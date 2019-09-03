@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RootNamespace>VErp.Services.Accountant.Model</RootNamespace>
+    <AssemblyName>VErp.Services.Accountant.Model</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,9 @@
+{
+  "Configuration": {
+    "ConfigFileKey": "/usr/verp/config/config.Production.json",
+    "SigninCert": "/usr/verp/certificate/cert.pfx"
+  },
+  "Identity": {
+    "Endpoint": "http://localhost:5000"
+  }
+}
