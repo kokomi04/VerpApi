@@ -18,6 +18,10 @@ namespace VErpApi.Controllers
             
         }
    
+        public async Task<IActionResult> Index()
+        {
+            return Content("Ok, I'm working");
+        }
         public async Task<IActionResult> Error(string errorId)
         {
             var message = await _interaction.GetErrorContextAsync(errorId);
