@@ -30,11 +30,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=MasterDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
-            }
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,6 +53,18 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Route)
                     .IsRequired()
                     .HasMaxLength(512);
+
+                entity.HasOne(d => d.Action)
+                    .WithMany(p => p.ApiEndpoint)
+                    .HasForeignKey(d => d.ActionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ApiEndpoint_Action");
+
+                entity.HasOne(d => d.Method)
+                    .WithMany(p => p.ApiEndpoint)
+                    .HasForeignKey(d => d.MethodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ApiEndpoint_Method");
             });
 
             modelBuilder.Entity<Config>(entity =>
@@ -78,21 +86,13 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.UserId).ValueGeneratedNever();
 
-                entity.Property(e => e.Address)
-                    .IsRequired()
-                    .HasMaxLength(512);
+                entity.Property(e => e.Address).HasMaxLength(512);
 
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.Email).HasMaxLength(128);
 
-                entity.Property(e => e.EmployeeCode)
-                    .IsRequired()
-                    .HasMaxLength(64);
+                entity.Property(e => e.EmployeeCode).HasMaxLength(64);
 
-                entity.Property(e => e.Phone)
-                    .IsRequired()
-                    .HasMaxLength(64);
+                entity.Property(e => e.Phone).HasMaxLength(64);
             });
 
             modelBuilder.Entity<Method>(entity =>
@@ -108,9 +108,7 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.Property(e => e.ModuleId).ValueGeneratedNever();
 
-                entity.Property(e => e.Description)
-                    .IsRequired()
-                    .HasMaxLength(512);
+                entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.ModuleName)
                     .IsRequired()
@@ -126,14 +124,34 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.Property(e => e.RoleId).ValueGeneratedNever();
 
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.RoleName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.HasOne(d => d.RoleStatus)
+                    .WithMany(p => p.Role)
+                    .HasForeignKey(d => d.RoleStatusId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Role_RoleStatus");
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
             {
                 entity.HasKey(e => new { e.RoleId, e.ModuleId });
+
+                entity.HasOne(d => d.Module)
+                    .WithMany(p => p.RolePermission)
+                    .HasForeignKey(d => d.ModuleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_RolePermission_Module");
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.RolePermission)
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_RolePermission_Role");
             });
 
             modelBuilder.Entity<RoleStatus>(entity =>

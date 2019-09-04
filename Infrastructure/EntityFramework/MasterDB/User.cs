@@ -13,5 +13,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsDeleted { get; set; }
         public int UserStatusId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
+        public int RoleId { get; set; }
     }
 }
