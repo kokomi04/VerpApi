@@ -22,4 +22,10 @@
     <ProjectReference Include="..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="web.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
