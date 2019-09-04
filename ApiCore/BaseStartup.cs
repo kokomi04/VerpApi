@@ -11,6 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Serialization;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.Collections.Generic;
@@ -40,6 +43,8 @@ namespace VErp.Infrastructure.ApiCore
 
             services.Configure<AppSetting>(Configuration);
 
+            CreateSerilogLogger(Configuration);
+
             ConfigDBContext(services);
 
             services.AddMvc(options =>
@@ -57,8 +62,6 @@ namespace VErp.Infrastructure.ApiCore
 
 
             ConfigureAuthService(services);
-
-            
 
             ConfigSwagger(services);
 
@@ -132,6 +135,8 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            loggerFactory.AddSerilog();
+          
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))
             {
@@ -212,8 +217,36 @@ namespace VErp.Infrastructure.ApiCore
 
         }
 
-    }
+        private void CreateSerilogLogger(IConfiguration configuration)
+        {
+            var seqServerUrl = configuration["Logging"];
+            var logstashUrl = configuration["Serilog:LogstashgUrl"];
+            var filePathFormat = $"{AppSetting.Logging.OutputPath}/{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
+            var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
+            var logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()                
+                .Enrich.With(new ExceptionEnricher())
+                .Enrich.WithProperty("ApplicationContext", AppSetting.ServiceName)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.RollingFile(filePathFormat, restrictedToMinimumLevel: LogEventLevel.Debug, outputTemplate: logTemplate, retainedFileCountLimit: 30, shared: true)
+                .ReadFrom.Configuration(configuration)
+                .CreateLogger();
 
+            Log.Logger = logger;
+        }
+    }
+    class ExceptionEnricher : ILogEventEnricher
+    {
+        public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+        {
+            if (logEvent.Exception == null)
+                return;
+
+            var logEventProperty = propertyFactory.CreateProperty("EscapedException", logEvent.Exception.ToString().Replace("\r\n", "\\r\\n"));
+            logEvent.AddPropertyIfAbsent(logEventProperty);
+        }
+    }
     public static class CustomExtensionMethods
     {
         public static IServiceCollection AddCustomHealthCheck(this IServiceCollection services, IConfiguration configuration)
