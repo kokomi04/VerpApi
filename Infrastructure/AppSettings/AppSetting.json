@@ -1,5 +1,6 @@
 {
   "Logging": {
+    "OutputPath": "/var/logs/Verp/",
     "IncludeScopes": false,
     "LogLevel": {
       "Default": "Debug",
