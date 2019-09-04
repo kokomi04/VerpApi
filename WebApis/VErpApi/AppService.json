@@ -1,3 +1,4 @@
 {
-  "ServiceName": "VErpApi"
+  "ServiceName": "VErpApi",
+  "Port":  8001
 }

@@ -31,11 +31,10 @@ namespace VErp.Infrastructure.ApiCore
         protected AppSetting AppSetting { get; private set; }
         protected IConfigurationRoot Configuration { get; set; }
 
-        protected BaseStartup()
+        protected BaseStartup(AppConfigSetting appConfig)
         {
-            var configSetting = AppConfigSetting.Config();
-            AppSetting = configSetting.AppSetting;
-            Configuration = configSetting.Configuration;
+            AppSetting = appConfig.AppSetting;
+            Configuration = appConfig.Configuration;
         }
 
         protected void ConfigureStandardServices(IServiceCollection services)
