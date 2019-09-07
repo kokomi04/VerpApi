@@ -27,7 +27,7 @@ namespace VErp.WebApis.VErpApi.Controllers
         }
         [HttpPost]
         [Route("CreateUser")]
-        public async Task<bool> Post([FromQuery] string userName, [FromQuery] string password)
+        public async Task<bool> Post([FromQuery] string userName, [FromQuery] string password, [FromQuery] int roleId)
         {
             var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, password);
             var user = new User()
@@ -38,7 +38,8 @@ namespace VErp.WebApis.VErpApi.Controllers
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UserStatusId = (int)EnumUserStatus.Actived,
                 PasswordSalt = salt,
-                PasswordHash = passwordHash
+                PasswordHash = passwordHash,
+                RoleId = roleId
             };
             _masterDBContext.User.Add(user);
             await _masterDBContext.SaveChangesAsync();

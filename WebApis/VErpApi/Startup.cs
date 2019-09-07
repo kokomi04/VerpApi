@@ -10,6 +10,7 @@ using System;
 using System.Reflection;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
+using VErp.Infrastructure.AppSettings;
 using VErp.Services.Master.Service;
 using VErp.WebApis.VErpApi.Validator;
 
@@ -17,7 +18,7 @@ namespace VErp.WebApis.VErpApi
 {
     public class Startup : BaseStartup
     {
-        public Startup(IConfiguration configuration) : base()
+        public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
 
         }

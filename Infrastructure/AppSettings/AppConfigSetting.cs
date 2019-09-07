@@ -7,7 +7,7 @@ using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Infrastructure.AppSettings
-{   
+{
     public class AppConfigSetting
     {
         private AppConfigSetting() { }
@@ -26,8 +26,9 @@ namespace VErp.Infrastructure.AppSettings
             var builder = new ConfigurationBuilder()
                     .SetBasePath(exeFolder)
                     .AddJsonFile($"AppSetting.json", false, true)
-                    .AddJsonFile($"AppSetting.{environmentName ?? modeName}.json", false, true);
-                ;
+                    .AddJsonFile($"AppSetting.{environmentName ?? modeName}.json", false, true)
+                    .AddJsonFile($"AppService.json", false, true);
+
             if (!excludeSensitiveConfig)
             {
                 AddEnvironmentConfig(builder);
@@ -49,7 +50,7 @@ namespace VErp.Infrastructure.AppSettings
         {
             var appConfigTemp = builder.Build().Get<AppSetting>();
 
-            builder.AddJsonFile(appConfigTemp.Configuration.ConfigFileKey, false, true);            
+            builder.AddJsonFile(appConfigTemp.Configuration.ConfigFileKey, false, true);
         }
 
 

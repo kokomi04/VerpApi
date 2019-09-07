@@ -9,5 +9,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Route { get; set; }
         public int MethodId { get; set; }
         public int ActionId { get; set; }
+
+        public virtual Action Action { get; set; }
+        public virtual Method Method { get; set; }
     }
 }
