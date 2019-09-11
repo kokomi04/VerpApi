@@ -46,6 +46,21 @@ namespace VErp.Infrastructure.ApiCore
 
             ConfigDBContext(services);
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                    .SetIsOriginAllowed((host) => true)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .AllowAnyOrigin()
+                    );
+            })
+              .AddHttpContextAccessor()
+              .AddOptions()
+              .AddCustomHealthCheck(Configuration);
+
             services.AddMvc(options =>
             {
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
@@ -65,20 +80,7 @@ namespace VErp.Infrastructure.ApiCore
             ConfigSwagger(services);
 
 
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                    .SetIsOriginAllowed((host) => true)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials()
-                    .AllowAnyOrigin()
-                    );
-            })
-            .AddHttpContextAccessor()
-            .AddOptions()
-            .AddCustomHealthCheck(Configuration);
+
 
         }
 
@@ -137,16 +139,14 @@ namespace VErp.Infrastructure.ApiCore
         protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddSerilog();
-          
+
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))
             {
                 app.UsePathBase(pathBase);
             }
 
-            ConfigureHelthCheck(app);
-
-            ConfigureAuth(app);
+            ConfigureHelthCheck(app);            
 
             //if (env.IsDevelopment())
             //  {
@@ -159,6 +159,9 @@ namespace VErp.Infrastructure.ApiCore
             // }
 
             app.UseCors("CorsPolicy");
+
+            ConfigureAuth(app);
+
             app.UseMvcWithDefaultRoute();
             app.UseSwagger()
                .UseSwaggerUI(c =>
@@ -225,7 +228,7 @@ namespace VErp.Infrastructure.ApiCore
             var filePathFormat = $"{AppSetting.Logging.OutputPath}/{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
             var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
             var logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()                
+                .MinimumLevel.Debug()
                 .Enrich.With(new ExceptionEnricher())
                 .Enrich.WithProperty("ApplicationContext", AppSetting.ServiceName)
                 .Enrich.FromLogContext()
