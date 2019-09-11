@@ -72,7 +72,9 @@ namespace VErp.Infrastructure.ApiCore
                     .SetIsOriginAllowed((host) => true)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials());
+                    .AllowCredentials()
+                    .AllowAnyOrigin()
+                    );
             })
             .AddHttpContextAccessor()
             .AddOptions()
