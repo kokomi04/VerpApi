@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
+        public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
@@ -113,11 +114,38 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ModuleName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.HasOne(d => d.ModuleGroup)
+                    .WithMany(p => p.Module)
+                    .HasForeignKey(d => d.ModuleGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Module_ModuleGroup");
             });
 
             modelBuilder.Entity<ModuleApiEndpointMapping>(entity =>
             {
                 entity.HasKey(e => new { e.ModuleId, e.ApiEndpointId });
+
+                entity.HasOne(d => d.ApiEndpoint)
+                    .WithMany(p => p.ModuleApiEndpointMapping)
+                    .HasForeignKey(d => d.ApiEndpointId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ModuleApiEndpointMapping_ApiEndpoint");
+
+                entity.HasOne(d => d.Module)
+                    .WithMany(p => p.ModuleApiEndpointMapping)
+                    .HasForeignKey(d => d.ModuleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ModuleApiEndpointMapping_Module");
+            });
+
+            modelBuilder.Entity<ModuleGroup>(entity =>
+            {
+                entity.Property(e => e.ModuleGroupId).ValueGeneratedNever();
+
+                entity.Property(e => e.ModuleGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<Role>(entity =>

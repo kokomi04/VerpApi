@@ -66,7 +66,7 @@ export class ModuleApiMapping extends Component {
                     , '', {
                         closeButton: true,
                     });
-            })
+            });
     }
     remove = (apiEndpointId) => () => {
         let moduleId = this.props.match.params.moduleId;

@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MigrateAndMappingApi.Services;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Services.Master.Service.RolePermission.Implement;
 using VErp.Services.Master.Service.RolePermission.Interface;
 using VErp.WebApis.VErpApi;
 
@@ -62,6 +60,70 @@ namespace MigrateAndMappingApi.Controllers
         {
             return await _masterContext.Module.ToListAsync();
         }
+        [Route("GetSystemModuleGroups")]
+        [HttpGet]
+        public async Task<IList<ModuleGroup>> GetSystemModuleGroups()
+        {
+            return await _masterContext.ModuleGroup.ToListAsync();
+        }
+
+        [Route("AddSystemModuleGroup")]
+        [HttpPost]
+        public async Task<bool> AddSystemModuleGroup([FromBody] ModuleGroup data)
+        {
+            await _masterContext.ModuleGroup.AddAsync(data);
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        [Route("UpdateSystemModuleGroup")]
+        [HttpPut]
+        public async Task<bool> UpdateSystemModuleGroup([FromBody] ModuleGroup data)
+        {
+            var group = await _masterContext.ModuleGroup.FirstOrDefaultAsync(g => g.ModuleGroupId == data.ModuleGroupId);
+            if (group == null)
+            {
+                throw new Exception("Not found");
+            }
+
+            group.ModuleGroupName = data.ModuleGroupName;
+
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        [Route("DeleteSystemModuleGroup")]
+        [HttpDelete]
+        public async Task<bool> DeleteSystemModuleGroup([FromBody] ModuleGroup data)
+        {
+            var group = await _masterContext.ModuleGroup.FirstOrDefaultAsync(g => g.ModuleGroupId == data.ModuleGroupId);
+            if (group == null)
+            {
+                throw new Exception("Not found");
+            }
+
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            {
+                var modules = _masterContext.Module.Where(m => m.ModuleGroupId == data.ModuleGroupId);
+
+                var apiMappings = from m in _masterContext.ModuleApiEndpointMapping
+                                  join module in modules on m.ModuleId equals module.ModuleId
+                                  select m;
+
+                _masterContext.ModuleApiEndpointMapping.RemoveRange(apiMappings);
+
+                _masterContext.Module.RemoveRange(modules);
+
+                _masterContext.ModuleGroup.Remove(group);
+
+                await _masterContext.SaveChangesAsync();
+
+                trans.Commit();
+            }
+            return true;
+        }
 
         [Route("GetSystemModulesMapping")]
         [HttpGet]
@@ -95,10 +157,23 @@ namespace MigrateAndMappingApi.Controllers
                 item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId, (EnumAction)item.ActionId);
             }
 
-            _masterContext.ApiEndpoint.RemoveRange(_masterContext.ApiEndpoint);
+            // var storedMappings = await _masterContext.ModuleApiEndpointMapping.ToListAsync();
 
-            await _masterContext.ApiEndpoint.AddRangeAsync(lst);
-            await _masterContext.SaveChangesAsync();
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            {
+                // _masterContext.ModuleApiEndpointMapping.RemoveRange(storedMappings);
+
+
+
+                _masterContext.ApiEndpoint.RemoveRange(_masterContext.ApiEndpoint);
+
+                await _masterContext.ApiEndpoint.AddRangeAsync(lst);
+
+                //_masterContext.ModuleApiEndpointMapping.AddRange(storedMappings);
+
+                await _masterContext.SaveChangesAsync();
+                trans.Commit();
+            }
             return true;
         }
 
@@ -113,7 +188,7 @@ namespace MigrateAndMappingApi.Controllers
                 _masterContext.ModuleApiEndpointMapping.Remove(mapping);
                 await _masterContext.SaveChangesAsync();
             }
-            
+
             return true;
         }
 
@@ -127,6 +202,65 @@ namespace MigrateAndMappingApi.Controllers
                 _masterContext.ModuleApiEndpointMapping.Add(data);
 
                 await _masterContext.SaveChangesAsync();
+            }
+            return true;
+        }
+
+
+
+        [Route("AddModule")]
+        [HttpPost]
+        public async Task<bool> AddModule([FromBody] Module data)
+        {
+            await _masterContext.Module.AddAsync(data);
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        [Route("UpdateModule")]
+        [HttpPut]
+        public async Task<bool> UpdateModule([FromBody] Module data)
+        {
+            var info = await _masterContext.Module.FirstOrDefaultAsync(g => g.ModuleId == data.ModuleId);
+            if (info == null)
+            {
+                throw new Exception("Not found");
+            }
+
+            info.ModuleGroupId = data.ModuleGroupId;
+            info.ModuleName = data.ModuleName;
+            info.Description = data.Description;
+
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        [Route("DeleteModule")]
+        [HttpDelete]
+        public async Task<bool> DeleteModule([FromBody] Module data)
+        {
+            var info = await _masterContext.Module.FirstOrDefaultAsync(g => g.ModuleId == data.ModuleId);
+            if (info == null)
+            {
+                throw new Exception("Not found");
+            }
+
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            {
+
+                var apiMappings = from m in _masterContext.ModuleApiEndpointMapping
+                                  where m.ModuleId == info.ModuleId
+                                  select m;
+
+                _masterContext.ModuleApiEndpointMapping.RemoveRange(apiMappings);
+
+                _masterContext.Module.Remove(info);
+
+                await _masterContext.SaveChangesAsync();
+
+                trans.Commit();
             }
             return true;
         }

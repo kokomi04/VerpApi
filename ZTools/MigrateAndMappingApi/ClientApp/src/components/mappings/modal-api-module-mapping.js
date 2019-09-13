@@ -20,7 +20,9 @@ export default class ModalApiModuleMapping extends Component {
             apiEndpointId: apiEndpointId
         })
         $(this.modal).modal();
-        this.getApiEndpoint()();
+
+        this.getSystemModules()();
+
         if (this.typeahead) {
             this.typeahead.getInstance().clear();
         }
@@ -59,7 +61,7 @@ export default class ModalApiModuleMapping extends Component {
 
         $(this.modal).modal('hide');
 
-        this.props.onSave(ApiEndpointService.addMapping(this.props.apiEndpointId, this.state.selectedModule.moduleId));
+        this.props.onSave(ApiEndpointService.addMapping(this.state.selectedModule.moduleId, this.state.apiEndpointId));
     }
 
     render() {

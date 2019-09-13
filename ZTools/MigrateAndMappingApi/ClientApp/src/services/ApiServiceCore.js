@@ -35,7 +35,9 @@ class ApiServiceCore {
     post(url, data, configs = null) {
         return this._axios.post(url, data, configs);
     }
-
+    put(url, data, configs = null) {
+        return this._axios.put(url, data, configs);
+    }
     delete(url, data, configs = null) {
         return this._axios.delete(url, { data: data, ...configs });
     }

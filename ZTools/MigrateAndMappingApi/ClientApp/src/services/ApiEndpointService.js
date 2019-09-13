@@ -18,6 +18,20 @@ class ApiEndpointService {
         return ApiServiceCore.post('/ApiEndpoint/AddMapping', { moduleId, apiEndpointId });
     }
 
+    addSystemModuleGroup(data) {
+        return ApiServiceCore.post('/ApiEndpoint/addSystemModuleGroup', data);
+    }
+    updateSystemModuleGroup(data) {
+        return ApiServiceCore.put('/ApiEndpoint/UpdateSystemModuleGroup', data);
+    }
+    removeSystemModuleGroup(data) {
+        return ApiServiceCore.delete('/ApiEndpoint/DeleteSystemModuleGroup', data);
+    }
+
+    getSystemModuleGroups() {
+        return ApiServiceCore.get('/ApiEndpoint/GetSystemModuleGroups');
+    }
+
     getSystemModules() {
         return ApiServiceCore.get('/ApiEndpoint/GetSystemModules');
     }
@@ -26,6 +40,16 @@ class ApiEndpointService {
     }
     getSystemModuleInfo(moduleId) {
         return ApiServiceCore.get('/ApiEndpoint/GetSystemModuleInfo', { moduleId });
+    }
+
+    addModule(data) {
+        return ApiServiceCore.post('/ApiEndpoint/addModule', data);
+    }
+    updateModule(data) {
+        return ApiServiceCore.put('/ApiEndpoint/updateModule', data);
+    }
+    removeModule(data) {
+        return ApiServiceCore.delete('/ApiEndpoint/deleteModule', data);
     }
 }
 export default new ApiEndpointService();

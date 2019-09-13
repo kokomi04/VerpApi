@@ -5,7 +5,7 @@ import Layout from './components/Layout';
 import Counter from './components/Counter';
 import FetchData from './components/FetchData';
 import syncApiEndpoints from './components/mappings/sync-api-endpoints';
-import systemModules from './components/mappings/system-modules';
+import systemModules from './components/system-modules/system-modules';
 import { ModuleApiMapping } from './components/mappings/module-api-mapping';
 
 export default () => (

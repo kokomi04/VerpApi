@@ -20,7 +20,9 @@ class SyncApiEndpoint extends Component {
             loading: false,
             endpoints: [],
             currentAction: 0
-        }
+        };
+
+        this.onSave = this.onSave.bind(this);
     }
 
 
@@ -88,8 +90,24 @@ class SyncApiEndpoint extends Component {
             });
     }
     openForMapping = (apiEndpointId) => () => {
-        this.modalForAddModule.open(apiEndpointId);
+        this.refs.modalForAddModule.open(apiEndpointId);
     }
+    onSave(saveAction) {
+
+        saveAction
+            .then(r => {
+                this.container.success('Thành công');
+                this.getApiEndpoint();
+            })
+            .catch(e => {
+                this.container.error(
+                    e.message ? e.message : e
+                    , '', {
+                        closeButton: true,
+                    });
+            });
+    }
+
     render() {
 
         var rows = [];
