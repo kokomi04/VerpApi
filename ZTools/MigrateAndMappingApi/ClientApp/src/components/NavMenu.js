@@ -22,21 +22,19 @@ export default class NavMenu extends React.Component {
             <header>
                 <Navbar className="navbar-expand-sm navbar-toggleable-sm border-bottom box-shadow mb-3" light >
                     <Container>
-                        <NavbarBrand tag={Link} to="/">MigrateAndMappingApi</NavbarBrand>
+                        <NavbarBrand tag={Link} to="/">Migrate api endpoints AND mapping modules - apis</NavbarBrand>
                         <NavbarToggler onClick={this.toggle} className="mr-2" />
                         <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={this.state.isOpen} navbar>
                             <ul className="navbar-nav flex-grow">
                                 <NavItem>
                                     <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
                                 </NavItem>
+                            
                                 <NavItem>
-                                    <NavLink tag={Link} className="text-dark" to="/counter">Counter</NavLink>
+                                    <NavLink tag={Link} className="text-dark" to="/sync-api-endpoint">Endpoints</NavLink>
                                 </NavItem>
                                 <NavItem>
-                                    <NavLink tag={Link} className="text-dark" to="/fetch-data">Fetch data</NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} className="text-dark" to="/sync-api-endpoint">Sync api endpoints</NavLink>
+                                    <NavLink tag={Link} className="text-dark" to="/system-modules">Modules</NavLink>
                                 </NavItem>
                             </ul>
                         </Collapse>

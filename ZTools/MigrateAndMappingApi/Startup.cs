@@ -5,55 +5,55 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Services.Accountant.Service;
+using System;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Extensions;
+using VErp.Infrastructure.AppSettings;
+using VErp.Services.Master.Service;
 
 namespace MigrateAndMappingApi
 {
-    public class Startup
+    public class Startup: BaseStartup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
-            Configuration = configuration;
+
         }
 
-        public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            ConfigureStandardServices(services);
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "ClientApp/build";
             });
+
+            ConfigureBussinessService(services);
+
+            return BuildService(services);
+        }
+        private void ConfigureBussinessService(IServiceCollection services)
+        {
+            services.AddScopedServices(MasterServiceAssembly.Assembly);
+            services.AddScopedServices(AccountantServiceAssembly.Assembly);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        {            
+
+            ConfigureBase(app, env, loggerFactory);
+
+            app.UseHsts();
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseSpaStaticFiles();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller}/{action=Index}/{id?}");
-            });
-
+            app.UseSpaStaticFiles();           
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
@@ -63,6 +63,8 @@ namespace MigrateAndMappingApi
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }
             });
+
+          
         }
     }
 }

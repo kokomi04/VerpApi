@@ -4,7 +4,7 @@ class ApiServiceCore {
     constructor() {
         const instance = axios.create({
             baseURL: '/api/',
-            timeout: 1000,
+            timeout: 30000,
             headers: { 'X-Custom-Header': 'my-dev' }
         });
         // Add a request interceptor
@@ -33,7 +33,11 @@ class ApiServiceCore {
     }
 
     post(url, data, configs = null) {
-        return this._axios.post(url, { data: data, ...configs });
+        return this._axios.post(url, data, configs);
+    }
+
+    delete(url, data, configs = null) {
+        return this._axios.delete(url, { data: data, ...configs });
     }
 }
 export default new ApiServiceCore();

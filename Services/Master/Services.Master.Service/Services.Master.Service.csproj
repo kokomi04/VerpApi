@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
+    <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\Services.Master.Model\Services.Master.Model.csproj" />
   </ItemGroup>

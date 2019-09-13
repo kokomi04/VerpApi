@@ -68,6 +68,7 @@ namespace VErp.WebApis.VErpApi
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
+            app.UseIdentityServer();
             base.ConfigureBase(app, env, loggerFactory);
         }
     }

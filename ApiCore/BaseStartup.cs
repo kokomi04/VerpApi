@@ -162,7 +162,6 @@ namespace VErp.Infrastructure.ApiCore
 
             ConfigureAuth(app);
 
-            app.UseMvcWithDefaultRoute();
             app.UseSwagger()
                .UseSwaggerUI(c =>
                {
@@ -201,8 +200,7 @@ namespace VErp.Infrastructure.ApiCore
 
         protected virtual void ConfigureAuth(IApplicationBuilder app)
         {
-            app.UseForwardedHeaders();
-            app.UseIdentityServer();
+            app.UseForwardedHeaders();            
             app.UseMvc();
         }
 
