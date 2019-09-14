@@ -79,9 +79,6 @@ namespace VErp.Infrastructure.ApiCore
 
             ConfigSwagger(services);
 
-
-
-
         }
 
         private void ConfigDBContext(IServiceCollection services)
@@ -136,7 +133,7 @@ namespace VErp.Infrastructure.ApiCore
             return new AutofacServiceProvider(container.Build());
         }
 
-        protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
             loggerFactory.AddSerilog();
 
@@ -160,7 +157,12 @@ namespace VErp.Infrastructure.ApiCore
 
             app.UseCors("CorsPolicy");
 
-            ConfigureAuth(app);
+            app.UseForwardedHeaders();
+            if (isIdentiy)
+            {
+                app.UseIdentityServer();
+            }
+            app.UseMvc();
 
             app.UseSwagger()
                .UseSwaggerUI(c =>
@@ -196,13 +198,7 @@ namespace VErp.Infrastructure.ApiCore
                 options.EnableCaching = false;
                 options.CacheDuration = TimeSpan.FromMinutes(10);
             });
-        }
-
-        protected virtual void ConfigureAuth(IApplicationBuilder app)
-        {
-            app.UseForwardedHeaders();            
-            app.UseMvc();
-        }
+        }       
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
         {

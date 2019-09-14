@@ -49,7 +49,7 @@ namespace MigrateAndMappingApi
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {            
 
-            ConfigureBase(app, env, loggerFactory);
+            ConfigureBase(app, env, loggerFactory, false);
 
             app.UseHsts();
 
