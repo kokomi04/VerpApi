@@ -67,9 +67,9 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(AccountantServiceAssembly.Assembly);            
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-        {
+        {            
+            ConfigureBase(app, env, loggerFactory);
             app.UseIdentityServer();
-            base.ConfigureBase(app, env, loggerFactory);
         }
     }
 }
