@@ -15,7 +15,8 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse()
             {
-                Code = code.GetErrorCodeString()
+                Code = code.GetErrorCodeString(),
+                Message = code.GetEnumDescription()
             };
         }
 

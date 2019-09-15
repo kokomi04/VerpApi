@@ -5,7 +5,7 @@ using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Infrastructure.ServiceCore.Model
 {
-    
+
     public class ServiceResult
     {
         public Enum Code { get; set; }
@@ -14,20 +14,22 @@ namespace VErp.Infrastructure.ServiceCore.Model
         {
             return new ServiceResult()
             {
-                Code = code
+                Code = code,
+                Message = code.GetEnumDescription()
             };
         }
     }
 
-    public class ServiceResult<T>: ServiceResult
+    public class ServiceResult<T> : ServiceResult
     {
-       public T Data { get; set; }
+        public T Data { get; set; }
 
         public static implicit operator ServiceResult<T>(Enum code)
         {
             return new ServiceResult<T>()
             {
-                Code = code
+                Code = code,
+                Message = code.GetEnumDescription()
             };
         }
         public static implicit operator ServiceResult<T>(T data)

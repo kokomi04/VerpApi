@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Reflection;
 using System.Text;
 
 namespace VErp.Commons.Enums.StandardEnum
@@ -25,5 +27,22 @@ namespace VErp.Commons.Enums.StandardEnum
             }
             return $"{prefix}-{Convert.ToInt32(enumValue)}";
         }
+
+        public static string GetEnumDescription(this Enum value)
+        {
+            try
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi == null)
+                    return value.ToString();
+                var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                return (attributes.Length > 0) ? attributes[0].Description : string.Empty;
+            }
+            catch (Exception)
+            {
+                return value.ToString();
+            }
+        }
+
     }
 }
