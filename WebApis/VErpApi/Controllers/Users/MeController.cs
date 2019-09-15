@@ -13,12 +13,12 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users.Interface;
 
 namespace VErpApi.Controllers.Users
 {
     [Route("api/users/[controller]")]
-    [ApiController]
     public class MeController : VErpBaseController
     {
         private readonly IUserService _userService;
@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Users
 
         [Route("info")]
         [HttpGet]
-        public async Task<ApiResponse<User>> GetInfo()
+        public async Task<ApiResponse<UserInfoOutput>> GetInfo()
         {
             return await _userService.GetInfo(UserId);
         }

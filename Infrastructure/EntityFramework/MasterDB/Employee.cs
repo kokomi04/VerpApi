@@ -7,9 +7,13 @@ namespace VErp.Infrastructure.EF.MasterDB
     {
         public int UserId { get; set; }
         public string EmployeeCode { get; set; }
+        public string FullName { get; set; }
         public string Email { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
-        public int? Gender { get; set; }
+        public int? GenderId { get; set; }
+        public bool IsDeleted { get; set; }
+
+        public virtual Gender Gender { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Description { get; set; }
         public int RoleStatusId { get; set; }
         public bool IsDeleted { get; set; }
+        public bool IsEditable { get; set; }
 
         public virtual RoleStatus RoleStatus { get; set; }
         public virtual ICollection<RolePermission> RolePermission { get; set; }
