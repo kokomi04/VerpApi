@@ -9,7 +9,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.Master.Model\Services.Master.Model.csproj" />
   </ItemGroup>
 

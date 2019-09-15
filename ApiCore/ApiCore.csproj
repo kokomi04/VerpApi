@@ -45,6 +45,7 @@
     <ProjectReference Include="..\Infrastructure\EntityFramework\IdentityDB\IdentityDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 
 </Project>
