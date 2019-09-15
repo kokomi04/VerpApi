@@ -14,10 +14,11 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Services.Master.Service;
+using VErp.Services.Stock.Service;
 
 namespace MigrateAndMappingApi
 {
-    public class Startup: BaseStartup
+    public class Startup : BaseStartup
     {
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
@@ -43,11 +44,12 @@ namespace MigrateAndMappingApi
         {
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
+            services.AddScopedServices(StockServiceAssembly.Assembly);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-        {            
+        {
 
             ConfigureBase(app, env, loggerFactory, false);
 
@@ -55,7 +57,7 @@ namespace MigrateAndMappingApi
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseSpaStaticFiles();           
+            app.UseSpaStaticFiles();
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
@@ -64,8 +66,8 @@ namespace MigrateAndMappingApi
                 {
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }
-            });          
-          
+            });
+
         }
     }
 }
