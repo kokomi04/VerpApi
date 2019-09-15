@@ -36,7 +36,7 @@ namespace VErp.Commons.Enums.StandardEnum
                 if (fi == null)
                     return value.ToString();
                 var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
-                return (attributes.Length > 0) ? attributes[0].Description : string.Empty;
+                return (attributes.Length > 0) ? attributes[0].Description : value.ToString();
             }
             catch (Exception)
             {
