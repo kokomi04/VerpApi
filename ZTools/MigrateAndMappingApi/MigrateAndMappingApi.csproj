@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
+    <ProjectReference Include="..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
     <ProjectReference Include="..\..\WebApis\VErpApi\VErpApi.csproj" />
   </ItemGroup>
 

@@ -9,6 +9,7 @@ using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.IdentityDB;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Infrastructure.ApiCore.Extensions
 {
@@ -22,7 +23,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             }, contextScope);
         }
 
-       
+        public static void ConfigStockDBContext(this IServiceCollection services, AppSetting appSetting, ServiceLifetime contextScope)
+        {
+            services.AddDbContext<StockDBContext>((option) =>
+            {
+                option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
+            }, contextScope);
+        }
+
         public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)
         {
             return services

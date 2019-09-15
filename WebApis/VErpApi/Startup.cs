@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Services.Master.Service;
+using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
 namespace VErp.WebApis.VErpApi
@@ -64,7 +65,8 @@ namespace VErp.WebApis.VErpApi
         private void ConfigureBussinessService(IServiceCollection services)
         {
             services.AddScopedServices(MasterServiceAssembly.Assembly);
-            services.AddScopedServices(AccountantServiceAssembly.Assembly);            
+            services.AddScopedServices(AccountantServiceAssembly.Assembly);
+            services.AddScopedServices(StockServiceAssembly.Assembly);            
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {            

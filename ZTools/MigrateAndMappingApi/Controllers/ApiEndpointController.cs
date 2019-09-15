@@ -29,7 +29,7 @@ namespace MigrateAndMappingApi.Controllers
 
         [Route("GetApiEndpoints")]
         [HttpGet]
-        public async Task<IList<ApiEndpoint>> GetApiEndpoints()
+        public IList<ApiEndpoint> GetApiEndpoints()
         {
             var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly));
             foreach (var item in lst)
