@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -19,31 +20,48 @@ namespace VErp.Services.Master.Service.Users.Implement
     {
         private MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
+        private ILogger _logger;
         public UserService(MasterDBContext masterContext
-            , IOptions<AppSetting> appSetting)
+            , IOptions<AppSetting> appSetting
+            , ILogger<UserService> logger
+            )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
+            _logger = logger;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
         {
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                var user = await CreateUserAuthen(req);
-                if (!user.Code.IsSuccess())
+                try
                 {
-                    return user.Code;
-                }
-                var r = await CreateEmployee(user.Data, req);
+                    var user = await CreateUserAuthen(req);
+                    if (!user.Code.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return user.Code;
+                    }
+                    var r = await CreateEmployee(user.Data, req);
 
-                if (!r.IsSuccess())
+                    if (!r.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r;
+                    }
+                    trans.Commit();
+
+                    _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+                    return user.Data;
+                }
+                catch (Exception ex)
                 {
-                    return r;
+                    trans.Rollback();
+                    _logger.LogError(ex, "CreateUser");
+                    return GeneralCode.InternalError;
                 }
-                trans.Commit();
-
-                return user.Data;
+                
             }
         }
 
@@ -81,20 +99,32 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                var user = await DeleteUserAuthen(userId);
-                if (!user.IsSuccess())
+                try
                 {
-                    return user;
-                }
-                var r = await DeleteEmployee(userId);
+                    var user = await DeleteUserAuthen(userId);
+                    if (!user.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return user;
+                    }
+                    var r = await DeleteEmployee(userId);
 
-                if (!r.IsSuccess())
+                    if (!r.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r;
+                    }
+                    trans.Commit();
+
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
                 {
-                    return r;
+                    trans.Rollback();
+                    _logger.LogError(ex, "DeleteUser");
+                    return GeneralCode.InternalError;
                 }
-                trans.Commit();
-
-                return GeneralCode.Success;
+               
             }
         }
 
@@ -140,20 +170,32 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                var r1 = await UpdateUserAuthen(userId, req);
-                if (!r1.IsSuccess())
+                try
                 {
-                    return r1;
-                }
-                var r2 = await UpdateEmployee(userId, req);
+                    var r1 = await UpdateUserAuthen(userId, req);
+                    if (!r1.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r1;
+                    }
+                    var r2 = await UpdateEmployee(userId, req);
 
-                if (!r2.IsSuccess())
+                    if (!r2.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r2;
+                    }
+                    trans.Commit();
+
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
                 {
-                    return r2;
+                    trans.Rollback();
+                    _logger.LogError(ex, "UpdateUser");
+                    return GeneralCode.InternalError;
                 }
-                trans.Commit();
-
-                return GeneralCode.Success;
+                
             }
         }
 
