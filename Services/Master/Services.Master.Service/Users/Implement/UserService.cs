@@ -43,7 +43,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
                 trans.Commit();
 
-                return GeneralCode.Success;
+                return user.Data;
             }
         }
 
