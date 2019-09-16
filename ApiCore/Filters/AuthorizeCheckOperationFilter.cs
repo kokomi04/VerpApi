@@ -33,4 +33,42 @@ namespace VErp.Infrastructure.ApiCore.Filters
             };
         }
     }
+
+    public class DataSchemaFilter : ISchemaFilter
+    {
+
+        public void Apply(Schema schema, SchemaFilterContext context)
+        {
+
+            if (Nullable.GetUnderlyingType(context.SystemType)?.IsEnum == true)
+            {
+                var example = new Dictionary<string, int>();
+                var lst = new List<object>();
+                foreach (var item in Enum.GetValues(Nullable.GetUnderlyingType(context.SystemType)))
+                {
+                    example.Add(item.ToString(), (int)item);
+                    lst.Add(item.ToString() + ": " + (int)item);
+                }
+                schema.Enum = lst;
+            }
+
+            if (context.SystemType.IsEnum)
+            {
+                var example = new Dictionary<string, int>();
+                var lst = new List<object>();
+                foreach (var item in Enum.GetValues(context.SystemType))
+                {
+                    example.Add(item.ToString(), (int)item);
+                    lst.Add(item.ToString() + ": " + (int)item);
+                }
+                schema.Enum = lst;
+            }
+
+            if (Nullable.GetUnderlyingType(context.SystemType) != null)
+            {
+                schema.Type = $"Nullable<{schema.Type}>";
+            }
+
+        }
+    }
 }

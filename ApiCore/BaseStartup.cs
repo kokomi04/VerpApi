@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.PlatformAbstractions;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
@@ -18,6 +19,7 @@ using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings;
@@ -90,7 +92,11 @@ namespace VErp.Infrastructure.ApiCore
         {
             services.AddSwaggerGen(options =>
             {
-                options.DescribeAllEnumsAsStrings();
+                //options.DescribeAllEnumsAsStrings();
+                //options.UseReferencedDefinitionsForEnums();
+                options.IncludeXmlComments(Path.Combine(
+                        PlatformServices.Default.Application.ApplicationBasePath,
+                        "VErpApi.xml"));
                 options.SwaggerDoc("v1", new Info
                 {
                     Title = "VERP HTTP API",
@@ -122,6 +128,7 @@ namespace VErp.Infrastructure.ApiCore
                 });
 
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
+                options.SchemaFilter<DataSchemaFilter>();
             });
         }
 
