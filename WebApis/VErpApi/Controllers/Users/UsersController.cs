@@ -54,7 +54,7 @@ namespace VErpApi.Controllers.Users
 
         [HttpDelete]
         [Route("{userId}")]
-        public async Task<ApiResponse> Update([FromRoute] int userId)
+        public async Task<ApiResponse> DeleteUser([FromRoute] int userId)
         {
             return await _userService.DeleteUser(userId);
         }
