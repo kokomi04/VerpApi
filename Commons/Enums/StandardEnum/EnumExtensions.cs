@@ -15,17 +15,25 @@ namespace VErp.Commons.Enums.StandardEnum
 
         public static string GetErrorCodeString(this Enum enumValue)
         {
+            string prefix = enumValue.GetType().GetErrorCodePrefix();
+
+            return $"{prefix}-{Convert.ToInt32(enumValue)}";
+        }
+
+        public static string GetErrorCodePrefix(this Type type, bool fallbackToName = true)
+        {
             string prefix = string.Empty;
-            var attrs = enumValue.GetType().GetCustomAttributes(typeof(ErrorCodePrefixAttribute), true);
+            var attrs = type.GetCustomAttributes(typeof(ErrorCodePrefixAttribute), true);
             if (attrs != null && attrs.Length > 0)
             {
                 prefix = ((ErrorCodePrefixAttribute)attrs[0]).Prefix;
             }
-            else
+            
+            if(string.IsNullOrWhiteSpace(prefix) && fallbackToName)
             {
-                prefix = enumValue.GetType().Name;
+                prefix = type.Name;
             }
-            return $"{prefix}-{Convert.ToInt32(enumValue)}";
+            return prefix;
         }
 
         public static string GetEnumDescription(this Enum value)

@@ -3,8 +3,12 @@ using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -31,6 +35,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     { "Bearer", new string[] { } },
                 }
             };
+
+            operation.Produces = new List<string>() { "application/json" };
+            operation.Consumes = new List<string>() { "application/json" };
+
         }
     }
 
@@ -42,11 +50,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (Nullable.GetUnderlyingType(context.SystemType)?.IsEnum == true)
             {
-                var example = new Dictionary<string, int>();
                 var lst = new List<object>();
                 foreach (var item in Enum.GetValues(Nullable.GetUnderlyingType(context.SystemType)))
                 {
-                    example.Add(item.ToString(), (int)item);
                     lst.Add(item.ToString() + ": " + (int)item);
                 }
                 schema.Enum = lst;
@@ -54,19 +60,87 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (context.SystemType.IsEnum)
             {
-                var example = new Dictionary<string, int>();
                 var lst = new List<object>();
+
+                var prefix = context.SystemType.GetErrorCodePrefix(false);
+
                 foreach (var item in Enum.GetValues(context.SystemType))
                 {
-                    example.Add(item.ToString(), (int)item);
-                    lst.Add(item.ToString() + ": " + (int)item);
+                    if (string.IsNullOrWhiteSpace(prefix))
+                    {
+                        lst.Add(item.ToString() + ": " + (int)item);
+                    }
+                    else
+                    {
+                        lst.Add($"{item}: \"{prefix}-{(int)item}\"");
+                    }
                 }
                 schema.Enum = lst;
             }
 
             if (Nullable.GetUnderlyingType(context.SystemType) != null)
             {
-                schema.Type = $"Nullable<{schema.Type}>";
+                schema.Description = "Nullable" + schema.Description;
+            }
+
+
+            var type = context.SystemType;
+
+            var propertyMappings = type
+           .GetProperties()
+           .Join(
+               schema.Properties ?? new Dictionary<string, Schema>(),
+               x => x.Name.ToLower(),
+               x => x.Key.ToLower(),
+               (x, y) => new KeyValuePair<PropertyInfo, KeyValuePair<string, Schema>>(x, y))
+           .ToList();
+
+            foreach (var propertyMapping in propertyMappings)
+            {
+                var sc = propertyMapping.Value;
+
+                if (propertyMapping.Key.PropertyType.IsEnum)
+                {
+                    //sc.Value.Ref = $"#/definitions/{propertyMapping.Key.PropertyType.Name}";
+                    sc.Value.Description = $"{propertyMapping.Key.PropertyType.Name}";
+                }
+
+
+                if (Nullable.GetUnderlyingType(propertyMapping.Key.PropertyType)?.IsEnum == true)
+                {
+                    //sc.Value.Ref = $"#/definitions/{Nullable.GetUnderlyingType(propertyMapping.Key.PropertyType).Name}";
+                    var t = Nullable.GetUnderlyingType(propertyMapping.Key.PropertyType).Name;
+                    sc.Value.Description = $"Nullable {t}";
+                }
+
+            }
+        }
+
+    }
+
+    public class CustomModelDocumentFilter : IDocumentFilter
+    {
+        public void Apply(SwaggerDocument swaggerDoc, DocumentFilterContext context)
+        {
+            var types = typeof(GeneralCode)
+                .Assembly
+                .GetTypes()
+                .Where(t => t.IsEnum)
+                .ToArray();
+
+            foreach (var enumType in types)
+            {
+                var prefix = enumType.GetErrorCodePrefix(false);
+                var sc = context.SchemaRegistry.GetOrRegister(enumType);
+
+                if (!string.IsNullOrWhiteSpace(prefix))
+                {
+                    swaggerDoc.Definitions.Add($"{enumType.Name} ({prefix}-)", sc);
+                }
+                else
+                {
+                    swaggerDoc.Definitions.Add($"{enumType.Name}", sc);
+                }
             }
 
         }

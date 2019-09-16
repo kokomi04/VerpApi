@@ -92,6 +92,8 @@ namespace VErp.Infrastructure.ApiCore
         {
             services.AddSwaggerGen(options =>
             {
+                options.DocumentFilter<CustomModelDocumentFilter>();
+                //options.UseReferencedDefinitionsForEnums();
                 //options.DescribeAllEnumsAsStrings();
                 //options.UseReferencedDefinitionsForEnums();
                 options.IncludeXmlComments(Path.Combine(
