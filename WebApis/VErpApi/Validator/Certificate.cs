@@ -13,7 +13,17 @@ namespace VErp.WebApis.VErpApi.Validator
             {
                 throw new Exception($"File '{filePath}' not found!");
             }
-            return new X509Certificate2(filePath, password);
-        }        
+
+            try
+            {
+                return new X509Certificate2(filePath, password);
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception($"File '{filePath}' exists: {File.Exists(filePath)} {ex.StackTrace}");
+            }
+
+        }
     }
 }
