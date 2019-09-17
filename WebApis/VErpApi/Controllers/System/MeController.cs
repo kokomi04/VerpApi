@@ -18,7 +18,7 @@ using VErp.Services.Master.Service.Users.Interface;
 
 namespace VErpApi.Controllers.System
 {
-    [Route("api/users/[controller]")]
+    [Route("api/users/me")]
     public class MeController : VErpBaseController
     {
         private readonly IUserService _userService;
