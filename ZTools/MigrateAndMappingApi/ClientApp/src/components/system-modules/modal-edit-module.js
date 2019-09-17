@@ -14,7 +14,8 @@ export default class ModalEditModule extends Component {
                 moduleId: 0,
                 moduleGroupId: 0,
                 moduleName: '',
-                description: ''
+                description: '',
+                sortOrder: 0
             }
         }
         this.open = this.open.bind(this);
@@ -28,7 +29,8 @@ export default class ModalEditModule extends Component {
             moduleId: 0,
             moduleGroupId: data ? data.moduleGroupId: 0,
             moduleName: '',
-            description: ''
+            description: '',
+            sortOrder: 0
         };
 
        
@@ -41,7 +43,8 @@ export default class ModalEditModule extends Component {
                 moduleId: data.moduleId,
                 moduleGroupId: data.moduleGroupId,
                 moduleName: data.moduleName,
-                description: data.description
+                description: data.description,
+                sortOrder: data.sortOrder
             };
 
         }
@@ -146,6 +149,16 @@ export default class ModalEditModule extends Component {
                                             onChange={this.handlerChange}
                                             value={this.state.info.description}
                                         ></textarea>
+                                    </div>
+                                </div>
+                                <div className="form-group row">
+                                    <label htmlFor="sortOrder" className="col-sm-2 col-form-label">Sort order</label>
+                                    <div className="col-sm-10">
+                                        <input type="text" className="form-control"
+                                            name="sortOrder"
+                                            value={this.state.info.sortOrder}
+                                            onChange={this.handlerChange}
+                                        />
                                     </div>
                                 </div>
                             </form>

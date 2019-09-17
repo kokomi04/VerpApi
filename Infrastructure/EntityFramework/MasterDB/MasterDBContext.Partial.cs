@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Employee>().HasQueryFilter(o => !o.IsDeleted);
 
+            modelBuilder.Entity<Role>().HasQueryFilter(o => !o.IsDeleted);
+
         }
     }
 

@@ -30,7 +30,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         }
     }
 
-
+    
     public class ApiResponse<T> : ApiResponse
     {
         public T Data { get; set; }
@@ -43,6 +43,7 @@ namespace VErp.Infrastructure.ApiCore.Model
                 Data = data
             };
         }
+
 
         public static implicit operator ApiResponse<T>(ServiceResult<T> result)
         {

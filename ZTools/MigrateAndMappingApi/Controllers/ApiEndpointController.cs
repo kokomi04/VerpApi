@@ -58,13 +58,14 @@ namespace MigrateAndMappingApi.Controllers
         [HttpGet]
         public async Task<IList<Module>> GetSystemModules()
         {
-            return await _masterContext.Module.ToListAsync();
+            return await _masterContext.Module.OrderBy(g => g.SortOrder).ToListAsync();
         }
+
         [Route("GetSystemModuleGroups")]
         [HttpGet]
         public async Task<IList<ModuleGroup>> GetSystemModuleGroups()
         {
-            return await _masterContext.ModuleGroup.ToListAsync();
+            return await _masterContext.ModuleGroup.OrderBy(g=>g.SortOrder).ToListAsync();
         }
 
         [Route("AddSystemModuleGroup")]
@@ -88,6 +89,8 @@ namespace MigrateAndMappingApi.Controllers
             }
 
             group.ModuleGroupName = data.ModuleGroupName;
+
+            group.SortOrder = data.SortOrder;
 
             await _masterContext.SaveChangesAsync();
 
@@ -162,8 +165,11 @@ namespace MigrateAndMappingApi.Controllers
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 _masterContext.ModuleApiEndpointMapping.RemoveRange(storedMappings);
+                await _masterContext.SaveChangesAsync();
 
                 _masterContext.ApiEndpoint.RemoveRange(_masterContext.ApiEndpoint);
+
+                await _masterContext.SaveChangesAsync();
 
                 await _masterContext.ApiEndpoint.AddRangeAsync(lst);
 
@@ -253,6 +259,7 @@ namespace MigrateAndMappingApi.Controllers
             info.ModuleGroupId = data.ModuleGroupId;
             info.ModuleName = data.ModuleName;
             info.Description = data.Description;
+            info.SortOrder = data.SortOrder;
 
             await _masterContext.SaveChangesAsync();
 
@@ -279,7 +286,11 @@ namespace MigrateAndMappingApi.Controllers
 
                 _masterContext.RolePermission.RemoveRange(permissions);
 
+                await _masterContext.SaveChangesAsync();
+
                 _masterContext.ModuleApiEndpointMapping.RemoveRange(apiMappings);
+
+                await _masterContext.SaveChangesAsync();
 
                 _masterContext.Module.Remove(info);
 

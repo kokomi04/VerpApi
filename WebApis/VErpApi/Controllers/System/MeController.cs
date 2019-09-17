@@ -16,7 +16,7 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users.Interface;
 
-namespace VErpApi.Controllers.Users
+namespace VErpApi.Controllers.System
 {
     [Route("api/users/[controller]")]
     public class MeController : VErpBaseController

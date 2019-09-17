@@ -18,9 +18,10 @@ namespace VErp.Services.Master.Service.Users.Implement
 {
     public class UserService : IUserService
     {
-        private MasterDBContext _masterContext;
+        private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
-        private ILogger _logger;
+        private readonly ILogger _logger;
+
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
@@ -223,7 +224,9 @@ namespace VErp.Services.Master.Service.Users.Implement
                 UserStatusId = (int)req.UserStatusId,
                 PasswordSalt = salt,
                 PasswordHash = passwordHash,
-                RoleId = req.RoleId
+                RoleId = req.RoleId,
+                UpdatedDatetimeUtc = DateTime.UtcNow
+
             };
 
             await _masterContext.User.AddAsync(user);
@@ -263,6 +266,8 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             user.UserStatusId = (int)req.UserStatusId;
             user.RoleId = req.RoleId;
+            user.UpdatedDatetimeUtc = DateTime.UtcNow;
+
             if (!string.IsNullOrWhiteSpace(req.Password))
             {
                 var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.Password);
@@ -305,7 +310,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
 
             user.IsDeleted = true;
-
+            user.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
             return GeneralCode.Success;

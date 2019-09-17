@@ -11,7 +11,8 @@ export default class ModalEditModuleGroup extends Component {
         this.state = {
             info: {
                 moduleGroupId: 0,
-                moduleGroupName: ''
+                moduleGroupName: '',
+                sortOrder: 0
             }
         }
         this.open = this.open.bind(this);
@@ -21,7 +22,8 @@ export default class ModalEditModuleGroup extends Component {
     open(data) {
         this.state.info = {
             moduleGroupId: 0,
-            moduleGroupName: ''
+            moduleGroupName: '',
+            sortOrder: 0
         };
 
         this.isNew = true;
@@ -30,7 +32,8 @@ export default class ModalEditModuleGroup extends Component {
 
             this.state.info = {
                 moduleGroupId: data.moduleGroupId,
-                moduleGroupName: data.moduleGroupName
+                moduleGroupName: data.moduleGroupName,
+                sortOrder: data.sortOrder
             };
         }
 
@@ -98,6 +101,17 @@ export default class ModalEditModuleGroup extends Component {
                                             value={this.state.info.moduleGroupName}
                                             onChange={this.handlerChange}
                                             ref="moduleGroupName"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-group row">
+                                    <label htmlFor="sortOrder" className="col-sm-2 col-form-label">Sort order</label>
+                                    <div className="col-sm-10">
+                                        <input type="text" className="form-control"
+                                            name="sortOrder"
+                                            value={this.state.info.sortOrder}
+                                            onChange={this.handlerChange}
+                                            ref="sortOrder"
                                         />
                                     </div>
                                 </div>

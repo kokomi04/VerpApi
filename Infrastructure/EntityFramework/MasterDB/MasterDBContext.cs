@@ -136,10 +136,12 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.Property(e => e.RoleId).ValueGeneratedNever();
+                entity.Property(e => e.CreatedDatetimUtc).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.Description).HasMaxLength(512);
                 entity.Property(e => e.RoleName)
                     .IsRequired()
                     .HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
                 entity.HasOne(d => d.RoleStatus)
                     .WithMany(p => p.Role)
                     .HasForeignKey(d => d.RoleStatusId)
@@ -149,6 +151,7 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<RolePermission>(entity =>
             {
                 entity.HasKey(e => new { e.RoleId, e.ModuleId });
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
                 entity.HasOne(d => d.Module)
                     .WithMany(p => p.RolePermission)
                     .HasForeignKey(d => d.ModuleId)
@@ -175,6 +178,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.PasswordSalt)
                     .IsRequired()
                     .HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(64);

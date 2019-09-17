@@ -10,7 +10,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users.Interface;
 
-namespace VErpApi.Controllers.Users
+namespace VErpApi.Controllers.System
 {
 
     [Route("api/users")]

@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string ModuleName { get; set; }
         public string Description { get; set; }
         public int ModuleGroupId { get; set; }
+        public int SortOrder { get; set; }
 
         public virtual ModuleGroup ModuleGroup { get; set; }
         public virtual ICollection<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
