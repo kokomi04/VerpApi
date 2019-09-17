@@ -7,6 +7,6 @@ namespace VErp.Services.Master.Service.RolePermission.Interface
 {
     public interface IApiEndpointService
     {
-        Guid HashApiEndpointId(string route, EnumMethod method, EnumAction action);
+        Guid HashApiEndpointId(string route, EnumMethod method);
     }
 }

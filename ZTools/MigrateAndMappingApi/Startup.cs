@@ -28,7 +28,7 @@ namespace MigrateAndMappingApi
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ConfigureStandardServices(services);
+            ConfigureStandardServices(services, false);
 
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
