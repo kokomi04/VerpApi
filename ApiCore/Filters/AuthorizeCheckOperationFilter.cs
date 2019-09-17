@@ -51,10 +51,16 @@ namespace VErp.Infrastructure.ApiCore.Filters
             if (Nullable.GetUnderlyingType(context.SystemType)?.IsEnum == true)
             {
                 var lst = new List<object>();
+                object example = null;
                 foreach (var item in Enum.GetValues(Nullable.GetUnderlyingType(context.SystemType)))
                 {
+                    if (example == null)
+                    {
+                        example = item;
+                    }
                     lst.Add(item.ToString() + ": " + (int)item);
                 }
+                schema.Example = example;
                 schema.Enum = lst;
             }
 
@@ -64,8 +70,14 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                 var prefix = context.SystemType.GetErrorCodePrefix(false);
 
+                object example = null;
                 foreach (var item in Enum.GetValues(context.SystemType))
                 {
+                    if (example == null)
+                    {
+                        example = item;
+                    }
+
                     if (string.IsNullOrWhiteSpace(prefix))
                     {
                         lst.Add(item.ToString() + ": " + (int)item);
@@ -75,6 +87,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                         lst.Add($"{item}: \"{prefix}-{(int)item}\"");
                     }
                 }
+                schema.Example = example;
                 schema.Enum = lst;
             }
 
