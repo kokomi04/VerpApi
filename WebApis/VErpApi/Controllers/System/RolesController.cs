@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission.Interface;
@@ -12,7 +13,7 @@ namespace VErpApi.Controllers.System
 {
     [Route("api/roles")]
 
-    public class RolesController : ControllerBase
+    public class RolesController : VErpBaseController
     {
         private readonly IRoleService _roleService;
         public RolesController(IRoleService roleService
@@ -68,6 +69,11 @@ namespace VErpApi.Controllers.System
             return await _roleService.DeleteRole(roleId);
         }
 
+        /// <summary>
+        /// Lấy danh sách module và quyền truy cập tương ứng
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("{roleId}/Permissions")]
         public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermissions([FromRoute] int roleId)

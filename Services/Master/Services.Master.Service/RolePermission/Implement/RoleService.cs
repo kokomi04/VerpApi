@@ -107,20 +107,25 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<Enum> UpdateRolePermission(int roleId, IList<RolePermissionModel> permissions)
         {
+            permissions = permissions.Where(p => p.Permission > 0).ToList();
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var rolePermissions = _masterContext.RolePermission.Where(p => p.RoleId == roleId);
 
                 _masterContext.RolePermission.RemoveRange(rolePermissions);
 
-                await _masterContext.RolePermission.AddRangeAsync(
-                    permissions.Select(p => new Infrastructure.EF.MasterDB.RolePermission()
-                    {
-                        RoleId = roleId,
-                        ModuleId = p.ModuleId,
-                        Permission = p.Permission,
-                        CreatedDatetimeUtc = DateTime.UtcNow
-                    }));
+                if (permissions.Count > 0)
+                {
+                    await _masterContext.RolePermission.AddRangeAsync(
+                        permissions.Select(p => new Infrastructure.EF.MasterDB.RolePermission()
+                        {
+                            RoleId = roleId,
+                            ModuleId = p.ModuleId,
+                            Permission = p.Permission,
+                            CreatedDatetimeUtc = DateTime.UtcNow
+                        }));
+                }
 
                 await _masterContext.SaveChangesAsync();
 
