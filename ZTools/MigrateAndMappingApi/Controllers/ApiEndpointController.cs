@@ -34,7 +34,7 @@ namespace MigrateAndMappingApi.Controllers
             var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly));
             foreach (var item in lst)
             {
-                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId, (EnumAction)item.ActionId);
+                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId);
             }
             return lst.OrderBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
         }
@@ -154,22 +154,21 @@ namespace MigrateAndMappingApi.Controllers
             var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly));
             foreach (var item in lst)
             {
-                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId, (EnumAction)item.ActionId);
+                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId);
             }
 
-            // var storedMappings = await _masterContext.ModuleApiEndpointMapping.ToListAsync();
+            var storedMappings = await _masterContext.ModuleApiEndpointMapping.ToListAsync();
 
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                // _masterContext.ModuleApiEndpointMapping.RemoveRange(storedMappings);
-
-
+                _masterContext.ModuleApiEndpointMapping.RemoveRange(storedMappings);
 
                 _masterContext.ApiEndpoint.RemoveRange(_masterContext.ApiEndpoint);
 
                 await _masterContext.ApiEndpoint.AddRangeAsync(lst);
 
-                //_masterContext.ModuleApiEndpointMapping.AddRange(storedMappings);
+                var lstNewIds = lst.Select(a => a.ApiEndpointId).ToList();
+                _masterContext.ModuleApiEndpointMapping.AddRange(storedMappings.Where(a=> lstNewIds.Contains(a.ApiEndpointId)));
 
                 await _masterContext.SaveChangesAsync();
                 trans.Commit();
@@ -212,9 +211,32 @@ namespace MigrateAndMappingApi.Controllers
         [HttpPost]
         public async Task<bool> AddModule([FromBody] Module data)
         {
-            await _masterContext.Module.AddAsync(data);
-            await _masterContext.SaveChangesAsync();
+            var reserveRoles = await _masterContext.Role.Where(r => !r.IsEditable).ToListAsync();
+            var rolePermissions = new List<RolePermission>();
 
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            {
+
+                await _masterContext.Module.AddAsync(data);
+                await _masterContext.SaveChangesAsync();
+
+                foreach (var role in reserveRoles)
+                {
+                    rolePermissions.Add(new RolePermission()
+                    {
+                        RoleId = role.RoleId,
+                        ModuleId = data.ModuleId,
+                        Permission = int.MaxValue
+                    });
+                }
+
+                await _masterContext.RolePermission.AddRangeAsync(rolePermissions);
+
+                await _masterContext.SaveChangesAsync();
+
+                trans.Commit();
+
+            }
             return true;
         }
 
@@ -253,6 +275,9 @@ namespace MigrateAndMappingApi.Controllers
                 var apiMappings = from m in _masterContext.ModuleApiEndpointMapping
                                   where m.ModuleId == info.ModuleId
                                   select m;
+                var permissions = _masterContext.RolePermission.Where(p => p.ModuleId == data.ModuleId);
+
+                _masterContext.RolePermission.RemoveRange(permissions);
 
                 _masterContext.ModuleApiEndpointMapping.RemoveRange(apiMappings);
 

@@ -15,6 +15,12 @@ namespace VErp.Commons.Enums.StandardEnum
         InvalidParams = 2,
 
         [Description("Lỗi hệ thống")]
-        InternalError = 3
+        InternalError = 3,
+
+        [Description("X-Module header was not found")]
+        X_ModuleMissing = 3,
+
+        [Description("Bạn không có quyền thực hiện chức năng này")]
+        Forbidden = 4
     }
 }

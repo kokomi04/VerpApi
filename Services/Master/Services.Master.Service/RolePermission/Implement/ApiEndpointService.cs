@@ -10,10 +10,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
     public class ApiEndpointService : IApiEndpointService
     {      
 
-        public Guid HashApiEndpointId(string route, EnumMethod method, EnumAction action)
+        public Guid HashApiEndpointId(string route, EnumMethod method)
         {
-            route = (route ?? "").Trim().ToLower();
-            return $"{route}{method}{action}".ToGuid();
+            return Utils.HashApiEndpointId(route, method);
         }
     }
 }

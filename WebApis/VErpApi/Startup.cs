@@ -26,7 +26,7 @@ namespace VErp.WebApis.VErpApi
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ConfigureStandardServices(services);           
+            ConfigureStandardServices(services, true);           
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.MasterDB;
 
@@ -68,43 +69,38 @@ namespace MigrateAndMappingApi.Services
                 }
 
 
-                
+                bool isCustomAction = false;
                 foreach (Attribute attribute in item.Attributes)
                 {
                     if (attribute is HttpGetAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Get;
-                        endpoint.ActionId = (int)EnumAction.View;
-
+                    
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
 
                     }
                     else if (attribute is HttpPostAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Post;
-                        endpoint.ActionId = (int)EnumAction.Add;
-
+                      
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpPutAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Put;
-                        endpoint.ActionId = (int)EnumAction.Update;
-
+                       
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpPatchAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Patch;
-                        endpoint.ActionId = (int)EnumAction.Update;
-
+                       
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpDeleteAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Delete;
-                        endpoint.ActionId = (int)EnumAction.Delete;
-
+                        
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is RouteAttribute)
@@ -119,8 +115,15 @@ namespace MigrateAndMappingApi.Services
                     if (attribute is VErpActionAttribute)
                     {
                         endpoint.ActionId = (int)(attribute as VErpActionAttribute).Action;
+                        isCustomAction = true;
                     }
                 }
+
+                if (!isCustomAction)
+                {
+                    endpoint.ActionId = (int)((EnumMethod)endpoint.MethodId).GetDefaultAction();
+                }
+
                 endpoint.Route = controllerRoute;
 
                 lst.Add(endpoint);

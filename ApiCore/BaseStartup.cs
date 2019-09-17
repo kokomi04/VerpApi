@@ -39,7 +39,7 @@ namespace VErp.Infrastructure.ApiCore
             Configuration = appConfig.Configuration;
         }
 
-        protected void ConfigureStandardServices(IServiceCollection services)
+        protected void ConfigureStandardServices(IServiceCollection services, bool isRequireAuthrize)
         {
 
             services.Configure<AppSetting>(Configuration);
@@ -67,11 +67,17 @@ namespace VErp.Infrastructure.ApiCore
             {
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
+                if (isRequireAuthrize)
+                {
+                    options.Filters.Add(typeof(AuthorizeActionFilter));
+                }
+                
             })
             .AddJsonOptions(options =>
             {
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                 options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Error;
             })
            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
            .AddControllersAsServices();
@@ -86,7 +92,7 @@ namespace VErp.Infrastructure.ApiCore
         private void ConfigDBContext(IServiceCollection services)
         {
             services.ConfigMasterDBContext(AppSetting, ServiceLifetime.Scoped);
-            services.ConfigStockDBContext(AppSetting, ServiceLifetime.Scoped);            
+            services.ConfigStockDBContext(AppSetting, ServiceLifetime.Scoped);
         }
         private void ConfigSwagger(IServiceCollection services)
         {
@@ -130,7 +136,10 @@ namespace VErp.Infrastructure.ApiCore
                 });
 
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
+
                 options.SchemaFilter<DataSchemaFilter>();
+
+                options.OperationFilter<HeaderFilter>();
             });
         }
 
@@ -153,7 +162,7 @@ namespace VErp.Infrastructure.ApiCore
                 app.UsePathBase(pathBase);
             }
 
-            ConfigureHelthCheck(app);            
+            ConfigureHelthCheck(app);
 
             //if (env.IsDevelopment())
             //  {
@@ -179,7 +188,7 @@ namespace VErp.Infrastructure.ApiCore
                {
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "VERP.API V1");
                    c.OAuthClientId("web");
-                   c.OAuthClientSecret("");
+                   c.OAuthClientSecret("secretWeb");
                    c.OAuthAppName("VERP Swagger UI");
                });
 
@@ -208,7 +217,7 @@ namespace VErp.Infrastructure.ApiCore
                 options.EnableCaching = false;
                 options.CacheDuration = TimeSpan.FromMinutes(10);
             });
-        }       
+        }
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
         {

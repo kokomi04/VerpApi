@@ -24,8 +24,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (!hasAuthorize) return;
 
-            operation.Responses.TryAdd("401", new Response { Description = "Unauthorized" });
-            operation.Responses.TryAdd("403", new Response { Description = "Forbidden" });
+            operation.Responses.TryAdd("401", new Response { Description = "Unauthorized - Chưa đăng nhập" });
+            operation.Responses.TryAdd("403", new Response { Description = "Forbidden - Không có quyền truy cập module" });
 
             operation.Security = new List<IDictionary<string, IEnumerable<string>>>
             {
@@ -38,7 +38,6 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             operation.Produces = new List<string>() { "application/json" };
             operation.Consumes = new List<string>() { "application/json" };
-
         }
     }
 
