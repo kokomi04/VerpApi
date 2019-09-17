@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums.StandardEnum
     public enum RoleErrorCode
     {
         EmptyRoleName = 1,
-        RoleNotFound = 3
+        RoleNotFound = 3,
+        RoleIsReadonly = 4
     }
 }
