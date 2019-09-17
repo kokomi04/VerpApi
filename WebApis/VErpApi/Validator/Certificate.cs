@@ -21,7 +21,7 @@ namespace VErp.WebApis.VErpApi.Validator
             catch (Exception ex)
             {
 
-                throw new Exception($"File '{filePath}' exists: {File.Exists(filePath)} {ex.StackTrace}");
+                throw new Exception($"File '{filePath}' exists: {File.Exists(filePath)}\n {ex.Message} \n {ex.StackTrace}");
             }
 
         }
