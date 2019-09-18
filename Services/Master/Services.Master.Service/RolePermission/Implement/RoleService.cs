@@ -82,6 +82,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleNotFound;
             }
+
+            if (!roleInfo.IsEditable)
+            {
+                return RoleErrorCode.RoleIsReadonly;
+            }
+
             roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             roleInfo.RoleName = role.RoleName;
             roleInfo.Description = role.Description;
@@ -99,6 +105,11 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleNotFound;
             }
+            if (!roleInfo.IsEditable)
+            {
+                return RoleErrorCode.RoleIsReadonly;
+            }
+
             roleInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
 
@@ -108,6 +119,17 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         public async Task<Enum> UpdateRolePermission(int roleId, IList<RolePermissionModel> permissions)
         {
             permissions = permissions.Where(p => p.Permission > 0).ToList();
+
+            var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
+            if (roleInfo == null)
+            {
+                return RoleErrorCode.RoleNotFound;
+            }
+
+            if (!roleInfo.IsEditable)
+            {
+                return RoleErrorCode.RoleIsReadonly;
+            }
 
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
