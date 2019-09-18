@@ -13,20 +13,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
 {
     public partial class HttpGlobalExceptionFilter : IExceptionFilter
     {
-        private readonly IHostingEnvironment env;
-        private readonly ILogger<HttpGlobalExceptionFilter> logger;
+        private readonly IHostingEnvironment _env;
+        private readonly ILogger<HttpGlobalExceptionFilter> _logger;
 
         public HttpGlobalExceptionFilter(IHostingEnvironment env, ILogger<HttpGlobalExceptionFilter> logger)
         {
-            this.env = env;
-            this.logger = logger;
+            _env = env;
+            _logger = logger;
         }
 
         public void OnException(ExceptionContext context)
         {
-            logger.LogError(new EventId(context.Exception.HResult),
-                context.Exception,
-                context.Exception.Message);
+            _logger.LogError(context.Exception, context.Exception.Message);
 
             if (context.Exception.GetType() == typeof(VerpException))
             {
@@ -47,7 +45,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     Message = context.Exception.Message
                 };
 
-                if (env.IsDevelopment())
+                if (_env.IsDevelopment())
                 {
                     json.Data = context.Exception;
                 }
