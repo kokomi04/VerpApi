@@ -18,9 +18,9 @@ namespace VErp.Commons.Enums.StandardEnum
         InternalError = 3,
 
         [Description("X-Module header was not found")]
-        X_ModuleMissing = 3,
+        X_ModuleMissing = 4,
 
         [Description("Bạn không có quyền thực hiện chức năng này")]
-        Forbidden = 4
+        Forbidden = 5
     }
 }
