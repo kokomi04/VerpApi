@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.System
         }
 
         [Route("logout")]
-        [HttpGet]
+        [HttpPost]
         public async Task<ApiResponse> Logout()
         {
             var asa = await _persistedGrant.GetAllGrantsAsync(Sub);
