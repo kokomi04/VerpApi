@@ -1,9 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <RootNamespace>VErp.WebApis.VErpApi</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netcoreapp2.2\VErpApi.xml</DocumentationFile>
+    <OutputPath></OutputPath>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netcoreapp2.2\VErpApi.xml</DocumentationFile>
+    <NoWarn>1701;1702;1705;1591</NoWarn>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,8 +30,12 @@
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Model\Services.Accountant.Model.csproj" />
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
+    <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
+    <ProjectReference Include="..\..\Services\Stock\Services.Stock.Model\Services.Stock.Model.csproj" />
+    <ProjectReference Include="..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,24 +2,35 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Model
 {
     public class ApiResponse
     {
-        public int Code { get; set; }
+        public string Code { get; set; }
         public string Message { get; set; }
 
         public static implicit operator ApiResponse(Enum code)
         {
             return new ApiResponse()
             {
-                Code = Convert.ToInt32(code)
+                Code = code.GetErrorCodeString(),
+                Message = code.GetEnumDescription()
+            };
+        }
+
+        public static implicit operator ApiResponse(ServiceResult result)
+        {
+            return new ApiResponse()
+            {
+                Code = result.Code.GetErrorCodeString(),
+                Message = result.Message
             };
         }
     }
-    
 
+    
     public class ApiResponse<T> : ApiResponse
     {
         public T Data { get; set; }
@@ -28,8 +39,19 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse<T>()
             {
-                Code = (int)GeneralCode.Success,
+                Code = GeneralCode.Success.GetErrorCodeString(),
                 Data = data
+            };
+        }
+
+
+        public static implicit operator ApiResponse<T>(ServiceResult<T> result)
+        {
+            return new ApiResponse<T>()
+            {
+                Code = result.Code.GetErrorCodeString(),
+                Data = result.Data,
+                Message = result.Message
             };
         }
     }

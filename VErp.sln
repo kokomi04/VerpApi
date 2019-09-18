@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.705
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29306.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Library", "Commons\Library\Library.csproj", "{C1BD209B-CD77-4A25-BFA8-4364CD3D79FB}"
 EndProject
@@ -39,7 +39,21 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MasterDB", "Infrastructure\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AccountantDB", "Infrastructure\EntityFramework\AccountantDB\AccountantDB.csproj", "{A41D80FA-252B-4703-9B89-F5A52A056F7F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityDB", "Infrastructure\EntityFramework\IdentityDB\IdentityDB.csproj", "{8753A37C-4795-4DCB-8341-D709D6E8548D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityDB", "Infrastructure\EntityFramework\IdentityDB\IdentityDB.csproj", "{8753A37C-4795-4DCB-8341-D709D6E8548D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ZTools", "ZTools", "{F9CC3F1A-C548-498E-9464-8F45EA648F2A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MigrateAndMappingApi", "ZTools\MigrateAndMappingApi\MigrateAndMappingApi.csproj", "{F51773C4-C627-4280-9ABF-D8F2E046247E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StockDB", "Infrastructure\EntityFramework\StockDB\StockDB.csproj", "{4076CC3C-622C-4894-93F8-062E442C1F26}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Stock", "Stock", "{951612D6-53E0-404C-976F-A71109B788E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Stock.Model", "Services\Stock\Services.Stock.Model\Services.Stock.Model.csproj", "{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Stock.Service", "Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj", "{BD9FE86D-E7F5-445C-89B1-34CCF66B7155}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceCore", "Infrastructure\ServiceCore\ServiceCore.csproj", "{C2C5A051-7412-47A7-8CD4-35E8F6860334}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,6 +109,26 @@ Global
 		{8753A37C-4795-4DCB-8341-D709D6E8548D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8753A37C-4795-4DCB-8341-D709D6E8548D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8753A37C-4795-4DCB-8341-D709D6E8548D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F51773C4-C627-4280-9ABF-D8F2E046247E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F51773C4-C627-4280-9ABF-D8F2E046247E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F51773C4-C627-4280-9ABF-D8F2E046247E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F51773C4-C627-4280-9ABF-D8F2E046247E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4076CC3C-622C-4894-93F8-062E442C1F26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4076CC3C-622C-4894-93F8-062E442C1F26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4076CC3C-622C-4894-93F8-062E442C1F26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4076CC3C-622C-4894-93F8-062E442C1F26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD9FE86D-E7F5-445C-89B1-34CCF66B7155}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD9FE86D-E7F5-445C-89B1-34CCF66B7155}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD9FE86D-E7F5-445C-89B1-34CCF66B7155}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD9FE86D-E7F5-445C-89B1-34CCF66B7155}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2C5A051-7412-47A7-8CD4-35E8F6860334}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2C5A051-7412-47A7-8CD4-35E8F6860334}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2C5A051-7412-47A7-8CD4-35E8F6860334}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2C5A051-7412-47A7-8CD4-35E8F6860334}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,6 +149,12 @@ Global
 		{9E00B649-4208-4B68-A857-D18595547EA6} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
 		{A41D80FA-252B-4703-9B89-F5A52A056F7F} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
 		{8753A37C-4795-4DCB-8341-D709D6E8548D} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
+		{F51773C4-C627-4280-9ABF-D8F2E046247E} = {F9CC3F1A-C548-498E-9464-8F45EA648F2A}
+		{4076CC3C-622C-4894-93F8-062E442C1F26} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
+		{951612D6-53E0-404C-976F-A71109B788E1} = {BA64BC8E-AA48-43AA-9FB3-F7EC82CC0966}
+		{1DD59A3C-725C-4EAC-9662-1BF1AFCD911E} = {951612D6-53E0-404C-976F-A71109B788E1}
+		{BD9FE86D-E7F5-445C-89B1-34CCF66B7155} = {951612D6-53E0-404C-976F-A71109B788E1}
+		{C2C5A051-7412-47A7-8CD4-35E8F6860334} = {40D3EA91-8579-41B8-A738-DA93A8220EE7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

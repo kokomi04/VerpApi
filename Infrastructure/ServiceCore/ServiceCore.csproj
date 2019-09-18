@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RootNamespace>VErp.Infrastructure.ServiceCore</RootNamespace>
+    <AssemblyName>VErp.Infrastructure.ServiceCore</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
+  </ItemGroup>
+
+</Project>

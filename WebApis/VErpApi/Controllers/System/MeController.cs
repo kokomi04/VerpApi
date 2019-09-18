@@ -6,16 +6,19 @@ using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users.Interface;
 
-namespace VErpApi.Controllers.Users
+namespace VErpApi.Controllers.System
 {
-    [Route("api/users/[controller]")]
-    [ApiController]
+    [Route("api/users/me")]
     public class MeController : VErpBaseController
     {
         private readonly IUserService _userService;
@@ -33,9 +36,17 @@ namespace VErpApi.Controllers.Users
 
         [Route("info")]
         [HttpGet]
-        public async Task<ApiResponse<User>> GetInfo()
+        public async Task<ApiResponse<UserInfoOutput>> GetInfo()
         {
             return await _userService.GetInfo(UserId);
+        }
+
+        [Route("censor")]
+        [HttpPost]
+        [VErpAction(EnumAction.Censor)]
+        public async Task<ApiResponse<User>> TestAction()
+        {
+            throw new NotImplementedException("Test http post as censor!");
         }
 
         [Route("logout")]

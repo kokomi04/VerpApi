@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.PlatformAbstractions;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
@@ -18,6 +19,7 @@ using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings;
@@ -37,7 +39,7 @@ namespace VErp.Infrastructure.ApiCore
             Configuration = appConfig.Configuration;
         }
 
-        protected void ConfigureStandardServices(IServiceCollection services)
+        protected void ConfigureStandardServices(IServiceCollection services, bool isRequireAuthrize)
         {
 
             services.Configure<AppSetting>(Configuration);
@@ -46,15 +48,36 @@ namespace VErp.Infrastructure.ApiCore
 
             ConfigDBContext(services);
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder
+                    .SetIsOriginAllowed((host) => true)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials()
+                    .AllowAnyOrigin()
+                    );
+            })
+              .AddHttpContextAccessor()
+              .AddOptions()
+              .AddCustomHealthCheck(Configuration);
+
             services.AddMvc(options =>
             {
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
+                if (isRequireAuthrize)
+                {
+                    options.Filters.Add(typeof(AuthorizeActionFilter));
+                }
+                
             })
             .AddJsonOptions(options =>
             {
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                 options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Error;
             })
            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
            .AddControllersAsServices();
@@ -64,31 +87,24 @@ namespace VErp.Infrastructure.ApiCore
 
             ConfigSwagger(services);
 
-
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                    .SetIsOriginAllowed((host) => true)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials());
-            })
-            .AddHttpContextAccessor()
-            .AddOptions()
-            .AddCustomHealthCheck(Configuration);
-
         }
 
         private void ConfigDBContext(IServiceCollection services)
         {
             services.ConfigMasterDBContext(AppSetting, ServiceLifetime.Scoped);
+            services.ConfigStockDBContext(AppSetting, ServiceLifetime.Scoped);
         }
         private void ConfigSwagger(IServiceCollection services)
         {
             services.AddSwaggerGen(options =>
             {
-                options.DescribeAllEnumsAsStrings();
+                options.DocumentFilter<CustomModelDocumentFilter>();
+                //options.UseReferencedDefinitionsForEnums();
+                //options.DescribeAllEnumsAsStrings();
+                //options.UseReferencedDefinitionsForEnums();
+                options.IncludeXmlComments(Path.Combine(
+                        PlatformServices.Default.Application.ApplicationBasePath,
+                        "VErpApi.xml"));
                 options.SwaggerDoc("v1", new Info
                 {
                     Title = "VERP HTTP API",
@@ -120,6 +136,10 @@ namespace VErp.Infrastructure.ApiCore
                 });
 
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
+
+                options.SchemaFilter<DataSchemaFilter>();
+
+                options.OperationFilter<HeaderFilter>();
             });
         }
 
@@ -132,10 +152,10 @@ namespace VErp.Infrastructure.ApiCore
             return new AutofacServiceProvider(container.Build());
         }
 
-        protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
             loggerFactory.AddSerilog();
-          
+
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))
             {
@@ -143,8 +163,6 @@ namespace VErp.Infrastructure.ApiCore
             }
 
             ConfigureHelthCheck(app);
-
-            ConfigureAuth(app);
 
             //if (env.IsDevelopment())
             //  {
@@ -157,13 +175,20 @@ namespace VErp.Infrastructure.ApiCore
             // }
 
             app.UseCors("CorsPolicy");
-            app.UseMvcWithDefaultRoute();
+
+            app.UseForwardedHeaders();
+            if (isIdentiy)
+            {
+                app.UseIdentityServer();
+            }
+            app.UseMvc();
+
             app.UseSwagger()
                .UseSwaggerUI(c =>
                {
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "VERP.API V1");
                    c.OAuthClientId("web");
-                   c.OAuthClientSecret("");
+                   c.OAuthClientSecret("secretWeb");
                    c.OAuthAppName("VERP Swagger UI");
                });
 
@@ -194,13 +219,6 @@ namespace VErp.Infrastructure.ApiCore
             });
         }
 
-        protected virtual void ConfigureAuth(IApplicationBuilder app)
-        {
-            app.UseForwardedHeaders();
-            app.UseIdentityServer();
-            app.UseMvc();
-        }
-
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
         {
             app.UseHealthChecks("/hc", new HealthCheckOptions()
@@ -223,7 +241,7 @@ namespace VErp.Infrastructure.ApiCore
             var filePathFormat = $"{AppSetting.Logging.OutputPath}/{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
             var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
             var logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()                
+                .MinimumLevel.Debug()
                 .Enrich.With(new ExceptionEnricher())
                 .Enrich.WithProperty("ApplicationContext", AppSetting.ServiceName)
                 .Enrich.FromLogContext()

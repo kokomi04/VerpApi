@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Services.Master.Service;
+using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
 namespace VErp.WebApis.VErpApi
@@ -25,7 +26,7 @@ namespace VErp.WebApis.VErpApi
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ConfigureStandardServices(services);           
+            ConfigureStandardServices(services, true);           
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -64,11 +65,13 @@ namespace VErp.WebApis.VErpApi
         private void ConfigureBussinessService(IServiceCollection services)
         {
             services.AddScopedServices(MasterServiceAssembly.Assembly);
-            services.AddScopedServices(AccountantServiceAssembly.Assembly);            
+            services.AddScopedServices(AccountantServiceAssembly.Assembly);
+            services.AddScopedServices(StockServiceAssembly.Assembly);            
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-        {
-            base.ConfigureBase(app, env, loggerFactory);
+        {            
+            ConfigureBase(app, env, loggerFactory, true);
+            
         }
     }
 }

@@ -6,32 +6,32 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
     public partial class HttpGlobalExceptionFilter : IExceptionFilter
     {
-        private readonly IHostingEnvironment env;
-        private readonly ILogger<HttpGlobalExceptionFilter> logger;
+        private readonly IHostingEnvironment _env;
+        private readonly ILogger<HttpGlobalExceptionFilter> _logger;
 
         public HttpGlobalExceptionFilter(IHostingEnvironment env, ILogger<HttpGlobalExceptionFilter> logger)
         {
-            this.env = env;
-            this.logger = logger;
+            _env = env;
+            _logger = logger;
         }
 
         public void OnException(ExceptionContext context)
         {
-            logger.LogError(new EventId(context.Exception.HResult),
-                context.Exception,
-                context.Exception.Message);
+            _logger.LogError(context.Exception, context.Exception.Message);
 
             if (context.Exception.GetType() == typeof(VerpException))
             {
-                var json = new JsonErrorResponse
+                var json = new ApiResponse
                 {
-                    Messages = new[] { context.Exception.Message }
+                    Code = GeneralCode.InternalError.GetErrorCodeString(),
+                    Message = context.Exception.Message
                 };
 
                 context.Result = new BadRequestObjectResult(json);
@@ -39,14 +39,15 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
             else
             {
-                var json = new JsonErrorResponse
+                var json = new ApiResponse<Exception>
                 {
-                    Messages = new[] { "An error occurred. Try it again." }
+                    Code = GeneralCode.InternalError.GetErrorCodeString(),
+                    Message = context.Exception.Message
                 };
 
-                if (env.IsDevelopment())
+                if (_env.IsDevelopment())
                 {
-                    json.DeveloperMessage = context.Exception;
+                    json.Data = context.Exception;
                 }
 
                 context.Result = new InternalServerErrorObjectResult(json);

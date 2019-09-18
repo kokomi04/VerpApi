@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RootNamespace>VErp.Services.Stock.Service</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\Services.Stock.Model\Services.Stock.Model.csproj" />
+  </ItemGroup>
+
+</Project>
