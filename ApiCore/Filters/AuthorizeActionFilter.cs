@@ -62,7 +62,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     Message = GeneralCode.X_ModuleMissing.GetEnumDescription()
                 };
 
-                context.Result = new UnauthorizedObjectResult(json);
+                context.Result = new JsonResult(json);
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
