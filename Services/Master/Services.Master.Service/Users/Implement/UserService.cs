@@ -216,10 +216,10 @@ namespace VErp.Services.Master.Service.Users.Implement
         #region private
         private Enum ValidateUserInfoInput(UserInfoInput req)
         {
-            if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
-            {
-                return GeneralCode.InvalidParams;
-            }
+            //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
             return GeneralCode.Success;
         }
         private async Task<ServiceResult<int>> CreateUserAuthen(UserInfoInput req)

@@ -211,10 +211,10 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         #region private
         private Enum ValidateRoleInput(RoleInput req)
         {
-            if (!Enum.IsDefined(req.RoleStatusId.GetType(), req.RoleStatusId))
-            {
-                return GeneralCode.InvalidParams;
-            }
+            //if (!Enum.IsDefined(req.RoleStatusId.GetType(), req.RoleStatusId))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
 
             if (string.IsNullOrWhiteSpace(req.RoleName))
             {
