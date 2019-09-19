@@ -9,8 +9,9 @@ namespace VErp.Services.Master.Service.RolePermission.Interface
 {
     public interface IRoleService
     {
-        Task<IList<RoleOutput>> GetList();
+        Task<PageData<RoleOutput>> GetList(string keyword, int page, int size);
         Task<ServiceResult<int>> AddRole(RoleInput role);
+        Task<ServiceResult<RoleOutput>> GetRoleInfo(int roleId);
         Task<Enum> UpdateRole(int roleId, RoleInput role);
         Task<Enum> DeleteRole(int roleId);
         Task<IList<RolePermissionModel>> GetRolePermission(int roleId);

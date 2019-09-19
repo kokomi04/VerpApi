@@ -56,17 +56,52 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return roleInfo.RoleId;
         }
 
-        public async Task<IList<RoleOutput>> GetList()
+        public async Task<PageData<RoleOutput>> GetList(string keyword, int page, int size)
         {
-            return await _masterContext.Role.Select(r => new RoleOutput()
+            keyword = (keyword ?? "").Trim();
+
+            var query = (
+                 from r in _masterContext.Role
+                 select new RoleOutput()
+                 {
+                     RoleId = r.RoleId,
+                     RoleName = r.RoleName,
+                     Description = r.Description,
+                     RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
+                     IsEditable = r.IsEditable
+                 }
+             );
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from r in query
+                        where r.RoleName.Contains(keyword)
+                        select r;
+            }
+
+            var lst = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var total = await query.CountAsync();
+
+            return (lst, total);
+        }
+
+        public async Task<ServiceResult<RoleOutput>> GetRoleInfo(int roleId)
+        {
+            var roleInfo = await _masterContext.Role.Select(r => new RoleOutput()
             {
                 RoleId = r.RoleId,
                 RoleName = r.RoleName,
                 Description = r.Description,
                 RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
                 IsEditable = r.IsEditable
-            })
-            .ToListAsync();
+            }).FirstOrDefaultAsync(r => r.RoleId == roleId);
+
+            if (roleInfo == null)
+            {
+                return RoleErrorCode.RoleNotFound;
+            }
+
+            return roleInfo;
         }
 
         public async Task<Enum> UpdateRole(int roleId, RoleInput role)
