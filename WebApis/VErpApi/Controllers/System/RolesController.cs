@@ -52,7 +52,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{roleId}")]
-        public async Task<ApiResponse> UpdateRole([FromRoute] int roleId)
+        public async Task<ApiResponse<RoleOutput>> GetRoleInfo([FromRoute] int roleId)
         {
             return await _roleService.GetRoleInfo(roleId);
         }
