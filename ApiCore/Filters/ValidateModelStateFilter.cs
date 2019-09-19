@@ -48,6 +48,11 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             foreach (var obj in objs)
             {
+                if (obj == null)
+                {
+                    continue;
+                }
+
                 var type = obj.GetType();
                 bool isPrimitiveType = type.IsPrimitive || type.IsValueType || (type == typeof(string));
 
