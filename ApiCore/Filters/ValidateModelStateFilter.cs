@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
@@ -14,6 +15,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             if (context.ModelState.IsValid)
             {
+                if (!ValidateEnum(context.ActionArguments.Select(a => a.Value)).IsSuccess())
+                {
+                    var invalidParams = new ApiResponse()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Message = GeneralCode.InvalidParams.GetEnumDescription()
+                    };
+
+                    context.Result = new BadRequestObjectResult(invalidParams);
+                    return;
+                }
+
                 return;
             }
 
@@ -29,6 +42,48 @@ namespace VErp.Infrastructure.ApiCore.Filters
             };
 
             context.Result = new BadRequestObjectResult(json);
+        }
+
+        private Enum ValidateEnum(IEnumerable<object> objs)
+        {
+            foreach (var obj in objs)
+            {
+                var type = obj.GetType();
+                bool isPrimitiveType = type.IsPrimitive || type.IsValueType || (type == typeof(string));
+
+                if (isPrimitiveType)
+                {
+                    if (type.IsEnum)
+                    {
+                        if (!type.IsEnumDefined(obj))
+                        {
+                            return GeneralCode.InvalidParams;
+                        }
+                    }
+                }
+                else
+                {
+                    if (type.IsArray)
+                    {
+                        if (!ValidateEnum((IEnumerable<object>)obj).IsSuccess())
+                        {
+                            return GeneralCode.InvalidParams;
+                        }
+                    }
+                    else
+                    {
+                        foreach (var p in type.GetProperties())
+                        {
+                            var v = p.GetValue(obj);
+                            if (!ValidateEnum(new List<object>() { v }).IsSuccess())
+                            {
+                                return GeneralCode.InvalidParams;
+                            }
+                        }
+                    }
+                }
+            }
+            return GeneralCode.Success;
         }
     }
 }
