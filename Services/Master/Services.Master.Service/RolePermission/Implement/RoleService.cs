@@ -34,11 +34,13 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
         {
-            if (string.IsNullOrWhiteSpace(role.RoleName))
+            var validate = ValidateRoleInput(role);
+            if (!validate.IsSuccess())
             {
-                return RoleErrorCode.EmptyRoleName;
+                return validate;
             }
 
+          
             role.RoleName = role.RoleName.Trim();
             var roleInfo = new Role()
             {
@@ -106,10 +108,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<Enum> UpdateRole(int roleId, RoleInput role)
         {
-            if (string.IsNullOrWhiteSpace(role.RoleName))
+            var validate = ValidateRoleInput(role);
+            if (!validate.IsSuccess())
             {
-                return RoleErrorCode.EmptyRoleName;
+                return validate;
             }
+           
             role.RoleName = role.RoleName.Trim();
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
@@ -121,7 +125,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             if (!roleInfo.IsEditable)
             {
                 return RoleErrorCode.RoleIsReadonly;
-            }
+            }           
 
             roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             roleInfo.RoleName = role.RoleName;
@@ -203,5 +207,21 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                      })
                      .ToListAsync();
         }
+
+        #region private
+        private Enum ValidateRoleInput(RoleInput req)
+        {
+            if (!Enum.IsDefined(req.RoleStatusId.GetType(), req.RoleStatusId))
+            {
+                return GeneralCode.InvalidParams;
+            }
+
+            if (string.IsNullOrWhiteSpace(req.RoleName))
+            {
+                return RoleErrorCode.EmptyRoleName;
+            }
+            return GeneralCode.Success;
+        }
+        #endregion
     }
 }

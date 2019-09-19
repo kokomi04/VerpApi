@@ -34,6 +34,12 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
         {
+            var validate = ValidateUserInfoInput(req);
+            if (!validate.IsSuccess())
+            {
+                return validate;
+            }
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -169,6 +175,12 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> UpdateUser(int userId, UserInfoInput req)
         {
+            var validate = ValidateUserInfoInput(req);
+            if (!validate.IsSuccess())
+            {
+                return validate;
+            }
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -202,7 +214,14 @@ namespace VErp.Services.Master.Service.Users.Implement
 
 
         #region private
-
+        private Enum ValidateUserInfoInput(UserInfoInput req)
+        {
+            if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
+            {
+                return GeneralCode.InvalidParams;
+            }
+            return GeneralCode.Success;
+        }
         private async Task<ServiceResult<int>> CreateUserAuthen(UserInfoInput req)
         {
             var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.Password);
