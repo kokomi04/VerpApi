@@ -135,7 +135,6 @@ namespace VErp.Infrastructure.EF.MasterDB
             });
             modelBuilder.Entity<Role>(entity =>
             {
-                entity.Property(e => e.RoleId).ValueGeneratedNever();
                 entity.Property(e => e.CreatedDatetimUtc).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.Description).HasMaxLength(512);
                 entity.Property(e => e.RoleName)
