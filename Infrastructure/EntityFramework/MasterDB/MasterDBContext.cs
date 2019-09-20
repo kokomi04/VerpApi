@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
+        public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
@@ -24,6 +25,9 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
+        public virtual DbSet<StockOutputRule> StockOutputRule { get; set; }
+        public virtual DbSet<TimeType> TimeType { get; set; }
+        public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -60,6 +64,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.MethodId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ApiEndpoint_Method");
+            });
+            modelBuilder.Entity<BarcodeStandard>(entity =>
+            {
+                entity.Property(e => e.BarcodeStandardId).ValueGeneratedNever();
+                entity.Property(e => e.BarcodeStandardName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Config>(entity =>
             {
@@ -166,6 +177,27 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.Property(e => e.RoleStatusId).ValueGeneratedNever();
                 entity.Property(e => e.RoleStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<StockOutputRule>(entity =>
+            {
+                entity.Property(e => e.StockOutputRuleId).ValueGeneratedNever();
+                entity.Property(e => e.StockOutputRuleName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<TimeType>(entity =>
+            {
+                entity.Property(e => e.TimeTypeId).ValueGeneratedNever();
+                entity.Property(e => e.TimeTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<Unit>(entity =>
+            {
+                entity.Property(e => e.UnitId).ValueGeneratedNever();
+                entity.Property(e => e.UnitName)
                     .IsRequired()
                     .HasMaxLength(128);
             });
