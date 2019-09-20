@@ -11,7 +11,9 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
+using VErp.Services.Master.Service.RolePermission.Interface;
 using VErp.Services.Master.Service.Users.Interface;
 
 namespace VErp.Services.Master.Service.Users.Implement
@@ -21,15 +23,18 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IRoleService _roleService;
 
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
+            , IRoleService roleService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _roleService = roleService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
@@ -68,7 +73,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "CreateUser");
                     return GeneralCode.InternalError;
                 }
-                
+
             }
         }
 
@@ -131,7 +136,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "DeleteUser");
                     return GeneralCode.InternalError;
                 }
-               
+
             }
         }
 
@@ -208,10 +213,19 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "UpdateUser");
                     return GeneralCode.InternalError;
                 }
-                
+
             }
         }
 
+        public async Task<IList<RolePermissionModel>> GetUserPermission(int userId)
+        {
+            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null || !user.RoleId.HasValue)
+            {
+                return null;
+            }
+            return await _roleService.GetRolePermission(user.RoleId.Value);
+        }
 
         #region private
         private Enum ValidateUserInfoInput(UserInfoInput req)

@@ -207,6 +207,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                      })
                      .ToListAsync();
         }
+       
 
         #region private
         private Enum ValidateRoleInput(RoleInput req)
@@ -222,6 +223,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
             return GeneralCode.Success;
         }
+       
         #endregion
     }
 }

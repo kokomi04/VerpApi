@@ -13,6 +13,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users.Interface;
 
@@ -58,6 +59,13 @@ namespace VErpApi.Controllers.System
             await _persistedGrant.RemoveAllGrantsAsync(Sub, ClientId);
 
             return GeneralCode.Success;
+        }
+
+        [Route("permissions")]
+        [HttpGet]
+        public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermission()
+        {
+            return (await _userService.GetUserPermission(UserId)).ToList();
         }
     }
 }
