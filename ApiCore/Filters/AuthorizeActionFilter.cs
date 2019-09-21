@@ -81,7 +81,21 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 var json = new ApiResponse
                 {
                     Code = GeneralCode.Forbidden.GetErrorCodeString(),
-                    Message = "api not found"
+                    Message = "api endpoint not found"
+                };
+                context.Result = new JsonResult(json);
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
+
+            var apiModuleMapped = await _masterContext.ModuleApiEndpointMapping.FirstOrDefaultAsync(m => m.ModuleId == moduleId && m.ApiEndpointId == apiEndpointId);
+
+            if (apiModuleMapped == null)
+            {
+                var json = new ApiResponse
+                {
+                    Code = GeneralCode.Forbidden.GetErrorCodeString(),
+                    Message = "api endpoint is not mapped to module"
                 };
                 context.Result = new JsonResult(json);
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
