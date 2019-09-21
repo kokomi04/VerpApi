@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<ProductExtraInfo>().HasQueryFilter(o => !o.IsDeleted);
             modelBuilder.Entity<ProductStockInfo>().HasQueryFilter(o => !o.IsDeleted);
             modelBuilder.Entity<ProductCate>().HasQueryFilter(o => !o.IsDeleted);
-            modelBuilder.Entity<ProductIdentityCode>().HasQueryFilter(o => !o.IsDeleted);
+            modelBuilder.Entity<ProductType>().HasQueryFilter(o => !o.IsDeleted);
 
         }
     }

@@ -61,6 +61,10 @@ namespace VErpApi.Controllers.System
             return GeneralCode.Success;
         }
 
+        /// <summary>
+        /// Lấy danh sách quyền của user đang login
+        /// </summary>
+        /// <returns></returns>
         [Route("permissions")]
         [HttpGet]
         public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermission()

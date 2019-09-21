@@ -15,9 +15,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
-        public virtual DbSet<ProductIdentityCode> ProductIdentityCode { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
+        public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -41,11 +41,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.ProductCateId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Product_ProductCate");
-                entity.HasOne(d => d.ProductIdentityCode)
+                entity.HasOne(d => d.ProductType)
                     .WithMany(p => p.Product)
-                    .HasForeignKey(d => d.ProductIdentityCodeId)
+                    .HasForeignKey(d => d.ProductTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Product_ProductIdentityCode");
+                    .HasConstraintName("FK_Product_ProductType");
             });
             modelBuilder.Entity<ProductCate>(entity =>
             {
@@ -69,19 +69,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductExtraInfo_Product");
             });
-            modelBuilder.Entity<ProductIdentityCode>(entity =>
-            {
-                entity.Property(e => e.IdentityCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
-                entity.Property(e => e.ProductIdentityCodeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-                entity.HasOne(d => d.ParentProductIdentityCode)
-                    .WithMany(p => p.InverseParentProductIdentityCode)
-                    .HasForeignKey(d => d.ParentProductIdentityCodeId)
-                    .HasConstraintName("FK_ProductIdentityCode_ProductIdentityCode");
-            });
             modelBuilder.Entity<ProductStockInfo>(entity =>
             {
                 entity.HasKey(e => e.ProductId);
@@ -101,6 +88,20 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductStockValidation_Product");
+            });
+            modelBuilder.Entity<ProductType>(entity =>
+            {
+                entity.Property(e => e.ProductTypeId).ValueGeneratedNever();
+                entity.Property(e => e.IdentityCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.ProductTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.HasOne(d => d.ParentProductType)
+                    .WithMany(p => p.InverseParentProductType)
+                    .HasForeignKey(d => d.ParentProductTypeId)
+                    .HasConstraintName("FK_ProductType_ProductType");
             });
             modelBuilder.Entity<ProductUnitConversion>(entity =>
             {

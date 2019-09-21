@@ -17,8 +17,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsCanBuy { get; set; }
         public bool IsCanSell { get; set; }
         public long? MainImageMediaId { get; set; }
+        public int ProductTypeId { get; set; }
         public int ProductCateId { get; set; }
-        public int ProductIdentityCodeId { get; set; }
         public int? BarcodeStandardId { get; set; }
         public string Barcode { get; set; }
         public int UnitId { get; set; }
@@ -28,7 +28,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
-        public virtual ProductIdentityCode ProductIdentityCode { get; set; }
+        public virtual ProductType ProductType { get; set; }
         public virtual ProductExtraInfo ProductExtraInfo { get; set; }
         public virtual ProductStockInfo ProductStockInfo { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
