@@ -110,16 +110,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             var total = await query.CountAsync();
 
-            var lst = await query.Select(c => new ProductCateOutput()
-                {
-                    ParentProductCateId = c.ParentProductCateId,
-                    ProductCateId = c.ProductCateId,
-                    ProductCateName = c.ProductCateName
-                }
-                )
-                .Skip((page - 1) * size).Take(size).ToListAsync();
+            var lst = query.Select(c => new ProductCateOutput()
+            {
+                ParentProductCateId = c.ParentProductCateId,
+                ProductCateId = c.ProductCateId,
+                ProductCateName = c.ProductCateName
+            });
 
-            return (lst, total);
+            if (size > 0)
+            {
+                lst = lst.Skip((page - 1) * size).Take(size);
+            }                
+
+            return (await lst.ToListAsync(), total);
         }
 
         public async Task<Enum> UpdateProductCate(int productCateId, ProductCateInput req)
