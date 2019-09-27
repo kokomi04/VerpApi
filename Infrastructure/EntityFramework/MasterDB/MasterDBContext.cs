@@ -32,11 +32,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (optionsBuilder.IsConfigured)
-            {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=MasterDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
-            }
+            
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -146,7 +142,7 @@ namespace VErp.Infrastructure.EF.MasterDB
             });
             modelBuilder.Entity<Role>(entity =>
             {
-                entity.Property(e => e.CreatedDatetimUtc).HasDefaultValueSql("(getutcdate())");
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.Description).HasMaxLength(512);
                 entity.Property(e => e.RoleName)
                     .IsRequired()

@@ -7,5 +7,8 @@ namespace VErp.Infrastructure.EF.MasterDB
     {
         public int UnitId { get; set; }
         public string UnitName { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }
