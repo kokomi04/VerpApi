@@ -46,7 +46,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 RoleName = role.RoleName,
                 Description = role.Description,
-                CreatedDatetimUtc = DateTime.UtcNow,
+                CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
                 IsEditable = true,
