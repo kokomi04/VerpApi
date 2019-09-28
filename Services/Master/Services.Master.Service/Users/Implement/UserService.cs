@@ -13,8 +13,8 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.RolePermission.Interface;
-using VErp.Services.Master.Service.Users.Interface;
+using VErp.Services.Master.Service.RolePermission;
+using VErp.Services.Master.Service.Users;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {

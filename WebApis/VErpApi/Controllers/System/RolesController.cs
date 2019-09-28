@@ -8,7 +8,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
-using VErp.Services.Master.Service.RolePermission.Interface;
+using VErp.Services.Master.Service.RolePermission;
 
 namespace VErpApi.Controllers.System
 {

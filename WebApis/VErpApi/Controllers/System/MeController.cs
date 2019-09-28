@@ -15,7 +15,7 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.Users.Interface;
+using VErp.Services.Master.Service.Users;
 
 namespace VErpApi.Controllers.System
 {

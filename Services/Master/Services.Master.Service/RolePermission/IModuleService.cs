@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Services.Master.Model.RolePermission;
 
-namespace VErp.Services.Master.Service.RolePermission.Interface
+namespace VErp.Services.Master.Service.RolePermission
 {
     public interface IModuleService
     {

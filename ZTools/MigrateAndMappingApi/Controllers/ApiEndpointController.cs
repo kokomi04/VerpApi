@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using MigrateAndMappingApi.Services;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Services.Master.Service.RolePermission.Interface;
+using VErp.Services.Master.Service.RolePermission;
 using VErp.WebApis.VErpApi;
 
 namespace MigrateAndMappingApi.Controllers

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 
-namespace VErp.Services.Master.Service.RolePermission.Interface
+namespace VErp.Services.Master.Service.RolePermission
 {
     public interface IRoleService
     {

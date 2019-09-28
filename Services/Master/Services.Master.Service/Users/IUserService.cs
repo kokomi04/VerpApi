@@ -8,7 +8,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 
-namespace VErp.Services.Master.Service.Users.Interface
+namespace VErp.Services.Master.Service.Users
 {
     public interface IUserService
     {

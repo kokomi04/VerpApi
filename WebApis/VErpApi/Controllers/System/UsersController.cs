@@ -8,7 +8,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.Users.Interface;
+using VErp.Services.Master.Service.Users;
 
 namespace VErpApi.Controllers.System
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
-using VErp.Services.Master.Service.RolePermission.Interface;
+using VErp.Services.Master.Service.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {
