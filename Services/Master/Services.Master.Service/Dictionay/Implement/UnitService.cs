@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                 return validate;
             }
 
-            var info = _masterContext.Unit.FirstOrDefaultAsync(u => u.UnitName == data.UnitName);
+            var info = await _masterContext.Unit.FirstOrDefaultAsync(u => u.UnitName == data.UnitName);
             if (info != null)
             {
                 return UnitErrorCode.UnitNameAlreadyExisted;
