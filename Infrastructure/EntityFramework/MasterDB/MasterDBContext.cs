@@ -192,7 +192,6 @@ namespace VErp.Infrastructure.EF.MasterDB
             });
             modelBuilder.Entity<Unit>(entity =>
             {
-                entity.Property(e => e.UnitId).ValueGeneratedNever();
                 entity.Property(e => e.UnitName)
                     .IsRequired()
                     .HasMaxLength(128);
