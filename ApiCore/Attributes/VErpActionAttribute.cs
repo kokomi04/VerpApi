@@ -13,5 +13,13 @@ namespace VErp.Infrastructure.ApiCore.Attributes
         {
             Action = action;
         }
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            if (!context.HttpContext.Items.ContainsKey("action"))
+            {
+                context.HttpContext.Items.Add("action", Action);
+            }
+            base.OnActionExecuting(context);
+        }
     }
 }

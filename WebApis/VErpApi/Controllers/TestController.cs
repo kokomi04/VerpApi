@@ -10,7 +10,10 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Services.Master.Model.Dictionary;
+using VErp.Services.Master.Service.Activity.Implement;
 using VErpApi.Controllers;
+using VErp.Services.Master.Service.Activity;
 
 namespace VErp.WebApis.VErpApi.Controllers
 {
@@ -20,10 +23,16 @@ namespace VErp.WebApis.VErpApi.Controllers
     {
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
-        public TestController(MasterDBContext masterDBContext, IOptions<AppSetting> appSetting)
+        private readonly IActivityService _activityService;
+        public TestController(
+            MasterDBContext masterDBContext
+            , IOptions<AppSetting> appSetting
+            , IActivityService activityService
+            )
         {
             _masterDBContext = masterDBContext;
             _appSetting = appSetting.Value;
+            _activityService = activityService;
         }
         [HttpPost]
         [Route("CreateUser")]
@@ -44,6 +53,13 @@ namespace VErp.WebApis.VErpApi.Controllers
             _masterDBContext.User.Add(user);
             await _masterDBContext.SaveChangesAsync();
             return true;
+        }
+
+        [HttpPost]
+        [Route("TestDiff")]
+        public async Task<string> TestChange([FromQuery] UnitOutput oldUnit, [FromBody] UnitOutput newUnit)
+        {
+            return Utils.GetJsonDiff(Newtonsoft.Json.JsonConvert.SerializeObject(oldUnit), newUnit);
         }
     }
 }

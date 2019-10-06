@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<ObjectType> ObjectType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
@@ -29,6 +30,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<TimeType> TimeType { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
+        public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
+        public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -140,6 +143,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
             });
+            modelBuilder.Entity<ObjectType>(entity =>
+            {
+                entity.Property(e => e.ObjectTypeId).ValueGeneratedNever();
+                entity.Property(e => e.ObjectTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
@@ -192,7 +202,6 @@ namespace VErp.Infrastructure.EF.MasterDB
             });
             modelBuilder.Entity<Unit>(entity =>
             {
-                entity.Property(e => e.UnitId).ValueGeneratedNever();
                 entity.Property(e => e.UnitName)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -209,6 +218,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(64);
+            });
+            modelBuilder.Entity<UserActivityLog>(entity =>
+            {
+                entity.Property(e => e.Message).HasMaxLength(512);
+            });
+            modelBuilder.Entity<UserActivityLogChange>(entity =>
+            {
+                entity.HasKey(e => e.UserActivityLogId);
+                entity.Property(e => e.UserActivityLogId).ValueGeneratedNever();
             });
             modelBuilder.Entity<UserStatus>(entity =>
             {
