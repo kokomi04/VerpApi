@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
@@ -36,6 +38,43 @@ namespace VErp.Commons.Library
             }
 
             return EnumAction.View;
+        }
+
+        public static string GetJsonDiff(string existing, object modified)
+        {
+            if (existing == null)
+            {
+                return Newtonsoft.Json.JsonConvert.SerializeObject(modified);
+            }
+            if (modified == null)
+            {
+                return existing;
+            }
+
+            JObject xptJson = JObject.FromObject(modified);
+            JObject actualJson = JObject.Parse(existing);
+
+            var xptProps = xptJson.Properties().ToList();
+            var actProps = actualJson.Properties().ToList();
+
+            var changes = (from existingProp in actProps
+                           from modifiedProp in xptProps
+                           where modifiedProp.Path.Equals(existingProp.Path)
+                           where !modifiedProp.Value.Equals(existingProp.Value)
+                           select new
+                           {
+                               Field = existingProp.Path,
+                               OldValue = existingProp.Value.ToString(),
+                               NewValue = modifiedProp.Value.ToString(),
+                           }).ToList();
+
+            var obj = JObject.Parse("{}");
+            foreach (var item in changes)
+            {
+                obj[item.Field] = item.NewValue;
+            }
+
+            return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         }
     }
 }

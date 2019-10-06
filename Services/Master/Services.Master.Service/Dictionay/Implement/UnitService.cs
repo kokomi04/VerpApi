@@ -11,6 +11,9 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
 using System.Linq;
+using VErp.Services.Master.Service.Activity;
+using VErp.Commons.Enums.MasterEnum;
+using Newtonsoft.Json;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
@@ -19,15 +22,18 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IActivityService _activityService;
 
         public UnitService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UnitService> logger
+            , IActivityService activityService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> AddUnit(UnitInput data)
@@ -54,6 +60,9 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
             await _masterContext.Unit.AddAsync(unit);
             await _masterContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.Unit, unit.UnitId, $"Thêm đơn vị tính {data.UnitName}", null, data);
+
             return unit.UnitId;
         }
 
@@ -116,11 +125,14 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                 return UnitErrorCode.UnitNotFound;
             }
 
+            var beforeChange = JsonConvert.SerializeObject(unitInfo);
+
             unitInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             unitInfo.UnitName = data.UnitName;
 
             await _masterContext.SaveChangesAsync();
 
+            await _activityService.CreateActivity(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", beforeChange, data);
             return GeneralCode.Success;
         }
 
@@ -131,10 +143,10 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             {
                 return UnitErrorCode.UnitNotFound;
             }
-
+            var beforeChange = JsonConvert.SerializeObject(unitInfo);
             unitInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
-
+            await _activityService.CreateActivity(EnumObjectType.Unit, unitId, $"Xóa đơn vị tính {unitInfo.UnitName}", beforeChange, null);
             return GeneralCode.Success;
         }
 
