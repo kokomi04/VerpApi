@@ -19,9 +19,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            
+           
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -115,6 +116,12 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
+            });
+            modelBuilder.Entity<Stock>(entity =>
+            {
+                entity.Property(e => e.StockName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
         }
     }
