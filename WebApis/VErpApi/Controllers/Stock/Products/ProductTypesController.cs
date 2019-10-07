@@ -6,7 +6,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Service.Dictionary;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.Stock.Products
 {
     [Route("api/productTypes")]
 

@@ -65,13 +65,15 @@ namespace VErp.Infrastructure.ApiCore
 
             services.AddMvc(options =>
             {
+                options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
+
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
                 if (isRequireAuthrize)
                 {
                     options.Filters.Add(typeof(AuthorizeActionFilter));
                 }
-                
+
             })
             .AddJsonOptions(options =>
             {
@@ -105,12 +107,20 @@ namespace VErp.Infrastructure.ApiCore
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));
-                options.SwaggerDoc("v1", new Info
+
+
+                options.SwaggerDoc("stock", new Info
                 {
-                    Title = "VERP HTTP API",
+                    Title = "VERP Stock HTTP API",
                     Version = "v1",
-                    Description = "The VERP Service HTTP API",
-                    TermsOfService = "Terms Of Service"
+                    Description = "The Stock Service HTTP API"
+                });
+
+                options.SwaggerDoc("system", new Info
+                {
+                    Title = "VERP System HTTP API",
+                    Version = "v1",
+                    Description = "The system Service HTTP API"
                 });
 
                 options.AddSecurityDefinition("oauth2", new OAuth2Scheme
@@ -186,7 +196,10 @@ namespace VErp.Infrastructure.ApiCore
             app.UseSwagger()
                .UseSwaggerUI(c =>
                {
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "VERP.API V1");
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
+                   
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
+
                    c.OAuthClientId("web");
                    c.OAuthClientSecret("secretWeb");
                    c.OAuthAppName("VERP Swagger UI");

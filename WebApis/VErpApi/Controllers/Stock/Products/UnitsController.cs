@@ -8,7 +8,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Service.Dictionary;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.Stock.Products
 {
     [Route("api/units")]
 
