@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
-        public long MainImageMediaId { get; set; }
+        public long? MainImageMediaId { get; set; }
         public int? ProductTypeId { get; set; }
         public string ProductTypeName { get; set; }
         public int ProductCateId { get; set; }
@@ -17,6 +17,6 @@ namespace VErp.Services.Stock.Model.Product
         public string Barcode { get; set; }
         public string Specification { get; set; }
         public int UnitId { get; set; }
-        public int UnitName { get; set; }
+        public string UnitName { get; set; }
     }
 }
