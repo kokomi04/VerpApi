@@ -13,5 +13,6 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductType = 5,
         Product = 6,
         Unit = 7,
+        BarcodeConfig = 8
     }
 }

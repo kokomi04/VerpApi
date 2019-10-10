@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
+        public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
@@ -35,7 +36,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            
+           
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -63,6 +64,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.MethodId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ApiEndpoint_Method");
+            });
+            modelBuilder.Entity<BarcodeConfig>(entity =>
+            {
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
             });
             modelBuilder.Entity<BarcodeStandard>(entity =>
             {
