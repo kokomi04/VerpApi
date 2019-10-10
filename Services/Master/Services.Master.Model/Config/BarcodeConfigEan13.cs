@@ -4,9 +4,7 @@ using System.Text;
 
 namespace VErp.Services.Master.Model.Config
 {
-    public class BarcodeConfigEan13
+    public class BarcodeConfigEan13 : BarcodeConfigEan
     {
-        public string CountryCode { get; set; }
-        public string CompanyCode { get; set; }
     }
 }

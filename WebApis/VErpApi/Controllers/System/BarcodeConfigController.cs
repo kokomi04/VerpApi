@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -25,13 +27,13 @@ namespace VErpApi.Controllers.System
             _barcodeConfigService = barcodeConfigService;
         }
 
-       /// <summary>
-       /// Tìm kiếm cấu hình barcode
-       /// </summary>
-       /// <param name="keyword"></param>
-       /// <param name="page"></param>
-       /// <param name="size"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Tìm kiếm cấu hình barcode
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("")]
         public async Task<ApiResponse<PageData<BarcodeConfigListOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
@@ -39,7 +41,7 @@ namespace VErpApi.Controllers.System
             return await _barcodeConfigService.GetList(keyword, page, size);
         }
 
-      
+
         /// <summary>
         /// Thêm mới cấu hình barcode
         /// </summary>
@@ -53,7 +55,7 @@ namespace VErpApi.Controllers.System
         }
 
 
-    
+
         /// <summary>
         /// Lấy thông tin barcode
         /// </summary>
@@ -66,7 +68,7 @@ namespace VErpApi.Controllers.System
             return await _barcodeConfigService.GetInfo(barcodeConfigId);
         }
 
-    
+
         /// <summary>
         /// Cập nhật cấu hình barcode
         /// </summary>
@@ -80,7 +82,7 @@ namespace VErpApi.Controllers.System
             return await _barcodeConfigService.UpdateBarcodeConfig(barcodeConfigId, req);
         }
 
-   
+
         /// <summary>
         /// Xóa cấu hình barcode
         /// </summary>
@@ -91,6 +93,36 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse> Delete([FromRoute] int barcodeConfigId)
         {
             return await _barcodeConfigService.DeleteBarcodeConfig(barcodeConfigId);
+        }
+
+        /// <summary>
+        /// Tạo mã barcode
+        /// </summary>
+        /// <param name="barcodeConfigId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{barcodeConfigId}/{productCode}")]
+        public async Task<ApiResponse<string>> Make([FromRoute] int barcodeConfigId, [FromRoute]int productCode)
+        {
+            var configModel = await _barcodeConfigService.GetInfo(barcodeConfigId);
+            if (!configModel.Code.IsSuccess())
+                return null;
+
+            var model = configModel.Data;
+            var barcode = string.Empty;
+            if (model.BarcodeStandardId == EnumBarcodeStandard.EAN_13)
+            {
+                var ean = model.Ean13;
+                barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
+                var total = 0;
+                for (var i = barcode.Length - 1; i >= 0; i--)
+                {
+                    total += Convert.ToInt32(barcode[i]) * (i % 2 == 0 ? 3 : 1);
+                }
+                var num = total % 10;
+                barcode = $"{barcode}{(num == 0 ? 0 : 10 - num)}";
+            }
+            return barcode;
         }
     }
 }
