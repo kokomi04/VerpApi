@@ -76,5 +76,15 @@ namespace VErp.Commons.Library
 
             return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         }
+
+        public static string JsonSerialize(this object obj)
+        {            
+            return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+        }
+
+        public static T JsonDeserialize<T>(this string obj)
+        {
+            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
+        }
     }
 }
