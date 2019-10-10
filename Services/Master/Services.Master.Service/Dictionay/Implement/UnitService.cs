@@ -150,6 +150,23 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             return GeneralCode.Success;
         }
 
+
+        public async Task<IList<UnitOutput>> GetListByIds(IList<int> unitIds)
+        {
+            if (unitIds == null || unitIds.Count == 0)
+            {
+                return new List<UnitOutput>();
+            }
+            return await _masterContext.Unit
+                .Where(u => unitIds.Contains(u.UnitId))
+                .Select(u => new UnitOutput()
+                {
+
+                    UnitId = u.UnitId,
+                    UnitName = u.UnitName
+                }).ToListAsync();
+        }
+
         private Enum ValidateUnitInput(UnitInput unit)
         {
             unit.UnitName = (unit.UnitName ?? "").Trim();
@@ -160,5 +177,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
             return GeneralCode.Success;
         }
+
+
     }
 }

@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\..\Master\Services.Master.Service\Services.Master.Service.csproj" />
     <ProjectReference Include="..\Services.Stock.Model\Services.Stock.Model.csproj" />
   </ItemGroup>
 

@@ -22,7 +22,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-           
+            
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -45,7 +45,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.ProductType)
                     .WithMany(p => p.Product)
                     .HasForeignKey(d => d.ProductTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Product_ProductType");
             });
             modelBuilder.Entity<ProductCate>(entity =>

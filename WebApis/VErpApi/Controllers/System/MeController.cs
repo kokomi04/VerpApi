@@ -47,6 +47,7 @@ namespace VErpApi.Controllers.System
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse<User>> TestAction()
         {
+            await Task.CompletedTask;
             throw new NotImplementedException("Test http post as censor!");
         }
 
