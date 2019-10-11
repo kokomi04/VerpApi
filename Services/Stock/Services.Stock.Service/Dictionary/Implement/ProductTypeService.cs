@@ -49,6 +49,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             var productType = new ProductType()
             {
                 ProductTypeName = req.ProductTypeName,
+                IdentityCode = req.IdentityCode ?? "",
                 ParentProductTypeId = req.ParentProductTypeId,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -83,6 +84,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 .Select(c => new ProductTypeOutput
                 {
                     ProductTypeId = c.ProductTypeId,
+                    IdentityCode = c.IdentityCode,
                     ParentProductTypeId = c.ParentProductTypeId,
                     ProductTypeName = c.ProductTypeName
                 })
@@ -112,6 +114,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 ParentProductTypeId = c.ParentProductTypeId,
                 ProductTypeId = c.ProductTypeId,
+                IdentityCode = c.IdentityCode,
                 ProductTypeName = c.ProductTypeName
             }
                 );
@@ -132,6 +135,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 return ProductTypeErrorCode.ProductTypeNotfound;
             }
             productType.ProductTypeName = req.ProductTypeName;
+            productType.IdentityCode = req.IdentityCode;
             productType.ParentProductTypeId = req.ParentProductTypeId;
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
