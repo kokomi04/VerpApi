@@ -91,7 +91,6 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<ProductType>(entity =>
             {
-                entity.Property(e => e.ProductTypeId).ValueGeneratedNever();
                 entity.Property(e => e.IdentityCode)
                     .IsRequired()
                     .HasMaxLength(128);
