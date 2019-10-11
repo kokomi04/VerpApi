@@ -66,7 +66,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterContext.SaveChangesAsync();
 
             await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", null, model);
-            
+
             return model.BarcodeConfigId;
         }
 
@@ -86,6 +86,29 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", dataBefore, model);
             return GeneralCode.Success;
+        }
+
+        public async Task<ServiceResult<string>> Make(int barcodeConfigId, int productCode)
+        {
+            var configModel = await GetInfo(barcodeConfigId);
+            if (!configModel.Code.IsSuccess())
+                return null;
+
+            var model = configModel.Data;
+            var barcode = string.Empty;
+            if (model.BarcodeStandardId == EnumBarcodeStandard.EAN_13)
+            {
+                var ean = model.Ean13;
+                barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
+                var total = 0;
+                for (var i = barcode.Length - 1; i >= 0; i--)
+                {
+                    total += Convert.ToInt32(barcode[i]) * (i % 2 == 0 ? 3 : 1);
+                }
+                var num = total % 10;
+                barcode = $"{barcode}{(num == 0 ? 0 : 10 - num)}";
+            }
+            return barcode;
         }
 
 
