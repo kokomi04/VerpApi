@@ -108,14 +108,18 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             var total = await query.CountAsync();
 
-            var lst = await query.Select(c => new ProductTypeOutput()
-                {
-                    ParentProductTypeId = c.ParentProductTypeId,
-                    ProductTypeId = c.ProductTypeId,
-                    ProductTypeName = c.ProductTypeName
-                }
-                )
-                .Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstQuery = query.Select(c => new ProductTypeOutput()
+            {
+                ParentProductTypeId = c.ParentProductTypeId,
+                ProductTypeId = c.ProductTypeId,
+                ProductTypeName = c.ProductTypeName
+            }
+                );
+
+
+            var lst = size > 0
+                ? await lstQuery.Skip((page - 1) * size).Take(size).ToListAsync()
+                : await lstQuery.ToListAsync();
 
             return (lst, total);
         }
