@@ -7,7 +7,7 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductModel
     {
-        public string ProductCode { get; set;}
+        public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public bool IsCanBuy { get; set; }
         public bool IsCanSell { get; set; }
@@ -44,6 +44,9 @@ namespace VErp.Services.Stock.Model.Product
 
         public class ProductModelUnitConversion
         {
+            public int ProductUnitConversionId { get; set; }
+            public string ProductUnitConversionName { get; set; }
+            public int ProductId { get; set; }
             public int SecondaryUnitId { get; set; }
             public string FactorExpression { get; set; }
             public string ConversionDescription { get; set; }

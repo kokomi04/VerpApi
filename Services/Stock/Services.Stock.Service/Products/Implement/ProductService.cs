@@ -117,6 +117,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
+                        ProductUnitConversionId = u.ProductUnitConversionId,
+                        ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
                         ConversionDescription = u.ConversionDescription
@@ -189,6 +191,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     StockIds = stockValidations?.Select(s => s.StockId).ToList(),
                     UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
                     {
+                        ProductId = c.ProductId,
+                        ProductUnitConversionId = c.ProductUnitConversionId,
+                        ProductUnitConversionName = c.ProductUnitConversionName,
                         SecondaryUnitId = c.SecondaryUnitId,
                         FactorExpression = c.FactorExpression,
                         ConversionDescription = c.ConversionDescription
@@ -272,6 +277,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
+                        ProductUnitConversionId = u.ProductUnitConversionId,
+                        ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
                         ConversionDescription = u.ConversionDescription
