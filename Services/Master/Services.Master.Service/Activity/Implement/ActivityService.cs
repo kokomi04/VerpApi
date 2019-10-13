@@ -11,7 +11,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
-
+using Autofac;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -20,69 +20,36 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-
-        private int _userId = 0;
-        private EnumAction _action = EnumAction.View;
-        private bool _isFirstCall = true;
-
-
+        private readonly ICurrentContextService _currentContextService;
+        private readonly ILifetimeScope _lifetimeScope;
 
         public ActivityService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
-            , IHttpContextAccessor httpContextAccessor
+            , ICurrentContextService currentContextService
+            , ILifetimeScope lifetimeScope
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
+            _currentContextService = currentContextService;
+            _lifetimeScope = lifetimeScope;
         }
 
-
-        protected int UserId
-        {
-            get
-            {
-                if (!_isFirstCall)
-                    return _userId;
-
-                _isFirstCall = false;
-                foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
-                {
-                    if (claim.Type != "userId")
-                        continue;
-
-                    int.TryParse(claim.Value, out _userId);
-                    break;
-                }
-
-                var method = (EnumMethod)Enum.Parse(typeof(EnumMethod), _httpContextAccessor.HttpContext.Request.Method, true);
-
-                if (_httpContextAccessor.HttpContext.Items.ContainsKey("action"))
-                {
-
-                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items["action"];
-                }
-                else
-                {
-                    _action = method.GetDefaultAction();
-                }
-
-                return _userId;
-            }
-        }
 
         public async Task<Enum> CreateActivity(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
         {
+            var userId = _currentContextService.UserId;
+            var actionId = (int)_currentContextService.Action;
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var activity = new UserActivityLog()
                 {
-                    UserId = UserId,
+                    UserId = userId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
-                    ActionId = (int)_action,
+                    ActionId = actionId,
                     ObjectTypeId = (int)objectTypeId,
                     ObjectId = objectId,
                     Message = message
@@ -90,6 +57,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
                 await _masterContext.UserActivityLog.AddAsync(activity);
                 await _masterContext.SaveChangesAsync();
+
                 var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
 
                 var change = new UserActivityLogChange()
@@ -99,7 +67,11 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 };
 
                 await _masterContext.UserActivityLogChange.AddAsync(change);
+
+                await _masterContext.SaveChangesAsync();
+
                 trans.Commit();
+
                 return GeneralCode.Success;
             }
         }
