@@ -6,10 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
@@ -19,16 +22,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IActivityService _activityService;
 
         public ProductCateService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductCateService> logger
+            , IActivityService activityService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> AddProductCate(ProductCateInput req)
@@ -61,6 +67,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
+            await _activityService.CreateActivity(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", null, productCate);
+
             return productCate.ProductCateId;
         }
 
@@ -75,6 +83,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
 
             await _stockContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize(), null);
 
             return GeneralCode.Success;
         }
@@ -120,7 +130,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             if (size > 0)
             {
                 lst = lst.Skip((page - 1) * size).Take(size);
-            }                
+            }
 
             return (await lst.ToListAsync(), total);
         }
@@ -132,12 +142,17 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 return ProductCateErrorCode.ProductCateNotfound;
             }
+
+            var beforeJson = productCate.JsonSerialize();
+
             productCate.ProductCateName = req.ProductCateName;
             productCate.ParentProductCateId = req.ParentProductCateId;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
 
 
             await _stockContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", beforeJson, productCate);
 
             return GeneralCode.Success;
         }

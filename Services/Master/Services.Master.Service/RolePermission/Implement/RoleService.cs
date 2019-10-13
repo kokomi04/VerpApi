@@ -8,10 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
+using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
@@ -21,15 +23,18 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IActivityService _activityService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<RoleService> logger
+            , IActivityService activityService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
@@ -40,7 +45,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 return validate;
             }
 
-          
+
             role.RoleName = role.RoleName.Trim();
             var roleInfo = new Role()
             {
@@ -55,6 +60,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _masterContext.Role.AddAsync(roleInfo);
             await _masterContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", null, roleInfo);
+
             return roleInfo.RoleId;
         }
 
@@ -113,7 +121,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return validate;
             }
-           
+
             role.RoleName = role.RoleName.Trim();
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
@@ -125,7 +133,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             if (!roleInfo.IsEditable)
             {
                 return RoleErrorCode.RoleIsReadonly;
-            }           
+            }
+            var dataBefore = roleInfo.JsonSerialize();
 
             roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             roleInfo.RoleName = role.RoleName;
@@ -133,6 +142,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             roleInfo.RoleStatusId = (int)role.RoleStatusId;
 
             await _masterContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", dataBefore, roleInfo);
 
             return GeneralCode.Success;
         }
@@ -151,6 +162,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             roleInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize(), null);
 
             return GeneralCode.Success;
         }
@@ -174,23 +187,29 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 var rolePermissions = _masterContext.RolePermission.Where(p => p.RoleId == roleId);
 
+                var beforeJson = rolePermissions.JsonSerialize();
+
                 _masterContext.RolePermission.RemoveRange(rolePermissions);
 
+                var newPermissions = new List<Infrastructure.EF.MasterDB.RolePermission>();
                 if (permissions.Count > 0)
                 {
-                    await _masterContext.RolePermission.AddRangeAsync(
-                        permissions.Select(p => new Infrastructure.EF.MasterDB.RolePermission()
-                        {
-                            RoleId = roleId,
-                            ModuleId = p.ModuleId,
-                            Permission = p.Permission,
-                            CreatedDatetimeUtc = DateTime.UtcNow
-                        }));
+                    newPermissions = permissions.Select(p => new Infrastructure.EF.MasterDB.RolePermission()
+                    {
+                        RoleId = roleId,
+                        ModuleId = p.ModuleId,
+                        Permission = p.Permission,
+                        CreatedDatetimeUtc = DateTime.UtcNow
+                    }).ToList();
+
+                    await _masterContext.RolePermission.AddRangeAsync(newPermissions);
                 }
 
                 await _masterContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await _activityService.CreateActivity(EnumObjectType.RolePermission, roleInfo.RoleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -207,7 +226,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                      })
                      .ToListAsync();
         }
-       
+
 
         #region private
         private Enum ValidateRoleInput(RoleInput req)
@@ -223,7 +242,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
             return GeneralCode.Success;
         }
-       
+
         #endregion
     }
 }

@@ -13,6 +13,7 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
+using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.Services.Master.Service.Users;
 
@@ -24,17 +25,19 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
-
+        private readonly IActivityService _activityService;
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
             , IRoleService roleService
+            , IActivityService activityService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _roleService = roleService;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
@@ -64,7 +67,12 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
+                    var info = await GetUserFullInfo(user.Data);
+                   
+                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
+
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+
                     return user.Data;
                 }
                 catch (Exception ex)
@@ -109,6 +117,10 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> DeleteUser(int userId)
         {
+            var userInfo = await GetUserFullInfo(userId);         
+
+            var beforeJson = userInfo.JsonSerialize();
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -128,6 +140,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
+                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
+                    
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
@@ -186,6 +200,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return validate;
             }
 
+            var userInfo = await GetUserFullInfo(userId);
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -204,6 +220,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                         return r2;
                     }
                     trans.Commit();
+
+                    var newUserInfo = await GetUserFullInfo(userId);
+
+                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize(), newUserInfo);
 
                     return GeneralCode.Success;
                 }
@@ -363,6 +383,29 @@ namespace VErp.Services.Master.Service.Users.Implement
             await _masterContext.SaveChangesAsync();
 
             return GeneralCode.Success;
+        }
+
+        private async Task<UserFullDbInfo> GetUserFullInfo(int userId)
+        {
+            var user = await (
+                 from u in _masterContext.User
+                 join em in _masterContext.Employee on u.UserId equals em.UserId
+                 where u.UserId == userId
+                 select new UserFullDbInfo
+                 {
+                     User = u,
+                     Employee = em
+                 }
+             )
+             .FirstOrDefaultAsync();          
+
+            return user;
+        }
+
+        private class UserFullDbInfo
+        {
+            public User User { get; set; }
+            public Employee Employee { get; set; }
         }
         #endregion
     }

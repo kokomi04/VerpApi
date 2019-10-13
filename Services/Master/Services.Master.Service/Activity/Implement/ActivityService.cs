@@ -60,7 +60,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
                 var method = (EnumMethod)Enum.Parse(typeof(EnumMethod), _httpContextAccessor.HttpContext.Request.Method, true);
 
-                if (!_httpContextAccessor.HttpContext.Items.ContainsKey("action"))
+                if (_httpContextAccessor.HttpContext.Items.ContainsKey("action"))
                 {
 
                     _action = (EnumAction)_httpContextAccessor.HttpContext.Items["action"];
