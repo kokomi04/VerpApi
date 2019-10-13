@@ -4,10 +4,13 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
@@ -17,16 +20,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IActivityService _activityService;
 
         public ProductTypeService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductTypeService> logger
+            , IActivityService activityService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> AddProductType(ProductTypeInput req)
@@ -60,6 +66,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
+            await _activityService.CreateActivity(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", null, productType);
+
             return productType.ProductTypeId;
         }
 
@@ -74,6 +82,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
             await _stockContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize(), null);
 
             return GeneralCode.Success;
         }
@@ -134,6 +144,9 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 return ProductTypeErrorCode.ProductTypeNotfound;
             }
+
+            var beforeJson = productType.JsonSerialize();
+
             productType.ProductTypeName = req.ProductTypeName;
             productType.IdentityCode = req.IdentityCode;
             productType.ParentProductTypeId = req.ParentProductTypeId;
@@ -141,6 +154,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
 
             await _stockContext.SaveChangesAsync();
+
+            await _activityService.CreateActivity(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", beforeJson, productType);
 
             return GeneralCode.Success;
         }

@@ -7,7 +7,7 @@ namespace VErp.Commons.Enums.MasterEnum
     public enum EnumObjectType
     {
         UserAndEmployee = 1,
-        RoleAndPermission = 2,
+        Role = 2,
         RolePermission = 3,
         ProductCate = 4,
         ProductType = 5,
