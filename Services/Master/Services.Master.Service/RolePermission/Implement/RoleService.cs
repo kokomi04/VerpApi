@@ -185,7 +185,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                var rolePermissions = _masterContext.RolePermission.Where(p => p.RoleId == roleId);
+                var rolePermissions = await _masterContext.RolePermission.Where(p => p.RoleId == roleId).ToListAsync();
 
                 var beforeJson = rolePermissions.JsonSerialize();
 
@@ -209,7 +209,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 trans.Commit();
 
-                await _activityService.CreateActivity(EnumObjectType.RolePermission, roleInfo.RoleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
+                await _activityService.CreateActivity(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
 
                 return GeneralCode.Success;
             }

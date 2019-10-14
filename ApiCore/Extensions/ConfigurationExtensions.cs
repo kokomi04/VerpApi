@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<MasterDBContext>((option) =>
             {
+                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.MasterDatabase);
             }, contextScope);
         }
@@ -27,6 +28,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<StockDBContext>((option) =>
             {
+                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
             }, contextScope);
         }

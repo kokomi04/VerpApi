@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +41,7 @@ namespace VErp.Commons.Library
             return EnumAction.View;
         }
 
-        public static string GetJsonDiff(string existing, object modified)
+        public static string GetObjectJsonDiff(string existing, object modified)
         {
             if (existing == null)
             {
@@ -77,9 +78,33 @@ namespace VErp.Commons.Library
             return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
         }
 
+        public static string GetJsonDiff(string existing, object modified)
+        {
+            if (existing == null)
+            {
+                return Newtonsoft.Json.JsonConvert.SerializeObject(modified);
+            }
+            if (modified == null)
+            {
+                return existing;
+            }
+            JToken mod = JToken.FromObject(modified);
+            JToken org = JToken.Parse(existing);
+
+            if (mod is JObject && org is JObject)
+            {
+                return GetObjectJsonDiff(existing, modified);
+            }
+            return mod.JsonSerialize();
+        }
+
+        private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
         public static string JsonSerialize(this object obj)
-        {            
-            return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
         }
 
         public static T JsonDeserialize<T>(this string obj)

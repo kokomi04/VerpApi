@@ -11,7 +11,6 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using Autofac;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -21,20 +20,17 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly ICurrentContextService _currentContextService;
-        private readonly ILifetimeScope _lifetimeScope;
 
         public ActivityService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
             , ICurrentContextService currentContextService
-            , ILifetimeScope lifetimeScope
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _currentContextService = currentContextService;
-            _lifetimeScope = lifetimeScope;
         }
 
 
