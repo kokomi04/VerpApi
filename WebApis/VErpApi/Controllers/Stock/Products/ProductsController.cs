@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -8,6 +11,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Dictionary;
+using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
 
 namespace VErpApi.Controllers.Stock.Products
@@ -17,10 +21,13 @@ namespace VErpApi.Controllers.Stock.Products
     public class ProductsController : VErpBaseController
     {
         private readonly IProductService _productService;
+        private readonly IFileService _fileService;
         public ProductsController(IProductService productService
+            , IFileService fileService
             )
         {
             _productService = productService;
+            _fileService = fileService;
         }
 
         /// <summary>
@@ -85,5 +92,18 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productService.DeleteProduct(productId);
         }
+
+        /// <summary>
+        /// Upload file
+        /// </summary>
+        /// <param name="fileTypeId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("File/{fileTypeId}")]
+        public async Task<ApiResponse<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromBody] IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
+        }        
     }
 }

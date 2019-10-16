@@ -11,7 +11,7 @@ namespace VErp.Services.Stock.Model.Product
         public string ProductName { get; set; }
         public bool IsCanBuy { get; set; }
         public bool IsCanSell { get; set; }
-        public long? MainImageMediaId { get; set; }
+        public long? MainImageFileId { get; set; }
         public int? ProductTypeId { get; set; }
         public int ProductCateId { get; set; }
         public EnumBarcodeStandard? BarcodeStandardId { get; set; }

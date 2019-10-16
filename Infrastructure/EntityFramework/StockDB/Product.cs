@@ -16,7 +16,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public string ProductName { get; set; }
         public bool IsCanBuy { get; set; }
         public bool IsCanSell { get; set; }
-        public long? MainImageMediaId { get; set; }
+        public long? MainImageFileId { get; set; }
         public int? ProductTypeId { get; set; }
         public int ProductCateId { get; set; }
         public int? BarcodeStandardId { get; set; }

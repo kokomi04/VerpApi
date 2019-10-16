@@ -16,8 +16,11 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
+        public virtual DbSet<BarcodeUsed> BarcodeUsed { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
+        public virtual DbSet<FileStatus> FileStatus { get; set; }
+        public virtual DbSet<FileType> FileType { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
@@ -102,6 +105,20 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .WithMany(p => p.Employee)
                     .HasForeignKey(d => d.GenderId)
                     .HasConstraintName("FK_Employee_Gender");
+            });
+            modelBuilder.Entity<FileStatus>(entity =>
+            {
+                entity.Property(e => e.FileStatusId).ValueGeneratedNever();
+                entity.Property(e => e.FileStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<FileType>(entity =>
+            {
+                entity.Property(e => e.FileTypeId).ValueGeneratedNever();
+                entity.Property(e => e.FileTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Gender>(entity =>
             {

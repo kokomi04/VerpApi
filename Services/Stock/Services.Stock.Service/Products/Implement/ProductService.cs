@@ -62,7 +62,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         ProductName = req.ProductName,
                         IsCanBuy = req.IsCanBuy,
                         IsCanSell = req.IsCanSell,
-                        MainImageMediaId = req.MainImageMediaId,
+                        MainImageFileId = req.MainImageFileId,
                         ProductTypeId = req.ProductTypeId,
                         ProductCateId = req.ProductCateId,
                         BarcodeStandardId = (int?)req.BarcodeStandardId,
@@ -165,7 +165,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 ProductName = productInfo.ProductName,
                 IsCanBuy = productInfo.IsCanBuy,
                 IsCanSell = productInfo.IsCanSell,
-                MainImageMediaId = productInfo.MainImageMediaId,
+                MainImageFileId = productInfo.MainImageFileId,
                 ProductTypeId = productInfo.ProductTypeId,
                 ProductCateId = productInfo.ProductCateId,
                 BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
@@ -235,7 +235,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.ProductName = req.ProductName;
                     productInfo.IsCanBuy = req.IsCanBuy;
                     productInfo.IsCanSell = req.IsCanSell;
-                    productInfo.MainImageMediaId = req.MainImageMediaId;
+                    productInfo.MainImageFileId = req.MainImageFileId;
                     productInfo.ProductTypeId = req.ProductTypeId;
                     productInfo.ProductCateId = req.ProductCateId;
                     productInfo.BarcodeStandardId = (int?)req.BarcodeStandardId;
@@ -375,7 +375,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.ProductId,
                     p.ProductCode,
                     p.ProductName,
-                    p.MainImageMediaId,
+                    p.MainImageFileId,
                     p.ProductTypeId,
                     ProductTypeName = pt == null ? null : pt.ProductTypeName,
                     p.ProductCateId,
@@ -413,7 +413,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductCode = item.ProductCode,
                     ProductName = item.ProductName,
                     Barcode = item.Barcode,
-                    MainImageMediaId = item.MainImageMediaId,
+                    MainImageFileId = item.MainImageFileId,
                     ProductCateId = item.ProductCateId,
                     ProductCateName = item.ProductCateName,
                     ProductTypeId = item.ProductTypeId,
