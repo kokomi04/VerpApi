@@ -22,7 +22,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            
+            if (optionsBuilder.IsConfigured)
+            {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
+            }
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -104,11 +108,13 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<ProductUnitConversion>(entity =>
             {
-                entity.HasKey(e => new { e.ProductId, e.SecondaryUnitId });
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
                 entity.Property(e => e.FactorExpression)
                     .IsRequired()
                     .HasMaxLength(256);
+                entity.Property(e => e.ProductUnitConversionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
