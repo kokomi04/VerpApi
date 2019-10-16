@@ -15,5 +15,6 @@ namespace VErp.Commons.Enums.MasterEnum
         Unit = 7,
         BarcodeConfig = 8,
         Stocks = 9,
+        File = 10
     }
 }

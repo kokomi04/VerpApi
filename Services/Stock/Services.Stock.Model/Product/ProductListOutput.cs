@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
-        public long? MainImageMediaId { get; set; }
+        public long? MainImageFileId { get; set; }
         public int? ProductTypeId { get; set; }
         public string ProductTypeName { get; set; }
         public int ProductCateId { get; set; }
