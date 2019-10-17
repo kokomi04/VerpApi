@@ -100,7 +100,8 @@ namespace VErp.Commons.Library
 
         private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
         {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            PreserveReferencesHandling = PreserveReferencesHandling.None
         };
         public static string JsonSerialize(this object obj)
         {
