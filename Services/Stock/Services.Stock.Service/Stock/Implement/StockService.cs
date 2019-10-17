@@ -59,7 +59,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Status = req.Status,
                         CreatedDatetimeUtc = DateTime.Now,
                         UpdatedDatetimeUtc = DateTime.Now,
-                        IsDeleted = false                        
+                        IsDeleted = false
                     };
 
                     await _stockContext.AddAsync(stockInfo);
@@ -122,11 +122,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (stockInfo == null)
                     {
                         return StockErrorCode.StockNotFound;
-                    }                 
+                    }
                     var originalObj = GetStockForLog(stockInfo);
 
                     //Update
-                                       
+
                     //stockInfo.StockId = req.StockId;
                     stockInfo.StockName = req.StockName;
                     stockInfo.Description = req.Description;
@@ -167,7 +167,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             stockInfo.IsDeleted = true;
             stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-           
+
             var objLog = GetStockForLog(stockInfo);
             var dataBefore = objLog.JsonSerialize();
 
@@ -177,7 +177,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     stockInfo.IsDeleted = true;
                     stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                                        
+
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -198,12 +198,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var query = from p in _stockContext.Stock
                         select p;
-                
+
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
-                        where q.StockName.Contains(keyword)                        
+                        where q.StockName.Contains(keyword)
                         select q;
             }
 
@@ -231,12 +231,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pageData, total);
         }
 
+        public async Task<IList<SimpleStockInfo>> GetSimpleList()
+        {
+            return await _stockContext.Stock.Select(s => new SimpleStockInfo()
+            {
+                StockId = s.StockId,
+                StockName = s.StockName
+            }).ToListAsync();
+        }
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
-            return new
-            {
-                StocksInfo = stockInfo
-            };
+            return stockInfo;
         }
+
+
     }
 }

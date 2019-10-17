@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Stock;
@@ -16,6 +17,8 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="size"></param>
         /// <returns></returns>
         Task<PageData<StockOutput>> GetList(string keyword, int page, int size);
+
+        Task<IList<SimpleStockInfo>> GetSimpleList();
 
         /// <summary>
         /// Thêm mới thông tin kho
