@@ -15,5 +15,6 @@ namespace VErp.Services.Master.Service.Config
         Task<ServiceResult<BarcodeConfigModel>> GetInfo(int barcodeConfigId);
         Task<Enum> UpdateBarcodeConfig(int barcodeConfigId, BarcodeConfigModel data);
         Task<Enum> DeleteBarcodeConfig(int barcodeConfigId);
+        Task<ServiceResult<string>> Make(EnumBarcodeStandard barcodeStandardId, int productCode);
     }
 }

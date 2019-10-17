@@ -66,7 +66,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterContext.SaveChangesAsync();
 
             await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", null, model);
-            
+
             return model.BarcodeConfigId;
         }
 
@@ -86,6 +86,37 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", dataBefore, model);
             return GeneralCode.Success;
+        }
+
+        public async Task<ServiceResult<string>> Make(EnumBarcodeStandard barcodeStandardId, int productCode)
+        {
+
+            var activedConfig = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)barcodeStandardId && c.IsActived);
+            if (activedConfig == null)
+            {
+                return BarcodeConfigErrorCode.NoActivedConfigWasFound;
+            }
+
+            var model = ExtractBarcodeModel(activedConfig);
+
+            var barcode = string.Empty;
+
+            switch (model.BarcodeStandardId)
+            {
+                case EnumBarcodeStandard.EAN_13:
+
+                    var ean = model.Ean13;
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
+                    var total = 0;
+                    for (var i = barcode.Length - 1; i >= 0; i--)
+                    {
+                        total += Convert.ToInt32(barcode[i]) * (i % 2 == 0 ? 3 : 1);
+                    }
+                    var num = total % 10;
+                    return $"{barcode}{(num == 0 ? 0 : 10 - num)}";
+                default:
+                    return BarcodeConfigErrorCode.BarcodeStandardNotSupportedYet;
+            }
         }
 
 
