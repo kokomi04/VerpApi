@@ -17,7 +17,7 @@ using System.Linq;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
-    public class BarcodeStandardConfigService : IBarcodeConfigService
+    public class BarcodeConfigService : IBarcodeConfigService
     {
 
         private readonly MasterDBContext _masterContext;
@@ -25,9 +25,9 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly ILogger _logger;
         private readonly IActivityService _activityService;
 
-        public BarcodeStandardConfigService(MasterDBContext masterContext
+        public BarcodeConfigService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
-            , ILogger<BarcodeStandardConfigService> logger
+            , ILogger<BarcodeConfigService> logger
             , IActivityService activityService
             )
         {
