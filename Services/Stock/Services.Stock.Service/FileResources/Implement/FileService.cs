@@ -25,6 +25,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityService _activityService;
+
+        private readonly string _rootFolder = "";
+
+
         public FileService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -36,6 +40,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityService = activityService;
+            _rootFolder = _appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\');
+
         }
 
 
@@ -52,7 +58,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 string filePath = GenerateTempFilePath(file.FileName);
 
-                using (var stream = File.Create(filePath))
+                using (var stream = File.Create(Path.Combine(_rootFolder, filePath)))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -126,6 +132,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
 
+                File.Move(Path.Combine(_rootFolder, fileInfo.FilePath), Path.Combine(_rootFolder, filePath));
+
+                Directory.Delete(Path.Combine(_rootFolder, fileInfo.FilePath.Substring(fileInfo.FilePath.LastIndexOf('/'))), true);
+
                 var beforeJson = fileInfo.JsonSerialize();
 
                 using (var trans = await _stockContext.Database.BeginTransactionAsync())
@@ -161,47 +171,37 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GenerateFilePathWithObject(EnumObjectType objectTypeId, long objectId, string uploadFileName)
         {
-            var filePathRes = _appSetting.Configuration.FileUploadFolder;
-
-            if (filePathRes.EndsWith("/") || filePathRes.EndsWith("\\"))
-                filePathRes = filePathRes.Substring(0, filePathRes.Length - 1);
-
-            var folder = Path.Combine(filePathRes, $"/{objectTypeId.ToString()}/{objectId}/");
-
+            var relativeFolder = $"/{objectTypeId.ToString()}/{objectId}";
             var fNameWithoutExtension = Path.GetFileNameWithoutExtension(uploadFileName);
             var ext = Path.GetExtension(uploadFileName);
 
-            var tmpFileName = fNameWithoutExtension + ext;
-            var filePath = Path.Combine(folder, tmpFileName);
+            var fileName = fNameWithoutExtension + ext;
+            var relativeFilePath = Path.Combine(relativeFolder, "/" + fileName);
+
             int i = 1;
-            while (File.Exists(Path.Combine(folder, tmpFileName)))
+            while (File.Exists(Path.Combine(_rootFolder, relativeFilePath)))
             {
-                tmpFileName = fNameWithoutExtension + $"({i++})" + ext;
-                filePath = Path.Combine(folder, tmpFileName);
+                fileName = fNameWithoutExtension + $"({i++})" + ext;
+                relativeFilePath = Path.Combine(relativeFolder, "/" + fileName);
             }
 
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
+            var obsoluteFolder = Path.Combine(_rootFolder, relativeFolder);
+            if (!Directory.Exists(obsoluteFolder))
+                Directory.CreateDirectory(obsoluteFolder);
 
-            return filePath;
+            return relativeFilePath;
         }
 
         private string GenerateTempFilePath(string uploadFileName)
         {
-            var filePathRes = _appSetting.Configuration.FileUploadFolder;
+            var relativeFolder = $"/_tmp_/{Guid.NewGuid().ToString()}";
+            var relativeFilePath = Path.Combine(relativeFolder, "/" + uploadFileName);
 
-            if (filePathRes.EndsWith("/") || filePathRes.EndsWith("\\"))
-                filePathRes = filePathRes.Substring(0, filePathRes.Length - 1);
+            var obsoluteFolder = Path.Combine(_rootFolder, relativeFolder);
+            if (!Directory.Exists(obsoluteFolder))
+                Directory.CreateDirectory(obsoluteFolder);
 
-            var folder = Path.Combine(filePathRes, Guid.NewGuid().ToString());
-
-            var filePath = Path.Combine(folder, uploadFileName);
-
-
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            return filePath;
+            return relativeFilePath;
         }
 
         private Enum ValidateUploadFile(EnumFileType fileTypeId, IFormFile uploadFile)

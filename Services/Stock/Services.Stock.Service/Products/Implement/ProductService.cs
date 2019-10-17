@@ -16,6 +16,7 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using static VErp.Services.Stock.Model.Product.ProductModel;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -26,6 +27,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
         private readonly IActivityService _activityService;
+        private readonly IFileService _fileService;
 
         public ProductService(
             StockDBContext stockContext
@@ -33,6 +35,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , ILogger<ProductService> logger
             , IUnitService unitService
             , IActivityService activityService
+            , IFileService fileService
             )
         {
             _stockContext = stockContext;
@@ -40,6 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _logger = logger;
             _unitService = unitService;
             _activityService = activityService;
+            _fileService = fileService;
         }
 
         public async Task<ServiceResult<int>> AddProduct(ProductModel req)
@@ -52,6 +56,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return ProductErrorCode.ProductCodeAlreadyExisted;
             }
 
+            int productId = 0;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -135,7 +140,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityService.CreateActivity(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", null, objLog);
 
-                    return productInfo.ProductId;
+                    productId = productInfo.ProductId;
                 }
                 catch (Exception ex)
                 {
@@ -144,6 +149,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     return GeneralCode.InternalError;
                 }
             }
+
+            if (req.MainImageFileId.HasValue)
+            {
+                _ = _fileService.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value);
+            }
+
+            return productId;
         }
 
 
@@ -209,6 +221,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return ProductErrorCode.ProductCodeAlreadyExisted;
             }
 
+            long? oldMainImageFileId = 0L;
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -219,6 +233,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         return ProductErrorCode.ProductNotFound;
                     }
+
+                    oldMainImageFileId = productInfo.MainImageFileId;
 
                     var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -283,15 +299,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         await _stockContext.AddRangeAsync(lstUnitConverions);
                     }
 
-
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
                     var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
 
                     await _activityService.CreateActivity(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", beforeData.JsonSerialize(), objLog);
-
-                    return GeneralCode.Success;
                 }
                 catch (Exception ex)
                 {
@@ -300,6 +313,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     return GeneralCode.InternalError;
                 }
             }
+
+            if (req.MainImageFileId.HasValue && oldMainImageFileId != req.MainImageFileId)
+            {
+                _ = _fileService.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value);
+            }
+            return GeneralCode.Success;
         }
 
 
