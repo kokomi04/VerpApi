@@ -98,14 +98,14 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Tạo mã barcode
         /// </summary>
-        /// <param name="barcodeConfigId"></param>
+        /// <param name="barcodeStandardId"></param>
         /// <param name="productCode"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("{barcodeConfigId}/{productCode}")]
-        public async Task<ApiResponse<string>> Make([FromRoute] int barcodeConfigId, [FromRoute]int productCode)
+        [Route("{barcodeStandardId}/Generate")]
+        public async Task<ApiResponse<string>> Make([FromRoute] EnumBarcodeStandard barcodeStandardId, [FromQuery]int productCode)
         {
-            return await _barcodeConfigService.Make(barcodeConfigId, productCode);
+            return await _barcodeConfigService.Make(barcodeStandardId, productCode);
         }
     }
 }

@@ -88,27 +88,35 @@ namespace VErp.Services.Master.Service.Config.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<ServiceResult<string>> Make(int barcodeConfigId, int productCode)
+        public async Task<ServiceResult<string>> Make(EnumBarcodeStandard barcodeStandardId, int productCode)
         {
-            var configModel = await GetInfo(barcodeConfigId);
-            if (!configModel.Code.IsSuccess())
-                return null;
 
-            var model = configModel.Data;
-            var barcode = string.Empty;
-            if (model.BarcodeStandardId == EnumBarcodeStandard.EAN_13)
+            var activedConfig = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)barcodeStandardId && c.IsActived);
+            if (activedConfig == null)
             {
-                var ean = model.Ean13;
-                barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
-                var total = 0;
-                for (var i = barcode.Length - 1; i >= 0; i--)
-                {
-                    total += Convert.ToInt32(barcode[i]) * (i % 2 == 0 ? 3 : 1);
-                }
-                var num = total % 10;
-                barcode = $"{barcode}{(num == 0 ? 0 : 10 - num)}";
+                return BarcodeConfigErrorCode.NoActivedConfigWasFound;
             }
-            return barcode;
+
+            var model = ExtractBarcodeModel(activedConfig);
+
+            var barcode = string.Empty;
+
+            switch (model.BarcodeStandardId)
+            {
+                case EnumBarcodeStandard.EAN_13:
+
+                    var ean = model.Ean13;
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
+                    var total = 0;
+                    for (var i = barcode.Length - 1; i >= 0; i--)
+                    {
+                        total += Convert.ToInt32(barcode[i]) * (i % 2 == 0 ? 3 : 1);
+                    }
+                    var num = total % 10;
+                    return $"{barcode}{(num == 0 ? 0 : 10 - num)}";
+                default:
+                    return BarcodeConfigErrorCode.BarcodeStandardNotSupportedYet;
+            }
         }
 
 
