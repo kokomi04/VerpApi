@@ -12,7 +12,7 @@ using VErp.Services.Stock.Service.Stock;
 
 namespace VErpApi.Controllers.Stock.Stocks
 {
-    [Route("api/stock")]
+    [Route("api/stocks")]
 
     public class StockController : VErpBaseController
     {
