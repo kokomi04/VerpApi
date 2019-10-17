@@ -14,7 +14,8 @@ namespace VErp.Commons.Enums.MasterEnum
         Product = 6,
         Unit = 7,
         BarcodeConfig = 8,
-        Stocks = 9,
+        Stock = 9, // Kho         
         File = 10
+
     }
 }
