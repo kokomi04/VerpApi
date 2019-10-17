@@ -45,7 +45,7 @@ namespace VErp.Commons.Library
         {
             if (existing == null)
             {
-                return Newtonsoft.Json.JsonConvert.SerializeObject(modified);
+                return modified.JsonSerialize();
             }
             if (modified == null)
             {
@@ -75,14 +75,14 @@ namespace VErp.Commons.Library
                 obj[item.Field] = item.NewValue;
             }
 
-            return Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+            return obj.JsonSerialize();
         }
 
         public static string GetJsonDiff(string existing, object modified)
         {
             if (existing == null)
             {
-                return Newtonsoft.Json.JsonConvert.SerializeObject(modified);
+                return modified.JsonSerialize();
             }
             if (modified == null)
             {
