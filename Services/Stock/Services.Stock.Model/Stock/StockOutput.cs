@@ -1,18 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace VErp.Infrastructure.EF.StockDB
+namespace VErp.Services.Stock.Model.Stock
+
 {
-    public partial class Stock
+    public class StockOutput
     {
+        /// <summary>
+        /// Mã kho
+        /// </summary>
         public int StockId { get; set; }
-        
+
         /// <summary>
         /// Tên kho
         /// </summary>
         public string StockName { get; set; }
 
-        // <summary>
+        /// <summary>
         /// Mô tả
         /// </summary>
         public string Description { get; set; }
@@ -36,9 +41,5 @@ namespace VErp.Infrastructure.EF.StockDB
         /// Trạng thái
         /// </summary>
         public int? Status { get; set; }
-
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }

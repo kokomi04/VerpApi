@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Stocks;
+using VErp.Services.Stock.Model.Stock;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VErp.Services.Master.Service.Dictionay;
@@ -15,11 +15,11 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
-using static VErp.Services.Stock.Model.Stocks.StocksModel;
+using static VErp.Services.Stock.Model.Stock.StockModel;
 
-namespace VErp.Services.Stock.Service.Stocks.Implement
+namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public class StocksService : IStocksService
+    public class StockService : IStockService
     {
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
@@ -27,10 +27,10 @@ namespace VErp.Services.Stock.Service.Stocks.Implement
         private readonly IUnitService _unitService;
         private readonly IActivityService _activityService;
 
-        public StocksService(
+        public StockService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
-            , ILogger<StocksService> logger
+            , ILogger<StockService> logger
             , IUnitService unitService
             , IActivityService activityService
             )
@@ -42,65 +42,75 @@ namespace VErp.Services.Stock.Service.Stocks.Implement
             _activityService = activityService;
         }
 
-        public async Task<ServiceResult<int>> AddStocks(StocksModel req)
+        public async Task<ServiceResult<int>> AddStock(StockModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    var stocksInfo = new VErp.Infrastructure.EF.StockDB.Stock()
+                    var stockInfo = new VErp.Infrastructure.EF.StockDB.Stock()
                     {
                         //StockId = req.StockId,
                         StockName = req.StockName,
+                        Description = req.Description,
+                        StockKeeperId = req.StockKeeperId,
+                        StockKeeperName = req.StockKeeperName,
+                        Type = req.Type,
+                        Status = req.Status,
                         CreatedDatetimeUtc = DateTime.Now,
                         UpdatedDatetimeUtc = DateTime.Now,
                         IsDeleted = false                        
                     };
 
-                    await _stockContext.AddAsync(stocksInfo);
+                    await _stockContext.AddAsync(stockInfo);
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    var objLog = GetStocksForLog(stocksInfo);
+                    var objLog = GetStockForLog(stockInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Stocks, stocksInfo.StockId, $"Thêm mới sản phẩm {stocksInfo.StockName}", null, objLog);
+                    await _activityService.CreateActivity(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", null, objLog);
 
-                    return stocksInfo.StockId;
+                    return stockInfo.StockId;
                 }
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "AddStocks");
+                    _logger.LogError(ex, "AddStock");
                     return GeneralCode.InternalError;
                 }
             }
         }
 
 
-        public async Task<ServiceResult<StocksOutput>> StocksInfo(int stocksId)
+        public async Task<ServiceResult<StockOutput>> StockInfo(int stockId)
         {
-            var stocksInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stocksId);
-            if (stocksInfo == null)
+            var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+            if (stockInfo == null)
             {
-                return StocksErrorCode.StocksNotFound;
+                return StockErrorCode.StockNotFound;
             }
-            return new StocksOutput()
+            return new StockOutput()
             {
-                StockId = stocksInfo.StockId,
-                StockName = stocksInfo.StockName                
+                StockId = stockInfo.StockId,
+                StockName = stockInfo.StockName,
+                Description = stockInfo.Description,
+                StockKeeperId = stockInfo.StockKeeperId,
+                StockKeeperName = stockInfo.StockKeeperName,
+                Type = stockInfo.Type,
+                Status = stockInfo.Status
             };
         }
 
 
-        public async Task<Enum> UpdateStocks(int stocksId, StocksModel req)
+        public async Task<Enum> UpdateStock(int stockId, StockModel req)
         {
             req.StockName = (req.StockName ?? "").Trim();
 
-            var checkExistsName = await _stockContext.Stock.AnyAsync(p => p.StockName == req.StockName && p.StockId != stocksId);
+            var checkExistsName = await _stockContext.Stock.AnyAsync(p => p.StockName == req.StockName && p.StockId != stockId);
             if (checkExistsName)
             {
-                return ProductErrorCode.ProductCodeAlreadyExisted;
+                return StockErrorCode.StockCodeAlreadyExisted;
             }
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
@@ -108,83 +118,83 @@ namespace VErp.Services.Stock.Service.Stocks.Implement
                 try
                 {
                     //Getdata
-                    var stocksInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stocksId);
-                    if (stocksInfo == null)
+                    var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+                    if (stockInfo == null)
                     {
-                        return StocksErrorCode.StocksNotFound;
-                    }
-
-                    var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == stocksId);
-                    var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == stocksId);
-                    var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == stocksId).ToListAsync();
-                    var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == stocksId).ToListAsync();
-
-                    var originalObj = GetStocksForLog(stocksInfo);
+                        return StockErrorCode.StockNotFound;
+                    }                 
+                    var originalObj = GetStockForLog(stockInfo);
 
                     //Update
                                        
-                    //stocksInfo.StockId = req.StockId;
-                    stocksInfo.StockName = req.StockName;
-                    
+                    //stockInfo.StockId = req.StockId;
+                    stockInfo.StockName = req.StockName;
+                    stockInfo.Description = req.Description;
+                    stockInfo.StockKeeperId = req.StockKeeperId;
+                    stockInfo.StockKeeperName = req.StockKeeperName;
+                    stockInfo.Type = req.Type;
+                    stockInfo.Status = req.Status;
+                    stockInfo.UpdatedDatetimeUtc = DateTime.Now;
+
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    var objLog = GetStocksForLog(stocksInfo);
+                    var objLog = GetStockForLog(stockInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Stocks, stocksInfo.StockId, $"Cập nhật thông tin kho hàng {stocksInfo.StockName}", originalObj.JsonSerialize(), objLog);
+                    await _activityService.CreateActivity(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", originalObj.JsonSerialize(), objLog);
 
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "UpdateStocks");
+                    _logger.LogError(ex, "UpdateStock");
                     return GeneralCode.InternalError;
                 }
             }
         }
 
 
-        public async Task<Enum> DeleteStocks(int stocksId)
+        public async Task<Enum> DeleteStock(int stockId)
         {
-            var stocksInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stocksId);
+            var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
 
-            if (stocksInfo == null)
+            if (stockInfo == null)
             {
                 return ProductErrorCode.ProductNotFound;
             }
 
-            stocksInfo.IsDeleted = true;
-            stocksInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            stockInfo.IsDeleted = true;
+            stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
            
-            var objLog = GetStocksForLog(stocksInfo);
+            var objLog = GetStockForLog(stockInfo);
             var dataBefore = objLog.JsonSerialize();
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    stocksInfo.IsDeleted = true;
-                    stocksInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    stockInfo.IsDeleted = true;
+                    stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                                         
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityService.CreateActivity(EnumObjectType.Product, stocksInfo.StockId, $"Xóa sản phẩm {stocksInfo.StockName}", dataBefore, null);
+                    await _activityService.CreateActivity(EnumObjectType.Product, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "DeleteStocks");
+                    _logger.LogError(ex, "DeleteStock");
                     return GeneralCode.InternalError;
                 }
             }
         }
 
-        public async Task<PageData<StocksOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size)
         {
             var query = from p in _stockContext.Stock
                         select p;
@@ -200,26 +210,32 @@ namespace VErp.Services.Stock.Service.Stocks.Implement
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
-            var pageData = new List<StocksOutput>();
+            var pageData = new List<StockOutput>();
             foreach (var item in lstData)
             {
-                var stocksInfo = new StocksOutput()
+                var stockInfo = new StockOutput()
                 {
                     StockId = item.StockId,
                     StockName = item.StockName,
+                    Description = item.Description,
+                    StockKeeperId = item.StockKeeperId,
+                    StockKeeperName = item.StockKeeperName,
+                    Type = item.Type,
+                    Status = item.Status
+
                 };
-                pageData.Add(stocksInfo);
+                pageData.Add(stockInfo);
             }
 
 
             return (pageData, total);
         }
 
-        private object GetStocksForLog(VErp.Infrastructure.EF.StockDB.Stock stocksInfo)
+        private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return new
             {
-                StocksInfo = stocksInfo
+                StocksInfo = stockInfo
             };
         }
     }

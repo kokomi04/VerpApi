@@ -4,10 +4,10 @@ using System.Text;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
-    public enum StocksErrorCode
+    public enum StockErrorCode
     {
-        StocksNotFound = 1,
-        StocksCodeEmpty = 2,
-        StocksCodeAlreadyExisted = 3
+        StockNotFound = 1,
+        StockCodeEmpty = 2,
+        StockCodeAlreadyExisted = 3
     }
 }
