@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
@@ -35,6 +37,17 @@ namespace VErpApi.Controllers.Stock.Stocks
         public async Task<ApiResponse<PageData<StockOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetList(keyword, page, size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách kho
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("SimpleList")]
+        public async Task<ApiResponse<IList<SimpleStockInfo>>> SimpleList()
+        {
+            return (await _stockService.GetSimpleList()).ToList();
         }
 
         /// <summary>

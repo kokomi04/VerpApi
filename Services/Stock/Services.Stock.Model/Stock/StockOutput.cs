@@ -5,7 +5,7 @@ using System.Text;
 namespace VErp.Services.Stock.Model.Stock
 
 {
-    public class StockOutput
+    public class SimpleStockInfo
     {
         /// <summary>
         /// Mã kho
@@ -16,6 +16,11 @@ namespace VErp.Services.Stock.Model.Stock
         /// Tên kho
         /// </summary>
         public string StockName { get; set; }
+    }
+
+    public class StockOutput : SimpleStockInfo
+    {
+
 
         /// <summary>
         /// Mô tả
