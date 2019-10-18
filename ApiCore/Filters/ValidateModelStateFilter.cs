@@ -69,8 +69,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 else
                 {
                     if (type.IsArray || type.IsGenericType)
-                    {
-                        if (!ValidateEnum((IEnumerable<object>)obj).IsSuccess())
+                    {                       
+                        if (!ValidateEnum(obj as IEnumerable<object>).IsSuccess())
                         {
                             return GeneralCode.InvalidParams;
                         }
