@@ -122,6 +122,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
+                        ProductUnitConversionId = u.ProductUnitConversionId,
+                        ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
                         ConversionDescription = u.ConversionDescription
@@ -161,7 +163,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ServiceResult<ProductModel>> ProductInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 return ProductErrorCode.ProductNotFound;
@@ -201,6 +203,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     StockIds = stockValidations?.Select(s => s.StockId).ToList(),
                     UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
                     {
+                        ProductUnitConversionId = c.ProductUnitConversionId,
+                        ProductUnitConversionName = c.ProductUnitConversionName,
                         SecondaryUnitId = c.SecondaryUnitId,
                         FactorExpression = c.FactorExpression,
                         ConversionDescription = c.ConversionDescription
@@ -288,6 +292,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
+                        ProductUnitConversionId = u.ProductUnitConversionId,
+                        ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
                         ConversionDescription = u.ConversionDescription
