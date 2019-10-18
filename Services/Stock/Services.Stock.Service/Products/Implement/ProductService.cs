@@ -151,7 +151,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ServiceResult<ProductModel>> ProductInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 return ProductErrorCode.ProductNotFound;
@@ -191,7 +191,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     StockIds = stockValidations?.Select(s => s.StockId).ToList(),
                     UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
                     {
-                        ProductId = c.ProductId,
                         ProductUnitConversionId = c.ProductUnitConversionId,
                         ProductUnitConversionName = c.ProductUnitConversionName,
                         SecondaryUnitId = c.SecondaryUnitId,
