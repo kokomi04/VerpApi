@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
@@ -44,9 +45,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
             context.Result = new BadRequestObjectResult(json);
         }
 
-        private Enum ValidateEnum(IEnumerable<object> objs)
+        private Enum ValidateEnum(dynamic objs)
         {
-            foreach (var obj in objs)
+            foreach (object obj in objs)
             {
                 if (obj == null)
                 {
@@ -69,8 +70,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 else
                 {
                     if (type.IsArray || type.IsGenericType)
-                    {                       
-                        if (!ValidateEnum(obj as IEnumerable<object>).IsSuccess())
+                    {                        
+                        if (!ValidateEnum(obj).IsSuccess())
                         {
                             return GeneralCode.InvalidParams;
                         }
