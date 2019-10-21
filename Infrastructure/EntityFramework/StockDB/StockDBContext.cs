@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
         }
         public virtual DbSet<File> File { get; set; }
+        public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -23,7 +24,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-           
+            if (optionsBuilder.IsConfigured)
+            {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
+            }
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -37,6 +42,18 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.FilePath)
                     .IsRequired()
                     .HasMaxLength(1024);
+            });
+            modelBuilder.Entity<Location>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Description)
+                    .HasMaxLength(256)
+                    .HasDefaultValueSql("(N'')");
+                entity.Property(e => e.Name)
+                    .HasMaxLength(128)
+                    .HasDefaultValueSql("(N'')");
+                entity.Property(e => e.Status).HasDefaultValueSql("((0))");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
             modelBuilder.Entity<Product>(entity =>
             {
@@ -130,9 +147,13 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<Stock>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+                entity.Property(e => e.Status).HasDefaultValueSql("((0))");
+                entity.Property(e => e.StockKeeperName).HasMaxLength(64);
                 entity.Property(e => e.StockName)
                     .IsRequired()
                     .HasMaxLength(128);
+                entity.Property(e => e.Type).HasDefaultValueSql("((0))");
             });
         }
     }
