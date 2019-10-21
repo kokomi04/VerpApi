@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
@@ -7,7 +8,11 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductModel
     {
+        [Required(ErrorMessage = "Vui lòng nhập mã sản phẩm")]
+        [MaxLength(128, ErrorMessage = "Mã sản phẩm quá dài")]
         public string ProductCode { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
+        [MaxLength(128, ErrorMessage = "Tên sản phẩm quá dài")]
         public string ProductName { get; set; }
         public bool IsCanBuy { get; set; }
         public bool IsCanSell { get; set; }
@@ -45,6 +50,8 @@ namespace VErp.Services.Stock.Model.Product
         public class ProductModelUnitConversion
         {
             public int ProductUnitConversionId { get; set; }
+            [Required(ErrorMessage = "Vui lòng nhập quy cách đơn vị chuyển đổi")]
+            [MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi quá dài")]
             public string ProductUnitConversionName { get; set; }
             public int SecondaryUnitId { get; set; }
             public string FactorExpression { get; set; }

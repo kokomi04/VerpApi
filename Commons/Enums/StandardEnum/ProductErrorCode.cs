@@ -8,6 +8,8 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         ProductNotFound = 1,
         ProductCodeEmpty = 2,
-        ProductCodeAlreadyExisted = 3
+        ProductCodeAlreadyExisted = 3,
+        ProductCateInvalid = 4,
+        ProductTypeInvalid = 5
     }
 }
