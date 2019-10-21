@@ -16,6 +16,5 @@ namespace VErp.Commons.Enums.MasterEnum
         BarcodeConfig = 8,
         Stock = 9, // Kho         
         File = 10
-
     }
 }

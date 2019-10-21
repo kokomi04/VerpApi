@@ -20,5 +20,15 @@ namespace VErp.Services.Master.Service.Users
 
         Task<IList<RolePermissionModel>> GetUserPermission(int userId);
 
+        /// <summary>
+        /// Lấy danh sách user đc quyền truy cập vào moduleId input
+        /// </summary>
+        /// <param name="currentUserId">UserId</param>
+        /// <param name="moduleId">moduleId input</param>
+        /// <param name="keyword">Từ khóa tìm kiếm</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize">Bản ghi trên 1 trang</param>
+        /// <returns></returns>
+        Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId,string keyword, int pageIndex, int pageSize);
     }
 }

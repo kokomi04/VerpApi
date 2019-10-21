@@ -68,7 +68,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     trans.Commit();
 
                     var info = await GetUserFullInfo(user.Data);
-                   
+
                     await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
 
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
@@ -117,7 +117,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> DeleteUser(int userId)
         {
-            var userInfo = await GetUserFullInfo(userId);         
+            var userInfo = await GetUserFullInfo(userId);
 
             var beforeJson = userInfo.JsonSerialize();
 
@@ -141,7 +141,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     trans.Commit();
 
                     await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
-                    
+
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
@@ -246,6 +246,77 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
             return await _roleService.GetRolePermission(user.RoleId.Value);
         }
+
+        /// <summary>
+        /// Lấy danh sách user đc quyền truy cập vào moduleId input
+        /// </summary>
+        /// <param name="currentUserId">Id người dùng hiện tại</param>
+        /// <param name="moduleId">moduleId input</param>
+        /// <param name="keyword">Từ khóa tìm kiếm</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize">Bản ghi trên 1 trang</param>
+        /// <returns></returns>
+        public async Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId, string keyword, int pageIndex, int pageSize)
+        {
+            // user current ? 
+            var currentRoleId = _masterContext.User.FirstOrDefault(q => q.UserId == currentUserId).RoleId ?? 0;
+
+            var rolePermissionList = await _roleService.GetRolePermission(currentRoleId);
+
+            var result = new PageData<UserInfoOutput> { Total=0,List=null};
+
+            if (rolePermissionList.Count > 0)
+            {
+                var checkPermission = rolePermissionList.Any(q => q.ModuleId == moduleId);
+
+                if (checkPermission)
+                {
+                    keyword = (keyword ?? "").Trim();
+
+                    var query = (
+                         from u in _masterContext.User
+                         join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
+                         join em in _masterContext.Employee on u.UserId equals em.UserId
+                         where rp.ModuleId == moduleId
+                         select new UserInfoOutput
+                         {
+                             UserId = u.UserId,
+                             UserName = u.UserName,
+                             UserStatusId = (EnumUserStatus)u.UserStatusId,
+                             RoleId = u.RoleId,
+                             EmployeeCode = em.EmployeeCode,
+                             FullName = em.FullName,
+                             Address = em.Address,
+                             Email = em.Email,
+                             GenderId = (EnumGender?)em.GenderId,
+                             Phone = em.Phone
+                         }
+                     );
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        query = from u in query
+                                where u.UserName.Contains(keyword)
+                                || u.FullName.Contains(keyword)
+                                || u.EmployeeCode.Contains(keyword)
+                                || u.Email.Contains(keyword)
+                                select u;
+                    }
+
+                    var userList = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+                    var totalRecords = await query.CountAsync();
+
+                    result.List = userList;
+                    result.Total = totalRecords;                    
+                }
+                else
+                {
+                    _logger.LogInformation(message: string.Format("{0} - {1}|{2}", "UserService.GetListByModuleId", currentUserId, "Không có quyền thực hiện chức năng này"));                    
+                }
+            }
+            return result;
+        }
+
 
         #region private
         private Enum ValidateUserInfoInput(UserInfoInput req)
@@ -397,7 +468,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                      Employee = em
                  }
              )
-             .FirstOrDefaultAsync();          
+             .FirstOrDefaultAsync();
 
             return user;
         }

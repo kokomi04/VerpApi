@@ -87,5 +87,21 @@ namespace VErpApi.Controllers.System
         {
             return await _userService.DeleteUser(userId);
         }
+
+
+        /// <summary>
+        /// Lấy danh sách user đc quyền truy cập vào moduleId input
+        /// </summary>
+        /// <param name="moduleId"></param>
+        /// <param name="keyword">Từ khóa tìm kiếm</param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns>Danh sách người dùng</returns>
+        [HttpGet]
+        [Route("GetListByModuleId")]
+        public async Task<ApiResponse<PageData<UserInfoOutput>>> GetListByModuleId([FromQuery] int moduleId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size);
+        }
     }
 }
