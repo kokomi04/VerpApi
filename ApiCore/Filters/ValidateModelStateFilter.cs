@@ -37,12 +37,14 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 .Select(e => e.ErrorMessage)
                 .ToArray();
 
-            var json = new JsonErrorResponse
+
+            var invalidModels = new ApiResponse()
             {
-                Messages = validationErrors
+                Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                Message = string.Join(",", validationErrors)
             };
 
-            context.Result = new BadRequestObjectResult(json);
+            context.Result = new BadRequestObjectResult(invalidModels);
         }
 
         private Enum ValidateEnum(dynamic objs)
@@ -70,7 +72,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 else
                 {
                     if (type.IsArray || type.IsGenericType)
-                    {                        
+                    {
                         if (!ValidateEnum(obj).IsSuccess())
                         {
                             return GeneralCode.InvalidParams;

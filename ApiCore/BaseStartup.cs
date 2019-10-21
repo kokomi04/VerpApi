@@ -42,6 +42,11 @@ namespace VErp.Infrastructure.ApiCore
         protected void ConfigureStandardServices(IServiceCollection services, bool isRequireAuthrize)
         {
 
+            services.Configure<ApiBehaviorOptions>(cfg =>
+           {
+               cfg.SuppressModelStateInvalidFilter = true;
+           });
+
             services.Configure<AppSetting>(Configuration);
 
             CreateSerilogLogger(Configuration);

@@ -56,6 +56,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return ProductErrorCode.ProductCodeAlreadyExisted;
             }
 
+            if(!await _stockContext.ProductCate.AnyAsync(c=>c.ParentProductCateId== req.ProductCateId))
+            {
+                return ProductErrorCode.ProductCateInvalid;
+            }
+
+            if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
+            {
+                return ProductErrorCode.ProductTypeInvalid;
+            }
+
             int productId = 0;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
