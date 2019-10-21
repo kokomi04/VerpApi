@@ -15,13 +15,13 @@ namespace VErp.Commons.Enums.MasterEnum
         Unit = 7,
         BarcodeConfig = 8,
         /// <summary>
-        /// Kho
+        /// Kho         
         /// </summary>
         Stock = 9, 
-        File = 10,
+        File = 10,        
         /// <summary>
         /// Vị trí trong Kho         
         /// </summary>
-        Location = 11, 
+        Location = 11,
     }
 }
