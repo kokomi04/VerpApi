@@ -19,6 +19,11 @@ namespace VErp.Services.Stock.Model.Location
         public int StockId { get; set; }
 
         /// <summary>
+        /// Tên kho
+        /// </summary>
+        public string StockName { get; set; }
+
+        /// <summary>
         /// Tên vị trí
         /// </summary>
         public string Name { get; set; }
