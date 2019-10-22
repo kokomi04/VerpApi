@@ -58,7 +58,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 string filePath = GenerateTempFilePath(file.FileName);
 
-                using (var stream = File.Create(Path.Combine(_rootFolder, filePath)))
+                using (var stream = File.Create(_rootFolder + filePath))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -132,9 +132,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
 
-                File.Move(Path.Combine(_rootFolder, fileInfo.FilePath), Path.Combine(_rootFolder, filePath));
+                File.Move(_rootFolder + fileInfo.FilePath, _rootFolder + filePath);
 
-                Directory.Delete(Path.Combine(_rootFolder, fileInfo.FilePath.Substring(fileInfo.FilePath.LastIndexOf('/'))), true);
+                Directory.Delete(_rootFolder + fileInfo.FilePath.Substring(fileInfo.FilePath.LastIndexOf('/')), true);
 
                 var beforeJson = fileInfo.JsonSerialize();
 
@@ -176,16 +176,16 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var ext = Path.GetExtension(uploadFileName);
 
             var fileName = fNameWithoutExtension + ext;
-            var relativeFilePath = Path.Combine(relativeFolder, "/" + fileName);
+            var relativeFilePath = relativeFolder + "/" + fileName;
 
             int i = 1;
-            while (File.Exists(Path.Combine(_rootFolder, relativeFilePath)))
+            while (File.Exists(_rootFolder + relativeFilePath))
             {
                 fileName = fNameWithoutExtension + $"({i++})" + ext;
-                relativeFilePath = Path.Combine(relativeFolder, "/" + fileName);
+                relativeFilePath = relativeFolder + "/" + fileName;
             }
 
-            var obsoluteFolder = Path.Combine(_rootFolder, relativeFolder);
+            var obsoluteFolder = _rootFolder + relativeFolder;
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
 
@@ -195,9 +195,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private string GenerateTempFilePath(string uploadFileName)
         {
             var relativeFolder = $"/_tmp_/{Guid.NewGuid().ToString()}";
-            var relativeFilePath = Path.Combine(relativeFolder, "/" + uploadFileName);
+            var relativeFilePath = relativeFolder + "/" + uploadFileName;
 
-            var obsoluteFolder = Path.Combine(_rootFolder, relativeFolder);
+            var obsoluteFolder = _rootFolder + relativeFolder;
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
 

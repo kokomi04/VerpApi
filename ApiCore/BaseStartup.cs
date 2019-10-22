@@ -153,6 +153,8 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
 
+                options.OperationFilter<SwaggerFileOperationFilter>();
+
                 options.SchemaFilter<DataSchemaFilter>();
 
                 options.OperationFilter<HeaderFilter>();

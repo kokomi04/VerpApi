@@ -80,12 +80,17 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     }
                     else
                     {
-                        foreach (var p in type.GetProperties())
+                        if (type.IsClass && !(obj is Microsoft.AspNetCore.Http.HeaderDictionary))
                         {
-                            var v = p.GetValue(obj);
-                            if (!ValidateEnum(new List<object>() { v }).IsSuccess())
+                            foreach (var p in type.GetProperties())
                             {
-                                return GeneralCode.InvalidParams;
+
+                                var v = p.GetValue(obj);
+
+                                if (!ValidateEnum(new List<object>() { v }).IsSuccess())
+                                {
+                                    return GeneralCode.InvalidParams;
+                                }
                             }
                         }
                     }
