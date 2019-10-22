@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         }
 
         /// <summary>
-        /// Lấy thông tin kho sản phẩm
+        /// Lấy thông tin vị trí
         /// </summary>
         /// <param name="locationId"></param>
         /// <returns></returns>
