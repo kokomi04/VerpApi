@@ -52,7 +52,7 @@ namespace VErp.Commons.Library
                 return existing;
             }
 
-            JObject xptJson = JObject.FromObject(modified);
+            JObject xptJson = JObject.FromObject(modified, JsonSerializer.Create(settings));
             JObject actualJson = JObject.Parse(existing);
 
             var xptProps = xptJson.Properties().ToList();
@@ -88,7 +88,7 @@ namespace VErp.Commons.Library
             {
                 return existing;
             }
-            JToken mod = JToken.FromObject(modified);
+            JToken mod = JToken.FromObject(modified, JsonSerializer.Create(settings));
             JToken org = JToken.Parse(existing);
 
             if (mod is JObject && org is JObject)
