@@ -101,7 +101,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ApiResponse<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromBody] IFormFile file)
+        public async Task<ApiResponse<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
         }        
