@@ -50,7 +50,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     {
                         StockId = req.StockId,
                         Name = req.Name,
-                        Description = req.Description,                        
+                        Description = req.Description,
                         Status = req.Status,
                         CreatedDatetimeUtc = DateTime.Now,
                         UpdatedDatetimeUtc = DateTime.Now,
@@ -118,9 +118,19 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
         public async Task<PageData<LocationOutput>> GetList(int stockId, string keyword, int page, int size)
         {
-            var query = from p in _stockDbContext.Location
-                        select p;
-            if(stockId > 0)
+            var query = from l in _stockDbContext.Location
+                        join s in _stockDbContext.Stock on l.StockId equals s.StockId
+                        select new LocationOutput
+                        {
+                            LocationId = l.LocationId,
+                            StockId = l.StockId,
+                            StockName = s.StockName,
+                            Name = l.Name,
+                            Description = l.Description,
+                            Status = l.Status
+                        };
+
+            if (stockId > 0)
             {
                 query = query.Where(q => q.StockId == stockId);
             }
@@ -142,8 +152,9 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 {
                     LocationId = item.LocationId,
                     StockId = item.StockId,
+                    StockName = item.StockName,
                     Name = item.Name,
-                    Description = item.Description,                    
+                    Description = item.Description,
                     Status = item.Status
 
                 };
@@ -155,14 +166,17 @@ namespace VErp.Services.Stock.Service.Location.Implement
         public async Task<ServiceResult<LocationOutput>> GetLocationInfo(int locationId)
         {
             var locationInfo = await _stockDbContext.Location.FirstOrDefaultAsync(p => p.LocationId == locationId);
+
             if (locationInfo == null)
             {
                 return LocationErrorCode.LocationNotFound;
             }
+            var stockInfo = await _stockDbContext.Stock.FirstOrDefaultAsync(p => p.StockId == locationInfo.StockId);
             return new LocationOutput()
             {
                 LocationId = locationInfo.LocationId,
                 StockId = locationInfo.StockId,
+                StockName = stockInfo.StockName ?? string.Empty,
                 Name = locationInfo.Name,
                 Description = locationInfo.Description,
                 Status = locationInfo.Status
@@ -195,7 +209,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     locationInfo.StockId = req.StockId;
                     locationInfo.Name = req.Name;
-                    locationInfo.Description = req.Description;                                       
+                    locationInfo.Description = req.Description;
                     locationInfo.Status = req.Status;
                     locationInfo.UpdatedDatetimeUtc = DateTime.Now;
 
