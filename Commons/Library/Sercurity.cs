@@ -18,5 +18,6 @@ namespace VErp.Commons.Library
         {
             return PasswordHash.ScryptHashStringVerify(passwordHash, pepper + salt + password);
         }
+       
     }
 }

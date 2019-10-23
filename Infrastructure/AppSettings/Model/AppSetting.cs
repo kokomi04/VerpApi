@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.AppSettings.Model
         public ConfigurationSetting Configuration { get; set; }
         public DatabaseConnectionSetting DatabaseConnections { get; set; }
         public string PasswordPepper { get; set; }
+        public string FileUrlEncryptPepper { get; set; }
         public IdentitySetting Identity { get; set; }
         public LoggingSetting Logging { get; set; }
     }

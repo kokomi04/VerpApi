@@ -23,13 +23,13 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-           
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
             modelBuilder.Entity<File>(entity =>
             {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
                 entity.Property(e => e.FileName)
                     .IsRequired()
                     .HasMaxLength(128)

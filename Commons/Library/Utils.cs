@@ -111,5 +111,10 @@ namespace VErp.Commons.Library
         {
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
         }
+
+        public static long GetUnix(this DateTime dateTime)
+        {
+            return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+        }
     }
 }

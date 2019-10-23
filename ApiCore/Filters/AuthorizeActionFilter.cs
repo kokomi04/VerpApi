@@ -44,7 +44,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            var allowAnonymousFilter = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousFilter);
+            var allowAnonymousFilter = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousFilter || x.Filter is GlobalApiAttribute);
             if (allowAnonymousFilter != null)
             {
                 await next();

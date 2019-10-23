@@ -3,6 +3,9 @@ using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +64,13 @@ namespace VErp.Infrastructure.ApiCore
             })
               .AddHttpContextAccessor()
               .AddOptions()
-              .AddCustomHealthCheck(Configuration);
+              .AddCustomHealthCheck(Configuration)
+              .AddDataProtection()
+              .UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration()
+              {
+                  EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
+                  ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
+              });
 
             services.AddMvc(options =>
             {
@@ -199,7 +208,7 @@ namespace VErp.Infrastructure.ApiCore
                .UseSwaggerUI(c =>
                {
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
-                   
+
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
 
                    c.OAuthClientId("web");
