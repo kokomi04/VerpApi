@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.DataProtection;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -36,6 +36,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<FileService> logger
             , IActivityService activityService
+            , IDataProtectionProvider dataProtectionProvider
         )
         {
             _stockContext = stockContext;
@@ -43,6 +44,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _logger = logger;
             _activityService = activityService;
             _rootFolder = _appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\');
+            _dataProtectionProvider = dataProtectionProvider;
 
         }
 
@@ -68,7 +70,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             var data = $"{fileId}|{fileInfo.FilePath}|{fileInfo.ContentType}|{DateTime.UtcNow.GetUnix()}";
-            return Encrypt(data);
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + Encrypt(data);
         }
 
         public async Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey)
@@ -93,6 +95,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 return (File.OpenRead(filePath), contentType);
             }
             catch (FileNotFoundException ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
+                return FileErrorCode.FileNotFound;
+            }
+            catch (DirectoryNotFoundException ex)
             {
                 _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
                 return FileErrorCode.FileNotFound;

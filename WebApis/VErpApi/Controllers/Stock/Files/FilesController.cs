@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Filters;
+using VErp.Infrastructure.ApiCore.Model;
 using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.Stock.Files
@@ -23,16 +19,25 @@ namespace VErpApi.Controllers.Stock.Files
         }
 
         [GlobalApi]
-        [Route("view")]
-        public async Task<IActionResult> View([FromQuery] long fileId)
+        [HttpGet]
+        [Route("{fileId}/GetFileUrl")]
+        public async Task<ApiResponse<string>> GetFileUrl([FromRoute] long fileId)
         {
-            var r = await _fileService.GetFileStream(fileId);
+            return await _fileService.GetFileUrl(fileId);
+        }
+
+        [AllowAnonymous]
+        [Route("Preview")]
+        [HttpGet]
+        public async Task<IActionResult> Preview([FromQuery] string fileKey)
+        {
+            var r = await _fileService.GetFileStream(fileKey);
             if (!r.Code.IsSuccess())
             {
-                return new ObjectResult(r);
+                return new JsonResult(r);
             }
 
-            return new FileStreamResult(r.Data.file, r.Data.info.ContentType);
+            return new FileStreamResult(r.Data.file, !string.IsNullOrWhiteSpace(r.Data.contentType) ? r.Data.contentType : "application/octet-stream");
         }
     }
 }

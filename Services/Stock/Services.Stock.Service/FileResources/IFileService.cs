@@ -16,5 +16,8 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
         Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
         Task<ServiceResult<(FileEnity info, Stream file)>> GetFileStream(long fileId);
+
+        Task<ServiceResult<string>> GetFileUrl(long fileId);
+        Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey);
     }
 }

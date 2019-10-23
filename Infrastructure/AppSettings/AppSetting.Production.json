@@ -7,5 +7,13 @@
   },
   "Identity": {
     "Endpoint": "http://localhost:8001"
+  },
+  "ServiceUrls": {
+    "ApiService": {
+      "Endpoint": "http://103.21.149.106:8001"
+    },
+    "FileService": {
+      "Endpoint": "http://103.21.149.106:8001"
+    }
   }
 }
