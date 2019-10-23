@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 
 namespace VErp.Services.Stock.Service.FileResources
@@ -17,7 +18,8 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
         Task<ServiceResult<(FileEnity info, Stream file)>> GetFileStream(long fileId);
 
-        Task<ServiceResult<string>> GetFileUrl(long fileId);
+        Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId);
+
         Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey);
     }
 }

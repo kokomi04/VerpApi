@@ -5,6 +5,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.Stock.Files
@@ -21,7 +22,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
-        public async Task<ApiResponse<string>> GetFileUrl([FromRoute] long fileId)
+        public async Task<ApiResponse<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId)
         {
             return await _fileService.GetFileUrl(fileId);
         }

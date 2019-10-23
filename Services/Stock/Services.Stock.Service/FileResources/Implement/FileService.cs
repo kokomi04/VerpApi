@@ -15,6 +15,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
+using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 using StockDBContext = VErp.Infrastructure.EF.StockDB.StockDBContext;
 
@@ -61,7 +62,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public async Task<ServiceResult<string>> GetFileUrl(long fileId)
+        public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
@@ -70,7 +71,13 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             var data = $"{fileId}|{fileInfo.FilePath}|{fileInfo.ContentType}|{DateTime.UtcNow.GetUnix()}";
-            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + Encrypt(data);
+            var fileUrl = _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + Encrypt(data);
+            return new FileToDownloadInfo()
+            {
+                FileName = fileInfo.FileName,
+                FileUrl = fileUrl,
+                FileLength = fileInfo.FileLength
+            };
         }
 
         public async Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey)
