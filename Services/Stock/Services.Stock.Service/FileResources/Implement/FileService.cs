@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -28,12 +29,14 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private readonly string _rootFolder = "";
 
+        private readonly IDataProtectionProvider _dataProtectionProvider;
 
         public FileService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<FileService> logger
             , IActivityService activityService
+            , IDataProtectionProvider dataProtectionProvider
         )
         {
             _stockContext = stockContext;
@@ -41,9 +44,96 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _logger = logger;
             _activityService = activityService;
             _rootFolder = _appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\');
+            _dataProtectionProvider = dataProtectionProvider;
 
         }
 
+        private string Encrypt(string input)
+        {
+            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
+            return protector.Protect(input);
+        }
+
+        private string Decrypt(string cipherText)
+        {
+            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
+            return protector.Unprotect(cipherText);
+        }
+
+
+        public async Task<ServiceResult<string>> GetFileUrl(long fileId)
+        {
+            var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                return FileErrorCode.FileNotFound;
+            }
+
+            var data = $"{fileId}|{fileInfo.FilePath}|{fileInfo.ContentType}|{DateTime.UtcNow.GetUnix()}";
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + Encrypt(data);
+        }
+
+        public async Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey)
+        {
+            await Task.CompletedTask;
+            var rawString = Decrypt(fileKey);
+            var data = rawString.Split('|');
+
+            var fileId = data[0];
+            var relativeFilePath = data[1];
+            var contentType = data[2];
+            var timeUnix = data[3];
+
+            if (long.Parse(timeUnix) < DateTime.UtcNow.AddDays(-1).GetUnix())
+            {
+                return FileErrorCode.FileUrlExpired;
+            }
+
+            var filePath = _rootFolder + relativeFilePath;
+            try
+            {
+                return (File.OpenRead(filePath), contentType);
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
+                return FileErrorCode.FileNotFound;
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
+                return FileErrorCode.FileNotFound;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
+                throw;
+            }
+        }
+
+        public async Task<ServiceResult<(FileEnity info, Stream file)>> GetFileStream(long fileId)
+        {
+            var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                return FileErrorCode.FileNotFound;
+            }
+            var filePath = _rootFolder + fileInfo.FilePath;
+            try
+            {
+                return (fileInfo, File.OpenRead(filePath));
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(long fileId={fileId})");
+                return FileErrorCode.FileNotFound;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, $"GetFileStream(long fileId={fileId})");
+                throw;
+            }
+        }
 
         public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
         {
@@ -77,6 +167,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             FileTypeId = (int)fileTypeId,
                             FilePath = filePath,
                             FileName = fileName,
+                            ContentType = file.ContentType,
+                            FileLength = file.Length,
                             ObjectTypeId = (int)objectTypeId,
                             ObjectId = null,
                             CreatedDatetimeUtc = DateTime.UtcNow,
@@ -114,7 +206,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             try
             {
-                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+                var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
                 if (fileInfo == null)
                 {
                     return FileErrorCode.FileNotFound;
@@ -134,7 +226,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 File.Move(_rootFolder + fileInfo.FilePath, _rootFolder + filePath);
 
-                Directory.Delete(_rootFolder + fileInfo.FilePath.Substring(fileInfo.FilePath.LastIndexOf('/')), true);
+                try
+                {
+                    Directory.Delete(_rootFolder + fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/')), true);
+                }
+                catch (Exception mov)
+                {
+                    _logger.LogError(mov, "Directory.Delete");
+                }
+
 
                 var beforeJson = fileInfo.JsonSerialize();
 

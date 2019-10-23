@@ -15,5 +15,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public int FileStatusId { get; set; }
+        public string ContentType { get; set; }
+        public long? FileLength { get; set; }
     }
 }

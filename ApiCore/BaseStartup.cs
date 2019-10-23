@@ -3,6 +3,9 @@ using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -66,7 +69,13 @@ namespace VErp.Infrastructure.ApiCore
             })
               .AddHttpContextAccessor()
               .AddOptions()
-              .AddCustomHealthCheck(Configuration);
+              .AddCustomHealthCheck(Configuration)
+              .AddDataProtection()
+              .UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration()
+              {
+                  EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
+                  ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
+              });
 
             services.AddMvc(options =>
             {

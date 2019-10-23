@@ -24,16 +24,14 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
-            }
+
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
             modelBuilder.Entity<File>(entity =>
             {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
                 entity.Property(e => e.FileName)
                     .IsRequired()
                     .HasMaxLength(128)
