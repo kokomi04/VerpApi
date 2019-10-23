@@ -76,7 +76,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             {
                 FileName = fileInfo.FileName,
                 FileUrl = fileUrl,
-                FileLength = fileInfo.FileLength
+                FileLength = fileInfo.FileLength??0
             };
         }
 
