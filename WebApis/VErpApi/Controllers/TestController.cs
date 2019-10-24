@@ -26,18 +26,18 @@ namespace VErp.WebApis.VErpApi.Controllers
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
         private readonly IActivityService _activityService;
-        private readonly ExampleSingletonService _exampleSingletonService;
+        private readonly IAsyncRunnerService _asyncRunnerService;
         public TestController(
             MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , IActivityService activityService
-            , ExampleSingletonService exampleSingletonService
+            , IAsyncRunnerService asyncRunnerService
             )
         {
             _masterDBContext = masterDBContext;
             _appSetting = appSetting.Value;
             _activityService = activityService;
-            _exampleSingletonService = exampleSingletonService;
+            _asyncRunnerService = asyncRunnerService;
         }
         [HttpPost]
         [Route("CreateUser")]
@@ -79,7 +79,7 @@ namespace VErp.WebApis.VErpApi.Controllers
         {
             await RunAbc(1);
 
-            _exampleSingletonService.DoSomethingAsync<TestController>(c=>c.RunAbc(1));
+            _asyncRunnerService.RunAsync<TestController>(c=>c.RunAbc(1));
 
             return 0;
         }
