@@ -17,6 +17,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using static VErp.Services.Stock.Model.Product.ProductModel;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -28,6 +29,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IUnitService _unitService;
         private readonly IActivityService _activityService;
         private readonly IFileService _fileService;
+        private readonly IAsyncRunnerService _asyncRunner;
 
         public ProductService(
             StockDBContext stockContext
@@ -36,6 +38,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IUnitService unitService
             , IActivityService activityService
             , IFileService fileService
+            , IAsyncRunnerService asyncRunner
             )
         {
             _stockContext = stockContext;
@@ -44,6 +47,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
             _activityService = activityService;
             _fileService = fileService;
+            _asyncRunner = asyncRunner;
         }
 
         public async Task<ServiceResult<int>> AddProduct(ProductModel req)
@@ -152,7 +156,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             if (req.MainImageFileId.HasValue)
             {
-                _ = _fileService.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value);
+                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value));
             }
 
             return productId;
@@ -316,7 +320,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             if (req.MainImageFileId.HasValue && oldMainImageFileId != req.MainImageFileId)
             {
-                _ = _fileService.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value);
+                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value));
             }
             return GeneralCode.Success;
         }

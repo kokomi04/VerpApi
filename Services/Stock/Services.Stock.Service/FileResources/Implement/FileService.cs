@@ -49,19 +49,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         }
 
-        private string Encrypt(string input)
-        {
-            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
-            return protector.Protect(input);
-        }
-
-        private string Decrypt(string cipherText)
-        {
-            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
-            return protector.Unprotect(cipherText);
-        }
-
-
+      
         public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
@@ -341,5 +329,18 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         {
             { EnumFileType.Image, new[] { ".jpg", ".jpeg", ".bmp", ".png" } }
         };
+
+        private string Encrypt(string input)
+        {
+            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
+            return protector.Protect(input);
+        }
+
+        private string Decrypt(string cipherText)
+        {
+            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
+            return protector.Unprotect(cipherText);
+        }
+
     }
 }
