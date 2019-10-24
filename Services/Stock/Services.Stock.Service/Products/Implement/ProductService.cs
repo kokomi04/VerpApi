@@ -335,6 +335,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (req.MainImageFileId.HasValue && oldMainImageFileId != req.MainImageFileId)
             {
                 _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value));
+                if (oldMainImageFileId.HasValue)
+                {
+                    _asyncRunner.RunAsync<IFileService>(f => f.DeleteFile(oldMainImageFileId.Value));
+                }
             }
             return GeneralCode.Success;
         }

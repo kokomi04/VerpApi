@@ -17,5 +17,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int FileStatusId { get; set; }
         public string ContentType { get; set; }
         public long? FileLength { get; set; }
+        public string SmallThumb { get; set; }
+        public string LargeThumb { get; set; }
     }
 }
