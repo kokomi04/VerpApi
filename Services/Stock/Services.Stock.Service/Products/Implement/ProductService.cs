@@ -135,7 +135,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
-                        ProductId = productInfo.ProductId,                        
+                        ProductId = productInfo.ProductId,
                         ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
@@ -304,7 +304,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
                     {
-                        ProductId = productInfo.ProductId,                        
+                        ProductId = productInfo.ProductId,
                         ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
@@ -398,7 +398,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, int? productTypeId, int? productCateId, int page, int size)
         {
             var query = (
                 from p in _stockContext.Product
@@ -423,10 +423,27 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.UnitId
                 });
 
+            if (productTypeId.HasValue)
+            {
+                query = from p in query
+                        where p.ProductTypeId == productTypeId
+                        select p;
+            }
+
+            if (productCateId.HasValue)
+            {
+                query = from p in query
+                        where p.ProductCateId == productCateId
+                        select p;
+            }
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from c in query
-                        where c.ProductName.Contains(keyword)
+                        where
+                        c.ProductCode.Contains(keyword)
+                        || c.Barcode.Contains(keyword)
+                        || c.ProductName.Contains(keyword)
                         || c.ProductTypeName.Contains(keyword)
                         || c.ProductCateName.Contains(keyword)
                         || c.Specification.Contains(keyword)

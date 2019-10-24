@@ -36,12 +36,14 @@ namespace VErpApi.Controllers.Stock.Products
         /// <param name="keyword"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
+        /// <param name="productTypeId"></param>
+        /// <param name="productCateId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ProductListOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<ProductListOutput>>> Search([FromQuery] string keyword,  [FromQuery] int page, [FromQuery] int size, [FromQuery] int? productTypeId = null, [FromQuery] int? productCateId= null)
         {
-            return await _productService.GetList(keyword, page, size);
+            return await _productService.GetList(keyword, productTypeId, productCateId, page, size);
         }
 
         /// <summary>
