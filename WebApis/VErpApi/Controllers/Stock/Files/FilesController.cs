@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
@@ -22,9 +23,17 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
-        public async Task<ApiResponse<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId)
+        public async Task<ApiResponse<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
         {
-            return await _fileService.GetFileUrl(fileId);
+            return await _fileService.GetFileUrl(fileId, thumb);
+        }
+
+        [GlobalApi]
+        [HttpGet]
+        [Route("GetFilesUrls")]
+        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetFileUrl([FromBody] IList<long> fileIds, EnumThumbnailSize? thumb)
+        {
+            return await _fileService.GetFilesUrls(fileIds, thumb);
         }
 
         [AllowAnonymous]

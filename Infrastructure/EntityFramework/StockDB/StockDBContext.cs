@@ -39,6 +39,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.FilePath)
                     .IsRequired()
                     .HasMaxLength(1024);
+                entity.Property(e => e.LargeThumb).HasMaxLength(1024);
+                entity.Property(e => e.SmallThumb).HasMaxLength(1024);
             });
             modelBuilder.Entity<Location>(entity =>
             {
