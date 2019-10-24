@@ -1,8 +1,10 @@
-﻿using Swashbuckle.AspNetCore.Swagger;
+﻿using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace VErp.Infrastructure.ApiCore.Filters
@@ -14,7 +16,6 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             var fileParams = context.MethodInfo.GetParameters()
                 .Where(p => p.ParameterType.FullName.Equals(typeof(Microsoft.AspNetCore.Http.IFormFile).FullName));
-
             var isUploadFile = fileParams.Any() && fileParams.Count() == 1;
             if (operation.Parameters != null)
             {
@@ -39,25 +40,34 @@ namespace VErp.Infrastructure.ApiCore.Filters
                             if (p1.In != "formData")
                             {
                                 lst.Add(p1);
-
                             }
                         }
+                        else
+                        {
+                            lst.Add(p1);
+                        }
+                    }
+                    else
+                    {
+                        lst.Add(p);
                     }
                 }
 
                 if (isUploadFile)
                 {
-                    lst.Add(new NonBodyParameter
+                    foreach (var f in fileParams)
                     {
-                        Name = fileParams.First().Name,
-                        Required = true,
-                        Type = "file",
-                        In = "formData"
-                    });
+                        lst.Add(new NonBodyParameter
+                        {
+                            Name = f.Name,
+                            Required = true,
+                            Type = "file",
+                            In = "formData"
+                        });
+                    }
                 }
                 operation.Parameters = lst;
             }
-
         }
     }
 }
