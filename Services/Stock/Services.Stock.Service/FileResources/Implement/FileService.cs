@@ -239,6 +239,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         fileInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                         fileInfo.ObjectId = objectId;
+                        fileInfo.FilePath = filePath;
                         fileInfo.FileStatusId = (int)EnumFileStatus.Ok;
 
                         await _stockContext.SaveChangesAsync();
