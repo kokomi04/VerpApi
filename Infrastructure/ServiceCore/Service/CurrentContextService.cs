@@ -8,9 +8,48 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 
-namespace VErp.Services.Master.Service.Activity.Implement
+namespace VErp.Infrastructure.ServiceCore.Service
 {
-    public class CurrentContextService : ICurrentContextService
+    public interface ICurrentContextFactory
+    {
+        void SetCurrentContext(ICurrentContextService currentContext);
+        ICurrentContextService GetCurrentContext();
+    }
+
+    public class CurrentContextFactory : ICurrentContextFactory
+    {
+        private ICurrentContextService _currentContext;
+        private bool _used = false;
+
+        public CurrentContextFactory(HttpCurrentContextService currentContext)
+        {
+            _currentContext = currentContext;
+        }
+
+        public void SetCurrentContext(ICurrentContextService currentContext)
+        {            
+            _currentContext = currentContext;
+        }
+
+        public ICurrentContextService GetCurrentContext()
+        {
+            if (_used || _currentContext == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            _used = true;
+            return _currentContext;
+        }       
+    }
+
+    public interface ICurrentContextService
+    {
+        int UserId { get; }
+        EnumAction Action { get; }
+    }
+
+    public class HttpCurrentContextService : ICurrentContextService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -19,9 +58,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private int _userId = 0;
         private EnumAction? _action;
 
-        public CurrentContextService(
+        public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
-            , ILogger<ActivityService> logger
+            , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
             )
         {
@@ -73,6 +112,20 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 return _action.Value;
             }
         }
+
+    }
+
+    public class ScopeCurrentContextService : ICurrentContextService
+    {
+        public ScopeCurrentContextService(int userId, EnumAction action)
+        {
+            UserId = userId;
+            Action = action;
+        }
+
+        public int UserId { get; } = 0;
+
+        public EnumAction Action { get; }
 
     }
 }
