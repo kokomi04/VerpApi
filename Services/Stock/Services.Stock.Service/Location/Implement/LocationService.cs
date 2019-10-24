@@ -64,7 +64,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     var objLog = GetLocationInfoForLog(locationInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Location, locationInfo.StockId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", null, objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.StockId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", null, objLog);
 
                     return locationInfo.StockId;
                 }
@@ -103,7 +103,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityService.CreateActivity(EnumObjectType.Location, locationInfo.StockId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.StockId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }
@@ -218,7 +218,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     var objLog = GetLocationInfoForLog(locationInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", originalObj.JsonSerialize(), objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", originalObj.JsonSerialize(), objLog);
 
                     return GeneralCode.Success;
                 }

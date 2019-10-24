@@ -40,10 +40,10 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public void CreateActivityAsync(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
         {
-            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivity(objectTypeId, objectId, message, oldJsonObject, newObject));
+            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(objectTypeId, objectId, message, oldJsonObject, newObject));
         }
 
-        public async Task<Enum> CreateActivity(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
+        public async Task<Enum> CreateActivityTask(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
         {
             var userId = _currentContextService.UserId;
             var actionId = (int)_currentContextService.Action;

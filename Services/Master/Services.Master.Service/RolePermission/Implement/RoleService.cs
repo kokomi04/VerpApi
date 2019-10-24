@@ -61,7 +61,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.Role.AddAsync(roleInfo);
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", null, roleInfo);
+            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", null, roleInfo);
 
             return roleInfo.RoleId;
         }
@@ -143,7 +143,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", dataBefore, roleInfo);
+            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", dataBefore, roleInfo);
 
             return GeneralCode.Success;
         }
@@ -163,7 +163,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             roleInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize(), null);
+            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize(), null);
 
             return GeneralCode.Success;
         }
@@ -209,7 +209,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 trans.Commit();
 
-                await _activityService.CreateActivity(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
+                _activityService.CreateActivityAsync(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
 
                 return GeneralCode.Success;
             }

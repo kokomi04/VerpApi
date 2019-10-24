@@ -61,7 +61,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _masterContext.Unit.AddAsync(unit);
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.Unit, unit.UnitId, $"Thêm đơn vị tính {data.UnitName}", null, data);
+            _activityService.CreateActivityAsync(EnumObjectType.Unit, unit.UnitId, $"Thêm đơn vị tính {data.UnitName}", null, data);
 
             return unit.UnitId;
         }
@@ -132,7 +132,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", beforeChange, data);
+            _activityService.CreateActivityAsync(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", beforeChange, data);
             return GeneralCode.Success;
         }
 
@@ -146,7 +146,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             var beforeChange = JsonConvert.SerializeObject(unitInfo);
             unitInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
-            await _activityService.CreateActivity(EnumObjectType.Unit, unitId, $"Xóa đơn vị tính {unitInfo.UnitName}", beforeChange, null);
+            _activityService.CreateActivityAsync(EnumObjectType.Unit, unitId, $"Xóa đơn vị tính {unitInfo.UnitName}", beforeChange, null);
             return GeneralCode.Success;
         }
 

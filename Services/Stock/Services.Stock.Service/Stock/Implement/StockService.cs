@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     var objLog = GetStockForLog(stockInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", null, objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", null, objLog);
 
                     return stockInfo.StockId;
                 }
@@ -141,7 +141,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     var objLog = GetStockForLog(stockInfo);
 
-                    await _activityService.CreateActivity(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", originalObj.JsonSerialize(), objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", originalObj.JsonSerialize(), objLog);
 
                     return GeneralCode.Success;
                 }
@@ -181,7 +181,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityService.CreateActivity(EnumObjectType.Product, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }

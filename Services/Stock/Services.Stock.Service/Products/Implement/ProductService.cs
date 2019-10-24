@@ -153,7 +153,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
 
-                    await _activityService.CreateActivity(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", null, objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", null, objLog);
 
                     productId = productInfo.ProductId;
                 }
@@ -322,7 +322,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
 
-                    await _activityService.CreateActivity(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", beforeData.JsonSerialize(), objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", beforeData.JsonSerialize(), objLog);
                 }
                 catch (Exception ex)
                 {
@@ -385,7 +385,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityService.CreateActivity(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }

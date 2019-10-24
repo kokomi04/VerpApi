@@ -176,7 +176,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         await _stockContext.SaveChangesAsync();
                         trans.Commit();
 
-                        await _activityService.CreateActivity(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", null, fileRes);
+                        _activityService.CreateActivityAsync(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", null, fileRes);
 
                         return fileRes.FileId;
                     }
@@ -245,7 +245,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         await _stockContext.SaveChangesAsync();
                         trans.Commit();
 
-                        await _activityService.CreateActivity(EnumObjectType.File, objectId, $"Cập nhật file {objectTypeId}", beforeJson, fileInfo);
+                        _activityService.CreateActivityAsync(EnumObjectType.File, objectId, $"Cập nhật file {objectTypeId}", beforeJson, fileInfo);
 
                         return GeneralCode.Success;
                     }

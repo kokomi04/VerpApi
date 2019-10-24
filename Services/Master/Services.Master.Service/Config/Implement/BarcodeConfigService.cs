@@ -65,7 +65,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", null, model);
+            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", null, model);
 
             return model.BarcodeConfigId;
         }
@@ -84,7 +84,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", dataBefore, model);
+            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", dataBefore, model);
             return GeneralCode.Success;
         }
 
@@ -178,7 +178,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            await _activityService.CreateActivity(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", dataBefore, model);
+            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", dataBefore, model);
 
             return GeneralCode.Success;
         }

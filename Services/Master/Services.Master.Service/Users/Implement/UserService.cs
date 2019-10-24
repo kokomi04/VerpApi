@@ -69,7 +69,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     var info = await GetUserFullInfo(user.Data);
 
-                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
 
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
 
@@ -140,7 +140,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
-                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
 
                     return GeneralCode.Success;
                 }
@@ -223,7 +223,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     var newUserInfo = await GetUserFullInfo(userId);
 
-                    await _activityService.CreateActivity(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize(), newUserInfo);
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize(), newUserInfo);
 
                     return GeneralCode.Success;
                 }
