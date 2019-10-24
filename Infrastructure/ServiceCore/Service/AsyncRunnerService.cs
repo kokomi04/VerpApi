@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -14,22 +15,37 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public class AsyncRunnerService: IAsyncRunnerService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        public AsyncRunnerService(IServiceScopeFactory serviceScopeFactory)
+        private readonly ICurrentContextService _currentContext;
+        private readonly ILogger _logger;
+        public AsyncRunnerService(IServiceScopeFactory serviceScopeFactory, ICurrentContextService currentContext, ILogger<AsyncRunnerService> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            _currentContext = currentContext;
+            _logger = logger;
         }
 
         public void RunAsync<T>(Expression<Func<T, Task>> action)
         {
+            var userId = _currentContext.UserId;
+            var actionId = _currentContext.Action;
             Task.Run(async () =>
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
+                try
                 {
-                    var obj = scope.ServiceProvider.GetService<T>();
-                    var fn = action.Compile();
-                    await fn.Invoke(obj);
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
+                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId));
+                        var obj = scope.ServiceProvider.GetService<T>();
+                        var fn = action.Compile();
+                        await fn.Invoke(obj);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "RunAsync");
+                }
+                
             });
             
         }

@@ -201,7 +201,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             try
             {
-                var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
+                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
                 if (fileInfo == null)
                 {
                     return FileErrorCode.FileNotFound;

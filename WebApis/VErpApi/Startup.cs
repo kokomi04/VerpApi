@@ -66,10 +66,11 @@ namespace VErp.WebApis.VErpApi
         }
         private void ConfigureBussinessService(IServiceCollection services)
         {
+            services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
-            services.AddScopedServices(StockServiceAssembly.Assembly);
-            services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
+            services.AddScopedServices(StockServiceAssembly.Assembly);            
+            services.AddServiceCoreDependency();
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {            
