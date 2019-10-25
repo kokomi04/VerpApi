@@ -22,7 +22,7 @@ namespace VErp.Services.Stock.Service.FileResources
 
         Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
 
-        Task<ServiceResult<IList<FileThumbnailInfo>>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb);
+        Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
 
         Task<Enum> GenerateThumbnail(long fileId);
 

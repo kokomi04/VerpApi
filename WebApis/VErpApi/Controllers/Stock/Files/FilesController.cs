@@ -20,6 +20,12 @@ namespace VErpApi.Controllers.Stock.Files
             _fileService = fileService;
         }
 
+        /// <summary>
+        /// Lấy thông tin file để download hoặc preview
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="thumb">EnumThumbnailSize: loại thumbnail sẽ trả về</param>
+        /// <returns></returns>
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
@@ -28,12 +34,18 @@ namespace VErpApi.Controllers.Stock.Files
             return await _fileService.GetFileUrl(fileId, thumb);
         }
 
+        /// <summary>
+        /// Lấy danh sách thumbnail
+        /// </summary>
+        /// <param name="fileIds"></param>
+        /// <param name="thumb">EnumThumbnailSize: loại thumbnail sẽ trả về</param>
+        /// <returns></returns>
         [GlobalApi]
         [HttpGet]
-        [Route("GetFilesUrls")]
-        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetFileUrl([FromBody] IList<long> fileIds, EnumThumbnailSize? thumb)
+        [Route("GetThumbnails")]
+        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] IList<long> fileIds, EnumThumbnailSize? thumb)
         {
-            return await _fileService.GetFilesUrls(fileIds, thumb);
+            return await _fileService.GetThumbnails(fileIds, thumb);
         }
 
         [AllowAnonymous]
