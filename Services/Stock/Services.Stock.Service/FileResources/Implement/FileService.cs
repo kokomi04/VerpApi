@@ -67,7 +67,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return GetFileUrl(fileInfo, thumb, true);
         }
 
-        public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb)
+        public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
             if (fileIds == null || fileIds.Count == 0)
             {
