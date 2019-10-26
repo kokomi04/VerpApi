@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.DataProtection;
+﻿using ImageMagick;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -264,34 +265,26 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var smallThumb = relDirectory + "/" + fileName + "_small.jpg";
                 var largeThumb = relDirectory + "/" + fileName + "_large.jpg";
 
-                var physicalFolder= GetPhysicalFilePath(relDirectory);
+                var physicalFolder = GetPhysicalFilePath(relDirectory);
                 if (!Directory.Exists(physicalFolder))
                 {
                     Directory.CreateDirectory(physicalFolder);
                 }
 
-                var sourceStream = new FileStream(filePath, FileMode.Open);
+                const int quality = 75;
 
-                using (var m = new MemoryStream())
+                using (var image = new MagickImage(filePath))
                 {
-                    await sourceStream.CopyToAsync(m);
+                    image.Resize((int)(image.Width * 500.0 / image.Height), 500);
+                    image.Strip();
+                    image.Quality = quality;
+                    image.Write(GetPhysicalFilePath(largeThumb));
 
-                    sourceStream.Close();
-                    sourceStream.Dispose();
+                    image.Resize((int)(image.Width * 100.0 / image.Height), 100);
+                    image.Strip();
 
-                    var thumbnailCreator = new ThumbnailSharp.ThumbnailCreator();
-
-                    var streamSmalls = thumbnailCreator.CreateThumbnailBytes(100, m, ThumbnailSharp.Format.Jpeg);
-                    await WriteBytesToFile(streamSmalls, GetPhysicalFilePath(smallThumb));
-
-                    var streamLarges = thumbnailCreator.CreateThumbnailBytes(500, m, ThumbnailSharp.Format.Jpeg);
-                    await WriteBytesToFile(streamLarges, GetPhysicalFilePath(largeThumb));
-
+                    image.Write(GetPhysicalFilePath(smallThumb));
                 }
-
-                sourceStream.Close();
-                sourceStream.Dispose();
-
 
                 fileInfo.SmallThumb = smallThumb;
                 fileInfo.LargeThumb = largeThumb;
@@ -307,13 +300,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
         #region private
-        private async Task WriteBytesToFile(byte[] bytes, string file)
-        {
-            var fileStream = new FileStream(file, FileMode.Create);
-            await fileStream.WriteAsync(bytes, 0, bytes.Length);
-            fileStream.Close();
-            fileStream.Dispose();
-        }
 
         public async Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
         {
@@ -343,7 +329,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 try
                 {
                     var tmpFolder = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
-                    Directory.Delete(GetPhysicalFilePath(tmpFolder), true);                    
+                    Directory.Delete(GetPhysicalFilePath(tmpFolder), true);
                 }
                 catch (Exception mov)
                 {
