@@ -113,9 +113,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId,
                         AmountWarningMin = req.StockInfo?.AmountWarningMin,
                         AmountWarningMax = req.StockInfo?.AmountWarningMax,
-                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,
-                        DescriptionToStock = req.StockInfo?.DescriptionToStock,
+                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,                        
                         TimeWarningAmount = req.StockInfo?.TimeWarningAmount,
+                        DescriptionToStock = req.StockInfo?.DescriptionToStock,
+                        ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId,
+                        ExpireTimeAmount = req.StockInfo?.ExpireTimeAmount,
                         IsDeleted = false
                     };
 
@@ -212,6 +214,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     AmountWarningMax = productStockInfo.AmountWarningMax,
                     TimeWarningTimeTypeId = (EnumTimeType?)productStockInfo.TimeWarningTimeTypeId,
                     TimeWarningAmount = productStockInfo.TimeWarningAmount,
+                    ExpireTimeTypeId = (EnumTimeType?)productStockInfo.ExpireTimeTypeId,
+                    ExpireTimeAmount = productStockInfo.ExpireTimeAmount,
                     DescriptionToStock = productStockInfo.DescriptionToStock,
                     StockIds = stockValidations?.Select(s => s.StockId).ToList(),
                     UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
@@ -285,9 +289,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productStockInfo.StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId;
                     productStockInfo.AmountWarningMin = req.StockInfo?.AmountWarningMin;
                     productStockInfo.AmountWarningMax = req.StockInfo?.AmountWarningMax;
-                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;
-                    productStockInfo.DescriptionToStock = req.StockInfo?.DescriptionToStock;
+                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;                    
                     productStockInfo.TimeWarningAmount = req.StockInfo?.TimeWarningAmount;
+                    productStockInfo.DescriptionToStock = req.StockInfo?.DescriptionToStock;
+                    productStockInfo.ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId;
+                    productStockInfo.ExpireTimeAmount = req.StockInfo?.ExpireTimeAmount;
 
                     var lstStockValidations = req.StockInfo?.StockIds?.Select(s => new ProductStockValidation()
                     {

@@ -13,6 +13,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? TimeWarningTimeTypeId { get; set; }
         public string DescriptionToStock { get; set; }
         public bool IsDeleted { get; set; }
+        public int? ExpireTimeTypeId { get; set; }
+        public double? ExpireTimeAmount { get; set; }
 
         public virtual Product Product { get; set; }
     }
