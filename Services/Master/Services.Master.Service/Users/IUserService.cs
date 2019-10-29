@@ -15,6 +15,7 @@ namespace VErp.Services.Master.Service.Users
         Task<ServiceResult<UserInfoOutput>> GetInfo(int userId);
         Task<ServiceResult<int>> CreateUser(UserInfoInput req);
         Task<Enum> UpdateUser(int userId, UserInfoInput req);
+        Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<Enum> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size);
 

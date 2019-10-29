@@ -237,6 +237,33 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
         }
 
+        public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
+        {
+            req.NewPassword = req.NewPassword ?? "";
+            if (req.NewPassword.Length<4)
+            {
+                return UserErrorCode.PasswordTooShort;
+            }
+
+            var userLoginInfo = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (userLoginInfo == null)
+            {
+                return UserErrorCode.UserNotFound;
+            }
+
+            if(!Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, userLoginInfo.PasswordSalt, req.OldPassword, userLoginInfo.PasswordHash))
+            {
+                return UserErrorCode.OldPasswordIncorrect;
+            }
+
+            var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.NewPassword);
+            userLoginInfo.PasswordSalt = salt;
+            userLoginInfo.PasswordHash = passwordHash;
+            await _masterContext.SaveChangesAsync();
+
+            return GeneralCode.Success;
+        }
+
         public async Task<IList<RolePermissionModel>> GetUserPermission(int userId)
         {
             var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);

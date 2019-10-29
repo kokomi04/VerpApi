@@ -9,6 +9,8 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         EmptyUserName = 1,
         UserNameExisted = 2,
-        UserNotFound = 3
+        UserNotFound = 3,
+        PasswordTooShort = 4,
+        OldPasswordIncorrect = 5
     }
 }

@@ -72,5 +72,18 @@ namespace VErpApi.Controllers.System
         {
             return (await _userService.GetUserPermission(UserId)).ToList();
         }
+
+
+        /// <summary>
+        /// Đổi mật khẩu
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [Route("changePassword")]
+        [HttpPut]
+        public async Task<ApiResponse> ChangePassword([FromBody] UserChangepasswordInput req)
+        {
+            return await _userService.ChangeUserPassword(UserId, req);
+        }
     }
 }
