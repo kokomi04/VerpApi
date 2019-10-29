@@ -21,4 +21,10 @@ namespace VErp.Services.Master.Model.Users
         public EnumUserStatus UserStatusId { get; set; }
         public int? RoleId { get; set; }
     }
+
+    public class UserChangepasswordInput
+    {
+        public string OldPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
 }
