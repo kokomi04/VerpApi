@@ -20,5 +20,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
+
+        public virtual Inventory Inventory { get; set; }
+        public virtual Package Package { get; set; }
+        public virtual Product Product { get; set; }
     }
 }

@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class Inventory
     {
+        public Inventory()
+        {
+            InventoryDetail = new HashSet<InventoryDetail>();
+        }
+
         public long InventoryId { get; set; }
         public string InventoryCode { get; set; }
         public int InventoryTypeId { get; set; }
@@ -20,5 +25,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+
+        public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
     }
 }
