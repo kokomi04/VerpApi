@@ -78,39 +78,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
             });
-            modelBuilder.Entity<Invoice>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-                entity.Property(e => e.IssuedDate).HasDefaultValueSql("(getdate())");
-                entity.Property(e => e.ReferenceCode)
-                    .HasMaxLength(64)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("('')");
-                entity.Property(e => e.SubTotal)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasDefaultValueSql("((0))");
-                entity.Property(e => e.TaxAmount)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasDefaultValueSql("((0))");
-                entity.Property(e => e.TaxRate)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasDefaultValueSql("((0))");
-                entity.Property(e => e.Total)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasDefaultValueSql("((0))");
-                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-            });
-            modelBuilder.Entity<InvoiceDetails>(entity =>
-            {
-                entity.Property(e => e.AltUnit).HasMaxLength(64);
-                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-                entity.Property(e => e.Quantity).HasDefaultValueSql("((0))");
-                entity.Property(e => e.Unit).HasMaxLength(64);
-                entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18, 2)")
-                    .HasDefaultValueSql("((0))");
-                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-            });
+           
             modelBuilder.Entity<Location>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
