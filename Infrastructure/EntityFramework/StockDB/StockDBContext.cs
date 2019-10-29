@@ -62,6 +62,54 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.HasOne(d => d.Inventory)
+                    .WithMany(p => p.InventoryDetail)
+                    .HasForeignKey(d => d.InventoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetail_Inventory");
+                entity.HasOne(d => d.Package)
+                    .WithMany(p => p.InventoryDetail)
+                    .HasForeignKey(d => d.PackageId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetail_Package");
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.InventoryDetail)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetail_Product");
+            });
+            modelBuilder.Entity<Invoice>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.IssuedDate).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.ReferenceCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("('')");
+                entity.Property(e => e.SubTotal)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.TaxAmount)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.TaxRate)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.Total)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+            modelBuilder.Entity<InvoiceDetails>(entity =>
+            {
+                entity.Property(e => e.AltUnit).HasMaxLength(64);
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Quantity).HasDefaultValueSql("((0))");
+                entity.Property(e => e.Unit).HasMaxLength(64);
+                entity.Property(e => e.UnitPrice)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
             modelBuilder.Entity<Location>(entity =>
             {
@@ -80,6 +128,15 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
                     .HasMaxLength(128);
+                entity.HasOne(d => d.Location)
+                    .WithMany(p => p.Package)
+                    .HasForeignKey(d => d.LocationId)
+                    .HasConstraintName("FK_Package_Location");
+                entity.HasOne(d => d.Stock)
+                    .WithMany(p => p.Package)
+                    .HasForeignKey(d => d.StockId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Package_Stock");
             });
             modelBuilder.Entity<Product>(entity =>
             {
