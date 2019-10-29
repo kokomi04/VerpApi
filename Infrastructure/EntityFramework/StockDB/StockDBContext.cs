@@ -13,7 +13,10 @@ namespace VErp.Infrastructure.EF.StockDB
         {
         }
         public virtual DbSet<File> File { get; set; }
+        public virtual DbSet<Inventory> Inventory { get; set; }
+        public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
         public virtual DbSet<Location> Location { get; set; }
+        public virtual DbSet<Package> Package { get; set; }
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -42,6 +45,24 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.LargeThumb).HasMaxLength(1024);
                 entity.Property(e => e.SmallThumb).HasMaxLength(1024);
             });
+            modelBuilder.Entity<Inventory>(entity =>
+            {
+                entity.Property(e => e.Content).HasMaxLength(512);
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Department).HasMaxLength(128);
+                entity.Property(e => e.InventoryCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.Shipper).HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+            modelBuilder.Entity<InventoryDetail>(entity =>
+            {
+                entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.RefObjectCode).HasMaxLength(128);
+                entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+            });
             modelBuilder.Entity<Location>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -53,6 +74,12 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasDefaultValueSql("(N'')");
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+            modelBuilder.Entity<Package>(entity =>
+            {
+                entity.Property(e => e.PackageCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Product>(entity =>
             {
