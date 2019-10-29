@@ -38,8 +38,16 @@ namespace VErp.Services.Stock.Model.Product
             public EnumStockOutputRule? StockOutputRuleId { get; set; }
             public long? AmountWarningMin { get; set; }
             public long? AmountWarningMax { get; set; }
+            /// <summary>
+            /// Thời gian cảnh báo lưu kho
+            /// </summary>
             public double? TimeWarningAmount { get; set; }
             public EnumTimeType? TimeWarningTimeTypeId { get; set; }
+            /// <summary>
+            /// Hạn sử dụng
+            /// </summary>
+            public double? ExpireTimeAmount { get; set; }
+            public EnumTimeType? ExpireTimeTypeId { get; set; }
             public string DescriptionToStock { get; set; }
 
             public IList<int> StockIds { get; set; }
