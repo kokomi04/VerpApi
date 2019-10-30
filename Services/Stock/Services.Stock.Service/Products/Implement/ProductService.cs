@@ -1,23 +1,22 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Product;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
-using static VErp.Services.Stock.Model.Product.ProductModel;
-using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Service.Activity;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.FileResources;
+using static VErp.Services.Stock.Model.Product.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -408,7 +407,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int? productTypeId, int? productCateId, int page, int size)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size)
         {
             var query = (
                 from p in _stockContext.Product
@@ -433,17 +432,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.UnitId
                 });
 
-            if (productTypeId.HasValue)
+            if (productTypeIds != null && productTypeIds.Length > 0)
             {
+                var types = productTypeIds.Select(t => (int?)t);
                 query = from p in query
-                        where p.ProductTypeId == productTypeId
+                        where types.Contains(p.ProductTypeId)
                         select p;
             }
 
-            if (productCateId.HasValue)
+            if (productCateIds != null && productCateIds.Length > 0)
             {
                 query = from p in query
-                        where p.ProductCateId == productCateId
+                        where productCateIds.Contains(p.ProductCateId)
                         select p;
             }
 
