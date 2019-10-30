@@ -55,6 +55,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(128);
                 entity.Property(e => e.Shipper).HasMaxLength(128);
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.HasOne(d => d.Stock)
+                    .WithMany(p => p.Inventory)
+                    .HasForeignKey(d => d.StockId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Inventory_Stock");
             });
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
@@ -78,7 +83,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
             });
-           
             modelBuilder.Entity<Location>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -100,11 +104,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.LocationId)
                     .HasConstraintName("FK_Package_Location");
-                entity.HasOne(d => d.Stock)
-                    .WithMany(p => p.Package)
-                    .HasForeignKey(d => d.StockId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Package_Stock");
             });
             modelBuilder.Entity<Product>(entity =>
             {
