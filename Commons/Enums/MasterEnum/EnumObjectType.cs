@@ -23,5 +23,20 @@ namespace VErp.Commons.Enums.MasterEnum
         /// Vị trí trong Kho         
         /// </summary>
         Location = 11,
+
+        /// <summary>
+        /// Phiếu nhập/xuất kho
+        /// </summary>
+        Inventory = 12,
+
+        /// <summary>
+        /// Phiếu nhập/xuất kho chi tiết
+        /// </summary>
+        InventoryDetail = 13,
+
+        /// <summary>
+        /// Gói / kiện
+        /// </summary>
+        Package = 14
     }
 }

@@ -27,7 +27,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-
+            if (optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
+            }
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -63,7 +66,7 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
-                entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
+                //entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
