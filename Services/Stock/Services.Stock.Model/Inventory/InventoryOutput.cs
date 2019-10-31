@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using VErp.Services.Stock.Model.Stock;
 
-namespace VErp.Infrastructure.EF.StockDB
+namespace VErp.Services.Stock.Model.Inventory
 {
-    public partial class Inventory
+    public class InventoryOutput
     {
-        public Inventory()
+        public InventoryOutput()
         {
-            InventoryDetail = new HashSet<InventoryDetail>();
+            InventoryDetailOutputList = new List<InventoryDetailOutput>(50);
         }
 
         public long InventoryId { get; set; }
@@ -23,11 +24,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public long? InvoiceFileId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }
+        //public DateTime CreatedDatetimeUtc { get; set; }
+        //public DateTime UpdatedDatetimeUtc { get; set; }
+        //public bool IsDeleted { get; set; }
 
-        public virtual Stock Stock { get; set; }
-        public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
+        public StockOutput StockOutput { get; set; }
+        public List<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
     }
 }

@@ -27,7 +27,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-
+            if (optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
+            }
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -55,10 +58,15 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(128);
                 entity.Property(e => e.Shipper).HasMaxLength(128);
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.HasOne(d => d.Stock)
+                    .WithMany(p => p.Inventory)
+                    .HasForeignKey(d => d.StockId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Inventory_Stock");
             });
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
-                entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
+                //entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
@@ -78,7 +86,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
             });
-           
             modelBuilder.Entity<Location>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -100,11 +107,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.LocationId)
                     .HasConstraintName("FK_Package_Location");
-                entity.HasOne(d => d.Stock)
-                    .WithMany(p => p.Package)
-                    .HasForeignKey(d => d.StockId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Package_Stock");
             });
             modelBuilder.Entity<Product>(entity =>
             {

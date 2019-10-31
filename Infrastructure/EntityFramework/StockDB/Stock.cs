@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         public Stock()
         {
-            Package = new HashSet<Package>();
+            Inventory = new HashSet<Inventory>();
         }
 
         public int StockId { get; set; }
@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
 
-        public virtual ICollection<Package> Package { get; set; }
+        
+        public virtual ICollection<Inventory> Inventory { get; set; }
     }
 }
