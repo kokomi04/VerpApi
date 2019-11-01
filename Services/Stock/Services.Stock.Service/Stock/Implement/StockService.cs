@@ -210,7 +210,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
-            var pageData = new List<StockOutput>();
+            var pagedData = new List<StockOutput>();
             foreach (var item in lstData)
             {
                 var stockInfo = new StockOutput()
@@ -224,11 +224,45 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Status = item.Status
 
                 };
-                pageData.Add(stockInfo);
+                pagedData.Add(stockInfo);
+            }
+            return (pagedData, total);
+        }
+
+        public async Task<PageData<StockOutput>> GetListByUserId(int userId,string keyword, int page, int size)
+        {
+            var query = from p in _stockContext.Stock
+                        where p.StockKeeperId == userId
+                        select p;
+
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.StockName.Contains(keyword)
+                        select q;
             }
 
+            var total = await query.CountAsync();
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
-            return (pageData, total);
+            var pagedData = new List<StockOutput>();
+            foreach (var item in lstData)
+            {
+                var stockInfo = new StockOutput()
+                {
+                    StockId = item.StockId,
+                    StockName = item.StockName,
+                    Description = item.Description,
+                    StockKeeperId = item.StockKeeperId,
+                    StockKeeperName = item.StockKeeperName,
+                    Type = item.Type,
+                    Status = item.Status
+
+                };
+                pagedData.Add(stockInfo);
+            }
+            return (pagedData, total);
         }
 
         public async Task<IList<SimpleStockInfo>> GetSimpleList()
