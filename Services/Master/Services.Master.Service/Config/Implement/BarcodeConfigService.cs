@@ -103,9 +103,16 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page, int size)
         {
+            var query = (from c in _masterContext.BarcodeConfig select c);
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from c in query
+                        where c.Name.Contains(keyword)
+                        select c;
+            }
+
             var lst = (
-                from c in _masterContext.BarcodeConfig
-                where c.Name.Contains(keyword)
+                from c in query
                 select new BarcodeConfigListOutput()
                 {
                     BarcodeConfigId = c.BarcodeConfigId,
