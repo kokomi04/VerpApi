@@ -53,6 +53,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var model = new BarcodeConfig()
             {
+                Name = data.Name.Trim(),
                 BarcodeStandardId = (int)data.BarcodeStandardId,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -172,7 +173,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             var dataBefore = model.JsonSerialize();
-
+            model.Name = data.Name;
             model.IsActived = data.IsActived;
             model.ConfigurationJson = config;
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
