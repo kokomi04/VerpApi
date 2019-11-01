@@ -40,6 +40,21 @@ namespace VErpApi.Controllers.Stock.Stocks
         }
 
         /// <summary>
+        /// Lấy danh sách kho mà người dùng đc phân quyền quản lý
+        /// </summary>
+        /// <param name="keyword">Từ khoá tìm kiếm</param>
+        /// <param name="page">Trang</param>
+        /// <param name="size">Sổ bản ghi 1 trang</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetListByUserId")]
+        public async Task<ApiResponse<PageData<StockOutput>>> GetListByUserId([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            var currentUserId = UserId;
+            return await _stockService.GetListByUserId(currentUserId, keyword, page, size);
+        }
+
+        /// <summary>
         /// Lấy danh sách kho
         /// </summary>
         /// <returns></returns>

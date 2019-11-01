@@ -18,6 +18,8 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<StockOutput>> GetList(string keyword, int page, int size);
 
+        Task<PageData<StockOutput>> GetListByUserId(int userId,string keyword, int page, int size);
+
         Task<IList<SimpleStockInfo>> GetSimpleList();
 
         /// <summary>
