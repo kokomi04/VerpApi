@@ -45,12 +45,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return status;
             }
 
-            var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived);
-            if (activedModel != null)
+            if (data.IsActived)
             {
-                return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+                var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived);
+                if (activedModel != null)
+                {
+                    return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+                }
             }
-
             var model = new BarcodeConfig()
             {
                 Name = data.Name.Trim(),
@@ -142,10 +144,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return BarcodeConfigErrorCode.BarcodeNotFound;
             }
 
-            var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived && c.BarcodeConfigId != barcodeConfigId);
-            if (activedModel != null)
+            if (data.IsActived)
             {
-                return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+                var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived && c.BarcodeConfigId != barcodeConfigId);
+                if (activedModel != null)
+                {
+                    return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+                }
             }
 
             var dataBefore = model.JsonSerialize();
