@@ -18,6 +18,9 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
         public virtual DbSet<BarcodeUsed> BarcodeUsed { get; set; }
         public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<Customer> Customer { get; set; }
+        public virtual DbSet<CustomerContact> CustomerContact { get; set; }
+        public virtual DbSet<CustomerType> CustomerType { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<FileStatus> FileStatus { get; set; }
         public virtual DbSet<FileType> FileType { get; set; }
@@ -91,6 +94,37 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(512);
+            });
+            modelBuilder.Entity<Customer>(entity =>
+            {
+                entity.Property(e => e.Address).HasMaxLength(128);
+                entity.Property(e => e.CustomerName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.Description).HasMaxLength(512);
+                entity.Property(e => e.Email).HasMaxLength(128);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+                entity.Property(e => e.TaxIdNo).HasMaxLength(64);
+                entity.Property(e => e.Website).HasMaxLength(128);
+            });
+            modelBuilder.Entity<CustomerContact>(entity =>
+            {
+                entity.Property(e => e.Email).HasMaxLength(128);
+                entity.Property(e => e.FullName).HasMaxLength(128);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+                entity.Property(e => e.Position).HasMaxLength(128);
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.CustomerContact)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerContact_Customer");
+            });
+            modelBuilder.Entity<CustomerType>(entity =>
+            {
+                entity.Property(e => e.CustomerTypeId).ValueGeneratedNever();
+                entity.Property(e => e.CustomerTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Employee>(entity =>
             {
