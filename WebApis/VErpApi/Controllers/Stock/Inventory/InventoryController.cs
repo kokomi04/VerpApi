@@ -21,18 +21,19 @@ namespace VErpApi.Controllers.Stock.Stocks
         }
 
         /// <summary>
-        /// Lấy danh sách phiếu nhập xuất kho
+        /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="stockId"></param>
+        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
+        /// <param name="stockId">Id kho</param>
+        /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId,[FromQuery] int type, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId,type: type, page: page, size: size);
         }
 
 
@@ -45,7 +46,8 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("")]
         public async Task<ApiResponse<long>> AddInventory([FromBody] InventoryInput inventoryInput)
         {
-            return await _inventoryService.AddInventory(inventoryInput);
+            var currentUserId = UserId;
+            return await _inventoryService.AddInventory(currentUserId, inventoryInput);
         }
 
     }
