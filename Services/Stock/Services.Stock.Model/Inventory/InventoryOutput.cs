@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -20,8 +21,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public DateTime DateUtc { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
-        public int? UserId { get; set; }
-        public long? InvoiceFileId { get; set; }
+        public int? UserId { get; set; }        
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         //public DateTime CreatedDatetimeUtc { get; set; }
@@ -30,5 +30,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public StockOutput StockOutput { get; set; }
         public List<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
+
+        public List<File> FileList { set; get; }
     }
 }

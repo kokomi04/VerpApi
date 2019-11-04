@@ -16,7 +16,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string InventoryCode { get; set; }
         
         /// <summary>
-        /// Loại
+        /// Loại 1: nhập kho  - 2: xuất kho
         /// </summary>
         public int InventoryTypeId { get; set; }
         public string Shipper { get; set; }
@@ -26,15 +26,17 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Department { get; set; }
         public int? UserId { get; set; }
 
-        /// <summary>
-        /// Tệp tin chứng từ liên quan
-        /// </summary>
-        public long? InvoiceFileId { get; set; }
-        public int CreatedByUserId { get; set; }
-        public int UpdatedByUserId { get; set; }
+        //public int CreatedByUserId { get; set; }
+        //public int UpdatedByUserId { get; set; }
         //public DateTime CreatedDatetimeUtc { get; set; }
         //public DateTime UpdatedDatetimeUtc { get; set; }
         //public bool IsDeleted { get; set; }
+        //public bool IsApproved { get; set; }
+        
+        /// <summary>
+        /// Id file đính kèm
+        /// </summary>
+        public List<long> FileIdList { set; get; }
 
         public List<InventoryDetailInput> InventoryDetailInputList { set; get; }
     }

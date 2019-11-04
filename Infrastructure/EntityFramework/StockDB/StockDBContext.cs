@@ -15,8 +15,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
+        public virtual DbSet<InventoryFile> InventoryFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
+        public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -66,7 +68,6 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
-                //entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
@@ -75,16 +76,15 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.InventoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Inventory");
-                entity.HasOne(d => d.Package)
-                    .WithMany(p => p.InventoryDetail)
-                    .HasForeignKey(d => d.PackageId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InventoryDetail_Package");
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.InventoryDetail)
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
+            });
+            modelBuilder.Entity<InventoryFile>(entity =>
+            {
+                entity.HasKey(e => new { e.InventoryId, e.FileId });
             });
             modelBuilder.Entity<Location>(entity =>
             {
@@ -100,13 +100,24 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<Package>(entity =>
             {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
-                    .HasMaxLength(128);
+                    .HasMaxLength(128)
+                    .HasDefaultValueSql("('')");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryUnitId).HasColumnType("decimal(18, 0)");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Location)
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.LocationId)
                     .HasConstraintName("FK_Package_Location");
+            });
+            modelBuilder.Entity<PackageRef>(entity =>
+            {
+                entity.HasKey(e => new { e.PackageId, e.RefPackageId });
             });
             modelBuilder.Entity<Product>(entity =>
             {
