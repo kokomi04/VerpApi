@@ -15,6 +15,7 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Services.Stock.Model.Product;
 using VErp.Commons.Library;
+using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Invetory.Implement
 {
@@ -162,6 +163,7 @@ namespace VErp.Services.Stock.Service.Invetory.Implement
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     UserId = item.UserId,
+                    IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
 
@@ -201,106 +203,124 @@ namespace VErp.Services.Stock.Service.Invetory.Implement
         /// <returns></returns>
         public async Task<ServiceResult<long>> AddInventory(int currentUserId, InventoryInput req)
         {
-            if (req == null || req.InventoryDetailInputList.Count < 1)
+            try
             {
-                return GeneralCode.InvalidParams;
-            }
-            if (Enum.IsDefined(typeof(EnumInventory), req.InventoryTypeId) == false)
-            {
-                return GeneralCode.InvalidParams;
-            }
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-            {
-                try
+                if (req == null || req.InventoryDetailInputList.Count < 1)
                 {
-                    var inventoryObj = new Inventory
-                    {
-                        StockId = req.StockId,
-                        InventoryCode = req.InventoryCode,
-                        InventoryTypeId = req.InventoryTypeId,
-                        Shipper = req.Shipper,
-                        Content = req.Content,
-                        DateUtc = req.DateUtc,
-                        CustomerId = req.CustomerId,
-                        Department = req.Department,
-                        UserId = req.UserId,
-                        CreatedByUserId = currentUserId,
-                        UpdatedByUserId = currentUserId,
-                        CreatedDatetimeUtc = DateTime.Now,
-                        UpdatedDatetimeUtc = DateTime.Now,
-                        IsDeleted = false,
-                        IsApproved = false
-                    };
-                    await _stockDbContext.AddAsync(inventoryObj);
-                    await _stockDbContext.SaveChangesAsync();
+                    return GeneralCode.InvalidParams;
+                }
+                if (Enum.IsDefined(typeof(EnumInventory), req.InventoryTypeId) == false)
+                {
+                    return GeneralCode.InvalidParams;
+                }
+                if (string.IsNullOrEmpty(req.DateUtc))
+                {
+                    return GeneralCode.InvalidParams;
+                }
+                var issuedDate = DateTime.MinValue;
 
-                    // Thêm danh sách file đính kèm vào phiếu nhập | xuất
-                    if (req.FileIdList != null && req.FileIdList.Count > 0)
+                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }                
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                {
+                    try
                     {
-                        var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
-                        attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
-                        await _stockDbContext.AddRangeAsync(attachedFiles);
-                        await _stockDbContext.SaveChangesAsync();
-                    }
-
-                    //switch (req.InventoryTypeId)
-                    //{
-                    //    case (int)EnumInventory.Input:
-                    //        break;
-                    //    case (int)EnumInventory.Output:
-                    //        break;
-                    //}
-                    if (req.InventoryDetailInputList.Count > 0)
-                    {
-                        var inventoryDetailList = new List<InventoryDetail>(req.InventoryDetailInputList.Count);
-                        foreach (var details in req.InventoryDetailInputList)
+                        var inventoryObj = new Inventory
                         {
-                            switch (req.InventoryTypeId)
-                            {
-                                //long currentPackageId = 0;
-                                case (int)EnumInventory.Input:
-                                    //var productObj = _stockDbContext.Product.FirstOrDefault(q => q.ProductId == details.ProductId);
-                                    //var newPackageCode = CreatePackageCode(inventoryObj.InventoryCode, (productObj.ProductCode ?? string.Empty), DateTime.Now);
-                                    //await _stockDbContext.AddAsync(package);
-                                    //await _stockDbContext.SaveChangesAsync();
-                                    //currentPackageId = package.PackageId;
-                                    break;
-                                case (int)EnumInventory.Output:
-                                    //currentPackageId = details.PackageId;
-                                    break;
-                            }
-                            inventoryDetailList.Add(new InventoryDetail
-                            {
-                                InventoryId = inventoryObj.InventoryId,
-                                ProductId = details.ProductId,
-                                CreatedDatetimeUtc = DateTime.Now,
-                                UpdatedDatetimeUtc = DateTime.Now,
-                                IsDeleted = false,
-                                PrimaryUnitId = details.PrimaryUnitId,
-                                PrimaryQuantity = details.PrimaryQuantity,
-                                SecondaryUnitId = details.SecondaryUnitId,
-                                SecondaryQuantity = details.SecondaryUnitId,
-                                RefObjectTypeId = details.RefObjectTypeId,
-                                RefObjectId = details.RefObjectId,
-                                RefObjectCode = details.RefObjectCode,
-                                FromPackageId= details.FromPackageId ?? null
-                            });
-                            await _stockDbContext.AddRangeAsync(inventoryDetailList);
+                            StockId = req.StockId,
+                            InventoryCode = req.InventoryCode,
+                            InventoryTypeId = req.InventoryTypeId,
+                            Shipper = req.Shipper,
+                            Content = req.Content,
+                            DateUtc = issuedDate,
+                            CustomerId = req.CustomerId,
+                            Department = req.Department,
+                            UserId = req.UserId,
+                            CreatedByUserId = currentUserId,
+                            UpdatedByUserId = currentUserId,
+                            CreatedDatetimeUtc = DateTime.Now,
+                            UpdatedDatetimeUtc = DateTime.Now,
+                            IsDeleted = false,
+                            IsApproved = false
+                        };
+                        await _stockDbContext.AddAsync(inventoryObj);
+                        await _stockDbContext.SaveChangesAsync();
+
+                        // Thêm danh sách file đính kèm vào phiếu nhập | xuất
+                        if (req.FileIdList != null && req.FileIdList.Count > 0)
+                        {
+                            var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
+                            attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
+                            await _stockDbContext.AddRangeAsync(attachedFiles);
                             await _stockDbContext.SaveChangesAsync();
                         }
-                    }
-                    trans.Commit();
-                    var objLog = GetInventoryInfoForLog(inventoryObj);
-                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập/xuất kho, mã: {inventoryObj.InventoryCode} ", null, objLog);
 
-                    return inventoryObj.InventoryId;
+                        //switch (req.InventoryTypeId)
+                        //{
+                        //    case (int)EnumInventory.Input:
+                        //        break;
+                        //    case (int)EnumInventory.Output:
+                        //        break;
+                        //}
+                        if (req.InventoryDetailInputList.Count > 0)
+                        {
+                            var inventoryDetailList = new List<InventoryDetail>(req.InventoryDetailInputList.Count);
+                            foreach (var details in req.InventoryDetailInputList)
+                            {
+                                switch (req.InventoryTypeId)
+                                {
+                                    //long currentPackageId = 0;
+                                    case (int)EnumInventory.Input:
+                                        //var productObj = _stockDbContext.Product.FirstOrDefault(q => q.ProductId == details.ProductId);
+                                        //var newPackageCode = CreatePackageCode(inventoryObj.InventoryCode, (productObj.ProductCode ?? string.Empty), DateTime.Now);
+                                        //await _stockDbContext.AddAsync(package);
+                                        //await _stockDbContext.SaveChangesAsync();
+                                        //currentPackageId = package.PackageId;
+                                        break;
+                                    case (int)EnumInventory.Output:
+                                        //currentPackageId = details.PackageId;
+                                        break;
+                                }
+                                inventoryDetailList.Add(new InventoryDetail
+                                {
+                                    InventoryId = inventoryObj.InventoryId,
+                                    ProductId = details.ProductId,
+                                    CreatedDatetimeUtc = DateTime.Now,
+                                    UpdatedDatetimeUtc = DateTime.Now,
+                                    IsDeleted = false,
+                                    PrimaryUnitId = details.PrimaryUnitId,
+                                    PrimaryQuantity = details.PrimaryQuantity,
+                                    SecondaryUnitId = details.SecondaryUnitId,
+                                    SecondaryQuantity = details.SecondaryUnitId,
+                                    RefObjectTypeId = details.RefObjectTypeId,
+                                    RefObjectId = details.RefObjectId,
+                                    RefObjectCode = details.RefObjectCode,
+                                    FromPackageId = details.FromPackageId ?? null
+                                });
+                                await _stockDbContext.AddRangeAsync(inventoryDetailList);
+                                await _stockDbContext.SaveChangesAsync();
+                            }
+                        }
+                        trans.Commit();
+                        var objLog = GetInventoryInfoForLog(inventoryObj);
+                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập/xuất kho, mã: {inventoryObj.InventoryCode} ", null, objLog);
+
+                        return inventoryObj.InventoryId;
+                    }
+                    catch (Exception ex)
+                    {
+                        trans.Rollback();
+                        _logger.LogError(ex, "AddInventory");
+                        return GeneralCode.InternalError;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "AddInventory");
-                    return GeneralCode.InternalError;
-                }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "UpdateInventory");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -316,6 +336,13 @@ namespace VErp.Services.Stock.Service.Invetory.Implement
                 {
                     return InventoryErrorCode.InventoryNotFound;
                 }
+                var issuedDate = DateTime.MinValue;
+
+                if (!DateTime.TryParseExact(model.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -330,7 +357,7 @@ namespace VErp.Services.Stock.Service.Invetory.Implement
                         inventoryObj.InventoryTypeId = model.InventoryTypeId;
                         inventoryObj.Shipper = model.Shipper;
                         inventoryObj.Content = model.Content;
-                        inventoryObj.DateUtc = model.DateUtc;
+                        inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
                         inventoryObj.UserId = model.UserId;

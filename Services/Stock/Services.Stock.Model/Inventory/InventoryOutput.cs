@@ -27,6 +27,7 @@ namespace VErp.Services.Stock.Model.Inventory
         //public DateTime CreatedDatetimeUtc { get; set; }
         //public DateTime UpdatedDatetimeUtc { get; set; }
         //public bool IsDeleted { get; set; }
+        public bool IsApproved { set; get; }
 
         public StockOutput StockOutput { get; set; }
         public List<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
