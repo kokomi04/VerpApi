@@ -50,5 +50,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="stockId">Mã kho</param>
         /// <returns></returns>
         Task<Enum> DeleteStock(int stockId);
+
+        Task<IList<StockWarning>> StockWarnings();
     }
 }

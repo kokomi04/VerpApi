@@ -113,5 +113,16 @@ namespace VErpApi.Controllers.Stock.Stocks
         {
             return await _stockService.DeleteStock(stockId);
         }
+
+        /// <summary>
+        /// Lấy toàn bộ kho và các cảnh báo của kho
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockWarnings")]
+        public async Task<ApiResponse<IList<StockWarning>>> StockWarnings()
+        {
+            return (await _stockService.StockWarnings()).ToList();
+        }
     }
 }
