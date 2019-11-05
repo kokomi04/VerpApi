@@ -18,6 +18,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public decimal PrimaryQuantityWaiting { get; set; }
+        public decimal PrimaryQuantityRemaining { get; set; }
+        public decimal SecondaryQuantityWaitting { get; set; }
+        public decimal SecondaryQuantityRemaining { get; set; }
 
         public virtual Location Location { get; set; }
     }

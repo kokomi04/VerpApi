@@ -21,7 +21,10 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
-                
+
+        public long? FromPackageId{set; get;}
+
+
         public ProductListOutput ProductOutput { get; set; }
     }
 }

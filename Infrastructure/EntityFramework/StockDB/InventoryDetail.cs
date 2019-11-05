@@ -15,9 +15,17 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal PrimaryQuantity { get; set; }
         public int? SecondaryUnitId { get; set; }
         public decimal? SecondaryQuantity { get; set; }
+
+        /// <summary>
+        /// Xuất từ kiện hàng nào
+        /// </summary>
+        public long? FromPackageId { get; set; }
+
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
+
+
 
         public virtual Inventory Inventory { get; set; }
         public virtual Product Product { get; set; }
