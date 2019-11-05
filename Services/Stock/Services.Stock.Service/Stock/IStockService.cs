@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Stock;
 
@@ -52,5 +53,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<Enum> DeleteStock(int stockId);
 
         Task<IList<StockWarning>> StockWarnings();
+
+        Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size);
     }
 }
