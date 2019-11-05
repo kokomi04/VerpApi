@@ -27,10 +27,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
+        public virtual DbSet<StockProduct> StockProduct { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (optionsBuilder.IsConfigured)
             {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
                 optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
             }
         }
@@ -107,7 +109,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryUnitId).HasColumnType("decimal(18, 0)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Location)
@@ -218,6 +224,26 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128);
                 entity.Property(e => e.Type).HasDefaultValueSql("((0))");
+            });
+            modelBuilder.Entity<StockProduct>(entity =>
+            {
+                entity.HasKey(e => new { e.StockId, e.ProductId, e.SecondaryUnitId });
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.StockProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockProduct_Product");
+                entity.HasOne(d => d.Stock)
+                    .WithMany(p => p.StockProduct)
+                    .HasForeignKey(d => d.StockId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockProduct_Stock");
             });
         }
     }

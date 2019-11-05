@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.StockDB
             InventoryDetail = new HashSet<InventoryDetail>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
+            StockProduct = new HashSet<StockProduct>();
         }
 
         public int ProductId { get; set; }
@@ -35,5 +36,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual ICollection<StockProduct> StockProduct { get; set; }
     }
 }

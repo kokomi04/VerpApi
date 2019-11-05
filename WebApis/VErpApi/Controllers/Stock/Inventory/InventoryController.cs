@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Invetory;
+using VErp.Services.Stock.Service.FileResources;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StockEnum;
 
 namespace VErpApi.Controllers.Stock.Stocks
 {
@@ -14,10 +16,12 @@ namespace VErpApi.Controllers.Stock.Stocks
     public class InventoryController : VErpBaseController
     {
         private readonly IInventoryService _inventoryService;
-        public InventoryController(IInventoryService iventoryService
+        private readonly IFileService _fileService;
+        public InventoryController(IInventoryService iventoryService,IFileService fileService
             )
         {
             _inventoryService = iventoryService;
+            _fileService = fileService;
         }
 
         /// <summary>
@@ -31,7 +35,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId,[FromQuery] int type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId,[FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inventoryService.GetList(keyword: keyword, stockId: stockId,type: type, page: page, size: size);
         }
@@ -50,5 +54,31 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _inventoryService.AddInventory(currentUserId, inventoryInput);
         }
 
+        /// <summary>
+        /// Cập nhật phiếu nhập/xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
+        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <returns></returns>
+        [HttpPut]        
+        [Route("{inventoryId}")]
+        public async Task<ApiResponse> UpdateInventory([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        {
+            var currentUserId = UserId;
+            return await _inventoryService.UpdateInventory(inventoryId, currentUserId, inventoryInput);
+        }
+
+        /// <summary>
+        /// Upload file
+        /// </summary>
+        /// <param name="fileTypeId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("File/{fileTypeId}")]
+        public async Task<ApiResponse<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
+        }
     }
 }

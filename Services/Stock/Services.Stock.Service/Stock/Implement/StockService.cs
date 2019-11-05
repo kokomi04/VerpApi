@@ -158,19 +158,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteStock(int stockId)
         {
             var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
-
+            
             if (stockInfo == null)
             {
-                return ProductErrorCode.ProductNotFound;
+                return StockErrorCode.StockNotFound;
             }
-
-            stockInfo.IsDeleted = true;
-            stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-
             var objLog = GetStockForLog(stockInfo);
             var dataBefore = objLog.JsonSerialize();
-
+            
+            stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Service.Invetory    
 {
@@ -23,7 +24,7 @@ namespace VErp.Services.Stock.Service.Invetory
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0,int type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventory type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
 
         /// <summary>
         /// Thêm mới phiếu nhập / xuất kho
@@ -39,19 +40,19 @@ namespace VErp.Services.Stock.Service.Invetory
         /// <returns></returns>
         Task<ServiceResult<InventoryOutput>> GetInventory(int inventoryId);
 
-        ///// <summary>
-        ///// Cập nhật thông tin vị trí
-        ///// </summary>
-        ///// <param name="locationId">Mã vị trí</param>
-        ///// <param name="req"></param>
-        ///// <returns></returns>
-        //Task<Enum> UpdateLocation(int locationId, LocationInput req);
+        /// <summary>
+        /// Cập nhật thông tin phiếu nhập / xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<Enum> UpdateInventory(int inventoryId, int currentUserId, InventoryInput model);
 
-        ///// <summary>
-        ///// Xóa thông tin vị trí (đánh dấu xóa)
-        ///// </summary>
-        ///// <param name="locationId">Mã vị trí</param>
-        ///// <returns></returns>
-        //Task<Enum> DeleteLocation(int locationId);
+        /// <summary>
+        /// Xóa thông tin phiếu nhập / xuất kho (đánh dấu xóa)
+        /// </summary>
+        /// <param name="inventoryId">Mã phiếu nhập xuất</param>
+        /// <returns></returns>
+        Task<Enum> DeleteInventory(int inventoryId, int currentUserId);
     }
 }
