@@ -158,14 +158,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteStock(int stockId)
         {
             var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
-            
+
             if (stockInfo == null)
             {
                 return StockErrorCode.StockNotFound;
             }
             var objLog = GetStockForLog(stockInfo);
             var dataBefore = objLog.JsonSerialize();
-            
+
             stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -225,7 +225,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
-        public async Task<PageData<StockOutput>> GetListByUserId(int userId,string keyword, int page, int size)
+        public async Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size)
         {
             var query = from p in _stockContext.Stock
                         where p.StockKeeperId == userId
@@ -268,6 +268,79 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 StockId = s.StockId,
                 StockName = s.StockName
             }).ToListAsync();
+        }
+
+        public async Task<IList<StockWarning>> StockWarnings()
+        {
+            var lstMinMaxWarnings = await (
+                 from sp in _stockContext.StockProduct
+                 join p in _stockContext.Product on sp.ProductId equals p.ProductId
+                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                 where sp.PrimaryQuantityRemaining <= ps.AmountWarningMin
+                 || sp.PrimaryQuantityRemaining >= ps.AmountWarningMax
+                 select new
+                 {
+                     sp.StockId,
+                     p.ProductId,
+                     p.ProductCode,
+                     p.ProductName,
+                     StockWarningTypeId = sp.PrimaryQuantityRemaining <= ps.AmountWarningMin ? EnumWarningType.Min : EnumWarningType.Max,
+                 })
+                 .ToListAsync();
+
+            var lstExpiredWarnings = await (
+                from pk in _stockContext.Package
+                join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
+                join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                join p in _stockContext.Product on d.ProductId equals p.ProductId
+                join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                where pk.ExpiryTime < DateTime.UtcNow
+                select new
+                {
+                    iv.StockId,
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    pk.PackageCode,
+                    StockWarningTypeId = EnumWarningType.Expired
+                })
+                .ToListAsync();
+
+            var result = new List<StockWarning>();
+            var stocks = await _stockContext.Stock.ToListAsync();
+            foreach (var s in stocks)
+            {
+                var warnings = lstMinMaxWarnings
+                    .Where(w => w.StockId == s.StockId)
+                    .Select(w => new StockWarningDetail
+                    {
+                        ProductId = w.ProductId,
+                        ProductCode = w.ProductCode,
+                        ProductName = w.ProductName,
+                        StockWarningTypeId = w.StockWarningTypeId,
+                        PackageCode = null
+                    });
+
+                warnings.Union(
+                    lstExpiredWarnings.Where(w => w.StockId == s.StockId)
+                    .Select(w => new StockWarningDetail
+                    {
+                        ProductId = w.ProductId,
+                        ProductCode = w.ProductCode,
+                        ProductName = w.ProductName,
+                        StockWarningTypeId = w.StockWarningTypeId,
+                        PackageCode = null
+                    })
+                    );
+
+                result.Add(new StockWarning()
+                {
+                    StockId = s.StockId,
+                    StockName = s.StockName,
+                    Warnings = warnings.OrderBy(p => p.ProductCode).ToList()
+                });
+            }
+            return result;
         }
 
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
