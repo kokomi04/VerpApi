@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -123,6 +124,24 @@ namespace VErpApi.Controllers.Stock.Stocks
         public async Task<ApiResponse<IList<StockWarning>>> StockWarnings()
         {
             return (await _stockService.StockWarnings()).ToList();
+        }
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm trong kho
+        /// </summary>
+        /// <param name="stockId"></param>
+        /// <param name="keyword"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
+        /// <param name="stockWarningTypeIds"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockProducts")]
+        public async Task<ApiResponse<PageData<StockProductListOutput>>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size)
+        {
+            return await _stockService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
         }
     }
 }

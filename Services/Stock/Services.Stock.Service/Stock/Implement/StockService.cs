@@ -343,6 +343,145 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return result;
         }
 
+
+        public async Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size)
+        {
+            var productQuery = (
+                 from p in _stockContext.Product
+                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                 select new
+                 {
+                     p.ProductId,
+                     p.ProductCode,
+                     p.ProductName,
+                     p.UnitId,
+                     p.ProductTypeId,
+                     p.ProductCateId
+                 }
+                );
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
+
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var types = productTypeIds.Select(t => (int?)t);
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                productQuery = from p in productQuery
+                               where productCateIds.Contains(p.ProductCateId)
+                               select p;
+            }
+
+            var query = (
+                 from sp in _stockContext.StockProduct
+                 join p in productQuery on sp.ProductId equals p.ProductId
+                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                 join iv in _stockContext.Inventory on sp.StockId equals iv.StockId
+                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                 join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
+                 where sp.StockId == stockId
+                 group new { IsExpired = pk.ExpiryTime < DateTime.UtcNow } by new
+                 {
+                     p.ProductId,
+                     p.ProductCode,
+                     p.ProductName,
+                     p.UnitId,
+                     p.ProductTypeId,
+                     p.ProductCateId,
+                     sp.PrimaryQuantityRemaining,
+                     IsMinWarning = sp.PrimaryQuantityRemaining <= ps.AmountWarningMin,
+                     IsMaxWarning = sp.PrimaryQuantityRemaining >= ps.AmountWarningMax
+                 } into g
+                 select new
+                 {
+                     g.Key.ProductId,
+                     g.Key.ProductCode,
+                     g.Key.ProductName,
+                     g.Key.UnitId,
+                     g.Key.ProductTypeId,
+                     g.Key.ProductCateId,
+                     g.Key.PrimaryQuantityRemaining,
+                     g.Key.IsMinWarning,
+                     g.Key.IsMaxWarning,
+                     IsExpired = g.Max(v => v.IsExpired)
+                 });
+
+            if (stockWarningTypeIds != null && stockWarningTypeIds.Count > 0)
+            {
+                if (stockWarningTypeIds.Contains(EnumWarningType.Min))
+                {
+                    query = from p in query
+                            where p.IsMinWarning
+                            select p;
+                }
+
+                if (stockWarningTypeIds.Contains(EnumWarningType.Max))
+                {
+                    query = from p in query
+                            where p.IsMaxWarning
+                            select p;
+                }
+
+
+                if (stockWarningTypeIds.Contains(EnumWarningType.Expired))
+                {
+                    query = from p in query
+                            where p.IsExpired
+                            select p;
+                }
+            }
+
+            var total = await query.CountAsync();
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var productIds = lstData.Select(p => p.ProductId).ToList();
+
+            if (productIds.Count == 0)
+            {
+                return (new List<StockProductListOutput>(), total);
+            }
+            var extraInfos = await (
+                from p in _stockContext.ProductExtraInfo
+                where productIds.Contains(p.ProductId)
+                select new
+                {
+                    p.ProductId,
+                    p.Specification
+                }
+                )
+                .ToListAsync();
+
+            var pagedData = new List<StockProductListOutput>();
+
+            foreach (var item in lstData)
+            {
+                var extra = extraInfos.FirstOrDefault(p => p.ProductId == item.ProductId);
+
+                var stockInfo = new StockProductListOutput()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductCateId = item.ProductCateId,
+                    Specification = extra?.Specification,
+                    UnitId = item.UnitId,
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
+                };
+                pagedData.Add(stockInfo);
+            }
+            return (pagedData, total);
+        }
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
