@@ -361,7 +361,7 @@ namespace VErp.Services.Stock.Service.Invetory.Implement
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
                         inventoryObj.UserId = model.UserId;
-
+                        inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
                         #endregion
