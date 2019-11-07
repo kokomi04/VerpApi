@@ -31,7 +31,7 @@ namespace VErp.Services.Stock.Model.Inventory
         //public DateTime CreatedDatetimeUtc { get; set; }
         //public DateTime UpdatedDatetimeUtc { get; set; }
         //public bool IsDeleted { get; set; }
-        //public bool IsApproved { get; set; }
+        public bool IsApproved { get; set; }
         
         /// <summary>
         /// Id file đính kèm

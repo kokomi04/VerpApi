@@ -227,13 +227,15 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<StockProduct>(entity =>
             {
-                entity.HasKey(e => new { e.StockId, e.ProductId, e.SecondaryUnitId });
+                entity.HasKey(e => new { e.StockId, e.ProductId })
+                    .HasName("PK_StockProduct_1");
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.StockProduct)
                     .HasForeignKey(d => d.ProductId)

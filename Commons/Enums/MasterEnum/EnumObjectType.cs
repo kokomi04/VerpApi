@@ -37,6 +37,11 @@ namespace VErp.Commons.Enums.MasterEnum
         /// <summary>
         /// Gói / kiện
         /// </summary>
-        Package = 14
+        Package = 14,
+
+        /// <summary>
+        /// Gói / kiện
+        /// </summary>
+        StockProduct = 15
     }
 }
