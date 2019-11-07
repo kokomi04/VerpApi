@@ -43,6 +43,18 @@ namespace VErpApi.Controllers.Stock.Stocks
 
 
         /// <summary>
+        /// Lấy thông tin phiếu nhập / xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu</param>
+        /// <returns>InventoryOutput</returns>
+        [HttpGet]
+        [Route("{inventoryId}")]
+        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] int inventoryId)
+        {
+            return await _inventoryService.GetInventory(inventoryId);
+        }
+
+        /// <summary>
         /// Thêm mới phiếu nhập/xuất kho
         /// </summary>
         /// <param name="inventoryInput">Model InventoryInput</param>
