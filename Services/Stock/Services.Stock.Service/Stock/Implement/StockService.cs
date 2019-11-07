@@ -1,21 +1,19 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Stock;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
-using static VErp.Services.Stock.Model.Stock.StockModel;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -348,7 +346,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var productQuery = (
                  from p in _stockContext.Product
-                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                  select new
                  {
                      p.ProductId,
@@ -382,61 +379,55 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
-            var query = (
-                 from sp in _stockContext.StockProduct
-                 join p in productQuery on sp.ProductId equals p.ProductId
-                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
-                 join iv in _stockContext.Inventory on sp.StockId equals iv.StockId
-                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-                 join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
-                 where sp.StockId == stockId
-                 group new { IsExpired = pk.ExpiryTime < DateTime.UtcNow } by new
-                 {
-                     p.ProductId,
-                     p.ProductCode,
-                     p.ProductName,
-                     p.UnitId,
-                     p.ProductTypeId,
-                     p.ProductCateId,
-                     sp.PrimaryQuantityRemaining,
-                     IsMinWarning = sp.PrimaryQuantityRemaining <= ps.AmountWarningMin,
-                     IsMaxWarning = sp.PrimaryQuantityRemaining >= ps.AmountWarningMax
-                 } into g
-                 select new
-                 {
-                     g.Key.ProductId,
-                     g.Key.ProductCode,
-                     g.Key.ProductName,
-                     g.Key.UnitId,
-                     g.Key.ProductTypeId,
-                     g.Key.ProductCateId,
-                     g.Key.PrimaryQuantityRemaining,
-                     g.Key.IsMinWarning,
-                     g.Key.IsMaxWarning,
-                     IsExpired = g.Max(v => v.IsExpired)
-                 });
+
+
+            var query = from sp in _stockContext.StockProduct
+                        join p in productQuery on sp.ProductId equals p.ProductId
+                        join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                        where sp.StockId == stockId
+                        select new
+                        {
+                            p.ProductId,
+                            p.ProductCode,
+                            p.ProductName,
+                            p.UnitId,
+                            p.ProductTypeId,
+                            p.ProductCateId,
+                            sp.PrimaryQuantityRemaining,
+                            ps.AmountWarningMin,
+                            ps.AmountWarningMax,
+                        };
 
             if (stockWarningTypeIds != null && stockWarningTypeIds.Count > 0)
             {
                 if (stockWarningTypeIds.Contains(EnumWarningType.Min))
                 {
                     query = from p in query
-                            where p.IsMinWarning
+                            where p.PrimaryQuantityRemaining <= p.AmountWarningMin
                             select p;
                 }
 
                 if (stockWarningTypeIds.Contains(EnumWarningType.Max))
                 {
                     query = from p in query
-                            where p.IsMaxWarning
+                            where p.AmountWarningMax >= p.AmountWarningMin
                             select p;
                 }
 
 
                 if (stockWarningTypeIds.Contains(EnumWarningType.Expired))
                 {
+                    var productWithExprires = from iv in _stockContext.Inventory
+                                              join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                                              join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
+                                              where iv.StockId == stockId && pk.ExpiryTime < DateTime.UtcNow
+                                              select new
+                                              {
+                                                  d.ProductId,
+                                              };
+
                     query = from p in query
-                            where p.IsExpired
+                            join e in productWithExprires on p.ProductId equals e.ProductId
                             select p;
                 }
             }
