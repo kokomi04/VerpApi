@@ -245,11 +245,11 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
                 if (reqContact != null)
                 {
-                    c.FullName = c.FullName;
-                    c.GenderId = (int?)c.GenderId;
-                    c.Position = c.Position;
-                    c.PhoneNumber = c.PhoneNumber;
-                    c.Email = c.Email;
+                    c.FullName = reqContact.FullName;
+                    c.GenderId = (int?)reqContact.GenderId;
+                    c.Position = reqContact.Position;
+                    c.PhoneNumber = reqContact.PhoneNumber;
+                    c.Email = reqContact.Email;
                     c.UpdatedDatetimeUtc = DateTime.UtcNow;
                 }
             }
