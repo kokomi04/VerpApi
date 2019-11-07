@@ -7,7 +7,7 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Service.Location;
-using VErp.Services.Stock.Service.Invetory;
+
 using VErp.Services.Stock.Model.Inventory;
 
 namespace VErpApi.Controllers.Stock.Stocks

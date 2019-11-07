@@ -1,18 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Services.Stock.Service.Invetory    
+namespace VErp.Services.Stock.Service.Inventory    
 {
     /// <summary>
     /// I - Nhap xuat kho
     /// </summary>
     public interface IInventoryService
     {
-
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
@@ -27,13 +25,6 @@ namespace VErp.Services.Stock.Service.Invetory
         Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventory type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
 
         /// <summary>
-        /// Thêm mới phiếu nhập / xuất kho
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        Task<ServiceResult<long>> AddInventory(int currentUserId, InventoryInput req);
-
-        /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
         /// </summary>
         /// <param name="inventoryId">Mã vị trí</param>
@@ -41,12 +32,34 @@ namespace VErp.Services.Stock.Service.Invetory
         Task<ServiceResult<InventoryOutput>> GetInventory(int inventoryId);
 
         /// <summary>
-        /// Cập nhật thông tin phiếu nhập / xuất kho
+        /// Thêm mới phiếu nhập kho
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInput req);
+
+        /// <summary>
+        /// Thêm mới phiếu xuất kho
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryInput req);
+
+        /// <summary>
+        /// Cập nhật thông tin phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<Enum> UpdateInventory(int inventoryId, int currentUserId, InventoryInput model);
+        Task<Enum> UpdateInventoryInput(int inventoryId, int currentUserId, InventoryInput model);
+
+        /// <summary>
+        /// Cập nhật thông tin phiếu xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<Enum> UpdateInventoryOutput(int inventoryId, int currentUserId, InventoryInput model);
 
         /// <summary>
         /// Xóa thông tin phiếu nhập / xuất kho (đánh dấu xóa)

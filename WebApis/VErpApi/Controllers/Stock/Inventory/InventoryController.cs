@@ -5,10 +5,11 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Invetory;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Services.Stock.Service.Inventory;
 
 namespace VErpApi.Controllers.Stock.Stocks
 {
@@ -17,7 +18,7 @@ namespace VErpApi.Controllers.Stock.Stocks
     {
         private readonly IInventoryService _inventoryService;
         private readonly IFileService _fileService;
-        public InventoryController(IInventoryService iventoryService,IFileService fileService
+        public InventoryController(IInventoryService iventoryService, IFileService fileService
             )
         {
             _inventoryService = iventoryService;
@@ -35,9 +36,9 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId,[FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId,type: type, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, page: page, size: size);
         }
 
 
@@ -51,7 +52,24 @@ namespace VErpApi.Controllers.Stock.Stocks
         public async Task<ApiResponse<long>> AddInventory([FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
-            return await _inventoryService.AddInventory(currentUserId, inventoryInput);
+
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Input:
+                    return await _inventoryService.AddInventoryInput(currentUserId, inventoryInput);
+
+                case (int)EnumInventory.Output:
+                    return await _inventoryService.AddInventoryOutput(currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    }; 
+                    return response;
+                    
+            }
         }
 
         /// <summary>
@@ -60,12 +78,27 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
-        [HttpPut]        
+        [HttpPut]
         [Route("{inventoryId}")]
         public async Task<ApiResponse> UpdateInventory([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
-            return await _inventoryService.UpdateInventory(inventoryId, currentUserId, inventoryInput);
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Input:
+                    return await _inventoryService.UpdateInventoryInput(inventoryId, currentUserId, inventoryInput);
+
+                case (int)EnumInventory.Output:
+                    return await _inventoryService.UpdateInventoryOutput(inventoryId, currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+            }
         }
 
         /// <summary>
