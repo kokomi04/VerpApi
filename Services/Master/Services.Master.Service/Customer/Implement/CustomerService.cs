@@ -39,7 +39,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
         {
             var customer = new CustomerEntity()
             {
-
+                CustomerCode = data.CustomerCode,
                 CustomerName = data.CustomerName,
                 CustomerTypeId = (int)data.CustomerTypeId,
                 Address = data.Address,
@@ -139,6 +139,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                  from c in _masterContext.Customer
                  select new CustomerListOutput()
                  {
+                     CustomerCode = c.CustomerCode,
                      CustomerId = c.CustomerId,
                      CustomerName = c.CustomerName,
                      CustomerTypeId = (EnumCustomerType)c.CustomerTypeId,
@@ -153,7 +154,9 @@ namespace VErp.Services.Master.Service.Customer.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from u in query
-                        where u.CustomerName.Contains(keyword)
+                        where
+                        u.CustomerCode.Contains(keyword)
+                        || u.CustomerName.Contains(keyword)
                         || u.Address.Contains(keyword)
                         || u.TaxIdNo.Contains(keyword)
                         || u.PhoneNumber.Contains(keyword)
@@ -182,6 +185,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 select new CustomerListOutput()
                 {
                     CustomerId = c.CustomerId,
+                    CustomerCode = c.CustomerCode,
                     CustomerName = c.CustomerName,
                     CustomerTypeId = (EnumCustomerType)c.CustomerTypeId,
                     Address = c.Address,
@@ -203,6 +207,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
             var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
 
+            customerInfo.CustomerCode = data.CustomerCode;
             customerInfo.CustomerName = data.CustomerName;
             customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
             customerInfo.Address = data.Address;

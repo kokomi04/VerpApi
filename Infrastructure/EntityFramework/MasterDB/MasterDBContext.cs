@@ -98,6 +98,7 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<Customer>(entity =>
             {
                 entity.Property(e => e.Address).HasMaxLength(128);
+                entity.Property(e => e.CustomerCode).HasMaxLength(128);
                 entity.Property(e => e.CustomerName)
                     .IsRequired()
                     .HasMaxLength(128);
