@@ -21,6 +21,9 @@ namespace VErp.Commons.Enums.StandardEnum
         X_ModuleMissing = 4,
 
         [Description("Bạn không có quyền thực hiện chức năng này")]
-        Forbidden = 5
+        Forbidden = 5,
+
+        [Description("Không thực hiện được. Chức năng này tạm thời chưa được hỗ trợ")]
+        NotYetSupported = 6
     }
 }

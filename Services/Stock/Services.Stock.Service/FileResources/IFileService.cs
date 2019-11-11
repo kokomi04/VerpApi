@@ -27,5 +27,7 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<Enum> GenerateThumbnail(long fileId);
 
         Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey);
+
+        List<FileToDownloadInfo> GetListFileUrl(long[] arrayFileId, EnumThumbnailSize? thumb);
     }
 }
