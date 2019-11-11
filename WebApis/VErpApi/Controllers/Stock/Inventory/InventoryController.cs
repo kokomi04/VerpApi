@@ -60,7 +60,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("")]
+        [Route("AddInventoryInput")]
         public async Task<ApiResponse<long>> AddInventoryInput([FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
@@ -87,7 +87,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("")]
+        [Route("AddInventoryOutput")]
         public async Task<ApiResponse<long>> AddInventoryOutput([FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
@@ -116,7 +116,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{inventoryId}")]
+        [Route("UpdateInventoryInput/{inventoryId}")]
         public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
@@ -144,7 +144,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{inventoryId}")]
+        [Route("UpdateInventoryOutput/{inventoryId}")]
         public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
@@ -171,7 +171,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{inventoryId}")]
+        [Route("ApproveInventoryInput/{inventoryId}")]
         public async Task<ApiResponse> ApproveInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
@@ -211,7 +211,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{inventoryId}")]
+        [Route("ApproveInventoryOutput/{inventoryId}")]
         public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
