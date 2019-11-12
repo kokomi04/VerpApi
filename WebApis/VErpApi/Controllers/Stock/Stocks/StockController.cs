@@ -143,5 +143,12 @@ namespace VErpApi.Controllers.Stock.Stocks
         {
             return await _stockService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
         }
+
+        [HttpGet]
+        [Route("{stockId}/StockProducts/{productId}")]
+        public async Task<ApiResponse<PageData<StockProductPackageDetail>>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockProductPackageDetails(stockId, productId, page, size);
+        }
     }
 }

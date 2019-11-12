@@ -473,6 +473,50 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
+
+        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
+        {
+            var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var query = (
+                from pk in _stockContext.Package
+                join iv in _stockContext.InventoryDetail on pk.InventoryDetailId equals iv.InventoryDetailId
+                join i in _stockContext.Inventory on iv.InventoryId equals i.InventoryId
+                select new StockProductPackageDetail()
+                {
+                    PackageId = pk.PackageId,
+                    PackageCode = pk.PackageCode,
+                    LocationId = pk.LocationId,
+                    Date = i.DateUtc,
+                    ExpriredDate = pk.ExpiryTime,
+                    PrimaryUnitId = pk.PrimaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantity,
+                    SecondaryUnitId = pk.SecondaryUnitId,
+                    SecondaryQuantity = pk.SecondaryQuantity,
+                    RefObjectId = iv.RefObjectId,
+                    RefObjectCode = iv.RefObjectCode
+                }
+                );
+            var total = await query.CountAsync();
+            switch((EnumStockOutputRule)productStockInfo.StockOutputRuleId)
+            {
+                case EnumStockOutputRule.None:
+                case EnumStockOutputRule.Fifo:
+                    query = from pk in query
+                            orderby pk.Date
+                            select pk;
+                    break;
+                case EnumStockOutputRule.Lifo:
+                    query = from pk in query
+                            orderby pk.Date descending
+                            select pk;
+                    break;
+            }
+
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+
+            return (lstData, total);
+        }
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
