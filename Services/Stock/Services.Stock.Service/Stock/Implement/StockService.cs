@@ -497,7 +497,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 );
             var total = await query.CountAsync();
-            switch((EnumStockOutputRule)productStockInfo.StockOutputRuleId)
+            switch ((EnumStockOutputRule)productStockInfo.StockOutputRuleId)
             {
                 case EnumStockOutputRule.None:
                 case EnumStockOutputRule.Fifo:
@@ -517,11 +517,118 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
+        {
+            var productQuery = (
+                from p in _stockContext.Product
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.UnitId,
+                    p.ProductTypeId,
+                    p.ProductCateId
+                }
+               );
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
+
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var types = productTypeIds.Select(t => (int?)t);
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                productQuery = from p in productQuery
+                               where productCateIds.Contains(p.ProductCateId)
+                               select p;
+            }
+
+            productQuery = from p in productQuery
+                           join d in _stockContext.InventoryDetail on p.ProductId equals d.ProductId
+                           join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                           where iv.IsApproved
+                           group 0 by new { p.ProductId, p.ProductCode, p.ProductName, p.ProductTypeId, p.ProductCateId, d.PrimaryUnitId } into g
+                           select new
+                           {
+                               g.Key.ProductId,
+                               g.Key.ProductCode,
+                               g.Key.ProductName,
+                               UnitId = g.Key.PrimaryUnitId,
+                               g.Key.ProductTypeId,
+                               g.Key.ProductCateId
+                           };
+
+            var total = await productQuery.CountAsync();
+
+            var queryBefore = (
+                from iv in _stockContext.Inventory
+                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                join p in productQuery on d.ProductId equals p.ProductId
+                where iv.IsApproved && iv.DateUtc < fromDate
+                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+                select new
+                {
+                    g.Key.ProductId,
+                    UnitId = g.Key.PrimaryUnitId,
+                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                }
+                );
+
+            var queryAfter = (
+                from iv in _stockContext.Inventory
+                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                join p in productQuery on d.ProductId equals p.ProductId
+                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+                select new
+                {
+                    g.Key.ProductId,
+                    UnitId = g.Key.PrimaryUnitId,
+                    TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : 0),
+                    TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Output ? d.PrimaryQuantity : 0),
+                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                }
+                );
+
+            //TODO: dotnetcore exception when join on group by
+            var products = await productQuery.ToListAsync();
+            var befores = await queryBefore.ToListAsync();
+            var afters = await queryAfter.ToListAsync();
+            var data = (
+                from p in products
+                join b in befores on new { p.ProductId, p.UnitId } equals new { b.ProductId, b.UnitId } into bp
+                from b in bp.DefaultIfEmpty()
+                join a in afters on new { p.ProductId, p.UnitId } equals new { a.ProductId, a.UnitId } into ap
+                from a in ap.DefaultIfEmpty()
+                select new StockSumaryReportOutput
+                {
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    UnitId = p.UnitId,
+                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
+                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
+                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
+                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
+                });
+            var pageData = data.Skip((page - 1) * size).Take(size).ToList();
+            return (pageData, total);
+        }
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
         }
-
 
     }
 }
