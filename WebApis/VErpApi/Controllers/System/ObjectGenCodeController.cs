@@ -58,6 +58,7 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Thêm mới cấu hình gen code cho đối tượng
         /// </summary>
+        /// <param name="objectType">Loại đối tượng</param>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
@@ -100,7 +101,7 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Tạo mã code
         /// </summary>
-        /// <param name="objectType">EnumObjectType</param>
+        /// <param name="objectType">Loại đối tượng cần tạo mã code</param>
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("GenerateCode")]

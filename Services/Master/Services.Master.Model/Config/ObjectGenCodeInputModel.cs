@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace VErp.Services.Master.Model.Config
@@ -10,8 +11,14 @@ namespace VErp.Services.Master.Model.Config
         //public int ObjectTypeId { get; set; }
         //public string ObjectName { get; set; }
         public int CodeLength { get; set; }
+        
+        [StringLength(32)]
         public string Prefix { get; set; }
+
+        [StringLength(32)]
         public string Suffix { get; set; }
+
+        [StringLength(1)]
         public string Seperator { get; set; }
         //public string DateFormat { get; set; }
         //public int LastValue { get; set; }
