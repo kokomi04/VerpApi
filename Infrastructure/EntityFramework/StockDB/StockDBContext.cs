@@ -114,7 +114,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryUnitId).HasColumnType("decimal(18, 0)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Location)
                     .WithMany(p => p.Package)
@@ -227,8 +226,7 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<StockProduct>(entity =>
             {
-                entity.HasKey(e => new { e.StockId, e.ProductId, e.SecondaryUnitId })
-                    .HasName("PK_StockProduct");
+                entity.HasKey(e => new { e.StockId, e.ProductId, e.SecondaryUnitId });
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
