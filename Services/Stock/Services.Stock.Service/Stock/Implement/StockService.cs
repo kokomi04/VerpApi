@@ -619,7 +619,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQualtityBefore = b == null ? 0 : b.Total,
                     PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
                     PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
-                    PrimaryQualtityAfter = a == null ? 0 : a.Total
+                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
                 });
             var pageData = data.Skip((page - 1) * size).Take(size).ToList();
             return (pageData, total);
