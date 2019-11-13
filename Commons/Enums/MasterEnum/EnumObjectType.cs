@@ -42,6 +42,8 @@ namespace VErp.Commons.Enums.MasterEnum
         /// <summary>
         /// Gói / kiện
         /// </summary>
-        StockProduct = 15
+        StockProduct = 15,
+
+        GenCodeConfig = 16,
     }
 }
