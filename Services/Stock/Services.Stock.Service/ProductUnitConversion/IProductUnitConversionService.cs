@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.ProductUnitConversion
 {
@@ -15,6 +16,6 @@ namespace VErp.Services.Stock.Service.ProductUnitConversion
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<Infrastructure.EF.StockDB.ProductUnitConversion>> GetList(int productId, int page = 1, int size = 10);
+        Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0);
     }
 }

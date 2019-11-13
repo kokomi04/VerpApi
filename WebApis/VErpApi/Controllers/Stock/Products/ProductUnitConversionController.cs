@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ProductUnitConversion>>> Get([FromQuery] int productId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<ProductUnitConversionOutput>>> Get([FromQuery] int productId, [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
             return await _productUnitConversionService.GetList(productId: productId, page: page, size: size);
         }
