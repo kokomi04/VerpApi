@@ -49,45 +49,45 @@ namespace VErp.Services.Stock.Service.ProductUnitConversion.Implement
             try
             {
                 var query = from p in _stockDbContext.ProductUnitConversion
-                            join u in _masterDBContext.Unit on p.SecondaryUnitId equals u.UnitId
-                            select new { p, u };
+                            select p;
 
                 if (productId > 0)
                 {
-                    query = query.Where(q => q.p.ProductId == productId);
+                    query = query.Where(q => q.ProductId == productId);
                 }
                 var total = query.Count();
-                var resultList = new List<ProductUnitConversionOutput>(total);
+                var secondUnitIdList = query.Select(q => q.SecondaryUnitId).ToList();
+
+                var unitList = await _masterDBContext.Unit.AsNoTracking().Where(q => secondUnitIdList.Contains(q.UnitId)).ToListAsync();
+
+                var resultFromDb = new List<VErp.Infrastructure.EF.StockDB.ProductUnitConversion>(total);
                 if (page > 0 && size > 0)
-                {
-                    resultList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList().Select(q => new ProductUnitConversionOutput
-                    {
-                        ProductUnitConversionId = q.p.ProductUnitConversionId,
-                        ProductUnitConversionName = q.p.ProductUnitConversionName,
-                        ProductId = q.p.ProductId,
-                        SecondaryUnitId = q.p.SecondaryUnitId,
-                        SecondaryUnitName = q.u.UnitName,
-                        FactorExpression = q.p.FactorExpression,
-                        ConversionDescription = q.p.ConversionDescription
-                    }).ToList();
-                }
+                    resultFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
                 else
-                    resultList = query.AsNoTracking().ToList().Select(q => new ProductUnitConversionOutput
+                    resultFromDb = query.AsNoTracking().ToList();
+
+                var resultList = new List<ProductUnitConversionOutput>(total);
+                foreach (var item in resultFromDb)
+                {
+                    var unitObj = unitList.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId);
+                    var p = new ProductUnitConversionOutput
                     {
-                        ProductUnitConversionId = q.p.ProductUnitConversionId,
-                        ProductUnitConversionName = q.p.ProductUnitConversionName,
-                        ProductId = q.p.ProductId,
-                        SecondaryUnitId = q.p.SecondaryUnitId,
-                        SecondaryUnitName = q.u.UnitName,
-                        FactorExpression = q.p.FactorExpression,
-                        ConversionDescription = q.p.ConversionDescription
-                    }).ToList();
-                return (resultList, total);
+                        ProductUnitConversionId = item.ProductUnitConversionId,
+                        ProductUnitConversionName = item.ProductUnitConversionName,
+                        ProductId = item.ProductId,
+                        SecondaryUnitId = item.SecondaryUnitId,
+                        SecondaryUnitName = unitObj != null ? unitObj.UnitName : null,
+                        FactorExpression = item.FactorExpression,
+                        ConversionDescription = item.ConversionDescription
+                    };
+                    resultList.Add(p);
+                }              
+                return (resultList,total);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetList");
-                return (null, 0);
+                return (new PageData<ProductUnitConversionOutput> { Total = 0, List = null });
             }
         }
     }

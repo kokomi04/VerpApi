@@ -247,7 +247,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                             trans.Rollback();
                             return ObjectGenCodeErrorCode.ConfigNotFound;
                         }
-                        var newCode = string.Empty;
+                        string newCode = string.Empty;
                         var newId = 0;
                         var maxId = (int)Math.Pow(10, config.CodeLength);
                         var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator))? null : config.Seperator;
@@ -268,12 +268,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                             config.ResetDate = DateTime.Now;
                         }
                         config.LastValue = newId;
-                        config.LastCode = newCode;
+                        config.LastCode = string.Empty;
 
                         _masterDbContext.SaveChanges();
                         trans.Commit();
 
-                        result.Data = newCode;
+                        result.Data = string.Empty;
                         result.Code = GeneralCode.Success;
                     }
                     catch (Exception ex)
