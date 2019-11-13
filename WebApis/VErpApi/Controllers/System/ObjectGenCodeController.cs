@@ -98,12 +98,12 @@ namespace VErpApi.Controllers.System
         }
 
         /// <summary>
-        /// Tạo mã barcode
+        /// Tạo mã code
         /// </summary>
         /// <param name="objectType">EnumObjectType</param>
         /// <returns>string Code</returns>
         [HttpGet]
-        [Route("/Generate")]
+        [Route("GenerateCode")]
         public async Task<ApiResponse<string>> GenerateCode([FromQuery] EnumObjectType objectType)
         {
             return await _objectGenCodeService.GenerateCode(objectType);

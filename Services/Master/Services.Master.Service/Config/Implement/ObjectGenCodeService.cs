@@ -249,21 +249,21 @@ namespace VErp.Services.Master.Service.Config.Implement
                         }
                         var newCode = string.Empty;
                         var newId = 0;
-                        var maxId = (int)Math.Pow(10, config.CodeLength) - 1;
-                        var checkLength = newId <= maxId;
+                        var maxId = (int)Math.Pow(10, config.CodeLength);
+                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator))? null : config.Seperator;
                         if (config.LastValue < 1)
                         {
                             newId = 1;                            
-                            var stringNewId = checkLength ? newId.ToString(string.Format("D{0}",config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{config.Seperator}{stringNewId}";
+                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}",config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                         }
                         else
                         {
                             newId = config.LastValue + 1;
-                            var stringNewId = checkLength ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{config.Seperator}{stringNewId}";
+                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                         }
-                        if (!checkLength) { 
+                        if (!(newId < maxId)) { 
                             config.CodeLength += 1;
                             config.ResetDate = DateTime.Now;
                         }
@@ -283,8 +283,6 @@ namespace VErp.Services.Master.Service.Config.Implement
                         return GeneralCode.InternalError;
                     }
                 }
-
-
             }
             catch (Exception ex)
             {
