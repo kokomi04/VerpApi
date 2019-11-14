@@ -268,12 +268,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                             config.ResetDate = DateTime.Now;
                         }
                         config.LastValue = newId;
-                        config.LastCode = string.Empty;
+                        config.LastCode = newCode;
 
                         _masterDbContext.SaveChanges();
                         trans.Commit();
 
-                        result.Data = string.Empty;
+                        result.Data = newCode;
                         result.Code = GeneralCode.Success;
                     }
                     catch (Exception ex)
