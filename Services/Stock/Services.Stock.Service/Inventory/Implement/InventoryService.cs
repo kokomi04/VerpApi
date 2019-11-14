@@ -1004,12 +1004,12 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
 
                         #region Update Package - Thông tin kiện
                         var newInventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().ToList();
-                        var packageList = new List<Package>(newInventoryDetails.Count);
+                        var packageList = new List<VErp.Infrastructure.EF.StockDB.Package>(newInventoryDetails.Count);
                         foreach (var item in newInventoryDetails)
                         {
                             var productObj = _stockDbContext.Product.AsNoTracking().FirstOrDefault(q => q.ProductId == item.ProductId);
                             var newPackageCode = CreatePackageCode(inventoryObj.InventoryCode, (productObj?.ProductCode ?? string.Empty), DateTime.Now);
-                            packageList.Add(new Package
+                            packageList.Add(new VErp.Infrastructure.EF.StockDB.Package
                             {
                                 InventoryDetailId = item.InventoryDetailId,
                                 PackageCode = newPackageCode,
