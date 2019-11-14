@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -18,7 +19,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? SecondaryUnitId { get; set; }
         public decimal? SecondaryQuantity { get; set; }
 
-        public int ProductUnitConversionId { set; get; }
+        public int? ProductUnitConversionId { set; get; }
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
@@ -28,5 +29,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
 
         public ProductListOutput ProductOutput { get; set; }
+
+        public ProductUnitConversion ProductUnitConversion { set; get; }
     }
 }

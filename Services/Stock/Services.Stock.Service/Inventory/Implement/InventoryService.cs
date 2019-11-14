@@ -123,6 +123,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 foreach (var details in listInventoryDetails)
                 {
                     var productInfo = dataList.Select(q => q.p).FirstOrDefault(q => q.ProductId == details.ProductId);
+                    var productUnitConversionInfo = _stockDbContext.ProductUnitConversion.AsNoTracking().FirstOrDefault(q => q.ProductUnitConversionId == details.ProductUnitConversionId);
                     ProductListOutput productOutput = null;
                     if (productInfo != null)
                     {
@@ -151,11 +152,13 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         PrimaryQuantity = details.PrimaryQuantity,
                         SecondaryUnitId = details.SecondaryUnitId,
                         SecondaryQuantity = details.SecondaryQuantity,
+                        ProductUnitConversionId = details.ProductUnitConversionId ?? 0,
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
 
-                        ProductOutput = productOutput
+                        ProductOutput = productOutput,
+                        ProductUnitConversion = productUnitConversionInfo
                     });
                 }
 
@@ -211,6 +214,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 foreach (var details in inventoryDetails)
                 {
                     var productInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(q => q.ProductId == details.ProductId);
+                    var productUnitConversionInfo = _stockDbContext.ProductUnitConversion.AsNoTracking().FirstOrDefault(q => q.ProductUnitConversionId == details.ProductUnitConversionId);
                     ProductListOutput productOutput = null;
                     if (productInfo != null)
                     {
@@ -239,11 +243,13 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         PrimaryQuantity = details.PrimaryQuantity,
                         SecondaryUnitId = details.SecondaryUnitId,
                         SecondaryQuantity = details.SecondaryQuantity,
+                        ProductUnitConversionId = details.ProductUnitConversionId ?? 0,
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
 
-                        ProductOutput = productOutput
+                        ProductOutput = productOutput,
+                        ProductUnitConversion = productUnitConversionInfo ?? null
                     });
                 }
                 #endregion
@@ -316,6 +322,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
+                if (_stockDbContext.Inventory.Any(q=>q.InventoryCode == req.InventoryCode.Trim()))
+                {
+                    return GeneralCode.InvalidParams;
+                }
 
                 if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
                 {
@@ -372,6 +382,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     PrimaryQuantity = details.PrimaryQuantity,
                                     SecondaryUnitId = details.SecondaryUnitId,
                                     SecondaryQuantity = details.SecondaryUnitId,
+                                    ProductUnitConversionId = details.ProductUnitConversionId ?? null,
                                     RefObjectTypeId = details.RefObjectTypeId,
                                     RefObjectId = details.RefObjectId,
                                     RefObjectCode = details.RefObjectCode,
@@ -418,6 +429,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     return GeneralCode.InvalidParams;
                 }
                 if (Enum.IsDefined(typeof(EnumInventory), req.InventoryTypeId) == false)
+                {
+                    return GeneralCode.InvalidParams;
+                }
+                if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return GeneralCode.InvalidParams;
                 }
@@ -483,6 +498,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     PrimaryQuantity = details.PrimaryQuantity,
                                     SecondaryUnitId = details.SecondaryUnitId,
                                     SecondaryQuantity = details.SecondaryUnitId,
+                                    ProductUnitConversionId = details.ProductUnitConversionId ?? null,
                                     RefObjectTypeId = details.RefObjectTypeId,
                                     RefObjectId = details.RefObjectId,
                                     RefObjectCode = details.RefObjectCode,
@@ -624,6 +640,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         PrimaryQuantity = item.PrimaryQuantity,
                                         SecondaryUnitId = item.SecondaryUnitId ?? null,
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
+                                        ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
@@ -647,6 +664,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.PrimaryQuantity = item.PrimaryQuantity;
                                     updatedItem.SecondaryUnitId = item.SecondaryUnitId ?? null;
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
+                                    updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
@@ -765,6 +783,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         PrimaryQuantity = item.PrimaryQuantity,
                                         SecondaryUnitId = item.SecondaryUnitId ?? null,
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
+                                        ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
@@ -788,6 +807,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.PrimaryQuantity = item.PrimaryQuantity;
                                     updatedItem.SecondaryUnitId = item.SecondaryUnitId ?? null;
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
+                                    updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
@@ -964,6 +984,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         PrimaryQuantity = item.PrimaryQuantity,
                                         SecondaryUnitId = item.SecondaryUnitId ?? null,
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
+                                        ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
@@ -987,6 +1008,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.PrimaryQuantity = item.PrimaryQuantity;
                                     updatedItem.SecondaryUnitId = item.SecondaryUnitId ?? null;
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
+                                    updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
@@ -1170,6 +1192,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         PrimaryQuantity = item.PrimaryQuantity,
                                         SecondaryUnitId = item.SecondaryUnitId ?? null,
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
+                                        ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
@@ -1193,6 +1216,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.PrimaryQuantity = item.PrimaryQuantity;
                                     updatedItem.SecondaryUnitId = item.SecondaryUnitId ?? null;
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
+                                    updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
