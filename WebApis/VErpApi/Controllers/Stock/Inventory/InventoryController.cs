@@ -1,23 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Invetory;
 using VErp.Services.Stock.Service.FileResources;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StockEnum;
+using VErp.Services.Stock.Service.Inventory;
 
-namespace VErpApi.Controllers.Stock.Stocks
+namespace VErpApi.Controllers.Stock.Inventory
 {
     [Route("api/inventory")]
     public class InventoryController : VErpBaseController
     {
         private readonly IInventoryService _inventoryService;
         private readonly IFileService _fileService;
-        public InventoryController(IInventoryService iventoryService,IFileService fileService
+        public InventoryController(IInventoryService iventoryService, IFileService fileService
             )
         {
             _inventoryService = iventoryService;
@@ -35,38 +36,212 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId,[FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId,type: type, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, page: page, size: size);
         }
 
 
         /// <summary>
-        /// Thêm mới phiếu nhập/xuất kho
+        /// Lấy thông tin phiếu nhập / xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu</param>
+        /// <returns>InventoryOutput</returns>
+        [HttpGet]
+        [Route("{inventoryId}")]
+        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] int inventoryId)
+        {
+            return await _inventoryService.GetInventory(inventoryId);
+        }
+
+        /// <summary>
+        /// Thêm mới phiếu nhập kho
         /// </summary>
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("")]
-        public async Task<ApiResponse<long>> AddInventory([FromBody] InventoryInput inventoryInput)
+        [Route("AddInventoryInput")]
+        public async Task<ApiResponse<long>> AddInventoryInput([FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
-            return await _inventoryService.AddInventory(currentUserId, inventoryInput);
+
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Input:
+                    return await _inventoryService.AddInventoryInput(currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    }; 
+                    return response;
+                    
+            }
         }
 
         /// <summary>
-        /// Cập nhật phiếu nhập/xuất kho
+        /// Thêm mới phiếu xuất kho
+        /// </summary>
+        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddInventoryOutput")]
+        public async Task<ApiResponse<long>> AddInventoryOutput([FromBody] InventoryInput inventoryInput)
+        {
+            var currentUserId = UserId;
+
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Output:
+                    return await _inventoryService.AddInventoryOutput(currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+
+            }
+        }
+
+
+        /// <summary>
+        /// Cập nhật phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
         /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
-        [HttpPut]        
-        [Route("{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventory([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        [HttpPut]
+        [Route("UpdateInventoryInput/{inventoryId}")]
+        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
         {
             var currentUserId = UserId;
-            return await _inventoryService.UpdateInventory(inventoryId, currentUserId, inventoryInput);
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Input:
+                    return await _inventoryService.UpdateInventoryInput(inventoryId, currentUserId, inventoryInput);
+
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+            }
         }
+
+
+        /// <summary>
+        /// Cập nhật phiếu xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
+        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("UpdateInventoryOutput/{inventoryId}")]
+        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        {
+            var currentUserId = UserId;
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Output:
+                    return await _inventoryService.UpdateInventoryOutput(inventoryId, currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+            }
+        }
+
+
+        /// <summary>
+        /// Duyệt phiếu nhập kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
+        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("ApproveInventoryInput/{inventoryId}")]
+        public async Task<ApiResponse> ApproveInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        {
+            var currentUserId = UserId;
+
+            if (!inventoryInput.IsApproved)
+            {
+                var response = new ApiResponse<long>()
+                {
+                    Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                    Data = 0,
+                    Message = "Tham số trạng thái duyệt không hợp lệ"
+                };
+                return response;
+            }
+
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Input:
+                    return await _inventoryService.UpdateInventoryInput(inventoryId, currentUserId, inventoryInput);
+
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+            }
+        }
+
+
+        /// <summary>
+        /// Duyệt phiếu xuất kho
+        /// </summary>
+        /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
+        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("ApproveInventoryOutput/{inventoryId}")]
+        public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        {
+            var currentUserId = UserId;
+
+            if (!inventoryInput.IsApproved)
+            {
+                var response = new ApiResponse<long>()
+                {
+                    Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                    Data = 0,
+                    Message = "Tham số trạng thái duyệt không hợp lệ"
+                };
+                return response;
+            }
+
+            switch (inventoryInput.InventoryTypeId)
+            {
+                case (int)EnumInventory.Output:
+                    return await _inventoryService.UpdateInventoryOutput(inventoryId, currentUserId, inventoryInput);
+                default:
+                    var response = new ApiResponse<long>()
+                    {
+                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Data = 0,
+                        Message = "Tham số loại phiếu không hợp lệ"
+                    };
+                    return response;
+            }
+        }
+
 
         /// <summary>
         /// Upload file

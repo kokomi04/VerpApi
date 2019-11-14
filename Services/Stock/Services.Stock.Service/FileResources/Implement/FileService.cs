@@ -64,7 +64,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             {
                 return FileErrorCode.FileNotFound;
             }
-
             return GetFileUrl(fileInfo, thumb, true);
         }
 
@@ -298,6 +297,24 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
         }
+
+        public List<FileToDownloadInfo> GetListFileUrl(long[] arrayFileId, EnumThumbnailSize? thumb)
+        {
+            if (arrayFileId.Length < 1)
+                return null;
+            var fileList = new List<FileToDownloadInfo>(arrayFileId.Length);
+
+            foreach (var id in arrayFileId)
+            {
+                var fileInfo = _stockContext.File.AsNoTracking().FirstOrDefault(f => f.FileId == id);
+                if (fileInfo == null) continue;
+                var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
+                fileList.Add(fileToDownloadInfo);
+            }
+            return fileList;
+        }
+
+
 
         #region private
 

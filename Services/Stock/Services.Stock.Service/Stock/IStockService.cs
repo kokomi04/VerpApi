@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Stock;
 
@@ -50,5 +51,13 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="stockId">Mã kho</param>
         /// <returns></returns>
         Task<Enum> DeleteStock(int stockId);
+
+        Task<IList<StockWarning>> StockWarnings();
+
+        Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size);
+
+        Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size);
+
+        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size);
     }
 }
