@@ -88,6 +88,17 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
+                var myCheckQuery = from i in _stockDbContext.Inventory
+                                  join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                                  join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
+                                  where !i.IsApproved
+                                  select new { p.PackageId };
+
+                var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
+
+                if(!allowUpdate)
+                    return PackageErrorCode.PackageNotAllowUpdate;
+
                 obj.InventoryDetailId = req.InventoryDetailId;
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;

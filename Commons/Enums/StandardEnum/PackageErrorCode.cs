@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         PackageNotFound = 1,
         PackageCodeEmpty = 2,
-        PackageAlreadyExisted = 3
+        PackageAlreadyExisted = 3,
+        PackageNotAllowUpdate = 4
     }
 }

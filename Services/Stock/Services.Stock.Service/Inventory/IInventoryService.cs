@@ -69,20 +69,18 @@ namespace VErp.Services.Stock.Service.Inventory
         /// Duyệt phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
-        /// <param name="currentUserId"></param>
-        /// <param name="model"></param>
+        /// <param name="currentUserId"></param>        
         /// <returns></returns>
-        Task<Enum> ApproveInventoryInput(int inventoryId, int currentUserId, InventoryInput model);
+        Task<Enum> ApproveInventoryInput(int inventoryId, int currentUserId);
 
 
         /// <summary>
         /// Duyệt phiếu xuất kho
         /// </summary>
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
-        /// <param name="currentUserId"></param>
-        /// <param name="model"></param>
+        /// <param name="currentUserId"></param>        
         /// <returns></returns>
-        Task<Enum> ApproveInventoryOutput(int inventoryId, int currentUserId, InventoryInput model);
+        Task<Enum> ApproveInventoryOutput(int inventoryId, int currentUserId);
 
         /// <summary>
         /// Xóa thông tin phiếu nhập / xuất kho (đánh dấu xóa)
