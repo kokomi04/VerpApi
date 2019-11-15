@@ -309,6 +309,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var fileInfo = _stockContext.File.AsNoTracking().FirstOrDefault(f => f.FileId == id);
                 if (fileInfo == null) continue;
                 var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
+                fileToDownloadInfo.FileId = id;
                 fileList.Add(fileToDownloadInfo);
             }
             return fileList;

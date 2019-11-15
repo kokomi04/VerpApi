@@ -13,5 +13,7 @@ namespace VErp.Services.Stock.Model.FileResources
     {
         public string FileUrl { get; set; }     
         public long FileLength { get; set; }
+
+        public long? FileId { set; get; }
     }
 }
