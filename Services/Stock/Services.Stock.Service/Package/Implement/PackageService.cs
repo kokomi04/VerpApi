@@ -17,6 +17,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Services.Stock.Model.Package;
 using Microsoft.EntityFrameworkCore.Internal;
+using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Package.Implement
 {
@@ -46,13 +47,21 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 if (req == null || _stockDbContext.Package.Any(q => q.PackageCode == req.PackageCode))
                     return GeneralCode.InvalidParams;
 
+                DateTime issuedDate = DateTime.MinValue;
+                DateTime expiredDate = DateTime.MinValue;
+                
+                if (!string.IsNullOrEmpty(req.Date))
+                    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
+                if (!string.IsNullOrEmpty(req.ExpiryTime))
+                    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
+
                 var obj = new VErp.Infrastructure.EF.StockDB.Package
                 {
                     InventoryDetailId = req.InventoryDetailId,
                     PackageCode = req.PackageCode,
                     LocationId = req.LocationId,
-                    Date = req.Date,
-                    ExpiryTime = req.ExpiryTime,
+                    Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
+                    ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
                     PrimaryUnitId = req.PrimaryUnitId,
                     PrimaryQuantity = req.PrimaryQuantity,
                     SecondaryUnitId = req.SecondaryUnitId,
@@ -89,21 +98,29 @@ namespace VErp.Services.Stock.Service.Package.Implement
                     return PackageErrorCode.PackageNotFound;
                 }
                 var myCheckQuery = from i in _stockDbContext.Inventory
-                                  join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                  join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
-                                  where !i.IsApproved
-                                  select new { p.PackageId };
+                                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
+                                   where !i.IsApproved
+                                   select new { p.PackageId };
 
                 var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
 
-                if(!allowUpdate)
+                if (!allowUpdate)
                     return PackageErrorCode.PackageNotAllowUpdate;
+
+                DateTime issuedDate = DateTime.MinValue;
+                DateTime expiredDate = DateTime.MinValue;
+
+                if (!string.IsNullOrEmpty(req.Date))
+                    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
+                if (!string.IsNullOrEmpty(req.ExpiryTime))
+                    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 
                 obj.InventoryDetailId = req.InventoryDetailId;
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;
-                obj.Date = req.Date;
-                obj.ExpiryTime = req.ExpiryTime;
+                obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
+                obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
                 obj.PrimaryUnitId = req.PrimaryUnitId;
                 obj.PrimaryQuantity = req.PrimaryQuantity;
                 obj.SecondaryUnitId = req.SecondaryUnitId;
@@ -135,7 +152,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 if (obj == null)
                 {
                     return PackageErrorCode.PackageNotFound;
-                }               
+                }
                 obj.UpdatedDatetimeUtc = DateTime.Now;
                 obj.IsDeleted = true;
 

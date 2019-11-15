@@ -101,10 +101,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
             var dataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
             var inventoryList = dataList.Select(q => q.i).ToList();
-
-
-
-            //var fileList = dataList.Select(q => q.f).ToList();
+                        
             var pagedData = new List<InventoryOutput>();
             foreach (var item in inventoryList)
             {
@@ -113,7 +110,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 if (_stockDbContext.InventoryFile.Any(q => q.InventoryId == item.InventoryId))
                 {
                     var fileIdArray = _stockDbContext.InventoryFile.Where(q => q.InventoryId == item.InventoryId).Select(q => q.FileId).ToArray();
-                    attachedFiles = _fileService.GetListFileUrl(fileIdArray, EnumThumbnailSize.Large);
+                    attachedFiles = _fileService.GetListFileUrl(fileIdArray, EnumThumbnailSize.Large);                     
                 }
                 #endregion
 
@@ -680,6 +677,26 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         }
                         #endregion
 
+                        #region Update Attached File
+                        if (model.FileIdList != null && model.FileIdList.Count > 0)
+                        {
+                            var oldFileIdList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId).Select(q => q.FileId).ToList();
+                            var deletedFileIdList = oldFileIdList.Except(model.FileIdList).ToList();
+                            var deletedObjList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId && deletedFileIdList.Contains(q.FileId)).ToList();
+                                                                                    
+                            var newAttachedFileList = new List<InventoryFile>(model.FileIdList.Count);
+                            foreach(var fileId in model.FileIdList)
+                            {
+                                if (oldFileIdList.Contains(fileId))
+                                    continue;
+                                newAttachedFileList.Add(new InventoryFile { FileId = fileId, InventoryId = inventoryId });
+                            }
+                            _stockDbContext.RemoveRange(deletedObjList);
+                            await _stockDbContext.AddRangeAsync(newAttachedFileList);
+                            await _stockDbContext.SaveChangesAsync();
+                        }
+                        #endregion
+
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
@@ -823,6 +840,27 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         }
                         #endregion
 
+
+                        #region Update Attached File
+                        if (model.FileIdList != null && model.FileIdList.Count > 0)
+                        {
+                            var oldFileIdList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId).Select(q => q.FileId).ToList();
+                            var deletedFileIdList = oldFileIdList.Except(model.FileIdList).ToList();
+                            var deletedObjList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId && deletedFileIdList.Contains(q.FileId)).ToList();
+
+                            var newAttachedFileList = new List<InventoryFile>(model.FileIdList.Count);
+                            foreach (var fileId in model.FileIdList)
+                            {
+                                if (oldFileIdList.Contains(fileId))
+                                    continue;
+                                newAttachedFileList.Add(new InventoryFile { FileId = fileId, InventoryId = inventoryId });
+                            }
+                            _stockDbContext.RemoveRange(deletedObjList);
+                            await _stockDbContext.AddRangeAsync(newAttachedFileList);
+                            await _stockDbContext.SaveChangesAsync();
+                        }
+                        #endregion
+                        
                         #region Update StockProduct - Số liệu tồn kho
                         // Nếu phiếu nhập xuất được duyệt thì update số lượng
                         if (inventoryObj.IsApproved)
