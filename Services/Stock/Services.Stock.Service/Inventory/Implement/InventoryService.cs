@@ -323,11 +323,11 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-
                 if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
                 {
                     return GeneralCode.InvalidParams;
                 }
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -518,7 +518,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                 #region Cập nhật thông tin StockProduct
                                 var oldStockProduct = _stockDbContext.StockProduct.FirstOrDefault(q =>
                                     q.StockId == inventoryObj.StockId && q.ProductId == item.ProductId &&
-                                    q.SecondaryUnitId == item.SecondaryUnitId);
+                                    q.SecondaryUnitId == item.SecondaryUnitId && q.ProductUnitConversionId == item.ProductUnitConversionId);
                                 if (oldStockProduct != null)
                                 {
                                     oldStockProduct.PrimaryQuantityWaiting += item.PrimaryQuantity;
@@ -530,6 +530,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             }
                         }
                         #endregion
+                        
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
                         var objLog = GetInventoryInfoForLog(inventoryObj);
@@ -1011,10 +1012,23 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         await _stockDbContext.SaveChangesAsync();
                         #endregion
 
+                        #region Update InventoryDetails
+                        var inventoryDetailList = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
+                        foreach (var item in inventoryDetailList)
+                        {
+                            if (item.ProductUnitConversionId > 0 && item.SecondaryUnitId > 0)
+                                continue;
+                            item.ProductUnitConversionId = null; 
+                            item.SecondaryUnitId = item.PrimaryUnitId;
+                            item.SecondaryQuantity = item.PrimaryQuantity ;
+                        }
+                        await _stockDbContext.SaveChangesAsync();
+                        #endregion
+
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
 
                         #region Update Package - Thông tin kiện
-                        //var newInventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().ToList();
+                        
                         var packageList = new List<VErp.Infrastructure.EF.StockDB.Package>(inventoryDetails.Count);
                         foreach (var item in inventoryDetails)
                         {
@@ -1029,6 +1043,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                 ExpiryTime = null,
                                 PrimaryUnitId = item.PrimaryUnitId,
                                 PrimaryQuantity = item.PrimaryQuantity,
+                                ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                 SecondaryUnitId = item.SecondaryUnitId,
                                 SecondaryQuantity = item.SecondaryQuantity,
                                 PrimaryQuantityRemaining = item.PrimaryQuantity,
@@ -1047,7 +1062,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         {
                             var oldStockProduct = _stockDbContext.StockProduct.FirstOrDefault(q =>
                                              q.StockId == inventoryObj.StockId && q.ProductId == item.ProductId &&
-                                             q.SecondaryUnitId == item.SecondaryUnitId);
+                                             q.SecondaryUnitId == item.SecondaryUnitId && q.ProductUnitConversionId == item.ProductUnitConversionId);
                             if (oldStockProduct != null)
                             {
                                 oldStockProduct.PrimaryQuantity += item.PrimaryQuantity;
@@ -1062,6 +1077,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     ProductId = item.ProductId,
                                     SecondaryUnitId = item.SecondaryUnitId ?? 0,
                                     SecondaryQuantity = item.SecondaryQuantity,
+                                    ProductUnitConversionId = item.ProductUnitConversionId,
                                     PrimaryUnitId = item.PrimaryUnitId,
                                     PrimaryQuantity = item.PrimaryQuantity,
                                     PrimaryQuantityRemaining = 0,
@@ -1140,7 +1156,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
                         foreach (var item in inventoryDetails)
                         {
-                            var oldStockProduct = _stockDbContext.StockProduct.FirstOrDefault(q => q.StockId == inventoryObj.StockId && q.ProductId == item.ProductId && q.SecondaryUnitId == item.SecondaryUnitId);
+                            var oldStockProduct = _stockDbContext.StockProduct.FirstOrDefault(q => q.StockId == inventoryObj.StockId && q.ProductId == item.ProductId && q.SecondaryUnitId == item.SecondaryUnitId && q.ProductUnitConversionId == item.ProductUnitConversionId);
                             if (oldStockProduct != null)
                             {
                                 oldStockProduct.PrimaryQuantityRemaining -= item.PrimaryQuantity;
