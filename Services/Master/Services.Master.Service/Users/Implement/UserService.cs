@@ -186,7 +186,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                         select u;
             }
 
-            var lst = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lst = await query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToListAsync();
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -240,7 +240,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
         {
             req.NewPassword = req.NewPassword ?? "";
-            if (req.NewPassword.Length<4)
+            if (req.NewPassword.Length < 4)
             {
                 return UserErrorCode.PasswordTooShort;
             }
@@ -251,7 +251,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return UserErrorCode.UserNotFound;
             }
 
-            if(!Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, userLoginInfo.PasswordSalt, req.OldPassword, userLoginInfo.PasswordHash))
+            if (!Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, userLoginInfo.PasswordSalt, req.OldPassword, userLoginInfo.PasswordHash))
             {
                 return UserErrorCode.OldPasswordIncorrect;
             }
@@ -290,7 +290,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var rolePermissionList = await _roleService.GetRolePermission(currentRoleId);
 
-            var result = new PageData<UserInfoOutput> { Total=0,List=null};
+            var result = new PageData<UserInfoOutput> { Total = 0, List = null };
 
             if (rolePermissionList.Count > 0)
             {
@@ -334,11 +334,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                     var totalRecords = await query.CountAsync();
 
                     result.List = userList;
-                    result.Total = totalRecords;                    
+                    result.Total = totalRecords;
                 }
                 else
                 {
-                    _logger.LogInformation(message: string.Format("{0} - {1}|{2}", "UserService.GetListByModuleId", currentUserId, "Không có quyền thực hiện chức năng này"));                    
+                    _logger.LogInformation(message: string.Format("{0} - {1}|{2}", "UserService.GetListByModuleId", currentUserId, "Không có quyền thực hiện chức năng này"));
                 }
             }
             return result;
