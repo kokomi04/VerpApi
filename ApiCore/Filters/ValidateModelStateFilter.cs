@@ -92,7 +92,16 @@ namespace VErp.Infrastructure.ApiCore.Filters
                                     var vType = v.GetType();
                                     if (vType == typeof(string))
                                     {
-                                        p.SetValue(obj, v.ToString().Trim());
+                                        try
+                                        {
+                                            p.SetValue(obj, v.ToString().Trim());
+                                        }
+                                        catch (Exception)
+                                        {
+
+                                            
+                                        }
+                                        
                                     }
                                 }
                                 if (!ValidateEnum(new List<object>() { v }).IsSuccess())
