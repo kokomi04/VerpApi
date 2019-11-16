@@ -351,7 +351,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      p.ProductId,
                      p.ProductCode,
                      p.ProductName,
-                     p.UnitId,
                      p.ProductTypeId,
                      p.ProductCateId
                  }
@@ -390,7 +389,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             p.ProductId,
                             p.ProductCode,
                             p.ProductName,
-                            p.UnitId,
+                            sp.PrimaryUnitId,
                             p.ProductTypeId,
                             p.ProductCateId,
                             sp.PrimaryQuantityRemaining,
@@ -465,7 +464,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductTypeId = item.ProductTypeId,
                     ProductCateId = item.ProductCateId,
                     Specification = extra?.Specification,
-                    UnitId = item.UnitId,
+                    UnitId = item.PrimaryUnitId,
                     PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
                 };
                 pagedData.Add(stockInfo);
@@ -481,18 +480,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from pk in _stockContext.Package
                 join iv in _stockContext.InventoryDetail on pk.InventoryDetailId equals iv.InventoryDetailId
                 join i in _stockContext.Inventory on iv.InventoryId equals i.InventoryId
+                join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
+                from c in cs.DefaultIfEmpty()
+                join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
+                from l in ls.DefaultIfEmpty()
                 where i.StockId == stockId && iv.ProductId == productId && i.IsApproved
                 select new StockProductPackageDetail()
                 {
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
                     LocationId = pk.LocationId,
+                    LocationName = l == null ? null : l.Name,
                     Date = i.DateUtc,
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantity,
                     SecondaryUnitId = pk.SecondaryUnitId,
                     SecondaryQuantity = pk.SecondaryQuantity,
+                    ProductUnitConversionId = pk.ProductUnitConversionId,
+                    ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     RefObjectId = iv.RefObjectId,
                     RefObjectCode = iv.RefObjectCode
                 }
@@ -637,21 +643,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
         {
-            var productQuery = (
-                from p in _stockContext.Product
-                join s in _stockContext.StockProduct on p.ProductId equals s.ProductId
-                select new
-                {
-                    s.StockId,
-                    s.PrimaryQuantityRemaining,
-                    p.ProductId,
-                    p.ProductCode,
-                    p.ProductName,
-                    p.UnitId,
-                    p.ProductTypeId,
-                    p.ProductCateId
-                }
-               );
+            toDate = toDate.AddDays(1).Date;
+
+
+            var productQuery = _stockContext.Product.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 productQuery = from p in productQuery
@@ -674,18 +669,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                where productCateIds.Contains(p.ProductCateId)
                                select p;
             }
-
             var inventories = _stockContext.Inventory.AsQueryable();
 
             if (stockIds != null && stockIds.Count > 0)
             {
-                productQuery = productQuery.Where(iv => stockIds.Contains(iv.StockId));
                 inventories = inventories.Where(iv => stockIds.Contains(iv.StockId));
             }
 
-            var total = await productQuery.CountAsync();
+            var productList = (
+                from p in _stockContext.Product
+                join s in _stockContext.StockProduct on p.ProductId equals s.ProductId
+                join d in _stockContext.InventoryDetail on new { s.PrimaryUnitId, p.ProductId } equals new { d.PrimaryUnitId, d.ProductId } into ds
+                from d in ds.DefaultIfEmpty()
+                join iv in inventories on d.InventoryId equals iv.InventoryId into ivs
+                from iv in ivs
+                where s.PrimaryQuantityRemaining > 0 || (d != null && iv.IsApproved)
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    s.PrimaryUnitId,
+                }
+               ).Distinct();
 
-            var products = productQuery.OrderByDescending(p => p.PrimaryQuantityRemaining).Skip((page - 1) * size).Take(size);
+
+            var total = await productList.CountAsync();
+
+            var products = await productList.OrderByDescending(p => p.ProductCode).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var productIds = products.Select(p => p.ProductId).ToList();
 
@@ -697,7 +708,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                select new
                {
                    g.Key.ProductId,
-                   UnitId = g.Key.PrimaryUnitId,
+                   g.Key.PrimaryUnitId,
                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                }
                ).ToListAsync();
@@ -712,30 +723,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 select new
                 {
                     g.Key.ProductId,
-                    UnitId = g.Key.PrimaryUnitId,
+                    g.Key.PrimaryUnitId,
                     TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : 0),
                     TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Output ? d.PrimaryQuantity : 0),
                     Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                 }
                 ).ToListAsync();
 
-           
+
             var data = (
-                from p in products
-                join b in befores on new { p.ProductId, p.UnitId } equals new { b.ProductId, b.UnitId } into bp
+                from p in productList
+                join b in befores on new { p.ProductId, p.PrimaryUnitId } equals new { b.ProductId, b.PrimaryUnitId } into bp
                 from b in bp.DefaultIfEmpty()
-                join a in afters on new { p.ProductId, p.UnitId } equals new { a.ProductId, a.UnitId } into ap
+                join a in afters on new { p.ProductId, p.PrimaryUnitId } equals new { a.ProductId, a.PrimaryUnitId } into ap
                 from a in ap.DefaultIfEmpty()
                 select new StockSumaryReportOutput
                 {
                     ProductCode = p.ProductCode,
                     ProductName = p.ProductName,
-                    UnitId = p.UnitId,
+                    UnitId = p.PrimaryUnitId,
                     PrimaryQualtityBefore = b == null ? 0 : b.Total,
                     PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
                     PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
                     PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
-                });
+                }).ToList();
 
             return (data, total);
         }
