@@ -1,10 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using VErp.Services.Stock.Model.Location;
 
-namespace VErp.Infrastructure.EF.StockDB
+namespace VErp.Services.Stock.Model.Package
 {
-    public partial class Package
+    public class PackageOutputModel
     {
+        public PackageOutputModel() 
+        {
+            LocationId = null;
+            LocationOutputModel = null;
+        }
+
         public long PackageId { get; set; }
         public long? InventoryDetailId { get; set; }
         public string PackageCode { get; set; }
@@ -17,12 +25,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? SecondaryQuantity { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }
+        //public bool IsDeleted { get; set; }
         public decimal PrimaryQuantityWaiting { get; set; }
         public decimal PrimaryQuantityRemaining { get; set; }
         public decimal SecondaryQuantityWaitting { get; set; }
         public decimal SecondaryQuantityRemaining { get; set; }
 
-        public virtual Location Location { get; set; }
+        public LocationOutput LocationOutputModel { get; set; }
     }
 }

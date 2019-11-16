@@ -1,21 +1,19 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Stock;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
-using static VErp.Services.Stock.Model.Stock.StockModel;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -348,7 +346,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var productQuery = (
                  from p in _stockContext.Product
-                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                  select new
                  {
                      p.ProductId,
@@ -382,61 +379,55 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
-            var query = (
-                 from sp in _stockContext.StockProduct
-                 join p in productQuery on sp.ProductId equals p.ProductId
-                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
-                 join iv in _stockContext.Inventory on sp.StockId equals iv.StockId
-                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-                 join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
-                 where sp.StockId == stockId
-                 group new { IsExpired = pk.ExpiryTime < DateTime.UtcNow } by new
-                 {
-                     p.ProductId,
-                     p.ProductCode,
-                     p.ProductName,
-                     p.UnitId,
-                     p.ProductTypeId,
-                     p.ProductCateId,
-                     sp.PrimaryQuantityRemaining,
-                     IsMinWarning = sp.PrimaryQuantityRemaining <= ps.AmountWarningMin,
-                     IsMaxWarning = sp.PrimaryQuantityRemaining >= ps.AmountWarningMax
-                 } into g
-                 select new
-                 {
-                     g.Key.ProductId,
-                     g.Key.ProductCode,
-                     g.Key.ProductName,
-                     g.Key.UnitId,
-                     g.Key.ProductTypeId,
-                     g.Key.ProductCateId,
-                     g.Key.PrimaryQuantityRemaining,
-                     g.Key.IsMinWarning,
-                     g.Key.IsMaxWarning,
-                     IsExpired = g.Max(v => v.IsExpired)
-                 });
+
+
+            var query = from sp in _stockContext.StockProduct
+                        join p in productQuery on sp.ProductId equals p.ProductId
+                        join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                        where sp.StockId == stockId
+                        select new
+                        {
+                            p.ProductId,
+                            p.ProductCode,
+                            p.ProductName,
+                            p.UnitId,
+                            p.ProductTypeId,
+                            p.ProductCateId,
+                            sp.PrimaryQuantityRemaining,
+                            ps.AmountWarningMin,
+                            ps.AmountWarningMax,
+                        };
 
             if (stockWarningTypeIds != null && stockWarningTypeIds.Count > 0)
             {
                 if (stockWarningTypeIds.Contains(EnumWarningType.Min))
                 {
                     query = from p in query
-                            where p.IsMinWarning
+                            where p.PrimaryQuantityRemaining <= p.AmountWarningMin
                             select p;
                 }
 
                 if (stockWarningTypeIds.Contains(EnumWarningType.Max))
                 {
                     query = from p in query
-                            where p.IsMaxWarning
+                            where p.AmountWarningMax >= p.AmountWarningMin
                             select p;
                 }
 
 
                 if (stockWarningTypeIds.Contains(EnumWarningType.Expired))
                 {
+                    var productWithExprires = from iv in _stockContext.Inventory
+                                              join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                                              join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
+                                              where iv.StockId == stockId && pk.ExpiryTime < DateTime.UtcNow
+                                              select new
+                                              {
+                                                  d.ProductId,
+                                              };
+
                     query = from p in query
-                            where p.IsExpired
+                            join e in productWithExprires on p.ProductId equals e.ProductId
                             select p;
                 }
             }
@@ -482,11 +473,162 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
+
+        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
+        {
+            var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var query = (
+                from pk in _stockContext.Package
+                join iv in _stockContext.InventoryDetail on pk.InventoryDetailId equals iv.InventoryDetailId
+                join i in _stockContext.Inventory on iv.InventoryId equals i.InventoryId
+                select new StockProductPackageDetail()
+                {
+                    PackageId = pk.PackageId,
+                    PackageCode = pk.PackageCode,
+                    LocationId = pk.LocationId,
+                    Date = i.DateUtc,
+                    ExpriredDate = pk.ExpiryTime,
+                    PrimaryUnitId = pk.PrimaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantity,
+                    SecondaryUnitId = pk.SecondaryUnitId,
+                    SecondaryQuantity = pk.SecondaryQuantity,
+                    RefObjectId = iv.RefObjectId,
+                    RefObjectCode = iv.RefObjectCode
+                }
+                );
+            var total = await query.CountAsync();
+            switch ((EnumStockOutputRule)productStockInfo.StockOutputRuleId)
+            {
+                case EnumStockOutputRule.None:
+                case EnumStockOutputRule.Fifo:
+                    query = from pk in query
+                            orderby pk.Date
+                            select pk;
+                    break;
+                case EnumStockOutputRule.Lifo:
+                    query = from pk in query
+                            orderby pk.Date descending
+                            select pk;
+                    break;
+            }
+
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+
+            return (lstData, total);
+        }
+
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
+        {
+            var productQuery = (
+                from p in _stockContext.Product
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.UnitId,
+                    p.ProductTypeId,
+                    p.ProductCateId
+                }
+               );
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
+
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var types = productTypeIds.Select(t => (int?)t);
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                productQuery = from p in productQuery
+                               where productCateIds.Contains(p.ProductCateId)
+                               select p;
+            }
+
+            productQuery = from p in productQuery
+                           join d in _stockContext.InventoryDetail on p.ProductId equals d.ProductId
+                           join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                           where iv.IsApproved
+                           group 0 by new { p.ProductId, p.ProductCode, p.ProductName, p.ProductTypeId, p.ProductCateId, d.PrimaryUnitId } into g
+                           select new
+                           {
+                               g.Key.ProductId,
+                               g.Key.ProductCode,
+                               g.Key.ProductName,
+                               UnitId = g.Key.PrimaryUnitId,
+                               g.Key.ProductTypeId,
+                               g.Key.ProductCateId
+                           };
+
+            var total = await productQuery.CountAsync();
+
+            var queryBefore = (
+                from iv in _stockContext.Inventory
+                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                join p in productQuery on d.ProductId equals p.ProductId
+                where iv.IsApproved && iv.DateUtc < fromDate
+                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+                select new
+                {
+                    g.Key.ProductId,
+                    UnitId = g.Key.PrimaryUnitId,
+                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                }
+                );
+
+            var queryAfter = (
+                from iv in _stockContext.Inventory
+                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                join p in productQuery on d.ProductId equals p.ProductId
+                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+                select new
+                {
+                    g.Key.ProductId,
+                    UnitId = g.Key.PrimaryUnitId,
+                    TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : 0),
+                    TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Output ? d.PrimaryQuantity : 0),
+                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                }
+                );
+
+            //TODO: dotnetcore exception when join on group by
+            var products = await productQuery.ToListAsync();
+            var befores = await queryBefore.ToListAsync();
+            var afters = await queryAfter.ToListAsync();
+            var data = (
+                from p in products
+                join b in befores on new { p.ProductId, p.UnitId } equals new { b.ProductId, b.UnitId } into bp
+                from b in bp.DefaultIfEmpty()
+                join a in afters on new { p.ProductId, p.UnitId } equals new { a.ProductId, a.UnitId } into ap
+                from a in ap.DefaultIfEmpty()
+                select new StockSumaryReportOutput
+                {
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    UnitId = p.UnitId,
+                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
+                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
+                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
+                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
+                });
+            var pageData = data.Skip((page - 1) * size).Take(size).ToList();
+            return (pageData, total);
+        }
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
         }
-
 
     }
 }

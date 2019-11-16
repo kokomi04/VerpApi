@@ -25,10 +25,12 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<FileStatus> FileStatus { get; set; }
         public virtual DbSet<FileType> FileType { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
+        public virtual DbSet<InventoryType> InventoryType { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
         public virtual DbSet<ObjectType> ObjectType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -42,7 +44,11 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-           
+            if (optionsBuilder.IsConfigured)
+            {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+                optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=MasterDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
+            }
         }
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
@@ -98,6 +104,7 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<Customer>(entity =>
             {
                 entity.Property(e => e.Address).HasMaxLength(128);
+                entity.Property(e => e.CustomerCode).HasMaxLength(128);
                 entity.Property(e => e.CustomerName)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -161,6 +168,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(64);
             });
+            modelBuilder.Entity<InventoryType>(entity =>
+            {
+                entity.Property(e => e.InventoryTypeId).ValueGeneratedNever();
+                entity.Property(e => e.InventoryTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<Method>(entity =>
             {
                 entity.Property(e => e.MethodId).ValueGeneratedNever();
@@ -201,6 +215,32 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ModuleGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+            modelBuilder.Entity<ObjectGenCode>(entity =>
+            {
+                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
+                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.DateFormat)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+                entity.Property(e => e.ObjectTypeName).HasMaxLength(128);
+                entity.Property(e => e.Prefix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.ResetDate).HasColumnType("datetime");
+                entity.Property(e => e.Seperator)
+                    .HasMaxLength(1)
+                    .IsUnicode(false);
+                entity.Property(e => e.Suffix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
             });
             modelBuilder.Entity<ObjectType>(entity =>
             {

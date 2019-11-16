@@ -134,7 +134,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
 
 
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
+                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
                         ProductUnitConversionName = u.ProductUnitConversionName,
@@ -307,7 +307,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
 
 
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new ProductUnitConversion()
+                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
                     {
                         ProductId = productInfo.ProductId,
                         ProductUnitConversionName = u.ProductUnitConversionName,
@@ -497,7 +497,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return (pageData, total);
         }
 
-        private object GetProductForLog(Product productInfo, ProductExtraInfo extraInfo, ProductStockInfo stockInfo, IEnumerable<ProductStockValidation> stocks, IEnumerable<ProductUnitConversion> converts)
+        private object GetProductForLog(Product productInfo, ProductExtraInfo extraInfo, ProductStockInfo stockInfo, IEnumerable<ProductStockValidation> stocks, IEnumerable<Infrastructure.EF.StockDB.ProductUnitConversion> converts)
         {
             return new
             {

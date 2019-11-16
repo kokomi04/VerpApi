@@ -6,6 +6,9 @@ namespace VErp.Services.Master.Model.Customer
 {
     public class CustomerModel
     {
+        [Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
+        [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
+        public string CustomerCode { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên đối tác")]
         [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
         public string CustomerName { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -142,6 +143,31 @@ namespace VErpApi.Controllers.Stock.Stocks
         public async Task<ApiResponse<PageData<StockProductListOutput>>> StockProducts([FromRoute] int stockId, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<EnumWarningType> stockWarningTypeIds, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
+        }
+
+        [HttpGet]
+        [Route("{stockId}/StockProducts/{productId}")]
+        public async Task<ApiResponse<PageData<StockProductPackageDetail>>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockProductPackageDetails(stockId, productId, page, size);
+        }
+
+        /// <summary>
+        /// Báo cáo xuất, nhập tồn
+        /// </summary>
+        /// <param name="stockIds"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockSumaryReport")]
+        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockSumaryReport("", stockIds, productTypeIds, productCateIds, fromDate, toDate,  page, size);
         }
     }
 }
