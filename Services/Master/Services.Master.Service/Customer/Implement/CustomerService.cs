@@ -110,6 +110,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             return new CustomerModel()
             {
                 CustomerName = customerInfo.CustomerName,
+                CustomerCode = customerInfo.CustomerCode,
                 CustomerTypeId = (EnumCustomerType)customerInfo.CustomerTypeId,
                 Address = customerInfo.Address,
                 TaxIdNo = customerInfo.TaxIdNo,
