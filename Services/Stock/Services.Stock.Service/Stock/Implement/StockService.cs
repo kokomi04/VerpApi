@@ -518,7 +518,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
-        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
+        [Obsolete]
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport_bak(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
         {
             var productQuery = (
                 from p in _stockContext.Product
@@ -634,7 +635,110 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var pageData = data.Skip((page - 1) * size).Take(size).ToList();
             return (pageData, total);
         }
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
+        {
+            var productQuery = (
+                from p in _stockContext.Product
+                join s in _stockContext.StockProduct on p.ProductId equals s.ProductId
+                select new
+                {
+                    s.StockId,
+                    s.PrimaryQuantityRemaining,
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.UnitId,
+                    p.ProductTypeId,
+                    p.ProductCateId
+                }
+               );
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
 
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var types = productTypeIds.Select(t => (int?)t);
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                productQuery = from p in productQuery
+                               where productCateIds.Contains(p.ProductCateId)
+                               select p;
+            }
+
+            var inventories = _stockContext.Inventory.AsQueryable();
+
+            if (stockIds != null && stockIds.Count > 0)
+            {
+                productQuery = productQuery.Where(iv => stockIds.Contains(iv.StockId));
+                inventories = inventories.Where(iv => stockIds.Contains(iv.StockId));
+            }
+
+            var total = await productQuery.CountAsync();
+
+            var products = productQuery.OrderByDescending(p => p.PrimaryQuantityRemaining).Skip((page - 1) * size).Take(size);
+
+            var productIds = products.Select(p => p.ProductId).ToList();
+
+            var befores = await (
+               from iv in inventories
+               join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+               where iv.IsApproved && iv.DateUtc < fromDate && productIds.Contains(d.ProductId)
+               group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+               select new
+               {
+                   g.Key.ProductId,
+                   UnitId = g.Key.PrimaryUnitId,
+                   Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+               }
+               ).ToListAsync();
+
+
+            var afters = await (
+                from iv in inventories
+                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                join p in productQuery on d.ProductId equals p.ProductId
+                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate && productIds.Contains(d.ProductId)
+                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
+                select new
+                {
+                    g.Key.ProductId,
+                    UnitId = g.Key.PrimaryUnitId,
+                    TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : 0),
+                    TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Output ? d.PrimaryQuantity : 0),
+                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventory.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                }
+                ).ToListAsync();
+
+           
+            var data = (
+                from p in products
+                join b in befores on new { p.ProductId, p.UnitId } equals new { b.ProductId, b.UnitId } into bp
+                from b in bp.DefaultIfEmpty()
+                join a in afters on new { p.ProductId, p.UnitId } equals new { a.ProductId, a.UnitId } into ap
+                from a in ap.DefaultIfEmpty()
+                select new StockSumaryReportOutput
+                {
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    UnitId = p.UnitId,
+                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
+                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
+                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
+                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
+                });
+
+            return (data, total);
+        }
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
