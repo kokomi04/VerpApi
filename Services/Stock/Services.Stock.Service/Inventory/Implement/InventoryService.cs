@@ -18,6 +18,7 @@ using VErp.Commons.Library;
 using System.Globalization;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Stock.Service.Inventory.Implement
 {
@@ -29,6 +30,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
         private readonly IActivityService _activityService;
         private readonly IUnitService _unitService;
         private readonly IFileService _fileService;
+        private readonly IAsyncRunnerService _asyncRunner;
 
         public InventoryService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -36,6 +38,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
             , IActivityService activityService
             , IUnitService unitService
             , IFileService fileService
+            , IAsyncRunnerService asyncRunner
             )
         {
             _stockDbContext = stockContext;
@@ -44,6 +47,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
             _activityService = activityService;
             _unitService = unitService;
             _fileService = fileService;
+            _asyncRunner = asyncRunner;
         }
 
         /// <summary>
@@ -101,7 +105,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
             var dataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
             var inventoryList = dataList.Select(q => q.i).ToList();
-                        
+
             var pagedData = new List<InventoryOutput>();
             foreach (var item in inventoryList)
             {
@@ -110,7 +114,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 if (_stockDbContext.InventoryFile.Any(q => q.InventoryId == item.InventoryId))
                 {
                     var fileIdArray = _stockDbContext.InventoryFile.Where(q => q.InventoryId == item.InventoryId).Select(q => q.FileId).ToArray();
-                    attachedFiles = _fileService.GetListFileUrl(fileIdArray, EnumThumbnailSize.Large);                     
+                    attachedFiles = _fileService.GetListFileUrl(fileIdArray, EnumThumbnailSize.Large);
                 }
                 #endregion
 
@@ -319,7 +323,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-                if (_stockDbContext.Inventory.Any(q=>q.InventoryCode == req.InventoryCode.Trim()))
+                if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return GeneralCode.InvalidParams;
                 }
@@ -394,6 +398,15 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         var objLog = GetInventoryInfoForLog(inventoryObj);
                         _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", null, objLog);
 
+                        //Move file from tmp folder
+                        if (req.FileIdList != null)
+                        {
+                            foreach (var fileId in req.FileIdList)
+                            {
+                                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                            }
+                        }
+
                         return inventoryObj.InventoryId;
                     }
                     catch (Exception ex)
@@ -403,6 +416,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         return GeneralCode.InternalError;
                     }
                 }
+
+                
             }
             catch (Exception ex)
             {
@@ -530,11 +545,21 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             }
                         }
                         #endregion
-                        
+
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
                         var objLog = GetInventoryInfoForLog(inventoryObj);
                         _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", null, objLog);
+
+
+                        //Move file from tmp folder
+                        if (req.FileIdList != null)
+                        {
+                            foreach (var fileId in req.FileIdList)
+                            {
+                                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                            }
+                        }
 
                         return inventoryObj.InventoryId;
                     }
@@ -684,9 +709,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             var oldFileIdList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId).Select(q => q.FileId).ToList();
                             var deletedFileIdList = oldFileIdList.Except(model.FileIdList).ToList();
                             var deletedObjList = _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryId && deletedFileIdList.Contains(q.FileId)).ToList();
-                                                                                    
+
                             var newAttachedFileList = new List<InventoryFile>(model.FileIdList.Count);
-                            foreach(var fileId in model.FileIdList)
+                            foreach (var fileId in model.FileIdList)
                             {
                                 if (oldFileIdList.Contains(fileId))
                                     continue;
@@ -861,7 +886,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             await _stockDbContext.SaveChangesAsync();
                         }
                         #endregion
-                        
+
                         #region Update StockProduct - Số liệu tồn kho
                         // Nếu phiếu nhập xuất được duyệt thì update số lượng
                         if (inventoryObj.IsApproved)
@@ -990,7 +1015,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 if (inventoryId <= 0)
                 {
                     return InventoryErrorCode.InventoryNotFound;
-                }                
+                }
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -1018,9 +1043,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         {
                             if (item.ProductUnitConversionId > 0 && item.SecondaryUnitId > 0)
                                 continue;
-                            item.ProductUnitConversionId = null; 
+                            item.ProductUnitConversionId = null;
                             item.SecondaryUnitId = item.PrimaryUnitId;
-                            item.SecondaryQuantity = item.PrimaryQuantity ;
+                            item.SecondaryQuantity = item.PrimaryQuantity;
                         }
                         await _stockDbContext.SaveChangesAsync();
                         #endregion
@@ -1028,7 +1053,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
 
                         #region Update Package - Thông tin kiện
-                        
+
                         var packageList = new List<VErp.Infrastructure.EF.StockDB.Package>(inventoryDetails.Count);
                         foreach (var item in inventoryDetails)
                         {
@@ -1067,6 +1092,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             {
                                 oldStockProduct.PrimaryQuantity += item.PrimaryQuantity;
                                 oldStockProduct.SecondaryQuantity += item.SecondaryQuantity;
+
+                                oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
+                                oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;
+
                                 oldStockProduct.UpdatedDatetimeUtc = DateTime.Now;
                             }
                             else
@@ -1080,8 +1109,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     ProductUnitConversionId = item.ProductUnitConversionId,
                                     PrimaryUnitId = item.PrimaryUnitId,
                                     PrimaryQuantity = item.PrimaryQuantity,
-                                    PrimaryQuantityRemaining = 0,
-                                    SecondaryQuantityRemaining = 0,
+                                    PrimaryQuantityRemaining = item.PrimaryQuantity,
+                                    SecondaryQuantityRemaining = item.SecondaryQuantity ?? 0,
                                     PrimaryQuantityWaiting = 0,
                                     SecondaryQuantityWaitting = 0,
                                     UpdatedDatetimeUtc = DateTime.Now
@@ -1130,7 +1159,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 if (inventoryId <= 0)
                 {
                     return InventoryErrorCode.InventoryNotFound;
-                }                
+                }
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -1143,7 +1172,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             return InventoryErrorCode.InventoryNotFound;
                         }
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
-                                                
+
                         inventoryObj.IsDeleted = false;
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
@@ -1151,7 +1180,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
 
                         await _stockDbContext.SaveChangesAsync();
                         #endregion
-                        
+
                         #region Update Package & StockProduct - Số liệu tồn kho
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
                         foreach (var item in inventoryDetails)
