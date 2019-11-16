@@ -429,7 +429,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.Barcode,
                     pe.Specification,
                     pe.Description,
-                    p.UnitId
+                    p.UnitId,
+                    p.EstimatePrice
                 });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -483,7 +484,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductTypeId = item.ProductTypeId,
                     ProductTypeName = item.ProductTypeName,
                     Specification = item.Specification,
-                    UnitId = item.UnitId
+                    UnitId = item.UnitId,
+                    EstimatePrice = item.EstimatePrice
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
