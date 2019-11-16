@@ -481,6 +481,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from pk in _stockContext.Package
                 join iv in _stockContext.InventoryDetail on pk.InventoryDetailId equals iv.InventoryDetailId
                 join i in _stockContext.Inventory on iv.InventoryId equals i.InventoryId
+                where i.StockId == stockId && iv.ProductId == productId && i.IsApproved
                 select new StockProductPackageDetail()
                 {
                     PackageId = pk.PackageId,
@@ -571,8 +572,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var total = await productQuery.CountAsync();
 
+            var inventories = _stockContext.Inventory.AsQueryable();
+            if (stockIds != null && stockIds.Count > 0)
+            {
+                inventories = inventories.Where(iv => stockIds.Contains(iv.StockId));
+            }
+
+
             var queryBefore = (
-                from iv in _stockContext.Inventory
+                from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
                 where iv.IsApproved && iv.DateUtc < fromDate
@@ -585,8 +593,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 );
 
+
             var queryAfter = (
-                from iv in _stockContext.Inventory
+                from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
                 where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
@@ -611,6 +620,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from b in bp.DefaultIfEmpty()
                 join a in afters on new { p.ProductId, p.UnitId } equals new { a.ProductId, a.UnitId } into ap
                 from a in ap.DefaultIfEmpty()
+                where b != null || a != null
                 select new StockSumaryReportOutput
                 {
                     ProductCode = p.ProductCode,
