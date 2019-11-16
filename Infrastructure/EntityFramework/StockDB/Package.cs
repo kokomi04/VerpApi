@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }
+        public int? ProductUnitConversionId { get; set; }
         public int? SecondaryUnitId { get; set; }
         public decimal? SecondaryQuantity { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
