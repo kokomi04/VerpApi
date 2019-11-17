@@ -12,9 +12,10 @@ namespace VErp.Services.Master.Service.Config
     {
         Task<ServiceResult<int>> AddBarcodeConfig(BarcodeConfigModel data);
         Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page, int size);
+        Task<IList<BarcodeConfigListOutput>> GetListActived();
         Task<ServiceResult<BarcodeConfigModel>> GetInfo(int barcodeConfigId);
         Task<Enum> UpdateBarcodeConfig(int barcodeConfigId, BarcodeConfigModel data);
         Task<Enum> DeleteBarcodeConfig(int barcodeConfigId);
-        Task<ServiceResult<string>> Make(EnumBarcodeStandard barcodeStandardId, int productCode);
+        Task<ServiceResult<string>> Make(int barcodeConfigId);
     }
 }

@@ -83,6 +83,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         MainImageFileId = req.MainImageFileId,
                         ProductTypeId = req.ProductTypeId,
                         ProductCateId = req.ProductCateId,
+                        BarcodeConfigId = req.BarcodeConfigId,
                         BarcodeStandardId = (int?)req.BarcodeStandardId,
                         Barcode = req.Barcode,
                         UnitId = req.UnitId,
@@ -182,10 +183,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 return ProductErrorCode.ProductNotFound;
             }
-            var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-            var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-            var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-            var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+            var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var stockValidations = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
 
             return new ProductModel()
             {
@@ -196,6 +197,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 MainImageFileId = productInfo.MainImageFileId,
                 ProductTypeId = productInfo.ProductTypeId,
                 ProductCateId = productInfo.ProductCateId,
+                BarcodeConfigId = productInfo.BarcodeConfigId,
                 BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
                 Barcode = productInfo.Barcode,
                 UnitId = productInfo.UnitId,
@@ -235,7 +237,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productByCode = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode && p.ProductId != productId);
+            var productByCode = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode && p.ProductId != productId);
             if (productByCode != null)
             {
                 return ProductErrorCode.ProductCodeAlreadyExisted;
@@ -274,6 +276,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.MainImageFileId = req.MainImageFileId;
                     productInfo.ProductTypeId = req.ProductTypeId;
                     productInfo.ProductCateId = req.ProductCateId;
+                    productInfo.BarcodeConfigId = req.BarcodeConfigId;
                     productInfo.BarcodeStandardId = (int?)req.BarcodeStandardId;
                     productInfo.Barcode = req.Barcode;
                     productInfo.UnitId = req.UnitId;

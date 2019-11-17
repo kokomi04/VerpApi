@@ -15,8 +15,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
+        public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
-        public virtual DbSet<BarcodeUsed> BarcodeUsed { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }

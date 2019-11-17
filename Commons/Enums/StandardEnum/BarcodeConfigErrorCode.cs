@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
         EmptyConfig = 2,
         OnlyAllowOneBarcodeConfigActivedAtTheSameTime = 3,
         NoActivedConfigWasFound = 4,
-        BarcodeStandardNotSupportedYet = 5
+        BarcodeStandardNotSupportedYet = 5,
+        BarcodeConfigHasBeenDisabled = 6
     }
 }
