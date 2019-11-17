@@ -145,11 +145,34 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _stockService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
         }
 
+        /// <summary>
+        /// Lấy danh sách kiện theo sản phẩm trong kho
+        /// </summary>
+        /// <param name="stockId"></param>
+        /// <param name="productId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("{stockId}/StockProducts/{productId}")]
         public async Task<ApiResponse<PageData<StockProductPackageDetail>>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockProductPackageDetails(stockId, productId, page, size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách kiện theo vị trí trong kho
+        /// </summary>
+        /// <param name="stockId"></param>
+        /// <param name="locationId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{stockId}/Packages")]
+        public async Task<ApiResponse<PageData<LocationProductPackageOuput>>> LocationProductPackageDetails([FromRoute] int stockId, [FromQuery] int? locationId, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.LocationProductPackageDetails(stockId, locationId, page, size);
         }
 
         /// <summary>

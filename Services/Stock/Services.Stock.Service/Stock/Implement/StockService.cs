@@ -524,6 +524,43 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
+        public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, int page, int size)
+        {
+            var query = (
+                from pk in _stockContext.Package                
+                join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
+                join p in _stockContext.Product on d.ProductId equals p.ProductId
+                join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
+                from c in cs.DefaultIfEmpty()
+                where iv.StockId == stockId && iv.IsApproved && pk.LocationId == locationId
+                orderby iv.DateUtc descending
+                select new LocationProductPackageOuput()
+                {
+                    ProductId = p.ProductId,
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    PackageId = pk.PackageId,
+                    PackageCode = pk.PackageCode,
+                    Date = iv.DateUtc,
+                    ExpriredDate = pk.ExpiryTime,
+                    PrimaryUnitId = pk.PrimaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantity,
+                    SecondaryUnitId = pk.SecondaryUnitId,
+                    SecondaryQuantity = pk.SecondaryQuantity,
+                    ProductUnitConversionId = pk.ProductUnitConversionId,
+                    ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
+                    RefObjectId = d.RefObjectId,
+                    RefObjectCode = d.RefObjectCode
+                }
+                );
+            var total = await query.CountAsync();
+           
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            return (lstData, total);
+        }
+
         [Obsolete]
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport_bak(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
         {
