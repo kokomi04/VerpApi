@@ -40,7 +40,7 @@ namespace VErpApi.Controllers.System
         {
             return await _barcodeConfigService.GetList(keyword, page, size);
         }
-
+       
 
         /// <summary>
         /// Thêm mới cấu hình barcode
@@ -98,14 +98,13 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Tạo mã barcode
         /// </summary>
-        /// <param name="barcodeStandardId"></param>
-        /// <param name="productCode"></param>
+        /// <param name="barcodeConfigId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("{barcodeStandardId}/Generate")]
-        public async Task<ApiResponse<string>> Make([FromRoute] EnumBarcodeStandard barcodeStandardId, [FromQuery]int productCode)
+        [Route("{barcodeConfigId}/Generate")]
+        public async Task<ApiResponse<string>> Make([FromRoute] int barcodeConfigId)
         {
-            return await _barcodeConfigService.Make(barcodeStandardId, productCode);
+            return await _barcodeConfigService.Make(barcodeConfigId);
         }
     }
 }
