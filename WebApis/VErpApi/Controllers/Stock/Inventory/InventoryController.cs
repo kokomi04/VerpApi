@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
@@ -8,6 +9,8 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Package;
+using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Inventory;
 
@@ -218,5 +221,37 @@ namespace VErpApi.Controllers.Stock.Inventory
         {
             return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
         }
+
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm để xuất kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIdList"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetProductListForExport")]
+        public async Task<ApiResponse<PageData<ProductListOutput>>> GetProductListForExport([FromQuery] string keyword, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetProductListForExport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách kiện để xuất kho
+        /// </summary>
+        /// <param name="productId"></param>
+        /// <param name="stockIdList"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetPackageListForExport")]
+        public async Task<ApiResponse<PageData<PackageOutputModel>>> GetPackageListForExport([FromQuery] int productId, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
+        }
+
     }
 }
