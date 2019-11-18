@@ -706,7 +706,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
-<<<<<<< HEAD
+
             if (productCateIds != null && productCateIds.Count > 0)
             {
                 productQuery = from p in productQuery
@@ -794,7 +794,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return (data, total);
         }
-=======
+
         /// <summary>
         /// Báo cáo chi tiết nhập xuất sp trong kỳ
         /// </summary>
@@ -921,7 +921,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private Methods
 
->>>>>>> VW-166
+
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;

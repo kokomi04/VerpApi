@@ -58,9 +58,9 @@ namespace VErp.Services.Stock.Service.Stock
         Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size);
 
         Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size);
-<<<<<<< HEAD
+
         Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, int page, int size);
-=======
+
 
         /// <summary>
         /// Báo cáo xuất, nhập tồn
@@ -74,7 +74,6 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
->>>>>>> VW-166
         Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size);
 
         /// <summary>
