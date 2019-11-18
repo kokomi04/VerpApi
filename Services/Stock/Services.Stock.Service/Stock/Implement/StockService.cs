@@ -47,7 +47,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<ServiceResult<int>> AddStock(StockModel req)
         {
-            if(_stockContext.Stock.Any(q=>q.StockName.ToLower() == req.StockName.ToLower()))
+            if (_stockContext.Stock.Any(q => q.StockName.ToLower() == req.StockName.ToLower()))
                 return StockErrorCode.StockNameAlreadyExisted;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -529,7 +529,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, int page, int size)
         {
             var query = (
-                from pk in _stockContext.Package                
+                from pk in _stockContext.Package
                 join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
                 join p in _stockContext.Product on d.ProductId equals p.ProductId
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
@@ -558,7 +558,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 );
             var total = await query.CountAsync();
-           
+
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
             return (lstData, total);
         }
@@ -830,7 +830,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             try
             {
-              DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
+                DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
 
                 #region Lấy dữ liệu tồn đầu
                 var openingStockQuery = from i in _stockContext.Inventory
@@ -843,8 +843,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (beginTime.HasValue && beginTime != DateTime.MinValue)
                     openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
 
-                var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventory.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventory.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
+#if DEBUG
+                var openingStockQueryDataInput = (from q in openingStockQuery
+                                                  where q.i.InventoryTypeId == (int)EnumInventory.Input
+                                                  group q by q.id.PrimaryUnitId into g
+                                                  select new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.id.PrimaryQuantity) }).ToList();
 
+                var openingStockQueryDataOutput = (from q in openingStockQuery
+                                                   where q.i.InventoryTypeId == (int)EnumInventory.Output
+                                                   group q by q.id.PrimaryUnitId into g
+                                                   select new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.id.PrimaryQuantity) }).ToList();
+#endif
+
+                var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventory.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventory.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
                 #endregion
 
                 #region Lấy dữ liệu giao dịch trong kỳ
@@ -855,7 +866,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
-                if (fromDate!= DateTime.MinValue && toDate != DateTime.MinValue)
+                if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
                     inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate && q.i.DateUtc <= toDate);
                 }
@@ -872,7 +883,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var totalRecord = inPerdiodQuery.Count();
-                var inPeriodData = inPerdiodQuery.Select(q => new
+                var inPeriodData = inPerdiodQuery.AsNoTracking().Select(q => new
                 {
                     InventoryId = q.i.InventoryId,
                     IssuedDate = q.i.DateUtc,
@@ -889,9 +900,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }).ToList();
 
                 var productUnitConversionIdsList = inPeriodData.Where(q => q.ProductUnitConversionId > 0).Select(q => q.ProductUnitConversionId).ToList();
-                var productUnitConversionData = _stockContext.ProductUnitConversion.Where(q => productUnitConversionIdsList.Contains(q.ProductUnitConversionId)).ToList();
-                var unitData = await _masterDBContext.Unit.ToListAsync();
-                
+                var productUnitConversionData = _stockContext.ProductUnitConversion.AsNoTracking().Where(q => productUnitConversionIdsList.Contains(q.ProductUnitConversionId)).ToList();
+                var unitData = await _masterDBContext.Unit.AsNoTracking().ToListAsync();
+
                 resultData.OpeningStock = new List<OpeningStockProductModel>(openingStockQueryData.Count);
                 foreach (var item in openingStockQueryData)
                 {
@@ -904,6 +915,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details = new List<StockProductDetailsModel>(totalRecord);
                 foreach (var item in inPeriodData)
                 {
+                    var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
+
                     resultData.Details.Add(new StockProductDetailsModel
                     {
                         InventoryId = item.InventoryId,
@@ -919,7 +932,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         SecondaryUnitId = item.SecondaryUnitId,
                         SecondaryQuantity = item.SecondaryQuantity,
                         ProductUnitConversionId = item.ProductUnitConversionId ?? null,
-                        ProductUnitConversion = (item.ProductUnitConversionId > 0 ? productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) : null)
+                        ProductUnitConversion = productUnitConversionObj
                     });
                 }
                 #endregion
