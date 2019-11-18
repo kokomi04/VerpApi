@@ -78,6 +78,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 return ProductTypeErrorCode.ProductTypeNotfound;
             }
+            var childrenCount = await _stockContext.ProductType.CountAsync(c => c.ParentProductTypeId == productTypeId);
+            if (childrenCount > 0)
+            {
+                return ProductTypeErrorCode.CanNotDeletedParentProductType;
+            }
+
             productType.IsDeleted = true;
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
