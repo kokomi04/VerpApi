@@ -15,7 +15,6 @@ using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
-using VErp.Services.Master.Service.Users;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {
@@ -360,16 +359,20 @@ namespace VErp.Services.Master.Service.Users.Implement
             req.UserName = (req.UserName ?? "").Trim().ToLower();
 
             var userNameHash = req.UserName.ToGuid();
-            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
-            if (user != null)
+            User user;
+            if (!string.IsNullOrWhiteSpace(req.UserName))
             {
-                return UserErrorCode.UserNameExisted;
+                user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
+                if (user != null)
+                {
+                    return UserErrorCode.UserNameExisted;
+                }
             }
 
             user = new User()
             {
                 UserName = req.UserName,
-                UserNameHash = req.UserName.ToGuid(),
+                UserNameHash = userNameHash,
                 IsDeleted = false,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UserStatusId = (int)req.UserStatusId,
