@@ -221,24 +221,19 @@ namespace VErp.Services.Stock.Service.Package.Implement
         {
             try
             {
-                var locationDb = _stockDbContext.Location;
                 var query = from p in _stockDbContext.Package
                             join id in _stockDbContext.InventoryDetail on p.InventoryDetailId equals id.InventoryDetailId
                             join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
-                            join s in _stockDbContext.Stock on i.StockId equals s.StockId
                             join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                             from lo in pl.DefaultIfEmpty()
-                            select new { s, i, id, p, lo };
-
-
-
-                query = query.Where(q => q.i.IsApproved);
+                            where i.IsApproved == true
+                            select new { p, i,id,lo };               
 
                 if (stockId > 0)
-                    query = query.Where(q => q.s.StockId == stockId);
+                    query = query.Where(q => q.i.StockId == stockId);
 
                 if (!string.IsNullOrEmpty(keyword))
-                    query = query.Where(q => q.s.StockName.Contains(keyword) || q.i.InventoryCode.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword) || q.p.PackageCode.Contains(keyword));
+                    query = query.Where(q => q.i.InventoryCode.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword) || q.p.PackageCode.Contains(keyword));
 
                 var totalRecord = query.AsNoTracking().Count();
                 var resultList = new List<PackageOutputModel>(totalRecord);
