@@ -2,9 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -52,6 +50,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 {
                     return ProductCateErrorCode.ParentProductCateNotfound;
                 }
+            }
+
+            var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateName == req.ProductCateName);
+            if (sameName != null)
+            {
+                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
             }
 
             var productCate = new ProductCate()
@@ -148,6 +152,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             if (productCate == null)
             {
                 return ProductCateErrorCode.ProductCateNotfound;
+            }
+
+            var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId != productCateId && c.ProductCateName == req.ProductCateName);
+            if (sameName != null)
+            {
+                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
             }
 
             var beforeJson = productCate.JsonSerialize();

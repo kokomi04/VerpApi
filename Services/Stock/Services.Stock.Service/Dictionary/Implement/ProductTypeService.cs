@@ -52,6 +52,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 }
             }
 
+            var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeName == req.ProductTypeName);
+            if (sameName != null)
+            {
+                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
+            }
+
             var productType = new ProductType()
             {
                 ProductTypeName = req.ProductTypeName,
@@ -149,6 +155,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             if (productType == null)
             {
                 return ProductTypeErrorCode.ProductTypeNotfound;
+            }
+
+            var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId != productTypeId && c.ProductTypeName == req.ProductTypeName);
+            if (sameName != null)
+            {
+                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
             }
 
             var beforeJson = productType.JsonSerialize();
