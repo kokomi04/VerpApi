@@ -8,6 +8,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Model.Users;
@@ -108,6 +109,17 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse<string>> GenerateCode([FromQuery] EnumObjectType objectType)
         {
             return await _objectGenCodeService.GenerateCode(objectType);
+        }
+
+        /// <summary>
+        /// Lấy danh sách các loại đối tượng 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAllObjectType")]
+        public async Task<ApiResponse<PageData<ObjectType>>> GetAllObjectType()
+        {
+            return await _objectGenCodeService.GetAllObjectType();
         }
     }
 }

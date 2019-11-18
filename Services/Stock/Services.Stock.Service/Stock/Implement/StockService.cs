@@ -13,10 +13,9 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Infrastructure.EF.MasterDB;
-
+using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -48,6 +47,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<ServiceResult<int>> AddStock(StockModel req)
         {
+            if(_stockContext.Stock.Any(q=>q.StockName.ToLower() == req.StockName.ToLower()))
+                return StockErrorCode.StockNameAlreadyExisted;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -86,7 +87,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-
         public async Task<ServiceResult<StockOutput>> StockInfo(int stockId)
         {
             var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
@@ -105,7 +105,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 Status = stockInfo.Status
             };
         }
-
 
         public async Task<Enum> UpdateStock(int stockId, StockModel req)
         {
@@ -157,7 +156,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
-
 
         public async Task<Enum> DeleteStock(int stockId)
         {
@@ -347,7 +345,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return result;
         }
 
-
         public async Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size)
         {
             var productQuery = (
@@ -477,7 +474,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (pagedData, total);
         }
-
 
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
         {
@@ -803,21 +799,38 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, DateTime? fromDate, DateTime? toDate)
+        public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, string fromDateString, string toDateString)
         {
+            if (productId <= 0)
+                return GeneralCode.InvalidParams;
+            if (string.IsNullOrEmpty(fromDateString) && string.IsNullOrEmpty(toDateString))
+                return GeneralCode.InvalidParams;
+
             var resultData = new StockProductDetailsReportOutput
             {
                 OpeningStock = null,
                 Details = null
             };
+            DateTime fromDate = DateTime.MinValue;
+            DateTime toDate = DateTime.MinValue;
+            if (!string.IsNullOrEmpty(fromDateString))
+            {
+                if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
+            }
+            if (!string.IsNullOrEmpty(toDateString))
+            {
+                if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
+            }
+
             try
             {
-                if (productId <= 0)
-                    return GeneralCode.InvalidParams;
-                if (!fromDate.HasValue && !toDate.HasValue)
-                    return GeneralCode.InvalidParams;
-
-                var beginTime = fromDate.HasValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
+              DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
 
                 #region Lấy dữ liệu tồn đầu
                 var openingStockQuery = from i in _stockContext.Inventory
@@ -827,7 +840,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     openingStockQuery = openingStockQuery.Where(q => stockIds.Contains(q.i.StockId));
 
-                if (beginTime.HasValue)
+                if (beginTime.HasValue && beginTime != DateTime.MinValue)
                     openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
 
                 var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventory.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventory.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
@@ -842,17 +855,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
-                if (fromDate.HasValue && toDate.HasValue)
+                if (fromDate!= DateTime.MinValue && toDate != DateTime.MinValue)
                 {
                     inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate && q.i.DateUtc <= toDate);
                 }
                 else
                 {
-                    if (fromDate.HasValue)
+                    if (fromDate != DateTime.MinValue)
                     {
                         inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate);
                     }
-                    if (toDate.HasValue)
+                    if (toDate != DateTime.MinValue)
                     {
                         inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc <= toDate);
                     }
