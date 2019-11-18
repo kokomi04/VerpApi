@@ -100,7 +100,7 @@ namespace VErpApi.Controllers.System
         /// </summary>
         /// <param name="barcodeConfigId"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("{barcodeConfigId}/Generate")]
         public async Task<ApiResponse<string>> Make([FromRoute] int barcodeConfigId)
         {
