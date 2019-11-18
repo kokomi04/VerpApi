@@ -18,6 +18,9 @@ namespace VErp.Commons.Enums.StandardEnum
         ProductTypeNotfound = 3,
 
         [Description("Để xóa loại cha, vui lòng xóa hoặc di chuyển loại con")]
-        CanNotDeletedParentProductType = 4
+        CanNotDeletedParentProductType = 4,
+
+        [Description("Tên loại mã mặt hàng đã tồn tại, vui lòng chọn tên khác")]
+        ProductTypeNameAlreadyExisted = 5,
     }
 }
