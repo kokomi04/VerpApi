@@ -8,13 +8,16 @@ namespace VErp.Commons.Enums.StandardEnum
     [ErrorCodePrefix("PRT")]
     public enum ProductTypeErrorCode
     {
-        [Description("Tên loại không được bỏ trống")]
+        [Description("Tên loại mã không được bỏ trống")]
         EmptyProductTypeName = 1,
 
         [Description("Loại cha không tồn tại")]
         ParentProductTypeNotfound = 2,
 
-        [Description("Loại SP/Vật tư không tồn tại")]
-        ProductTypeNotfound = 3
+        [Description("Loại mã mặt hàng không tồn tại")]
+        ProductTypeNotfound = 3,
+
+        [Description("Để xóa loại cha, vui lòng xóa hoặc di chuyển loại con")]
+        CanNotDeletedParentProductType = 4
     }
 }
