@@ -64,50 +64,49 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
         public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventory type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10)
         {
             var query = from i in _stockDbContext.Inventory
-                        join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                        join p in _stockDbContext.Product on id.ProductId equals p.ProductId
-                        join s in _stockDbContext.Stock on i.StockId equals s.StockId
-                        select new { i, id, p, s };
+                        select i;
             if (stockId > 0)
             {
-                query = query.Where(q => q.i.StockId == stockId);
+                query = query.Where(q => q.StockId == stockId);
             }
 
             if (type > 0 && Enum.IsDefined(typeof(EnumInventory), type))
             {
-                query = query.Where(q => q.i.InventoryTypeId == (int)type);
+                query = query.Where(q => q.InventoryTypeId == (int)type);
             }
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = from q in query
-                        where q.i.InventoryCode.Contains(keyword) || q.p.ProductCode.Contains(keyword) || q.p.ProductName.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword)
-                        select q;
+                query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
             }
 
             if (beginTime.HasValue && endTime.HasValue)
             {
-                query = query.Where(q => q.i.DateUtc >= beginTime && q.i.DateUtc <= endTime);
+                query = query.Where(q => q.DateUtc >= beginTime && q.DateUtc <= endTime);
             }
             else
             {
                 if (beginTime.HasValue)
                 {
-                    query = query.Where(q => q.i.DateUtc >= beginTime);
+                    query = query.Where(q => q.DateUtc >= beginTime);
                 }
                 if (endTime.HasValue)
                 {
-                    query = query.Where(q => q.i.DateUtc <= endTime);
+                    query = query.Where(q => q.DateUtc <= endTime);
                 }
             }
 
             var total = query.Count();
-            var dataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var inventoryDataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
-            var inventoryList = dataList.Select(q => q.i).ToList();
+            var inventoryIdList = inventoryDataList.Select(q => q.InventoryId).ToList();
+            var inventoryDetailsDataList = _stockDbContext.InventoryDetail.AsNoTracking().Where(q => inventoryIdList.Contains(q.InventoryId)).ToList();
+
+            var productIdList = inventoryDetailsDataList.Select(q => q.ProductId).Distinct().ToList();
+            var productDataList = _stockDbContext.Product.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
 
             var pagedData = new List<InventoryOutput>();
-            foreach (var item in inventoryList)
+            foreach (var item in inventoryDataList)
             {
                 #region Get Attached files 
                 var attachedFiles = new List<FileToDownloadInfo>(4);
@@ -118,12 +117,12 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 }
                 #endregion
 
-                var listInventoryDetails = dataList.Where(q => q.id.InventoryId == item.InventoryId).Select(q => q.id).ToList();
+                var listInventoryDetails = inventoryDetailsDataList.Where(q => q.InventoryId == item.InventoryId).ToList();
                 var listInventoryDetailsOutput = new List<InventoryDetailOutput>(listInventoryDetails.Count);
 
                 foreach (var details in listInventoryDetails)
                 {
-                    var productInfo = dataList.Select(q => q.p).FirstOrDefault(q => q.ProductId == details.ProductId);
+                    var productInfo = productDataList.FirstOrDefault(q => q.ProductId == details.ProductId);
                     var productUnitConversionInfo = _stockDbContext.ProductUnitConversion.AsNoTracking().FirstOrDefault(q => q.ProductUnitConversionId == details.ProductUnitConversionId);
                     ProductListOutput productOutput = null;
                     if (productInfo != null)
@@ -163,7 +162,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     });
                 }
 
-                var stockInfo = dataList.Select(q => q.s).FirstOrDefault(q => q.StockId == item.StockId);
+                var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == item.StockId);
 
                 var inventoryOutput = new InventoryOutput()
                 {
@@ -1092,6 +1091,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             {
                                 oldStockProduct.PrimaryQuantity += item.PrimaryQuantity;
                                 oldStockProduct.SecondaryQuantity += item.SecondaryQuantity;
+
+                                oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
+                                oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;
 
                                 oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
                                 oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;

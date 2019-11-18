@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Service.Stock
@@ -57,7 +58,36 @@ namespace VErp.Services.Stock.Service.Stock
         Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size);
 
         Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size);
+<<<<<<< HEAD
         Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, int page, int size);
+=======
+
+        /// <summary>
+        /// Báo cáo xuất, nhập tồn
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+>>>>>>> VW-166
         Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size);
+
+        /// <summary>
+        /// Báo cáo chi tiết nvl/sp
+        /// </summary>
+        /// <param name="productId"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, DateTime? fromDate, DateTime? toDate);
+
     }
 }

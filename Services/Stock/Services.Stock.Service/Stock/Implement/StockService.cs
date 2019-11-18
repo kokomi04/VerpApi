@@ -13,12 +13,16 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
+using VErp.Infrastructure.EF.MasterDB;
+
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public class StockService : IStockService
     {
+        private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -26,6 +30,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IActivityService _activityService;
 
         public StockService(
+            MasterDBContext masterDBContext,
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<StockService> logger
@@ -33,6 +38,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityService activityService
             )
         {
+            _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -700,6 +706,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
+<<<<<<< HEAD
             if (productCateIds != null && productCateIds.Count > 0)
             {
                 productQuery = from p in productQuery
@@ -787,10 +794,139 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return (data, total);
         }
+=======
+        /// <summary>
+        /// Báo cáo chi tiết nhập xuất sp trong kỳ
+        /// </summary>
+        /// <param name="productId"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <returns></returns>
+        public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, DateTime? fromDate, DateTime? toDate)
+        {
+            var resultData = new StockProductDetailsReportOutput
+            {
+                OpeningStock = null,
+                Details = null
+            };
+            try
+            {
+                if (productId <= 0)
+                    return GeneralCode.InvalidParams;
+                if (!fromDate.HasValue && !toDate.HasValue)
+                    return GeneralCode.InvalidParams;
+
+                var beginTime = fromDate.HasValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
+
+                #region Lấy dữ liệu tồn đầu
+                var openingStockQuery = from i in _stockContext.Inventory
+                                        join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                                        where i.IsApproved && id.ProductId == productId
+                                        select new { i, id };
+                if (stockIds.Count > 0)
+                    openingStockQuery = openingStockQuery.Where(q => stockIds.Contains(q.i.StockId));
+
+                if (beginTime.HasValue)
+                    openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
+
+                var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventory.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventory.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
+
+                #endregion
+
+                #region Lấy dữ liệu giao dịch trong kỳ
+                var inPerdiodQuery = from i in _stockContext.Inventory
+                                     join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                                     where i.IsApproved && id.ProductId == productId
+                                     select new { i, id };
+                if (stockIds.Count > 0)
+                    inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
+
+                if (fromDate.HasValue && toDate.HasValue)
+                {
+                    inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate && q.i.DateUtc <= toDate);
+                }
+                else
+                {
+                    if (fromDate.HasValue)
+                    {
+                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate);
+                    }
+                    if (toDate.HasValue)
+                    {
+                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc <= toDate);
+                    }
+                }
+
+                var totalRecord = inPerdiodQuery.Count();
+                var inPeriodData = inPerdiodQuery.Select(q => new
+                {
+                    InventoryId = q.i.InventoryId,
+                    IssuedDate = q.i.DateUtc,
+                    InventoryCode = q.i.InventoryCode,
+                    InventoryTypeId = q.i.InventoryTypeId,
+                    Description = q.i.Content,
+                    InventoryDetailId = q.id.InventoryDetailId,
+                    RefObjectCode = q.id.RefObjectCode,
+                    PrimaryUnitId = q.id.PrimaryUnitId,
+                    PrimaryQuantity = q.id.PrimaryQuantity,
+                    SecondaryUnitId = q.id.SecondaryUnitId,
+                    SecondaryQuantity = q.id.SecondaryQuantity,
+                    ProductUnitConversionId = q.id.ProductUnitConversionId
+                }).ToList();
+
+                var productUnitConversionIdsList = inPeriodData.Where(q => q.ProductUnitConversionId > 0).Select(q => q.ProductUnitConversionId).ToList();
+                var productUnitConversionData = _stockContext.ProductUnitConversion.Where(q => productUnitConversionIdsList.Contains(q.ProductUnitConversionId)).ToList();
+                var unitData = await _masterDBContext.Unit.ToListAsync();
+                
+                resultData.OpeningStock = new List<OpeningStockProductModel>(openingStockQueryData.Count);
+                foreach (var item in openingStockQueryData)
+                {
+                    resultData.OpeningStock.Add(new OpeningStockProductModel
+                    {
+                        PrimaryUnitId = item.PrimaryUnitId,
+                        Total = item.Total
+                    });
+                }
+                resultData.Details = new List<StockProductDetailsModel>(totalRecord);
+                foreach (var item in inPeriodData)
+                {
+                    resultData.Details.Add(new StockProductDetailsModel
+                    {
+                        InventoryId = item.InventoryId,
+                        IssuedDate = item.IssuedDate,
+                        InventoryCode = item.InventoryCode,
+                        InventoryTypeId = item.InventoryTypeId,
+                        Description = item.Description,
+                        SecondaryUnitName = unitData.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId).UnitName ?? string.Empty,
+                        InventoryDetailId = item.InventoryDetailId,
+                        RefObjectCode = item.RefObjectCode,
+                        PrimaryUnitId = item.PrimaryUnitId,
+                        PrimaryQuantity = item.PrimaryQuantity,
+                        SecondaryUnitId = item.SecondaryUnitId,
+                        SecondaryQuantity = item.SecondaryQuantity,
+                        ProductUnitConversionId = item.ProductUnitConversionId ?? null,
+                        ProductUnitConversion = (item.ProductUnitConversionId > 0 ? productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) : null)
+                    });
+                }
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "StockProductDetailsReport");
+                return GeneralCode.InternalError;
+            }
+            return resultData;
+        }
+
+        #region Private Methods
+
+>>>>>>> VW-166
         private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
         {
             return stockInfo;
         }
 
+        #endregion
     }
 }

@@ -192,5 +192,21 @@ namespace VErpApi.Controllers.Stock.Stocks
         {
             return await _stockService.StockSumaryReport("", stockIds, productTypeIds, productCateIds, fromDate, toDate,  page, size);
         }
+
+        /// <summary>
+        /// Báo cáo chi tiết nhập xuất VTHHSP trong kỳ
+        /// </summary>
+        /// <param name="productId">Id VTHHSP</param>
+        /// <param name="stockIds">List id of stock</param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockProductDetailsReport")]
+        public async Task<ApiResponse<ServiceResult<StockProductDetailsReportOutput>>> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        {
+            return await _stockService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
+        }
+
     }
 }
