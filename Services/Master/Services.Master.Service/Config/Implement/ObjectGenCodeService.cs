@@ -67,9 +67,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectTypeName = item.ObjectTypeName,
                     CodeLength = item.CodeLength,
                     Prefix = item.Prefix,
-                    Suffix =item.Suffix,
+                    Suffix = item.Suffix,
                     Seperator = item.Seperator,
-                    LastCode=item.LastCode,
+                    LastCode = item.LastCode,
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
                     CreatedTime = item.CreatedTime,
@@ -196,7 +196,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     ObjectTypeId = (int)objectType,
                     ObjectTypeName = objType.ObjectTypeName,
-                    CodeLength = (model.CodeLength >  5) ? model.CodeLength : 5,
+                    CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
                     Prefix = model.Prefix ?? string.Empty,
                     Suffix = model.Suffix ?? string.Empty,
                     Seperator = model.Seperator ?? string.Empty,
@@ -250,11 +250,11 @@ namespace VErp.Services.Master.Service.Config.Implement
                         string newCode = string.Empty;
                         var newId = 0;
                         var maxId = (int)Math.Pow(10, config.CodeLength);
-                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator))? null : config.Seperator;
+                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
                         if (config.LastValue < 1)
                         {
-                            newId = 1;                            
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}",config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                            newId = 1;
+                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
                             newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                         }
                         else
@@ -263,7 +263,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                             var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
                             newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                         }
-                        if (!(newId < maxId)) { 
+                        if (!(newId < maxId))
+                        {
                             config.CodeLength += 1;
                             config.ResetDate = DateTime.Now;
                         }
@@ -292,6 +293,22 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             }
             return result;
+        }
+
+        public async Task<PageData<ObjectType>> GetAllObjectType()
+        {
+            try
+            {
+                var total = _masterDbContext.ObjectType.Count();
+                var allData = _masterDbContext.ObjectType.AsNoTracking().ToList();
+
+                return (allData, total);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllObjectType");
+                return (null, 0);
+            }
         }
 
         private object GetInfoForLog(ObjectGenCode obj)

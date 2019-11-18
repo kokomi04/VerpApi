@@ -203,7 +203,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockProductDetailsReport")]
-        public async Task<ApiResponse<ServiceResult<StockProductDetailsReportOutput>>> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+        public async Task<ApiResponse<ServiceResult<StockProductDetailsReportOutput>>> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] string fromDate, [FromQuery] string toDate)
         {
             return await _stockService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
         }

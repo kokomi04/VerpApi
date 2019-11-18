@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         StockNotFound = 1,
         StockCodeEmpty = 2,
-        StockCodeAlreadyExisted = 3
+        StockCodeAlreadyExisted = 3,
+        StockNameAlreadyExisted = 4,
     }
 }
