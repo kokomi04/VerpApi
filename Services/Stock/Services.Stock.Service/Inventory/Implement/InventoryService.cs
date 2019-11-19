@@ -1223,6 +1223,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     package.UpdatedDatetimeUtc = DateTime.Now;
                                     package.PrimaryQuantityRemaining -= item.PrimaryQuantity;
                                     package.SecondaryQuantityWaitting -= (item.SecondaryQuantity ?? 0);
+
+                                    package.PrimaryQuantityWaiting -= item.PrimaryQuantity; 
+                                    package.SecondaryQuantityWaitting -= (item.SecondaryQuantity ?? 0);
                                 }
                             }
                             await _stockDbContext.SaveChangesAsync();
