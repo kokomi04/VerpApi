@@ -113,7 +113,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId,
                         AmountWarningMin = req.StockInfo?.AmountWarningMin,
                         AmountWarningMax = req.StockInfo?.AmountWarningMax,
-                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,                        
+                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,
                         TimeWarningAmount = req.StockInfo?.TimeWarningAmount,
                         DescriptionToStock = req.StockInfo?.DescriptionToStock,
                         ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId,
@@ -256,12 +256,34 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         return ProductErrorCode.ProductNotFound;
                     }
 
+
+
+                    var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
+                    var keepIds = req.StockInfo?.UnitConversions.Select(c => c.ProductUnitConversionId);
+                    var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId)).ToList();
+                    if (toRemoveUnitConversions.Count > 0)
+                    {
+                        var removeConversionIds = toRemoveUnitConversions.Select(c => (int?)c.ProductUnitConversionId).ToList();
+
+
+                        var usedUnitConvertion = _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
+                        if (usedUnitConvertion != null)
+                        {
+                            trans.Rollback();
+                            return ProductErrorCode.SomeProductUnitConversionInUsed;
+                        }
+
+                        _stockContext.RemoveRange(toRemoveUnitConversions);
+
+                    }
+
                     oldMainImageFileId = productInfo.MainImageFileId;
 
                     var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-                    var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
 
                     var beforeData = GetProductForLog(productInfo, productExtra, productStockInfo, stockValidations, unitConverions);
 
@@ -291,7 +313,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productStockInfo.StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId;
                     productStockInfo.AmountWarningMin = req.StockInfo?.AmountWarningMin;
                     productStockInfo.AmountWarningMax = req.StockInfo?.AmountWarningMax;
-                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;                    
+                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;
                     productStockInfo.TimeWarningAmount = req.StockInfo?.TimeWarningAmount;
                     productStockInfo.DescriptionToStock = req.StockInfo?.DescriptionToStock;
                     productStockInfo.ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId;
@@ -310,23 +332,40 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
 
 
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
-                    {
-                        ProductId = productInfo.ProductId,
-                        ProductUnitConversionName = u.ProductUnitConversionName,
-                        SecondaryUnitId = u.SecondaryUnitId,
-                        FactorExpression = u.FactorExpression,
-                        ConversionDescription = u.ConversionDescription
-                    });
+                    var lstNewUnitConverions = req.StockInfo?.UnitConversions?
+                        .Where(c => c.ProductUnitConversionId <= 0)?
+                        .Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
+                        {
+                            ProductId = productInfo.ProductId,
+                            ProductUnitConversionName = u.ProductUnitConversionName,
+                            SecondaryUnitId = u.SecondaryUnitId,
+                            FactorExpression = u.FactorExpression,
+                            ConversionDescription = u.ConversionDescription
+                        });
 
-                    _stockContext.RemoveRange(unitConverions);
-                    if (lstUnitConverions != null)
+
+                    if (lstNewUnitConverions != null)
                     {
-                        await _stockContext.AddRangeAsync(lstUnitConverions);
+                        await _stockContext.AddRangeAsync(lstNewUnitConverions);
                     }
 
+                    foreach (var productUnitConversionId in keepIds)
+                    {
+                        var db = unitConverions.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
+                        var u = req.StockInfo?.UnitConversions?.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
+                        if (db != null && u != null)
+                        {
+                            db.ProductUnitConversionName = u.ProductUnitConversionName;
+                            db.SecondaryUnitId = u.SecondaryUnitId;
+                            db.FactorExpression = u.FactorExpression;
+                            db.ConversionDescription = u.ConversionDescription;
+                        }
+                    }
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
+
+                    var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
 
                     var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
 
