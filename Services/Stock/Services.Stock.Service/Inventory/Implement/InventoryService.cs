@@ -440,10 +440,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
         {
             try
             {
-                if (req == null || req.InventoryDetailInputList.Count < 1)
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //if (req == null || req.InventoryDetailInputList.Count < 1)
+                //{
+                //    return GeneralCode.InvalidParams;
+                //}
                 if (Enum.IsDefined(typeof(EnumInventory), req.InventoryTypeId) == false)
                 {
                     return GeneralCode.InvalidParams;
