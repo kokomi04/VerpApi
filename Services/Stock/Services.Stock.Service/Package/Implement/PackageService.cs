@@ -97,16 +97,16 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
-                var myCheckQuery = from i in _stockDbContext.Inventory
-                                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
-                                   where !i.IsApproved
-                                   select new { p.PackageId };
+                //var myCheckQuery = from i in _stockDbContext.Inventory
+                //                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                //                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
+                //                   where !i.IsApproved
+                //                   select new { p.PackageId };
 
-                var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
+                //var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
 
-                if (!allowUpdate)
-                    return PackageErrorCode.PackageNotAllowUpdate;
+                //if (!allowUpdate)
+                //    return PackageErrorCode.PackageNotAllowUpdate;
 
                 DateTime issuedDate = DateTime.MinValue;
                 DateTime expiredDate = DateTime.MinValue;
@@ -116,19 +116,19 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
                     DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 
-                obj.InventoryDetailId = req.InventoryDetailId;
+                //obj.InventoryDetailId = req.InventoryDetailId;
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;
-                obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
+                //obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
-                obj.PrimaryUnitId = req.PrimaryUnitId;
-                obj.PrimaryQuantity = req.PrimaryQuantity;
-                obj.SecondaryUnitId = req.SecondaryUnitId;
-                obj.SecondaryQuantity = req.SecondaryQuantity;
-                obj.PrimaryQuantityWaiting = req.PrimaryQuantityWaiting;
-                obj.PrimaryQuantityRemaining = req.PrimaryQuantityRemaining;
-                obj.SecondaryQuantityWaitting = req.SecondaryQuantityWaitting;
-                obj.SecondaryQuantityRemaining = req.SecondaryQuantityRemaining;
+                //obj.PrimaryUnitId = req.PrimaryUnitId;
+                //obj.PrimaryQuantity = req.PrimaryQuantity;
+                //obj.SecondaryUnitId = req.SecondaryUnitId;
+                //obj.SecondaryQuantity = req.SecondaryQuantity;
+                //obj.PrimaryQuantityWaiting = req.PrimaryQuantityWaiting;
+                //obj.PrimaryQuantityRemaining = req.PrimaryQuantityRemaining;
+                //obj.SecondaryQuantityWaitting = req.SecondaryQuantityWaitting;
+                //obj.SecondaryQuantityRemaining = req.SecondaryQuantityRemaining;
                 obj.UpdatedDatetimeUtc = DateTime.Now;
 
                 _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
