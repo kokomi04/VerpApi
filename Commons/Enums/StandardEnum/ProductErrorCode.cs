@@ -10,6 +10,7 @@ namespace VErp.Commons.Enums.StandardEnum
         ProductCodeEmpty = 2,
         ProductCodeAlreadyExisted = 3,
         ProductCateInvalid = 4,
-        ProductTypeInvalid = 5
+        ProductTypeInvalid = 5,
+        SomeProductUnitConversionInUsed = 6
     }
 }
