@@ -123,7 +123,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _masterContext.SaveChangesAsync();
 
                     var ean = model.Ean13;
-                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{g.BarcodeGenerateId}";
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}";
+                    var n = 13 - barcode.Length;
+                    var pCode = g.BarcodeGenerateId.ToString($"D{n}");
+                    if (pCode.Length > n)
+                        pCode = pCode.Substring(pCode.Length - n);
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{pCode}";
                     var total = 0;
                     for (var i = barcode.Length - 1; i >= 0; i--)
                     {
