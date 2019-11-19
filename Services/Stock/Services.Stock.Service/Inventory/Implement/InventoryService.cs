@@ -1031,6 +1031,12 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
+                        if (inventoryObj.InventoryTypeId != (int)EnumInventory.Input)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.InventoryNotFound;
+                        }
+
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         inventoryObj.IsDeleted = false;
@@ -1178,6 +1184,12 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
+                        if (inventoryObj.InventoryTypeId != (int)EnumInventory.Output)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.InventoryNotFound;
+                        }
+
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         inventoryObj.IsDeleted = false;

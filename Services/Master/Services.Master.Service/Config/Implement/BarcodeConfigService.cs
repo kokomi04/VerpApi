@@ -124,7 +124,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     var ean = model.Ean13;
                     barcode = $"{ean.CountryCode}{ean.CompanyCode}";
-                    var n = 13 - barcode.Length;
+                    var n = 12 - barcode.Length;
                     var pCode = g.BarcodeGenerateId.ToString($"D{n}");
                     if (pCode.Length > n)
                         pCode = pCode.Substring(pCode.Length - n);
