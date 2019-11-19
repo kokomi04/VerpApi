@@ -82,7 +82,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdatePackage");
+                _logger.LogError(ex, "AddPackage");
                 return GeneralCode.InternalError;
             }
         }
@@ -111,8 +111,8 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 DateTime issuedDate = DateTime.MinValue;
                 DateTime expiredDate = DateTime.MinValue;
 
-                if (!string.IsNullOrEmpty(req.Date))
-                    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
+                //if (!string.IsNullOrEmpty(req.Date))
+                //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
                     DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 

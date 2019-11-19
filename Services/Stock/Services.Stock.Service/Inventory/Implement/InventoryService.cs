@@ -1101,10 +1101,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                 oldStockProduct.SecondaryQuantity += item.SecondaryQuantity;
 
                                 oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
-                                oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;
-
-                                oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
-                                oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;
+                                oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;                                
 
                                 oldStockProduct.UpdatedDatetimeUtc = DateTime.Now;
                             }
