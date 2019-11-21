@@ -694,9 +694,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
+           
             if (productTypeIds != null && productTypeIds.Count > 0)
             {
-                var types = productTypeIds.Select(t => (int?)t);
+                var productTypes = await _stockContext.ProductType.ToListAsync();
+
+                var types = new List<int?>();
+                foreach (var productTypeId in productTypeIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productTypeId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        types.Add(parentId);
+                        var children = productTypes.Where(p => p.ParentProductTypeId == parentId);
+                        foreach(var t in children)
+                        {
+                            st.Push(t.ProductTypeId);
+                        }
+                    }
+
+                }
+                
+
                 productQuery = from p in productQuery
                                where types.Contains(p.ProductTypeId)
                                select p;
@@ -705,8 +726,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (productCateIds != null && productCateIds.Count > 0)
             {
+                var productCates = await _stockContext.ProductCate.ToListAsync();
+
+                var cates = new List<int>();
+                foreach (var productCateId in productCateIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productCateId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        cates.Add(parentId);
+                        var children = productCates.Where(p => p.ParentProductCateId == parentId);
+                        foreach (var t in children)
+                        {
+                            st.Push(t.ProductCateId);
+                        }
+                    }
+
+                }
+
                 productQuery = from p in productQuery
-                               where productCateIds.Contains(p.ProductCateId)
+                               where cates.Contains(p.ProductCateId)
                                select p;
             }
             var inventories = _stockContext.Inventory.AsQueryable();
