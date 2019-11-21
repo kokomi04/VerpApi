@@ -53,10 +53,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productByCode = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);
-            if (productByCode != null)
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+            if (productExisted != null)
             {
-                return ProductErrorCode.ProductCodeAlreadyExisted;
+                if (productExisted.ProductCode == req.ProductCode)
+                    return ProductErrorCode.ProductCodeAlreadyExisted;
+                return ProductErrorCode.ProductNameAlreadyExisted;
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
@@ -237,11 +239,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productByCode = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode && p.ProductId != productId);
-            if (productByCode != null)
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
+            if (productExisted != null)
             {
-                return ProductErrorCode.ProductCodeAlreadyExisted;
+                if (productExisted.ProductCode == req.ProductCode)
+                    return ProductErrorCode.ProductCodeAlreadyExisted;
+                return ProductErrorCode.ProductNameAlreadyExisted;
             }
+
 
             long? oldMainImageFileId = 0L;
 
