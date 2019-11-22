@@ -56,7 +56,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
             if (productExisted != null)
             {
-                if (productExisted.ProductCode == req.ProductCode)
+                if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
                     return ProductErrorCode.ProductCodeAlreadyExisted;
                 return ProductErrorCode.ProductNameAlreadyExisted;
             }
