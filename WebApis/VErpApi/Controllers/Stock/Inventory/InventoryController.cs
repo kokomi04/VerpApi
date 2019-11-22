@@ -224,6 +224,22 @@ namespace VErpApi.Controllers.Stock.Inventory
 
 
         /// <summary>
+        /// Lấy danh sách sản phẩm để nhập kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetProductListForImport")]
+        public async Task<ApiResponse<PageData<ProductListOutput>>> GetProductListForImport([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetProductListForImport(keyword: keyword, stockId: stockId, page: page, size: size);
+        }
+
+
+        /// <summary>
         /// Lấy danh sách sản phẩm để xuất kho
         /// </summary>
         /// <param name="keyword"></param>

@@ -94,10 +94,20 @@ namespace VErp.Services.Stock.Service.Inventory
         Task<Enum> DeleteInventory(int inventoryId, int currentUserId);
 
         /// <summary>
+        /// Lấy danh sách sản phẩm để nhập kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, int stockId, int page = 1, int size = 20);
+
+        /// <summary>
         /// Lấy danh sách sản phẩm để xuất kho
         /// </summary>
         /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
+        /// <param name="stockIdList">Id kho</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
