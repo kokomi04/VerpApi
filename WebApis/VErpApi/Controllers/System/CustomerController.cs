@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Customer;
+using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Customer;
 
 namespace VErpApi.Controllers.System
@@ -13,10 +16,13 @@ namespace VErpApi.Controllers.System
     public class CustomerController : VErpBaseController
     {
         private readonly ICustomerService _customerService;
+        private readonly IObjectGenCodeService _objectGenCodeService;
         public CustomerController(ICustomerService customerService
+            , IObjectGenCodeService objectGenCodeService
             )
         {
             _customerService = customerService;
+            _objectGenCodeService = objectGenCodeService;
         }
 
 
@@ -81,6 +87,17 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse> DeleteUnit([FromRoute] int customerId)
         {
             return await _customerService.DeleteCustomer(customerId);
+        }
+
+        /// <summary>
+        /// Sinh mã đối tác
+        /// </summary>     
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GenerateCustomerCode")]
+        public async Task<ApiResponse<string>> GenerateCustomerCode()
+        {           
+            return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
         }
     }
 }
