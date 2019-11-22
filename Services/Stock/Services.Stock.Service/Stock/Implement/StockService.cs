@@ -684,7 +684,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             toDate = toDate.AddDays(1).Date;
 
-
             var productQuery = _stockContext.Product.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -776,7 +775,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
-                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc < toDate
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.PrimaryUnitId } into g
                 select new
                 {
