@@ -73,6 +73,10 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
                 entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.HasOne(d => d.FromPackage)
+                    .WithMany(p => p.InventoryDetailFromPackage)
+                    .HasForeignKey(d => d.FromPackageId)
+                    .HasConstraintName("FK_InventoryDetail_FromPackage");
                 entity.HasOne(d => d.Inventory)
                     .WithMany(p => p.InventoryDetail)
                     .HasForeignKey(d => d.InventoryId)
@@ -83,6 +87,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
+                entity.HasOne(d => d.ToPackage)
+                    .WithMany(p => p.InventoryDetailToPackage)
+                    .HasForeignKey(d => d.ToPackageId)
+                    .HasConstraintName("FK_InventoryDetail_ToPackage");
             });
             modelBuilder.Entity<InventoryFile>(entity =>
             {
@@ -108,6 +116,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
+                entity.Property(e => e.PackageType).HasDefaultValueSql("((1))");
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
@@ -119,6 +128,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.LocationId)
                     .HasConstraintName("FK_Package_Location");
+                entity.HasOne(d => d.Stock)
+                    .WithMany(p => p.Package)
+                    .HasForeignKey(d => d.StockId)
+                    .HasConstraintName("FK_Package_Stock");
             });
             modelBuilder.Entity<PackageRef>(entity =>
             {
