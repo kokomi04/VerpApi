@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
+using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Users;
 
 namespace VErpApi.Controllers.System
@@ -17,10 +19,13 @@ namespace VErpApi.Controllers.System
     public class UsersController : VErpBaseController
     {
         private readonly IUserService _userService;
+        private readonly IObjectGenCodeService _objectGenCodeService;
         public UsersController(IUserService userService
+            , IObjectGenCodeService objectGenCodeService
             )
         {
             _userService = userService;
+            _objectGenCodeService = objectGenCodeService;
         }
 
         /// <summary>
@@ -102,6 +107,17 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse<PageData<UserInfoOutput>>> GetListByModuleId([FromQuery] int moduleId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size);
+        }
+
+        /// <summary>
+        /// Sinh mã nhân viên
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GenerateUserCode")]
+        public async Task<ApiResponse<string>> GenerateUserCode()
+        {
+            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee);
         }
     }
 }

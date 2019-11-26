@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
         UserNameExisted = 2,
         UserNotFound = 3,
         PasswordTooShort = 4,
-        OldPasswordIncorrect = 5
+        OldPasswordIncorrect = 5,
+        EmployeeCodeAlreadyExisted = 6
     }
 }
