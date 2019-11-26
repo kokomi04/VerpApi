@@ -41,7 +41,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
         {
-            var validate = ValidateUserInfoInput(req);
+            var validate = await ValidateUserInfoInput(-1, req);
             if (!validate.IsSuccess())
             {
                 return validate;
@@ -193,7 +193,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> UpdateUser(int userId, UserInfoInput req)
         {
-            var validate = ValidateUserInfoInput(req);
+            var validate = await ValidateUserInfoInput(userId, req);
             if (!validate.IsSuccess())
             {
                 return validate;
@@ -345,8 +345,13 @@ namespace VErp.Services.Master.Service.Users.Implement
 
 
         #region private
-        private Enum ValidateUserInfoInput(UserInfoInput req)
+        private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
         {
+            var findByCode = await _masterContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
+            if (findByCode)
+            {
+                return UserErrorCode.EmployeeCodeAlreadyExisted;
+            }
             //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
             //{
             //    return GeneralCode.InvalidParams;
