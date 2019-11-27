@@ -5,6 +5,12 @@ namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class Package
     {
+        public Package()
+        {
+            InventoryDetailFromPackage = new HashSet<InventoryDetail>();
+            InventoryDetailToPackage = new HashSet<InventoryDetail>();
+        }
+
         public long PackageId { get; set; }
         public long? InventoryDetailId { get; set; }
         public string PackageCode { get; set; }
@@ -23,7 +29,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal PrimaryQuantityRemaining { get; set; }
         public decimal SecondaryQuantityWaitting { get; set; }
         public decimal SecondaryQuantityRemaining { get; set; }
+        public int PackageType { get; set; }
+        public int? StockId { get; set; }
 
         public virtual Location Location { get; set; }
+        public virtual Stock Stock { get; set; }
+        public virtual ICollection<InventoryDetail> InventoryDetailFromPackage { get; set; }
+        public virtual ICollection<InventoryDetail> InventoryDetailToPackage { get; set; }
     }
 }

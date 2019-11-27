@@ -15,8 +15,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
+        public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
-        public virtual DbSet<BarcodeUsed> BarcodeUsed { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
         public virtual DbSet<ObjectType> ObjectType { get; set; }
+        public virtual DbSet<PackageOption> PackageOption { get; set; }
+        public virtual DbSet<PackageType> PackageType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
@@ -246,6 +248,20 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.Property(e => e.ObjectTypeId).ValueGeneratedNever();
                 entity.Property(e => e.ObjectTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<PackageOption>(entity =>
+            {
+                entity.Property(e => e.PackageOptionId).ValueGeneratedNever();
+                entity.Property(e => e.PackageOptionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<PackageType>(entity =>
+            {
+                entity.Property(e => e.PackageTypeId).ValueGeneratedNever();
+                entity.Property(e => e.PackageTypeName)
                     .IsRequired()
                     .HasMaxLength(128);
             });

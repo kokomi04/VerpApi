@@ -42,11 +42,18 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
         public async Task<ServiceResult<int>> AddLocation(LocationInput req)
         {
+            var checkExisted = _stockDbContext.Location.Any(q =>
+                !q.IsDeleted && q.StockId == req.StockId && string.Equals(q.Name, req.Name,
+                    StringComparison.CurrentCultureIgnoreCase));
+
+            if(checkExisted)
+                return LocationErrorCode.LocationAlreadyExisted;
+
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    var locationInfo = new VErp.Infrastructure.EF.StockDB.Location()
+                    var locationInfo = new VErp.Infrastructure.EF.StockDB.Location
                     {
                         StockId = req.StockId,
                         Name = req.Name,
@@ -58,7 +65,6 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     };
 
                     await _stockDbContext.AddAsync(locationInfo);
-
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -141,6 +147,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
                         where q.Name.Contains(keyword) || q.Description.Contains(keyword)
                         select q;
             }
+
+            query = query.OrderBy(q=>q.StockId);
 
             var total = await query.CountAsync();
             var locationList = await query.Skip((page - 1) * size).Take(size).ToListAsync();

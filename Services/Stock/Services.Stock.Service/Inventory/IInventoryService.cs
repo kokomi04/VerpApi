@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Package;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Inventory    
 {
@@ -89,5 +92,35 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="currentUserId"></param>
         /// <returns></returns>
         Task<Enum> DeleteInventory(int inventoryId, int currentUserId);
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm để nhập kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, int stockId, int page = 1, int size = 20);
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm để xuất kho
+        /// </summary>
+        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
+        /// <param name="stockIdList">Id kho</param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
+
+        /// <summary>
+        /// Lấy danh sách kiện để xuất kho
+        /// </summary>
+        /// <param name="productId">Id sản phẩm</param>
+        /// <param name="stockIdList">List Id kho</param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
     }
 }

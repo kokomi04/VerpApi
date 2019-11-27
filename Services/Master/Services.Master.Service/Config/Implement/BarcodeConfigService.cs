@@ -45,14 +45,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return status;
             }
 
-            if (data.IsActived)
-            {
-                var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived);
-                if (activedModel != null)
-                {
-                    return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
-                }
-            }
+            //if (data.IsActived)
+            //{
+            //    var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived);
+            //    if (activedModel != null)
+            //    {
+            //        return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+            //    }
+            //}
             var model = new BarcodeConfig()
             {
                 Name = data.Name.Trim(),
@@ -91,13 +91,19 @@ namespace VErp.Services.Master.Service.Config.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<ServiceResult<string>> Make(EnumBarcodeStandard barcodeStandardId, int productCode)
+        public async Task<ServiceResult<string>> Make(int barcodeConfigId)
         {
 
-            var activedConfig = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)barcodeStandardId && c.IsActived);
+
+            var activedConfig = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeConfigId == barcodeConfigId);
             if (activedConfig == null)
             {
-                return BarcodeConfigErrorCode.NoActivedConfigWasFound;
+                return BarcodeConfigErrorCode.BarcodeNotFound;
+            }
+
+            if (!activedConfig.IsActived)
+            {
+                return BarcodeConfigErrorCode.BarcodeConfigHasBeenDisabled;
             }
 
             var model = ExtractBarcodeModel(activedConfig);
@@ -107,9 +113,22 @@ namespace VErp.Services.Master.Service.Config.Implement
             switch (model.BarcodeStandardId)
             {
                 case EnumBarcodeStandard.EAN_13:
+                    var g = new BarcodeGenerate()
+                    {
+                        GeneratedDatetimeUtc = DateTime.UtcNow,
+                        IsUsed = true
+                    };
+                    var config = _masterContext.BarcodeGenerate.Add(g);
+
+                    await _masterContext.SaveChangesAsync();
 
                     var ean = model.Ean13;
-                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{productCode}";
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}";
+                    var n = 12 - barcode.Length;
+                    var pCode = g.BarcodeGenerateId.ToString($"D{n}");
+                    if (pCode.Length > n)
+                        pCode = pCode.Substring(pCode.Length - n);
+                    barcode = $"{ean.CountryCode}{ean.CompanyCode}{pCode}";
                     var total = 0;
                     for (var i = barcode.Length - 1; i >= 0; i--)
                     {
@@ -155,11 +174,25 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
                 );
             var total = await lst.CountAsync();
-            var pageData = lst.OrderBy(c => c.Name).Skip((page - 1) * size).Take(size);
+            var pageData = size == -1 ? lst.OrderBy(c => c.Name) : lst.OrderBy(c => c.Name).Skip((page - 1) * size).Take(size);
 
             return (await pageData.ToListAsync(), total);
         }
 
+        public async Task<IList<BarcodeConfigListOutput>> GetListActived()
+        {
+            return await (
+                from c in _masterContext.BarcodeConfig
+                where c.IsActived
+                select new BarcodeConfigListOutput()
+                {
+                    BarcodeConfigId = c.BarcodeConfigId,
+                    BarcodeStandardId = (EnumBarcodeStandard)c.BarcodeStandardId,
+                    IsActived = c.IsActived,
+                    Name = c.Name
+                }
+                ).ToListAsync();
+        }
         public async Task<Enum> UpdateBarcodeConfig(int barcodeConfigId, BarcodeConfigModel data)
         {
             var (status, config) = ExtractBarcodeConfig(data);
@@ -175,14 +208,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return BarcodeConfigErrorCode.BarcodeNotFound;
             }
 
-            if (data.IsActived)
-            {
-                var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived && c.BarcodeConfigId != barcodeConfigId);
-                if (activedModel != null)
-                {
-                    return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
-                }
-            }
+            //if (data.IsActived)
+            //{
+            //    var activedModel = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeStandardId == (int)data.BarcodeStandardId && c.IsActived && c.BarcodeConfigId != barcodeConfigId);
+            //    if (activedModel != null)
+            //    {
+            //        return BarcodeConfigErrorCode.OnlyAllowOneBarcodeConfigActivedAtTheSameTime;
+            //    }
+            //}
 
             var dataBefore = model.JsonSerialize();
             model.Name = data.Name;

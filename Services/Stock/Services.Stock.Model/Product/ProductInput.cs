@@ -19,6 +19,7 @@ namespace VErp.Services.Stock.Model.Product
         public long? MainImageFileId { get; set; }
         public int? ProductTypeId { get; set; }
         public int ProductCateId { get; set; }
+        public int? BarcodeConfigId { get; set; }
         public EnumBarcodeStandard? BarcodeStandardId { get; set; }
         public string Barcode { get; set; }
         public int UnitId { get; set; }

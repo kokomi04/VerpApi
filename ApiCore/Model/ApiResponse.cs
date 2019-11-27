@@ -54,6 +54,15 @@ namespace VErp.Infrastructure.ApiCore.Model
                 Message = result.Message
             };
         }
+
+        public static implicit operator ApiResponse<T>(Enum code)
+        {
+            return new ApiResponse<T>()
+            {
+                Code = code.GetErrorCodeString(),
+                Message = code.GetEnumDescription()
+            };
+        }
     }
 
 }

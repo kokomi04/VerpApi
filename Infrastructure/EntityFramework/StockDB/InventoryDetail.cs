@@ -17,11 +17,15 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? SecondaryUnitId { get; set; }
         public decimal? SecondaryQuantity { get; set; }
         public long? FromPackageId { get; set; }
+        public long? ToPackageId { get; set; }
+        public int PackageOptionId { get; set; }
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
 
+        public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }
         public virtual Product Product { get; set; }
+        public virtual Package ToPackage { get; set; }
     }
 }

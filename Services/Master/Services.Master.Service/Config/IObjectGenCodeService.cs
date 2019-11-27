@@ -27,5 +27,7 @@ namespace VErp.Services.Master.Service.Config
         /// <param name="objectType">(Enum) object type</param>
         /// <returns>string code</returns>
         Task<ServiceResult<string>> GenerateCode(EnumObjectType objectType);
+
+        Task<PageData<ObjectType>> GetAllObjectType();
     }
 }

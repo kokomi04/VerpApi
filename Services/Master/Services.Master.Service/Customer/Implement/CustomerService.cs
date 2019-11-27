@@ -37,6 +37,18 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
         public async Task<ServiceResult<int>> AddCustomer(CustomerModel data)
         {
+            var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
+
+            if (existedCustomer != null)
+            {
+                if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    return CustomerErrorCode.CustomerCodeAlreadyExisted;
+                }
+
+                return CustomerErrorCode.CustomerNameAlreadyExisted;
+            }
+
             var customer = new CustomerEntity()
             {
                 CustomerCode = data.CustomerCode,
@@ -110,6 +122,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             return new CustomerModel()
             {
                 CustomerName = customerInfo.CustomerName,
+                CustomerCode = customerInfo.CustomerCode,
                 CustomerTypeId = (EnumCustomerType)customerInfo.CustomerTypeId,
                 Address = customerInfo.Address,
                 TaxIdNo = customerInfo.TaxIdNo,
@@ -203,6 +216,18 @@ namespace VErp.Services.Master.Service.Customer.Implement
             if (customerInfo == null)
             {
                 return CustomerErrorCode.CustomerNotFound;
+            }
+
+            var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
+
+            if (existedCustomer != null)
+            {
+                if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    return CustomerErrorCode.CustomerCodeAlreadyExisted;
+                }
+
+                return CustomerErrorCode.CustomerNameAlreadyExisted;
             }
 
             var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();

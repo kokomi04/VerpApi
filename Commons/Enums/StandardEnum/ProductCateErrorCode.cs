@@ -15,6 +15,12 @@ namespace VErp.Commons.Enums.StandardEnum
         ParentProductCateNotfound = 2,
 
         [Description("Danh mục không tồn tại")]
-        ProductCateNotfound = 3
+        ProductCateNotfound = 3,
+
+        [Description("Để xóa danh mục cha, vui lòng xóa hoặc di chuyển danh mục con")]
+        CanNotDeletedParentProductCate = 4,
+
+        [Description("Tên danh mục đã tồn tại, vui lòng chọn tên khác")]
+        ProductCateNameAlreadyExisted = 5,
     }
 }

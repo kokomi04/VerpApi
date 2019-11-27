@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? ProductTypeId { get; set; }
         public int ProductCateId { get; set; }
         public int? BarcodeStandardId { get; set; }
+        public int? BarcodeConfigId { get; set; }
         public string Barcode { get; set; }
         public int UnitId { get; set; }
         public decimal? EstimatePrice { get; set; }

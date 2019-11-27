@@ -2,9 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -54,6 +52,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 }
             }
 
+            var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateName == req.ProductCateName);
+            if (sameName != null)
+            {
+                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
+            }
+
             var productCate = new ProductCate()
             {
                 ProductCateName = req.ProductCateName,
@@ -79,6 +83,13 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 return ProductCateErrorCode.ProductCateNotfound;
             }
+
+            var childrenCount = await _stockContext.ProductCate.CountAsync(c => c.ParentProductCateId == productCateId);
+            if (childrenCount > 0)
+            {
+                return ProductCateErrorCode.CanNotDeletedParentProductCate;
+            }
+
             productCate.IsDeleted = true;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
 
@@ -141,6 +152,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             if (productCate == null)
             {
                 return ProductCateErrorCode.ProductCateNotfound;
+            }
+
+            var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId != productCateId && c.ProductCateName == req.ProductCateName);
+            if (sameName != null)
+            {
+                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
             }
 
             var beforeJson = productCate.JsonSerialize();

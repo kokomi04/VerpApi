@@ -1,13 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace VErp.Services.Stock.Model.Stock
 {
-    public class StockProductPackageDetail
-    {
+    public class LocationProductPackageOuput
+    {       
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
         public long PackageId { get; set; }
-        public string PackageCode { get; set; }
-        public int? LocationId { get; set; }
-        public string LocationName { get; set; }
+        public string PackageCode { get; set; }     
         public DateTime Date { get; set; }
         public DateTime? ExpriredDate { get; set; }
         public int PrimaryUnitId { get; set; }

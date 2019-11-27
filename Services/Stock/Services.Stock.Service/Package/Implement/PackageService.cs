@@ -82,7 +82,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdatePackage");
+                _logger.LogError(ex, "AddPackage");
                 return GeneralCode.InternalError;
             }
         }
@@ -97,38 +97,38 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
-                var myCheckQuery = from i in _stockDbContext.Inventory
-                                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
-                                   where !i.IsApproved
-                                   select new { p.PackageId };
+                //var myCheckQuery = from i in _stockDbContext.Inventory
+                //                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
+                //                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
+                //                   where !i.IsApproved
+                //                   select new { p.PackageId };
 
-                var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
+                //var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
 
-                if (!allowUpdate)
-                    return PackageErrorCode.PackageNotAllowUpdate;
+                //if (!allowUpdate)
+                //    return PackageErrorCode.PackageNotAllowUpdate;
 
                 DateTime issuedDate = DateTime.MinValue;
                 DateTime expiredDate = DateTime.MinValue;
 
-                if (!string.IsNullOrEmpty(req.Date))
-                    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
+                //if (!string.IsNullOrEmpty(req.Date))
+                //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
                     DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 
-                obj.InventoryDetailId = req.InventoryDetailId;
+                //obj.InventoryDetailId = req.InventoryDetailId;
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;
-                obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
+                //obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
-                obj.PrimaryUnitId = req.PrimaryUnitId;
-                obj.PrimaryQuantity = req.PrimaryQuantity;
-                obj.SecondaryUnitId = req.SecondaryUnitId;
-                obj.SecondaryQuantity = req.SecondaryQuantity;
-                obj.PrimaryQuantityWaiting = req.PrimaryQuantityWaiting;
-                obj.PrimaryQuantityRemaining = req.PrimaryQuantityRemaining;
-                obj.SecondaryQuantityWaitting = req.SecondaryQuantityWaitting;
-                obj.SecondaryQuantityRemaining = req.SecondaryQuantityRemaining;
+                //obj.PrimaryUnitId = req.PrimaryUnitId;
+                //obj.PrimaryQuantity = req.PrimaryQuantity;
+                //obj.SecondaryUnitId = req.SecondaryUnitId;
+                //obj.SecondaryQuantity = req.SecondaryQuantity;
+                //obj.PrimaryQuantityWaiting = req.PrimaryQuantityWaiting;
+                //obj.PrimaryQuantityRemaining = req.PrimaryQuantityRemaining;
+                //obj.SecondaryQuantityWaitting = req.SecondaryQuantityWaitting;
+                //obj.SecondaryQuantityRemaining = req.SecondaryQuantityRemaining;
                 obj.UpdatedDatetimeUtc = DateTime.Now;
 
                 _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
@@ -221,24 +221,19 @@ namespace VErp.Services.Stock.Service.Package.Implement
         {
             try
             {
-                var locationDb = _stockDbContext.Location;
                 var query = from p in _stockDbContext.Package
                             join id in _stockDbContext.InventoryDetail on p.InventoryDetailId equals id.InventoryDetailId
                             join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
-                            join s in _stockDbContext.Stock on i.StockId equals s.StockId
                             join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                             from lo in pl.DefaultIfEmpty()
-                            select new { s, i, id, p, lo };
-
-
-
-                query = query.Where(q => q.i.IsApproved);
+                            where i.IsApproved == true
+                            select new { p, i,id,lo };               
 
                 if (stockId > 0)
-                    query = query.Where(q => q.s.StockId == stockId);
+                    query = query.Where(q => q.i.StockId == stockId);
 
                 if (!string.IsNullOrEmpty(keyword))
-                    query = query.Where(q => q.s.StockName.Contains(keyword) || q.i.InventoryCode.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword) || q.p.PackageCode.Contains(keyword));
+                    query = query.Where(q => q.i.InventoryCode.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword) || q.p.PackageCode.Contains(keyword));
 
                 var totalRecord = query.AsNoTracking().Count();
                 var resultList = new List<PackageOutputModel>(totalRecord);

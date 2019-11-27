@@ -52,6 +52,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 }
             }
 
+            var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeName == req.ProductTypeName);
+            if (sameName != null)
+            {
+                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
+            }
+
             var productType = new ProductType()
             {
                 ProductTypeName = req.ProductTypeName,
@@ -78,6 +84,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 return ProductTypeErrorCode.ProductTypeNotfound;
             }
+            var childrenCount = await _stockContext.ProductType.CountAsync(c => c.ParentProductTypeId == productTypeId);
+            if (childrenCount > 0)
+            {
+                return ProductTypeErrorCode.CanNotDeletedParentProductType;
+            }
+
             productType.IsDeleted = true;
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
@@ -143,6 +155,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             if (productType == null)
             {
                 return ProductTypeErrorCode.ProductTypeNotfound;
+            }
+
+            var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId != productTypeId && c.ProductTypeName == req.ProductTypeName);
+            if (sameName != null)
+            {
+                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
             }
 
             var beforeJson = productType.JsonSerialize();

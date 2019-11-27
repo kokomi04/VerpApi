@@ -53,10 +53,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productByCode = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);
-            if (productByCode != null)
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+            if (productExisted != null)
             {
-                return ProductErrorCode.ProductCodeAlreadyExisted;
+                if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
+                    return ProductErrorCode.ProductCodeAlreadyExisted;
+                return ProductErrorCode.ProductNameAlreadyExisted;
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
@@ -83,6 +85,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         MainImageFileId = req.MainImageFileId,
                         ProductTypeId = req.ProductTypeId,
                         ProductCateId = req.ProductCateId,
+                        BarcodeConfigId = req.BarcodeConfigId,
                         BarcodeStandardId = (int?)req.BarcodeStandardId,
                         Barcode = req.Barcode,
                         UnitId = req.UnitId,
@@ -112,7 +115,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId,
                         AmountWarningMin = req.StockInfo?.AmountWarningMin,
                         AmountWarningMax = req.StockInfo?.AmountWarningMax,
-                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,                        
+                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,
                         TimeWarningAmount = req.StockInfo?.TimeWarningAmount,
                         DescriptionToStock = req.StockInfo?.DescriptionToStock,
                         ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId,
@@ -182,10 +185,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 return ProductErrorCode.ProductNotFound;
             }
-            var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-            var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-            var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-            var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+            var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var stockValidations = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
 
             return new ProductModel()
             {
@@ -196,6 +199,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 MainImageFileId = productInfo.MainImageFileId,
                 ProductTypeId = productInfo.ProductTypeId,
                 ProductCateId = productInfo.ProductCateId,
+                BarcodeConfigId = productInfo.BarcodeConfigId,
                 BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
                 Barcode = productInfo.Barcode,
                 UnitId = productInfo.UnitId,
@@ -235,11 +239,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productByCode = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode && p.ProductId != productId);
-            if (productByCode != null)
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
+            if (productExisted != null)
             {
-                return ProductErrorCode.ProductCodeAlreadyExisted;
+                if (productExisted.ProductCode == req.ProductCode)
+                    return ProductErrorCode.ProductCodeAlreadyExisted;
+                return ProductErrorCode.ProductNameAlreadyExisted;
             }
+
 
             long? oldMainImageFileId = 0L;
 
@@ -254,12 +261,34 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         return ProductErrorCode.ProductNotFound;
                     }
 
+
+
+                    var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
+                    var keepIds = req.StockInfo?.UnitConversions.Select(c => c.ProductUnitConversionId);
+                    var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId)).ToList();
+                    if (toRemoveUnitConversions.Count > 0)
+                    {
+                        var removeConversionIds = toRemoveUnitConversions.Select(c => (int?)c.ProductUnitConversionId).ToList();
+
+
+                        var usedUnitConvertion = _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
+                        if (usedUnitConvertion != null)
+                        {
+                            trans.Rollback();
+                            return ProductErrorCode.SomeProductUnitConversionInUsed;
+                        }
+
+                        _stockContext.RemoveRange(toRemoveUnitConversions);
+
+                    }
+
                     oldMainImageFileId = productInfo.MainImageFileId;
 
                     var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-                    var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
 
                     var beforeData = GetProductForLog(productInfo, productExtra, productStockInfo, stockValidations, unitConverions);
 
@@ -274,6 +303,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.MainImageFileId = req.MainImageFileId;
                     productInfo.ProductTypeId = req.ProductTypeId;
                     productInfo.ProductCateId = req.ProductCateId;
+                    productInfo.BarcodeConfigId = req.BarcodeConfigId;
                     productInfo.BarcodeStandardId = (int?)req.BarcodeStandardId;
                     productInfo.Barcode = req.Barcode;
                     productInfo.UnitId = req.UnitId;
@@ -288,7 +318,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productStockInfo.StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId;
                     productStockInfo.AmountWarningMin = req.StockInfo?.AmountWarningMin;
                     productStockInfo.AmountWarningMax = req.StockInfo?.AmountWarningMax;
-                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;                    
+                    productStockInfo.TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId;
                     productStockInfo.TimeWarningAmount = req.StockInfo?.TimeWarningAmount;
                     productStockInfo.DescriptionToStock = req.StockInfo?.DescriptionToStock;
                     productStockInfo.ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId;
@@ -307,23 +337,40 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
 
 
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
-                    {
-                        ProductId = productInfo.ProductId,
-                        ProductUnitConversionName = u.ProductUnitConversionName,
-                        SecondaryUnitId = u.SecondaryUnitId,
-                        FactorExpression = u.FactorExpression,
-                        ConversionDescription = u.ConversionDescription
-                    });
+                    var lstNewUnitConverions = req.StockInfo?.UnitConversions?
+                        .Where(c => c.ProductUnitConversionId <= 0)?
+                        .Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
+                        {
+                            ProductId = productInfo.ProductId,
+                            ProductUnitConversionName = u.ProductUnitConversionName,
+                            SecondaryUnitId = u.SecondaryUnitId,
+                            FactorExpression = u.FactorExpression,
+                            ConversionDescription = u.ConversionDescription
+                        });
 
-                    _stockContext.RemoveRange(unitConverions);
-                    if (lstUnitConverions != null)
+
+                    if (lstNewUnitConverions != null)
                     {
-                        await _stockContext.AddRangeAsync(lstUnitConverions);
+                        await _stockContext.AddRangeAsync(lstNewUnitConverions);
                     }
 
+                    foreach (var productUnitConversionId in keepIds)
+                    {
+                        var db = unitConverions.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
+                        var u = req.StockInfo?.UnitConversions?.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
+                        if (db != null && u != null)
+                        {
+                            db.ProductUnitConversionName = u.ProductUnitConversionName;
+                            db.SecondaryUnitId = u.SecondaryUnitId;
+                            db.FactorExpression = u.FactorExpression;
+                            db.ConversionDescription = u.ConversionDescription;
+                        }
+                    }
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
+
+                    var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
 
                     var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
 
@@ -429,7 +476,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.Barcode,
                     pe.Specification,
                     pe.Description,
-                    p.UnitId
+                    p.UnitId,
+                    p.EstimatePrice
                 });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -483,7 +531,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductTypeId = item.ProductTypeId,
                     ProductTypeName = item.ProductTypeName,
                     Specification = item.Specification,
-                    UnitId = item.UnitId
+                    UnitId = item.UnitId,
+                    EstimatePrice = item.EstimatePrice
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);

@@ -18,5 +18,6 @@ namespace VErp.Services.Stock.Model.Product
         public string Specification { get; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
+        public decimal? EstimatePrice { get; set; }
     }
 }

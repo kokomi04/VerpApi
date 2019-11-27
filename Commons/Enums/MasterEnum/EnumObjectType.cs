@@ -17,8 +17,8 @@ namespace VErp.Commons.Enums.MasterEnum
         /// <summary>
         /// Kho         
         /// </summary>
-        Stock = 9, 
-        File = 10,        
+        Stock = 9,
+        File = 10,
         /// <summary>
         /// Vị trí trong Kho         
         /// </summary>
@@ -45,5 +45,7 @@ namespace VErp.Commons.Enums.MasterEnum
         StockProduct = 15,
 
         GenCodeConfig = 16,
+
+        Customer = 17
     }
 }
