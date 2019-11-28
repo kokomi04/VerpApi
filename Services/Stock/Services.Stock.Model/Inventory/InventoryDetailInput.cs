@@ -27,6 +27,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public long? ToPackageId { set; get; }
 
+        public int PackageOptionId { set; get; }
+
         public bool IsUpdated { set; get; }
         //public virtual Inventory Inventory { get; set; }
         //public virtual Package Package { get; set; }

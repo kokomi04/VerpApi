@@ -56,6 +56,9 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.DeliveryCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
                 entity.Property(e => e.Department).HasMaxLength(128);
                 entity.Property(e => e.InventoryCode)
                     .IsRequired()

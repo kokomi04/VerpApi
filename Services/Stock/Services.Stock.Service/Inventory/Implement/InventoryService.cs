@@ -161,6 +161,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
+                        FromPackageId = details.FromPackageId,
+                        ToPackageId = details.ToPackageId,
+                        PackageOptionId = details.PackageOptionId,
 
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo
@@ -181,6 +184,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
+                    DeliveryCode = item.DeliveryCode,
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
@@ -252,7 +256,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
-
+                        FromPackageId = details.FromPackageId,
+                        ToPackageId = details.ToPackageId,
+                        PackageOptionId = details.PackageOptionId,
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null
                     });
@@ -282,6 +288,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
+                    DeliveryCode = inventoryObj.DeliveryCode,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
@@ -350,7 +357,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
-                            StockKeeperUserId = req.UserId,
+                            StockKeeperUserId = req.StockKeeperUserId,
+                            DeliveryCode = req.DeliveryCode,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
                             CreatedDatetimeUtc = DateTime.Now,
@@ -393,6 +401,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     RefObjectCode = details.RefObjectCode,
                                     FromPackageId = (req.InventoryTypeId == (int)EnumInventory.Output) ? details.FromPackageId : null,
                                     ToPackageId = (req.InventoryTypeId == (int)EnumInventory.Input) ? details.ToPackageId : null,
+                                    PackageOptionId = details.PackageOptionId
                                 });
                             }
                             await _stockDbContext.InventoryDetail.AddRangeAsync(inventoryDetailList);
@@ -473,7 +482,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
-                            StockKeeperUserId = req.UserId,
+                            StockKeeperUserId = req.StockKeeperUserId,
+                            DeliveryCode = req.DeliveryCode,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
                             CreatedDatetimeUtc = DateTime.Now,
@@ -516,7 +526,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     RefObjectTypeId = details.RefObjectTypeId,
                                     RefObjectId = details.RefObjectId,
                                     RefObjectCode = details.RefObjectCode,
-                                    FromPackageId = details.FromPackageId
+                                    FromPackageId = details.FromPackageId,
+                                    //PackageOptionId = details.PackageOptionId
                                 });
                             }
                             await _stockDbContext.InventoryDetail.AddRangeAsync(inventoryDetailList);
@@ -603,7 +614,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     try
                     {
-                        #region Update Inventory - Phiếu nhập xuất kho
+                        #region Update Inventory - Phiếu nhập kho
                         var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
                         if (inventoryObj == null)
                         {
@@ -625,7 +636,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
-                        inventoryObj.StockKeeperUserId = model.UserId;
+                        inventoryObj.StockKeeperUserId = model.StockKeeperUserId;
+                        inventoryObj.DeliveryCode = model.DeliveryCode;
                         //inventoryObj.IsApproved = model.IsApproved;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
@@ -668,6 +680,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
                                         ToPackageId = item.ToPackageId ?? null,
+                                        PackageOptionId = item.PackageOptionId,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
                                         RefObjectCode = item.RefObjectCode ?? string.Empty,
@@ -790,7 +803,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
-                        inventoryObj.StockKeeperUserId = model.UserId;
+                        inventoryObj.StockKeeperUserId = model.StockKeeperUserId;
+                        inventoryObj.DeliveryCode = model.DeliveryCode;
                         //inventoryObj.IsApproved = model.IsApproved;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
@@ -832,6 +846,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
                                         ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
+                                        //ToPackageId = item.ToPackageId ?? null,
+                                        PackageOptionId = item.PackageOptionId,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
                                         RefObjectCode = item.RefObjectCode ?? string.Empty,
@@ -856,6 +872,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
                                     updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
+                                    //ToPackageId = item.ToPackageId ?? null,
+                                    updatedItem.PackageOptionId = item.PackageOptionId;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
                                     updatedItem.RefObjectCode = item.RefObjectCode ?? string.Empty;
