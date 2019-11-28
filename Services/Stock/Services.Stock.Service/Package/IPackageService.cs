@@ -47,5 +47,13 @@ namespace VErp.Services.Stock.Service.Package
         /// <param name="packageId">Mã kiện</param>
         /// <returns></returns>
         Task<Enum> DeletePackage(long packageId);
+
+        /// <summary>
+        /// Tách kiện
+        /// </summary>
+        /// <param name="packageId"></param>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        Task<Enum> SplitPackage(long packageId, PackageSplitInput req);
     }
 }

@@ -3,6 +3,7 @@
     public enum ProductUnitConversionErrorCode
     {
         ProductUnitConversionNotFound = 1,
-        ProductSecondaryUnitAlreadyExisted = 2
+        ProductSecondaryUnitAlreadyExisted = 2,
+        SecondaryUnitConversionError = 3
     }
 }

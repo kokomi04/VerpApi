@@ -18,6 +18,7 @@ using VErp.Commons.Library;
 using VErp.Services.Stock.Model.Package;
 using Microsoft.EntityFrameworkCore.Internal;
 using System.Globalization;
+using PackageModel = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Package.Implement
 {
@@ -48,7 +49,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
 
                 DateTime issuedDate = DateTime.MinValue;
                 DateTime expiredDate = DateTime.MinValue;
-                
+
                 if (!string.IsNullOrEmpty(req.Date))
                     DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
@@ -58,7 +59,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     PackageCode = req.PackageCode,
                     LocationId = req.LocationId,
-                    StockId =  req.StockId,
+                    StockId = req.StockId,
                     ProductId = req.ProductId,
                     Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
                     ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
@@ -71,7 +72,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
                     PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
                     SecondaryQuantityWaitting = req.SecondaryQuantityWaitting,
                     SecondaryQuantityRemaining = req.SecondaryQuantityRemaining,
-                    PackageType  = req.PackageType,
+                    PackageType = req.PackageType,
 
                     CreatedDatetimeUtc = DateTime.Now,
                     UpdatedDatetimeUtc = DateTime.Now,
@@ -100,7 +101,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
-                
+
                 var expiredDate = DateTime.MinValue;
 
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
@@ -147,6 +148,78 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 return GeneralCode.InternalError;
             }
         }
+
+
+        public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
+        {
+            if (req == null || req.ToPackages == null || req.ToPackages.Count == 0 || req.ToPackages.Any(p => p.SecondaryUnitQualtity <= 0))
+                return GeneralCode.InvalidParams;
+
+            var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
+            if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+
+            Infrastructure.EF.StockDB.ProductUnitConversion unitConversionInfo = null;
+            if (packageInfo.ProductUnitConversionId.HasValue)
+            {
+                unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
+
+                if (unitConversionInfo == null) return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+            }
+
+            var totalSecondaryInput = req.ToPackages.Sum(p => p.SecondaryUnitQualtity);
+            if (totalSecondaryInput > packageInfo.SecondaryQuantityRemaining) return PackageErrorCode.QualtityOfProductInPackageNotEnough;
+
+            var newPackages = new List<PackageModel>();
+
+            foreach (var package in req.ToPackages)
+            {
+                decimal qualtityInPrimaryUnit = package.SecondaryUnitQualtity;
+                if (unitConversionInfo != null)
+                {
+                    qualtityInPrimaryUnit = Utils.Eval($"({unitConversionInfo.FactorExpression}) * {package.SecondaryUnitQualtity}");
+                    if (!(qualtityInPrimaryUnit > 0))
+                    {
+                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                    }
+                }
+
+
+                newPackages.Add(new PackageModel()
+                {
+                    PackageCode = package.PackageCode,
+                    LocationId = package.LocationId,
+                    StockId = packageInfo.StockId,
+                    ProductId = packageInfo.ProductId,
+                    Date = packageInfo.Date,
+                    ExpiryTime = packageInfo.ExpiryTime,
+                    PrimaryUnitId = packageInfo.PrimaryUnitId,
+                    PrimaryQuantity = qualtityInPrimaryUnit,
+                    ProductUnitConversionId = packageInfo.ProductUnitConversionId,
+                    SecondaryUnitId = packageInfo.SecondaryUnitId,
+                    SecondaryQuantity = package.SecondaryUnitQualtity,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    PrimaryQuantityWaiting = 0,
+                    PrimaryQuantityRemaining = qualtityInPrimaryUnit,
+                    SecondaryQuantityWaitting = 0,
+                    SecondaryQuantityRemaining = package.SecondaryUnitQualtity,
+                    PackageType = (int)EnumPackageType.Custom
+                });
+
+                packageInfo.PrimaryQuantityRemaining -= qualtityInPrimaryUnit;
+                packageInfo.SecondaryQuantityRemaining -= package.SecondaryUnitQualtity;
+            }
+
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                await _stockDbContext.Package.AddRangeAsync(newPackages);
+                await _stockDbContext.SaveChangesAsync();
+                trans.Commit();
+            }
+            return GeneralCode.Success;
+        }
+
 
         public async Task<ServiceResult<PackageOutputModel>> GetInfo(long packageId)
         {
@@ -207,7 +280,7 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 var query = from p in _stockDbContext.Package
                             join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                             from lo in pl.DefaultIfEmpty()
-                            select new { p, lo };               
+                            select new { p, lo };
 
                 if (stockId > 0)
                     query = query.Where(q => q.p.StockId == stockId);
