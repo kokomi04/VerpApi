@@ -292,14 +292,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var lstExpiredWarnings = await (
                 from pk in _stockContext.Package
-                join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
-                join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
-                join p in _stockContext.Product on d.ProductId equals p.ProductId
+                //join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
+                //join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                join p in _stockContext.Product on pk.ProductId equals p.ProductId
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 where pk.ExpiryTime < DateTime.UtcNow
                 select new
                 {
-                    iv.StockId,
+                    pk.StockId,
                     p.ProductId,
                     p.ProductCode,
                     p.ProductName,
@@ -419,13 +419,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (stockWarningTypeIds.Contains(EnumWarningType.Expired))
                 {
-                    var productWithExprires = from iv in _stockContext.Inventory
-                                              join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-                                              join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
-                                              where iv.StockId == stockId && pk.ExpiryTime < DateTime.UtcNow
+                    var productWithExprires = from pk in _stockContext.Package
+                                              //from iv in _stockContext.Inventory
+                                              //join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                                              //join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
+                                              where pk.StockId == stockId && pk.ExpiryTime < DateTime.UtcNow
                                               select new
                                               {
-                                                  d.ProductId,
+                                                  pk.ProductId,
                                               };
 
                     query = from p in query
@@ -480,13 +481,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
             var query = (
                 from pk in _stockContext.Package
-                join iv in _stockContext.InventoryDetail on pk.InventoryDetailId equals iv.InventoryDetailId
+                join iv in _stockContext.InventoryDetail on pk.PackageId equals iv.ToPackageId
                 join i in _stockContext.Inventory on iv.InventoryId equals i.InventoryId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
-                where i.StockId == stockId && iv.ProductId == productId && i.IsApproved
+                where pk.StockId == stockId && pk.ProductId == productId  && i.IsApproved
                 select new StockProductPackageDetail()
                 {
                     PackageId = pk.PackageId,
@@ -530,13 +531,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var query = (
                 from pk in _stockContext.Package
-                join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
+                join d in _stockContext.InventoryDetail on pk.PackageId equals d.ToPackageId
                 join p in _stockContext.Product on d.ProductId equals p.ProductId
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
-                where iv.StockId == stockId && iv.IsApproved && pk.LocationId == locationId
+                where pk.StockId == stockId && iv.IsApproved && pk.LocationId == locationId
                 orderby iv.DateUtc descending
                 select new LocationProductPackageOuput()
                 {

@@ -26,7 +26,6 @@ namespace VErp.Services.Stock.Service.Package.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IUnitService _unitService;
         private readonly IActivityService _activityService;
 
         public PackageService(StockDBContext stockContext
@@ -57,19 +56,23 @@ namespace VErp.Services.Stock.Service.Package.Implement
 
                 var obj = new VErp.Infrastructure.EF.StockDB.Package
                 {
-                    InventoryDetailId = req.InventoryDetailId,
                     PackageCode = req.PackageCode,
                     LocationId = req.LocationId,
+                    StockId =  req.StockId,
+                    ProductId = req.ProductId,
                     Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
                     ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
                     PrimaryUnitId = req.PrimaryUnitId,
                     PrimaryQuantity = req.PrimaryQuantity,
+                    ProductUnitConversionId = req.ProductUnitConversionId,
                     SecondaryUnitId = req.SecondaryUnitId,
                     SecondaryQuantity = req.SecondaryQuantity,
                     PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
                     SecondaryQuantityWaitting = req.SecondaryQuantityWaitting,
                     SecondaryQuantityRemaining = req.SecondaryQuantityRemaining,
+                    PackageType  = req.PackageType,
+
                     CreatedDatetimeUtc = DateTime.Now,
                     UpdatedDatetimeUtc = DateTime.Now,
                     IsDeleted = false
@@ -97,38 +100,15 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
-                //var myCheckQuery = from i in _stockDbContext.Inventory
-                //                   join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                //                   join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
-                //                   where !i.IsApproved
-                //                   select new { p.PackageId };
+                
+                var expiredDate = DateTime.MinValue;
 
-                //var allowUpdate = myCheckQuery.Any(q => q.PackageId == packageId);
-
-                //if (!allowUpdate)
-                //    return PackageErrorCode.PackageNotAllowUpdate;
-
-                DateTime issuedDate = DateTime.MinValue;
-                DateTime expiredDate = DateTime.MinValue;
-
-                //if (!string.IsNullOrEmpty(req.Date))
-                //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
                 if (!string.IsNullOrEmpty(req.ExpiryTime))
                     DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 
-                //obj.InventoryDetailId = req.InventoryDetailId;
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;
-                //obj.Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
-                //obj.PrimaryUnitId = req.PrimaryUnitId;
-                //obj.PrimaryQuantity = req.PrimaryQuantity;
-                //obj.SecondaryUnitId = req.SecondaryUnitId;
-                //obj.SecondaryQuantity = req.SecondaryQuantity;
-                //obj.PrimaryQuantityWaiting = req.PrimaryQuantityWaiting;
-                //obj.PrimaryQuantityRemaining = req.PrimaryQuantityRemaining;
-                //obj.SecondaryQuantityWaitting = req.SecondaryQuantityWaitting;
-                //obj.SecondaryQuantityRemaining = req.SecondaryQuantityRemaining;
                 obj.UpdatedDatetimeUtc = DateTime.Now;
 
                 _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
@@ -191,11 +171,14 @@ namespace VErp.Services.Stock.Service.Package.Implement
                 var packageOutputModel = new PackageOutputModel()
                 {
                     PackageId = obj.PackageId,
-                    InventoryDetailId = obj.InventoryDetailId,
+                    //InventoryDetailId = obj.InventoryDetailId,
                     PackageCode = obj.PackageCode,
                     LocationId = obj.LocationId ?? 0,
+                    StockId = obj.StockId ?? 0,
+                    ProductId = obj.ProductId ?? 0,
                     Date = obj.Date,
                     ExpiryTime = obj.ExpiryTime,
+                    ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryUnitId = obj.PrimaryUnitId,
                     PrimaryQuantity = obj.PrimaryQuantity,
                     SecondaryUnitId = obj.SecondaryUnitId,
@@ -222,18 +205,15 @@ namespace VErp.Services.Stock.Service.Package.Implement
             try
             {
                 var query = from p in _stockDbContext.Package
-                            join id in _stockDbContext.InventoryDetail on p.InventoryDetailId equals id.InventoryDetailId
-                            join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
                             join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                             from lo in pl.DefaultIfEmpty()
-                            where i.IsApproved == true
-                            select new { p, i,id,lo };               
+                            select new { p, lo };               
 
                 if (stockId > 0)
-                    query = query.Where(q => q.i.StockId == stockId);
+                    query = query.Where(q => q.p.StockId == stockId);
 
                 if (!string.IsNullOrEmpty(keyword))
-                    query = query.Where(q => q.i.InventoryCode.Contains(keyword) || q.i.Shipper.Contains(keyword) || q.id.RefObjectCode.Contains(keyword) || q.p.PackageCode.Contains(keyword));
+                    query = query.Where(q => q.p.PackageCode.Contains(keyword));
 
                 var totalRecord = query.AsNoTracking().Count();
                 var resultList = new List<PackageOutputModel>(totalRecord);
@@ -256,11 +236,14 @@ namespace VErp.Services.Stock.Service.Package.Implement
                         var model = new PackageOutputModel
                         {
                             PackageId = item.Package.PackageId,
-                            InventoryDetailId = item.Package.InventoryDetailId,
+                            //InventoryDetailId = item.Package.InventoryDetailId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
+                            StockId = item.Package.StockId ?? 0,
+                            ProductId = item.Package.ProductId ?? 0,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
+                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
                             SecondaryUnitId = item.Package.SecondaryUnitId,
@@ -294,11 +277,14 @@ namespace VErp.Services.Stock.Service.Package.Implement
                         var model = new PackageOutputModel
                         {
                             PackageId = item.Package.PackageId,
-                            InventoryDetailId = item.Package.InventoryDetailId,
+                            //InventoryDetailId = item.Package.InventoryDetailId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
+                            StockId = item.Package.StockId ?? 0,
+                            ProductId = item.Package.ProductId ?? 0,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
+                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
                             SecondaryUnitId = item.Package.SecondaryUnitId,

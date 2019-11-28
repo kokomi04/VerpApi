@@ -22,7 +22,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public DateTime DateUtc { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
-        public int? UserId { get; set; }        
+        public int? StockKeeperUserId { get; set; }        
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         //public DateTime CreatedDatetimeUtc { get; set; }
