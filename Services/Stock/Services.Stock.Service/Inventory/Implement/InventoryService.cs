@@ -180,7 +180,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     DateUtc = item.DateUtc,
                     CustomerId = item.CustomerId,
                     Department = item.Department,
-                    UserId = item.UserId,
+                    StockKeeperUserId = item.StockKeeperUserId,
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
@@ -281,7 +281,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     DateUtc = inventoryObj.DateUtc,
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
-                    UserId = inventoryObj.UserId,
+                    StockKeeperUserId = inventoryObj.StockKeeperUserId,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
@@ -350,7 +350,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
-                            UserId = req.UserId,
+                            StockKeeperUserId = req.UserId,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
                             CreatedDatetimeUtc = DateTime.Now,
@@ -391,7 +391,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     RefObjectTypeId = details.RefObjectTypeId,
                                     RefObjectId = details.RefObjectId,
                                     RefObjectCode = details.RefObjectCode,
-                                    FromPackageId = (req.InventoryTypeId == (int)EnumInventory.Output) ? details.FromPackageId : null
+                                    FromPackageId = (req.InventoryTypeId == (int)EnumInventory.Output) ? details.FromPackageId : null,
+                                    ToPackageId = (req.InventoryTypeId == (int)EnumInventory.Input) ? details.ToPackageId : null,
                                 });
                             }
                             await _stockDbContext.InventoryDetail.AddRangeAsync(inventoryDetailList);
@@ -410,7 +411,6 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                 _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
                             }
                         }
-
                         return inventoryObj.InventoryId;
                     }
                     catch (Exception ex)
@@ -420,8 +420,6 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         return GeneralCode.InternalError;
                     }
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -475,7 +473,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
-                            UserId = req.UserId,
+                            StockKeeperUserId = req.UserId,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
                             CreatedDatetimeUtc = DateTime.Now,
@@ -627,7 +625,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
-                        inventoryObj.UserId = model.UserId;
+                        inventoryObj.StockKeeperUserId = model.UserId;
                         //inventoryObj.IsApproved = model.IsApproved;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
@@ -669,6 +667,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                         SecondaryQuantity = item.SecondaryQuantity ?? null,
                                         ProductUnitConversionId = item.ProductUnitConversionId ?? null,
                                         FromPackageId = item.FromPackageId ?? null,
+                                        ToPackageId = item.ToPackageId ?? null,
                                         RefObjectId = item.RefObjectId ?? null,
                                         RefObjectTypeId = item.RefObjectTypeId ?? null,
                                         RefObjectCode = item.RefObjectCode ?? string.Empty,
@@ -693,6 +692,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     updatedItem.SecondaryQuantity = item.SecondaryQuantity ?? null;
                                     updatedItem.ProductUnitConversionId = item.ProductUnitConversionId ?? null;
                                     updatedItem.FromPackageId = item.FromPackageId ?? null;
+                                    updatedItem.ToPackageId = item.ToPackageId ?? null;
                                     updatedItem.RefObjectId = item.RefObjectId ?? null;
                                     updatedItem.RefObjectTypeId = item.RefObjectTypeId ?? null;
                                     updatedItem.RefObjectCode = item.RefObjectCode ?? string.Empty;
@@ -790,7 +790,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = model.CustomerId;
                         inventoryObj.Department = model.Department;
-                        inventoryObj.UserId = model.UserId;
+                        inventoryObj.StockKeeperUserId = model.UserId;
                         //inventoryObj.IsApproved = model.IsApproved;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
@@ -1024,7 +1024,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     try
                     {
-                        #region Update Inventory - Phiếu nhập xuất kho
+                        #region Update Inventory - Phiếu nhập kho
                         var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
                         if (inventoryObj == null)
                         {
@@ -1047,23 +1047,9 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         await _stockDbContext.SaveChangesAsync();
                         #endregion
 
-                        #region Update InventoryDetails
-                        var inventoryDetailList = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
-                        foreach (var item in inventoryDetailList)
-                        {
-                            if (item.ProductUnitConversionId > 0 && item.SecondaryUnitId > 0)
-                                continue;
-                            item.ProductUnitConversionId = null;
-                            item.SecondaryUnitId = item.PrimaryUnitId;
-                            item.SecondaryQuantity = item.PrimaryQuantity;
-                        }
-                        await _stockDbContext.SaveChangesAsync();
-                        #endregion
-
-                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
+                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
                         #region Update Package - Thông tin kiện
-
                         var packageList = new List<VErp.Infrastructure.EF.StockDB.Package>(inventoryDetails.Count);
                         foreach (var item in inventoryDetails)
                         {
@@ -1074,9 +1060,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
 
                             packageList.Add(new VErp.Infrastructure.EF.StockDB.Package
                             {
-                                InventoryDetailId = item.InventoryDetailId,
                                 PackageCode = newPackageCode,
                                 LocationId = null,
+                                StockId = inventoryObj.StockId,
+                                ProductId = item.ProductId,
                                 Date = inventoryObj.DateUtc,
                                 ExpiryTime = null,
                                 PrimaryUnitId = item.PrimaryUnitId,
@@ -1087,10 +1074,24 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                 PrimaryQuantityRemaining = item.PrimaryQuantity,
                                 SecondaryQuantityRemaining = item.SecondaryQuantity ?? 0,
                                 PrimaryQuantityWaiting = 0,
-                                SecondaryQuantityWaitting = 0
+                                SecondaryQuantityWaitting = 0,
+                                PackageType = 0
                             });
                         }
                         await _stockDbContext.Package.AddRangeAsync(packageList);
+                        await _stockDbContext.SaveChangesAsync();
+                        #endregion
+
+                        #region Update InventoryDetails
+                        foreach (var item in inventoryDetails)
+                        {
+                            item.ToPackageId = packageList.FirstOrDefault(q => q.ProductId == item.ProductId)?.PackageId;
+                            if (item.ProductUnitConversionId > 0 && item.SecondaryUnitId > 0)
+                                continue;
+                            item.ProductUnitConversionId = null;
+                            item.SecondaryUnitId = item.PrimaryUnitId;
+                            item.SecondaryQuantity = item.PrimaryQuantity;
+                        }
                         await _stockDbContext.SaveChangesAsync();
                         #endregion
 
@@ -1103,9 +1104,6 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                              q.SecondaryUnitId == item.SecondaryUnitId && q.ProductUnitConversionId == item.ProductUnitConversionId);
                             if (oldStockProduct != null)
                             {
-                                oldStockProduct.PrimaryQuantity += item.PrimaryQuantity;
-                                oldStockProduct.SecondaryQuantity += item.SecondaryQuantity;
-
                                 oldStockProduct.PrimaryQuantityRemaining += item.PrimaryQuantity;
                                 oldStockProduct.SecondaryQuantityRemaining += item.SecondaryQuantity ?? 0;
 
@@ -1118,10 +1116,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                                     StockId = inventoryObj.StockId,
                                     ProductId = item.ProductId,
                                     SecondaryUnitId = item.SecondaryUnitId ?? 0,
-                                    SecondaryQuantity = item.SecondaryQuantity,
+
                                     ProductUnitConversionId = item.ProductUnitConversionId,
                                     PrimaryUnitId = item.PrimaryUnitId,
-                                    PrimaryQuantity = item.PrimaryQuantity,
+
                                     PrimaryQuantityRemaining = item.PrimaryQuantity,
                                     SecondaryQuantityRemaining = item.SecondaryQuantity ?? 0,
                                     PrimaryQuantityWaiting = 0,
@@ -1177,7 +1175,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     try
                     {
-                        #region Update Inventory - Phiếu xuất kho
+                        #region Validate Product Qty & Update Inventory - Phiếu xuất kho
                         var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
                         if (inventoryObj == null)
                         {
@@ -1189,6 +1187,24 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
+                        #region Validate Product Qty
+                        var inventoryDetailList = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId && !q.IsDeleted).AsNoTracking().ToList();
+                        var productIdList = inventoryDetailList.Select(q => q.ProductId).Distinct().ToList();
+                        var stockProductList = _stockDbContext.StockProduct.Where(q => q.StockId == inventoryObj.StockId && productIdList.Contains(q.ProductId)).AsNoTracking().ToList();
+
+                        foreach (var detail in inventoryDetailList)
+                        {
+                            var stockProductObj = stockProductList.FirstOrDefault(q =>
+                                q.ProductId == detail.ProductId && q.PrimaryUnitId == detail.PrimaryUnitId &&
+                                q.ProductUnitConversionId == detail.ProductUnitConversionId);
+                            var productQty = stockProductObj?.PrimaryQuantityRemaining ?? 0;
+
+                            if (detail.PrimaryQuantity <= productQty) continue;
+                            trans.Rollback();
+                            return InventoryDetailErrorCode.OutOfStock;
+                        }
+                        #endregion
+
 
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
 
@@ -1312,8 +1328,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
             {
                 var query = from i in _stockDbContext.Inventory
                             join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                            join p in _stockDbContext.Package on id.InventoryDetailId equals p.InventoryDetailId
-                            where i.IsApproved == true && stockIdList.Contains(i.StockId) && id.ProductId == productId
+                            join p in _stockDbContext.Package on id.ToPackageId equals p.PackageId
+                            where i.IsApproved && stockIdList.Contains(i.StockId) && id.ProductId == productId
                             select p;
 
                 var total = query.Count();
@@ -1341,8 +1357,10 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                     {
                         PackageId = item.PackageId,
                         PackageCode = item.PackageCode,
-                        InventoryDetailId = item.InventoryDetailId,
+                        //InventoryDetailId = item.InventoryDetailId,
                         LocationId = item.LocationId ?? 0,
+                        StockId = item.StockId ?? 0,
+                        ProductId = item.ProductId ?? 0,
                         Date = item.Date,
                         ExpiryTime = item.ExpiryTime,
                         PrimaryUnitId = item.PrimaryUnitId,
@@ -1354,6 +1372,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                         PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
                         SecondaryQuantityWaitting = item.SecondaryQuantityWaitting,
                         SecondaryQuantityRemaining = item.SecondaryQuantityRemaining,
+                        PackageType = item.PackageType,
+
                         CreatedDatetimeUtc = item.CreatedDatetimeUtc,
                         UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
                         LocationOutputModel = locationOutputModel,
@@ -1371,7 +1391,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
 
         }
 
-        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, int stockId, int page = 1, int size = 20)
+        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
             {
@@ -1379,19 +1399,19 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
 
                 var productWithStockValidationQuery = from p in _stockDbContext.Product
                                                       join pv in _stockDbContext.ProductStockValidation on p.ProductId equals pv.ProductId
-                                                      where pv.StockId == stockId
+                                                      where stockIdList.Contains(pv.StockId)
                                                       select p;
                 if (!string.IsNullOrEmpty(keyword))
                 {
-                    productWithStockValidationQuery =  productWithStockValidationQuery.Where(q =>q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
+                    productWithStockValidationQuery = productWithStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
                 }
 
                 var productWithoutStockValidationQuery = _stockDbContext.Product.Where(q => !productWithStockValidationIdList.Contains(q.ProductId));
 
                 var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
 
-               var total = productQuery.Count();
-               var pagedData = productQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+                var total = productQuery.Count();
+                var pagedData = productQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
                 var productIdList = pagedData.Select(q => q.ProductId).ToList();
                 var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
@@ -1403,7 +1423,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement
                 {
                     var specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId)?.Specification ?? string.Empty;
                     var unitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId)?.UnitName ?? string.Empty;
-                    
+
                     productList.Add(new ProductListOutput
                     {
                         ProductId = item.ProductId,

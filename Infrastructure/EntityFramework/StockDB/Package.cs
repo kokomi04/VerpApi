@@ -12,9 +12,10 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public long PackageId { get; set; }
-        public long? InventoryDetailId { get; set; }
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
+        public int? StockId { get; set; }
+        public int? ProductId { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
@@ -30,7 +31,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal SecondaryQuantityWaitting { get; set; }
         public decimal SecondaryQuantityRemaining { get; set; }
         public int PackageType { get; set; }
-        public int? StockId { get; set; }
 
         public virtual Location Location { get; set; }
         public virtual Stock Stock { get; set; }

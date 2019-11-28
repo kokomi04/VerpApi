@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Location;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Model.Package
 {
@@ -16,9 +17,13 @@ namespace VErp.Services.Stock.Model.Package
         }
 
         public long PackageId { get; set; }
-        public long? InventoryDetailId { get; set; }
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
+
+        public int? StockId { set; get; }
+
+        public int? ProductId { set; get; }
+
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
@@ -36,8 +41,12 @@ namespace VErp.Services.Stock.Model.Package
         public decimal SecondaryQuantityWaitting { get; set; }
         public decimal SecondaryQuantityRemaining { get; set; }
 
+        public int PackageType { set; get; }
+
         public LocationOutput LocationOutputModel { get; set; }
 
         public ProductUnitConversion ProductUnitConversionModel { set; get; }
+
+        public ProductListOutput ProductOutputModel { set; get; }
     }
 }

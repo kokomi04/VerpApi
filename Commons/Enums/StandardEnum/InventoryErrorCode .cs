@@ -18,6 +18,7 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         InventoryDetailNotFound = 1,
         InventoryDetailCodeEmpty = 2,
-        InventoryDetailAlreadyExisted = 3
+        InventoryDetailAlreadyExisted = 3,
+        OutOfStock = 4,
     }
 }

@@ -97,11 +97,11 @@ namespace VErp.Services.Stock.Service.Inventory
         /// Lấy danh sách sản phẩm để nhập kho
         /// </summary>
         /// <param name="keyword"></param>
-        /// <param name="stockId"></param>
+        /// <param name="stockIdList"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, int stockId, int page = 1, int size = 20);
+        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
 
         /// <summary>
         /// Lấy danh sách sản phẩm để xuất kho
