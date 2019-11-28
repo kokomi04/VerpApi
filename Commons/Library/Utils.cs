@@ -117,5 +117,11 @@ namespace VErp.Commons.Library
         {
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
+
+        public static decimal Eval(string expression)
+        {
+            return (decimal)new NCalc.Expression(expression).Evaluate();
+        }
+
     }
 }

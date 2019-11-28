@@ -15,12 +15,12 @@ namespace VErpApi.Controllers.Stock.package
     public class PackageController : VErpBaseController
     {
         private readonly IPackageService _packageService;
-        
+
         public PackageController(IPackageService packageService
             )
         {
             _packageService = packageService;
-        
+
         }
 
         /// <summary>
@@ -33,9 +33,9 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns>List of PackageOutputModel</returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<PackageOutputModel>>> Get([FromQuery] int stockId = 0,[FromQuery] string keyword = "", [FromQuery] int page = 0, [FromQuery] int size = 0)
+        public async Task<ApiResponse<PageData<PackageOutputModel>>> Get([FromQuery] int stockId = 0, [FromQuery] string keyword = "", [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
-            return await _packageService.GetList(stockId,keyword, page, size);
+            return await _packageService.GetList(stockId, keyword, page, size);
         }
 
 
@@ -87,5 +87,20 @@ namespace VErpApi.Controllers.Stock.package
         {
             return await _packageService.DeletePackage(packageId);
         }
+
+        /// <summary>
+        /// Tách kiện
+        /// </summary>
+        /// <param name="packageId"></param>
+        /// <param name="req">Danh sách kiện cần tách</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{packageId}/Split")]
+        public async Task<ApiResponse> Split([FromRoute] int packageId, [FromBody] PackageSplitInput req)
+        {
+            return await _packageService.SplitPackage(packageId, req);
+        }
+
+
     }
 }
