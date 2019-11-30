@@ -12,7 +12,7 @@ using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
-using VErp.Services.Stock.Service.Inventory;
+using VErp.Services.Stock.Service.Stock;
 
 namespace VErpApi.Controllers.Stock.Inventory
 {
@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventory type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, page: page, size: size);
         }
@@ -60,55 +60,27 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <summary>
         /// Thêm mới phiếu nhập kho
         /// </summary>
-        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <param name="req">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPost]
         [Route("AddInventoryInput")]
-        public async Task<ApiResponse<long>> AddInventoryInput([FromBody] InventoryInput inventoryInput)
+        public async Task<ApiResponse<long>> AddInventoryInput([FromBody] InventoryInModel req)
         {
-            var currentUserId = UserId;
+            return await _inventoryService.AddInventoryInput(UserId, req);
 
-            switch (inventoryInput.InventoryTypeId)
-            {
-                case (int)EnumInventory.Input:
-                    return await _inventoryService.AddInventoryInput(currentUserId, inventoryInput);
-                default:
-                    var response = new ApiResponse<long>()
-                    {
-                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
-                        Data = 0,
-                        Message = "Tham số loại phiếu không hợp lệ"
-                    }; 
-                    return response;
-                    
-            }
         }
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
         /// </summary>
-        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <param name="req">Model InventoryOutput</param>
         /// <returns></returns>
         [HttpPost]
         [Route("AddInventoryOutput")]
-        public async Task<ApiResponse<long>> AddInventoryOutput([FromBody] InventoryInput inventoryInput)
+        public async Task<ApiResponse<long>> AddInventoryOutput([FromBody] InventoryOutModel req)
         {
-            var currentUserId = UserId;
+            return await _inventoryService.AddInventoryOutput(UserId, req);
 
-            switch (inventoryInput.InventoryTypeId)
-            {
-                case (int)EnumInventory.Output:
-                    return await _inventoryService.AddInventoryOutput(currentUserId, inventoryInput);
-                default:
-                    var response = new ApiResponse<long>()
-                    {
-                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
-                        Data = 0,
-                        Message = "Tham số loại phiếu không hợp lệ"
-                    };
-                    return response;
-
-            }
         }
 
 
@@ -116,27 +88,13 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Cập nhật phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
-        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <param name="req">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryInput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
         {
-            var currentUserId = UserId;
-            switch (inventoryInput.InventoryTypeId)
-            {
-                case (int)EnumInventory.Input:
-                    return await _inventoryService.UpdateInventoryInput(inventoryId, currentUserId, inventoryInput);
-
-                default:
-                    var response = new ApiResponse<long>()
-                    {
-                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
-                        Data = 0,
-                        Message = "Tham số loại phiếu không hợp lệ"
-                    };
-                    return response;
-            }
+            return await _inventoryService.UpdateInventoryInput(inventoryId, UserId, req);
         }
 
 
@@ -144,26 +102,13 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Cập nhật phiếu xuất kho
         /// </summary>
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
-        /// <param name="inventoryInput">Model InventoryInput</param>
+        /// <param name="req">Model InventoryOutput</param>
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryOutput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryInput inventoryInput)
+        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryOutModel req)
         {
-            var currentUserId = UserId;
-            switch (inventoryInput.InventoryTypeId)
-            {
-                case (int)EnumInventory.Output:
-                    return await _inventoryService.UpdateInventoryOutput(inventoryId, currentUserId, inventoryInput);
-                default:
-                    var response = new ApiResponse<long>()
-                    {
-                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
-                        Data = 0,
-                        Message = "Tham số loại phiếu không hợp lệ"
-                    };
-                    return response;
-            }
+            return await _inventoryService.UpdateInventoryOutput(inventoryId, UserId, req);
         }
 
         /// <summary>
@@ -183,14 +128,13 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Duyệt phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
-        /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
         public async Task<ApiResponse> ApproveInventoryInput([FromRoute] int inventoryId)
         {
             var currentUserId = UserId;
-            return await _inventoryService.ApproveInventoryInput(inventoryId, currentUserId);            
+            return await _inventoryService.ApproveInventoryInput(inventoryId, currentUserId);
         }
 
 
@@ -198,7 +142,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Duyệt phiếu xuất kho
         /// </summary>
         /// <param name="inventoryId">Id phiếu nhập/xuất kho</param>
-        /// <param name="inventoryInput">Model InventoryInput</param>
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]

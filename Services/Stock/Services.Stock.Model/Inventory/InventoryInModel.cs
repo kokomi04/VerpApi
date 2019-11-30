@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryInput
+    public class InventoryInModel
     {
         //public long InventoryId { get; set; }
 
@@ -14,32 +15,34 @@ namespace VErp.Services.Stock.Model.Inventory
         /// Mã code phiếu nhập / xuất kho
         /// </summary>
         public string InventoryCode { get; set; }
-        
-        /// <summary>
-        /// Loại 1: nhập kho  - 2: xuất kho
-        /// </summary>
-        public int InventoryTypeId { get; set; }
+              
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public string DateUtc { get; set; }
+        public DateTime DateUtc { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
         public string DeliveryCode { set; get; }
-
-        //public int CreatedByUserId { get; set; }
-        //public int UpdatedByUserId { get; set; }
-        //public DateTime CreatedDatetimeUtc { get; set; }
-        //public DateTime UpdatedDatetimeUtc { get; set; }
-        //public bool IsDeleted { get; set; }
-        public bool IsApproved { get; set; }
         
         /// <summary>
         /// Id file đính kèm
         /// </summary>
-        public List<long> FileIdList { set; get; }
+        public IList<long> FileIdList { set; get; }
 
-        public List<InventoryDetailInput> InventoryDetailInputList { set; get; }
+        public IList<InventoryInProductModel> InProducts { set; get; }
+    }
+
+    public class InventoryInProductModel
+    {
+        public int ProductId { get; set; }
+        public int ProductUnitConversionId { set; get; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public int? RefObjectTypeId { get; set; }
+        public long? RefObjectId { get; set; }
+        public string RefObjectCode { get; set; }
+        public long? ToPackageId { set; get; }
+
+        public EnumPackageOption PackageOptionId { set; get; }
     }
 }

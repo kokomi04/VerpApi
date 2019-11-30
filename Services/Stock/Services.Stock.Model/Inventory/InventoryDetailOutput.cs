@@ -29,7 +29,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public long? ToPackageId { set; get; }
 
-        public int PackageOptionId { set; get; }
+        public int? PackageOptionId { set; get; }
 
         public ProductListOutput ProductOutput { get; set; }
 

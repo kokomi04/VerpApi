@@ -16,9 +16,8 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
-using VErp.Services.Stock.Service.Inventory.Implement;
 
-namespace VErp.Services.Stock.Service.ProductUnitConversion.Implement
+namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductUnitConversionService : IProductUnitConversionService
     {

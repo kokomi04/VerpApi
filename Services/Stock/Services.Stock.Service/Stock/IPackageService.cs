@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Package;
 
-namespace VErp.Services.Stock.Service.Package
+namespace VErp.Services.Stock.Service.Stock
 {
     public interface IPackageService
     {

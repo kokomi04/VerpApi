@@ -7,7 +7,7 @@ using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 
-namespace VErp.Services.Stock.Service.Inventory    
+namespace VErp.Services.Stock.Service.Stock    
 {
     /// <summary>
     /// I - Nhap xuat kho
@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventory type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
@@ -40,7 +40,7 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInput req);
+        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req);
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
@@ -48,7 +48,7 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryInput req);
+        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req);
 
         /// <summary>
         /// Cập nhật thông tin phiếu nhập kho
@@ -57,7 +57,7 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<Enum> UpdateInventoryInput(int inventoryId, int currentUserId, InventoryInput model);
+        Task<Enum> UpdateInventoryInput(int inventoryId, int currentUserId, InventoryInModel model);
 
         /// <summary>
         /// Cập nhật thông tin phiếu xuất kho
@@ -66,7 +66,7 @@ namespace VErp.Services.Stock.Service.Inventory
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<Enum> UpdateInventoryOutput(int inventoryId, int currentUserId, InventoryInput model);
+        Task<Enum> UpdateInventoryOutput(int inventoryId, int currentUserId, InventoryOutModel model);
 
         /// <summary>
         /// Duyệt phiếu nhập kho

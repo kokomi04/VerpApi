@@ -7,7 +7,7 @@ namespace VErp.Commons.Enums.MasterEnum
     /// <summary>
     /// Kho - Phiếu nhập xuất
     /// </summary>
-    public enum EnumInventory
+    public enum EnumInventoryType
     {
         /// <summary>
         /// Nhập kho

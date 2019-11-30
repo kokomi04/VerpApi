@@ -31,7 +31,6 @@ namespace VErp.Services.Stock.Model.Package
 
         public int? ProductUnitConversionId { set; get; }
 
-        public int? SecondaryUnitId { get; set; }
         public decimal? SecondaryQuantity { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }

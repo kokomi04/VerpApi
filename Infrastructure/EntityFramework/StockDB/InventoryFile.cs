@@ -7,5 +7,6 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         public long InventoryId { get; set; }
         public long FileId { get; set; }
+        public bool IsDeleted { get; set; }
     }
 }

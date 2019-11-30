@@ -6,7 +6,7 @@ using VErp.Services.Stock.Model.Inventory;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.StockDB;
 
-namespace VErp.Services.Stock.Service.StockProduct
+namespace VErp.Services.Stock.Service.Stock
 {
     public interface IStockProductService
     {

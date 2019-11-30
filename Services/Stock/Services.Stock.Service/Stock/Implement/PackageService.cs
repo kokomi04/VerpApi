@@ -20,7 +20,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using System.Globalization;
 using PackageModel = VErp.Infrastructure.EF.StockDB.Package;
 
-namespace VErp.Services.Stock.Service.Package.Implement
+namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public class PackageService : IPackageService
     {
@@ -66,13 +66,12 @@ namespace VErp.Services.Stock.Service.Package.Implement
                     PrimaryUnitId = req.PrimaryUnitId,
                     PrimaryQuantity = req.PrimaryQuantity,
                     ProductUnitConversionId = req.ProductUnitConversionId,
-                    SecondaryUnitId = req.SecondaryUnitId,
-                    SecondaryQuantity = req.SecondaryQuantity,
+                    ProductUnitConversionQuantity = req.SecondaryQuantity,
                     PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
-                    SecondaryQuantityWaitting = req.SecondaryQuantityWaitting,
-                    SecondaryQuantityRemaining = req.SecondaryQuantityRemaining,
-                    PackageType = req.PackageType,
+                    ProductUnitConversionWaitting = req.SecondaryQuantityWaitting,
+                    ProductUnitConversionRemaining = req.SecondaryQuantityRemaining,
+                    PackageTypeId = req.PackageType,
 
                     CreatedDatetimeUtc = DateTime.Now,
                     UpdatedDatetimeUtc = DateTime.Now,
@@ -159,15 +158,14 @@ namespace VErp.Services.Stock.Service.Package.Implement
             if (packageInfo == null) return PackageErrorCode.PackageNotFound;
 
             Infrastructure.EF.StockDB.ProductUnitConversion unitConversionInfo = null;
-            if (packageInfo.ProductUnitConversionId.HasValue)
-            {
-                unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
 
-                if (unitConversionInfo == null) return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-            }
+            unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
+
+            if (unitConversionInfo == null) return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+
 
             var totalSecondaryInput = req.ToPackages.Sum(p => p.SecondaryUnitQualtity);
-            if (totalSecondaryInput > packageInfo.SecondaryQuantityRemaining) return PackageErrorCode.QualtityOfProductInPackageNotEnough;
+            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining) return PackageErrorCode.QualtityOfProductInPackageNotEnough;
 
             var newPackages = new List<PackageModel>();
 
@@ -195,20 +193,19 @@ namespace VErp.Services.Stock.Service.Package.Implement
                     PrimaryUnitId = packageInfo.PrimaryUnitId,
                     PrimaryQuantity = qualtityInPrimaryUnit,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
-                    SecondaryUnitId = packageInfo.SecondaryUnitId,
-                    SecondaryQuantity = package.SecondaryUnitQualtity,
+                    ProductUnitConversionQuantity = package.SecondaryUnitQualtity,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = qualtityInPrimaryUnit,
-                    SecondaryQuantityWaitting = 0,
-                    SecondaryQuantityRemaining = package.SecondaryUnitQualtity,
-                    PackageType = (int)EnumPackageType.Custom
+                    ProductUnitConversionWaitting = 0,
+                    ProductUnitConversionRemaining = package.SecondaryUnitQualtity,
+                    PackageTypeId = (int)EnumPackageType.Custom
                 });
 
                 packageInfo.PrimaryQuantityRemaining -= qualtityInPrimaryUnit;
-                packageInfo.SecondaryQuantityRemaining -= package.SecondaryUnitQualtity;
+                packageInfo.ProductUnitConversionRemaining -= package.SecondaryUnitQualtity;
             }
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -247,21 +244,20 @@ namespace VErp.Services.Stock.Service.Package.Implement
                     //InventoryDetailId = obj.InventoryDetailId,
                     PackageCode = obj.PackageCode,
                     LocationId = obj.LocationId ?? 0,
-                    StockId = obj.StockId ?? 0,
-                    ProductId = obj.ProductId ?? 0,
+                    StockId = obj.StockId,
+                    ProductId = obj.ProductId ,
                     Date = obj.Date,
                     ExpiryTime = obj.ExpiryTime,
                     ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryUnitId = obj.PrimaryUnitId,
                     PrimaryQuantity = obj.PrimaryQuantity,
-                    SecondaryUnitId = obj.SecondaryUnitId,
-                    SecondaryQuantity = obj.SecondaryQuantity,
+                    SecondaryQuantity = obj.ProductUnitConversionQuantity,
                     CreatedDatetimeUtc = obj.CreatedDatetimeUtc,
                     UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
-                    SecondaryQuantityWaitting = obj.SecondaryQuantityWaitting,
-                    SecondaryQuantityRemaining = obj.SecondaryQuantityRemaining,
+                    SecondaryQuantityWaitting = obj.ProductUnitConversionWaitting,
+                    SecondaryQuantityRemaining = obj.ProductUnitConversionRemaining,
                     LocationOutputModel = locationOutputModel
                 };
                 return packageOutputModel;
@@ -312,21 +308,20 @@ namespace VErp.Services.Stock.Service.Package.Implement
                             //InventoryDetailId = item.Package.InventoryDetailId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
-                            StockId = item.Package.StockId ?? 0,
-                            ProductId = item.Package.ProductId ?? 0,
+                            StockId = item.Package.StockId,
+                            ProductId = item.Package.ProductId,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
-                            SecondaryUnitId = item.Package.SecondaryUnitId,
-                            SecondaryQuantity = item.Package.SecondaryQuantity,
+                            SecondaryQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            SecondaryQuantityWaitting = item.Package.SecondaryQuantityWaitting,
-                            SecondaryQuantityRemaining = item.Package.SecondaryQuantityRemaining,
+                            SecondaryQuantityWaitting = item.Package.ProductUnitConversionWaitting,
+                            SecondaryQuantityRemaining = item.Package.ProductUnitConversionRemaining,
                             LocationOutputModel = locationOutputModel
                         };
                         resultList.Add(model);
@@ -353,21 +348,20 @@ namespace VErp.Services.Stock.Service.Package.Implement
                             //InventoryDetailId = item.Package.InventoryDetailId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
-                            StockId = item.Package.StockId ?? 0,
-                            ProductId = item.Package.ProductId ?? 0,
+                            StockId = item.Package.StockId,
+                            ProductId = item.Package.ProductId,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
-                            SecondaryUnitId = item.Package.SecondaryUnitId,
-                            SecondaryQuantity = item.Package.SecondaryQuantity,
+                            SecondaryQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            SecondaryQuantityWaitting = item.Package.SecondaryQuantityWaitting,
-                            SecondaryQuantityRemaining = item.Package.SecondaryQuantityRemaining,
+                            SecondaryQuantityWaitting = item.Package.ProductUnitConversionWaitting,
+                            SecondaryQuantityRemaining = item.Package.ProductUnitConversionRemaining,
                             LocationOutputModel = locationOutputModel
                         };
                         resultList.Add(model);

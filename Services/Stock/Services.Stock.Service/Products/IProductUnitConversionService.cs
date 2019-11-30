@@ -5,7 +5,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
 
-namespace VErp.Services.Stock.Service.ProductUnitConversion
+namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductUnitConversionService
     {

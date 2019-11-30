@@ -17,7 +17,7 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Commons.Library;
 using System.Globalization;
 
-namespace VErp.Services.Stock.Service.StockProduct.Implement
+namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public class StockProductService : IStockProductService
     {
