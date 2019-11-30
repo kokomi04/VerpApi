@@ -74,8 +74,8 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
-                entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.HasOne(d => d.FromPackage)
                     .WithMany(p => p.InventoryDetailFromPackage)
                     .HasForeignKey(d => d.FromPackageId)
@@ -90,6 +90,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_Product");
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.InventoryDetail)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetail_ProductUnitConversion");
                 entity.HasOne(d => d.ToPackage)
                     .WithMany(p => p.InventoryDetailToPackage)
                     .HasForeignKey(d => d.ToPackageId)
@@ -119,21 +124,27 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
-                entity.Property(e => e.PackageType).HasDefaultValueSql("((1))");
+                entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryQuantity).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Location)
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.LocationId)
                     .HasConstraintName("FK_Package_Location");
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.Package)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Package_ProductUnitConversion");
                 entity.HasOne(d => d.Stock)
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.StockId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Package_Stock");
             });
             modelBuilder.Entity<PackageRef>(entity =>
@@ -242,17 +253,23 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<StockProduct>(entity =>
             {
-                entity.HasKey(e => new { e.StockId, e.ProductId, e.SecondaryUnitId });
+                entity.HasKey(e => new { e.StockId, e.ProductId, e.ProductUnitConversionId })
+                    .HasName("PK_StockProduct_1");
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryQuantityRemaining).HasColumnType("decimal(18, 4)");
-                entity.Property(e => e.SecondaryQuantityWaitting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.StockProduct)
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StockProduct_Product");
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.StockProduct)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockProduct_ProductUnitConversion");
                 entity.HasOne(d => d.Stock)
                     .WithMany(p => p.StockProduct)
                     .HasForeignKey(d => d.StockId)
