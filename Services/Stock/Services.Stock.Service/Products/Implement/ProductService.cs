@@ -136,6 +136,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         await _stockContext.AddRangeAsync(lstStockValidations);
                     }
 
+                    var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
+                    if (unitInfo == null)
+                    {
+                        return UnitErrorCode.UnitNotFound;
+                    }
 
                     var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
                     {
@@ -143,9 +148,27 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         ProductUnitConversionName = u.ProductUnitConversionName,
                         SecondaryUnitId = u.SecondaryUnitId,
                         FactorExpression = u.FactorExpression,
-                        ConversionDescription = u.ConversionDescription
-                    });
+                        ConversionDescription = u.ConversionDescription,
+                        IsDefault = false,
+                    })
+                    .ToList();
 
+                    if (lstUnitConverions == null)
+                    {
+                        lstUnitConverions = new List<ProductUnitConversion>();
+                    }
+
+                    lstUnitConverions.Add(
+                        new ProductUnitConversion()
+                        {
+                            ProductId = productInfo.ProductId,
+                            ProductUnitConversionName = unitInfo.Data.UnitName,
+                            SecondaryUnitId = req.UnitId,
+                            FactorExpression = "1",
+                            ConversionDescription = "Mặc định",
+                            IsDefault = true
+                        }
+                    );
 
                     if (lstUnitConverions != null)
                     {
@@ -188,7 +211,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             var stockValidations = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
-            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => !p.IsDefault && p.ProductId == productId).ToListAsync();
 
             return new ProductModel()
             {
@@ -266,7 +289,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
                     var keepIds = req.StockInfo?.UnitConversions.Select(c => c.ProductUnitConversionId);
-                    var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId)).ToList();
+                    var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
                     if (toRemoveUnitConversions.Count > 0)
                     {
                         var removeConversionIds = toRemoveUnitConversions.Select(c => (int?)c.ProductUnitConversionId).ToList();
@@ -366,6 +389,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             db.ConversionDescription = u.ConversionDescription;
                         }
                     }
+                    var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
+                    if (defaultUnitConversion != null)
+                    {
+                        defaultUnitConversion.SecondaryUnitId = req.UnitId;
+                    }
+
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
