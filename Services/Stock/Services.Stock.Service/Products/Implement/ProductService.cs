@@ -360,6 +360,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
 
 
+                    var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
+                    if (unitInfo == null)
+                    {
+                        return UnitErrorCode.UnitNotFound;
+                    }
+
                     var lstNewUnitConverions = req.StockInfo?.UnitConversions?
                         .Where(c => c.ProductUnitConversionId <= 0)?
                         .Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
@@ -393,6 +399,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     if (defaultUnitConversion != null)
                     {
                         defaultUnitConversion.SecondaryUnitId = req.UnitId;
+                        defaultUnitConversion.ProductUnitConversionName = unitInfo.Data.UnitName;
                     }
 
                     await _stockContext.SaveChangesAsync();
