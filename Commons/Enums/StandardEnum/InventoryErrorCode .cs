@@ -12,7 +12,9 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         [Description("Không tìm thấy phiếu xuất/nhập kho")]
         InventoryNotFound = 1,
+        [Description("Mã phiếu không có")]
         InventoryCodeEmpty = 2,
+        [Description("Thông tin phiếu đã tồn tại")]
         InventoryAlreadyExisted = 3,
         [Description("Kiện hàng không hợp lệ (sản phẩm hoặc đơn vị lưu không trùng khớp)")]
         InvalidPackage = 4,
@@ -21,11 +23,14 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Mã phiếu đã tồn tại")]
         InventoryCodeAlreadyExisted = 6,
         [Description("Kiện không đủ số lượng để xuất kho")]
-        NotEnoughQualtity = 7
+        NotEnoughQuantity = 7,
+        [Description("Tính năng này chưa được hỗ trợ")]
+        NotSupportedYet = 8,
     }
 
     public enum InventoryDetailErrorCode
     {
+        [Description("Không tìm thấy thông tin chi tiết phiếu xuất/nhập kho")]
         InventoryDetailNotFound = 1,
         InventoryDetailCodeEmpty = 2,
         InventoryDetailAlreadyExisted = 3,

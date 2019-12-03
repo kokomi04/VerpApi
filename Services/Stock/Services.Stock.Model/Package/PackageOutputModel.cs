@@ -17,30 +17,31 @@ namespace VErp.Services.Stock.Model.Package
         }
 
         public long PackageId { get; set; }
+
+        public int PackageTypeId { get; set; }
+
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
 
-        public int? StockId { set; get; }
+        public int StockId { set; get; }
 
-        public int? ProductId { set; get; }
+        public int ProductId { set; get; }
 
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }
 
-        public int? ProductUnitConversionId { set; get; }
-
-        public decimal? SecondaryQuantity { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        //public bool IsDeleted { get; set; }
+        public int ProductUnitConversionId { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        
         public decimal PrimaryQuantityWaiting { get; set; }
         public decimal PrimaryQuantityRemaining { get; set; }
-        public decimal SecondaryQuantityWaitting { get; set; }
-        public decimal SecondaryQuantityRemaining { get; set; }
+        public decimal ProductUnitConversionWaitting { get; set; }
+        public decimal ProductUnitConversionRemaining { get; set; }
 
-        public int PackageType { set; get; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
 
         public LocationOutput LocationOutputModel { get; set; }
 

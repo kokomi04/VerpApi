@@ -57,6 +57,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var obj = new VErp.Infrastructure.EF.StockDB.Package
                 {
+                    PackageTypeId = req.PackageTypeId,
                     PackageCode = req.PackageCode,
                     LocationId = req.LocationId,
                     StockId = req.StockId,
@@ -66,13 +67,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryUnitId = req.PrimaryUnitId,
                     PrimaryQuantity = req.PrimaryQuantity,
                     ProductUnitConversionId = req.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = req.SecondaryQuantity,
+                    ProductUnitConversionQuantity = req.ProductUnitConversionQuantity,
                     PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
-                    ProductUnitConversionWaitting = req.SecondaryQuantityWaitting,
-                    ProductUnitConversionRemaining = req.SecondaryQuantityRemaining,
-                    PackageTypeId = req.PackageType,
-
+                    ProductUnitConversionWaitting = req.ProductUnitConversionWaitting,
+                    ProductUnitConversionRemaining = req.ProductUnitConversionRemaining,
+                    
                     CreatedDatetimeUtc = DateTime.Now,
                     UpdatedDatetimeUtc = DateTime.Now,
                     IsDeleted = false
@@ -241,23 +241,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageOutputModel = new PackageOutputModel()
                 {
                     PackageId = obj.PackageId,
-                    //InventoryDetailId = obj.InventoryDetailId,
+                    PackageTypeId = obj.PackageTypeId,
                     PackageCode = obj.PackageCode,
                     LocationId = obj.LocationId ?? 0,
                     StockId = obj.StockId,
                     ProductId = obj.ProductId ,
                     Date = obj.Date,
                     ExpiryTime = obj.ExpiryTime,
-                    ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryUnitId = obj.PrimaryUnitId,
                     PrimaryQuantity = obj.PrimaryQuantity,
-                    SecondaryQuantity = obj.ProductUnitConversionQuantity,
-                    CreatedDatetimeUtc = obj.CreatedDatetimeUtc,
-                    UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc,
+                    ProductUnitConversionId = obj.ProductUnitConversionId,
+                    ProductUnitConversionQuantity = obj.ProductUnitConversionQuantity,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
-                    SecondaryQuantityWaitting = obj.ProductUnitConversionWaitting,
-                    SecondaryQuantityRemaining = obj.ProductUnitConversionRemaining,
+                    ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
+                    ProductUnitConversionRemaining = obj.ProductUnitConversionRemaining,
+
+                    CreatedDatetimeUtc = obj.CreatedDatetimeUtc,
+                    UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc,
+
                     LocationOutputModel = locationOutputModel
                 };
                 return packageOutputModel;
@@ -305,23 +307,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var model = new PackageOutputModel
                         {
                             PackageId = item.Package.PackageId,
-                            //InventoryDetailId = item.Package.InventoryDetailId,
+                            PackageTypeId = item.Package.PackageTypeId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
                             StockId = item.Package.StockId,
                             ProductId = item.Package.ProductId,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
-                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
+                            
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
-                            SecondaryQuantity = item.Package.ProductUnitConversionQuantity,
+                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
+                            ProductUnitConversionQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            SecondaryQuantityWaitting = item.Package.ProductUnitConversionWaitting,
-                            SecondaryQuantityRemaining = item.Package.ProductUnitConversionRemaining,
+                            ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
+                            ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
                             LocationOutputModel = locationOutputModel
                         };
                         resultList.Add(model);
@@ -345,7 +348,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var model = new PackageOutputModel
                         {
                             PackageId = item.Package.PackageId,
-                            //InventoryDetailId = item.Package.InventoryDetailId,
+                            PackageTypeId = item.Package.PackageTypeId,
                             PackageCode = item.Package.PackageCode,
                             LocationId = item.Package.LocationId ?? 0,
                             StockId = item.Package.StockId,
@@ -355,13 +358,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
-                            SecondaryQuantity = item.Package.ProductUnitConversionQuantity,
+                            ProductUnitConversionQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            SecondaryQuantityWaitting = item.Package.ProductUnitConversionWaitting,
-                            SecondaryQuantityRemaining = item.Package.ProductUnitConversionRemaining,
+                            ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
+                            ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
                             LocationOutputModel = locationOutputModel
                         };
                         resultList.Add(model);
