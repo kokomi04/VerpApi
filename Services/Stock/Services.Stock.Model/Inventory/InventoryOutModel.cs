@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int StockId { get; set; }
      
         public string InventoryCode { get; set; }
-              
+        
         public string Shipper { get; set; }
         public string Content { get; set; }
         public DateTime DateUtc { get; set; }
