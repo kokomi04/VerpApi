@@ -102,5 +102,17 @@ namespace VErpApi.Controllers.Stock.package
         }
 
 
+        /// <summary>
+        /// Gộp kiện
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("Join")]
+        public async Task<ApiResponse<long>> Join([FromBody] PackageJoinInput req)
+        {
+            return await _packageService.JoinPackage(req);
+        }
+
     }
 }

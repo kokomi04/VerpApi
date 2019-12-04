@@ -55,5 +55,12 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="req"></param>
         /// <returns></returns>
         Task<Enum> SplitPackage(long packageId, PackageSplitInput req);
+
+        /// <summary>
+        /// Gộp kiện
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        Task<ServiceResult<long>> JoinPackage(PackageJoinInput req);
     }
 }

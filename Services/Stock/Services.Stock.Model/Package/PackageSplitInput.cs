@@ -13,6 +13,6 @@ namespace VErp.Services.Stock.Model.Package
     {
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
-        public decimal SecondaryUnitQualtity { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
     }
 }

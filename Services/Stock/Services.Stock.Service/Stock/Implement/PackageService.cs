@@ -72,7 +72,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
                     ProductUnitConversionWaitting = req.ProductUnitConversionWaitting,
                     ProductUnitConversionRemaining = req.ProductUnitConversionRemaining,
-                    
+
                     CreatedDatetimeUtc = DateTime.Now,
                     UpdatedDatetimeUtc = DateTime.Now,
                     IsDeleted = false
@@ -151,11 +151,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
         {
-            if (req == null || req.ToPackages == null || req.ToPackages.Count == 0 || req.ToPackages.Any(p => p.SecondaryUnitQualtity <= 0))
+            if (req == null || req.ToPackages == null || req.ToPackages.Count == 0 || req.ToPackages.Any(p => p.ProductUnitConversionQuantity <= 0))
                 return GeneralCode.InvalidParams;
 
             var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
             if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+
+            if (packageInfo.ProductUnitConversionWaitting > 0)
+            {
+                return PackageErrorCode.HasSomeQualtityWaitingForApproved;
+            }
 
             Infrastructure.EF.StockDB.ProductUnitConversion unitConversionInfo = null;
 
@@ -164,17 +169,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (unitConversionInfo == null) return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
 
 
-            var totalSecondaryInput = req.ToPackages.Sum(p => p.SecondaryUnitQualtity);
+            var totalSecondaryInput = req.ToPackages.Sum(p => p.ProductUnitConversionQuantity);
             if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining) return PackageErrorCode.QualtityOfProductInPackageNotEnough;
 
             var newPackages = new List<PackageModel>();
 
+
             foreach (var package in req.ToPackages)
             {
-                decimal qualtityInPrimaryUnit = package.SecondaryUnitQualtity;
+                if (string.IsNullOrWhiteSpace(package.PackageCode))
+                {
+                    return PackageErrorCode.PackageCodeEmpty;
+                }
+
+                var packageExisted = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageCode == package.PackageCode);
+                if (packageExisted != null)
+                {
+                    return PackageErrorCode.PackageAlreadyExisted;
+                }
+
+                decimal qualtityInPrimaryUnit = package.ProductUnitConversionQuantity;
                 if (unitConversionInfo != null)
                 {
-                    qualtityInPrimaryUnit = Utils.Eval($"({unitConversionInfo.FactorExpression}) * {package.SecondaryUnitQualtity}");
+                    qualtityInPrimaryUnit = Utils.Eval($"({unitConversionInfo.FactorExpression}) * {package.ProductUnitConversionQuantity}");
                     if (!(qualtityInPrimaryUnit > 0))
                     {
                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
@@ -193,30 +210,129 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryUnitId = packageInfo.PrimaryUnitId,
                     PrimaryQuantity = qualtityInPrimaryUnit,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = package.SecondaryUnitQualtity,
+                    ProductUnitConversionQuantity = package.ProductUnitConversionQuantity,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = qualtityInPrimaryUnit,
                     ProductUnitConversionWaitting = 0,
-                    ProductUnitConversionRemaining = package.SecondaryUnitQualtity,
+                    ProductUnitConversionRemaining = package.ProductUnitConversionQuantity,
                     PackageTypeId = (int)EnumPackageType.Custom
                 });
 
                 packageInfo.PrimaryQuantityRemaining -= qualtityInPrimaryUnit;
-                packageInfo.ProductUnitConversionRemaining -= package.SecondaryUnitQualtity;
+                packageInfo.ProductUnitConversionRemaining -= package.ProductUnitConversionQuantity;
+
             }
 
+            var packageRefs = new List<PackageRef>();
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                await _stockDbContext.Package.AddRangeAsync(newPackages);
+                foreach (var newPackage in newPackages)
+                {
+                    await _stockDbContext.Package.AddAsync(newPackage);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    packageRefs.Add(new PackageRef()
+                    {
+                        PackageId = newPackage.PackageId,
+                        RefPackageId = packageId
+                    });
+                }
+
+                await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
             }
             return GeneralCode.Success;
         }
 
+        public async Task<ServiceResult<long>> JoinPackage(PackageJoinInput req)
+        {
+            if (req == null || req.FromPackageIds == null || req.FromPackageIds.Count == 0)
+                return GeneralCode.InvalidParams;
+
+            if (string.IsNullOrWhiteSpace(req.PackageCode))
+            {
+                return PackageErrorCode.PackageCodeEmpty;
+            }
+
+            var packageExisted = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageCode == req.PackageCode);
+            if (packageExisted != null)
+            {
+                return PackageErrorCode.PackageAlreadyExisted;
+            }
+
+
+
+            var fromPackages = await _stockDbContext.Package.Where(p => req.FromPackageIds.Contains(p.PackageId) && p.PackageTypeId == (int)EnumPackageType.Custom).ToListAsync();
+
+            if (fromPackages
+                .GroupBy(p => new { p.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId })
+                .Count() > 1)
+            {
+                return PackageErrorCode.PackagesToJoinMustBeSameProductAndUnit;
+            }
+
+            foreach (var packageId in req.FromPackageIds)
+            {
+                var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
+                if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+
+                if (packageInfo.ProductUnitConversionWaitting > 0)
+                {
+                    return PackageErrorCode.HasSomeQualtityWaitingForApproved;
+                }
+            }
+
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var newPackage = new PackageModel()
+                {
+                    PackageCode = req.PackageCode,
+                    LocationId = req.LocationId,
+                    StockId = fromPackages[0].StockId,
+                    ProductId = fromPackages[0].ProductId,
+                    Date = fromPackages.Max(p => p.Date),
+                    ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
+                    PrimaryUnitId = fromPackages[0].PrimaryUnitId,
+                    PrimaryQuantity = fromPackages.Sum(p => p.PrimaryQuantity),
+                    ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
+                    ProductUnitConversionQuantity = fromPackages.Sum(p => p.ProductUnitConversionQuantity),
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    PrimaryQuantityWaiting = 0,
+                    PrimaryQuantityRemaining = fromPackages.Sum(p => p.PrimaryQuantity),
+                    ProductUnitConversionWaitting = 0,
+                    ProductUnitConversionRemaining = fromPackages.Sum(p => p.ProductUnitConversionQuantity),
+                    PackageTypeId = (int)EnumPackageType.Custom
+                };
+                await _stockDbContext.AddAsync(newPackage);
+                await _stockDbContext.SaveChangesAsync();
+
+                var packageRefs = new List<PackageRef>();
+                foreach (var package in fromPackages)
+                {
+                    package.PrimaryQuantity = 0;
+                    package.PrimaryQuantityRemaining = 0;
+                    package.ProductUnitConversionQuantity = 0;
+                    package.ProductUnitConversionRemaining = 0;
+
+                    packageRefs.Add(new PackageRef()
+                    {
+                        PackageId = newPackage.PackageId,
+                        RefPackageId = package.PackageId
+                    });
+                }
+
+                await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);
+                await _stockDbContext.SaveChangesAsync();
+                trans.Commit();
+            }
+            return GeneralCode.Success;
+        }
 
         public async Task<ServiceResult<PackageOutputModel>> GetInfo(long packageId)
         {
@@ -245,7 +361,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageCode = obj.PackageCode,
                     LocationId = obj.LocationId ?? 0,
                     StockId = obj.StockId,
-                    ProductId = obj.ProductId ,
+                    ProductId = obj.ProductId,
                     Date = obj.Date,
                     ExpiryTime = obj.ExpiryTime,
                     PrimaryUnitId = obj.PrimaryUnitId,
@@ -314,7 +430,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ProductId = item.Package.ProductId,
                             Date = item.Package.Date,
                             ExpiryTime = item.Package.ExpiryTime,
-                            
+
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             PrimaryQuantity = item.Package.PrimaryQuantity,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
