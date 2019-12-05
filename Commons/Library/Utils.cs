@@ -120,7 +120,16 @@ namespace VErp.Commons.Library
 
         public static decimal Eval(string expression)
         {
-            return (decimal)new NCalc.Expression(expression).Evaluate();
+            try
+            {
+                var outPut = new NCalc.Expression(expression).Evaluate();
+                var result = Convert.ToDecimal(outPut);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
     }

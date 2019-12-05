@@ -337,11 +337,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
 
-                var validate = await ValidateInventoryIn(req);
+                var validInventoryDetails = await ValidateInventoryIn(req);
 
-                if (!validate.Code.IsSuccess())
+                if (!validInventoryDetails.Code.IsSuccess())
                 {
-                    return validate.Code;
+                    return validInventoryDetails.Code;
                 }
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -379,12 +379,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await _stockDbContext.SaveChangesAsync();
                         }
 
-                        foreach (var item in validate.Data)
+                        foreach (var item in validInventoryDetails.Data)
                         {
-                            item.InventoryId = inventoryObj.InventoryId;
+                            item.InventoryId = inventoryObj.InventoryId;                            
                         }
 
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
+                        await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
                         await _stockDbContext.SaveChangesAsync();
 
                         trans.Commit();
@@ -1230,7 +1230,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
-                    FromPackageId = 0,
+                    FromPackageId = null,
                     ToPackageId = details.ToPackageId,
                     PackageOptionId = (int)details.PackageOptionId
                 });
