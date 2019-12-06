@@ -15,7 +15,6 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Services.Stock.Model.Product;
 using VErp.Commons.Library;
-using System.Globalization;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -36,6 +35,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IAsyncRunnerService _asyncRunner;
+                
 
         public InventoryService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -992,6 +992,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (!string.IsNullOrEmpty(keyword))
                     productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
 
+                productInStockQuery = productInStockQuery.GroupBy(q=>q.ProductId).Select(g=>g.First());
+
                 var total = productInStockQuery.Count();
                 var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
@@ -1109,13 +1111,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     productWithStockValidationQuery = productWithStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
                 }
 
+                productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q=>q.ProductId).Select(v=>v.First());
+
                 var productWithoutStockValidationQuery = _stockDbContext.Product.Where(q => !productWithStockValidationIdList.Contains(q.ProductId));
 
                 var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
 
                 var total = productQuery.Count();
-                var pagedData = productQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+                productQuery = productQuery.AsNoTracking().OrderBy(q=>q.ProductId).Skip((page - 1) * size).Take(size);
 
+                var pagedData = productQuery.ToList();
                 var productIdList = pagedData.Select(q => q.ProductId).ToList();
                 var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
                 var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
@@ -1154,7 +1159,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        #region Private helper method
+#region Private helper method
 
         private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(InventoryInModel req)
         {
@@ -1511,6 +1516,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return packageCode;
         }
 
-        #endregion
+#endregion
     }
 }
