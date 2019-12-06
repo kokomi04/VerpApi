@@ -165,14 +165,16 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// </summary>
         /// <param name="stockId"></param>
         /// <param name="locationId"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("{stockId}/Packages")]
-        public async Task<ApiResponse<PageData<LocationProductPackageOuput>>> LocationProductPackageDetails([FromRoute] int stockId, [FromQuery] int? locationId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<LocationProductPackageOuput>>> LocationProductPackageDetails([FromRoute] int stockId, [FromQuery] int? locationId, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.LocationProductPackageDetails(stockId, locationId, page, size);
+            return await _stockService.LocationProductPackageDetails(stockId, locationId, productTypeIds, productCateIds, page, size);
         }
 
         /// <summary>
@@ -190,7 +192,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockSumaryReport")]
         public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReport("", stockIds, productTypeIds, productCateIds, fromDate, toDate,  page, size);
+            return await _stockService.StockSumaryReport("", stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
 
         /// <summary>

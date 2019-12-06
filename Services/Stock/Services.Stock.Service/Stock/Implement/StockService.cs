@@ -292,8 +292,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var lstExpiredWarnings = await (
                 from pk in _stockContext.Package
-                //join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
-                //join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
+                    //join d in _stockContext.InventoryDetail on pk.InventoryDetailId equals d.InventoryDetailId
+                    //join iv in _stockContext.Inventory on d.InventoryId equals iv.InventoryId
                 join p in _stockContext.Product on pk.ProductId equals p.ProductId
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 where pk.ExpiryTime < DateTime.UtcNow
@@ -420,9 +420,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockWarningTypeIds.Contains(EnumWarningType.Expired))
                 {
                     var productWithExprires = from pk in _stockContext.Package
-                                              //from iv in _stockContext.Inventory
-                                              //join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-                                              //join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
+                                                  //from iv in _stockContext.Inventory
+                                                  //join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                                                  //join pk in _stockContext.Package on d.InventoryDetailId equals pk.InventoryDetailId
                                               where pk.StockId == stockId && pk.ExpiryTime < DateTime.UtcNow
                                               select new
                                               {
@@ -496,7 +496,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantity,
-                    SecondaryUnitId = c.SecondaryUnitId,                    
+                    SecondaryUnitId = c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionQuantity,
@@ -525,11 +525,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
-        public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, int page, int size)
+        public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
         {
+            var products = _stockContext.Product.AsQueryable();
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var typeIds = productTypeIds.Cast<int?>();
+                products = from p in products
+                           where typeIds.Contains(p.ProductTypeId)
+                           select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                products = from p in products
+                           where productCateIds.Contains(p.ProductCateId)
+                           select p;
+            }
             var query = (
                 from pk in _stockContext.Package
-                join p in _stockContext.Product on pk.ProductId equals p.ProductId
+                join p in products on pk.ProductId equals p.ProductId
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
@@ -559,7 +574,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
             return (lstData, total);
         }
-     
+
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
         {
             toDate = toDate.AddDays(1).Date;
