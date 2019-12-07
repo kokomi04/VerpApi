@@ -6,10 +6,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Magick.NET.Core-Q8" Version="7.0.5.900" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="2.2.0" />
+    <PackageReference Include="System.Drawing.Common" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\..\Master\Services.Master.Service\Services.Master.Service.csproj" />
     <ProjectReference Include="..\Services.Stock.Model\Services.Stock.Model.csproj" />
   </ItemGroup>
 

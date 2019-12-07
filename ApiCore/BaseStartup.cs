@@ -3,6 +3,9 @@ using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
+using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +45,11 @@ namespace VErp.Infrastructure.ApiCore
         protected void ConfigureStandardServices(IServiceCollection services, bool isRequireAuthrize)
         {
 
+            services.Configure<ApiBehaviorOptions>(cfg =>
+           {
+               cfg.SuppressModelStateInvalidFilter = true;
+           });
+
             services.Configure<AppSetting>(Configuration);
 
             CreateSerilogLogger(Configuration);
@@ -61,23 +69,32 @@ namespace VErp.Infrastructure.ApiCore
             })
               .AddHttpContextAccessor()
               .AddOptions()
-              .AddCustomHealthCheck(Configuration);
+              .AddCustomHealthCheck(Configuration)
+              .AddDataProtection()
+              .UseCryptographicAlgorithms(new AuthenticatedEncryptorConfiguration()
+              {
+                  EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
+                  ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
+              });
 
             services.AddMvc(options =>
             {
+                options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
+
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
                 if (isRequireAuthrize)
                 {
                     options.Filters.Add(typeof(AuthorizeActionFilter));
                 }
-                
+
             })
             .AddJsonOptions(options =>
             {
                 options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                 options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Error;
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
             })
            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
            .AddControllersAsServices();
@@ -105,12 +122,20 @@ namespace VErp.Infrastructure.ApiCore
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));
-                options.SwaggerDoc("v1", new Info
+
+
+                options.SwaggerDoc("stock", new Info
                 {
-                    Title = "VERP HTTP API",
+                    Title = "VERP Stock HTTP API",
                     Version = "v1",
-                    Description = "The VERP Service HTTP API",
-                    TermsOfService = "Terms Of Service"
+                    Description = "The Stock Service HTTP API"
+                });
+
+                options.SwaggerDoc("system", new Info
+                {
+                    Title = "VERP System HTTP API",
+                    Version = "v1",
+                    Description = "The system Service HTTP API"
                 });
 
                 options.AddSecurityDefinition("oauth2", new OAuth2Scheme
@@ -136,6 +161,8 @@ namespace VErp.Infrastructure.ApiCore
                 });
 
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
+
+                options.OperationFilter<SwaggerFileOperationFilter>();
 
                 options.SchemaFilter<DataSchemaFilter>();
 
@@ -186,7 +213,10 @@ namespace VErp.Infrastructure.ApiCore
             app.UseSwagger()
                .UseSwaggerUI(c =>
                {
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "VERP.API V1");
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
+
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
+
                    c.OAuthClientId("web");
                    c.OAuthClientSecret("secretWeb");
                    c.OAuthAppName("VERP Swagger UI");

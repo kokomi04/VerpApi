@@ -6,8 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
-using VErp.Services.Master.Service.RolePermission.Interface;
+using VErp.Services.Master.Service.RolePermission;
 
 namespace VErpApi.Controllers.System
 {
@@ -23,14 +24,14 @@ namespace VErpApi.Controllers.System
         }
 
         /// <summary>
-        /// Lấy toàn bộ nhóm quyền
+        /// Lấy danh sách nhóm quyền
         /// </summary>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<IList<RoleOutput>>> GetList()
+        public async Task<ApiResponse<PageData<RoleOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return (await _roleService.GetList()).ToList();
+            return await _roleService.GetList(keyword, page, size);
         }
 
         /// <summary>
@@ -42,6 +43,18 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse<int>> AddRole([FromBody] RoleInput role)
         {
             return await _roleService.AddRole(role);
+        }
+
+        /// <summary>
+        /// Lấy thông tin nhóm quyền
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{roleId}")]
+        public async Task<ApiResponse<RoleOutput>> GetRoleInfo([FromRoute] int roleId)
+        {
+            return await _roleService.GetRoleInfo(roleId);
         }
 
         /// <summary>

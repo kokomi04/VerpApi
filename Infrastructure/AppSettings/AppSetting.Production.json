@@ -1,9 +1,19 @@
 {
   "Configuration": {
     "ConfigFileKey": "/usr/verp/config/config.Production.json",
-    "SigninCert": "/usr/verp/certificate/cert.pfx"
+    "SigninCert": "/usr/verp/certificate/cert.pfx",
+    "FileUploadFolder": "/usr/resources/",
+    "FileUploadMaxLength": 50000000
   },
   "Identity": {
     "Endpoint": "http://localhost:8001"
+  },
+  "ServiceUrls": {
+    "ApiService": {
+      "Endpoint": "http://103.21.149.106:8001"
+    },
+    "FileService": {
+      "Endpoint": "http://103.21.149.106:8001"
+    }
   }
 }

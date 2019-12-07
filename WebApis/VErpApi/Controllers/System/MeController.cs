@@ -13,8 +13,9 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.Users.Interface;
+using VErp.Services.Master.Service.Users;
 
 namespace VErpApi.Controllers.System
 {
@@ -46,11 +47,12 @@ namespace VErpApi.Controllers.System
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse<User>> TestAction()
         {
+            await Task.CompletedTask;
             throw new NotImplementedException("Test http post as censor!");
         }
 
         [Route("logout")]
-        [HttpGet]
+        [HttpPost]
         public async Task<ApiResponse> Logout()
         {
             var asa = await _persistedGrant.GetAllGrantsAsync(Sub);
@@ -58,6 +60,30 @@ namespace VErpApi.Controllers.System
             await _persistedGrant.RemoveAllGrantsAsync(Sub, ClientId);
 
             return GeneralCode.Success;
+        }
+
+        /// <summary>
+        /// Lấy danh sách quyền của user đang login
+        /// </summary>
+        /// <returns></returns>
+        [Route("permissions")]
+        [HttpGet]
+        public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermission()
+        {
+            return (await _userService.GetUserPermission(UserId)).ToList();
+        }
+
+
+        /// <summary>
+        /// Đổi mật khẩu
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [Route("changePassword")]
+        [HttpPut]
+        public async Task<ApiResponse> ChangePassword([FromBody] UserChangepasswordInput req)
+        {
+            return await _userService.ChangeUserPassword(UserId, req);
         }
     }
 }

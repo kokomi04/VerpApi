@@ -12,4 +12,5 @@ namespace VErp.Services.Master.Model.Users
         public EnumUserStatus UserStatusId { get; set; }
         public int? RoleId { get; set; }
     }
+    
 }

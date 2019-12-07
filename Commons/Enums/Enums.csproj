@@ -6,4 +6,8 @@
     <AssemblyName>VErp.Commons.Enums</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="StockEnum\" />
+  </ItemGroup>
+
 </Project>

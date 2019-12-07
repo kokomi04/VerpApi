@@ -14,17 +14,35 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
+        public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
+        public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
+        public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
         public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<Customer> Customer { get; set; }
+        public virtual DbSet<CustomerContact> CustomerContact { get; set; }
+        public virtual DbSet<CustomerType> CustomerType { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
+        public virtual DbSet<FileStatus> FileStatus { get; set; }
+        public virtual DbSet<FileType> FileType { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
+        public virtual DbSet<InventoryType> InventoryType { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
+        public virtual DbSet<ObjectType> ObjectType { get; set; }
+        public virtual DbSet<PackageOption> PackageOption { get; set; }
+        public virtual DbSet<PackageType> PackageType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
+        public virtual DbSet<StockOutputRule> StockOutputRule { get; set; }
+        public virtual DbSet<TimeType> TimeType { get; set; }
+        public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
+        public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
+        public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -61,6 +79,20 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ApiEndpoint_Method");
             });
+            modelBuilder.Entity<BarcodeConfig>(entity =>
+            {
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
+            });
+            modelBuilder.Entity<BarcodeStandard>(entity =>
+            {
+                entity.Property(e => e.BarcodeStandardId).ValueGeneratedNever();
+                entity.Property(e => e.BarcodeStandardName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<Config>(entity =>
             {
                 entity.Property(e => e.ConfigId).ValueGeneratedNever();
@@ -70,6 +102,38 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(512);
+            });
+            modelBuilder.Entity<Customer>(entity =>
+            {
+                entity.Property(e => e.Address).HasMaxLength(128);
+                entity.Property(e => e.CustomerCode).HasMaxLength(128);
+                entity.Property(e => e.CustomerName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+                entity.Property(e => e.Description).HasMaxLength(512);
+                entity.Property(e => e.Email).HasMaxLength(128);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+                entity.Property(e => e.TaxIdNo).HasMaxLength(64);
+                entity.Property(e => e.Website).HasMaxLength(128);
+            });
+            modelBuilder.Entity<CustomerContact>(entity =>
+            {
+                entity.Property(e => e.Email).HasMaxLength(128);
+                entity.Property(e => e.FullName).HasMaxLength(128);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+                entity.Property(e => e.Position).HasMaxLength(128);
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.CustomerContact)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerContact_Customer");
+            });
+            modelBuilder.Entity<CustomerType>(entity =>
+            {
+                entity.Property(e => e.CustomerTypeId).ValueGeneratedNever();
+                entity.Property(e => e.CustomerTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Employee>(entity =>
             {
@@ -85,12 +149,33 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.GenderId)
                     .HasConstraintName("FK_Employee_Gender");
             });
+            modelBuilder.Entity<FileStatus>(entity =>
+            {
+                entity.Property(e => e.FileStatusId).ValueGeneratedNever();
+                entity.Property(e => e.FileStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<FileType>(entity =>
+            {
+                entity.Property(e => e.FileTypeId).ValueGeneratedNever();
+                entity.Property(e => e.FileTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<Gender>(entity =>
             {
                 entity.Property(e => e.GenderId).ValueGeneratedNever();
                 entity.Property(e => e.GenderName)
                     .IsRequired()
                     .HasMaxLength(64);
+            });
+            modelBuilder.Entity<InventoryType>(entity =>
+            {
+                entity.Property(e => e.InventoryTypeId).ValueGeneratedNever();
+                entity.Property(e => e.InventoryTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
             modelBuilder.Entity<Method>(entity =>
             {
@@ -133,10 +218,56 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
             });
+            modelBuilder.Entity<ObjectGenCode>(entity =>
+            {
+                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
+                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.DateFormat)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+                entity.Property(e => e.ObjectTypeName).HasMaxLength(128);
+                entity.Property(e => e.Prefix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.ResetDate).HasColumnType("datetime");
+                entity.Property(e => e.Seperator)
+                    .HasMaxLength(1)
+                    .IsUnicode(false);
+                entity.Property(e => e.Suffix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+            modelBuilder.Entity<ObjectType>(entity =>
+            {
+                entity.Property(e => e.ObjectTypeId).ValueGeneratedNever();
+                entity.Property(e => e.ObjectTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<PackageOption>(entity =>
+            {
+                entity.Property(e => e.PackageOptionId).ValueGeneratedNever();
+                entity.Property(e => e.PackageOptionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<PackageType>(entity =>
+            {
+                entity.Property(e => e.PackageTypeId).ValueGeneratedNever();
+                entity.Property(e => e.PackageTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<Role>(entity =>
             {
-                entity.Property(e => e.RoleId).ValueGeneratedNever();
-                entity.Property(e => e.CreatedDatetimUtc).HasDefaultValueSql("(getutcdate())");
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.Description).HasMaxLength(512);
                 entity.Property(e => e.RoleName)
                     .IsRequired()
@@ -170,6 +301,26 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
             });
+            modelBuilder.Entity<StockOutputRule>(entity =>
+            {
+                entity.Property(e => e.StockOutputRuleId).ValueGeneratedNever();
+                entity.Property(e => e.StockOutputRuleName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<TimeType>(entity =>
+            {
+                entity.Property(e => e.TimeTypeId).ValueGeneratedNever();
+                entity.Property(e => e.TimeTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<Unit>(entity =>
+            {
+                entity.Property(e => e.UnitName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
             modelBuilder.Entity<User>(entity =>
             {
                 entity.Property(e => e.PasswordHash)
@@ -182,6 +333,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(64);
+            });
+            modelBuilder.Entity<UserActivityLog>(entity =>
+            {
+                entity.Property(e => e.Message).HasMaxLength(512);
+            });
+            modelBuilder.Entity<UserActivityLogChange>(entity =>
+            {
+                entity.HasKey(e => e.UserActivityLogId);
+                entity.Property(e => e.UserActivityLogId).ValueGeneratedNever();
             });
             modelBuilder.Entity<UserStatus>(entity =>
             {

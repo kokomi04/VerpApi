@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.RolePermission;
-using VErp.Services.Master.Service.RolePermission.Interface;
+using VErp.Services.Master.Service.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {

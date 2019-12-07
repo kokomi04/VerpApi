@@ -11,8 +11,10 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.Users.Interface;
+using VErp.Services.Master.Service.Activity;
+using VErp.Services.Master.Service.RolePermission;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {
@@ -21,19 +23,30 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-
+        private readonly IRoleService _roleService;
+        private readonly IActivityService _activityService;
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
+            , IRoleService roleService
+            , IActivityService activityService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _roleService = roleService;
+            _activityService = activityService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
         {
+            var validate = await ValidateUserInfoInput(-1, req);
+            if (!validate.IsSuccess())
+            {
+                return validate;
+            }
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -53,7 +66,12 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
+                    var info = await GetUserFullInfo(user.Data);
+
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
+
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+
                     return user.Data;
                 }
                 catch (Exception ex)
@@ -62,7 +80,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "CreateUser");
                     return GeneralCode.InternalError;
                 }
-                
+
             }
         }
 
@@ -98,6 +116,10 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> DeleteUser(int userId)
         {
+            var userInfo = await GetUserFullInfo(userId);
+
+            var beforeJson = userInfo.JsonSerialize();
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -117,6 +139,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
+
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
@@ -125,7 +149,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "DeleteUser");
                     return GeneralCode.InternalError;
                 }
-               
+
             }
         }
 
@@ -161,7 +185,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                         select u;
             }
 
-            var lst = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lst = await query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToListAsync();
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -169,6 +193,14 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<Enum> UpdateUser(int userId, UserInfoInput req)
         {
+            var validate = await ValidateUserInfoInput(userId, req);
+            if (!validate.IsSuccess())
+            {
+                return validate;
+            }
+
+            var userInfo = await GetUserFullInfo(userId);
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -188,6 +220,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
+                    var newUserInfo = await GetUserFullInfo(userId);
+
+                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize(), newUserInfo);
+
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
@@ -196,29 +232,152 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "UpdateUser");
                     return GeneralCode.InternalError;
                 }
-                
+
             }
+        }
+
+        public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
+        {
+            req.NewPassword = req.NewPassword ?? "";
+            if (req.NewPassword.Length < 4)
+            {
+                return UserErrorCode.PasswordTooShort;
+            }
+
+            var userLoginInfo = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (userLoginInfo == null)
+            {
+                return UserErrorCode.UserNotFound;
+            }
+
+            if (!Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, userLoginInfo.PasswordSalt, req.OldPassword, userLoginInfo.PasswordHash))
+            {
+                return UserErrorCode.OldPasswordIncorrect;
+            }
+
+            var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.NewPassword);
+            userLoginInfo.PasswordSalt = salt;
+            userLoginInfo.PasswordHash = passwordHash;
+            await _masterContext.SaveChangesAsync();
+
+            return GeneralCode.Success;
+        }
+
+        public async Task<IList<RolePermissionModel>> GetUserPermission(int userId)
+        {
+            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null || !user.RoleId.HasValue)
+            {
+                return null;
+            }
+            return await _roleService.GetRolePermission(user.RoleId.Value);
+        }
+
+        /// <summary>
+        /// Lấy danh sách user đc quyền truy cập vào moduleId input
+        /// </summary>
+        /// <param name="currentUserId">Id người dùng hiện tại</param>
+        /// <param name="moduleId">moduleId input</param>
+        /// <param name="keyword">Từ khóa tìm kiếm</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize">Bản ghi trên 1 trang</param>
+        /// <returns></returns>
+        public async Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId, string keyword, int pageIndex, int pageSize)
+        {
+            // user current ? 
+            var currentRoleId = _masterContext.User.FirstOrDefault(q => q.UserId == currentUserId).RoleId ?? 0;
+
+            var rolePermissionList = await _roleService.GetRolePermission(currentRoleId);
+
+            var result = new PageData<UserInfoOutput> { Total = 0, List = null };
+
+            if (rolePermissionList.Count > 0)
+            {
+                var checkPermission = rolePermissionList.Any(q => q.ModuleId == moduleId);
+
+                if (checkPermission)
+                {
+                    keyword = (keyword ?? "").Trim();
+
+                    var query = (
+                         from u in _masterContext.User
+                         join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
+                         join em in _masterContext.Employee on u.UserId equals em.UserId
+                         where rp.ModuleId == moduleId
+                         select new UserInfoOutput
+                         {
+                             UserId = u.UserId,
+                             UserName = u.UserName,
+                             UserStatusId = (EnumUserStatus)u.UserStatusId,
+                             RoleId = u.RoleId,
+                             EmployeeCode = em.EmployeeCode,
+                             FullName = em.FullName,
+                             Address = em.Address,
+                             Email = em.Email,
+                             GenderId = (EnumGender?)em.GenderId,
+                             Phone = em.Phone
+                         }
+                     );
+
+                    if (!string.IsNullOrWhiteSpace(keyword))
+                    {
+                        query = from u in query
+                                where u.UserName.Contains(keyword)
+                                || u.FullName.Contains(keyword)
+                                || u.EmployeeCode.Contains(keyword)
+                                || u.Email.Contains(keyword)
+                                select u;
+                    }
+
+                    var userList = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+                    var totalRecords = await query.CountAsync();
+
+                    result.List = userList;
+                    result.Total = totalRecords;
+                }
+                else
+                {
+                    _logger.LogInformation(message: string.Format("{0} - {1}|{2}", "UserService.GetListByModuleId", currentUserId, "Không có quyền thực hiện chức năng này"));
+                }
+            }
+            return result;
         }
 
 
         #region private
-
+        private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
+        {
+            var findByCode = await _masterContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
+            if (findByCode)
+            {
+                return UserErrorCode.EmployeeCodeAlreadyExisted;
+            }
+            //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
+            return GeneralCode.Success;
+        }
         private async Task<ServiceResult<int>> CreateUserAuthen(UserInfoInput req)
         {
             var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.Password);
             req.UserName = (req.UserName ?? "").Trim().ToLower();
 
             var userNameHash = req.UserName.ToGuid();
-            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
-            if (user != null)
+            User user;
+            if (!string.IsNullOrWhiteSpace(req.UserName))
             {
-                return UserErrorCode.UserNameExisted;
+                user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
+                if (user != null)
+                {
+                    return UserErrorCode.UserNameExisted;
+                }
             }
 
             user = new User()
             {
                 UserName = req.UserName,
-                UserNameHash = req.UserName.ToGuid(),
+                UserNameHash = userNameHash,
                 IsDeleted = false,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UserStatusId = (int)req.UserStatusId,
@@ -330,6 +489,29 @@ namespace VErp.Services.Master.Service.Users.Implement
             await _masterContext.SaveChangesAsync();
 
             return GeneralCode.Success;
+        }
+
+        private async Task<UserFullDbInfo> GetUserFullInfo(int userId)
+        {
+            var user = await (
+                 from u in _masterContext.User
+                 join em in _masterContext.Employee on u.UserId equals em.UserId
+                 where u.UserId == userId
+                 select new UserFullDbInfo
+                 {
+                     User = u,
+                     Employee = em
+                 }
+             )
+             .FirstOrDefaultAsync();
+
+            return user;
+        }
+
+        private class UserFullDbInfo
+        {
+            public User User { get; set; }
+            public Employee Employee { get; set; }
         }
         #endregion
     }

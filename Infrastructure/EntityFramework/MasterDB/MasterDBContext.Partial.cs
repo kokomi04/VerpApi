@@ -1,8 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq.Expressions;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.MasterDB
 {
@@ -12,14 +10,23 @@ namespace VErp.Infrastructure.EF.MasterDB
         {
             OnModelCreated(modelBuilder);
 
-            modelBuilder.Entity<User>().HasQueryFilter(o => !o.IsDeleted);
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
 
-            modelBuilder.Entity<Employee>().HasQueryFilter(o => !o.IsDeleted);
+                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
 
-            modelBuilder.Entity<Role>().HasQueryFilter(o => !o.IsDeleted);
+                var isDeletedProp = entityType.FindProperty("IsDeleted");
+                if (isDeletedProp != null)
+                {
+                    var isDeleted = Expression.Constant(false);
+                    filterBuilder.AddFilter("IsDeleted", isDeleted);
+                }
+
+                entityType.QueryFilter = filterBuilder.Build();
+            }
 
         }
     }
 
-   
+
 }

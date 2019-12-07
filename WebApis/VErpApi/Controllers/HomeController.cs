@@ -20,6 +20,7 @@ namespace VErpApi.Controllers
    
         public async Task<IActionResult> Index()
         {
+            await Task.CompletedTask;
             return Content("Ok, I'm working!");
         }
         public async Task<IActionResult> Error(string errorId)

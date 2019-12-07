@@ -44,11 +44,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            var allowAnonymousFilter = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousFilter);
+            var allowAnonymousFilter = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousFilter || x.Filter is GlobalApiAttribute);
             if (allowAnonymousFilter != null)
             {
                 await next();
+                return;
             }
+
+#if DEBUG
+            await next();
+            return;
+#endif
+
             var headers = context.HttpContext.Request.Headers;
             var moduleIds = new StringValues();
 
@@ -62,7 +69,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     Message = GeneralCode.X_ModuleMissing.GetEnumDescription()
                 };
 
-                context.Result = new UnauthorizedObjectResult(json);
+                context.Result = new JsonResult(json);
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
@@ -81,7 +88,21 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 var json = new ApiResponse
                 {
                     Code = GeneralCode.Forbidden.GetErrorCodeString(),
-                    Message = "api not found"
+                    Message = "api endpoint not found"
+                };
+                context.Result = new JsonResult(json);
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
+
+            var apiModuleMapped = await _masterContext.ModuleApiEndpointMapping.FirstOrDefaultAsync(m => m.ModuleId == moduleId && m.ApiEndpointId == apiEndpointId);
+
+            if (apiModuleMapped == null)
+            {
+                var json = new ApiResponse
+                {
+                    Code = GeneralCode.Forbidden.GetErrorCodeString(),
+                    Message = "api endpoint is not mapped to module"
                 };
                 context.Result = new JsonResult(json);
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
