@@ -22,6 +22,7 @@ using VErp.Services.Stock.Model.Package;
 using VErp.Services.Master.Service.Config;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
+using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -336,6 +337,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
+                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
 
                 var validInventoryDetails = await ValidateInventoryIn(req);
 
@@ -355,7 +360,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Input,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = req.DateUtc,
+                            DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -435,8 +440,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
+                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
 
-              
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -448,7 +456,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Output,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = req.DateUtc,
+                            DateUtc = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -523,6 +531,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(int inventoryId, int currentUserId, InventoryInModel req)
         {
+            if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            {
+                return GeneralCode.InvalidParams;
+            }
+
             try
             {
                 if (inventoryId <= 0)
@@ -557,6 +570,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         inventoryObj.StockId = req.StockId;
                         inventoryObj.InventoryCode = req.InventoryCode;
+                        inventoryObj.DateUtc = issuedDate;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
                         inventoryObj.CustomerId = req.CustomerId;
@@ -649,6 +663,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
+                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                {
+                    return GeneralCode.InvalidParams;
+                }
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -665,7 +684,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.InventoryCode = req.InventoryCode;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
-                        inventoryObj.DateUtc = req.DateUtc;
+                        inventoryObj.DateUtc = issuedDate;
                         inventoryObj.CustomerId = req.CustomerId;
                         inventoryObj.Department = req.Department;
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
