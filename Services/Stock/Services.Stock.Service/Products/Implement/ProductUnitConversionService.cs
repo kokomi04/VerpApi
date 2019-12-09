@@ -77,7 +77,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         SecondaryUnitId = item.SecondaryUnitId,
                         SecondaryUnitName = unitObj != null ? unitObj.UnitName : null,
                         FactorExpression = item.FactorExpression,
-                        ConversionDescription = item.ConversionDescription
+                        ConversionDescription = item.ConversionDescription,
+                        IsDefault = item.IsDefault
                     };
                     resultList.Add(p);
                 }              

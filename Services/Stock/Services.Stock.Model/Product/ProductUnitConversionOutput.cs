@@ -12,5 +12,7 @@
         public string FactorExpression { get; set; }
         
         public string ConversionDescription { get; set; }
+
+        public bool IsDefault { get; set; }
     }
 }
