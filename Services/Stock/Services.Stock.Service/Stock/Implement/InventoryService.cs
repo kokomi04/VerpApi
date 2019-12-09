@@ -1313,7 +1313,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return GeneralCode.InvalidParams;
                 }
 
-                if (details.ProductUnitConversionQuantity < fromPackageInfo.ProductUnitConversionQuantity)
+                if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionQuantity)
                 {
                     return InventoryErrorCode.NotEnoughQuantity;
                 }
