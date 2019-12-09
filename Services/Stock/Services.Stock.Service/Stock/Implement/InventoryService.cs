@@ -582,21 +582,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
 
-
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
-                        foreach (var f in files)
-                        {
-                            f.IsDeleted = true;
-                        }
-
+                       
                         if (req.FileIdList != null && req.FileIdList.Count > 0)
                         {
-                            await _stockDbContext.InventoryFile.AddRangeAsync(req.FileIdList.Select(f => new InventoryFile()
+                            foreach (var f in files)
                             {
-                                InventoryId = inventoryId,
-                                FileId = f,
-                                IsDeleted = false
-                            }));
+                                if(!req.FileIdList.Contains(f.FileId))
+                                    f.IsDeleted = true;
+                            }
+                            foreach(var newFileId in req.FileIdList)
+                            {
+                                if (!files.Select(q=> q.FileId).ToList().Contains(newFileId))
+                                    _stockDbContext.InventoryFile.Add(new InventoryFile()
+                                    {
+                                        InventoryId = inventoryId,
+                                        FileId = newFileId,
+                                        IsDeleted = false
+                                    });
+                            }                            
                         }
 
                         await _stockDbContext.SaveChangesAsync();
@@ -684,21 +688,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return processInventoryOut.Code;
                         }
 
-
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
-                        foreach (var f in files)
-                        {
-                            f.IsDeleted = true;
-                        }
 
                         if (req.FileIdList != null && req.FileIdList.Count > 0)
                         {
-                            await _stockDbContext.InventoryFile.AddRangeAsync(req.FileIdList.Select(f => new InventoryFile()
+                            foreach (var f in files)
                             {
-                                InventoryId = inventoryId,
-                                FileId = f,
-                                IsDeleted = false
-                            }));
+                                if (!req.FileIdList.Contains(f.FileId))
+                                    f.IsDeleted = true;
+                            }
+                            foreach (var newFileId in req.FileIdList)
+                            {
+                                if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
+                                    _stockDbContext.InventoryFile.Add(new InventoryFile()
+                                    {
+                                        InventoryId = inventoryId,
+                                        FileId = newFileId,
+                                        IsDeleted = false
+                                    });
+                            }
                         }
 
                         await _stockDbContext.SaveChangesAsync();
