@@ -36,7 +36,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IAsyncRunnerService _asyncRunner;
-                
+
 
         public InventoryService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -264,7 +264,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
-                        
+
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null
                     });
@@ -386,7 +386,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         foreach (var item in validInventoryDetails.Data)
                         {
-                            item.InventoryId = inventoryObj.InventoryId;                            
+                            item.InventoryId = inventoryObj.InventoryId;
                         }
 
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
@@ -435,7 +435,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-
                 if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
@@ -444,12 +443,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
-                        var inventoryObj = new Infrastructure.EF.StockDB.Inventory
+                        var inventoryObj = new Inventory
                         {
                             StockId = req.StockId,
                             InventoryCode = req.InventoryCode,
@@ -470,7 +468,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         };
                         await _stockDbContext.AddAsync(inventoryObj);
                         await _stockDbContext.SaveChangesAsync();
-                        
+
                         if (req.FileIdList != null && req.FileIdList.Count > 0)
                         {
                             var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
@@ -597,24 +595,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
-                       
+
                         if (req.FileIdList != null && req.FileIdList.Count > 0)
                         {
                             foreach (var f in files)
                             {
-                                if(!req.FileIdList.Contains(f.FileId))
+                                if (!req.FileIdList.Contains(f.FileId))
                                     f.IsDeleted = true;
                             }
-                            foreach(var newFileId in req.FileIdList)
+                            foreach (var newFileId in req.FileIdList)
                             {
-                                if (!files.Select(q=> q.FileId).ToList().Contains(newFileId))
+                                if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
                                     _stockDbContext.InventoryFile.Add(new InventoryFile()
                                     {
                                         InventoryId = inventoryId,
                                         FileId = newFileId,
                                         IsDeleted = false
                                     });
-                            }                            
+                            }
                         }
 
                         await _stockDbContext.SaveChangesAsync();
@@ -706,6 +704,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return processInventoryOut.Code;
                         }
+                        await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
@@ -769,7 +768,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryErrorCode.InventoryNotFound;
             }
             // Chưa hỗ trợ chức năng xoá phiếu nhập kho đã duyệt.
-            if (inventoryObj.IsApproved && inventoryObj.InventoryTypeId == (int) EnumInventoryType.Input)
+            if (inventoryObj.IsApproved && inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input)
             {
                 return InventoryErrorCode.NotSupportedYet;
             }
@@ -786,7 +785,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                    var processResult =  await RollbackInventoryOutput(inventoryObj);
+                    var processResult = await RollbackInventoryOutput(inventoryObj);
                     if (!Equals(processResult, GeneralCode.Success))
                     {
                         trans.Rollback();
@@ -796,7 +795,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa {0} | mã phiếu {1}", typeName, inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
-                    
+
                     return GeneralCode.Success;
                 }
                 catch (Exception ex)
@@ -858,7 +857,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await UpdateStockProduct(inventoryObj, item);
 
                             if (item.PackageOptionId != null)
-                                switch ((EnumPackageOption) item.PackageOptionId)
+                                switch ((EnumPackageOption)item.PackageOptionId)
                                 {
                                     case EnumPackageOption.Append:
                                         var appendResult = await AppendToCustomPackage(inventoryObj, item);
@@ -1019,7 +1018,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (!string.IsNullOrEmpty(keyword))
                     productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
 
-                productInStockQuery = productInStockQuery.GroupBy(q=>q.ProductId).Select(g=>g.First());
+                productInStockQuery = productInStockQuery.GroupBy(q => q.ProductId).Select(g => g.First());
 
                 var total = productInStockQuery.Count();
                 var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -1063,7 +1062,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var query = from p in _stockDbContext.Package 
+                var query = from p in _stockDbContext.Package
                             where stockIdList.Contains(p.StockId) && p.ProductId == productId && p.PrimaryQuantityRemaining > 0
                             select p;
 
@@ -1106,7 +1105,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
                         ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
                         ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
-                        
+
                         CreatedDatetimeUtc = item.CreatedDatetimeUtc,
                         UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
                         LocationOutputModel = locationOutputModel,
@@ -1138,14 +1137,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     productWithStockValidationQuery = productWithStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
                 }
 
-                productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q=>q.ProductId).Select(v=>v.First());
+                productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q => q.ProductId).Select(v => v.First());
 
                 var productWithoutStockValidationQuery = _stockDbContext.Product.Where(q => !productWithStockValidationIdList.Contains(q.ProductId));
 
                 var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
 
                 var total = productQuery.Count();
-                productQuery = productQuery.AsNoTracking().OrderBy(q=>q.ProductId).Skip((page - 1) * size).Take(size);
+                productQuery = productQuery.AsNoTracking().OrderBy(q => q.ProductId).Skip((page - 1) * size).Take(size);
 
                 var pagedData = productQuery.ToList();
                 var productIdList = pagedData.Select(q => q.ProductId).ToList();
@@ -1186,7 +1185,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-#region Private helper method
+        #region Private helper method
 
         private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(InventoryInModel req)
         {
@@ -1543,6 +1542,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return packageCode;
         }
 
-#endregion
+        #endregion
     }
 }
