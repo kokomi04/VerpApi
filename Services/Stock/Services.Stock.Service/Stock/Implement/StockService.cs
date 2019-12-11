@@ -495,11 +495,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
-                    PrimaryQuantity = pk.PrimaryQuantity,
+                    PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
-                    ProductUnitConversionQualtity = pk.ProductUnitConversionQuantity,
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     RefObjectId = null,
                     RefObjectCode = ""
                 }
@@ -560,11 +560,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
-                    PrimaryQuantity = pk.PrimaryQuantity,
+                    PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
-                    ProductUnitConversionQualtity = pk.ProductUnitConversionQuantity,
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     RefObjectId = null,
                     RefObjectCode = ""
                 }
