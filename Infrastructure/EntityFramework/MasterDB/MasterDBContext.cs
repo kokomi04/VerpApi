@@ -32,6 +32,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
         public virtual DbSet<ObjectType> ObjectType { get; set; }
+        public virtual DbSet<PackageOperationType> PackageOperationType { get; set; }
         public virtual DbSet<PackageOption> PackageOption { get; set; }
         public virtual DbSet<PackageType> PackageType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
@@ -248,6 +249,13 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.Property(e => e.ObjectTypeId).ValueGeneratedNever();
                 entity.Property(e => e.ObjectTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+            modelBuilder.Entity<PackageOperationType>(entity =>
+            {
+                entity.Property(e => e.PackageOperationTypeId).ValueGeneratedNever();
+                entity.Property(e => e.PackageOperationTypeName)
                     .IsRequired()
                     .HasMaxLength(128);
             });

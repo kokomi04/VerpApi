@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             InventoryDetail = new HashSet<InventoryDetail>();
             Package = new HashSet<Package>();
+            PackageRef = new HashSet<PackageRef>();
             StockProduct = new HashSet<StockProduct>();
         }
 
@@ -23,6 +24,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual Product Product { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
         public virtual ICollection<Package> Package { get; set; }
+        public virtual ICollection<PackageRef> PackageRef { get; set; }
         public virtual ICollection<StockProduct> StockProduct { get; set; }
     }
 }

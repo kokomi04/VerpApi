@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Stock
 {
@@ -20,7 +21,7 @@ namespace VErp.Services.Stock.Model.Stock
         public int SecondaryUnitId { get; set; }
         public decimal ProductUnitConversionQualtity { get; set; }
         public decimal SecondaryUnitQualtity { get { return ProductUnitConversionQualtity; } }
-
+        public EnumPackageType PackageTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
     }

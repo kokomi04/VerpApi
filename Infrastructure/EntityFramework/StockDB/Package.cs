@@ -9,6 +9,8 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             InventoryDetailFromPackage = new HashSet<InventoryDetail>();
             InventoryDetailToPackage = new HashSet<InventoryDetail>();
+            PackageRefPackage = new HashSet<PackageRef>();
+            PackageRefRefPackage = new HashSet<PackageRef>();
         }
 
         public long PackageId { get; set; }
@@ -36,5 +38,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetailFromPackage { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetailToPackage { get; set; }
+        public virtual ICollection<PackageRef> PackageRefPackage { get; set; }
+        public virtual ICollection<PackageRef> PackageRefRefPackage { get; set; }
     }
 }

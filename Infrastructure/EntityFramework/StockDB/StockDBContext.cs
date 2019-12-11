@@ -73,6 +73,7 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.Property(e => e.PackageOptionId).HasDefaultValueSql("((0))");
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
@@ -150,6 +151,22 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<PackageRef>(entity =>
             {
                 entity.HasKey(e => new { e.PackageId, e.RefPackageId });
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
+                entity.HasOne(d => d.Package)
+                    .WithMany(p => p.PackageRefPackage)
+                    .HasForeignKey(d => d.PackageId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PackageRef_Package");
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.PackageRef)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .HasConstraintName("FK_PackageRef_ProductUnitConversion");
+                entity.HasOne(d => d.RefPackage)
+                    .WithMany(p => p.PackageRefRefPackage)
+                    .HasForeignKey(d => d.RefPackageId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PackageRef_PackageFrom");
             });
             modelBuilder.Entity<Product>(entity =>
             {

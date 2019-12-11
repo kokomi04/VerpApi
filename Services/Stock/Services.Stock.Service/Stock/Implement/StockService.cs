@@ -3,19 +3,19 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
-using VErp.Infrastructure.EF.MasterDB;
-using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -500,6 +500,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
+                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectId = null,
                     RefObjectCode = ""
                 }
@@ -566,6 +567,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     RefObjectId = null,
+                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = ""
                 }
                 );
