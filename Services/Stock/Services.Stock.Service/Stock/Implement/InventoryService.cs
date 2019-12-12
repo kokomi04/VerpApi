@@ -767,11 +767,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return InventoryErrorCode.InventoryNotFound;
             }
-            // Chưa hỗ trợ chức năng xoá phiếu nhập kho đã duyệt.
-            if (inventoryObj.IsApproved && inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input)
-            {
-                return InventoryErrorCode.NotSupportedYet;
-            }
 
             inventoryObj.IsDeleted = true;
             //inventoryObj.IsApproved = false;
@@ -785,11 +780,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                    var processResult = await RollbackInventoryOutput(inventoryObj);
-                    if (!Equals(processResult, GeneralCode.Success))
+                    // Xử lý phiếu nhập kho
+                    if (inventoryObj.IsApproved && inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input)
                     {
-                        trans.Rollback();
-                        return GeneralCode.InvalidParams;
+                        var processResult = await RollBackInventoryInput(inventoryObj);
+                        if (!Equals(processResult, GeneralCode.Success))
+                        {
+                            trans.Rollback();
+                            return GeneralCode.InvalidParams;
+                        }
+                    }
+                    else // Xử lý phiếu xuất kho
+                    {
+                        var processResult = await RollbackInventoryOutput(inventoryObj);
+                        if (!Equals(processResult, GeneralCode.Success))
+                        {
+                            trans.Rollback();
+                            return GeneralCode.InvalidParams;
+                        }
                     }
                     var typeName = inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input ? "phiếu nhập kho" : "phiếu xuất kho";
                     _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa {0} | mã phiếu {1}", typeName, inventoryObj.InventoryCode), dataBefore, null);
@@ -801,11 +809,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "DeleteStock");
+                    _logger.LogError(ex, "DeleteInventory");
                     return GeneralCode.InternalError;
                 }
             }
         }
+
         /// <summary>
         /// Duyệt phiếu nhập kho
         /// </summary>
@@ -1070,7 +1079,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageData = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
                 var locationIdList = packageData.Select(q => q.LocationId).ToList();
                 var productUnitConversionIdList = packageData.Select(q => q.ProductUnitConversionId).ToList();
-                var locationData = _stockDbContext.Location.AsNoTracking().Where(q => locationIdList.Contains(q.LocationId)).ToList();
+                var locationData = await _stockDbContext.Location.AsNoTracking().Where(q => locationIdList.Contains(q.LocationId)).ToListAsync();
                 var productUnitConversionData = _stockDbContext.ProductUnitConversion.AsNoTracking().Where(q => productUnitConversionIdList.Contains(q.ProductUnitConversionId)).ToList();
 
                 var packageList = new List<PackageOutputModel>(total);
@@ -1385,12 +1394,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return stockProductInfo;
         }
 
-        private async Task UpdateStockProduct(InventoryEntity inventory, InventoryDetail detail)
+        private async Task UpdateStockProduct(InventoryEntity inventory, InventoryDetail detail, EnumInventoryType type = EnumInventoryType.Input)
         {
             var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    {
+                        stockProductInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
+                        stockProductInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
+                        break;
+                    }
+                case EnumInventoryType.Output:
+                    {
+                        stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+                        stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                        break;
+                    }
+                default:
+                    break;
+            }
 
-            stockProductInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
-            stockProductInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
         }
 
         private async Task<Enum> AppendToCustomPackage(InventoryEntity inventory, InventoryDetail detail)
@@ -1488,7 +1512,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return newPackage;
         }
 
-
         private async Task<Enum> RollbackInventoryOutput(Inventory inventory)
         {
             var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
@@ -1527,6 +1550,42 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
 
+            return GeneralCode.Success;
+        }
+
+        private async Task<Enum> RollBackInventoryInput(Inventory inventory)
+        {
+            var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
+
+            var toPackageIdList = inventoryDetails.Select(d => d.ToPackageId).ToList();
+
+            var toPackagesList = _stockDbContext.Package.Where(p => toPackageIdList.Contains(p.PackageId)).ToList();
+
+            foreach (var detail in inventoryDetails)
+            {
+                var packageInfo = toPackagesList.FirstOrDefault(f => f.PackageId == detail.ToPackageId);
+                if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+
+                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+
+                if (!inventory.IsApproved)
+                {
+                    
+                }
+                else
+                {
+                    packageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+                    packageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+
+                    stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+                    stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                }
+                packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                detail.IsDeleted = true;
+                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
             return GeneralCode.Success;
         }
 
