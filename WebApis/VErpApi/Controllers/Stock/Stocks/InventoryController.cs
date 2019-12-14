@@ -115,13 +115,23 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Xóa phiếu nhập/xuất kho
         /// </summary>
         /// <param name="inventoryId"></param>
+        /// <param name="type">EnumInventoryType: 1-phiếu nhập kho ; 2-phiếu xuất kho</param>
         /// <returns></returns>
         [HttpDelete]
         [Route("{inventoryId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int inventoryId)
+        public async Task<ApiResponse> Delete([FromRoute] int inventoryId, [FromQuery] EnumInventoryType type)
         {
             var currentUserId = UserId;
-            return await _inventoryService.DeleteInventory(inventoryId, currentUserId);
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryService.DeleteInventoryInput(inventoryId, currentUserId);
+                    
+                case EnumInventoryType.Output:
+                    return await _inventoryService.DeleteInventoryOutput(inventoryId, currentUserId);                
+            }
+            var result = new ApiResponse { Code = GeneralCode.InvalidParams.ToString(), Message = GeneralCode.InvalidParams.GetEnumDescription() };
+            return result;            
         }
 
         /// <summary>

@@ -759,7 +759,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<Enum> DeleteInventory(int inventoryId, int currentUserId)
+        /// <summary>
+        /// Xoá phiếu nhập kho
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        /// <param name="currentUserId"></param>
+        /// <returns></returns>
+        public async Task<Enum> DeleteInventoryInput(int inventoryId, int currentUserId)
         {
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
             var objLog = GetInventoryInfoForLog(inventoryObj);
@@ -767,7 +773,63 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return InventoryErrorCode.InventoryNotFound;
             }
+            if (inventoryObj.InventoryTypeId == (int)EnumInventoryType.Output)
+            {
+                return GeneralCode.InvalidParams;
+            }
+            inventoryObj.IsDeleted = true;
+            //inventoryObj.IsApproved = false;
+            inventoryObj.UpdatedByUserId = currentUserId;
+            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
+            var dataBefore = objLog.JsonSerialize();
+
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    if (inventoryObj.IsApproved)
+                    {
+                        var processResult = await RollBackInventoryInput(inventoryObj);
+                        if (!Equals(processResult, GeneralCode.Success))
+                        {
+                            trans.Rollback();
+                            return GeneralCode.InvalidParams;
+                        }
+                    }
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    await _stockDbContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "DeleteInventoryInput");
+                    return GeneralCode.InternalError;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Xoá phiếu xuất kho
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        /// <param name="currentUserId"></param>
+        /// <returns></returns>
+        public async Task<Enum> DeleteInventoryOutput(int inventoryId, int currentUserId)
+        {
+            var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
+            var objLog = GetInventoryInfoForLog(inventoryObj);
+            if (inventoryObj == null)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
+            if (inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input)
+            {
+                return GeneralCode.InvalidParams;
+            }
             inventoryObj.IsDeleted = true;
             //inventoryObj.IsApproved = false;
             inventoryObj.UpdatedByUserId = currentUserId;
@@ -780,17 +842,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                    // Xử lý phiếu nhập kho
-                    if (inventoryObj.IsApproved && inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input)
-                    {
-                        var processResult = await RollBackInventoryInput(inventoryObj);
-                        if (!Equals(processResult, GeneralCode.Success))
-                        {
-                            trans.Rollback();
-                            return GeneralCode.InvalidParams;
-                        }
-                    }
-                    else // Xử lý phiếu xuất kho
+                    if (inventoryObj.IsApproved)
                     {
                         var processResult = await RollbackInventoryOutput(inventoryObj);
                         if (!Equals(processResult, GeneralCode.Success))
@@ -798,9 +850,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return GeneralCode.InvalidParams;
                         }
-                    }
-                    var typeName = inventoryObj.InventoryTypeId == (int)EnumInventoryType.Input ? "phiếu nhập kho" : "phiếu xuất kho";
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa {0} | mã phiếu {1}", typeName, inventoryObj.InventoryCode), dataBefore, null);
+                    }                    
+                    _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -809,11 +860,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "DeleteInventory");
+                    _logger.LogError(ex, "DeleteInventoryOutput");
                     return GeneralCode.InternalError;
                 }
             }
         }
+
 
         /// <summary>
         /// Duyệt phiếu nhập kho
@@ -1570,7 +1622,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!inventory.IsApproved)
                 {
-                    
+
                 }
                 else
                 {
