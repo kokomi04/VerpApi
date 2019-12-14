@@ -1067,6 +1067,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách sản phẩm để xuất kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIdList"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
@@ -1119,6 +1127,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách kiện để xuất kho
+        /// </summary>
+        /// <param name="productId"></param>
+        /// <param name="stockIdList"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public async Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
@@ -1183,6 +1199,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách sản phẩm để nhập kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIdList"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
@@ -1190,6 +1214,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var productWithStockValidationIdList = _stockDbContext.ProductStockValidation.Select(q => q.ProductId).ToList();
 
                 var productWithStockValidationQuery = from p in _stockDbContext.Product
+                                                      join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
                                                       join pv in _stockDbContext.ProductStockValidation on p.ProductId equals pv.ProductId
                                                       where stockIdList.Contains(pv.StockId)
                                                       select p;
@@ -1200,7 +1225,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q => q.ProductId).Select(v => v.First());
 
-                var productWithoutStockValidationQuery = _stockDbContext.Product.Where(q => !productWithStockValidationIdList.Contains(q.ProductId));
+                var productWithoutStockValidationQuery = from p in _stockDbContext.Product
+                                                         join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
+                                                         where !productWithStockValidationIdList.Contains(p.ProductId)
+                                                         select p;                    
 
                 var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
 
