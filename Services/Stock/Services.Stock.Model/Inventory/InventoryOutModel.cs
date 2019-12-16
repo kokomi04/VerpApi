@@ -30,6 +30,9 @@ namespace VErp.Services.Stock.Model.Inventory
         public int ProductId { get; set; }
         public int ProductUnitConversionId { set; get; }
         public decimal ProductUnitConversionQuantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }

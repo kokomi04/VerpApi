@@ -158,6 +158,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductId = details.ProductId,
                         PrimaryUnitId = details.PrimaryUnitId,
                         PrimaryQuantity = details.PrimaryQuantity,
+                        UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
                         ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
                         FromPackageId = details.FromPackageId,
@@ -188,6 +189,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
                     DeliveryCode = item.DeliveryCode,
+                    TotalMoney = item.TotalMoney,
+
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
@@ -255,6 +258,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductId = details.ProductId,
                         PrimaryUnitId = details.PrimaryUnitId,
                         PrimaryQuantity = details.PrimaryQuantity,
+                        UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
                         ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
                         FromPackageId = details.FromPackageId,
@@ -295,6 +299,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
                     DeliveryCode = inventoryObj.DeliveryCode,
+                    TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
@@ -353,6 +358,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     try
                     {
+                        var totalMoney = (decimal)0;
+                        foreach (var item in validInventoryDetails.Data)
+                        {
+                            totalMoney += (item.UnitPrice * item.PrimaryQuantity);
+                        }                       
+
                         var inventoryObj = new Infrastructure.EF.StockDB.Inventory
                         {
                             StockId = req.StockId,
@@ -365,6 +376,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
                             DeliveryCode = req.DeliveryCode,
+                            TotalMoney = totalMoney,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
                             CreatedDatetimeUtc = DateTime.Now,
@@ -384,11 +396,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await _stockDbContext.SaveChangesAsync();
                         }
 
+                        
                         foreach (var item in validInventoryDetails.Data)
                         {
-                            item.InventoryId = inventoryObj.InventoryId;
+                            item.InventoryId = inventoryObj.InventoryId;                        
                         }
-
+                        inventoryObj.TotalMoney = totalMoney;
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
                         await _stockDbContext.SaveChangesAsync();
 
@@ -586,11 +599,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             d.IsDeleted = true;
                             d.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
-
+                        var totalMoney = (decimal)0;
                         foreach (var item in validate.Data)
                         {
                             item.InventoryId = inventoryObj.InventoryId;
+
+                            totalMoney += (item.UnitPrice * item.PrimaryQuantity);
                         }
+                        inventoryObj.TotalMoney = totalMoney;
 
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
 
@@ -1271,7 +1287,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, "GetProductListForImport");
                 return (null, 0);
             }
-
         }
 
         #region Private helper method

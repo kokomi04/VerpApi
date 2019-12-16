@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
+        public virtual DbSet<PackageOperation> PackageOperation { get; set; }
         public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
@@ -64,6 +65,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128);
                 entity.Property(e => e.Shipper).HasMaxLength(128);
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.HasOne(d => d.Stock)
                     .WithMany(p => p.Inventory)
@@ -77,6 +79,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.RefObjectCode).HasMaxLength(128);
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
                 entity.HasOne(d => d.FromPackage)
                     .WithMany(p => p.InventoryDetailFromPackage)
                     .HasForeignKey(d => d.FromPackageId)

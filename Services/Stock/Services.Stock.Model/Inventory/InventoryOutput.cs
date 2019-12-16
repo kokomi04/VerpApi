@@ -25,12 +25,16 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? StockKeeperUserId { get; set; }
         public string DeliveryCode { set; get; }
 
+        public decimal TotalMoney { get; set; }
+
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         
         public DateTime CreatedDatetimeUtc { set; get; }
 
         public DateTime UpdatedDatetimeUtc { set; get; }
+
+
 
         public bool IsApproved { set; get; }
 
