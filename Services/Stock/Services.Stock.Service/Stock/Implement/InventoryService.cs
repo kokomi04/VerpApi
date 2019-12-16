@@ -1,28 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Services.Stock.Model.Product;
-using VErp.Commons.Library;
-using VErp.Services.Stock.Model.FileResources;
-using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Stock.Model.Package;
+using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Config;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.FileResources;
+using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Package;
+using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.FileResources;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
-using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using NPOI.XSSF.UserModel;
@@ -671,8 +671,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> CensoredInventoryInputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
+        {
+            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
+            if (!data.Code.IsSuccess())
+            {
+                return data.Code;
+            }
 
-        public async Task<ServiceResult<List<CensoredInventoryInputProducts>>> CensoredInventoryInputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
+            return data.Data.products.ToList();
+
+        }
+        public async Task<ServiceResult<(IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)>> CensoredInventoryInputUpdateGetAffected(int inventoryId, InventoryInModel req)
         {
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
@@ -891,6 +901,37 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 products.Add(product);
 
             }
+
+            return (products, details);
+        }
+
+        public async Task<ServiceResult> CensoredInventoryInputUpdate(int inventoryId, InventoryInModel req, IList<CensoredInventoryInputProducts> updateProducts)
+        {
+            var products = await CensoredInventoryInputUpdateGetAffectedPackages(inventoryId, req);
+            if (!products.Code.IsSuccess())
+            {
+                return products.Code;
+            }
+
+            foreach (var p in products.Data)
+            {
+                var updateProduct = updateProducts.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
+                if (updateProduct != null)
+                {
+                    foreach(var obj in p.AffectObjects)
+                    {
+                        var updatedObj = updateProduct.AffectObjects.FirstOrDefault(a => a.ObjectKey == obj.ObjectKey);
+                        if (updatedObj == null) continue;
+                        obj.NewProductUnitConversionQuantity = updatedObj.NewProductUnitConversionQuantity;
+                        foreach(var child in obj.Children)
+                        {
+                            var updatedChild = updatedObj.Children.FirstOrDefault(c => c.ObjectKey == child.ObjectKey);
+                            child.NewTransferProductUnitConversionQuantity = updatedChild.NewTransferProductUnitConversionQuantity;
+                        }
+                    }
+                }
+            }
+
 
             return products;
         }
