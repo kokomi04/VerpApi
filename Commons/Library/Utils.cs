@@ -132,5 +132,10 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
+        {
+            return $"{((int)objectTypeId)}_{objectId}";
+        }
+
     }
 }

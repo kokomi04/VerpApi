@@ -6,7 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 namespace VErp.Services.Stock.Model.Inventory
 {
     public class InventoryInModel
-    {
+    {        
         //public long InventoryId { get; set; }
 
         public int StockId { get; set; }
@@ -35,6 +35,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
     public class InventoryInProductModel
     {
+        public long? InventoryDetailId { get; set; }
         public int ProductId { get; set; }
         public int? ProductUnitConversionId { set; get; }
 

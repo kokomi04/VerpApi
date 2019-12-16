@@ -671,6 +671,231 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+
+        public async Task<ServiceResult<List<CensoredInventoryInputProducts>>> CensoredInventoryInputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
+        {
+            var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
+
+            var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
+
+            var data = await ValidateInventoryIn(req);
+            if (!data.Code.IsSuccess())
+            {
+                return data.Code;
+            }
+
+            var products = new List<CensoredInventoryInputProducts>();
+
+            foreach (var d in details)
+            {
+                decimal newQuantity = 0;
+
+
+                if (deletedDetails.Any(id => id.InventoryDetailId == d.InventoryDetailId))
+                {
+                    newQuantity = 0;
+                }
+
+                var newDetail = data.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
+                if (newDetail != null)
+                {
+                    newQuantity = newDetail.ProductUnitConversionQuantity;
+                }
+
+
+                var product = new CensoredInventoryInputProducts()
+                {
+                    InventoryDetailId = d.InventoryDetailId,
+                    ProductId = d.ProductId,
+                    PrimaryUnitId = d.PrimaryUnitId,
+                    PrimaryQuantity = d.PrimaryQuantity,
+                    ProductUnitConversionId = d.ProductUnitConversionId.Value,
+                    OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                    NewProductUnitConversionQuantity = newQuantity,
+                    ToPackageId = d.ToPackageId.Value
+                };
+
+
+                var topPackage = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == product.ToPackageId);
+
+                var affectObjects = new List<CensoredInventoryInputObject>();
+                affectObjects.Add(new CensoredInventoryInputObject()
+                {
+                    ObjectId = d.InventoryDetailId,
+                    ObjectCode = req.InventoryCode,
+                    ObjectTypeId = EnumObjectType.InventoryDetail,
+                    IsRoot = true,
+                    IsCurrentFlow = true,
+                    OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                    NewProductUnitConversionQuantity = newQuantity,
+                    Children = new List<TransferToObject>()
+                    {
+                        new TransferToObject {
+                            IsEditable = false,
+                            ObjectId = topPackage.PackageId,
+                            ObjectTypeId = EnumObjectType.Package,
+                            PackageOperationTypeId = EnumPackageOperationType.Join,
+                            OldTransferProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                            NewTransferProductUnitConversionQuantity = newQuantity
+                        }
+                    }
+                });
+
+                var stack = new Stack<long>();
+                stack.Push(topPackage.PackageId);
+                while (stack.Count > 0)
+                {
+                    var packageId = stack.Pop();
+
+                    var refParentPackages = await _stockDbContext.PackageRef.Where(r => r.PackageId == packageId).ToListAsync();
+
+                    var refParentPackageIds = refParentPackages.Select(r => r.RefPackageId);
+
+                    var refParentPackageInfos = await _stockDbContext.Package.Where(p => refParentPackageIds.Contains(p.PackageId)).ToListAsync();
+
+                    foreach (var r in refParentPackageInfos)
+                    {
+                        var refQuantity = refParentPackages.FirstOrDefault(q => q.RefPackageId == r.PackageId);
+
+                        var newObject = new CensoredInventoryInputObject()
+                        {
+                            ObjectId = r.PackageId,
+                            ObjectCode = r.PackageCode,
+                            ObjectTypeId = EnumObjectType.Package,
+                            IsRoot = false,
+                            IsCurrentFlow = false,
+                            OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                            NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                            Children = new List<TransferToObject>()
+                            {
+                                new TransferToObject{
+                                    IsEditable = false,
+                                    ObjectId = topPackage.PackageId,
+                                    ObjectTypeId = EnumObjectType.Package,
+                                    PackageOperationTypeId = (EnumPackageOperationType)refQuantity.PackageOperationTypeId,
+                                    OldTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value,
+                                    NewTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value
+                                }
+                            }
+                        };
+
+                        if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
+                        {
+                            affectObjects.Add(newObject);
+                        }
+                    }
+
+
+                    var refInventoryIns = await (
+                       from id in _stockDbContext.InventoryDetail
+                       join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
+                       where id.ToPackageId == packageId
+                       select new
+                       {
+                           iv.InventoryId,
+                           iv.InventoryCode,
+                           id.InventoryDetailId,
+                           id.ProductUnitConversionQuantity
+                       }
+                       ).ToListAsync();
+
+                    foreach (var r in refInventoryIns)
+                    {
+                        var newObject = new CensoredInventoryInputObject()
+                        {
+                            ObjectId = r.InventoryDetailId,
+                            ObjectCode = r.InventoryCode,
+                            ObjectTypeId = EnumObjectType.InventoryDetail,
+                            IsRoot = false,
+                            OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                            NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                            Children = new List<TransferToObject>()
+                            {
+                                new TransferToObject{
+                                    IsEditable = false,
+                                    ObjectId = topPackage.PackageId,
+                                    ObjectTypeId =EnumObjectType.Package,
+                                    PackageOperationTypeId = EnumPackageOperationType.Join,
+                                    OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                                    NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity
+                                }
+                            }
+                        };
+
+                        if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
+                        {
+                            affectObjects.Add(newObject);
+                        }
+                    }
+
+
+                    var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == product.ToPackageId);
+
+                    var childrenPackages = await _stockDbContext.PackageRef.Where(p => p.RefPackageId == packageId).ToListAsync();
+
+                    var currentPackageNode = new CensoredInventoryInputObject()
+                    {
+                        ObjectId = packageInfo.PackageId,
+                        ObjectCode = packageInfo.PackageCode,
+                        ObjectTypeId = EnumObjectType.Package,
+                        IsRoot = false,
+                        OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
+                        NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
+                        Children = childrenPackages.Select(r => new TransferToObject()
+                        {
+                            IsEditable = true,
+                            ObjectId = r.PackageId,
+                            ObjectTypeId = EnumObjectType.Package,
+                            PackageOperationTypeId = (EnumPackageOperationType)r.PackageOperationTypeId,
+                            OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value,
+                            NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value
+                        }).ToList()
+                    };
+
+                    var childrenInventoryOuts = await (
+                        from id in _stockDbContext.InventoryDetail
+                        join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
+                        where id.FromPackageId == packageId
+                        select new
+                        {
+                            iv.InventoryId,
+                            iv.InventoryCode,
+                            id.InventoryDetailId,
+                            id.ProductUnitConversionQuantity
+                        }
+                        ).ToListAsync();
+
+                    foreach (var iv in childrenInventoryOuts)
+                    {
+                        currentPackageNode.Children.Add(new TransferToObject()
+                        {
+                            IsEditable = true,
+                            ObjectId = iv.InventoryDetailId,
+                            ObjectTypeId = EnumObjectType.InventoryDetail,
+                            PackageOperationTypeId = EnumPackageOperationType.Split,
+                            OldTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
+                            NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
+                        });
+                    }
+
+                    affectObjects.Add(currentPackageNode);
+
+                    foreach (var c in childrenPackages)
+                    {
+                        stack.Push(c.PackageId);
+                    }
+
+                }
+                product.AffectObjects = affectObjects;
+
+                products.Add(product);
+
+            }
+
+            return products;
+        }
+
+
         /// <summary>
         /// Cập nhật phiếu xuất kho
         /// </summary>
