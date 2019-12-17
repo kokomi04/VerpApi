@@ -18,7 +18,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public long InventoryDetailId { get; set; }
         public int ProductId { get; set; }
         public int PrimaryUnitId { get; set; }
-        public decimal PrimaryQuantity { get; set; }
+        public decimal OldPrimaryQuantity { get; set; }
+        public decimal NewPrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
         public decimal OldProductUnitConversionQuantity { get; set; }
         public decimal NewProductUnitConversionQuantity { get; set; }
@@ -42,8 +43,13 @@ namespace VErp.Services.Stock.Model.Inventory
         public long ObjectId { get; set; }
         public string ObjectCode { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
+
+        public decimal OldPrimaryQuantity { get; set; }
+        public decimal NewPrimaryQuantity { get; set; }
+
         public decimal OldProductUnitConversionQuantity { get; set; }
         public decimal NewProductUnitConversionQuantity { get; set; }
+
         public IList<TransferToObject> Children { get; set; }
     }
 
@@ -61,6 +67,10 @@ namespace VErp.Services.Stock.Model.Inventory
         public long ObjectId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public EnumPackageOperationType PackageOperationTypeId { get; set; }
+
+        public decimal OldTransferPrimaryQuantity { get; set; }
+        public decimal NewTransferPrimaryQuantity { get; set; }
+
         public decimal OldTransferProductUnitConversionQuantity { get; set; }
         public decimal NewTransferProductUnitConversionQuantity { get; set; }
     }

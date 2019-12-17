@@ -698,18 +698,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var d in details)
             {
-                decimal newQuantity = 0;
-
+                decimal newProductUnitConversionQuantity = 0;
+                decimal newPrimaryQuantity = 0;
 
                 if (deletedDetails.Any(id => id.InventoryDetailId == d.InventoryDetailId))
                 {
-                    newQuantity = 0;
+                    newProductUnitConversionQuantity = 0;
+                    newPrimaryQuantity = 0;
                 }
 
                 var newDetail = data.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
                 if (newDetail != null)
                 {
-                    newQuantity = newDetail.ProductUnitConversionQuantity;
+                    newProductUnitConversionQuantity = newDetail.ProductUnitConversionQuantity;
+                    newPrimaryQuantity = newDetail.PrimaryQuantity;
                 }
 
 
@@ -718,10 +720,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryDetailId = d.InventoryDetailId,
                     ProductId = d.ProductId,
                     PrimaryUnitId = d.PrimaryUnitId,
-                    PrimaryQuantity = d.PrimaryQuantity,
+
+
+                    OldPrimaryQuantity = d.PrimaryQuantity,
+                    NewPrimaryQuantity = newPrimaryQuantity,
+
                     ProductUnitConversionId = d.ProductUnitConversionId.Value,
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = newQuantity,
+                    NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
                     ToPackageId = d.ToPackageId.Value
                 };
 
@@ -736,8 +742,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ObjectTypeId = EnumObjectType.InventoryDetail,
                     IsRoot = true,
                     IsCurrentFlow = true,
+
+                    OldPrimaryQuantity = d.PrimaryQuantity,
+                    NewPrimaryQuantity = newPrimaryQuantity,
+
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = newQuantity,
+                    NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
+
                     Children = new List<TransferToObject>()
                     {
                         new TransferToObject {
@@ -745,8 +756,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ObjectId = topPackage.PackageId,
                             ObjectTypeId = EnumObjectType.Package,
                             PackageOperationTypeId = EnumPackageOperationType.Join,
+
+                            OldTransferPrimaryQuantity = d.PrimaryQuantity,
+                            NewTransferPrimaryQuantity = newPrimaryQuantity,
+
                             OldTransferProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                            NewTransferProductUnitConversionQuantity = newQuantity
+                            NewTransferProductUnitConversionQuantity = newProductUnitConversionQuantity,
                         }
                     }
                 });
@@ -774,8 +789,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ObjectTypeId = EnumObjectType.Package,
                             IsRoot = false,
                             IsCurrentFlow = false,
+
+                            OldPrimaryQuantity = r.PrimaryQuantity,
+                            NewPrimaryQuantity = r.PrimaryQuantity,
+
                             OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
                             NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+
                             Children = new List<TransferToObject>()
                             {
                                 new TransferToObject{
@@ -783,6 +803,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     ObjectId = topPackage.PackageId,
                                     ObjectTypeId = EnumObjectType.Package,
                                     PackageOperationTypeId = (EnumPackageOperationType)refQuantity.PackageOperationTypeId,
+
+                                    OldTransferPrimaryQuantity = refQuantity.PrimaryQuantity.Value,
+                                    NewTransferPrimaryQuantity = refQuantity.PrimaryQuantity.Value,
+
                                     OldTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value,
                                     NewTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value
                                 }
@@ -805,6 +829,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                            iv.InventoryId,
                            iv.InventoryCode,
                            id.InventoryDetailId,
+                           id.PrimaryQuantity,
                            id.ProductUnitConversionQuantity
                        }
                        ).ToListAsync();
@@ -817,8 +842,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ObjectCode = r.InventoryCode,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
                             IsRoot = false,
+
+                            OldPrimaryQuantity = r.PrimaryQuantity,
+                            NewPrimaryQuantity = r.PrimaryQuantity,
+
                             OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
                             NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+
                             Children = new List<TransferToObject>()
                             {
                                 new TransferToObject{
@@ -826,6 +856,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     ObjectId = topPackage.PackageId,
                                     ObjectTypeId =EnumObjectType.Package,
                                     PackageOperationTypeId = EnumPackageOperationType.Join,
+
+                                    OldTransferPrimaryQuantity = r.PrimaryQuantity,
+                                    NewTransferPrimaryQuantity = r.PrimaryQuantity,
+
                                     OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
                                     NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity
                                 }
@@ -849,14 +883,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ObjectCode = packageInfo.PackageCode,
                         ObjectTypeId = EnumObjectType.Package,
                         IsRoot = false,
+
+                        OldPrimaryQuantity = packageInfo.PrimaryQuantity,
+                        NewPrimaryQuantity = packageInfo.PrimaryQuantity,
+
                         OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
                         NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
+
                         Children = childrenPackages.Select(r => new TransferToObject()
                         {
                             IsEditable = true,
                             ObjectId = r.PackageId,
                             ObjectTypeId = EnumObjectType.Package,
                             PackageOperationTypeId = (EnumPackageOperationType)r.PackageOperationTypeId,
+
+                            OldTransferPrimaryQuantity = r.PrimaryQuantity.Value,
+                            NewTransferPrimaryQuantity = r.PrimaryQuantity.Value,
+
                             OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value,
                             NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value
                         }).ToList()
@@ -871,6 +914,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             iv.InventoryId,
                             iv.InventoryCode,
                             id.InventoryDetailId,
+                            id.PrimaryQuantity,
                             id.ProductUnitConversionQuantity
                         }
                         ).ToListAsync();
@@ -883,6 +927,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ObjectId = iv.InventoryDetailId,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
                             PackageOperationTypeId = EnumPackageOperationType.Split,
+
+                            OldTransferPrimaryQuantity = iv.PrimaryQuantity,
+                            NewTransferPrimaryQuantity = iv.PrimaryQuantity,
+
                             OldTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
                             NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
                         });
@@ -907,33 +955,195 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<ServiceResult> CensoredInventoryInputUpdate(int inventoryId, InventoryInModel req, IList<CensoredInventoryInputProducts> updateProducts)
         {
-            var products = await CensoredInventoryInputUpdateGetAffectedPackages(inventoryId, req);
-            if (!products.Code.IsSuccess())
+            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
+
+            if (!data.Code.IsSuccess())
             {
-                return products.Code;
+                return data.Code;
             }
 
-            foreach (var p in products.Data)
+            var products = data.Data.products;
+            var details = data.Data.details;
+
+            foreach (var p in products)
             {
                 var updateProduct = updateProducts.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
                 if (updateProduct != null)
                 {
-                    foreach(var obj in p.AffectObjects)
+
+                    var productUnitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == p.ProductUnitConversionId);
+                    if (productUnitConversionInfo == null)
+                    {
+                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                    }
+
+                    foreach (var obj in p.AffectObjects)
+                    {                       
+                        var expression = $"({obj.NewProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
+
+                        if (obj.NewProductUnitConversionQuantity > 0)
+                        {
+                            var primaryQualtity = Utils.Eval(expression);
+                            if (!(primaryQualtity > 0))
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            }
+
+                            obj.NewPrimaryQuantity = primaryQualtity;
+                        }
+
+                        foreach(var c in obj.Children)
+                        {
+                            expression = $"({c.NewTransferProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
+
+                            if (c.NewTransferProductUnitConversionQuantity > 0)
+                            {
+                                var primaryQualtity = Utils.Eval(expression);
+                                if (!(primaryQualtity > 0))
+                                {
+                                    return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                                }
+
+                                obj.NewPrimaryQuantity = primaryQualtity;
+                            }
+                        }
+                        
+                    }
+
+                    foreach (var obj in p.AffectObjects)
                     {
                         var updatedObj = updateProduct.AffectObjects.FirstOrDefault(a => a.ObjectKey == obj.ObjectKey);
-                        if (updatedObj == null) continue;
+                        if (updatedObj == null) continue;                       
+
+                        decimal totalInPrimaryQuantity = 0;
+                        decimal totalInProductUnitConversionQuantity = 0;
+
+                        foreach (var parent in p.AffectObjects)
+                        {
+                            foreach (var child in parent.Children)
+                            {
+                                if (child.ObjectKey == obj.ObjectKey)
+                                {
+                                    totalInPrimaryQuantity += child.NewTransferPrimaryQuantity;
+                                    totalInProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                                }
+                            }
+                        }
+
+
+                        obj.NewPrimaryQuantity = updatedObj.NewPrimaryQuantity;
                         obj.NewProductUnitConversionQuantity = updatedObj.NewProductUnitConversionQuantity;
-                        foreach(var child in obj.Children)
+
+                        decimal totalOutPrimaryQuantity = 0;
+                        decimal totalOutProductUnitConversionQuantity = 0;
+
+                        foreach (var child in obj.Children)
                         {
                             var updatedChild = updatedObj.Children.FirstOrDefault(c => c.ObjectKey == child.ObjectKey);
+
+                            child.NewTransferPrimaryQuantity = updatedChild.NewTransferPrimaryQuantity;
                             child.NewTransferProductUnitConversionQuantity = updatedChild.NewTransferProductUnitConversionQuantity;
+
+                            totalOutPrimaryQuantity += child.NewTransferPrimaryQuantity;
+                            totalOutProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                        }
+
+                        if (totalOutPrimaryQuantity > totalInPrimaryQuantity || totalOutProductUnitConversionQuantity > totalInProductUnitConversionQuantity)
+                        {
+                            return GeneralCode.InvalidParams;
                         }
                     }
                 }
             }
 
+            foreach (var p in products)
+            {
+                var detail = details.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
+                if (detail != null)
+                {
+                    if (p.NewProductUnitConversionQuantity == 0)
+                    {
+                        detail.IsDeleted = true;
+                    }
 
-            return products;
+
+                    foreach (var obj in p.AffectObjects)
+                    {
+                        object parent = null;
+                        switch (obj.ObjectTypeId)
+                        {
+                            case EnumObjectType.Package:
+                                parent = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == obj.ObjectId);
+                                break;
+                            case EnumObjectType.InventoryDetail:
+                                parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
+                                break;
+                            default:
+                                throw new NotSupportedException();
+                        }
+
+                        foreach (var r in obj.Children)
+                        {
+                            if (r.IsEditable)
+                            {
+                                //substract parent
+                                var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
+                                var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
+
+                                switch (obj.ObjectTypeId)
+                                {
+                                    case EnumObjectType.Package:
+                                        ((PackageEntity)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                        ((PackageEntity)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                        break;
+                                    case EnumObjectType.InventoryDetail:
+                                        ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                        ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                        break;
+                                    default:
+                                        throw new NotSupportedException();
+                                }
+
+                                //addition children
+                                switch (r.ObjectTypeId)
+                                {
+                                    case EnumObjectType.Package:
+
+                                        var refInfo = await _stockDbContext.PackageRef.FirstOrDefaultAsync(rd => rd.PackageId == r.ObjectId && rd.RefPackageId == obj.ObjectId);
+                                        refInfo.PrimaryQuantity += deltaPrimaryQuantity;
+                                        refInfo.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+                                        var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
+
+                                        childPackage.PrimaryQuantity += deltaPrimaryQuantity;
+                                        childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+                                        break;
+
+                                    case EnumObjectType.InventoryDetail:
+
+                                        var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
+
+                                        childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
+                                        childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+                                        break;
+                                    default:
+                                        throw new NotSupportedException();
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+
+            await _stockDbContext.SaveChangesAsync();
+
+            return GeneralCode.Success;
         }
 
 
