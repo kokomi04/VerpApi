@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public int ProductUnitConversionId { get; set; }
+        public int? ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal PrimaryQuantityWaiting { get; set; }
         public decimal PrimaryQuantityRemaining { get; set; }
