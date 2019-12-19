@@ -97,7 +97,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.InventoryDetail)
                     .HasForeignKey(d => d.ProductUnitConversionId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_ProductUnitConversion");
                 entity.HasOne(d => d.ToPackage)
                     .WithMany(p => p.InventoryDetailToPackage)
@@ -143,7 +142,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.ProductUnitConversionId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Package_ProductUnitConversion");
                 entity.HasOne(d => d.Stock)
                     .WithMany(p => p.Package)
@@ -273,28 +271,14 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<StockProduct>(entity =>
             {
-                entity.HasKey(e => new { e.StockId, e.ProductId, e.ProductUnitConversionId })
-                    .HasName("PK_StockProduct_1");
+                entity.HasIndex(e => new { e.StockId, e.ProductId, e.ProductUnitConversionId })
+                    .HasName("idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
+                    .IsUnique();
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-                entity.HasOne(d => d.Product)
-                    .WithMany(p => p.StockProduct)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_StockProduct_Product");
-                entity.HasOne(d => d.ProductUnitConversion)
-                    .WithMany(p => p.StockProduct)
-                    .HasForeignKey(d => d.ProductUnitConversionId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_StockProduct_ProductUnitConversion");
-                entity.HasOne(d => d.Stock)
-                    .WithMany(p => p.StockProduct)
-                    .HasForeignKey(d => d.StockId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_StockProduct_Stock");
             });
         }
     }

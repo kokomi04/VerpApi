@@ -16,7 +16,7 @@ namespace VErp.Services.Stock.Model.Stock
         public DateTime? ExpriredDate { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }       
-        public int ProductUnitConversionId { get; set; }
+        public int? ProductUnitConversionId { get; set; }
         public string ProductUnitConversionName { get; set; }
         public int SecondaryUnitId { get; set; }
         public decimal ProductUnitConversionQualtity { get; set; }

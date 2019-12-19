@@ -52,7 +52,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns>InventoryOutput</returns>
         [HttpGet]
         [Route("{inventoryId}")]
-        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] int inventoryId)
+        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] long inventoryId)
         {
             return await _inventoryService.GetInventory(inventoryId);
         }
@@ -92,7 +92,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryInput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
+        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] long inventoryId, [FromBody] InventoryInModel req)
         {
             return await _inventoryService.UpdateInventoryInput(inventoryId, UserId, req);
         }
@@ -106,7 +106,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryOutput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryOutModel req)
+        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] long inventoryId, [FromBody] InventoryOutModel req)
         {
             return await _inventoryService.UpdateInventoryOutput(inventoryId, UserId, req);
         }
@@ -119,7 +119,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpDelete]
         [Route("{inventoryId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int inventoryId, [FromQuery] EnumInventoryType type)
+        public async Task<ApiResponse> Delete([FromRoute] long inventoryId, [FromQuery] EnumInventoryType type)
         {
             var currentUserId = UserId;
             switch (type)
@@ -141,7 +141,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
-        public async Task<ApiResponse> ApproveInventoryInput([FromRoute] int inventoryId)
+        public async Task<ApiResponse> ApproveInventoryInput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
             return await _inventoryService.ApproveInventoryInput(inventoryId, currentUserId);
@@ -155,7 +155,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]
-        public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] int inventoryId)
+        public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
             return await _inventoryService.ApproveInventoryOutput(inventoryId, currentUserId);
@@ -222,5 +222,19 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
+
+        /// <summary>
+        /// Xử lý file - Đọc và tạo chứng từ tồn đầu
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("ProcessOpeningBalance")]
+        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceInputModel model)
+        {
+            var currentUserId = UserId;
+            return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
+        }
+        
     }
 }

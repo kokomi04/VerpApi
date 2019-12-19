@@ -28,7 +28,10 @@ namespace VErp.Services.Stock.Model.Inventory
     public class InventoryOutProductModel
     {
         public int ProductId { get; set; }
-        public int ProductUnitConversionId { set; get; }
+        public int? ProductUnitConversionId { set; get; }
+
+        public decimal PrimaryQuantity { get; set; }
+
         public decimal ProductUnitConversionQuantity { get; set; }
 
         public decimal UnitPrice { get; set; }
