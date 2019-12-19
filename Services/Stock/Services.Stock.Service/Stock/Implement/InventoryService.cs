@@ -1355,7 +1355,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                         else
                         {
-
+                            return GeneralCode.InternalError;
                         }
                     }
                 }

@@ -222,5 +222,19 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
+
+        /// <summary>
+        /// Xử lý file - Đọc và tạo chứng từ tồn đầu
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("ProcessOpeningBalance")]
+        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceInputModel model)
+        {
+            var currentUserId = UserId;
+            return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
+        }
+        
     }
 }
