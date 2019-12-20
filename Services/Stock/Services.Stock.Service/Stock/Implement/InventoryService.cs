@@ -988,6 +988,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             {
                                 InventoryDetailId = item.InventoryDetailId,
                                 ToPackageId = item.ToPackageId.Value,
+                                CreatedDatetimeUtc = DateTime.UtcNow,
                                 IsDeleted = false
                             });
                         }
