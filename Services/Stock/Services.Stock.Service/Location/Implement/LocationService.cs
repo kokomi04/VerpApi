@@ -59,8 +59,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
                         Name = req.Name,
                         Description = req.Description,
                         Status = req.Status,
-                        CreatedDatetimeUtc = DateTime.Now,
-                        UpdatedDatetimeUtc = DateTime.Now,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false
                     };
 
@@ -219,7 +219,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     locationInfo.Name = req.Name;
                     locationInfo.Description = req.Description;
                     locationInfo.Status = req.Status;
-                    locationInfo.UpdatedDatetimeUtc = DateTime.Now;
+                    locationInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();

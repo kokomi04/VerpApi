@@ -387,8 +387,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             TotalMoney = totalMoney,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -482,8 +482,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             DeliveryCode = string.Empty,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -596,7 +596,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
                         inventoryObj.DeliveryCode = req.DeliveryCode;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         #endregion
 
@@ -709,7 +709,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
                         inventoryObj.IsApproved = false;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -928,7 +928,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         await _stockDbContext.SaveChangesAsync();
 
@@ -1051,7 +1051,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
@@ -1449,8 +1449,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryDetailList.Add(new InventoryDetail
                 {
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryUnitId = productInfo.UnitId,
                     PrimaryQuantity = primaryQty,
@@ -1527,8 +1527,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryUnitId = fromPackageInfo.PrimaryUnitId,
                     PrimaryQuantity = primaryQualtity,
@@ -1827,8 +1827,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         {
                                             ProductCateName = currentCateName,
                                             ParentProductCateId = null,
-                                            CreatedDatetimeUtc = DateTime.Now,
-                                            UpdatedDatetimeUtc = DateTime.Now
+                                            CreatedDatetimeUtc = DateTime.UtcNow,
+                                            UpdatedDatetimeUtc = DateTime.UtcNow
                                             ,
                                             IsDeleted = false
                                         };
@@ -1863,7 +1863,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var checkExistUnitCode = _masterDBContext.Unit.Any(q => q.UnitName.Trim() == unitName.Trim());
                                 if (!checkExistUnitCode)
                                 {
-                                    unitObj = new Unit { UnitName = unitName, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
+                                    unitObj = new Unit { UnitName = unitName, IsDeleted = false, CreatedDatetimeUtc = DateTime.UtcNow, UpdatedDatetimeUtc = DateTime.UtcNow };
                                     await _masterDBContext.Unit.AddAsync(unitObj);
                                     await _masterDBContext.SaveChangesAsync();
 
@@ -1896,8 +1896,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             UnitId = unitObj.UnitId,
                                             EstimatePrice = unitPrice,
                                             MainImageFileId = null,
-                                            CreatedDatetimeUtc = DateTime.Now,
-                                            UpdatedDatetimeUtc = DateTime.Now
+                                            CreatedDatetimeUtc = DateTime.UtcNow,
+                                            UpdatedDatetimeUtc = DateTime.UtcNow
                                             ,
                                             IsDeleted = false
                                         };
@@ -1966,7 +1966,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var details = g.ToList();
                             var newInventory = new InventoryInModel() { InProducts = details };
                             newInventory.StockId = model.StockId;
-                            newInventory.InventoryCode = string.Format("PN_TonDau_{0}", DateTime.Now.ToString("ddMMyyyyHHmmss"));
+                            newInventory.InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"));
                             newInventory.DateUtc = model.IssuedDate;
                             newInventory.Shipper = string.Empty;
                             newInventory.Content = model.Description;

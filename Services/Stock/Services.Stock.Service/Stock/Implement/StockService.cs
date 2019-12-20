@@ -62,8 +62,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockKeeperName = req.StockKeeperName,
                         Type = req.Type,
                         Status = req.Status,
-                        CreatedDatetimeUtc = DateTime.Now,
-                        UpdatedDatetimeUtc = DateTime.Now,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false
                     };
 
@@ -137,7 +137,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     stockInfo.StockKeeperName = req.StockKeeperName;
                     stockInfo.Type = req.Type;
                     stockInfo.Status = req.Status;
-                    stockInfo.UpdatedDatetimeUtc = DateTime.Now;
+                    stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
