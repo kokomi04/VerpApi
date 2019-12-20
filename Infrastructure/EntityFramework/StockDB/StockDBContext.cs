@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
+        public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
@@ -102,6 +103,20 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.InventoryDetailToPackage)
                     .HasForeignKey(d => d.ToPackageId)
                     .HasConstraintName("FK_InventoryDetail_ToPackage");
+            });
+            modelBuilder.Entity<InventoryDetailToPackage>(entity =>
+            {
+                entity.HasKey(e => new { e.InventoryDetailId, e.ToPackageId });
+                entity.HasOne(d => d.InventoryDetail)
+                    .WithMany(p => p.InventoryDetailToPackage)
+                    .HasForeignKey(d => d.InventoryDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetailToPackage_InventoryDetail");
+                entity.HasOne(d => d.ToPackage)
+                    .WithMany(p => p.InventoryDetailToPackageNavigation)
+                    .HasForeignKey(d => d.ToPackageId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetailToPackage_Package");
             });
             modelBuilder.Entity<InventoryFile>(entity =>
             {

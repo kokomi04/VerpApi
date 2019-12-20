@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class InventoryDetail
     {
+        public InventoryDetail()
+        {
+            InventoryDetailToPackage = new HashSet<InventoryDetailToPackage>();
+        }
+
         public long InventoryDetailId { get; set; }
         public long InventoryId { get; set; }
         public int ProductId { get; set; }
@@ -28,5 +33,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual Product Product { get; set; }
         public virtual ProductUnitConversion ProductUnitConversion { get; set; }
         public virtual Package ToPackage { get; set; }
+        public virtual ICollection<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
     }
 }

@@ -934,6 +934,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
+                        var inputTransfer = new List<InventoryDetailToPackage>();
                         foreach (var item in inventoryDetails)
                         {
                             await UpdateStockProduct(inventoryObj, item);
@@ -982,7 +983,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                 item.ToPackageId = createNewPackageResult.Data.PackageId;
                             }
+
+                            inputTransfer.Add(new InventoryDetailToPackage()
+                            {
+                                InventoryDetailId = item.InventoryDetailId,
+                                ToPackageId = item.ToPackageId.Value,
+                                IsDeleted = false
+                            });
                         }
+
+                        await _stockDbContext.InventoryDetailToPackage.AddRangeAsync(inputTransfer);
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
