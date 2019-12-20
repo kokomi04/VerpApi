@@ -934,6 +934,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             OldTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
                             NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
                         });
+
+                        affectObjects.Add(new CensoredInventoryInputObject()
+                        {
+                            IsRoot = false,
+                            IsCurrentFlow = true,
+                            ObjectId = iv.InventoryDetailId,
+                            ObjectCode = iv.InventoryCode,
+                            ObjectTypeId = EnumObjectType.InventoryDetail,
+
+                            OldPrimaryQuantity = iv.PrimaryQuantity,
+                            NewPrimaryQuantity = iv.PrimaryQuantity,
+
+                            OldProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
+                            NewProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
+
+                            Children = null
+                        });
                     }
 
                     affectObjects.Add(currentPackageNode);
