@@ -223,6 +223,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
 
+
         /// <summary>
         /// Xử lý file - Đọc và tạo chứng từ tồn đầu
         /// </summary>
@@ -236,5 +237,13 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
         }
         
+
+        [HttpPost]
+        [Route("{inventoryId}/InputGetAffectedPackages")]
+        public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
+        {
+            return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId, req);
+        }
+
     }
 }

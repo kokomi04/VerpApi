@@ -131,6 +131,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
 
+
         /// <summary>
         /// Đọc file và xử lý nhập liệu số dư đầu kỳ theo kho
         /// </summary>
@@ -138,5 +139,9 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="model"></param>
         /// <returns></returns>
         Task<ServiceResult<long>> ProcessOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model);
+=
+
+        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req);
+
     }
 }

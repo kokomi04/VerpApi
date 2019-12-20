@@ -671,7 +671,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> CensoredInventoryInputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
+        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
         {
             var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
             if (!data.Code.IsSuccess())
