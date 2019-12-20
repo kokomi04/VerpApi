@@ -932,7 +932,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.SaveChangesAsync();
 
-                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).AsNoTracking().ToList();
+                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
                         foreach (var item in inventoryDetails)
                         {
@@ -1043,7 +1043,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
 
-                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).AsNoTracking().ToList();
+                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
                         var fromPackageIds = inventoryDetails.Select(f => f.FromPackageId).ToList();
                         var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
