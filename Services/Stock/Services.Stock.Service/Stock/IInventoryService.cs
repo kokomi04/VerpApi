@@ -139,7 +139,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="model"></param>
         /// <returns></returns>
         Task<ServiceResult<long>> ProcessOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model);
-=
+
 
         Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req);
 

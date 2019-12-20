@@ -1,15 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NPOI.HSSF.UserModel;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -23,12 +29,6 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
-using System.IO;
-using System.Text.RegularExpressions;
-using NPOI.XSSF.UserModel;
-using NPOI.SS.UserModel;
-using NPOI.HSSF.UserModel;
-using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -45,7 +45,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IAsyncRunnerService _asyncRunner;
 
 
-        public InventoryService(MasterDBContext masterDBContext,StockDBContext stockContext
+        public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<InventoryService> logger
             , IActivityService activityService
@@ -355,7 +355,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return GeneralCode.InvalidParams;
                 }
 
-                var validInventoryDetails = await ValidateInventoryIn(req);
+                var validInventoryDetails = await ValidateInventoryIn(false, req);
 
                 if (!validInventoryDetails.Code.IsSuccess())
                 {
@@ -561,7 +561,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return InventoryErrorCode.InventoryNotFound;
                 }
 
-                var validate = await ValidateInventoryIn(req);
+                var validate = await ValidateInventoryIn(false, req);
 
                 if (!validate.Code.IsSuccess())
                 {
@@ -688,7 +688,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
 
-            var data = await ValidateInventoryIn(req);
+            var data = await ValidateInventoryIn(true, req);
             if (!data.Code.IsSuccess())
             {
                 return data.Code;
@@ -978,7 +978,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
                     foreach (var obj in p.AffectObjects)
-                    {                       
+                    {
                         var expression = $"({obj.NewProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
 
                         if (obj.NewProductUnitConversionQuantity > 0)
@@ -992,7 +992,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             obj.NewPrimaryQuantity = primaryQualtity;
                         }
 
-                        foreach(var c in obj.Children)
+                        foreach (var c in obj.Children)
                         {
                             expression = $"({c.NewTransferProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
 
@@ -1007,13 +1007,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 obj.NewPrimaryQuantity = primaryQualtity;
                             }
                         }
-                        
+
                     }
 
                     foreach (var obj in p.AffectObjects)
                     {
                         var updatedObj = updateProduct.AffectObjects.FirstOrDefault(a => a.ObjectKey == obj.ObjectKey);
-                        if (updatedObj == null) continue;                       
+                        if (updatedObj == null) continue;
 
                         decimal totalInPrimaryQuantity = 0;
                         decimal totalInProductUnitConversionQuantity = 0;
@@ -1793,7 +1793,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 if (model.FileIdList.Count < 1)
                     return GeneralCode.InvalidParams;
-                               
+
                 foreach (var fileId in model.FileIdList)
                 {
                     var ret = await _fileService.GetFileStream(fileId);
@@ -1859,7 +1859,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private helper method
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(InventoryInModel req)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req)
         {
             var productIds = req.InProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -1885,7 +1885,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-                if(details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
+                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)
@@ -1916,7 +1916,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     case EnumPackageOption.Create:
                     case EnumPackageOption.NoPackageManager:
 
-                        if (details.ToPackageId.HasValue)
+                        if (!isApproved && details.ToPackageId.HasValue)
                         {
                             return GeneralCode.InvalidParams;
                         }
@@ -2270,7 +2270,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private async Task<Enum> ProcessExcelSheet(List<ISheet> sheetList, InventoryOpeningBalanceInputModel model, int currentUserId)
         {
             try
-            {   
+            {
                 foreach (var sheet in sheetList)
                 {
                     var inventoryInputList = new List<InventoryInModel>();
@@ -2282,7 +2282,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         var row = sheet.GetRow(i);
                         if (row == null) continue;
-                        
+
                         var currentCateName = string.Empty;
                         var isNewCate = false;
 
@@ -2295,7 +2295,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var cateName = cell.StringCellValue;
                                 if (!string.IsNullOrEmpty(cateName))
                                 {
-                                    currentCateName = cateName;                                    
+                                    currentCateName = cateName;
 
                                     var checkExistCate = _stockDbContext.ProductCate.Any(q => q.ProductCateName.ToLower().Trim() == currentCateName.ToLower().Trim());
                                     if (!checkExistCate)
@@ -2425,17 +2425,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             PackageOptionId = EnumPackageOption.NoPackageManager
                                         }
                                     );
-                                }                                
+                                }
                             }
                             else
                                 continue; // Tạm thời không đọc các cột phụ
-                        }                       
+                        }
                     }
 
                     #region Tạo và xửa lý phiếu
-                    if(inventoryInputModel.InProducts.Count > 0)
+                    if (inventoryInputModel.InProducts.Count > 0)
                     {
-                        
+
                         var groupList = inventoryInputModel.InProducts.GroupBy(g => g.RefObjectCode).ToList();
 
                         foreach (var g in groupList)
@@ -2457,11 +2457,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                     }
 
-                    if(inventoryInputList.Count > 0)
+                    if (inventoryInputList.Count > 0)
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret  = await AddInventoryInput(currentUserId,item);
+                            var ret = await AddInventoryInput(currentUserId, item);
                             await ApproveInventoryInput(ret.Data, currentUserId);
                         }
                     }
