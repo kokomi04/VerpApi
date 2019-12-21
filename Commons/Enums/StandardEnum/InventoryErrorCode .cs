@@ -26,6 +26,9 @@ namespace VErp.Commons.Enums.StandardEnum
         NotEnoughQuantity = 7,
         [Description("Tính năng này chưa được hỗ trợ")]
         NotSupportedYet = 8,
+
+        [Description("Bạn cần cập nhật dữ liệu hợp lệ cho kiện/phiếu xuất (đầu ra <= đầu vào)")]
+        InOuputAffectObjectsInvalid = 9,
     }
 
     public enum InventoryDetailErrorCode

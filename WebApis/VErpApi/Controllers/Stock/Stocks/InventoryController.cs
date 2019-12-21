@@ -126,12 +126,12 @@ namespace VErpApi.Controllers.Stock.Inventory
             {
                 case EnumInventoryType.Input:
                     return await _inventoryService.DeleteInventoryInput(inventoryId, currentUserId);
-                    
+
                 case EnumInventoryType.Output:
-                    return await _inventoryService.DeleteInventoryOutput(inventoryId, currentUserId);                
+                    return await _inventoryService.DeleteInventoryOutput(inventoryId, currentUserId);
             }
             var result = new ApiResponse { Code = GeneralCode.InvalidParams.ToString(), Message = GeneralCode.InvalidParams.GetEnumDescription() };
-            return result;            
+            return result;
         }
 
         /// <summary>
@@ -236,13 +236,21 @@ namespace VErpApi.Controllers.Stock.Inventory
             var currentUserId = UserId;
             return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
         }
-        
 
-        [HttpPost]
+
+        [HttpPut]
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
         {
             return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId, req);
+        }
+
+        [HttpPut]
+        [Route("{inventoryId}/ApprovedInputDataUpdate")]
+        public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, ApprovedInputDataSubmitModel req)
+        {
+
+            return await _inventoryService.ApprovedInputDataUpdate(inventoryId, req);
         }
 
     }

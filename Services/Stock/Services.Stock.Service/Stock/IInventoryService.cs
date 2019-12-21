@@ -141,7 +141,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<ServiceResult<long>> ProcessOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model);
 
 
-        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req);
-
+        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req);
+        Task<ServiceResult> ApprovedInputDataUpdate(long inventoryId, ApprovedInputDataSubmitModel req);
     }
 }

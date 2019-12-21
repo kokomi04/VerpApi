@@ -671,7 +671,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(int inventoryId, InventoryInModel req)
+        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req)
         {
             var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
             if (!data.Code.IsSuccess())
@@ -682,7 +682,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return data.Data.products.ToList();
 
         }
-        public async Task<ServiceResult<(IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)>> CensoredInventoryInputUpdateGetAffected(int inventoryId, InventoryInModel req)
+        public async Task<ServiceResult<(IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
         {
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
@@ -873,7 +873,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
 
-                    var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == product.ToPackageId);
+                    var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
 
                     var childrenPackages = await _stockDbContext.PackageRef.Where(p => p.RefPackageId == packageId).ToListAsync();
 
@@ -935,7 +935,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
                         });
 
-                        affectObjects.Add(new CensoredInventoryInputObject()
+                        var outObject = new CensoredInventoryInputObject()
                         {
                             IsRoot = false,
                             IsCurrentFlow = true,
@@ -950,10 +950,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             NewProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
 
                             Children = null
-                        });
+                        };
+
+                        if (!affectObjects.Any(o => o.ObjectKey == outObject.ObjectKey))
+                            affectObjects.Add(outObject);
                     }
 
-                    affectObjects.Add(currentPackageNode);
+                    if (!affectObjects.Any(o => o.ObjectKey == currentPackageNode.ObjectKey))
+                        affectObjects.Add(currentPackageNode);
 
                     foreach (var c in childrenPackages)
                     {
@@ -970,9 +974,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (products, details);
         }
 
-        public async Task<ServiceResult> CensoredInventoryInputUpdate(int inventoryId, InventoryInModel req, IList<CensoredInventoryInputProducts> updateProducts)
+        public async Task<ServiceResult> ApprovedInputDataUpdate(long inventoryId, ApprovedInputDataSubmitModel req)
         {
-            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var r = await ApprovedInputDataUpdateAction(inventoryId, req);
+                trans.Rollback();
+                return r;
+            }
+        }
+        private async Task<ServiceResult> ApprovedInputDataUpdateAction(long inventoryId, ApprovedInputDataSubmitModel req)
+        {
+            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req.Inventory);
 
             if (!data.Code.IsSuccess())
             {
@@ -984,7 +997,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var p in products)
             {
-                var updateProduct = updateProducts.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
+                var updateProduct = req.AffectDetails.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
                 if (updateProduct != null)
                 {
 
@@ -1009,19 +1022,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             obj.NewPrimaryQuantity = primaryQualtity;
                         }
 
-                        foreach (var c in obj.Children)
+                        if (obj.Children != null)
                         {
-                            expression = $"({c.NewTransferProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
-
-                            if (c.NewTransferProductUnitConversionQuantity > 0)
+                            foreach (var c in obj.Children)
                             {
-                                var primaryQualtity = Utils.Eval(expression);
-                                if (!(primaryQualtity > 0))
-                                {
-                                    return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                                }
+                                expression = $"({c.NewTransferProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
 
-                                obj.NewPrimaryQuantity = primaryQualtity;
+                                if (c.NewTransferProductUnitConversionQuantity > 0)
+                                {
+                                    var primaryQualtity = Utils.Eval(expression);
+                                    if (!(primaryQualtity > 0))
+                                    {
+                                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                                    }
+
+                                    obj.NewPrimaryQuantity = primaryQualtity;
+                                }
                             }
                         }
 
@@ -1029,6 +1045,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     foreach (var obj in p.AffectObjects)
                     {
+                        if (obj.Children != null && obj.Children.All(c => !c.IsEditable)) continue;
+
                         var updatedObj = updateProduct.AffectObjects.FirstOrDefault(a => a.ObjectKey == obj.ObjectKey);
                         if (updatedObj == null) continue;
 
@@ -1037,12 +1055,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         foreach (var parent in p.AffectObjects)
                         {
-                            foreach (var child in parent.Children)
+                            if (parent.Children != null)
                             {
-                                if (child.ObjectKey == obj.ObjectKey)
+                                foreach (var child in parent.Children)
                                 {
-                                    totalInPrimaryQuantity += child.NewTransferPrimaryQuantity;
-                                    totalInProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                                    if (child.ObjectKey == obj.ObjectKey)
+                                    {
+                                        totalInPrimaryQuantity += child.NewTransferPrimaryQuantity;
+                                        totalInProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                                    }
                                 }
                             }
                         }
@@ -1054,20 +1075,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         decimal totalOutPrimaryQuantity = 0;
                         decimal totalOutProductUnitConversionQuantity = 0;
 
-                        foreach (var child in obj.Children)
+                        if (obj.Children != null && updatedObj.Children != null)
                         {
-                            var updatedChild = updatedObj.Children.FirstOrDefault(c => c.ObjectKey == child.ObjectKey);
+                            foreach (var child in obj.Children)
+                            {
+                                var updatedChild = updatedObj.Children.FirstOrDefault(c => c.ObjectKey == child.ObjectKey);
 
-                            child.NewTransferPrimaryQuantity = updatedChild.NewTransferPrimaryQuantity;
-                            child.NewTransferProductUnitConversionQuantity = updatedChild.NewTransferProductUnitConversionQuantity;
+                                child.NewTransferPrimaryQuantity = updatedChild.NewTransferPrimaryQuantity;
+                                child.NewTransferProductUnitConversionQuantity = updatedChild.NewTransferProductUnitConversionQuantity;
 
-                            totalOutPrimaryQuantity += child.NewTransferPrimaryQuantity;
-                            totalOutProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                                totalOutPrimaryQuantity += child.NewTransferPrimaryQuantity;
+                                totalOutProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
+                            }
                         }
 
                         if (totalOutPrimaryQuantity > totalInPrimaryQuantity || totalOutProductUnitConversionQuantity > totalInProductUnitConversionQuantity)
                         {
-                            return GeneralCode.InvalidParams;
+                            return InventoryErrorCode.InOuputAffectObjectsInvalid;
                         }
                     }
                 }
@@ -1099,55 +1123,58 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 throw new NotSupportedException();
                         }
 
-                        foreach (var r in obj.Children)
+                        if (obj.Children != null)
                         {
-                            if (r.IsEditable)
+                            foreach (var r in obj.Children)
                             {
-                                //substract parent
-                                var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
-                                var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
-
-                                switch (obj.ObjectTypeId)
+                                if (r.IsEditable)
                                 {
-                                    case EnumObjectType.Package:
-                                        ((PackageEntity)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((PackageEntity)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
-                                        break;
-                                    case EnumObjectType.InventoryDetail:
-                                        ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
-                                        break;
-                                    default:
-                                        throw new NotSupportedException();
-                                }
+                                    //substract parent
+                                    var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
+                                    var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
 
-                                //addition children
-                                switch (r.ObjectTypeId)
-                                {
-                                    case EnumObjectType.Package:
+                                    switch (obj.ObjectTypeId)
+                                    {
+                                        case EnumObjectType.Package:
+                                            ((PackageEntity)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                            ((PackageEntity)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                            break;
+                                        case EnumObjectType.InventoryDetail:
+                                            ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                            ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                            break;
+                                        default:
+                                            throw new NotSupportedException();
+                                    }
 
-                                        var refInfo = await _stockDbContext.PackageRef.FirstOrDefaultAsync(rd => rd.PackageId == r.ObjectId && rd.RefPackageId == obj.ObjectId);
-                                        refInfo.PrimaryQuantity += deltaPrimaryQuantity;
-                                        refInfo.ProductUnitConversionQuantity += deltaConversionQuantity;
+                                    //addition children
+                                    switch (r.ObjectTypeId)
+                                    {
+                                        case EnumObjectType.Package:
 
-                                        var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
+                                            var refInfo = await _stockDbContext.PackageRef.FirstOrDefaultAsync(rd => rd.PackageId == r.ObjectId && rd.RefPackageId == obj.ObjectId);
+                                            refInfo.PrimaryQuantity += deltaPrimaryQuantity;
+                                            refInfo.ProductUnitConversionQuantity += deltaConversionQuantity;
 
-                                        childPackage.PrimaryQuantity += deltaPrimaryQuantity;
-                                        childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
+                                            var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
 
-                                        break;
+                                            childPackage.PrimaryQuantity += deltaPrimaryQuantity;
+                                            childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
 
-                                    case EnumObjectType.InventoryDetail:
+                                            break;
 
-                                        var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
+                                        case EnumObjectType.InventoryDetail:
 
-                                        childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
-                                        childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
+                                            var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
 
-                                        break;
-                                    default:
-                                        throw new NotSupportedException();
+                                            childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
+                                            childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
 
+                                            break;
+                                        default:
+                                            throw new NotSupportedException();
+
+                                    }
                                 }
                             }
                         }
@@ -1942,6 +1969,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 inventoryDetailList.Add(new InventoryDetail
                 {
+                    InventoryDetailId = isApproved ? details.InventoryDetailId ?? 0 : 0,
                     ProductId = details.ProductId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
