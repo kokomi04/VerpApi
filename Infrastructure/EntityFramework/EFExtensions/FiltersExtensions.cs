@@ -21,7 +21,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
         public FilterExpressionBuilder AddFilter(string field, Expression value)
         {
             var prop = Expression.Property(_tableParam, field);
-            _expressions.Add(Expression.Equal(prop, value));
+            try
+            {
+                _expressions.Add(Expression.Equal(prop, value));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
             return this;
         }
 
@@ -49,5 +56,5 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return null;
         }
     }
-   
+
 }

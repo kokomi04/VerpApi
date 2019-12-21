@@ -25,6 +25,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public string Barcode { get; set; }
         public int UnitId { get; set; }
         public decimal? EstimatePrice { get; set; }
+        public decimal? Long { get; set; }
+        public decimal? Width { get; set; }
+        public decimal? Height { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }

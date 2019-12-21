@@ -34,7 +34,6 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             if (optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
                 optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
             }
         }
@@ -188,12 +187,15 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.Barcode).HasMaxLength(128);
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ProductCode)
                     .IsRequired()
                     .HasMaxLength(128);
                 entity.Property(e => e.ProductName)
                     .IsRequired()
                     .HasMaxLength(128);
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
                 entity.HasOne(d => d.ProductCate)
                     .WithMany(p => p.Product)
                     .HasForeignKey(d => d.ProductCateId)

@@ -161,7 +161,6 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.ApproveInventoryOutput(inventoryId, currentUserId);
         }
 
-
         /// <summary>
         /// Upload file
         /// </summary>
@@ -174,7 +173,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         {
             return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
         }
-
 
         /// <summary>
         /// Lấy danh sách sản phẩm để nhập kho

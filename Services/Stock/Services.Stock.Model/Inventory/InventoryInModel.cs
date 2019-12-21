@@ -51,4 +51,9 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public EnumPackageOption PackageOptionId { set; get; }
     }
+
+    public class InventoryInProductExtendModel : InventoryInProductModel
+    {
+        public string ProductCode { get; set; }
+    }
 }
