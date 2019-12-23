@@ -23,9 +23,8 @@ namespace SynTool
 
             //var path = "..\\..\\..\\..\\..\\Infrastructure\\EntityFramework";
 
-            var path = "..\\";
 
-            var projectFolder = path + "\\" + args[2];
+            var projectFolder = args[2];
 
             var files = Directory.GetFiles(projectFolder, "*.cs");
             foreach (var f in files)
