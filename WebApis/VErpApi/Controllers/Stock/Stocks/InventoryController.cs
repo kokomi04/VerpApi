@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -141,6 +142,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
+        [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> ApproveInventoryInput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
@@ -155,6 +157,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]
+        [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
@@ -238,7 +241,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
 
-        [HttpPut]
+        [HttpGet]
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
         {
@@ -247,6 +250,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("{inventoryId}/ApprovedInputDataUpdate")]
+        [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, ApprovedInputDataSubmitModel req)
         {
 
