@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -19,5 +18,7 @@ namespace VErp.Services.Stock.Model.Product
         public int UnitId { get; set; }
         public string UnitName { get; set; }
         public decimal? EstimatePrice { get; set; }
+
+        public List<StockProductOutput> StockProductModelList { set; get; }
     }
 }

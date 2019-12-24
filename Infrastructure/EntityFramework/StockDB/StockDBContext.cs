@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             if (optionsBuilder.IsConfigured)
             {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
                 optionsBuilder.UseSqlServer("Server=103.21.149.106;Database=StockDB;User ID=VErpAdmin;Password=VerpDev123$#1;MultipleActiveResultSets=true");
             }
         }
@@ -55,11 +56,14 @@ namespace VErp.Infrastructure.EF.StockDB
             });
             modelBuilder.Entity<Inventory>(entity =>
             {
-                entity.Property(e => e.Content).HasMaxLength(512);
-                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-                entity.Property(e => e.DeliveryCode)
+                entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
+                entity.Property(e => e.BillSerial)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+                entity.Property(e => e.Content).HasMaxLength(512);
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
                 entity.Property(e => e.Department).HasMaxLength(128);
                 entity.Property(e => e.InventoryCode)
                     .IsRequired()

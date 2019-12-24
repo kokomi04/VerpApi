@@ -23,8 +23,12 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
-        public string DeliveryCode { set; get; }
-        
+        public string BillCode { set; get; }
+
+        public string BillSerial { set; get; }
+
+        public string BillDate { set; get; }
+
         /// <summary>
         /// Id file đính kèm
         /// </summary>
