@@ -322,11 +322,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageRefs = new List<PackageRef>();
                 foreach (var package in fromPackages)
                 {
-                    package.PrimaryQuantity = 0;
-                    package.PrimaryQuantityRemaining = 0;
-                    package.ProductUnitConversionQuantity = 0;
-                    package.ProductUnitConversionRemaining = 0;
-
                     packageRefs.Add(new PackageRef()
                     {
                         PackageId = newPackage.PackageId,
@@ -338,6 +333,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         PackageOperationTypeId = (int)EnumPackageOperationType.Join
                     });
+
+
+                    package.PrimaryQuantity = 0;
+                    package.PrimaryQuantityRemaining = 0;
+                    package.ProductUnitConversionQuantity = 0;
+                    package.ProductUnitConversionRemaining = 0;
                 }
 
                 await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);

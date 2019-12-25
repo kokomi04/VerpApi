@@ -241,7 +241,8 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
 
-        [HttpGet]
+        [VErpAction(EnumAction.View)]
+        [HttpPost]
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
         {
