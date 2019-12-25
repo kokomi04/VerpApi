@@ -2385,17 +2385,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InProducts = new List<InventoryInProductModel>(32)
                     };
 
-                    ProductCate currentCateObj = null;
-                    ProductType currentProductTypeObj = null;
-                    Product product = null;
-                    Unit unitObj = null;
-                    Unit unitAltObj = null;
-
                     var totalRowCount = sheet.LastRowNum + 1;
+                    var excelModel = new List<OpeningBalanceModel>(totalRowCount);
 
                     var newProductList = new List<Product>(totalRowCount);
-                    var newProductExtraModelList = new List<ProductExtraModel>(totalRowCount);
-                    var newProductUnitConversionExtModelList = new List<ProductUnitConversionExtModel>(totalRowCount);
+                    var oldProductList = new List<Product>(totalRowCount);
+                    var newProductExtraInfoList = new List<ProductExtraInfo>(totalRowCount);
+                    var oldProductExtraInfoList = new List<ProductExtraInfo>(totalRowCount);
+
                     var newUnit1List = new List<UnitModel>(totalRowCount);
                     var newUnit2List = new List<UnitModel>(totalRowCount);
                     var newInventoryInputModel = new List<InventoryInProductExtendModel>(totalRowCount);
@@ -2404,263 +2401,307 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var currentCatePrefixCode = string.Empty;
                     var cateName = string.Empty;
                     var catePrefixCode = string.Empty;
-
-                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                    try
                     {
-                        var row = sheet.GetRow(i);
-                        if (row == null) continue;
-
-                        var cellCateName = row.GetCell(0);
-                        var cellCatePreifxCode = row.GetCell(1);
-                        cateName = cellCateName != null ? cellCateName.StringCellValue : string.Empty;
-                        catePrefixCode = cellCatePreifxCode != null ? cellCatePreifxCode.StringCellValue : string.Empty;
-                        if (!string.IsNullOrEmpty(cateName))
+                        for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
                         {
-                            currentCateName = cateName;
+                            var row = sheet.GetRow(i);
+                            if (row == null) continue;
 
-                            var checkExistCate = _stockDbContext.ProductCate.Any(q => q.ProductCateName.ToLower().Trim() == currentCateName.ToLower().Trim());
-                            if (!checkExistCate)
+                            var cellCateName = row.GetCell(0);
+                            var cellCatePreifxCode = row.GetCell(1);
+                            cateName = cellCateName != null ? cellCateName.StringCellValue.Trim() : string.Empty;
+                            catePrefixCode = cellCatePreifxCode != null ? cellCatePreifxCode.StringCellValue.Trim() : string.Empty;
+                            if (!string.IsNullOrEmpty(cateName))
                             {
-                                var newCate = new ProductCate
-                                {
-                                    ProductCateName = currentCateName,
-                                    ParentProductCateId = null,
-                                    CreatedDatetimeUtc = DateTime.Now,
-                                    UpdatedDatetimeUtc = DateTime.Now
-                                    ,
-                                    IsDeleted = false
-                                };
-                                await _stockDbContext.ProductCate.AddAsync(newCate);
-                                await _stockDbContext.SaveChangesAsync();
-
-                                currentCateObj = newCate;
+                                currentCateName = cateName;
                             }
-                            else
-                                currentCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateName.ToLower().Trim() == currentCateName.ToLower().Trim());
-                        }
-                        if (!string.IsNullOrEmpty(catePrefixCode))
+                            if (!string.IsNullOrEmpty(catePrefixCode))
+                            {
+                                currentCatePrefixCode = catePrefixCode;
+                            }
+                            var cellProductCode = row.GetCell(2);
+                            if (cellProductCode == null)
+                                continue;
+                            var productCode = cellProductCode != null ? cellProductCode.StringCellValue.Trim() : string.Empty;
+                            if (string.IsNullOrEmpty(productCode))
+                                continue;
+                            #region Get All Cell value
+                            var productName = row.GetCell(3) != null ? row.GetCell(3).StringCellValue.Trim() : string.Empty;
+                            var cellUnit = row.GetCell(4);
+                            var cellUnitAlt = row.GetCell(9);
+                            var unitName = cellUnit != null ? cellUnit.StringCellValue.Trim() : string.Empty;
+                            var unitAltName = cellUnitAlt != null ? cellUnitAlt.StringCellValue.Trim() : string.Empty;
+
+                            var qTy = row.GetCell(5) != null ? row.GetCell(5).NumericCellValue : 0;
+                            var unitPrice = row.GetCell(6) != null ? (decimal)row.GetCell(6).NumericCellValue : 0;
+                            var qTy2 = row.GetCell(11) != null ? row.GetCell(11).NumericCellValue : 0;
+                            var factor = row.GetCell(10) != null ? row.GetCell(10).NumericCellValue : 0;
+                            var specification = row.GetCell(8) != null ? row.GetCell(8).StringCellValue : string.Empty;
+                            var heightSize = row.GetCell(13) != null ? row.GetCell(13).NumericCellValue : 0;
+                            var widthSize = row.GetCell(14) != null ? row.GetCell(14).NumericCellValue : 0;
+                            var longSize = row.GetCell(15) != null ? row.GetCell(15).NumericCellValue : 0;
+
+                            var cellItem = new OpeningBalanceModel();
+                            cellItem.CateName = currentCateName;
+                            cellItem.CatePrefixCode = currentCatePrefixCode;
+                            cellItem.ProductCode = productCode;
+                            cellItem.ProductName = productName;
+                            cellItem.Unit1 = unitName;
+                            cellItem.Qty1 = (decimal)qTy;
+                            cellItem.UnitPrice = unitPrice;
+                            cellItem.Specification = specification;
+                            cellItem.Unit2 = unitAltName;
+                            cellItem.Qty2 = (decimal)qTy2;
+                            cellItem.Factor = (decimal)factor;
+                            cellItem.Height = (decimal)heightSize;
+                            cellItem.Width = (decimal)widthSize;
+                            cellItem.Long = (decimal)longSize;
+
+                            excelModel.Add(cellItem);
+                            #endregion
+                        } // end for loop
+                    }
+                    catch (Exception ex)
+                    {
+                        return GeneralCode.InternalError;
+                        throw ex;
+                    }
+                    #region Insert & update data to DB
+
+                    #region Cập nhật ProductCate && ProductType
+                    var productCateNameData = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
+                    foreach (var item in productCateNameData)
+                    {
+                        var checkExistCate = _stockDbContext.ProductCate.Any(q => q.ProductCateName == item);
+                        if (!checkExistCate)
                         {
-                            currentCatePrefixCode = catePrefixCode;
-
-                            var checkExistProductType = _stockDbContext.ProductType.Any(q => q.IdentityCode == catePrefixCode.Trim());
-                            if (!checkExistProductType)
+                            var newCate = new ProductCate
                             {
-                                var newProductType = new ProductType
-                                {
-                                    ProductTypeName = catePrefixCode,
-                                    ParentProductTypeId = null,
-                                    IdentityCode = catePrefixCode,
-                                    CreatedDatetimeUtc = DateTime.Now,
-                                    UpdatedDatetimeUtc = DateTime.Now,
-                                    IsDeleted = false
-                                };
-                                await _stockDbContext.ProductType.AddAsync(newProductType);
-                                await _stockDbContext.SaveChangesAsync();
-
-                                currentProductTypeObj = newProductType;
-                            }
-                            else
-                                currentProductTypeObj = _stockDbContext.ProductType.AsNoTracking().FirstOrDefault(q => q.IdentityCode == catePrefixCode.Trim());
-                        }
-                        var cellProductCode = row.GetCell(2);
-                        if (cellProductCode == null)
-                            continue;
-
-                        var productCode = cellProductCode != null ? cellProductCode.StringCellValue.Trim() : string.Empty;
-
-                        #region Thông tin đơn vị tính
-                        var cellUnit = row.GetCell(4);
-                        var cellUnitAlt = row.GetCell(8);
-                        var unitName = cellUnit != null ? cellUnit.StringCellValue.Trim() : string.Empty;
-                        var unitAltName = cellUnitAlt != null ? cellUnitAlt.StringCellValue.Trim() : string.Empty;
-
-                        if (!string.IsNullOrEmpty(unitName))
-                        {
-                            var checkExistUnitCode = _masterDBContext.Unit.Any(q => q.UnitName == unitName);
-                            if (!checkExistUnitCode)
-                            {
-                                unitObj = new Unit { UnitName = unitName, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
-                                await _masterDBContext.Unit.AddAsync(unitObj);
-                                await _masterDBContext.SaveChangesAsync();
-                            }
-                            else
-                            {
-                                unitObj = _masterDBContext.Unit.AsNoTracking().FirstOrDefault(q => q.UnitName == unitName);
-                            }
-                            //var unitModel = new UnitModel { UnitId = unitObj.UnitId, UnitName = unitName, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now, ProductCode = productCode };
-                            //newUnit1List.Add(unitModel);
-                        }
-                        if (!string.IsNullOrEmpty(unitAltName))
-                        {
-                            var checkExistUnitAltCode = _masterDBContext.Unit.Any(q => q.UnitName == unitAltName);
-                            if (!checkExistUnitAltCode)
-                            {
-                                unitAltObj = new Unit { UnitName = unitAltName, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
-                                await _masterDBContext.Unit.AddAsync(unitAltObj);
-                                await _masterDBContext.SaveChangesAsync();
-                            }
-                            else
-                            {
-                                unitAltObj = _masterDBContext.Unit.AsNoTracking().FirstOrDefault(q => q.UnitName == unitAltName);
-                            }
-                            var unitAltModel = new UnitModel { UnitId = unitObj.UnitId, UnitName = unitAltName, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now, ProductCode = productCode };
-                            newUnit2List.Add(unitAltModel);
-
-                            var factor = row.GetCell(9) != null ? row.GetCell(9).NumericCellValue : 0;
-
-                            var newProductUnitConversionExtObj = new ProductUnitConversionExtModel
-                            {
-                                ProductCode = productCode,
-                                SecondaryUnitId = unitAltObj.UnitId,
-                                FactorExpression = factor.ToString(),
+                                ProductCateName = item,
+                                ParentProductCateId = null,
+                                CreatedDatetimeUtc = DateTime.Now,
+                                UpdatedDatetimeUtc = DateTime.Now,
+                                IsDeleted = false
                             };
-                            newProductUnitConversionExtModelList.Add(newProductUnitConversionExtObj);
+                            await _stockDbContext.ProductCate.AddAsync(newCate);
                         }
-                        #endregion
+                    }
+                    await _stockDbContext.SaveChangesAsync();
 
-                        #region Thông tin sản phẩm & tạo model inventory input
-
-                        if (!string.IsNullOrEmpty(productCode))
+                    // Thêm Cate prefix ProductType
+                    var productCatePrefixCodeData = excelModel.GroupBy(g => g.CatePrefixCode).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CatePrefixCode)).Select(q => q.CatePrefixCode).ToList();
+                    foreach (var item in productCatePrefixCodeData)
+                    {
+                        var checkExistProductType = _stockDbContext.ProductType.Any(q => q.IdentityCode == item);
+                        if (!checkExistProductType)
                         {
-                            var checkExistProductCode = _stockDbContext.Product.Any(q => q.ProductCode == productCode);
+                            var newProductType = new ProductType
+                            {
+                                ProductTypeName = item,
+                                ParentProductTypeId = null,
+                                IdentityCode = catePrefixCode,
+                                CreatedDatetimeUtc = DateTime.Now,
+                                UpdatedDatetimeUtc = DateTime.Now,
+                                IsDeleted = false
+                            };
+                            await _stockDbContext.ProductType.AddAsync(newProductType);
+                            await _stockDbContext.SaveChangesAsync();
+                        }
+                    }
+                    await _stockDbContext.SaveChangesAsync();
+                    #endregion
 
-                            var cellHeight = row.GetCell(12);
-                            var cellWidth = row.GetCell(13);
-                            var cellLong = row.GetCell(14);
+                    #region Cập nhật đơn vị tính chính & phụ
+                    var unit1Data = excelModel.GroupBy(g => g.Unit1).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit1)).Select(q => q.Unit1).ToList();
+                    var unit1DataList = new List<Unit>(unit1Data.Count);
+                    foreach (var item in unit1Data)
+                    {
+                        var checkExistUnitCode = _masterDBContext.Unit.Any(q => q.UnitName == item);
+                        if (!checkExistUnitCode)
+                        {
+                            var unitEntity = new Unit { UnitName = item, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
+                            await _masterDBContext.Unit.AddAsync(unitEntity);
+                            unit1DataList.Add(unitEntity);
+                        }
+                    }
+                    if (unit1DataList.Count > 0)
+                        await _masterDBContext.SaveChangesAsync();
 
+                    var unit2Data = excelModel.GroupBy(g => g.Unit2).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit2)).Select(q => q.Unit2).ToList();
+                    var unit2DataList = new List<Unit>(unit2Data.Count);
+                    foreach (var item in unit2Data)
+                    {
+                        var checkExistUnitCode = _masterDBContext.Unit.Any(q => q.UnitName == item);
+                        if (!checkExistUnitCode)
+                        {
+                            var unitEntity = new Unit { UnitName = item, IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
+                            await _masterDBContext.Unit.AddAsync(unitEntity);
+                            unit2DataList.Add(unitEntity);
+                        }
+                    }
+                    if (unit2DataList.Count > 0)
+                        await _masterDBContext.SaveChangesAsync();
+
+                    var unitDataList = unit1DataList.Union(unit2DataList).ToList();
+                    #endregion
+
+                    #region Cập nhật sản phẩm
+                    foreach (var item in excelModel)
+                    {
+                        if (!string.IsNullOrEmpty(item.ProductCode))
+                        {
+                            var checkExistProductCode = _stockDbContext.Product.Any(q => q.ProductCode == item.ProductCode);
+                            var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateName == item.CateName);
+                            var productTypeObj = _stockDbContext.ProductType.AsNoTracking().FirstOrDefault(q => q.IdentityCode == item.CatePrefixCode);
+                            var unitObj = _masterDBContext.Unit.AsNoTracking().FirstOrDefault(q => q.UnitName == item.Unit1);
                             if (!checkExistProductCode)
                             {
-                                var productName = row.GetCell(3) != null ? row.GetCell(3).StringCellValue.Trim() : string.Empty;
-                                var unitPrice = row.GetCell(7) != null ? (decimal?)(row.GetCell(7).NumericCellValue) : 0;
-
-                                product = new Product
+                                var productEntity = new Product
                                 {
-                                    ProductId = 0,
-                                    ProductCode = productCode,
-                                    ProductName = productName ?? string.Empty,
+                                    ProductCode = item.ProductCode,
+                                    ProductName = item.ProductName,
                                     IsCanBuy = true,
                                     IsCanSell = true,
                                     MainImageFileId = null,
-                                    ProductTypeId = null,
-                                    ProductCateId = currentCateObj != null ? currentCateObj.ProductCateId : 0,
+                                    ProductTypeId = productTypeObj != null ? (int?)productTypeObj.ProductTypeId : null,
+                                    ProductCateId = productCateObj != null ? productCateObj.ProductCateId : 0,
                                     BarcodeStandardId = null,
                                     BarcodeConfigId = null,
                                     Barcode = null,
-                                    //UnitId = newUnit1List.FirstOrDefault(q => q.ProductCode == productCode) != null ? newUnit1List.FirstOrDefault(q=>q.ProductCode == productCode).UnitId : 0,
-                                    UnitId = unitObj.UnitId,
-                                    EstimatePrice = unitPrice,
-                                    Long = (decimal?)cellLong?.NumericCellValue,
-                                    Width = (decimal?)cellWidth?.NumericCellValue,
-                                    Height = (decimal?)cellHeight?.NumericCellValue,
+                                    UnitId = unitObj != null ? unitObj.UnitId : 0,
+                                    EstimatePrice = item.UnitPrice,
+                                    Long = item.Long,
+                                    Width = item.Width,
+                                    Height = item.Height,
                                     CreatedDatetimeUtc = DateTime.Now,
                                     UpdatedDatetimeUtc = DateTime.Now,
                                     IsDeleted = false
                                 };
-                                newProductList.Add(product);
-
-                                #region Thông tin sản phẩm bổ sung
-                                var specification = row.GetCell(6) != null ? row.GetCell(6).StringCellValue : string.Empty;
-                                var newProductExtraModel = new ProductExtraModel
-                                {
-                                    ProductId = product.ProductId,
-                                    Specification = specification,
-                                    Description = string.Empty,
-                                    IsDeleted = false,
-                                    ProductCode = productCode
-                                };
-                                newProductExtraModelList.Add(newProductExtraModel);
-
-                                #endregion
+                                newProductList.Add(productEntity);
                             }
                             else
                             {
-                                var unitPrice = row.GetCell(7) != null ? (decimal?)(row.GetCell(7).NumericCellValue) : 0;
-                                var specification = row.GetCell(6) != null ? row.GetCell(6).StringCellValue : string.Empty;
+                                var productObj = _stockDbContext.Product.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                                productObj.UnitId = unitObj.UnitId;
+                                productObj.EstimatePrice = item.UnitPrice;
+                                productObj.Long = item.Long;
+                                productObj.Width = item.Width;
+                                productObj.Height = item.Height;
 
-                                product = _stockDbContext.Product.FirstOrDefault(q => q.ProductCode == productCode);
-                                product.UnitId = unitObj.UnitId;
-                                product.EstimatePrice = unitPrice;
-                                product.Long = (decimal?)cellLong?.NumericCellValue;
-                                product.Width = (decimal?)cellWidth?.NumericCellValue;
-                                product.Height = (decimal?)cellHeight?.NumericCellValue;
-                                var productExtObj = _stockDbContext.ProductExtraInfo.FirstOrDefault(q => q.ProductId == product.ProductId);
-                                productExtObj.Specification = specification;
-
-                                await _stockDbContext.SaveChangesAsync();
-                                newProductList.Add(product);
+                                oldProductList.Add(productObj);
                             }
+                        }
+                    }
+                    if (newProductList.Count > 0)
+                    {
+                        await _stockDbContext.Product.AddRangeAsync(newProductList);
+                        await _stockDbContext.SaveChangesAsync();
+                    }
+                    if (oldProductList.Count > 0)
+                    {
+                        _stockDbContext.Product.UpdateRange(oldProductList);
+                        await _stockDbContext.SaveChangesAsync();
+                    }
+                    var productData = newProductList.Union(oldProductList).ToList();
+                    #endregion
 
-                            var qTy = row.GetCell(5) != null ? row.GetCell(5).NumericCellValue : 0;
-                            var qTy2 = row.GetCell(10) != null ? row.GetCell(10).NumericCellValue : 0;
+                    #region Cập nhật mô tả sản phẩm
+                    foreach (var item in excelModel)
+                    {
+                        if (!string.IsNullOrEmpty(item.Specification) && !string.IsNullOrEmpty(item.ProductCode))
+                        {
+                            var productObj = productData.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                            if (productObj != null)
+                            {
+                                var checkExist = _stockDbContext.ProductExtraInfo.Any(q => q.ProductId == productObj.ProductId);
+                                if (checkExist)
+                                {
+                                    var productExtObj = _stockDbContext.ProductExtraInfo.FirstOrDefault(q => q.ProductId == productObj.ProductId);
+                                    productExtObj.Specification = item.Specification;
+                                    oldProductExtraInfoList.Add(productExtObj);
+                                }
+                                else
+                                {
+                                    var productExtraInfoEntity = new ProductExtraInfo
+                                    {
+                                        ProductId = productObj.ProductId,
+                                        Specification = item.Specification,
+                                        Description = string.Empty,
+                                        IsDeleted = false
+                                    };
+                                    newProductExtraInfoList.Add(productExtraInfoEntity);
+                                }
+                            }
+                        }
+                    }
+                    if(newProductExtraInfoList.Count > 0)
+                    {
+                        await _stockDbContext.ProductExtraInfo.AddRangeAsync(newProductExtraInfoList);
+                        await _stockDbContext.SaveChangesAsync();
+                    }
+                    if (oldProductExtraInfoList.Count > 0)
+                    {
+                        _stockDbContext.ProductExtraInfo.UpdateRange(oldProductExtraInfoList);
+                        await _stockDbContext.SaveChangesAsync();
+                    }                    
+                    #endregion
 
-                            newInventoryInputModel.Add(
+                    #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion - Tạm thời chưa thực hiện
+                    //foreach (var item in excelModel)
+                    //{
+                    //    if (!string.IsNullOrEmpty(item.ProductCode))
+                    //    {
+                    //        var productObj = productData.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                    //        if (!string.IsNullOrEmpty(item.Unit1) && !string.IsNullOrEmpty(item.Unit2) && item.Factor > 0 && productObj != null)
+                    //        {
+                    //            var unit1 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);
+                    //            var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
+                    //            if (unit1 != null && unit2 != null)
+                    //            {
+                    //                var checkExists = _stockDbContext.ProductUnitConversion.Any(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId);
+                    //                if (checkExists)
+                    //                {
+                    //                    var productUnitConversionEntity = _stockDbContext.ProductUnitConversion.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId);
+                    //                }
+                    //                else
+                    //                {
+
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //}
+
+                    #endregion
+
+                    #endregion end db updating
+
+                    #region Tạo và xửa lý phiếu
+
+                    #region Thông tin phiếu newInventoryInputModel
+                    foreach (var item in excelModel)
+                    {
+                        var productObj = productData.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                        newInventoryInputModel.Add(
                                 new InventoryInProductExtendModel
                                 {
-                                    ProductId = product.ProductId > 0 ? product.ProductId : 0,
-                                    ProductCode = productCode,
-                                    //ProductUnitConversionId = newUnit2List.FirstOrDefault(q => q.ProductCode == productCode)?.UnitId,
+                                    ProductId = productObj != null ? productObj.ProductId : 0,
+                                    ProductCode = item.ProductCode,
                                     ProductUnitConversionId = null,
-                                    PrimaryQuantity = (decimal)qTy,
-                                    ProductUnitConversionQuantity = (decimal)qTy2,
-                                    UnitPrice = product.EstimatePrice ?? 0,
+                                    PrimaryQuantity = item.Qty1,
+                                    ProductUnitConversionQuantity = item.Qty2,
+                                    UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = null,
                                     RefObjectId = null,
-                                    RefObjectCode = currentCateName,
+                                    RefObjectCode = item.CateName,
                                     ToPackageId = null,
                                     PackageOptionId = EnumPackageOption.NoPackageManager
                                 }
                             );
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                        #endregion
-                    } // end for loop
-
-                    #region Insert data to DB
-                    var unitData = newUnit1List.GroupBy(g => g.UnitName).Select(q => q.First()).ToList();
-                    await _masterDBContext.Unit.AddRangeAsync(unitData);
-                    await _masterDBContext.SaveChangesAsync();
-
-                    //var newProductData = newProductList.Where(q => q.ProductId < 1).GroupBy(g => g.ProductCode).Select(q => q.First()).ToList();
-                    foreach (var p in newProductList.Where(q => q.ProductId == 0).GroupBy(g => g.ProductCode).Select(q => q.First()).ToList())
-                    {
-                        var currentUnitObj = unitData.FirstOrDefault(q => q.ProductCode == p.ProductCode);
-                        var unitId = currentUnitObj != null ? currentUnitObj.UnitId : 0;
-                        p.UnitId = unitId;
                     }
-
-                    await _stockDbContext.Product.AddRangeAsync(newProductList.Where(q => q.ProductId == 0).ToList());
-                    await _stockDbContext.SaveChangesAsync();
-
-                    var newProductExtraList = new List<ProductExtraInfo>(newProductExtraModelList.Count);
-                    foreach (var p in newProductExtraModelList)
-                    {
-                        var currentProductObj = newProductList.FirstOrDefault(q => q.ProductCode == p.ProductCode);
-                        var newProductId = currentProductObj != null ? currentProductObj.ProductId : 0;
-                        p.ProductId = newProductId;
-
-                        newProductExtraList.Add(new ProductExtraInfo { ProductId = p.ProductId, Specification = p.Specification, Description = p.Description, IsDeleted = false });
-                    }
-                    await _stockDbContext.ProductExtraInfo.AddRangeAsync(newProductExtraList);
-                    await _stockDbContext.SaveChangesAsync();
-
-                    var newProductUnitConversionData = new List<ProductUnitConversion>(newProductUnitConversionExtModelList.Count);
-                    foreach (var item in newProductUnitConversionExtModelList)
-                    {
-                        var currentProductObj = newProductList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-                        var newProductId = currentProductObj != null ? currentProductObj.ProductId : 0;
-                        var puc = new ProductUnitConversion { ProductId = newProductId, SecondaryUnitId = item.SecondaryUnitId, FactorExpression = item.FactorExpression, IsDefault = false, ProductUnitConversionName = string.Empty, ConversionDescription = string.Empty };
-
-                        newProductUnitConversionData.Add(puc);
-                    }
-                    await _stockDbContext.ProductUnitConversion.AddRangeAsync(newProductUnitConversionData);
-                    await _stockDbContext.SaveChangesAsync();
-
                     #endregion
 
-                    #region Tạo và xửa lý phiếu
                     if (newInventoryInputModel.Count > 0)
                     {
                         var groupList = newInventoryInputModel.GroupBy(g => g.RefObjectCode).ToList();
@@ -2685,10 +2726,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             foreach (var item in details)
                             {
                                 var currentProductObj = newProductList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-                                var newProductId = currentProductObj != null ? currentProductObj.ProductId : 0;
                                 newInventory.InProducts.Add(new InventoryInProductModel
                                 {
-                                    ProductId = newProductId,
+                                    ProductId = item.ProductId,
                                     ProductUnitConversionId = null,
                                     PrimaryQuantity = item.PrimaryQuantity,
                                     ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
@@ -2708,7 +2748,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var item in inventoryInputList)
                         {
                             var ret = await AddInventoryInput(currentUserId, item);
-
                             if (ret.Data > 0)
                                 await ApproveInventoryInput(ret.Data, currentUserId);
                         }

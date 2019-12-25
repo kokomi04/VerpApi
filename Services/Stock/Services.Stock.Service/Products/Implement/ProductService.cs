@@ -228,12 +228,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 UnitId = productInfo.UnitId,
                 EstimatePrice = productInfo.EstimatePrice,
 
-                Extra = new ProductModelExtra()
+                Extra = productExtra != null ?  new ProductModelExtra()
                 {
                     Specification = productExtra.Specification,
                     Description = productExtra.Description
-                },
-                StockInfo = new ProductModelStock()
+                } : null,
+                StockInfo = productStockInfo != null ?  new ProductModelStock()
                 {
                     StockOutputRuleId = (EnumStockOutputRule?)productStockInfo.StockOutputRuleId,
                     AmountWarningMin = productStockInfo.AmountWarningMin,
@@ -252,8 +252,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         FactorExpression = c.FactorExpression,
                         ConversionDescription = c.ConversionDescription
                     }).ToList()
-                }
-
+                } : null
             };
         }
 
