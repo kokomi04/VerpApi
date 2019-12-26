@@ -22,5 +22,9 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Tên loại mã mặt hàng đã tồn tại, vui lòng chọn tên khác")]
         ProductTypeNameAlreadyExisted = 5,
+
+        [Description("Không thể xóa loại mã hàng đang được sử dụng")]
+        ProductTypeInUsed = 6,
+
     }
 }
