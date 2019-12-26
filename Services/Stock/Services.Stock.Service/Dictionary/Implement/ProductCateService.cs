@@ -90,6 +90,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 return ProductCateErrorCode.CanNotDeletedParentProductCate;
             }
 
+            if (await _stockContext.Product.AnyAsync(p => p.ProductCateId == productCateId))
+            {
+                return ProductCateErrorCode.ProductCateInUsed;
+            }
+
             productCate.IsDeleted = true;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
 
