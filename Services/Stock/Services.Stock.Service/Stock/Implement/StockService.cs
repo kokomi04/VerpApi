@@ -506,7 +506,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
-                    SecondaryUnitId = c.SecondaryUnitId,
+                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
@@ -572,7 +572,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
-                    SecondaryUnitId = c.SecondaryUnitId,
+                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
@@ -814,7 +814,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                      join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
                                      //join conversion in _stockContext.ProductUnitConversion on id.ProductUnitConversionId equals conversion.ProductUnitConversionId
                                      where i.IsApproved && id.ProductId == productId
-                                     select new { i, id};
+                                     select new { i, id };
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
@@ -868,8 +868,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 foreach (var item in inPeriodData)
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
-                    var secondaryUnitObj  = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
-                    var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName: string.Empty;
+                    var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
+                    var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName : string.Empty;
                     var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
                     resultData.Details.Add(new StockProductDetailsModel
                     {

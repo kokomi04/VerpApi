@@ -18,7 +18,7 @@ namespace VErp.Services.Stock.Model.Stock
         public decimal PrimaryQuantity { get; set; }       
         public int? ProductUnitConversionId { get; set; }
         public string ProductUnitConversionName { get; set; }
-        public int SecondaryUnitId { get; set; }
+        public int? SecondaryUnitId { get; set; }
         public decimal ProductUnitConversionQualtity { get; set; }
         public decimal SecondaryUnitQualtity { get { return ProductUnitConversionQualtity; } }
         public EnumPackageType PackageTypeId { get; set; }
