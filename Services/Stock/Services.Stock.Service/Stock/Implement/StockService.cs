@@ -485,7 +485,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.ProductId == productId
+                where pk.StockId == stockId && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
                 select new StockProductPackageDetail()
                 {
                     PackageId = pk.PackageId,
@@ -549,7 +549,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.LocationId == locationId
+                where pk.StockId == stockId && pk.LocationId == locationId && pk.PrimaryQuantityRemaining > 0
                 orderby pk.Date descending
                 select new LocationProductPackageOuput()
                 {
