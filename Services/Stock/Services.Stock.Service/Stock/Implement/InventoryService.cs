@@ -1986,15 +1986,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                    if (productUnitConversionInfo == null)
+                    //if (productUnitConversionInfo == null)
+                    //{
+                    //    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                    //}
+                    if (productUnitConversionInfo != null)
                     {
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                    }
-                    var expression = $"({details.ProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
-                    primaryQty = Utils.Eval(expression);
-                    if (!(primaryQty > 0))
-                    {
-                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        var expression = $"({details.ProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
+                        primaryQty = Utils.Eval(expression);
+                        if (primaryQty < 0)
+                        {
+                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        }
                     }
                 }
                 switch (details.PackageOptionId)
@@ -2635,7 +2638,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             }
                         }
                     }
-                    if(newProductExtraInfoList.Count > 0)
+                    if (newProductExtraInfoList.Count > 0)
                     {
                         await _stockDbContext.ProductExtraInfo.AddRangeAsync(newProductExtraInfoList);
                         await _stockDbContext.SaveChangesAsync();
@@ -2644,7 +2647,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         _stockDbContext.ProductExtraInfo.UpdateRange(oldProductExtraInfoList);
                         await _stockDbContext.SaveChangesAsync();
-                    }                    
+                    }
                     #endregion
 
                     #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion - Tạm thời chưa thực hiện
@@ -2705,13 +2708,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (newInventoryInputModel.Count > 0)
                     {
                         var groupList = newInventoryInputModel.GroupBy(g => g.RefObjectCode).ToList();
-
+                        var index = 1;
                         foreach (var g in groupList)
                         {
                             var details = g.ToList();
                             var newInventory = new InventoryInModel();
                             newInventory.StockId = model.StockId;
-                            newInventory.InventoryCode = string.Format("PN_TonDau_{0}", DateTime.Now.ToString("ddMMyyyyHHmmss"));
+                            newInventory.InventoryCode = string.Format("PN_TonDau_{0}_{1}", index,DateTime.Now.ToString("ddMMyyyyHHmmss"));
                             newInventory.DateUtc = model.IssuedDate;
                             newInventory.Shipper = string.Empty;
                             newInventory.Content = model.Description;
@@ -2741,6 +2744,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 });
                             }
                             inventoryInputList.Add(newInventory);
+                            index++;
                         }
                     }
                     if (inventoryInputList.Count > 0)

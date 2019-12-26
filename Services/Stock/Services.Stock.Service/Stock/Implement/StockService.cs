@@ -750,7 +750,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InvalidParams;
             if (string.IsNullOrEmpty(fromDateString) && string.IsNullOrEmpty(toDateString))
                 return GeneralCode.InvalidParams;
-
             var resultData = new StockProductDetailsReportOutput
             {
                 OpeningStock = null,
@@ -772,7 +771,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return GeneralCode.InvalidParams;
                 }
             }
-
             try
             {
                 DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
@@ -787,7 +785,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (beginTime.HasValue && beginTime != DateTime.MinValue)
                     openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
-
 #if DEBUG
                 var openingStockQueryDataInput = (from q in openingStockQuery
                                                   where q.i.InventoryTypeId == (int)EnumInventoryType.Input
@@ -802,13 +799,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventoryType.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventoryType.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
                 #endregion
-
                 #region Lấy dữ liệu giao dịch trong kỳ
                 var inPerdiodQuery = from i in _stockContext.Inventory
                                      join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                     join conversion in _stockContext.ProductUnitConversion on id.ProductUnitConversionId equals conversion.ProductUnitConversionId
+                                     //join conversion in _stockContext.ProductUnitConversion on id.ProductUnitConversionId equals conversion.ProductUnitConversionId
                                      where i.IsApproved && id.ProductId == productId
-                                     select new { i, id, conversion };
+                                     select new { i, id};
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
@@ -840,7 +836,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectCode = q.id.RefObjectCode,
                     PrimaryUnitId = q.id.PrimaryUnitId,
                     PrimaryQuantity = q.id.PrimaryQuantity,
-                    SecondaryUnitId = q.conversion.SecondaryUnitId,
+                    //SecondaryUnitId = q.conversion.SecondaryUnitId,
                     SecondaryQuantity = q.id.ProductUnitConversionQuantity,
                     ProductUnitConversionId = q.id.ProductUnitConversionId
                 }).ToList();
@@ -862,7 +858,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 foreach (var item in inPeriodData)
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
-
+                    var secondaryUnitObj  = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
+                    var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName: string.Empty;
+                    var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
                     resultData.Details.Add(new StockProductDetailsModel
                     {
                         InventoryId = item.InventoryId,
@@ -870,12 +868,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryCode = item.InventoryCode,
                         InventoryTypeId = item.InventoryTypeId,
                         Description = item.Description,
-                        SecondaryUnitName = unitData.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId).UnitName ?? string.Empty,
+                        SecondaryUnitName = secondaryUnitName,
                         InventoryDetailId = item.InventoryDetailId,
                         RefObjectCode = item.RefObjectCode,
                         PrimaryUnitId = item.PrimaryUnitId,
                         PrimaryQuantity = item.PrimaryQuantity,
-                        SecondaryUnitId = item.SecondaryUnitId,
+                        SecondaryUnitId = secondaryUnitId,
                         SecondaryQuantity = item.SecondaryQuantity,
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         ProductUnitConversion = productUnitConversionObj
