@@ -381,12 +381,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
+            var productRemaining = from sp in _stockContext.StockProduct
+                                   join p in productQuery on sp.ProductId equals p.ProductId
+                                   where sp.StockId == stockId
+                                   group sp by new { sp.ProductId, sp.StockId, sp.PrimaryUnitId } into g
+                                   //from p in g
+                                   select new
+                                   {
+                                       g.Key.ProductId,
+                                       g.Key.PrimaryUnitId,
+                                       PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                                   };
 
 
-            var query = from sp in _stockContext.StockProduct
+            var query = from sp in productRemaining
                         join p in productQuery on sp.ProductId equals p.ProductId
                         join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
-                        where sp.StockId == stockId
                         select new
                         {
                             p.ProductId,
