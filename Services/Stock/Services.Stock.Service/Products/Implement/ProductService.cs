@@ -228,12 +228,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 UnitId = productInfo.UnitId,
                 EstimatePrice = productInfo.EstimatePrice,
 
-                Extra = productExtra != null ?  new ProductModelExtra()
+                Extra = productExtra != null ? new ProductModelExtra()
                 {
                     Specification = productExtra.Specification,
                     Description = productExtra.Description
                 } : null,
-                StockInfo = productStockInfo != null ?  new ProductModelStock()
+                StockInfo = productStockInfo != null ? new ProductModelStock()
                 {
                     StockOutputRuleId = (EnumStockOutputRule?)productStockInfo.StockOutputRuleId,
                     AmountWarningMin = productStockInfo.AmountWarningMin,
@@ -440,14 +440,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return ProductErrorCode.ProductNotFound;
             }
 
-            productInfo.IsDeleted = true;
-            productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
             var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-            if (productExtra != null)
-            {
-                productExtra.IsDeleted = true;
-            }
 
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
 
@@ -469,9 +462,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     productStockInfo.IsDeleted = true;
 
-                    _stockContext.ProductStockValidation.RemoveRange(stockValidations);
+                    //_stockContext.ProductStockValidation.RemoveRange(stockValidations);
 
-                    _stockContext.ProductUnitConversion.RemoveRange(unitConverions);
+                    // _stockContext.ProductUnitConversion.RemoveRange(unitConverions);
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
