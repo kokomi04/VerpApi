@@ -1924,22 +1924,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var widthSize = row.GetCell(14) != null ? HelperCellGetNumericValue(row.GetCell(14)) : 0;
                             var longSize = row.GetCell(15) != null ? HelperCellGetNumericValue(row.GetCell(15)) : 0;
 
-                            var cellItem = new OpeningBalanceModel();
-                            cellItem.CateName = currentCateName;
-                            cellItem.CatePrefixCode = currentCatePrefixCode;
-                            cellItem.ProductCode = productCode;
-                            cellItem.ProductName = productName;
-                            cellItem.Unit1 = unitName.ToLower();
-                            cellItem.Qty1 = qTy;
-                            cellItem.UnitPrice = unitPrice;
-                            cellItem.Specification = specification;
-                            cellItem.Unit2 = unitAltName.ToLower();
-                            cellItem.Qty2 = qTy2;
-                            cellItem.Factor = factor;
-                            cellItem.Height = heightSize;
-                            cellItem.Width = widthSize;
-                            cellItem.Long = longSize;
-
+                            var cellItem = new OpeningBalanceModel
+                            {
+                                CateName = currentCateName,
+                                CatePrefixCode = currentCatePrefixCode,
+                                ProductCode = productCode,
+                                ProductName = productName,
+                                Unit1 = unitName.ToLower(),
+                                Qty1 = qTy,
+                                UnitPrice = unitPrice,
+                                Specification = specification,
+                                Unit2 = unitAltName.ToLower(),
+                                Qty2 = qTy2,
+                                Factor = factor,
+                                Height = heightSize,
+                                Width = widthSize,
+                                Long = longSize
+                            };
                             excelModel.Add(cellItem);
                             #endregion
                         } // end for loop
@@ -2120,6 +2121,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     #region Thông tin phiếu newInventoryInputModel - Tạm đóng test cập nhật
                     foreach (var item in excelModel)
                     {
+                        if (string.IsNullOrEmpty(item.ProductCode))
+                            continue;
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
                         ProductUnitConversion productUnitConversionObj = null;
@@ -2139,7 +2142,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = null,
                                     RefObjectId = null,
-                                    RefObjectCode = item.CateName,
+                                    RefObjectCode = item.CatePrefixCode,
                                     ToPackageId = null,
                                     PackageOptionId = EnumPackageOption.NoPackageManager
                                 }
@@ -2181,7 +2184,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = item.RefObjectTypeId,
                                     RefObjectId = item.RefObjectId,
-                                    RefObjectCode = item.RefObjectCode,
+                                    RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.Now.ToString("ddMMyyyyHHmmss"), item.RefObjectCode),
                                     ToPackageId = null,
                                     PackageOptionId = EnumPackageOption.NoPackageManager
                                 });
