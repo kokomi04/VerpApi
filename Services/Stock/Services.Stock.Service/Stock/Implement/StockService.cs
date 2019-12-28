@@ -734,6 +734,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from a in ap.DefaultIfEmpty()
                 select new StockSumaryReportOutput
                 {
+                    ProductId = p.ProductId,
                     ProductCode = info.ProductCode,
                     ProductName = info.ProductName,
                     UnitId = p.PrimaryUnitId,

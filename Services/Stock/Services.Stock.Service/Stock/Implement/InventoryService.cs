@@ -1927,11 +1927,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             cellItem.CatePrefixCode = currentCatePrefixCode;
                             cellItem.ProductCode = productCode;
                             cellItem.ProductName = productName;
-                            cellItem.Unit1 = unitName;
+                            cellItem.Unit1 = unitName.ToLower();
                             cellItem.Qty1 = qTy;
                             cellItem.UnitPrice = unitPrice;
                             cellItem.Specification = specification;
-                            cellItem.Unit2 = unitAltName;
+                            cellItem.Unit2 = unitAltName.ToLower();
                             cellItem.Qty2 = qTy2;
                             cellItem.Factor = factor;
                             cellItem.Height = heightSize;
@@ -1951,79 +1951,84 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     #region Insert & update data to DB
 
                     #region Cập nhật ProductCate && ProductType
-                    var productCateNameData = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
-                    var productCateEntities = new List<ProductCate>(productCateNameData.Count);
-                    foreach (var item in productCateNameData)
+                    var productCateNameModelList = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
+                    var productCateEntities = new List<ProductCate>(productCateNameModelList.Count);
+                    foreach (var item in productCateNameModelList)
                     {
-                        var newCate = new ProductCate
+                        var exists = _stockDbContext.ProductCate.Any(q => q.ProductCateName == item);
+                        if(!exists)
                         {
-                            ProductCateName = item,
-                            ParentProductCateId = null,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
-                            IsDeleted = false
-                        };
-                        productCateEntities.Add(newCate);
+                            var newCate = new ProductCate
+                            {
+                                ProductCateName = item,
+                                ParentProductCateId = null,
+                                CreatedDatetimeUtc = DateTime.Now,
+                                UpdatedDatetimeUtc = DateTime.Now,
+                                IsDeleted = false
+                            };
+                            _stockDbContext.ProductCate.Add(newCate);
+                        }                        
                     }
-                    var readProductCateBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductCate.ProductCateName) } };
-                    _stockDbContext.BulkRead<ProductCate>(productCateEntities, readProductCateBulkConfig);
-                    _stockDbContext.BulkInsert<ProductCate>(productCateEntities.Where(q => q.ProductCateId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+                    _stockDbContext.SaveChanges();
+                    productCateEntities = _stockDbContext.ProductCate.AsNoTracking().ToList();                  
 
                     // Thêm Cate prefix ProductType
-                    var productCatePrefixCodeData = excelModel.GroupBy(g => g.CatePrefixCode).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CatePrefixCode)).Select(q => q.CatePrefixCode).ToList();
-                    var productTypeEntities = new List<ProductType>(productCatePrefixCodeData.Count);
-                    foreach (var item in productCatePrefixCodeData)
+                    var productTypeModelList = excelModel.GroupBy(g => g.CatePrefixCode).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CatePrefixCode)).Select(q => q.CatePrefixCode).ToList();
+                    var productTypeEntities = new List<ProductType>(productTypeModelList.Count);
+
+                    foreach (var item in productTypeModelList)
                     {
-                        var newProductType = new ProductType
+                        var exists = _stockDbContext.ProductType.Any(q => q.ProductTypeName == item);
+                        if (!exists)
                         {
-                            ProductTypeName = item,
-                            ParentProductTypeId = null,
-                            IdentityCode = item,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
-                            IsDeleted = false
-                        };
-                        productTypeEntities.Add(newProductType);
+                            var newProductType = new ProductType
+                            {
+                                ProductTypeName = item,
+                                ParentProductTypeId = null,
+                                IdentityCode = item,
+                                CreatedDatetimeUtc = DateTime.Now,
+                                UpdatedDatetimeUtc = DateTime.Now,
+                                IsDeleted = false
+                            };
+                            _stockDbContext.ProductType.Add(newProductType);
+                        }
                     }
-                    var readProductTypeBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductType.ProductTypeName) } };
-                    _stockDbContext.BulkRead<ProductType>(productTypeEntities, readProductTypeBulkConfig);
-                    _stockDbContext.BulkInsert<ProductType>(productTypeEntities.Where(q => q.ProductTypeId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+                    _stockDbContext.SaveChanges();
+                    productTypeEntities = _stockDbContext.ProductType.AsNoTracking().ToList();
+                                     
                     #endregion
 
                     #region Cập nhật đơn vị tính chính & phụ
-                    var unit1Data = excelModel.GroupBy(g => g.Unit1.ToLower()).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit1)).Select(q => q.Unit1).ToList();
-                    var unit1DataList = new List<Unit>(unit1Data.Count);
-                    foreach (var item in unit1Data)
+                    var unit1ModelList = excelModel.GroupBy(g => g.Unit1).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit1)).Select(q => q.Unit1).ToList();
+                    var unit2ModelList = excelModel.GroupBy(g => g.Unit2).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit2)).Select(q => q.Unit2).ToList();
+                    var unitModelList = unit1ModelList.Union(unit2ModelList).GroupBy(g => g.ToLower()).Select(q => q.First());                    
+                    foreach (var u in unitModelList)
                     {
-                        var unitEntity = new Unit { UnitName = item.ToLower(), IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
-                        unit1DataList.Add(unitEntity);
+                        var exists = _masterDBContext.Unit.Any(q => q.UnitName == u);
+                        if(!exists)
+                        {
+                            var newUnit = new Unit
+                            {
+                                UnitName = u,
+                                IsDeleted = false,
+                                CreatedDatetimeUtc = DateTime.Now,
+                                UpdatedDatetimeUtc = DateTime.Now
+                            };
+                            _masterDBContext.Unit.Add(newUnit);
+                        }
                     }
-                    var readUnit1BulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Unit.UnitName) } };
-                    _masterDBContext.BulkRead<Unit>(unit1DataList, readUnit1BulkConfig);
-                    _masterDBContext.BulkInsertOrUpdate<Unit>(unit1DataList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
-
-                    var unit2Data = excelModel.GroupBy(g => g.Unit2.ToLower()).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit2)).Select(q => q.Unit2).ToList();
-                    var unit2DataList = new List<Unit>(unit2Data.Count);
-                    foreach (var item in unit2Data)
-                    {
-                        var unitEntity = new Unit { UnitName = item.ToLower(), IsDeleted = false, CreatedDatetimeUtc = DateTime.Now, UpdatedDatetimeUtc = DateTime.Now };
-                        unit2DataList.Add(unitEntity);
-                    }
-                    var readUnit2BulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Unit.UnitName) } };
-                    _masterDBContext.BulkRead<Unit>(unit2DataList, readUnit2BulkConfig);
-                    _masterDBContext.BulkInsertOrUpdate<Unit>(unit2DataList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
-
-                    var unitDataList = unit1DataList.Union(unit2DataList).ToList();
+                    _masterDBContext.SaveChanges();
+                    var unitDataList = _masterDBContext.Unit.AsNoTracking().ToList();                   
                     #endregion
 
-                    #region Cập nhật sản phẩm & bổ sung
+                    #region Cập nhật sản phẩm & các thông tin bổ sung
                     foreach (var item in excelModel)
                     {
-                        var productCateObj = productCateEntities.FirstOrDefault(q => q.ProductCateName == item.CateName);
-                        var productTypeObj = productTypeEntities.FirstOrDefault(q => q.IdentityCode == item.CatePrefixCode);
-                        var unitObj = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);
                         if (productDataList.Any(q => q.ProductCode == item.ProductCode))
                             continue;
+                        var productCateObj = productCateEntities.FirstOrDefault(q => q.ProductCateName == item.CateName);
+                        var productTypeObj = productTypeEntities.FirstOrDefault(q => q.IdentityCode == item.CatePrefixCode);
+                        var unitObj = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);                        
                         var productEntity = new Product
                         {
                             ProductCode = item.ProductCode,
@@ -2051,11 +2056,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var readBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Product.ProductCode) } };
                     _stockDbContext.BulkRead<Product>(productDataList, readBulkConfig);
                     _stockDbContext.BulkInsert<Product>(productDataList.Where(q => q.ProductId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+                    //_stockDbContext.BulkInsertOrUpdate<Product>(productDataList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
 
                     #region Cập nhật mô tả sản phẩm & thông tin bổ sung
                     //var productExtraInfoList = new List<ProductExtraInfo>(productDataList.Count);
                     //foreach (var item in excelModel)
-                    //{                        
+                    //{
+
                     //    if (!string.IsNullOrEmpty(item.Specification))
                     //    {
                     //        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
@@ -2114,7 +2121,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     #region Tạo và xửa lý phiếu
 
-                    #region Thông tin phiếu newInventoryInputModel
+                    #region Thông tin phiếu newInventoryInputModel - Tạm đóng test cập nhật
                     foreach (var item in excelModel)
                     {
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
@@ -2197,8 +2204,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 continue;
                             else
                             {
-                                _logger.LogWarning(string.Format("ProcessExcelSheet not success, please recheck -> AddInventoryInput: {0}", item.InventoryCode));                                
-                            }   
+                                _logger.LogWarning(string.Format("ProcessExcelSheet not success, please recheck -> AddInventoryInput: {0}", item.InventoryCode));
+                            }
                         }
                     }
                     #endregion
