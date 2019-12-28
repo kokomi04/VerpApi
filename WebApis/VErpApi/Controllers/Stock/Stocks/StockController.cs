@@ -185,14 +185,15 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="productCateIds"></param>
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
+        /// <param name="keyword">Từ khoá tìm kiếm: ProductCode | ProductName</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReport")]
-        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReport("", stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
+            return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
 
         /// <summary>
