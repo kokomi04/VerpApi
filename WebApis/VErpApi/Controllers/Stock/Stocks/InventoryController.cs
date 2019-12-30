@@ -35,14 +35,16 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
         /// <param name="stockId">Id kho</param>
         /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
+        /// <param name="beginTime"></param>
+        /// <param name="endTime"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] string beginTime, [FromQuery] string endTime, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type,beginTime: beginTime,endTime: endTime, page: page, size: size);
         }
 
 
