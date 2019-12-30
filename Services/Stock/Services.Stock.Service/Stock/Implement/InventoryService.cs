@@ -1475,9 +1475,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //{
                     //    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     //}
-                    if (productUnitConversionInfo != null)
+                    if (productUnitConversionInfo != null && primaryQty == 0)
                     {
-                        var expression = $"({details.ProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
+                        var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
                         primaryQty = Utils.Eval(expression);
                         if (primaryQty < 0)
                         {
@@ -2101,7 +2101,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor.ToString("N6")),
                                 IsDefault = false
                             };
-                            if (newProductUnitConversionList.Any(q => q.ProductUnitConversionName == newProductUnitConversion.ProductUnitConversionName))
+                            if (newProductUnitConversionList.Any(q => q.ProductUnitConversionName == newProductUnitConversion.ProductUnitConversionName && q.ProductId == newProductUnitConversion.ProductId))
                                 continue;
                             else
                                 newProductUnitConversionList.Add(newProductUnitConversion);
@@ -2118,7 +2118,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     #region Tạo và xửa lý phiếu
 
-                    #region Thông tin phiếu newInventoryInputModel - Tạm đóng test cập nhật
+                    #region Thông tin phiếu newInventoryInputModel 
                     foreach (var item in excelModel)
                     {
                         if (string.IsNullOrEmpty(item.ProductCode))
@@ -2177,8 +2177,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 newInventory.InProducts.Add(new InventoryInProductModel
                                 {
                                     ProductId = item.ProductId,
-                                    //ProductUnitConversionId = item.ProductUnitConversionId,
-                                    ProductUnitConversionId = null,
+                                    ProductUnitConversionId = item.ProductUnitConversionId,
+                                    //ProductUnitConversionId = null,
                                     PrimaryQuantity = item.PrimaryQuantity,
                                     ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                     UnitPrice = item.UnitPrice,
