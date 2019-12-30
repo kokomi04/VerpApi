@@ -64,11 +64,15 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
+
                 entity.Property(e => e.BillSerial)
                     .HasMaxLength(64)
                     .IsUnicode(false);
+
                 entity.Property(e => e.Content).HasMaxLength(512);
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.Department).HasMaxLength(128);
 
                 entity.Property(e => e.InventoryCode)
@@ -239,11 +243,17 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Product>(entity =>
             {
+                entity.HasIndex(e => e.ProductCode)
+                    .HasName("idx_Product_ProductCode");
+
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+
                 entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.ProductCode)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -251,7 +261,9 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductName)
                     .IsRequired()
                     .HasMaxLength(128);
+
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
+
                 entity.HasOne(d => d.ProductCate)
                     .WithMany(p => p.Product)
                     .HasForeignKey(d => d.ProductCateId)
@@ -342,6 +354,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.FactorExpression)
                     .IsRequired()
                     .HasMaxLength(256);
+
+                entity.Property(e => e.IsFreeStyle).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.ProductUnitConversionName)
                     .IsRequired()

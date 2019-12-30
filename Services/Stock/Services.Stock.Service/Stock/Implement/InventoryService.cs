@@ -79,8 +79,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, string beginTime = null, string endTime = null, int page = 1, int size = 10)
         {
+            var bTime = DateTime.MinValue;
+            var eTime = DateTime.MinValue;
+
+            if (!string.IsNullOrEmpty(beginTime))
+            {
+                if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
+                {
+                    return null;
+                }
+            }
+            if (!string.IsNullOrEmpty(endTime))
+            {
+                if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
+                {
+                    return null;
+                }
+            }
             var query = from i in _stockDbContext.Inventory
                         select i;
             if (stockId > 0)
@@ -98,19 +115,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
             }
 
-            if (beginTime.HasValue && endTime.HasValue)
+            if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
-                query = query.Where(q => q.DateUtc >= beginTime && q.DateUtc <= endTime);
+                query = query.Where(q => q.DateUtc >= bTime && q.DateUtc <= eTime);
             }
             else
             {
-                if (beginTime.HasValue)
+                if (bTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc >= beginTime);
+                    query = query.Where(q => q.DateUtc >= bTime);
                 }
-                if (endTime.HasValue)
+                if (eTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc <= endTime);
+                    query = query.Where(q => q.DateUtc <= eTime);
                 }
             }
 
@@ -1295,6 +1312,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                                          join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
                                                          where !productWithStockValidationIdList.Contains(p.ProductId)
                                                          select p;
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    productWithoutStockValidationQuery = productWithoutStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
+                }
 
                 var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
 
@@ -1463,25 +1484,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
-
                 if (details.ProductUnitConversionQuantity < 0)
                 {
                     return GeneralCode.InvalidParams;
                 }
-                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
+                if (details.IsFreeStyle != null && !(bool)details.IsFreeStyle)
                 {
-                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                    //if (productUnitConversionInfo == null)
-                    //{
-                    //    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                    //}
-                    if (productUnitConversionInfo != null && primaryQty == 0)
+                    if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                     {
-                        var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
-                        primaryQty = Utils.Eval(expression);
-                        if (primaryQty < 0)
+                        var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                        if (productUnitConversionInfo == null)
                         {
-                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                        }
+                        if (productUnitConversionInfo != null)
+                        {
+                            var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
+                            primaryQty = Utils.Eval(expression);
+                            if (primaryQty <= 0)
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            }
                         }
                     }
                 }
@@ -1529,7 +1552,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = (int)details.PackageOptionId
                 });
             }
-
             return inventoryDetailList;
         }
 
@@ -2060,6 +2082,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     _stockDbContext.BulkRead<Product>(productDataList, readBulkConfig);
                     _stockDbContext.BulkInsert<Product>(productDataList.Where(q => q.ProductId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
 
+                    // Cập nhật đơn vị chuyển đổi mặc định
+                    var defaultProductUnitConversionList = new List<ProductUnitConversion>(productDataList.Count);
+                    foreach (var p in productDataList)
+                    {
+                        var unitObj = unitDataList.FirstOrDefault(q => q.UnitId == p.UnitId);
+                        var defaultProductUnitConversionEntity = new ProductUnitConversion()
+                        {
+                            ProductUnitConversionName = unitObj.UnitName,
+                            ProductId = p.ProductId,
+                            SecondaryUnitId = unitObj.UnitId,
+                            FactorExpression = "1",
+                            ConversionDescription = "Mặc định",
+                            IsFreeStyle = false,
+                            IsDefault = true
+                        };
+                        defaultProductUnitConversionList.Add(defaultProductUnitConversionEntity);
+                    }
+                    var readDefaultProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductId), nameof(ProductUnitConversion.SecondaryUnitId), nameof(ProductUnitConversion.ProductUnitConversionName) } };
+                    _stockDbContext.BulkRead<ProductUnitConversion>(defaultProductUnitConversionList, readDefaultProductUnitConversionBulkConfig);
+                    _stockDbContext.BulkInsert<ProductUnitConversion>(defaultProductUnitConversionList.Where(q => q.ProductUnitConversionId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+
                     #region Cập nhật mô tả sản phẩm & thông tin bổ sung
                     var productExtraInfoList = new List<ProductExtraInfo>(productDataList.Count);
                     var productExtraInfoModel = excelModel.Select(q => new { q.ProductCode, q.Specification }).GroupBy(g => g.ProductCode).Select(q => q.First()).ToList();
@@ -2083,7 +2126,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     _stockDbContext.BulkInsertOrUpdate<ProductExtraInfo>(productExtraInfoList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false });
                     #endregion
 
-                    #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion - Tạm thời chưa thực hiện
+                    #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion
                     var newProductUnitConversionList = new List<ProductUnitConversion>(productDataList.Count);
                     foreach (var item in excelModel)
                     {
@@ -2110,6 +2153,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var readProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductUnitConversionName), nameof(ProductUnitConversion.ProductId) } };
                     _stockDbContext.BulkRead<ProductUnitConversion>(newProductUnitConversionList, readProductUnitConversionBulkConfig);
                     _stockDbContext.BulkInsertOrUpdate<ProductUnitConversion>(newProductUnitConversionList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+
+                    //var productUnitConversionDataList = defaultProductUnitConversionList.Union(newProductUnitConversionList).ToList();
+
                     #endregion
 
                     #endregion end db updating product & related data
@@ -2134,13 +2180,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             var factorExpression = item.Factor.ToString("N6");
                             productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression);
-                        }
+                        }                        
+                        if (productUnitConversionObj == null)
+                            productUnitConversionObj = defaultProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
                         newInventoryInputModel.Add(
                                 new InventoryInProductExtendModel
                                 {
                                     ProductId = productObj != null ? productObj.ProductId : 0,
                                     ProductCode = item.ProductCode,
                                     ProductUnitConversionId = productUnitConversionObj != null ? (int?)productUnitConversionObj.ProductUnitConversionId : null,
+                                    IsFreeStyle = productUnitConversionObj != null ? false : true,
                                     PrimaryQuantity = item.Qty1,
                                     ProductUnitConversionQuantity = item.Qty2,
                                     UnitPrice = item.UnitPrice,
@@ -2150,7 +2199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     ToPackageId = null,
                                     PackageOptionId = EnumPackageOption.NoPackageManager
                                 }
-                            );
+                            ); ;
                     }
                     #endregion
 
@@ -2220,7 +2269,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, "ProcessExcelSheet");
                 return GeneralCode.InternalError;
             }
-
         }
 
         private decimal HelperCellGetNumericValue(ICell myCell)
