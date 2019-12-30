@@ -1488,16 +1488,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
-                if (details.IsFreeStyle != null && !(bool)details.IsFreeStyle)
+
+                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
-                    if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
+                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                    if (productUnitConversionInfo == null)
                     {
-                        var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                        if (productUnitConversionInfo == null)
-                        {
-                            return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                        }
-                        if (productUnitConversionInfo != null)
+                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                    }
+
+                    if (productUnitConversionInfo != null)
+                    {
+                        if (!(bool)productUnitConversionInfo.IsFreeStyle)
                         {
                             var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
                             primaryQty = Utils.Eval(expression);
@@ -2180,7 +2182,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             var factorExpression = item.Factor.ToString("N6");
                             productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression);
-                        }                        
+                        }
                         if (productUnitConversionObj == null)
                             productUnitConversionObj = defaultProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
                         newInventoryInputModel.Add(
