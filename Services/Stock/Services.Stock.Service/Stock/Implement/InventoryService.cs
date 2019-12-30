@@ -2123,6 +2123,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         if (string.IsNullOrEmpty(item.ProductCode))
                             continue;
+
+                        if (item.Qty1 == 0)
+                            continue;
+
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
                         ProductUnitConversion productUnitConversionObj = null;
