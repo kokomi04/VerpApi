@@ -6,7 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 namespace VErp.Services.Stock.Model.Inventory
 {
     public class InventoryInModel
-    {
+    {        
         //public long InventoryId { get; set; }
 
         public int StockId { get; set; }
@@ -18,13 +18,17 @@ namespace VErp.Services.Stock.Model.Inventory
               
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public DateTime DateUtc { get; set; }
+        public string DateUtc { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
-        public string DeliveryCode { set; get; }
-        
+        public string BillCode { set; get; }
+
+        public string BillSerial { set; get; }
+
+        public string BillDate { set; get; }
+
         /// <summary>
         /// Id file đính kèm
         /// </summary>
@@ -35,14 +39,28 @@ namespace VErp.Services.Stock.Model.Inventory
 
     public class InventoryInProductModel
     {
+        public long? InventoryDetailId { get; set; }
         public int ProductId { get; set; }
-        public int ProductUnitConversionId { set; get; }
+        public int? ProductUnitConversionId { set; get; }
+
+        public bool? IsFreeStyle { set; get; }
+
+        public decimal PrimaryQuantity { get; set; }
+
         public decimal ProductUnitConversionQuantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
         public long? ToPackageId { set; get; }
 
         public EnumPackageOption PackageOptionId { set; get; }
+    }
+
+    public class InventoryInProductExtendModel : InventoryInProductModel
+    {
+        public string ProductCode { get; set; }
     }
 }

@@ -22,5 +22,9 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Tên danh mục đã tồn tại, vui lòng chọn tên khác")]
         ProductCateNameAlreadyExisted = 5,
+
+        [Description("Không thể xóa danh mục đang được sử dụng")]
+        ProductCateInUsed = 6,
+        
     }
 }

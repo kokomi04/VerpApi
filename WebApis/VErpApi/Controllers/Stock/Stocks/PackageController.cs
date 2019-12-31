@@ -51,17 +51,17 @@ namespace VErpApi.Controllers.Stock.package
             return await _packageService.GetInfo(packageId);
         }
 
-        /// <summary>
-        /// Thêm mới kiện vào kho 
-        /// </summary>
-        /// <param name="packageInputModel"></param>
-        /// <returns>new packageId</returns>
-        [HttpPost]
-        [Route("")]
-        public async Task<ApiResponse<long>> AddPackage([FromBody] PackageInputModel packageInputModel)
-        {
-            return await _packageService.AddPackage(packageInputModel);
-        }
+        ///// <summary>
+        ///// Thêm mới kiện vào kho 
+        ///// </summary>
+        ///// <param name="packageInputModel"></param>
+        ///// <returns>new packageId</returns>
+        //[HttpPost]
+        //[Route("")]
+        //public async Task<ApiResponse<long>> AddPackage([FromBody] PackageInputModel packageInputModel)
+        //{
+        //    return await _packageService.AddPackage(packageInputModel);
+        //}
 
         /// <summary>
         /// Cập nhật thông tin kiện trong kho
@@ -76,17 +76,17 @@ namespace VErpApi.Controllers.Stock.package
             return await _packageService.UpdatePackage(packageId, packageInputModel);
         }
 
-        /// <summary>
-        /// Xóa thông tin kiện trong kho
-        /// </summary>
-        /// <param name="packageId"></param>
-        /// <returns></returns>
-        [HttpDelete]
-        [Route("{packageId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int packageId)
-        {
-            return await _packageService.DeletePackage(packageId);
-        }
+        ///// <summary>
+        ///// Xóa thông tin kiện trong kho
+        ///// </summary>
+        ///// <param name="packageId"></param>
+        ///// <returns></returns>
+        //[HttpDelete]
+        //[Route("{packageId}")]
+        //public async Task<ApiResponse> Delete([FromRoute] int packageId)
+        //{
+        //    return await _packageService.DeletePackage(packageId);
+        //}
 
         /// <summary>
         /// Tách kiện

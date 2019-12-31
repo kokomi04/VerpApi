@@ -9,7 +9,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             InventoryDetail = new HashSet<InventoryDetail>();
             Package = new HashSet<Package>();
-            StockProduct = new HashSet<StockProduct>();
+            PackageRef = new HashSet<PackageRef>();
         }
 
         public int ProductUnitConversionId { get; set; }
@@ -18,11 +18,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public int SecondaryUnitId { get; set; }
         public string FactorExpression { get; set; }
         public string ConversionDescription { get; set; }
+        public bool? IsFreeStyle { get; set; }
         public bool IsDefault { get; set; }
 
         public virtual Product Product { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
         public virtual ICollection<Package> Package { get; set; }
-        public virtual ICollection<StockProduct> StockProduct { get; set; }
+        public virtual ICollection<PackageRef> PackageRef { get; set; }
     }
 }

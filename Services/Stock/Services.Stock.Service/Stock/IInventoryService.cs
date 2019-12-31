@@ -25,14 +25,14 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, DateTime? beginTime = null, DateTime? endTime = null, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, string beginTime = null, string endTime = null, int page = 1, int size = 10);
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
         /// </summary>
         /// <param name="inventoryId">Mã phiếu</param>
         /// <returns></returns>
-        Task<ServiceResult<InventoryOutput>> GetInventory(int inventoryId);
+        Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId);
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
@@ -57,7 +57,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<Enum> UpdateInventoryInput(int inventoryId, int currentUserId, InventoryInModel model);
+        Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel model);
 
         /// <summary>
         /// Cập nhật thông tin phiếu xuất kho
@@ -66,7 +66,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<Enum> UpdateInventoryOutput(int inventoryId, int currentUserId, InventoryOutModel model);
+        Task<Enum> UpdateInventoryOutput(long inventoryId, int currentUserId, InventoryOutModel model);
 
         /// <summary>
         /// Duyệt phiếu nhập kho
@@ -74,7 +74,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
         /// <param name="currentUserId"></param>        
         /// <returns></returns>
-        Task<Enum> ApproveInventoryInput(int inventoryId, int currentUserId);
+        Task<Enum> ApproveInventoryInput(long inventoryId, int currentUserId);
 
 
         /// <summary>
@@ -83,15 +83,23 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
         /// <param name="currentUserId"></param>        
         /// <returns></returns>
-        Task<Enum> ApproveInventoryOutput(int inventoryId, int currentUserId);
+        Task<Enum> ApproveInventoryOutput(long inventoryId, int currentUserId);
 
         /// <summary>
-        /// Xóa thông tin phiếu nhập / xuất kho (đánh dấu xóa)
+        /// Xóa thông tin phiếu nhập kho
         /// </summary>
         /// <param name="inventoryId">Mã phiếu nhập xuất</param>
         /// <param name="currentUserId"></param>
         /// <returns></returns>
-        Task<Enum> DeleteInventory(int inventoryId, int currentUserId);
+        Task<Enum> DeleteInventoryInput(long inventoryId, int currentUserId);
+
+        /// <summary>
+        /// Xóa thông tin phiếu xuất kho (đánh dấu xóa)
+        /// </summary>
+        /// <param name="inventoryId">Mã phiếu nhập xuất</param>
+        /// <param name="currentUserId"></param>
+        /// <returns></returns>
+        Task<Enum> DeleteInventoryOutput(long inventoryId, int currentUserId);
 
         /// <summary>
         /// Lấy danh sách sản phẩm để nhập kho
@@ -122,5 +130,18 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="size"></param>
         /// <returns></returns>
         Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
+
+
+        /// <summary>
+        /// Đọc file và xử lý nhập liệu số dư đầu kỳ theo kho
+        /// </summary>
+        /// <param name="currentUserId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<ServiceResult<long>> ProcessOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model);
+
+
+        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req);
+        Task<ServiceResult> ApprovedInputDataUpdate(long inventoryId, ApprovedInputDataSubmitModel req);
     }
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
@@ -23,6 +20,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Kiện hàng đang tồn tại một lượng chờ duyệt")]
         HasSomeQualtityWaitingForApproved = 6,
         [Description("Các kiện được gộp phải cùng kho chứa, mặt hàng và đơn vị tính (cùng đơn vị chuyển đổi)")]
-        PackagesToJoinMustBeSameProductAndUnit = 7
+        PackagesToJoinMustBeSameProductAndUnit = 7,
+        [Description("Kiện mặc định không được phép gộp")]
+        CanNotJoinDefaultPackage = 8
     }
 }

@@ -23,7 +23,14 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
-        public string DeliveryCode { set; get; }
+
+        public string BillCode { set; get; }
+
+        public string BillSerial { set; get; }
+
+        public DateTime? BillDate { set; get; }
+
+        public decimal TotalMoney { get; set; }
 
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -31,6 +38,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public DateTime CreatedDatetimeUtc { set; get; }
 
         public DateTime UpdatedDatetimeUtc { set; get; }
+
+
 
         public bool IsApproved { set; get; }
 

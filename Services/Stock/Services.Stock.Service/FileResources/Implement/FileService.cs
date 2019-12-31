@@ -35,7 +35,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly IDataProtectionProvider _dataProtectionProvider;
         private static readonly Dictionary<EnumFileType, string[]> ValidFileExtensions = new Dictionary<EnumFileType, string[]>()
         {
-            { EnumFileType.Image, new[] { ".jpg", ".jpeg", ".bmp", ".png" } }
+            { EnumFileType.Image, new[] { ".jpg", ".jpeg", ".bmp", ".png" } },
+            { EnumFileType.Document, new[] { ".doc", ".docx", ".xls", ".xlsx" } }
         };
 
         public FileService(
@@ -151,6 +152,30 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
         }
 
+        public async Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId)
+        {
+            var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                return FileErrorCode.FileNotFound;
+            }
+            var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+            try
+            {
+                return (fileInfo, filePath);
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogDebug(ex, $"GetFileAndPath(long fileId={fileId})");
+                return FileErrorCode.FileNotFound;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, $"GetFileAndPath(long fileId={fileId})");
+                throw;
+            }
+        }
+
         public async Task<Enum> DeleteFile(long fileId)
         {
             var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
@@ -181,7 +206,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
         public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
         {
-
             try
             {
                 var validate = ValidateUploadFile(fileTypeId, file);
@@ -314,9 +338,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             return fileList;
         }
-
-
-
+        
         #region private
 
         public async Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)

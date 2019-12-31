@@ -3,19 +3,19 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
-using VErp.Infrastructure.EF.MasterDB;
-using System.Globalization;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -62,8 +62,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockKeeperName = req.StockKeeperName,
                         Type = req.Type,
                         Status = req.Status,
-                        CreatedDatetimeUtc = DateTime.Now,
-                        UpdatedDatetimeUtc = DateTime.Now,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false
                     };
 
@@ -137,7 +137,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     stockInfo.StockKeeperName = req.StockKeeperName;
                     stockInfo.Type = req.Type;
                     stockInfo.Status = req.Status;
-                    stockInfo.UpdatedDatetimeUtc = DateTime.Now;
+                    stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
@@ -381,12 +381,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                select p;
             }
 
+            var productRemaining = from sp in _stockContext.StockProduct
+                                   join p in productQuery on sp.ProductId equals p.ProductId
+                                   where sp.StockId == stockId
+                                   group sp by new { sp.ProductId, sp.StockId, sp.PrimaryUnitId } into g
+                                   //from p in g
+                                   select new
+                                   {
+                                       g.Key.ProductId,
+                                       g.Key.PrimaryUnitId,
+                                       PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                                   };
 
 
-            var query = from sp in _stockContext.StockProduct
+            var query = from sp in productRemaining
                         join p in productQuery on sp.ProductId equals p.ProductId
                         join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
-                        where sp.StockId == stockId
                         select new
                         {
                             p.ProductId,
@@ -485,7 +495,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.ProductId == productId
+                where pk.StockId == stockId && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
                 select new StockProductPackageDetail()
                 {
                     PackageId = pk.PackageId,
@@ -495,11 +505,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
-                    PrimaryQuantity = pk.PrimaryQuantity,
-                    SecondaryUnitId = c.SecondaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantityRemaining,
+                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
-                    ProductUnitConversionQualtity = pk.ProductUnitConversionQuantity,
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
+                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectId = null,
                     RefObjectCode = ""
                 }
@@ -548,7 +559,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.LocationId == locationId
+                where pk.StockId == stockId && pk.LocationId == locationId && pk.PrimaryQuantityRemaining > 0
                 orderby pk.Date descending
                 select new LocationProductPackageOuput()
                 {
@@ -560,12 +571,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = pk.PrimaryUnitId,
-                    PrimaryQuantity = pk.PrimaryQuantity,
-                    SecondaryUnitId = c.SecondaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantityRemaining,
+                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
-                    ProductUnitConversionQualtity = pk.ProductUnitConversionQuantity,
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     RefObjectId = null,
+                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = ""
                 }
                 );
@@ -722,6 +734,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from a in ap.DefaultIfEmpty()
                 select new StockSumaryReportOutput
                 {
+                    ProductId = p.ProductId,
                     ProductCode = info.ProductCode,
                     ProductName = info.ProductName,
                     UnitId = p.PrimaryUnitId,
@@ -748,7 +761,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InvalidParams;
             if (string.IsNullOrEmpty(fromDateString) && string.IsNullOrEmpty(toDateString))
                 return GeneralCode.InvalidParams;
-
             var resultData = new StockProductDetailsReportOutput
             {
                 OpeningStock = null,
@@ -770,7 +782,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return GeneralCode.InvalidParams;
                 }
             }
-
             try
             {
                 DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
@@ -785,7 +796,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (beginTime.HasValue && beginTime != DateTime.MinValue)
                     openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
-
 #if DEBUG
                 var openingStockQueryDataInput = (from q in openingStockQuery
                                                   where q.i.InventoryTypeId == (int)EnumInventoryType.Input
@@ -800,13 +810,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var openingStockQueryData = openingStockQuery.GroupBy(q => q.id.PrimaryUnitId).Select(g => new { PrimaryUnitId = g.Key, Total = g.Sum(v => v.i.InventoryTypeId == (int)EnumInventoryType.Input ? v.id.PrimaryQuantity : (v.i.InventoryTypeId == (int)EnumInventoryType.Output ? -v.id.PrimaryQuantity : 0)) }).ToList();
                 #endregion
-
                 #region Lấy dữ liệu giao dịch trong kỳ
                 var inPerdiodQuery = from i in _stockContext.Inventory
                                      join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                     join conversion in _stockContext.ProductUnitConversion on id.ProductUnitConversionId equals conversion.ProductUnitConversionId
+                                     //join conversion in _stockContext.ProductUnitConversion on id.ProductUnitConversionId equals conversion.ProductUnitConversionId
                                      where i.IsApproved && id.ProductId == productId
-                                     select new { i, id, conversion };
+                                     select new { i, id };
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
@@ -838,7 +847,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectCode = q.id.RefObjectCode,
                     PrimaryUnitId = q.id.PrimaryUnitId,
                     PrimaryQuantity = q.id.PrimaryQuantity,
-                    SecondaryUnitId = q.conversion.SecondaryUnitId,
+                    //SecondaryUnitId = q.conversion.SecondaryUnitId,
                     SecondaryQuantity = q.id.ProductUnitConversionQuantity,
                     ProductUnitConversionId = q.id.ProductUnitConversionId
                 }).ToList();
@@ -860,7 +869,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 foreach (var item in inPeriodData)
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
-
+                    var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
+                    var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName : string.Empty;
+                    var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
                     resultData.Details.Add(new StockProductDetailsModel
                     {
                         InventoryId = item.InventoryId,
@@ -868,12 +879,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryCode = item.InventoryCode,
                         InventoryTypeId = item.InventoryTypeId,
                         Description = item.Description,
-                        SecondaryUnitName = unitData.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId).UnitName ?? string.Empty,
+                        SecondaryUnitName = secondaryUnitName,
                         InventoryDetailId = item.InventoryDetailId,
                         RefObjectCode = item.RefObjectCode,
                         PrimaryUnitId = item.PrimaryUnitId,
                         PrimaryQuantity = item.PrimaryQuantity,
-                        SecondaryUnitId = item.SecondaryUnitId,
+                        SecondaryUnitId = secondaryUnitId,
                         SecondaryQuantity = item.SecondaryQuantity,
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         ProductUnitConversion = productUnitConversionObj

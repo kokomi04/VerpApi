@@ -26,12 +26,12 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<ServiceResult<PackageOutputModel>> GetInfo(long packageId);
 
-        /// <summary>
-        /// Thêm mới thông tin kiện
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        Task<ServiceResult<long>> AddPackage(PackageInputModel req);
+        ///// <summary>
+        ///// Thêm mới thông tin kiện
+        ///// </summary>
+        ///// <param name="req"></param>
+        ///// <returns></returns>
+        //Task<ServiceResult<long>> AddPackage(PackageInputModel req);
 
         /// <summary>
         /// Cập nhật thông tin kiện
@@ -41,12 +41,12 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<Enum> UpdatePackage(long packageId, PackageInputModel req);
 
-        /// <summary>
-        /// Xóa thông tin kiện (đánh dấu xóa)
-        /// </summary>
-        /// <param name="packageId">Mã kiện</param>
-        /// <returns></returns>
-        Task<Enum> DeletePackage(long packageId);
+        ///// <summary>
+        ///// Xóa thông tin kiện (đánh dấu xóa)
+        ///// </summary>
+        ///// <param name="packageId">Mã kiện</param>
+        ///// <returns></returns>
+        //Task<Enum> DeletePackage(long packageId);
 
         /// <summary>
         /// Tách kiện

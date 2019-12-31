@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -34,14 +35,16 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
         /// <param name="stockId">Id kho</param>
         /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
+        /// <param name="beginTime"></param>
+        /// <param name="endTime"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] string beginTime, [FromQuery] string endTime, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type,beginTime: beginTime,endTime: endTime, page: page, size: size);
         }
 
 
@@ -52,7 +55,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns>InventoryOutput</returns>
         [HttpGet]
         [Route("{inventoryId}")]
-        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] int inventoryId)
+        public async Task<ApiResponse<InventoryOutput>> GetInventory([FromRoute] long inventoryId)
         {
             return await _inventoryService.GetInventory(inventoryId);
         }
@@ -92,7 +95,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryInput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
+        public async Task<ApiResponse> UpdateInventoryInput([FromRoute] long inventoryId, [FromBody] InventoryInModel req)
         {
             return await _inventoryService.UpdateInventoryInput(inventoryId, UserId, req);
         }
@@ -106,7 +109,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("UpdateInventoryOutput/{inventoryId}")]
-        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] int inventoryId, [FromBody] InventoryOutModel req)
+        public async Task<ApiResponse> UpdateInventoryOutput([FromRoute] long inventoryId, [FromBody] InventoryOutModel req)
         {
             return await _inventoryService.UpdateInventoryOutput(inventoryId, UserId, req);
         }
@@ -115,13 +118,23 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// Xóa phiếu nhập/xuất kho
         /// </summary>
         /// <param name="inventoryId"></param>
+        /// <param name="type">EnumInventoryType: 1-phiếu nhập kho ; 2-phiếu xuất kho</param>
         /// <returns></returns>
         [HttpDelete]
         [Route("{inventoryId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int inventoryId)
+        public async Task<ApiResponse> Delete([FromRoute] long inventoryId, [FromQuery] EnumInventoryType type)
         {
             var currentUserId = UserId;
-            return await _inventoryService.DeleteInventory(inventoryId, currentUserId);
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryService.DeleteInventoryInput(inventoryId, currentUserId);
+
+                case EnumInventoryType.Output:
+                    return await _inventoryService.DeleteInventoryOutput(inventoryId, currentUserId);
+            }
+            var result = new ApiResponse { Code = GeneralCode.InvalidParams.ToString(), Message = GeneralCode.InvalidParams.GetEnumDescription() };
+            return result;
         }
 
         /// <summary>
@@ -131,7 +144,8 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
-        public async Task<ApiResponse> ApproveInventoryInput([FromRoute] int inventoryId)
+        [VErpAction(EnumAction.Censor)]
+        public async Task<ApiResponse> ApproveInventoryInput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
             return await _inventoryService.ApproveInventoryInput(inventoryId, currentUserId);
@@ -145,12 +159,12 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]
-        public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] int inventoryId)
+        [VErpAction(EnumAction.Censor)]
+        public async Task<ApiResponse> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
             var currentUserId = UserId;
             return await _inventoryService.ApproveInventoryOutput(inventoryId, currentUserId);
         }
-
 
         /// <summary>
         /// Upload file
@@ -164,7 +178,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         {
             return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
         }
-
 
         /// <summary>
         /// Lấy danh sách sản phẩm để nhập kho
@@ -210,6 +223,39 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<ApiResponse<PageData<PackageOutputModel>>> GetPackageListForExport([FromQuery] int productId, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
+        }
+
+
+
+        /// <summary>
+        /// Xử lý file - Đọc và tạo chứng từ tồn đầu
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("ProcessOpeningBalance")]
+        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceInputModel model)
+        {
+            var currentUserId = UserId;
+            return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
+        }
+
+
+        [VErpAction(EnumAction.View)]
+        [HttpPost]
+        [Route("{inventoryId}/InputGetAffectedPackages")]
+        public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
+        {
+            return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId, req);
+        }
+
+        [HttpPut]
+        [Route("{inventoryId}/ApprovedInputDataUpdate")]
+        [VErpAction(EnumAction.Censor)]
+        public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, ApprovedInputDataSubmitModel req)
+        {
+
+            return await _inventoryService.ApprovedInputDataUpdate(inventoryId, req);
         }
 
     }

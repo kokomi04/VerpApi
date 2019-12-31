@@ -14,6 +14,9 @@ namespace VErp.Services.Stock.Model.Inventory
         
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }
+
+        public decimal UnitPrice { get; set; }
+
         public int? ProductUnitConversionId { set; get; }
 
         public decimal? ProductUnitConversionQuantity { get; set; }

@@ -1,23 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Location;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
+using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Model.Package;
-using Microsoft.EntityFrameworkCore.Internal;
-using System.Globalization;
 using PackageModel = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -40,55 +38,55 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityService = activityService;
         }
 
-        public async Task<ServiceResult<long>> AddPackage(PackageInputModel req)
-        {
-            try
-            {
-                if (req == null || _stockDbContext.Package.Any(q => q.PackageCode == req.PackageCode))
-                    return GeneralCode.InvalidParams;
+        //public async Task<ServiceResult<long>> AddPackage(PackageInputModel req)
+        //{
+        //    try
+        //    {
+        //        if (req == null || _stockDbContext.Package.Any(q => q.PackageCode == req.PackageCode))
+        //            return GeneralCode.InvalidParams;
 
-                DateTime issuedDate = DateTime.MinValue;
-                DateTime expiredDate = DateTime.MinValue;
+        //        DateTime issuedDate = DateTime.MinValue;
+        //        DateTime expiredDate = DateTime.MinValue;
 
-                if (!string.IsNullOrEmpty(req.Date))
-                    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
-                if (!string.IsNullOrEmpty(req.ExpiryTime))
-                    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
+        //        if (!string.IsNullOrEmpty(req.Date))
+        //            DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
+        //        if (!string.IsNullOrEmpty(req.ExpiryTime))
+        //            DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
 
-                var obj = new VErp.Infrastructure.EF.StockDB.Package
-                {
-                    PackageTypeId = req.PackageTypeId,
-                    PackageCode = req.PackageCode,
-                    LocationId = req.LocationId,
-                    StockId = req.StockId,
-                    ProductId = req.ProductId,
-                    Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
-                    ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
-                    PrimaryUnitId = req.PrimaryUnitId,
-                    PrimaryQuantity = req.PrimaryQuantity,
-                    ProductUnitConversionId = req.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = req.ProductUnitConversionQuantity,
-                    PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
-                    PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
-                    ProductUnitConversionWaitting = req.ProductUnitConversionWaitting,
-                    ProductUnitConversionRemaining = req.ProductUnitConversionRemaining,
+        //        var obj = new VErp.Infrastructure.EF.StockDB.Package
+        //        {
+        //            PackageTypeId = req.PackageTypeId,
+        //            PackageCode = req.PackageCode,
+        //            LocationId = req.LocationId,
+        //            StockId = req.StockId,
+        //            ProductId = req.ProductId,
+        //            Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
+        //            ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
+        //            PrimaryUnitId = req.PrimaryUnitId,
+        //            PrimaryQuantity = req.PrimaryQuantity,
+        //            ProductUnitConversionId = req.ProductUnitConversionId,
+        //            ProductUnitConversionQuantity = req.ProductUnitConversionQuantity,
+        //            PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
+        //            PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
+        //            ProductUnitConversionWaitting = req.ProductUnitConversionWaitting,
+        //            ProductUnitConversionRemaining = req.ProductUnitConversionRemaining,
 
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
-                    IsDeleted = false
-                };
-                await _stockDbContext.Package.AddAsync(obj);
-                _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Tạo mới thông tin kiện {obj.PackageCode} ", null, obj);
-                await _stockDbContext.SaveChangesAsync();
+        //            CreatedDatetimeUtc = DateTime.Now,
+        //            UpdatedDatetimeUtc = DateTime.Now,
+        //            IsDeleted = false
+        //        };
+        //        await _stockDbContext.Package.AddAsync(obj);
+        //        _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Tạo mới thông tin kiện {obj.PackageCode} ", null, obj);
+        //        await _stockDbContext.SaveChangesAsync();
 
-                return obj.PackageId;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "AddPackage");
-                return GeneralCode.InternalError;
-            }
-        }
+        //        return obj.PackageId;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "AddPackage");
+        //        return GeneralCode.InternalError;
+        //    }
+        //}
 
         public async Task<Enum> UpdatePackage(long packageId, PackageInputModel req)
         {
@@ -123,30 +121,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<Enum> DeletePackage(long packageId)
-        {
-            try
-            {
-                var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
-                var oldPackageData = GetInfoForLog(obj);
-                if (obj == null)
-                {
-                    return PackageErrorCode.PackageNotFound;
-                }
-                obj.UpdatedDatetimeUtc = DateTime.Now;
-                obj.IsDeleted = true;
+        //public async Task<Enum> DeletePackage(long packageId)
+        //{
+        //    try
+        //    {
+        //        var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
+        //        var oldPackageData = GetInfoForLog(obj);
+        //        if (obj == null)
+        //        {
+        //            return PackageErrorCode.PackageNotFound;
+        //        }
+        //        obj.UpdatedDatetimeUtc = DateTime.Now;
+        //        obj.IsDeleted = true;
 
-                _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Xoá thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
-                await _stockDbContext.SaveChangesAsync();
+        //        _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Xoá thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
+        //        await _stockDbContext.SaveChangesAsync();
 
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdatePackage");
-                return GeneralCode.InternalError;
-            }
-        }
+        //        return GeneralCode.Success;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "UpdatePackage");
+        //        return GeneralCode.InternalError;
+        //    }
+        //}
 
 
         public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
@@ -237,7 +235,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     packageRefs.Add(new PackageRef()
                     {
                         PackageId = newPackage.PackageId,
-                        RefPackageId = packageId
+                        RefPackageId = packageId,
+                        PrimaryUnitId = newPackage.PrimaryUnitId,
+                        PrimaryQuantity = newPackage.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = newPackage.ProductUnitConversionId,
+                        ProductUnitConversionQuantity = newPackage.ProductUnitConversionRemaining,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        PackageOperationTypeId = (int)EnumPackageOperationType.Split
                     });
                 }
 
@@ -264,15 +268,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return PackageErrorCode.PackageAlreadyExisted;
             }
 
-
-
-            var fromPackages = await _stockDbContext.Package.Where(p => req.FromPackageIds.Contains(p.PackageId) && p.PackageTypeId == (int)EnumPackageType.Custom).ToListAsync();
+            var fromPackages = await _stockDbContext.Package.Where(p => req.FromPackageIds.Contains(p.PackageId)).ToListAsync();
 
             if (fromPackages
                 .GroupBy(p => new { p.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId })
                 .Count() > 1)
             {
                 return PackageErrorCode.PackagesToJoinMustBeSameProductAndUnit;
+            }
+            var defaultPackage = fromPackages.FirstOrDefault(p => p.PackageTypeId == (int)EnumPackageType.Default);
+            if (defaultPackage != null)
+            {
+                return PackageErrorCode.CanNotJoinDefaultPackage;
             }
 
             foreach (var packageId in req.FromPackageIds)
@@ -297,16 +304,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = fromPackages.Max(p => p.Date),
                     ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
                     PrimaryUnitId = fromPackages[0].PrimaryUnitId,
-                    PrimaryQuantity = fromPackages.Sum(p => p.PrimaryQuantity),
+                    PrimaryQuantity = fromPackages.Sum(p => p.PrimaryQuantityRemaining),
                     ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
-                    ProductUnitConversionQuantity = fromPackages.Sum(p => p.ProductUnitConversionQuantity),
+                    ProductUnitConversionQuantity = fromPackages.Sum(p => p.ProductUnitConversionRemaining),
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryQuantityWaiting = 0,
-                    PrimaryQuantityRemaining = fromPackages.Sum(p => p.PrimaryQuantity),
+                    PrimaryQuantityRemaining = fromPackages.Sum(p => p.PrimaryQuantityRemaining),
                     ProductUnitConversionWaitting = 0,
-                    ProductUnitConversionRemaining = fromPackages.Sum(p => p.ProductUnitConversionQuantity),
+                    ProductUnitConversionRemaining = fromPackages.Sum(p => p.ProductUnitConversionRemaining),
                     PackageTypeId = (int)EnumPackageType.Custom
                 };
                 await _stockDbContext.AddAsync(newPackage);
@@ -315,16 +322,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageRefs = new List<PackageRef>();
                 foreach (var package in fromPackages)
                 {
+                    packageRefs.Add(new PackageRef()
+                    {
+                        PackageId = newPackage.PackageId,
+                        RefPackageId = package.PackageId,
+                        PrimaryUnitId = package.PrimaryUnitId,
+                        PrimaryQuantity = package.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = package.ProductUnitConversionId,
+                        ProductUnitConversionQuantity = package.ProductUnitConversionRemaining,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        PackageOperationTypeId = (int)EnumPackageOperationType.Join
+                    });
+
+
                     package.PrimaryQuantity = 0;
                     package.PrimaryQuantityRemaining = 0;
                     package.ProductUnitConversionQuantity = 0;
                     package.ProductUnitConversionRemaining = 0;
-
-                    packageRefs.Add(new PackageRef()
-                    {
-                        PackageId = newPackage.PackageId,
-                        RefPackageId = package.PackageId
-                    });
                 }
 
                 await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);

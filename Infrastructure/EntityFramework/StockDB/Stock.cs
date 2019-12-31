@@ -9,7 +9,6 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             Inventory = new HashSet<Inventory>();
             Package = new HashSet<Package>();
-            StockProduct = new HashSet<StockProduct>();
         }
 
         public int StockId { get; set; }
@@ -25,6 +24,5 @@ namespace VErp.Infrastructure.EF.StockDB
 
         public virtual ICollection<Inventory> Inventory { get; set; }
         public virtual ICollection<Package> Package { get; set; }
-        public virtual ICollection<StockProduct> StockProduct { get; set; }
     }
 }
