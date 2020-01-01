@@ -132,6 +132,11 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static decimal GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
+        {
+            var expression = $"({productUnitConversionQuantity})/({factorExpression})";
+            return Eval(expression);
+        }
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
         {
             return $"{((int)objectTypeId)}_{objectId}";

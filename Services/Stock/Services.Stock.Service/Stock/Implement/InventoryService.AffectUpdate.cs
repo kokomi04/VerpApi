@@ -437,51 +437,69 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 var updateProduct = req.AffectDetails.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
                 if (updateProduct == null) continue;
-               
+
                 var productUnitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == p.ProductUnitConversionId);
                 if (productUnitConversionInfo == null)
                 {
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                 }
 
-                
+
                 foreach (var obj in p.AffectObjects)
                 {
-                    var expression = $"({obj.NewProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
-
-                    if (obj.NewProductUnitConversionQuantity > 0)
+                    if (productUnitConversionInfo.IsFreeStyle == false)
                     {
-                        var primaryQualtity = Utils.Eval(expression);
-                        if (!(primaryQualtity > 0))
+                       
+                        if (obj.NewProductUnitConversionQuantity > 0)
                         {
-                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        }
+                            var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                            if (!(primaryQualtity > 0))
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            }
 
-                        obj.NewPrimaryQuantity = primaryQualtity;
+                            obj.NewPrimaryQuantity = primaryQualtity;
+                        }
+                        else
+                        {
+                            obj.NewPrimaryQuantity = 0;
+                        }
+                    }
+
+                    if ((obj.NewProductUnitConversionQuantity != 0 || obj.NewPrimaryQuantity != 0)
+                        && (obj.NewProductUnitConversionQuantity <= 0 || obj.NewPrimaryQuantity <= 0)
+                        )
+                    {
+                        return GeneralCode.InvalidParams;
                     }
 
                     if (obj.Children != null)
                     {
                         foreach (var c in obj.Children)
-                        {
-                            expression = $"({c.NewTransferProductUnitConversionQuantity})*({productUnitConversionInfo.FactorExpression})";
-
-                            if (c.NewTransferProductUnitConversionQuantity > 0)
+                        {                          
+                            if (productUnitConversionInfo.IsFreeStyle == false)
                             {
-                                var primaryQualtity = Utils.Eval(expression);
-                                if (!(primaryQualtity > 0))
+                                if (obj.NewProductUnitConversionQuantity > 0)
                                 {
-                                    return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                                }
+                                    var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                                    if (!(primaryQualtity > 0))
+                                    {
+                                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                                    }
 
-                                obj.NewPrimaryQuantity = primaryQualtity;
+                                    c.NewTransferPrimaryQuantity = primaryQualtity;
+                                }
+                                else
+                                {
+                                    c.NewTransferPrimaryQuantity = 0;
+                                }
                             }
                         }
                     }
 
                 }
 
-               
+
                 foreach (var obj in p.AffectObjects)
                 {
                     if (obj.Children != null && obj.Children.All(c => !c.IsEditable)) continue;
@@ -606,7 +624,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         childPackage.PrimaryQuantity += deltaPrimaryQuantity;
                                         childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
-                                       
+
 
                                         break;
 
