@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -21,11 +22,11 @@ namespace VErpApi.Controllers.Stock.Products
     public class ProductUnitConversionController : VErpBaseController
     {
         private readonly IProductUnitConversionService _productUnitConversionService;
-        
+
         public ProductUnitConversionController(IProductUnitConversionService productUnitConversionService)
         {
             _productUnitConversionService = productUnitConversionService;
-            
+
         }
 
         /// <summary>
@@ -40,6 +41,20 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<ApiResponse<PageData<ProductUnitConversionOutput>>> Get([FromQuery] int productId, [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
             return await _productUnitConversionService.GetList(productId: productId, page: page, size: size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách đơn vị chuyển đổi của danh sách mặt hàng
+        /// </summary>
+        /// <param name="productIds"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ByProducts")]
+        public async Task<ApiResponse<PageData<ProductUnitConversionByProductOutput>>> ByProducts([FromQuery] IList<int> productIds, [FromQuery] int page = 0, [FromQuery] int size = 0)
+        {
+            return await _productUnitConversionService.GetListByProducts(productIds, page, size);
         }
 
     }
