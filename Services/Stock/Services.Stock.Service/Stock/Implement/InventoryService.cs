@@ -1463,6 +1463,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private helper method
 
+
+
         private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req)
         {
             var productIds = req.InProducts.Select(p => p.ProductId).Distinct().ToList();
@@ -1487,7 +1489,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
-                if (details.ProductUnitConversionQuantity < 0)
+                if (details.ProductUnitConversionQuantity <= 0 || details.PrimaryQuantity <= 0)
                 {
                     return GeneralCode.InvalidParams;
                 }
@@ -1501,8 +1503,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (productUnitConversionInfo.IsFreeStyle == false)
                     {
-                        var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
-                        primaryQty = Utils.Eval(expression);
+                        primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                         if (primaryQty <= 0)
                         {
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
@@ -1608,7 +1609,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         return InventoryErrorCode.NotEnoughQuantity;
                     }
-                    if(primaryQualtity == 0)
+                    if (primaryQualtity == 0)
                     {
                         var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
 
@@ -1618,7 +1619,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         }
                     }
-                    
+
                 }
                 inventoryDetailList.Add(new InventoryDetail
                 {
@@ -2141,11 +2142,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             continue;
                         var unit1 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);
                         var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
-                        
+
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-                       
+
                         if (item.Factor > 0 && productObj != null && unit1 != null && unit2 != null)
-                        {                           
+                        {
                             var newProductUnitConversion = new ProductUnitConversion
                             {
                                 ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")),
@@ -2205,7 +2206,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var factorExpression = item.Factor.ToString("N6");
                                 productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression && !q.IsDefault);
                             }
-                        }                        
+                        }
                         newInventoryInputModel.Add(
                                 new InventoryInProductExtendModel
                                 {
