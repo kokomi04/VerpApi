@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -17,5 +18,8 @@ namespace VErp.Services.Stock.Service.Products
         /// <param name="size"></param>
         /// <returns></returns>
         Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0);
+
+
+        Task<ServiceResult<PageData<ProductUnitConversionByProductOutput>>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0);
     }
 }
