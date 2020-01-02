@@ -940,7 +940,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                if (inventoryId <= 0)
+                if (inventoryId < 0)
                 {
                     return InventoryErrorCode.InventoryNotFound;
                 }
@@ -2086,28 +2086,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     var readBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Product.ProductCode) } };
                     _stockDbContext.BulkRead<Product>(productDataList, readBulkConfig);
-                    _stockDbContext.BulkInsert<Product>(productDataList.Where(q => q.ProductId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+                    _stockDbContext.BulkInsertOrUpdate<Product>(productDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = true });
+                    _stockDbContext.BulkRead<Product>(productDataList, readBulkConfig);
 
                     // Cập nhật đơn vị chuyển đổi mặc định
                     var defaultProductUnitConversionList = new List<ProductUnitConversion>(productDataList.Count);
                     foreach (var p in productDataList)
                     {
-                        var unitObj = unitDataList.FirstOrDefault(q => q.UnitId == p.UnitId);
-                        var defaultProductUnitConversionEntity = new ProductUnitConversion()
+                        if(p.ProductId > 0)
                         {
-                            ProductUnitConversionName = unitObj.UnitName,
-                            ProductId = p.ProductId,
-                            SecondaryUnitId = unitObj.UnitId,
-                            FactorExpression = "1",
-                            ConversionDescription = "Mặc định",
-                            IsFreeStyle = false,
-                            IsDefault = true
-                        };
-                        defaultProductUnitConversionList.Add(defaultProductUnitConversionEntity);
+                            var unitObj = unitDataList.FirstOrDefault(q => q.UnitId == p.UnitId);
+                            var defaultProductUnitConversionEntity = new ProductUnitConversion()
+                            {
+                                ProductUnitConversionName = unitObj.UnitName,
+                                ProductId = p.ProductId,
+                                SecondaryUnitId = unitObj.UnitId,
+                                FactorExpression = "1",
+                                ConversionDescription = "Mặc định",
+                                IsFreeStyle = false,
+                                IsDefault = true
+                            };
+                            defaultProductUnitConversionList.Add(defaultProductUnitConversionEntity);
+                        }                        
                     }
-                    var readDefaultProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductId), nameof(ProductUnitConversion.SecondaryUnitId), nameof(ProductUnitConversion.ProductUnitConversionName) } };
-                    //_stockDbContext.BulkRead<ProductUnitConversion>(defaultProductUnitConversionList, readDefaultProductUnitConversionBulkConfig);
-                    _stockDbContext.BulkInsert<ProductUnitConversion>(defaultProductUnitConversionList.Where(q => q.ProductUnitConversionId == 0).ToList(), new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
+                    var readDefaultProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductId), nameof(ProductUnitConversion.SecondaryUnitId), nameof(ProductUnitConversion.IsDefault) } };
+                    _stockDbContext.BulkRead<ProductUnitConversion>(defaultProductUnitConversionList, readDefaultProductUnitConversionBulkConfig);
+                    _stockDbContext.BulkInsert<ProductUnitConversion>(defaultProductUnitConversionList.Where(q => q.ProductUnitConversionId == 0).ToList(), new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = true });
 
                     #region Cập nhật mô tả sản phẩm & thông tin bổ sung
                     var productExtraInfoList = new List<ProductExtraInfo>(productDataList.Count);
@@ -2129,7 +2133,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     var readProductExtraInfoBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductExtraInfo.ProductId) } };
                     _stockDbContext.BulkRead<ProductExtraInfo>(productExtraInfoList, readProductExtraInfoBulkConfig);
-                    _stockDbContext.BulkInsertOrUpdate<ProductExtraInfo>(productExtraInfoList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = false });
+                    _stockDbContext.BulkInsertOrUpdate<ProductExtraInfo>(productExtraInfoList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false });
                     #endregion
 
                     #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion
@@ -2139,6 +2143,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         if (string.IsNullOrEmpty(item.ProductCode))
                             continue;
                         if (string.IsNullOrEmpty(item.Unit2))
+                            continue;
+                        if (item.Factor == 0)
                             continue;
                         var unit1 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);
                         var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
@@ -2162,7 +2168,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 newProductUnitConversionList.Add(newProductUnitConversion);
                         }
                     }
-                    var readProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductUnitConversionName), nameof(ProductUnitConversion.ProductId) } };
+                    var readProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductUnitConversionName), nameof(ProductUnitConversion.ProductId), nameof(ProductUnitConversion.ProductUnitConversionName) } };
                     //_stockDbContext.BulkRead<ProductUnitConversion>(newProductUnitConversionList, readProductUnitConversionBulkConfig);
                     _stockDbContext.BulkInsert<ProductUnitConversion>(newProductUnitConversionList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
 
@@ -2189,24 +2195,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             continue;
                         ProductUnitConversion productUnitConversionObj = null;
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-
-                        //if (item.ProductCode == "GODAY.048")
-                        //{
-
-                        //}
-                        if (string.IsNullOrEmpty(item.Unit2))
-                        {
-                            productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.IsDefault);
-                        }
-                        else
+                       
+                        if (!string.IsNullOrEmpty(item.Unit2) && item.Factor > 0)
                         {
                             var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
-                            if (unit2 != null)
+                            if (unit2 != null && item.Factor > 0)
                             {
                                 var factorExpression = item.Factor.ToString("N6");
                                 productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression && !q.IsDefault);
                             }
                         }
+                        else
+                            productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.IsDefault);
+
                         newInventoryInputModel.Add(
                                 new InventoryInProductExtendModel
                                 {
@@ -2234,20 +2235,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var g in groupList)
                         {
                             var details = g.ToList();
-                            var newInventory = new InventoryInModel();
-                            newInventory.StockId = model.StockId;
-                            newInventory.InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.Now.ToString("ddMMyyyyHHmmss"));
-                            newInventory.DateUtc = model.IssuedDate;
-                            newInventory.Shipper = string.Empty;
-                            newInventory.Content = model.Description;
-                            newInventory.CustomerId = null;
-                            newInventory.Department = string.Empty;
-                            newInventory.StockKeeperUserId = null;
-                            newInventory.BillCode = string.Empty;
-                            newInventory.BillSerial = string.Empty;
-                            newInventory.BillDate = null;
-                            newInventory.FileIdList = null;
-                            newInventory.InProducts = new List<InventoryInProductModel>(details.Count);
+                            var newInventory = new InventoryInModel
+                            {
+                                StockId = model.StockId,
+                                InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                                DateUtc = model.IssuedDate,
+                                Shipper = string.Empty,
+                                Content = model.Description,
+                                CustomerId = null,
+                                Department = string.Empty,
+                                StockKeeperUserId = null,
+                                BillCode = string.Empty,
+                                BillSerial = string.Empty,
+                                BillDate = null,
+                                FileIdList = null,
+                                InProducts = new List<InventoryInProductModel>(details.Count)
+                            };
                             foreach (var item in details)
                             {
                                 var currentProductObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
@@ -2277,8 +2280,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             var ret = await AddInventoryInput(currentUserId, item);
                             if (ret.Data > 0)
-                                //await ApproveInventoryInput(ret.Data, currentUserId);
-                                continue;
+                            {
+                                await ApproveInventoryInput(ret.Data, currentUserId);
+                                //continue;
+                            }                                
                             else
                             {
                                 _logger.LogWarning(string.Format("ProcessExcelSheet not success, please recheck -> AddInventoryInput: {0}", item.InventoryCode));
