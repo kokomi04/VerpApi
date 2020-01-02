@@ -81,13 +81,55 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         IsDefault = item.IsDefault
                     };
                     resultList.Add(p);
-                }              
-                return (resultList,total);
+                }
+                return (resultList, total);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetList");
                 return (new PageData<ProductUnitConversionOutput> { Total = 0, List = null });
+            }
+        }
+
+        public async Task<ServiceResult<PageData<ProductUnitConversionByProductOutput>>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0)
+        {
+            try
+            {
+                if (productIds == null || productIds.Count == 0)
+                    return null;
+
+                var query = from c in _stockDbContext.ProductUnitConversion
+                            where productIds.Contains(c.ProductId)
+                            select new ProductUnitConversionByProductOutput()
+                            {
+                                ProductUnitConversionId = c.ProductUnitConversionId,
+                                ProductUnitConversionName = c.ProductUnitConversionName,
+                                ProductId = c.ProductId,
+                                SecondaryUnitId = c.SecondaryUnitId,
+                                FactorExpression = c.FactorExpression,
+                                ConversionDescription = c.ConversionDescription,
+                                IsFreeStyle = c.IsFreeStyle,
+                                IsDefault = c.IsDefault,
+                            };
+
+                var total = query.Count();
+
+                IList<ProductUnitConversionByProductOutput> pagedData;
+                if (size <= 0)
+                {
+                    pagedData = await query.ToListAsync();
+                }
+                else
+                {
+                    pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+                }
+
+                return (PageData<ProductUnitConversionByProductOutput>)(pagedData, total);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetListByProducts");
+                return GeneralCode.InternalError;
             }
         }
     }

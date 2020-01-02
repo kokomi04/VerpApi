@@ -40,5 +40,6 @@ namespace VErp.Infrastructure.ServiceCore.Model
                 Data = data
             };
         }
+
     }
 }
