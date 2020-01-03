@@ -396,11 +396,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     try
                     {
-                        var totalMoney = (decimal)0;
-                        foreach (var item in validInventoryDetails.Data)
-                        {
-                            totalMoney += (item.UnitPrice * item.PrimaryQuantity);
-                        }
+                        var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
 
                         var inventoryObj = new Infrastructure.EF.StockDB.Inventory
                         {
@@ -472,6 +468,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, "AddInventoryInput");
                 return GeneralCode.InternalError;
             }
+        }
+
+        private decimal InputCalTotalMoney(IList<InventoryDetail> data)
+        {
+            var totalMoney = (decimal)0;
+            foreach (var item in data)
+            {
+                totalMoney += (item.UnitPrice * item.PrimaryQuantity);
+            }
+            return totalMoney;
         }
 
         /// <summary>

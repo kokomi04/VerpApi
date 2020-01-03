@@ -142,6 +142,6 @@ namespace VErp.Services.Stock.Service.Stock
 
 
         Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req);
-        Task<ServiceResult> ApprovedInputDataUpdate(long inventoryId, ApprovedInputDataSubmitModel req);
+        Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req);
     }
 }
