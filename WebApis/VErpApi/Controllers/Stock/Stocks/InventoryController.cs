@@ -255,7 +255,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, ApprovedInputDataSubmitModel req)
         {
 
-            return await _inventoryService.ApprovedInputDataUpdate(inventoryId, req);
+            return await _inventoryService.ApprovedInputDataUpdate(UserId, inventoryId, req);
         }
 
     }

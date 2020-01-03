@@ -43,19 +43,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return data.Code;
             }
 
-            return data.Data.products.ToList();
+            return data.Data.Products.ToList();
 
         }
-        public async Task<ServiceResult<(IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
+        public async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
         {
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
 
-            var data = await ValidateInventoryIn(true, req);
-            if (!data.Code.IsSuccess())
+            var updateDetail = await ValidateInventoryIn(true, req);
+            if (!updateDetail.Code.IsSuccess())
             {
-                return data.Code;
+                return updateDetail.Code;
             }
 
             var products = new List<CensoredInventoryInputProducts>();
@@ -71,7 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     newPrimaryQuantity = 0;
                 }
 
-                var newDetail = data.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
+                var newDetail = updateDetail.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
                 if (newDetail != null)
                 {
                     newProductUnitConversionQuantity = newDetail.ProductUnitConversionQuantity;
@@ -135,7 +135,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             }
 
-            return (products, details);
+            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
         }
 
 
@@ -384,13 +384,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        public async Task<ServiceResult> ApprovedInputDataUpdate(long inventoryId, ApprovedInputDataSubmitModel req)
+        public async Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    var r = await ApprovedInputDataUpdateAction(inventoryId, req);
+                    var r = await ApprovedInputDataUpdateAction(currentUserId, inventoryId, req);
                     if (!r.Code.IsSuccess())
                     {
                         trans.Rollback();
@@ -408,7 +408,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction(long inventoryId, ApprovedInputDataSubmitModel req)
+        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req)
         {
             var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req.Inventory);
 
@@ -417,14 +417,48 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return data.Code;
             }
 
-            var products = data.Data.products;
-            var details = data.Data.details;
+            var products = data.Data.Products;
+            var dbDetails = data.Data.DbDetails;
+            var updateDetails = data.Data.UpdateDetails;
 
-            var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products, details);
+            var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products, dbDetails);
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
-            var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, details);
+            var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
             if (!updateStatus.IsSuccess()) return updateStatus;
+
+
+            if (!DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            {
+                return GeneralCode.InvalidParams;
+            }
+
+            var billDate = DateTime.MinValue;
+            if (!string.IsNullOrEmpty(req.Inventory.BillDate))
+            {
+                DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
+            }
+
+
+            var totalMoney = InputCalTotalMoney(updateDetails);
+
+            var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
+
+            inventoryInfo.TotalMoney = totalMoney;
+            inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
+            inventoryInfo.Shipper = req.Inventory.Shipper;
+            inventoryInfo.Content = req.Inventory.Content;
+            inventoryInfo.DateUtc = issuedDate;
+            inventoryInfo.CustomerId = req.Inventory.CustomerId;
+            inventoryInfo.Department = req.Inventory.Department;
+            inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
+            inventoryInfo.BillCode = req.Inventory.BillCode;
+            inventoryInfo.BillSerial = req.Inventory.BillSerial;
+            inventoryInfo.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
+            inventoryInfo.TotalMoney = totalMoney;
+            inventoryInfo.UpdatedByUserId = currentUserId;
+            inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+
 
             await _stockDbContext.SaveChangesAsync();
 
@@ -449,7 +483,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (productUnitConversionInfo.IsFreeStyle == false)
                     {
-                       
+
                         if (obj.NewProductUnitConversionQuantity > 0)
                         {
                             var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
@@ -476,7 +510,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (obj.Children != null)
                     {
                         foreach (var c in obj.Children)
-                        {                          
+                        {
                             if (productUnitConversionInfo.IsFreeStyle == false)
                             {
                                 if (obj.NewProductUnitConversionQuantity > 0)
@@ -563,7 +597,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var detail = details.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
                 if (detail == null) continue;
 
-                if (p.NewProductUnitConversionQuantity == 0)
+                var submitDetail = req.Inventory?.InProducts?.FirstOrDefault(i => i.InventoryDetailId == p.InventoryDetailId);
+
+                detail.PrimaryQuantity = p.NewPrimaryQuantity;
+                detail.ProductUnitConversionQuantity = p.NewProductUnitConversionQuantity;
+                detail.UnitPrice = submitDetail?.UnitPrice ?? 0;
+                detail.RefObjectId = submitDetail?.RefObjectId;
+                detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
+                detail.RefObjectCode = submitDetail?.RefObjectCode;
+
+                if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
                 }
@@ -653,5 +696,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return GeneralCode.Success;
         }
+
+        public class InventoryInputUpdateGetAffectedModel
+        {
+            public IList<CensoredInventoryInputProducts> Products { get; set; }
+            public IList<InventoryDetail> DbDetails { get; set; }
+
+            public IList<InventoryDetail> UpdateDetails { get; set; }
+        }
     }
+
 }
