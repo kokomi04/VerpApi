@@ -1599,7 +1599,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
-
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)
                     {
@@ -1617,15 +1616,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     if (primaryQualtity == 0)
                     {
-                        var expression = $"({details.ProductUnitConversionQuantity})/({productUnitConversionInfo.FactorExpression})";
-
-                        primaryQualtity = Utils.Eval(expression);
+                        primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                         if (!(primaryQualtity > 0))
                         {
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         }
                     }
-
                 }
                 inventoryDetailList.Add(new InventoryDetail
                 {
@@ -1945,7 +1941,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             #region Get All Cell value
                             var productName = row.GetCell(3) != null ? HelperCellGetStringValue(row.GetCell(3)) : string.Empty;
                             var cellUnit = row.GetCell(4);
-                            
+
                             var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
                             if (string.IsNullOrEmpty(unitName))
                                 continue;
@@ -1960,7 +1956,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var heightSize = row.GetCell(13) != null ? HelperCellGetNumericValue(row.GetCell(13)) : 0;
                             var widthSize = row.GetCell(14) != null ? HelperCellGetNumericValue(row.GetCell(14)) : 0;
                             var longSize = row.GetCell(15) != null ? HelperCellGetNumericValue(row.GetCell(15)) : 0;
-                         
+
                             var cellItem = new OpeningBalanceModel
                             {
                                 CateName = currentCateName,
@@ -2153,7 +2149,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     foreach (var item in excelModel)
                     {
                         if (string.IsNullOrEmpty(item.ProductCode) || string.IsNullOrEmpty(item.Unit2) || item.Factor == 0)
-                            continue;                        
+                            continue;
                         var unit1 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit1);
                         var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
 
@@ -2179,7 +2175,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var readProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductUnitConversionName), nameof(ProductUnitConversion.ProductId), nameof(ProductUnitConversion.IsDefault) } };
                     _stockDbContext.BulkRead<ProductUnitConversion>(newProductUnitConversionList, readProductUnitConversionBulkConfig);
                     _stockDbContext.BulkInsertOrUpdate<ProductUnitConversion>(newProductUnitConversionList, new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true });
-                    
+
                     #endregion
 
                     #endregion end db updating product & related data
