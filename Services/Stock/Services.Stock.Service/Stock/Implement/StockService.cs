@@ -179,7 +179,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }

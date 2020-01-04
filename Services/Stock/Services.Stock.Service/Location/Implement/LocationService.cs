@@ -70,7 +70,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     var objLog = GetLocationInfoForLog(locationInfo);
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.StockId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", null, objLog);
+                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", null, objLog);
 
                     return locationInfo.StockId;
                 }
@@ -109,7 +109,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.StockId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", dataBefore, null);
 
                     return GeneralCode.Success;
                 }

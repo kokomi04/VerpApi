@@ -404,6 +404,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
                     trans.Commit();
+
+                    var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
+                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryId, messageLog, "", req);
+
                     return r;
                 }
                 catch (Exception ex)

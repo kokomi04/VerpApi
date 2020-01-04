@@ -391,7 +391,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         await _stockContext.SaveChangesAsync();
                         trans.Commit();
 
-                        _activityService.CreateActivityAsync(EnumObjectType.File, objectId, $"Cập nhật file {objectTypeId}", beforeJson, fileInfo);
+                        _activityService.CreateActivityAsync(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", beforeJson, fileInfo);
 
                         _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
 

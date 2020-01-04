@@ -696,7 +696,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var objLog = GetInventoryInfoForLog(inventoryObj);
-                        var messageLog = inventoryObj.IsApproved ? string.Format("Duyệt phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode) : string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
+                        var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
                         _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
                     }
                     catch (Exception ex)
@@ -813,7 +813,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var objLog = GetInventoryInfoForLog(inventoryObj);
-                        var messageLog = inventoryObj.IsApproved ? string.Format("Duyệt phiếu xuất kho, mã:", inventoryObj.InventoryCode) : string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
+                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
                         _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
                     }
                     catch (Exception ex)
@@ -885,7 +885,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryObj.UpdatedByUserId = currentUserId;
                     inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -941,7 +941,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
