@@ -96,7 +96,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             try
             {
                 if (productIds == null || productIds.Count == 0)
-                    return null;
+                    return (PageData<ProductUnitConversionByProductOutput>)(new List<ProductUnitConversionByProductOutput>(), 0);
 
                 var query = from c in _stockDbContext.ProductUnitConversion
                             where productIds.Contains(c.ProductId)
