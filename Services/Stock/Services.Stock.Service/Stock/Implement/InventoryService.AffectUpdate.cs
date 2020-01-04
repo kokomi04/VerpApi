@@ -626,6 +626,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId);
 
+                stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
+                stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
                 foreach (var obj in p.AffectObjects)
                 {
                     object parent = null;
@@ -661,8 +664,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
                                         ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
 
-                                        stockProduct.PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                        stockProduct.ProductUnitConversionRemaining -= deltaConversionQuantity;
+
                                         break;
                                     default:
                                         throw new NotSupportedException();
@@ -691,9 +693,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
-
-                                        stockProduct.PrimaryQuantityRemaining += deltaPrimaryQuantity;
-                                        stockProduct.ProductUnitConversionRemaining += deltaConversionQuantity;
 
                                         break;
                                     default:
