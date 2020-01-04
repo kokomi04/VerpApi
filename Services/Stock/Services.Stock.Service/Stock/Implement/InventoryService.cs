@@ -873,7 +873,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //}
             }
 
-          
+
             var dataBefore = objLog.JsonSerialize();
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -918,7 +918,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return GeneralCode.InvalidParams;
             }
-           
+
 
             var dataBefore = objLog.JsonSerialize();
 
@@ -1517,10 +1517,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
-                if (details.ProductUnitConversionQuantity <= 0 || details.PrimaryQuantity <= 0)
+
+                if (!isApproved)
                 {
-                    return GeneralCode.InvalidParams;
+                    if (details.ProductUnitConversionQuantity <= 0 || details.PrimaryQuantity <= 0)
+                    {
+                        return GeneralCode.InvalidParams;
+                    }
                 }
+
                 if (details.IsFreeStyle == false)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
@@ -1532,13 +1537,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (productUnitConversionInfo.IsFreeStyle == false)
                     {
                         primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                        if (primaryQty <= 0)
+                        if (!isApproved && primaryQty <= 0)
                         {
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         }
 
                     }
                 }
+
+
                 switch (details.PackageOptionId)
                 {
                     case EnumPackageOption.Append:

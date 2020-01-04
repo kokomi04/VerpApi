@@ -58,6 +58,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryErrorCode.CanNotChangeStock;
             }
 
+            if (!inventoryInfo.IsApproved)
+            {
+                return GeneralCode.InvalidParams;
+            }
+
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
@@ -454,24 +459,39 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
-            var totalMoney = InputCalTotalMoney(updateDetails);
+            await _stockDbContext.SaveChangesAsync();
+
+
 
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
 
-            inventoryInfo.TotalMoney = totalMoney;
-            inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
-            inventoryInfo.Shipper = req.Inventory.Shipper;
-            inventoryInfo.Content = req.Inventory.Content;
-            inventoryInfo.DateUtc = issuedDate;
-            inventoryInfo.CustomerId = req.Inventory.CustomerId;
-            inventoryInfo.Department = req.Inventory.Department;
-            inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
-            inventoryInfo.BillCode = req.Inventory.BillCode;
-            inventoryInfo.BillSerial = req.Inventory.BillSerial;
-            inventoryInfo.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
-            inventoryInfo.TotalMoney = totalMoney;
-            inventoryInfo.UpdatedByUserId = currentUserId;
-            inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
+
+            if (!isDelete)
+            {
+                var totalMoney = InputCalTotalMoney(updateDetails);
+
+                inventoryInfo.TotalMoney = totalMoney;
+                inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
+                inventoryInfo.Shipper = req.Inventory.Shipper;
+                inventoryInfo.Content = req.Inventory.Content;
+                inventoryInfo.DateUtc = issuedDate;
+                inventoryInfo.CustomerId = req.Inventory.CustomerId;
+                inventoryInfo.Department = req.Inventory.Department;
+                inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
+                inventoryInfo.BillCode = req.Inventory.BillCode;
+                inventoryInfo.BillSerial = req.Inventory.BillSerial;
+                inventoryInfo.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
+                inventoryInfo.TotalMoney = totalMoney;
+                inventoryInfo.UpdatedByUserId = currentUserId;
+                inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+            else
+            {
+                inventoryInfo.IsDeleted = true;
+                inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                inventoryInfo.UpdatedByUserId = currentUserId;
+            }
 
 
             await _stockDbContext.SaveChangesAsync();
