@@ -859,26 +859,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return GeneralCode.InvalidParams;
             }
-            inventoryObj.IsDeleted = true;
-            //inventoryObj.IsApproved = false;
-            inventoryObj.UpdatedByUserId = currentUserId;
-            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
+            if (inventoryObj.IsApproved)
+            {
+                /*Khong duoc phep xoa phieu nhap da duyet (Cần xóa theo lưu đồ, flow)*/
+                return InventoryErrorCode.NotSupportedYet;
+
+                //var processResult = await RollBackInventoryInput(inventoryObj);
+                //if (!Equals(processResult, GeneralCode.Success))
+                //{
+                //    trans.Rollback();
+                //    return GeneralCode.InvalidParams;
+                //}
+            }
+
+          
             var dataBefore = objLog.JsonSerialize();
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    if (inventoryObj.IsApproved)
-                    {
-                        var processResult = await RollBackInventoryInput(inventoryObj);
-                        if (!Equals(processResult, GeneralCode.Success))
-                        {
-                            trans.Rollback();
-                            return GeneralCode.InvalidParams;
-                        }
-                    }
+                    inventoryObj.IsDeleted = true;
+                    //inventoryObj.IsApproved = false;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                     _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
@@ -912,10 +918,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return GeneralCode.InvalidParams;
             }
-            inventoryObj.IsDeleted = true;
-            //inventoryObj.IsApproved = false;
-            inventoryObj.UpdatedByUserId = currentUserId;
-            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+           
 
             var dataBefore = objLog.JsonSerialize();
 
@@ -924,15 +927,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                    if (inventoryObj.IsApproved)
+                    inventoryObj.IsDeleted = true;
+                    //inventoryObj.IsApproved = false;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    //Cần rollback cả 2 loại phiếu đã duyệt và chưa duyệt All approved or not need tobe rollback, bỏ if (inventoryObj.IsApproved)
+
+                    var processResult = await RollbackInventoryOutput(inventoryObj);
+                    if (!processResult.IsSuccess())
                     {
-                        var processResult = await RollbackInventoryOutput(inventoryObj);
-                        if (!Equals(processResult, GeneralCode.Success))
-                        {
-                            trans.Rollback();
-                            return GeneralCode.InvalidParams;
-                        }
+                        trans.Rollback();
+                        return GeneralCode.InvalidParams;
                     }
+
                     _activityService.CreateActivityAsync(EnumObjectType.Product, inventoryObj.StockId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
@@ -1857,41 +1865,41 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-        private async Task<Enum> RollBackInventoryInput(Inventory inventory)
-        {
-            var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
+        //private async Task<Enum> RollBackInventoryInput(Inventory inventory)
+        //{
+        //    var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
 
-            var toPackageIdList = inventoryDetails.Select(d => d.ToPackageId).ToList();
+        //    var toPackageIdList = inventoryDetails.Select(d => d.ToPackageId).ToList();
 
-            var toPackagesList = _stockDbContext.Package.Where(p => toPackageIdList.Contains(p.PackageId)).ToList();
+        //    var toPackagesList = _stockDbContext.Package.Where(p => toPackageIdList.Contains(p.PackageId)).ToList();
 
-            foreach (var detail in inventoryDetails)
-            {
-                var packageInfo = toPackagesList.FirstOrDefault(f => f.PackageId == detail.ToPackageId);
-                if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+        //    foreach (var detail in inventoryDetails)
+        //    {
+        //        var packageInfo = toPackagesList.FirstOrDefault(f => f.PackageId == detail.ToPackageId);
+        //        if (packageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+        //        var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
 
-                if (!inventory.IsApproved)
-                {
+        //        if (!inventory.IsApproved)
+        //        {
 
-                }
-                else
-                {
-                    packageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                    packageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+        //        }
+        //        else
+        //        {
+        //            packageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+        //            packageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
 
-                    stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                    stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
-                }
-                packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+        //            stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+        //            stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+        //        }
+        //        packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+        //        stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                detail.IsDeleted = true;
-                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
-            }
-            return GeneralCode.Success;
-        }
+        //        detail.IsDeleted = true;
+        //        detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+        //    }
+        //    return GeneralCode.Success;
+        //}
 
         private object GetInventoryInfoForLog(VErp.Infrastructure.EF.StockDB.Inventory inventoryObj)
         {
