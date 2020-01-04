@@ -49,6 +49,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
         {
             var inventoryInfo = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+            if (inventoryInfo == null)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
             if (inventoryInfo.StockId != req.StockId)
             {
                 return InventoryErrorCode.CanNotChangeStock;
@@ -404,6 +408,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
                     trans.Commit();
+
+                    var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
+                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryId, messageLog, "", req);
+
                     return r;
                 }
                 catch (Exception ex)
@@ -618,6 +626,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId);
 
+                stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
+                stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
                 foreach (var obj in p.AffectObjects)
                 {
                     object parent = null;
@@ -653,8 +664,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
                                         ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
 
-                                        stockProduct.PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                        stockProduct.ProductUnitConversionRemaining -= deltaConversionQuantity;
+
                                         break;
                                     default:
                                         throw new NotSupportedException();
@@ -683,9 +693,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
-
-                                        stockProduct.PrimaryQuantityRemaining += deltaPrimaryQuantity;
-                                        stockProduct.ProductUnitConversionRemaining += deltaConversionQuantity;
 
                                         break;
                                     default:

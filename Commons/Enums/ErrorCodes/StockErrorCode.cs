@@ -4,6 +4,7 @@ using System.Text;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
+    [ErrorCodePrefix("STK")]
     public enum StockErrorCode
     {
         StockNotFound = 1,
