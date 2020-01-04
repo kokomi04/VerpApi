@@ -49,6 +49,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
         {
             var inventoryInfo = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+            if (inventoryInfo == null)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
             if (inventoryInfo.StockId != req.StockId)
             {
                 return InventoryErrorCode.CanNotChangeStock;

@@ -33,13 +33,4 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không thể sửa kho")]
         CanNotChangeStock = 10,
     }
-
-    public enum InventoryDetailErrorCode
-    {
-        [Description("Không tìm thấy thông tin chi tiết phiếu xuất/nhập kho")]
-        InventoryDetailNotFound = 1,
-        InventoryDetailCodeEmpty = 2,
-        InventoryDetailAlreadyExisted = 3,
-        OutOfStock = 4,
-    }
 }

@@ -2,9 +2,7 @@
 
 namespace VErp.Commons.Enums.StandardEnum
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    [ErrorCodePrefix("PAK")]
     public enum PackageErrorCode
     {
         [Description("Không tìm thấy kiện tương ứng")]

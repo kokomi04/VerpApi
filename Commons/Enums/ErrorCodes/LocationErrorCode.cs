@@ -4,9 +4,7 @@ using System.Text;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    [ErrorCodePrefix("LOC")]
     public enum LocationErrorCode
     {
         LocationNotFound = 1,
