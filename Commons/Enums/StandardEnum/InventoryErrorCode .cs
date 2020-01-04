@@ -29,6 +29,9 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Bạn cần cập nhật dữ liệu hợp lệ cho kiện/phiếu xuất (đầu ra <= đầu vào)")]
         InOuputAffectObjectsInvalid = 9,
+
+        [Description("Không thể sửa kho")]
+        CanNotChangeStock = 10,
     }
 
     public enum InventoryDetailErrorCode
