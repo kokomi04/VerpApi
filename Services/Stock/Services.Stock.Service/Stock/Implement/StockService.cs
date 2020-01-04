@@ -839,6 +839,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var inPeriodData = inPerdiodQuery.AsNoTracking().Select(q => new
                 {
                     InventoryId = q.i.InventoryId,
+                    q.i.StockId,
                     IssuedDate = q.i.DateUtc,
                     InventoryCode = q.i.InventoryCode,
                     InventoryTypeId = q.i.InventoryTypeId,
@@ -866,6 +867,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     });
                 }
                 resultData.Details = new List<StockProductDetailsModel>(totalRecord);
+
+                var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
                 foreach (var item in inPeriodData)
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
@@ -875,6 +878,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     resultData.Details.Add(new StockProductDetailsModel
                     {
                         InventoryId = item.InventoryId,
+                        StockId = item.StockId,
+                        StockName = stocks.FirstOrDefault(s => s.StockId == item.StockId)?.StockName,
                         IssuedDate = item.IssuedDate,
                         InventoryCode = item.InventoryCode,
                         InventoryTypeId = item.InventoryTypeId,
