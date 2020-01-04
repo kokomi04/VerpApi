@@ -48,6 +48,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         public async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
         {
+            var inventoryInfo = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+            if (inventoryInfo.StockId != req.StockId)
+            {
+                return InventoryErrorCode.CanNotChangeStock;
+            }
+
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));

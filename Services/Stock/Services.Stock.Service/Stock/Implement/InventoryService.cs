@@ -624,6 +624,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
+
+                        if (inventoryObj.StockId != req.StockId)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.CanNotChangeStock;
+                        }
+
                         if (inventoryObj.IsApproved)
                         {
                             trans.Rollback();
@@ -631,7 +638,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
 
-                        inventoryObj.StockId = req.StockId;
+                        //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
                         inventoryObj.InventoryCode = req.InventoryCode;
                         inventoryObj.DateUtc = issuedDate;
                         inventoryObj.Shipper = req.Shipper;
@@ -745,6 +752,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
+
+                        if (inventoryObj.StockId != req.StockId)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.CanNotChangeStock;
+                        }
+
                         var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         inventoryObj.InventoryCode = req.InventoryCode;
