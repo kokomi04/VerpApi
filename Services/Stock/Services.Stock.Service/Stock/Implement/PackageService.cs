@@ -186,15 +186,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return PackageErrorCode.PackageAlreadyExisted;
                 }
 
-                decimal qualtityInPrimaryUnit = package.ProductUnitConversionQuantity;
-                if (unitConversionInfo != null)
+                decimal qualtityInPrimaryUnit = package.PrimaryQuantity;
+                if (unitConversionInfo.IsFreeStyle == false)
                 {
-                    qualtityInPrimaryUnit = Utils.Eval($"({unitConversionInfo.FactorExpression}) * {package.ProductUnitConversionQuantity}");
+                    qualtityInPrimaryUnit = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, unitConversionInfo.FactorExpression);
                     if (!(qualtityInPrimaryUnit > 0))
                     {
                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     }
                 }
+
+                if (qualtityInPrimaryUnit <= 0 || package.ProductUnitConversionQuantity <= 0)
+                    return GeneralCode.InvalidParams;
 
 
                 newPackages.Add(new PackageModel()
