@@ -53,6 +53,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             var unit = new Unit()
             {
                 UnitName = data.UnitName,
+                UnitStatusId = (int)data.UnitStatusId,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
@@ -68,7 +69,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
 
 
-        public async Task<PageData<UnitOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -77,9 +78,17 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                  select new UnitOutput()
                  {
                      UnitId = u.UnitId,
-                     UnitName = u.UnitName
+                     UnitName = u.UnitName,
+                     UnitStatusId = (EnumUnitStatus)u.UnitStatusId,
                  }
              );
+
+            if (unitStatusId.HasValue)
+            {
+                query = from u in query
+                        where u.UnitStatusId == unitStatusId.Value
+                        select u;
+            }
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -100,7 +109,8 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             var roleInfo = await _masterContext.Unit.Select(u => new UnitOutput()
             {
                 UnitId = u.UnitId,
-                UnitName = u.UnitName
+                UnitName = u.UnitName,
+                UnitStatusId = (EnumUnitStatus)u.UnitStatusId
             }).FirstOrDefaultAsync(u => u.UnitId == unitId);
 
             if (roleInfo == null)
@@ -129,7 +139,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
             unitInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             unitInfo.UnitName = data.UnitName;
-
+            unitInfo.UnitStatusId = (int)data.UnitStatusId;
             await _masterContext.SaveChangesAsync();
 
             _activityService.CreateActivityAsync(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", beforeChange, data);
@@ -161,9 +171,9 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                 .Where(u => unitIds.Contains(u.UnitId))
                 .Select(u => new UnitOutput()
                 {
-
                     UnitId = u.UnitId,
-                    UnitName = u.UnitName
+                    UnitName = u.UnitName,
+                    UnitStatusId = (EnumUnitStatus)u.UnitStatusId
                 }).ToListAsync();
         }
 

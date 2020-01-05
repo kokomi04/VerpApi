@@ -63,7 +63,8 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 IsActived = data.IsActived,
                 IsDeleted = false,
                 CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                CustomerStatusId = (int)data.CustomerStatusId
             };
 
             await _masterContext.Customer.AddAsync(customer);
@@ -132,6 +133,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
                 Description = customerInfo.Description,
                 IsActived = customerInfo.IsActived,
+                CustomerStatusId = (EnumCustomerStatus)customerInfo.CustomerStatusId,
                 Contacts = customerContacts.Select(c => new CustomerContactModel()
                 {
                     CustomerContactId = c.CustomerContactId,
@@ -144,7 +146,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             };
         }
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -160,9 +162,18 @@ namespace VErp.Services.Master.Service.Customer.Implement
                      TaxIdNo = c.TaxIdNo,
                      PhoneNumber = c.PhoneNumber,
                      Website = c.Website,
-                     Email = c.Email
+                     Email = c.Email,
+                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
              );
+            if (customerStatusId.HasValue)
+            {
+                query = from u in query
+                        where
+                        u.CustomerStatusId == customerStatusId
+                        select u;
+            }
+
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -205,7 +216,8 @@ namespace VErp.Services.Master.Service.Customer.Implement
                     TaxIdNo = c.TaxIdNo,
                     PhoneNumber = c.PhoneNumber,
                     Website = c.Website,
-                    Email = c.Email
+                    Email = c.Email,
+                    CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                 }
             ).ToListAsync();
         }
@@ -243,6 +255,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             customerInfo.Description = data.Description;
             customerInfo.IsActived = data.IsActived;
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
 
             if (data.Contacts == null)
             {

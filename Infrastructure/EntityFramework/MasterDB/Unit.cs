@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.MasterDB
 {
@@ -9,11 +9,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string UnitName { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }        
-    }
-
-    public class UnitModel: Unit
-    {
-        public string ProductCode { set; get; }
+        public bool IsDeleted { get; set; }
+        public int UnitStatusId { get; set; }
     }
 }
