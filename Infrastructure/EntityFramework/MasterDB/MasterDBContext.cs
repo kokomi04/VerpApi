@@ -23,6 +23,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
+        public virtual DbSet<CustomerStatus> CustomerStatus { get; set; }
         public virtual DbSet<CustomerType> CustomerType { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<FileStatus> FileStatus { get; set; }
@@ -44,6 +45,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<StockOutputRule> StockOutputRule { get; set; }
         public virtual DbSet<TimeType> TimeType { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
+        public virtual DbSet<UnitStatus> UnitStatus { get; set; }
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
@@ -127,6 +129,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.CustomerStatusId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.Email).HasMaxLength(128);
@@ -153,6 +157,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.CustomerId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CustomerContact_Customer");
+            });
+
+            modelBuilder.Entity<CustomerStatus>(entity =>
+            {
+                entity.Property(e => e.CustomerStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.CustomerStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<CustomerType>(entity =>
@@ -415,6 +428,17 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<Unit>(entity =>
             {
                 entity.Property(e => e.UnitName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.UnitStatusId).HasDefaultValueSql("((1))");
+            });
+
+            modelBuilder.Entity<UnitStatus>(entity =>
+            {
+                entity.Property(e => e.UnitStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.UnitStatusName)
                     .IsRequired()
                     .HasMaxLength(128);
             });

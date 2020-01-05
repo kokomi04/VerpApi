@@ -35,9 +35,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _customerService.GetList(keyword, page, size);
+            return await _customerService.GetList(keyword, customerStatusId, page, size);
         }
 
         /// <summary>

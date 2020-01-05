@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime? UpdatedDatetimeUtc { get; set; }
+        public int CustomerStatusId { get; set; }
 
         public virtual ICollection<CustomerContact> CustomerContact { get; set; }
     }
