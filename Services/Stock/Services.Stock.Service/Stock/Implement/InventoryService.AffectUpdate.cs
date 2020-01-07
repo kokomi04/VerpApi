@@ -213,11 +213,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsRoot = false,
                     IsCurrentFlow = false,
 
-                    OldPrimaryQuantity = r.PrimaryQuantity,
-                    NewPrimaryQuantity = r.PrimaryQuantity,
+                    OldPrimaryQuantity = r.PrimaryQuantityRemaining,
+                    NewPrimaryQuantity = r.PrimaryQuantityRemaining,
 
-                    OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                    OldProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
+                    NewProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
 
                     Children = new List<TransferToObject>()
                             {
@@ -312,11 +312,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ObjectTypeId = EnumObjectType.Package,
                 IsRoot = false,
 
-                OldPrimaryQuantity = packageInfo.PrimaryQuantity,
-                NewPrimaryQuantity = packageInfo.PrimaryQuantity,
+                OldPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
+                NewPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
 
-                OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
-                NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
+                OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
+                NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
 
                 Children = childrenPackages.Select(r => new TransferToObject()
                 {
@@ -677,8 +677,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 switch (obj.ObjectTypeId)
                                 {
                                     case EnumObjectType.Package:
-                                        ((PackageEntity)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((PackageEntity)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                        ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                        ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
                                         break;
                                     case EnumObjectType.InventoryDetail:
                                         ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
@@ -701,8 +701,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
 
-                                        childPackage.PrimaryQuantity += deltaPrimaryQuantity;
-                                        childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
+                                        childPackage.PrimaryQuantityRemaining += deltaPrimaryQuantity;
+                                        childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
 
 
                                         break;

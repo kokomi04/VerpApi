@@ -1286,9 +1286,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Date = item.Date,
                         ExpiryTime = item.ExpiryTime,
                         PrimaryUnitId = item.PrimaryUnitId,
-                        PrimaryQuantity = item.PrimaryQuantity,
                         ProductUnitConversionId = item.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                         PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
                         PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
                         ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
@@ -1548,7 +1546,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
 
-                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionQuantity)
+                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
                     {
                         return InventoryErrorCode.NotEnoughQuantity;
                     }
@@ -1650,9 +1648,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == detail.ToPackageId && p.PackageTypeId == (int)EnumPackageType.Custom);
             if (packageInfo == null) return PackageErrorCode.PackageNotFound;
 
-            packageInfo.PrimaryQuantity += detail.PrimaryQuantity;
+            //packageInfo.PrimaryQuantity += detail.PrimaryQuantity;
             packageInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
-            packageInfo.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
+            //packageInfo.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
             packageInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
             return GeneralCode.Success;
         }
@@ -1679,9 +1677,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockId = inventory.StockId,
                     ProductId = detail.ProductId,
                     PrimaryUnitId = detail.PrimaryUnitId,
-                    PrimaryQuantity = 0,
+                    //PrimaryQuantity = 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = 0,
+                    //ProductUnitConversionQuantity = 0,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
@@ -1696,9 +1694,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.Package.AddAsync(ensureDefaultPackage);
             }
 
-            ensureDefaultPackage.PrimaryQuantity += detail.PrimaryQuantity;
+            //ensureDefaultPackage.PrimaryQuantity += detail.PrimaryQuantity;
             ensureDefaultPackage.PrimaryQuantityRemaining += detail.PrimaryQuantity;
-            ensureDefaultPackage.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
+            //ensureDefaultPackage.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
             ensureDefaultPackage.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
 
             await _stockDbContext.SaveChangesAsync();
@@ -1722,9 +1720,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 StockId = inventory.StockId,
                 ProductId = detail.ProductId,
                 PrimaryUnitId = detail.PrimaryUnitId,
-                PrimaryQuantity = detail.PrimaryQuantity,
+                //PrimaryQuantity = detail.PrimaryQuantity,
                 ProductUnitConversionId = detail.ProductUnitConversionId,
-                ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity,
+                //ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity,
                 PrimaryQuantityWaiting = 0,
                 PrimaryQuantityRemaining = detail.PrimaryQuantity,
                 ProductUnitConversionWaitting = 0,
@@ -1781,42 +1779,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-        //private async Task<Enum> RollBackInventoryInput(Inventory inventory)
-        //{
-        //    var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
-
-        //    var toPackageIdList = inventoryDetails.Select(d => d.ToPackageId).ToList();
-
-        //    var toPackagesList = _stockDbContext.Package.Where(p => toPackageIdList.Contains(p.PackageId)).ToList();
-
-        //    foreach (var detail in inventoryDetails)
-        //    {
-        //        var packageInfo = toPackagesList.FirstOrDefault(f => f.PackageId == detail.ToPackageId);
-        //        if (packageInfo == null) return PackageErrorCode.PackageNotFound;
-
-        //        var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
-
-        //        if (!inventory.IsApproved)
-        //        {
-
-        //        }
-        //        else
-        //        {
-        //            packageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-        //            packageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
-
-        //            stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-        //            stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
-        //        }
-        //        packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-        //        stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-        //        detail.IsDeleted = true;
-        //        detail.UpdatedDatetimeUtc = DateTime.UtcNow;
-        //    }
-        //    return GeneralCode.Success;
-        //}
-
+     
         private object GetInventoryInfoForLog(VErp.Infrastructure.EF.StockDB.Inventory inventoryObj)
         {
             return inventoryObj;

@@ -184,13 +184,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
-
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
 
