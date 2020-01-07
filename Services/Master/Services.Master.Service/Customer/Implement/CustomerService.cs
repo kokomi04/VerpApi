@@ -230,17 +230,20 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 return CustomerErrorCode.CustomerNotFound;
             }
 
-            var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
+            var checkExisted = _masterContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
+            if (checkExisted)
+                return CustomerErrorCode.CustomerCodeAlreadyExisted;
+            //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
-            if (existedCustomer != null)
-            {
-                if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    return CustomerErrorCode.CustomerCodeAlreadyExisted;
-                }
+                //if (existedCustomer != null)
+                //{
+                //    if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+                //    {
+                //        return CustomerErrorCode.CustomerCodeAlreadyExisted;
+                //    }
 
-                return CustomerErrorCode.CustomerNameAlreadyExisted;
-            }
+                //    return CustomerErrorCode.CustomerNameAlreadyExisted;
+                //}
 
             var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
 
