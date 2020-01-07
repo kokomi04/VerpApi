@@ -276,12 +276,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             {
                 foreach (var sheet in sheetList)
                 {
-                    var inventoryInputList = new List<InventoryInModel>();
-                    InventoryInModel inventoryInputModel = new InventoryInModel
-                    {
-                        InProducts = new List<InventoryInProductModel>(32)
-                    };
-
                     var totalRowCount = sheet.LastRowNum + 1;
                     var customerExcelModelList = new List<ExcelCustomerModel>(totalRowCount);
 
@@ -372,7 +366,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             }
                             var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
                             _masterDBContext.BulkRead<Customer>(customerDataList, readCustomerBulkConfig);
-                            _masterDBContext.BulkInsertOrUpdate<Customer>(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false });
+                            _masterDBContext.BulkInsertOrUpdate<Customer>(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
                             return GeneralCode.Success;
                         }
                     }
