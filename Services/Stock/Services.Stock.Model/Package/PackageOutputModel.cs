@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Package
 {
     public class PackageOutputModel
     {
-        public PackageOutputModel() 
+        public PackageOutputModel()
         {
             LocationId = null;
             LocationOutputModel = null;
@@ -30,11 +30,15 @@ namespace VErp.Services.Stock.Model.Package
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
-        public decimal PrimaryQuantity { get; set; }
+
+        [Obsolete]
+        public decimal PrimaryQuantity { get { return PrimaryQuantityRemaining; } }
 
         public int? ProductUnitConversionId { get; set; }
-        public decimal ProductUnitConversionQuantity { get; set; }
-        
+
+        [Obsolete]
+        public decimal ProductUnitConversionQuantity { get { return ProductUnitConversionRemaining; } }
+
         public decimal PrimaryQuantityWaiting { get; set; }
         public decimal PrimaryQuantityRemaining { get; set; }
         public decimal ProductUnitConversionWaitting { get; set; }

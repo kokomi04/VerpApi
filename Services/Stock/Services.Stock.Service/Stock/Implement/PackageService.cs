@@ -38,56 +38,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityService = activityService;
         }
 
-        //public async Task<ServiceResult<long>> AddPackage(PackageInputModel req)
-        //{
-        //    try
-        //    {
-        //        if (req == null || _stockDbContext.Package.Any(q => q.PackageCode == req.PackageCode))
-        //            return GeneralCode.InvalidParams;
-
-        //        DateTime issuedDate = DateTime.MinValue;
-        //        DateTime expiredDate = DateTime.MinValue;
-
-        //        if (!string.IsNullOrEmpty(req.Date))
-        //            DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out issuedDate);
-        //        if (!string.IsNullOrEmpty(req.ExpiryTime))
-        //            DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
-
-        //        var obj = new VErp.Infrastructure.EF.StockDB.Package
-        //        {
-        //            PackageTypeId = req.PackageTypeId,
-        //            PackageCode = req.PackageCode,
-        //            LocationId = req.LocationId,
-        //            StockId = req.StockId,
-        //            ProductId = req.ProductId,
-        //            Date = issuedDate == DateTime.MinValue ? null : (DateTime?)issuedDate,
-        //            ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate,
-        //            PrimaryUnitId = req.PrimaryUnitId,
-        //            PrimaryQuantity = req.PrimaryQuantity,
-        //            ProductUnitConversionId = req.ProductUnitConversionId,
-        //            ProductUnitConversionQuantity = req.ProductUnitConversionQuantity,
-        //            PrimaryQuantityWaiting = req.PrimaryQuantityWaiting,
-        //            PrimaryQuantityRemaining = req.PrimaryQuantityRemaining,
-        //            ProductUnitConversionWaitting = req.ProductUnitConversionWaitting,
-        //            ProductUnitConversionRemaining = req.ProductUnitConversionRemaining,
-
-        //            CreatedDatetimeUtc = DateTime.Now,
-        //            UpdatedDatetimeUtc = DateTime.Now,
-        //            IsDeleted = false
-        //        };
-        //        await _stockDbContext.Package.AddAsync(obj);
-        //        _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Tạo mới thông tin kiện {obj.PackageCode} ", null, obj);
-        //        await _stockDbContext.SaveChangesAsync();
-
-        //        return obj.PackageId;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "AddPackage");
-        //        return GeneralCode.InternalError;
-        //    }
-        //}
-
         public async Task<Enum> UpdatePackage(long packageId, PackageInputModel req)
         {
             try
@@ -121,31 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        //public async Task<Enum> DeletePackage(long packageId)
-        //{
-        //    try
-        //    {
-        //        var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
-        //        var oldPackageData = GetInfoForLog(obj);
-        //        if (obj == null)
-        //        {
-        //            return PackageErrorCode.PackageNotFound;
-        //        }
-        //        obj.UpdatedDatetimeUtc = DateTime.Now;
-        //        obj.IsDeleted = true;
-
-        //        _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Xoá thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
-        //        await _stockDbContext.SaveChangesAsync();
-
-        //        return GeneralCode.Success;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "UpdatePackage");
-        //        return GeneralCode.InternalError;
-        //    }
-        //}
-
+      
 
         public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
         {
@@ -160,7 +86,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return PackageErrorCode.HasSomeQualtityWaitingForApproved;
             }
 
-            Infrastructure.EF.StockDB.ProductUnitConversion unitConversionInfo = null;
+            ProductUnitConversion unitConversionInfo = null;
 
             unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
 
@@ -209,9 +135,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = packageInfo.Date,
                     ExpiryTime = packageInfo.ExpiryTime,
                     PrimaryUnitId = packageInfo.PrimaryUnitId,
-                    PrimaryQuantity = qualtityInPrimaryUnit,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = package.ProductUnitConversionQuantity,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
@@ -307,9 +231,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = fromPackages.Max(p => p.Date),
                     ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
                     PrimaryUnitId = fromPackages[0].PrimaryUnitId,
-                    PrimaryQuantity = fromPackages.Sum(p => p.PrimaryQuantityRemaining),
                     ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
-                    ProductUnitConversionQuantity = fromPackages.Sum(p => p.ProductUnitConversionRemaining),
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
@@ -338,9 +260,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     });
 
 
-                    package.PrimaryQuantity = 0;
                     package.PrimaryQuantityRemaining = 0;
-                    package.ProductUnitConversionQuantity = 0;
                     package.ProductUnitConversionRemaining = 0;
                 }
 
@@ -382,9 +302,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = obj.Date,
                     ExpiryTime = obj.ExpiryTime,
                     PrimaryUnitId = obj.PrimaryUnitId,
-                    PrimaryQuantity = obj.PrimaryQuantity,
                     ProductUnitConversionId = obj.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = obj.ProductUnitConversionQuantity,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
                     ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
@@ -449,9 +367,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ExpiryTime = item.Package.ExpiryTime,
 
                             PrimaryUnitId = item.Package.PrimaryUnitId,
-                            PrimaryQuantity = item.Package.PrimaryQuantity,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
-                            ProductUnitConversionQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
@@ -490,8 +406,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             ExpiryTime = item.Package.ExpiryTime,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
-                            PrimaryQuantity = item.Package.PrimaryQuantity,
-                            ProductUnitConversionQuantity = item.Package.ProductUnitConversionQuantity,
                             CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
                             UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
