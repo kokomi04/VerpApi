@@ -640,6 +640,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
                 detail.RefObjectCode = submitDetail?.RefObjectCode;
 
+
+                var firstPackage = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == detail.ToPackageId);
+
+                if (firstPackage == null) throw new Exception("Invalid data");
+
+                firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
+                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
                 if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
@@ -674,22 +682,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
                                 var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
 
-                                switch (obj.ObjectTypeId)
-                                {
-                                    case EnumObjectType.Package:
-                                        ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                        ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
-                                        break;
-                                    case EnumObjectType.InventoryDetail:
-                                        ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
-
-
-                                        break;
-                                    default:
-                                        throw new NotSupportedException();
-                                }
-
                                 //addition children
                                 switch (r.ObjectTypeId)
                                 {
@@ -705,14 +697,63 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
 
 
+                                        //sub parent
+                                        switch (obj.ObjectTypeId)
+                                        {
+                                            case EnumObjectType.Package:
+                                                ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                break;
+                                            case EnumObjectType.InventoryDetail:
+                                                ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                                ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                                break;
+                                            default:
+                                                throw new NotSupportedException();
+                                        }
+
                                         break;
 
                                     case EnumObjectType.InventoryDetail:
 
                                         var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
 
+                                        var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
+
+                                        //if(inventory.InventoryTypeId==(int)EnumInventoryType.Output)                                        
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+
+                                        if (inventory.IsApproved)
+                                        {
+                                            //sub parent
+                                            switch (obj.ObjectTypeId)
+                                            {
+                                                case EnumObjectType.Package:
+                                                    ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                    ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                    break;
+                                                default:
+                                                    throw new NotSupportedException();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            //sub parent
+                                            switch (obj.ObjectTypeId)
+                                            {
+                                                case EnumObjectType.Package:
+                                                    ((PackageEntity)parent).PrimaryQuantityWaiting += deltaPrimaryQuantity;
+                                                    ((PackageEntity)parent).ProductUnitConversionWaitting += deltaConversionQuantity;
+
+                                                    stockProduct.PrimaryQuantityWaiting += deltaPrimaryQuantity;
+                                                    stockProduct.ProductUnitConversionWaitting += deltaConversionQuantity;
+                                                    break;
+                                                default:
+                                                    throw new NotSupportedException();
+                                            }
+                                        }
 
                                         break;
                                     default:
