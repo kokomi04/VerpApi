@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -57,5 +58,20 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productUnitConversionService.GetListByProducts(productIds, page, size);
         }
 
+
+        /// <summary>
+        /// Lấy danh sách đơn vị chuyển đổi của danh sách mặt hàng
+        /// </summary>
+        /// <param name="productIds"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetByProducts")]
+        [VErpAction(EnumAction.View)]
+        public async Task<ApiResponse<PageData<ProductUnitConversionByProductOutput>>> GetByProducts([FromBody] IList<int> productIds, [FromQuery] int page = 0, [FromQuery] int size = 0)
+        {
+            return await _productUnitConversionService.GetListByProducts(productIds, page, size);
+        }
     }
 }
