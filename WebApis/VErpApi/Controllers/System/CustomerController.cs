@@ -129,8 +129,8 @@ namespace VErpApi.Controllers.System
         /// <param name="fileId">Id của file đã được upload</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("ProcessOpeningBalance")]
-        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] long fileId)
+        [Route("ImportCustomerData")]
+        public async Task<ApiResponse> ImportCustomerData([FromBody] long fileId)
         {
             var currentUserId = UserId;
             return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);
