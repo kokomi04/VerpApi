@@ -73,6 +73,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return updateDetail.Code;
             }
 
+            var productIds = details.Select(d => d.ProductId);
+            var productInfos = _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+
+            //var productUnitConversions = _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+
             var products = new List<CensoredInventoryInputProducts>();
 
             foreach (var d in details)
@@ -94,10 +99,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
 
+                //var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
+
                 var product = new CensoredInventoryInputProducts()
                 {
                     InventoryDetailId = d.InventoryDetailId,
                     ProductId = d.ProductId,
+                    ProductCode = productInfos.FirstOrDefault(p => p.ProductId == d.ProductId)?.ProductCode,
                     PrimaryUnitId = d.PrimaryUnitId,
 
 
@@ -105,6 +113,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     NewPrimaryQuantity = newPrimaryQuantity,
 
                     ProductUnitConversionId = d.ProductUnitConversionId.Value,
+                    //ProductUnitConversionName = conversionInfo?.ProductUnitConversionName,
+                    //FactorExpression = conversionInfo?.FactorExpression,
+
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                     NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
                     ToPackageId = d.ToPackageId.Value
