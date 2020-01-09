@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -27,9 +28,9 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<UnitOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<UnitOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _unitService.GetList(keyword, page, size);
+            return await _unitService.GetList(keyword, unitStatusId, page, size);
         }
 
         /// <summary>
@@ -55,12 +56,12 @@ namespace VErpApi.Controllers.Stock.Products
             return await _unitService.GetUnitInfo(unitId);
         }
 
-       /// <summary>
-       /// Cập nhật thông tin đơn vị tính
-       /// </summary>
-       /// <param name="unitId"></param>
-       /// <param name="unit"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Cập nhật thông tin đơn vị tính
+        /// </summary>
+        /// <param name="unitId"></param>
+        /// <param name="unit"></param>
+        /// <returns></returns>
         [HttpPut]
         [Route("{unitId}")]
         public async Task<ApiResponse> UpdateUnit([FromRoute] int unitId, [FromBody] UnitInput unit)
@@ -78,6 +79,6 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<ApiResponse> DeleteUnit([FromRoute] int unitId)
         {
             return await _unitService.DeleteUnit(unitId);
-        }       
+        }
     }
 }

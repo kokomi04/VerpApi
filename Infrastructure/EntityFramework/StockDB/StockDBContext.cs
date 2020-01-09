@@ -94,13 +94,28 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.Property(e => e.OrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.PackageOptionId).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
 
-                entity.Property(e => e.RefObjectCode).HasMaxLength(128);
+                entity.Property(e => e.ProductionOrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RefObjectCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
 
@@ -184,13 +199,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
-
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
 

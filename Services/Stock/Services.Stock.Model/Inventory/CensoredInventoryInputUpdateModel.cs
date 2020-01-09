@@ -17,10 +17,13 @@ namespace VErp.Services.Stock.Model.Inventory
     {
         public long InventoryDetailId { get; set; }
         public int ProductId { get; set; }
+        public string ProductCode { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal OldPrimaryQuantity { get; set; }
         public decimal NewPrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
+        //public string ProductUnitConversionName { get; set; }
+        //public string FactorExpression { get; set; }
         public decimal OldProductUnitConversionQuantity { get; set; }
         public decimal NewProductUnitConversionQuantity { get; set; }
         public long ToPackageId { get; set; }

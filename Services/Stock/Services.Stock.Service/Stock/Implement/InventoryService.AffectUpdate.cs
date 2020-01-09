@@ -73,6 +73,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return updateDetail.Code;
             }
 
+            var productIds = details.Select(d => d.ProductId);
+            var productInfos = _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+
+            //var productUnitConversions = _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+
             var products = new List<CensoredInventoryInputProducts>();
 
             foreach (var d in details)
@@ -94,10 +99,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
 
+                //var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
+
                 var product = new CensoredInventoryInputProducts()
                 {
                     InventoryDetailId = d.InventoryDetailId,
                     ProductId = d.ProductId,
+                    ProductCode = productInfos.FirstOrDefault(p => p.ProductId == d.ProductId)?.ProductCode,
                     PrimaryUnitId = d.PrimaryUnitId,
 
 
@@ -105,6 +113,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     NewPrimaryQuantity = newPrimaryQuantity,
 
                     ProductUnitConversionId = d.ProductUnitConversionId.Value,
+                    //ProductUnitConversionName = conversionInfo?.ProductUnitConversionName,
+                    //FactorExpression = conversionInfo?.FactorExpression,
+
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                     NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
                     ToPackageId = d.ToPackageId.Value
@@ -213,11 +224,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsRoot = false,
                     IsCurrentFlow = false,
 
-                    OldPrimaryQuantity = r.PrimaryQuantity,
-                    NewPrimaryQuantity = r.PrimaryQuantity,
+                    OldPrimaryQuantity = r.PrimaryQuantityRemaining,
+                    NewPrimaryQuantity = r.PrimaryQuantityRemaining,
 
-                    OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
+                    OldProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
+                    NewProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
 
                     Children = new List<TransferToObject>()
                             {
@@ -312,11 +323,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ObjectTypeId = EnumObjectType.Package,
                 IsRoot = false,
 
-                OldPrimaryQuantity = packageInfo.PrimaryQuantity,
-                NewPrimaryQuantity = packageInfo.PrimaryQuantity,
+                OldPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
+                NewPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
 
-                OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
-                NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionQuantity,
+                OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
+                NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
 
                 Children = childrenPackages.Select(r => new TransferToObject()
                 {
@@ -640,6 +651,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
                 detail.RefObjectCode = submitDetail?.RefObjectCode;
 
+
+                var firstPackage = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == detail.ToPackageId);
+
+                if (firstPackage == null) throw new Exception("Invalid data");
+
+                firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
+                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
                 if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
@@ -674,22 +693,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
                                 var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
 
-                                switch (obj.ObjectTypeId)
-                                {
-                                    case EnumObjectType.Package:
-                                        ((PackageEntity)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((PackageEntity)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
-                                        break;
-                                    case EnumObjectType.InventoryDetail:
-                                        ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                        ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
-
-
-                                        break;
-                                    default:
-                                        throw new NotSupportedException();
-                                }
-
                                 //addition children
                                 switch (r.ObjectTypeId)
                                 {
@@ -701,9 +704,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
 
-                                        childPackage.PrimaryQuantity += deltaPrimaryQuantity;
-                                        childPackage.ProductUnitConversionQuantity += deltaConversionQuantity;
+                                        childPackage.PrimaryQuantityRemaining += deltaPrimaryQuantity;
+                                        childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
 
+
+                                        //sub parent
+                                        switch (obj.ObjectTypeId)
+                                        {
+                                            case EnumObjectType.Package:
+                                                ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                break;
+                                            case EnumObjectType.InventoryDetail:
+                                                ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
+                                                ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                                break;
+                                            default:
+                                                throw new NotSupportedException();
+                                        }
 
                                         break;
 
@@ -711,8 +729,42 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                         var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
 
+                                        var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
+
+                                        //if(inventory.InventoryTypeId==(int)EnumInventoryType.Output)                                        
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+
+                                        if (inventory.IsApproved)
+                                        {
+                                            //sub parent
+                                            switch (obj.ObjectTypeId)
+                                            {
+                                                case EnumObjectType.Package:
+                                                    ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                    ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                    break;
+                                                default:
+                                                    throw new NotSupportedException();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            //sub parent
+                                            switch (obj.ObjectTypeId)
+                                            {
+                                                case EnumObjectType.Package:
+                                                    ((PackageEntity)parent).PrimaryQuantityWaiting += deltaPrimaryQuantity;
+                                                    ((PackageEntity)parent).ProductUnitConversionWaitting += deltaConversionQuantity;
+
+                                                    stockProduct.PrimaryQuantityWaiting += deltaPrimaryQuantity;
+                                                    stockProduct.ProductUnitConversionWaitting += deltaConversionQuantity;
+                                                    break;
+                                                default:
+                                                    throw new NotSupportedException();
+                                            }
+                                        }
 
                                         break;
                                     default:

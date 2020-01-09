@@ -28,6 +28,8 @@ namespace VErp.Services.Master.Model.Customer
         public string Description { get; set; }
         public bool IsActived { get; set; }
 
+        public EnumCustomerStatus CustomerStatusId { get; set; }
+
         public IList<CustomerContactModel> Contacts { get; set; }
     }
 }

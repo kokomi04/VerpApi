@@ -31,6 +31,15 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
 
+        public string OrderCode { get; set; }
+
+        /// <summary>
+        /// Purchase order code 
+        /// </summary>
+        public string POCode { get; set; }
+
+        public string ProductionOrderCode { get; set; }
+
         public ProductListOutput ProductOutput { get; set; }
 
         public ProductUnitConversion ProductUnitConversion { set; get; }

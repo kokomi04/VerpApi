@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Customer;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Customer;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.System
 {
@@ -17,12 +20,19 @@ namespace VErpApi.Controllers.System
     {
         private readonly ICustomerService _customerService;
         private readonly IObjectGenCodeService _objectGenCodeService;
+        private readonly IFileService _fileService;
+        private readonly IFileProcessDataService _fileProcessDataService;
+
         public CustomerController(ICustomerService customerService
             , IObjectGenCodeService objectGenCodeService
+            , IFileService fileService
+            , IFileProcessDataService fileProcessDataService
             )
         {
             _customerService = customerService;
             _objectGenCodeService = objectGenCodeService;
+            _fileService = fileService;
+            _fileProcessDataService = fileProcessDataService;
         }
 
 
@@ -35,9 +45,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _customerService.GetList(keyword, page, size);
+            return await _customerService.GetList(keyword, customerStatusId, page, size);
         }
 
         /// <summary>
@@ -98,6 +108,32 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse<string>> GenerateCustomerCode()
         {           
             return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
+        }
+
+        /// <summary>
+        /// Upload file dữ liệu khách hàng
+        /// </summary>
+        /// <param name="fileTypeId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("File/{fileTypeId}")]
+        public async Task<ApiResponse<long>> UploadExcelDataFile([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.Customer, fileTypeId, string.Empty, file);
+        }
+
+        /// <summary>
+        /// Xử lý file - Đọc và cập nhật dữ liệu khách hàng
+        /// </summary>
+        /// <param name="fileId">Id của file đã được upload</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("ImportCustomerData")]
+        public async Task<ApiResponse> ImportCustomerData([FromBody] long fileId)
+        {
+            var currentUserId = UserId;
+            return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);
         }
     }
 }

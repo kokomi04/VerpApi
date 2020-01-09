@@ -22,11 +22,13 @@ namespace VErpApi.Controllers.Stock.Inventory
     {
         private readonly IInventoryService _inventoryService;
         private readonly IFileService _fileService;
-        public InventoryController(IInventoryService iventoryService, IFileService fileService
-            )
+        private readonly IFileProcessDataService _fileProcessDataService;
+
+        public InventoryController(IInventoryService iventoryService, IFileService fileService, IFileProcessDataService fileProcessDataService)
         {
             _inventoryService = iventoryService;
             _fileService = fileService;
+            _fileProcessDataService = fileProcessDataService;
         }
 
         /// <summary>
@@ -237,9 +239,8 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceInputModel model)
         {
             var currentUserId = UserId;
-            return await _inventoryService.ProcessOpeningBalance(currentUserId, model);
+            return await _fileProcessDataService.ImportInventoryInputOpeningBalance(currentUserId, model);
         }
-
 
         [VErpAction(EnumAction.View)]
         [HttpPost]
