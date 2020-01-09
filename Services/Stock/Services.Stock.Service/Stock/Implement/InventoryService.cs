@@ -299,6 +299,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         RefObjectTypeId = details.RefObjectTypeId,
                         RefObjectId = details.RefObjectId,
                         RefObjectCode = details.RefObjectCode,
+                        OrderCode = details.OrderCode,
+                        POCode = details.Pocode,
+                        ProductionOrderCode = details.ProductionOrderCode,
 
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null
@@ -1424,7 +1427,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
-
                 if (!isApproved)
                 {
                     if (details.ProductUnitConversionQuantity <= 0 || details.PrimaryQuantity <= 0)
@@ -1432,7 +1434,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
                 }
-
                 if (details.IsFreeStyle == false)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
@@ -1451,7 +1452,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     }
                 }
-
 
                 switch (details.PackageOptionId)
                 {
@@ -1492,6 +1492,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
+                    OrderCode = details.OrderCode,
+                    Pocode  =details.POCode,
+                    ProductionOrderCode  =details.ProductionOrderCode,
                     FromPackageId = null,
                     ToPackageId = details.ToPackageId,
                     PackageOptionId = (int)details.PackageOptionId
@@ -1574,6 +1577,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
+                    OrderCode = details.OrderCode,
+                    Pocode = details.POCode,
+                    ProductionOrderCode = details.ProductionOrderCode,
                     FromPackageId = details.FromPackageId,
                     ToPackageId = null,
                     PackageOptionId = null

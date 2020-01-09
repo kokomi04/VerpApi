@@ -587,10 +587,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
-        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, DateTime fromDate, DateTime toDate, int page, int size)
-        {
-            toDate = toDate.AddDays(1).Date;
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, string fromDateString, string toDateString, int page, int size)
+        {            
+            DateTime fromDate = DateTime.MinValue;
+            DateTime toDate = DateTime.Now;
 
+            if (!string.IsNullOrEmpty(fromDateString))
+            {
+                if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
+                {
+                    return (null, 0); 
+                }
+            }
+            if (!string.IsNullOrEmpty(toDateString))
+            {
+                if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
+                {
+                    return (null, 0);
+                }
+            }
             var productQuery = _stockContext.Product.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -599,8 +614,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                || p.ProductCode.Contains(keyword)
                                select p;
             }
-
-
             if (productTypeIds != null && productTypeIds.Count > 0)
             {
                 var productTypes = await _stockContext.ProductType.ToListAsync();
@@ -628,7 +641,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                where types.Contains(p.ProductTypeId)
                                select p;
             }
-
 
             if (productCateIds != null && productCateIds.Count > 0)
             {
@@ -676,7 +688,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                }
                ).ToListAsync();
-
 
             var afters = await (
                 from iv in inventories

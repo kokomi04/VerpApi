@@ -191,7 +191,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReport")]
-        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] DateTime fromDate, [FromQuery] DateTime toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] string fromDate, [FromQuery] string toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }

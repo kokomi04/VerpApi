@@ -42,5 +42,14 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
         public long FromPackageId { set; get; }
+
+        public string OrderCode { get; set; }
+
+        /// <summary>
+        /// Purchase order code 
+        /// </summary>
+        public string POCode { get; set; }
+
+        public string ProductionOrderCode { get; set; }
     }
 }
