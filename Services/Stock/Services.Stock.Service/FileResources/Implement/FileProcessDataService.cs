@@ -702,8 +702,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 {
                                     ProductId = productObj != null ? productObj.ProductId : 0,
                                     ProductCode = item.ProductCode,
-                                    ProductUnitConversionId = productUnitConversionObj != null ? productUnitConversionObj?.ProductUnitConversionId : null,
-                                    IsFreeStyle = true,
+                                    ProductUnitConversionId = productUnitConversionObj != null ? productUnitConversionObj?.ProductUnitConversionId : null,                                    
                                     PrimaryQuantity = item.Qty1,
                                     ProductUnitConversionQuantity = item.Qty2,
                                     UnitPrice = item.UnitPrice,
@@ -744,11 +743,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 newInventory.InProducts.Add(new InventoryInProductModel
                                 {
                                     ProductId = item.ProductId,
-                                    ProductUnitConversionId = item.ProductUnitConversionId,
-                                    //ProductUnitConversionId = null,
+                                    ProductUnitConversionId = item.ProductUnitConversionId,                                    
                                     PrimaryQuantity = item.PrimaryQuantity,
-                                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                                    IsFreeStyle = true, // true
+                                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,                                    
                                     UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = item.RefObjectTypeId,
                                     RefObjectId = item.RefObjectId,
@@ -766,9 +763,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item);
+                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item,true);
                             if (ret.Data > 0)
                             {
+                                // Duyệt phiếu nhập kho
                                 //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
                                 continue;
                             }

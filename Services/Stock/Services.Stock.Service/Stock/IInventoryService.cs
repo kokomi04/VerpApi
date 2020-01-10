@@ -39,8 +39,9 @@ namespace VErp.Services.Stock.Service.Stock
         /// </summary>
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
+        /// <param name="IsFreeStyle">IsFreeStyle = true: by pass unit conversion qty</param>
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req);
+        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req,bool IsFreeStyle = false);
 
         /// <summary>
         /// Thêm mới phiếu xuất kho

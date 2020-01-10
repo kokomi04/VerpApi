@@ -143,64 +143,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var pagedData = new List<InventoryOutput>();
             foreach (var item in inventoryDataList)
             {
-                #region Get Attached files 
-                //var attachedFiles = new List<FileToDownloadInfo>(4);
-                //if (_stockDbContext.InventoryFile.Any(q => q.InventoryId == item.InventoryId))
-                //{
-                //    var fileIdArray = _stockDbContext.InventoryFile.Where(q => q.InventoryId == item.InventoryId).Select(q => q.FileId).ToArray();
-                //    attachedFiles = _fileService.GetListFileUrl(fileIdArray, EnumThumbnailSize.Large);
-                //}
-                #endregion
-
-                //var listInventoryDetails = inventoryDetailsDataList.Where(q => q.InventoryId == item.InventoryId).ToList();
-                //var listInventoryDetailsOutput = new List<InventoryDetailOutput>(listInventoryDetails.Count);
-
-                //foreach (var details in listInventoryDetails)
-                //{
-                //    var productInfo = productDataList.FirstOrDefault(q => q.ProductId == details.ProductId);
-                //    var productUnitConversionInfo = _stockDbContext.ProductUnitConversion.AsNoTracking().FirstOrDefault(q => q.ProductUnitConversionId == details.ProductUnitConversionId);
-                //    ProductListOutput productOutput = null;
-                //    if (productInfo != null)
-                //    {
-                //        productOutput = new ProductListOutput
-                //        {
-                //            ProductId = productInfo.ProductId,
-                //            ProductCode = productInfo.ProductCode,
-                //            ProductName = productInfo.ProductName,
-                //            MainImageFileId = productInfo.MainImageFileId,
-                //            ProductTypeId = productInfo.ProductTypeId,
-                //            ProductTypeName = string.Empty,
-                //            ProductCateId = productInfo.ProductCateId,
-                //            ProductCateName = string.Empty,
-                //            Barcode = productInfo.Barcode,
-                //            Specification = string.Empty,
-                //            UnitId = productInfo.UnitId,
-                //            UnitName = string.Empty
-                //        };
-                //    }
-                //    listInventoryDetailsOutput.Add(new InventoryDetailOutput
-                //    {
-                //        InventoryId = details.InventoryId,
-                //        InventoryDetailId = details.InventoryDetailId,
-                //        ProductId = details.ProductId,
-                //        PrimaryUnitId = details.PrimaryUnitId,
-                //        PrimaryQuantity = details.PrimaryQuantity,
-                //        UnitPrice = details.UnitPrice,
-                //        ProductUnitConversionId = details.ProductUnitConversionId,
-                //        ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
-                //        FromPackageId = details.FromPackageId,
-                //        ToPackageId = details.ToPackageId,
-                //        PackageOptionId = details.PackageOptionId,
-
-                //        RefObjectTypeId = details.RefObjectTypeId,
-                //        RefObjectId = details.RefObjectId,
-                //        RefObjectCode = details.RefObjectCode,
-
-                //        ProductOutput = productOutput,
-                //        ProductUnitConversion = productUnitConversionInfo
-                //    });
-                //}
-
                 var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == item.StockId);
 
                 var inventoryOutput = new InventoryOutput()
@@ -232,11 +174,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockName = stockInfo.StockName,
                         StockKeeperName = stockInfo.StockKeeperName,
                         StockKeeperId = stockInfo.StockKeeperId
-                    },
-                    //InventoryDetailOutputList = listInventoryDetailsOutput,
+                    },                    
                     InventoryDetailOutputList = null,
-                    FileList = null,
-                    //FileList = attachedFiles
+                    FileList = null,                    
                 };
                 pagedData.Add(inventoryOutput);
             }
@@ -365,7 +305,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req)
+        public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req,bool IsFreeStyle = false)
         {
             try
             {
@@ -388,7 +328,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
                 }
 
-                var validInventoryDetails = await ValidateInventoryIn(false, req);
+                var validInventoryDetails = await ValidateInventoryIn(false, req, IsFreeStyle);
 
                 if (!validInventoryDetails.Code.IsSuccess())
                 {
@@ -1400,10 +1340,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-      
+
         #region Private helper method
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool IsFreeStyle = false)
         {
             var productIds = req.InProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -1434,25 +1374,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
                 }
-                if (details.IsFreeStyle??false == false)
+                if (IsFreeStyle == false)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)
                     {
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     }
-
-                    if (productUnitConversionInfo.IsFreeStyle == false)
+                    primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                    if (!isApproved && primaryQty <= 0)
                     {
-                        primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                        if (!isApproved && primaryQty <= 0)
-                        {
-                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        }
-
+                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     }
                 }
-
                 switch (details.PackageOptionId)
                 {
                     case EnumPackageOption.Append:
@@ -1493,8 +1427,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
                     OrderCode = details.OrderCode,
-                    Pocode  =details.POCode,
-                    ProductionOrderCode  =details.ProductionOrderCode,
+                    Pocode = details.POCode,
+                    ProductionOrderCode = details.ProductionOrderCode,
                     FromPackageId = null,
                     ToPackageId = details.ToPackageId,
                     PackageOptionId = (int)details.PackageOptionId
@@ -1785,7 +1719,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-     
+
         private object GetInventoryInfoForLog(VErp.Infrastructure.EF.StockDB.Inventory inventoryObj)
         {
             return inventoryObj;
@@ -1797,7 +1731,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             //var package = await _objectGenCodeService.GenerateCode(EnumObjectType.Package);
             return packageCode;
         }
-        
+
         #endregion
     }
 }
