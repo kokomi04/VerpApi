@@ -423,6 +423,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return r;
                     }
 
+
                     trans.Commit();
 
                     var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
@@ -480,6 +481,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!isDelete)
             {
+                var newDetails = updateDetails.Where(d => d.InventoryDetailId <= 0).ToList();
+
+                foreach (var d in newDetails)
+                {
+                    d.InventoryId = inventoryId;
+                }
+
+                _stockDbContext.InventoryDetail.AddRange(newDetails);
+                _stockDbContext.SaveChanges();
+
+                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.DateUtc, newDetails);
+                if (!r.IsSuccess())
+                {
+                    return r;
+                }
+
                 var totalMoney = InputCalTotalMoney(updateDetails);
 
                 inventoryInfo.TotalMoney = totalMoney;
