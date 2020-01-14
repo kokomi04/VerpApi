@@ -944,9 +944,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return r;
                         }
+
+                        trans.Commit();
+
                         var objLog = GetInventoryInfoForLog(inventoryObj);
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
                         _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+
+                        return GeneralCode.Success;
                     }
                     catch (Exception ex)
                     {
@@ -955,7 +960,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InternalError;
                     }
                 }
-                return GeneralCode.Success;
+                
             }
             catch (Exception ex)
             {
