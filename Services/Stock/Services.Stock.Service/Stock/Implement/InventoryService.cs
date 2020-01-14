@@ -1345,6 +1345,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool IsFreeStyle = false)
         {
+            if (req.InProducts == null)
+                req.InProducts = new List<InventoryInProductModel>();
             var productIds = req.InProducts.Select(p => p.ProductId).Distinct().ToList();
 
             var productInfos = await _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
