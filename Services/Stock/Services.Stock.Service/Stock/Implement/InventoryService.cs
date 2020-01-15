@@ -24,6 +24,7 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
+
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService : IInventoryService
@@ -421,7 +422,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req)
+        public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req, bool IsFreeStyle = false)
         {
             try
             {
@@ -1444,7 +1445,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryDetailList;
         }
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ProcessInventoryOut(Inventory inventory, InventoryOutModel req)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ProcessInventoryOut(Inventory inventory, InventoryOutModel req, bool IsFreeStyle = false)
         {
             var productIds = req.OutProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -1479,27 +1480,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
-                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                    if (productUnitConversionInfo == null)
+                    if(IsFreeStyle == false)
                     {
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                    }
-
-                    if (details.ProductUnitConversionQuantity <= 0)
-                    {
-                        return GeneralCode.InvalidParams;
-                    }
-
-                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
-                    {
-                        return InventoryErrorCode.NotEnoughQuantity;
-                    }
-                    if (primaryQualtity == 0)
-                    {
-                        primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                        if (!(primaryQualtity > 0))
+                        var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                        if (productUnitConversionInfo == null)
                         {
-                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                        }
+
+                        if (details.ProductUnitConversionQuantity <= 0)
+                        {
+                            return GeneralCode.InvalidParams;
+                        }
+
+                        if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
+                        {
+                            return InventoryErrorCode.NotEnoughQuantity;
+                        }
+                        if (primaryQualtity == 0)
+                        {
+                            primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                            if (!(primaryQualtity > 0))
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            }
                         }
                     }
                 }
