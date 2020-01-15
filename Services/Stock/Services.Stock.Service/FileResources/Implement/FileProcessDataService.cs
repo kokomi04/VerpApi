@@ -36,17 +36,19 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        
+
         public FileProcessDataService(MasterDBContext masterDBContext, StockDBContext stockDbContext
-            , IOptions<AppSetting> appSetting            
-            , IFileService fileService            
+            , IOptions<AppSetting> appSetting
+            , ILogger<FileProcessDataService> logger
+            , IFileService fileService
             , IInventoryService inventoryService
             )
         {
             _masterDBContext = masterDBContext;
             _stockDbContext = stockDbContext;
             _appSetting = appSetting.Value;
-            _fileService = fileService;            
+            _logger = logger;
+            _fileService = fileService;
             _inventoryService = inventoryService;
         }
 
@@ -144,7 +146,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model)
+        public async Task<ServiceResult<long>> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model)
         {
             try
             {
@@ -221,7 +223,95 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ProcessOpeningBalance");
+                _logger.LogError(ex, "ImportInventoryInputOpeningBalance");
+                return GeneralCode.InternalError;
+            }
+        }
+
+        /// <summary>
+        /// Đọc file và cập nhật số liêu phiếu xuất kho
+        /// </summary>
+        /// <param name="currentUserId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task<ServiceResult<long>> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model)
+        {
+            try
+            {
+                var result = GeneralCode.Success;
+                if (model.FileIdList.Count < 1)
+                    return GeneralCode.InvalidParams;
+
+                foreach (var fileId in model.FileIdList)
+                {
+                    var ret = await _fileService.GetFileAndPath(fileId);
+                    if (ret.Data.info == null)
+                        continue;
+                    var fileExtension = string.Empty;
+                    var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                    if (checkExt)
+                        fileExtension = "xls";
+                    else
+                    {
+                        checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                        if (checkExt)
+                            fileExtension = "xlsx";
+                    }
+                    IWorkbook wb = null;
+                    var sheetList = new List<ISheet>(4);
+                    using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                    {
+                        if (fs != null)
+                        {
+                            switch (fileExtension)
+                            {
+                                case "xls":
+                                    {
+                                        wb = new HSSFWorkbook(fs);
+                                        var numberOfSheet = wb.NumberOfSheets;
+                                        for (var i = 0; i < numberOfSheet; i++)
+                                        {
+                                            var sheetName = wb.GetSheetAt(i).SheetName;
+                                            var sheet = (HSSFSheet)wb.GetSheet(sheetName);
+                                            sheetList.Add(sheet);
+                                        }
+                                        break;
+                                    }
+                                case "xlsx":
+                                    {
+                                        wb = new XSSFWorkbook(fs);
+                                        var numberOfSheet = wb.NumberOfSheets;
+                                        for (var i = 0; i < numberOfSheet; i++)
+                                        {
+                                            var sheetName = wb.GetSheetAt(i).SheetName;
+                                            var sheet = (XSSFSheet)wb.GetSheet(sheetName);
+                                            sheetList.Add(sheet);
+                                        }
+                                        break;
+                                    }
+                                default:
+                                    continue;
+                            }
+                            #region Process wb and sheet
+                            var sheetListCount = sheetList.Count;
+                            var returnResult = await ProcessInventoryOutputExcelSheet(sheetList, model, currentUserId);
+                            if ((GeneralCode)returnResult != GeneralCode.Success)
+                            {
+                                return GeneralCode.InternalError;
+                            }
+                            #endregion
+                        }
+                        else
+                        {
+                            return GeneralCode.InternalError;
+                        }
+                    }
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ImportInventoryOutput");
                 return GeneralCode.InternalError;
             }
         }
@@ -385,7 +475,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
         }
 
-        private async Task<Enum> ProcessInventoryInputExcelSheet(List<ISheet> sheetList, InventoryOpeningBalanceInputModel model, int currentUserId)
+        private async Task<Enum> ProcessInventoryInputExcelSheet(List<ISheet> sheetList, InventoryOpeningBalanceModel model, int currentUserId)
         {
             try
             {
@@ -476,7 +566,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         return GeneralCode.InternalError;
                         throw ex;
-                    }  
+                    }
 
                     #region Cập nhật ProductCate && ProductType
                     var productCateNameModelList = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
@@ -673,7 +763,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     #endregion end db updating product & related data
 
                     #region Tạo và xửa lý phiếu nhập kho
-                    
+
                     newProductUnitConversionList = _stockDbContext.ProductUnitConversion.AsNoTracking().ToList();
                     foreach (var item in excelModel)
                     {
@@ -702,7 +792,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 {
                                     ProductId = productObj != null ? productObj.ProductId : 0,
                                     ProductCode = item.ProductCode,
-                                    ProductUnitConversionId = productUnitConversionObj != null ? productUnitConversionObj?.ProductUnitConversionId : null,                                    
+                                    ProductUnitConversionId = productUnitConversionObj != null ? productUnitConversionObj?.ProductUnitConversionId : null,
                                     PrimaryQuantity = item.Qty1,
                                     ProductUnitConversionQuantity = item.Qty2,
                                     UnitPrice = item.UnitPrice,
@@ -743,9 +833,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 newInventory.InProducts.Add(new InventoryInProductModel
                                 {
                                     ProductId = item.ProductId,
-                                    ProductUnitConversionId = item.ProductUnitConversionId,                                    
+                                    ProductUnitConversionId = item.ProductUnitConversionId,
                                     PrimaryQuantity = item.PrimaryQuantity,
-                                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,                                    
+                                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                     UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = item.RefObjectTypeId,
                                     RefObjectId = item.RefObjectId,
@@ -763,7 +853,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item,true);
+                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item, true);
                             if (ret.Data > 0)
                             {
                                 // Duyệt phiếu nhập kho
@@ -786,7 +876,218 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 return GeneralCode.InternalError;
             }
         }
-        
+
+        private async Task<Enum> ProcessInventoryOutputExcelSheet(List<ISheet> sheetList, InventoryOpeningBalanceModel model, int currentUserId)
+        {
+            try
+            {
+                foreach (var sheet in sheetList)
+                {                    
+                    var totalRowCount = sheet.LastRowNum + 1;
+                    var excelModel = new List<OpeningBalanceModel>(totalRowCount);                    
+                    try
+                    {
+                        for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                        {
+                            var row = sheet.GetRow(i);
+                            if (row == null) continue;
+
+                            var cellProductCode = row.GetCell(0);
+                            if (cellProductCode == null)
+                                continue;
+                            var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
+                            if (string.IsNullOrEmpty(productCode))
+                                continue;
+
+                            #region Get All Cell value
+                            var cellUnit = row.GetCell(2);
+                            var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
+
+                            var cellUnitAlt = row.GetCell(7);
+                            var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
+
+                            var qTy = row.GetCell(3) != null ? HelperCellGetNumericValue(row.GetCell(3)) : 0;
+                            var unitPrice = row.GetCell(4) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(4)) : 0;
+
+                            var qTy2 = row.GetCell(9) != null ? HelperCellGetNumericValue(row.GetCell(9)) : 0;
+                            var factor = row.GetCell(8) != null ? HelperCellGetNumericValue(row.GetCell(8)) : 0;
+
+                            var cellItem = new OpeningBalanceModel
+                            {
+                                CateName = string.Empty,
+                                CatePrefixCode = string.Empty,
+                                ProductCode = productCode,
+                                ProductName = string.Empty,
+                                Unit1 = unitName.ToLower(),
+                                Qty1 = qTy,
+                                UnitPrice = unitPrice,
+                                Specification = string.Empty,
+                                Unit2 = unitAltName.ToLower(),
+                                Qty2 = qTy2,
+                                Factor = factor,
+                                Height = 0,
+                                Width = 0,
+                                Long = 0
+                            };
+                            excelModel.Add(cellItem);
+                            #endregion
+                        } // end for loop
+                    }
+                    catch (Exception ex)
+                    {
+                        return GeneralCode.InternalError;
+                        throw ex;
+                    }
+
+                    #region Thông tin sản phẩm
+                    var productDataList = new List<Product>(excelModel.Count);
+                    foreach (var item in excelModel)
+                    {
+                        if (productDataList.Any(q => q.ProductCode == item.ProductCode))
+                            continue;
+                        var productEntity = new Product
+                        {
+                            ProductCode = item.ProductCode,
+                            ProductName = item.ProductName,
+                            IsCanBuy = true,
+                            IsCanSell = true,
+                            MainImageFileId = null,
+                            ProductTypeId = null,
+                            ProductCateId = 0,
+                            BarcodeStandardId = null,
+                            BarcodeConfigId = null,
+                            Barcode = null,
+                            UnitId = 0,
+                            EstimatePrice = item.UnitPrice,
+                            Long = item.Long,
+                            Width = item.Width,
+                            Height = item.Height,
+                            CreatedDatetimeUtc = DateTime.Now,
+                            UpdatedDatetimeUtc = DateTime.Now,
+                            IsDeleted = false
+                        };
+                        productDataList.Add(productEntity);
+                    }
+
+                    var readBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Product.ProductCode) } };
+                    _stockDbContext.BulkRead<Product>(productDataList, readBulkConfig);
+                    #endregion
+
+                    #region Thông tin đơn vị tính & chuyển đổi
+                    var unitDataList = await _masterDBContext.Unit.AsNoTracking().ToListAsync();
+                    var productUnitConversionDataList = new List<ProductUnitConversion>(excelModel.Count);
+                    foreach (var item in excelModel)
+                    {
+                        var productEntity = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor.ToString("N6"));
+                        if (productEntity != null)
+                        {
+                            var productUnitConversionEntity = new ProductUnitConversion
+                            {
+                                ProductId = productEntity.ProductId,
+                                ProductUnitConversionName = productUnitConversionName
+                            };
+                            productUnitConversionDataList.Add(productUnitConversionEntity);
+                        }
+                    }
+                    var readProductUnitConversionBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductUnitConversion.ProductUnitConversionName), nameof(ProductUnitConversion.ProductId) } };
+                    _stockDbContext.BulkRead<ProductUnitConversion>(productUnitConversionDataList, readProductUnitConversionBulkConfig);
+                    #endregion
+
+                    #region Thông tin kiện mặc định
+                    var defaultPackageDataList = (from pk in _stockDbContext.Package
+                                                  join p in productDataList on pk.ProductId equals p.ProductId
+                                                  where pk.StockId == model.StockId && pk.PackageTypeId == (int)EnumPackageType.Default
+                                                  select pk).AsNoTracking().ToList();
+
+                    #endregion
+
+                    #region Tạo và xửa lý phiếu xuất kho   
+                    var inventoryOutProductModelList = new List<InventoryOutProductModel>(excelModel.Count);
+                    foreach (var item in excelModel)
+                    {
+                        if (string.IsNullOrEmpty(item.ProductCode) || (item.Qty1 == 0 && item.Qty2 == 0))
+                            continue;
+
+                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor.ToString("N6"));
+                        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
+                        var productUnitConversionObj = productUnitConversionDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.ProductUnitConversionName == productUnitConversionName);
+                        var packageObj = defaultPackageDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
+
+                        var inventoryOutProductModel = new InventoryOutProductModel
+                        {
+                            ProductId = productObj.ProductId,
+                            ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
+                            IsFreeStyle = true,
+                            PrimaryQuantity = item.Qty1,
+                            ProductUnitConversionQuantity = item.Qty2,
+                            UnitPrice = item.UnitPrice,
+                            RefObjectTypeId = null,
+                            RefObjectId = null,
+                            RefObjectCode = string.Format("PX_{0}", DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                            FromPackageId = packageObj.PackageId,
+                            OrderCode = string.Empty,
+                            POCode = string.Empty,
+                            ProductionOrderCode = string.Empty,
+                        };
+                        inventoryOutProductModelList.Add(inventoryOutProductModel);
+                    }
+                    if (inventoryOutProductModelList.Count > 0)
+                    {
+                        var pageSize = 60;
+                        var totalPage = (int)Math.Ceiling(inventoryOutProductModelList.Count / (decimal)pageSize);
+                        var inventoryOutputList = new List<InventoryOutModel>(totalPage);
+
+                        for (var pageIndex = 1; pageIndex < totalPage; pageIndex++)
+                        {
+                            var outProductsList = inventoryOutProductModelList.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+                            var inventoryOutputEntity = new InventoryOutModel
+                            {
+                                StockId = model.StockId,
+                                InventoryCode = string.Format("PX_TonDau_{0}_{1}", pageIndex, DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                                Shipper = string.Empty,
+                                Content = model.Description,
+                                DateUtc = model.IssuedDate,
+                                CustomerId = null,
+                                Department = string.Empty,
+                                StockKeeperUserId = null,
+                                FileIdList = null,
+                                OutProducts = outProductsList
+                            };
+                            inventoryOutputList.Add(inventoryOutputEntity);
+                        }
+                        if (inventoryOutputList.Count > 0)
+                        {
+                            foreach (var item in inventoryOutputList)
+                            {
+                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item, true);
+                                if (ret.Data > 0)
+                                {
+                                    // Duyệt phiếu xuất kho
+                                    //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
+                                    continue;
+                                }
+                                else
+                                {
+                                    _logger.LogWarning(string.Format("ProcessInventoryOutputExcelSheet not success, please recheck -> AddInventoryOutput: {0}", item.InventoryCode));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return GeneralCode.InternalError;
+                        }
+                    }
+                    #endregion
+                }
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ProcessInventoryOutputExcelSheet");
+                return GeneralCode.InternalError;
+            }
+        }
         #endregion
     }
 

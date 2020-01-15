@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("")]
         public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] string beginTime, [FromQuery] string endTime, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type,beginTime: beginTime,endTime: endTime, page: page, size: size);
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, beginTime: beginTime, endTime: endTime, page: page, size: size);
         }
 
 
@@ -230,16 +230,22 @@ namespace VErpApi.Controllers.Stock.Inventory
 
 
         /// <summary>
-        /// Xử lý file - Đọc và tạo chứng từ tồn đầu
+        /// Xử lý file - Đọc và tạo chứng từ tồn đầu -> tạo phiếu nhập / xuất
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost]
         [Route("ProcessOpeningBalance")]
-        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceInputModel model)
+        public async Task<ApiResponse> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceModel model)
         {
             var currentUserId = UserId;
-            return await _fileProcessDataService.ImportInventoryInputOpeningBalance(currentUserId, model);
+            if (model.Type == EnumInventoryType.Input)
+                return await _fileProcessDataService.ImportInventoryInputOpeningBalance(currentUserId, model);
+            else if (model.Type == EnumInventoryType.Output)
+                return await _fileProcessDataService.ImportInventoryOutput(currentUserId, model);
+            else
+                return new ApiResponse { Code = GeneralCode.InvalidParams.ToString() };
+
         }
 
         [VErpAction(EnumAction.View)]
