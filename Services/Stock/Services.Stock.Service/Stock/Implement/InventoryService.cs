@@ -695,18 +695,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return InventoryErrorCode.CanNotChangeStock;
                         }
 
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
-                        inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.Shipper = req.Shipper;
-                        inventoryObj.Content = req.Content;
-                        inventoryObj.DateUtc = issuedDate;
-                        inventoryObj.CustomerId = req.CustomerId;
-                        inventoryObj.Department = req.Department;
-                        inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
-                        inventoryObj.IsApproved = false;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        var originalObj = GetInventoryInfoForLog(inventoryObj);                      
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -723,6 +712,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return processInventoryOut.Code;
                         }
                         await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
+
+
+                        //note: update IsApproved after RollbackInventoryOutput
+                        inventoryObj.InventoryCode = req.InventoryCode;
+                        inventoryObj.Shipper = req.Shipper;
+                        inventoryObj.Content = req.Content;
+                        inventoryObj.DateUtc = issuedDate;
+                        inventoryObj.CustomerId = req.CustomerId;
+                        inventoryObj.Department = req.Department;
+                        inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
+                        inventoryObj.IsApproved = false;
+                        inventoryObj.UpdatedByUserId = currentUserId;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
