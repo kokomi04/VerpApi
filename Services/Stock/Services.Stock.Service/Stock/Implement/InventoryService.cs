@@ -933,10 +933,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                    inventoryObj.IsDeleted = true;
-                    //inventoryObj.IsApproved = false;
-                    inventoryObj.UpdatedByUserId = currentUserId;
-                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                  
 
                     //Cần rollback cả 2 loại phiếu đã duyệt và chưa duyệt All approved or not need tobe rollback, bỏ if (inventoryObj.IsApproved)
 
@@ -946,6 +943,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Rollback();
                         return GeneralCode.InvalidParams;
                     }
+
+                    //update status after rollback
+                    inventoryObj.IsDeleted = true;
+                    //inventoryObj.IsApproved = false;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
                     await _stockDbContext.SaveChangesAsync();
