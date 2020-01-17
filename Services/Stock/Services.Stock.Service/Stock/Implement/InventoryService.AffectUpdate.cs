@@ -1,33 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using NPOI.HSSF.UserModel;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Service.Config;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Package;
-using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.FileResources;
-using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -667,23 +650,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.RefObjectId = submitDetail?.RefObjectId;
                 detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
                 detail.RefObjectCode = submitDetail?.RefObjectCode;
-
+                if (p.NewPrimaryQuantity == 0)
+                {
+                    detail.IsDeleted = true;
+                }
 
                 var firstPackage = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == detail.ToPackageId);
 
                 if (firstPackage == null) throw new Exception("Invalid data");
 
                 firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
-                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;               
 
-                if (p.NewPrimaryQuantity == 0)
-                {
-                    detail.IsDeleted = true;
-                }
                 var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId);
 
                 stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
                 stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
 
                 foreach (var obj in p.AffectObjects)
                 {
@@ -724,6 +707,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         childPackage.PrimaryQuantityRemaining += deltaPrimaryQuantity;
                                         childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
 
+                                        if (childPackage.PrimaryQuantityRemaining < 0 || childPackage.ProductUnitConversionRemaining < 0)
+                                        {
+                                            throw new Exception("Invalid negative child package data!");
+                                        }
 
                                         //sub parent
                                         switch (obj.ObjectTypeId)
@@ -752,6 +739,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
 
+                                        if (childInventoryDetail.PrimaryQuantity < 0 || childInventoryDetail.ProductUnitConversionQuantity < 0)
+                                        {
+                                            throw new Exception("Invalid negative output inventory data!");
+                                        }
+
                                         if (childInventoryDetail.PrimaryQuantity == 0)
                                         {
                                             childInventoryDetail.IsDeleted = true;
@@ -767,6 +759,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                                 case EnumObjectType.Package:
                                                     ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
                                                     ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+
+                                                    stockProduct.PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                    stockProduct.ProductUnitConversionRemaining -= deltaConversionQuantity;
+
                                                     break;
                                                 default:
                                                     throw new NotSupportedException();
@@ -783,6 +779,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                                     stockProduct.PrimaryQuantityWaiting += deltaPrimaryQuantity;
                                                     stockProduct.ProductUnitConversionWaitting += deltaConversionQuantity;
+
                                                     break;
                                                 default:
                                                     throw new NotSupportedException();
@@ -800,6 +797,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
+                foreach (var obj in p.AffectObjects)
+                {
+                    if (obj.NewPrimaryQuantity < 0 || obj.NewProductUnitConversionQuantity < 0)
+                    {
+                        throw new Exception("Invalid negative object data");
+                    }
+
+                    if (obj.Children != null)
+                    {
+                        foreach (var r in obj.Children)
+                        {
+                            if (r.NewTransferPrimaryQuantity < 0 || r.NewTransferProductUnitConversionQuantity < 0)
+                            {
+                                throw new Exception("Invalid negative transfer data");
+                            }
+                        }
+                    }
+                }
+                if (firstPackage.PrimaryQuantityRemaining < 0 || firstPackage.ProductUnitConversionRemaining < 0)
+                {
+                    throw new Exception("Invalid negative first package data");
+                }
+
+                if (stockProduct.PrimaryQuantityRemaining < 0 || stockProduct.ProductUnitConversionRemaining < 0)
+                {
+                    throw new Exception("Invalid negative stock product data!");
+                }
             }
 
             return GeneralCode.Success;
