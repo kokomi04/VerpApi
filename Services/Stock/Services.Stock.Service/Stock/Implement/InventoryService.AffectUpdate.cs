@@ -76,7 +76,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var productIds = details.Select(d => d.ProductId);
             var productInfos = _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
 
-            //var productUnitConversions = _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+            var productUnitConversions = _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
 
             var products = new List<CensoredInventoryInputProducts>();
 
@@ -99,7 +99,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
 
-                //var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
+                var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
 
                 var product = new CensoredInventoryInputProducts()
                 {
@@ -113,8 +113,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     NewPrimaryQuantity = newPrimaryQuantity,
 
                     ProductUnitConversionId = d.ProductUnitConversionId.Value,
-                    //ProductUnitConversionName = conversionInfo?.ProductUnitConversionName,
-                    //FactorExpression = conversionInfo?.FactorExpression,
+                    ProductUnitConversionName = conversionInfo?.ProductUnitConversionName,
+                    FactorExpression = conversionInfo?.FactorExpression,
 
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                     NewProductUnitConversionQuantity = newProductUnitConversionQuantity,

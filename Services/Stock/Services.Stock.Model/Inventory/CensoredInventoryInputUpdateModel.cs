@@ -22,8 +22,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public decimal OldPrimaryQuantity { get; set; }
         public decimal NewPrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
-        //public string ProductUnitConversionName { get; set; }
-        //public string FactorExpression { get; set; }
+        public string ProductUnitConversionName { get; set; }
+        public string FactorExpression { get; set; }
         public decimal OldProductUnitConversionQuantity { get; set; }
         public decimal NewProductUnitConversionQuantity { get; set; }
         public long ToPackageId { get; set; }
