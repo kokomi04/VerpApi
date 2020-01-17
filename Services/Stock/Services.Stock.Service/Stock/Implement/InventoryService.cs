@@ -695,7 +695,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return InventoryErrorCode.CanNotChangeStock;
                         }
 
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);                      
+                        var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -866,7 +866,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 try
                 {
-                  
+
 
                     //Cần rollback cả 2 loại phiếu đã duyệt và chưa duyệt All approved or not need tobe rollback, bỏ if (inventoryObj.IsApproved)
 
@@ -967,7 +967,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InternalError;
                     }
                 }
-                
+
             }
             catch (Exception ex)
             {
@@ -1134,15 +1134,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var productInStockQuery = from i in _stockDbContext.Inventory
-                                          join id in _stockDbContext.InventoryDetail on i.InventoryId equals id.InventoryId
-                                          join p in _stockDbContext.Product on id.ProductId equals p.ProductId
-                                          where i.IsApproved && stockIdList.Contains(i.StockId) && i.InventoryTypeId == (int)EnumInventoryType.Input
-                                          select p;
+                var productInStockQuery = (
+                    from s in _stockDbContext.StockProduct
+                    join p in _stockDbContext.Product on s.ProductId equals p.ProductId
+                    where stockIdList.Contains(s.StockId) && s.PrimaryQuantityRemaining > 0
+                    select p
+                    )
+                    .Distinct();
+
                 if (!string.IsNullOrEmpty(keyword))
                     productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
-
-                productInStockQuery = productInStockQuery.GroupBy(q => q.ProductId).Select(g => g.First());
 
                 var total = productInStockQuery.Count();
                 var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -1486,7 +1487,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
-                    if(IsFreeStyle == false)
+                    if (IsFreeStyle == false)
                     {
                         var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                         if (productUnitConversionInfo == null)
