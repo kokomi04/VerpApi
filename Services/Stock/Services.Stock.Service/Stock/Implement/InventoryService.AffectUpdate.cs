@@ -752,6 +752,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
                                         childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
 
+                                        if (childInventoryDetail.PrimaryQuantity == 0)
+                                        {
+                                            childInventoryDetail.IsDeleted = true;
+                                        }
+
+                                        if (inventory.InventoryTypeId != (int)EnumInventoryType.Output) throw new Exception("Invalid inventory type!");
 
                                         if (inventory.IsApproved)
                                         {

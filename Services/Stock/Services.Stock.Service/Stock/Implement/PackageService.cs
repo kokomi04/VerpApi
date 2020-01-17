@@ -71,7 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-      
+
 
         public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
         {
@@ -81,7 +81,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
             if (packageInfo == null) return PackageErrorCode.PackageNotFound;
 
-            if (packageInfo.ProductUnitConversionWaitting > 0)
+            if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
             {
                 return PackageErrorCode.HasSomeQualtityWaitingForApproved;
             }
@@ -214,7 +214,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
                 if (packageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                if (packageInfo.ProductUnitConversionWaitting > 0)
+                if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
                 {
                     return PackageErrorCode.HasSomeQualtityWaitingForApproved;
                 }
