@@ -660,13 +660,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (firstPackage == null) throw new Exception("Invalid data");
 
                 firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
-                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;               
+                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
 
                 var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId);
 
                 stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
                 stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
 
+                var updatedPackages = new List<Package>();
+                var updatedInventoryDetails = new List<InventoryDetail>();
+                var updatedPackageRefs = new List<PackageRef>();
 
                 foreach (var obj in p.AffectObjects)
                 {
@@ -675,9 +678,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         case EnumObjectType.Package:
                             parent = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == obj.ObjectId);
+                            if (!updatedPackages.Contains((Package)parent))
+                            {
+                                updatedPackages.Add((Package)parent);
+                            }
                             break;
                         case EnumObjectType.InventoryDetail:
                             parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
+                            if (!updatedInventoryDetails.Contains((InventoryDetail)parent))
+                            {
+                                updatedInventoryDetails.Add((InventoryDetail)parent);
+                            }
                             break;
                         default:
                             throw new NotSupportedException();
@@ -707,9 +718,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         childPackage.PrimaryQuantityRemaining += deltaPrimaryQuantity;
                                         childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
 
-                                        if (childPackage.PrimaryQuantityRemaining < 0 || childPackage.ProductUnitConversionRemaining < 0)
+                                        if (!updatedPackages.Contains(childPackage))
                                         {
-                                            throw new Exception("Invalid negative child package data!");
+                                            updatedPackages.Add(childPackage);
+                                        }
+
+                                        if (!updatedPackageRefs.Contains(refInfo))
+                                        {
+                                            updatedPackageRefs.Add(refInfo);
                                         }
 
                                         //sub parent
@@ -718,6 +734,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             case EnumObjectType.Package:
                                                 ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
                                                 ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+
                                                 break;
                                             case EnumObjectType.InventoryDetail:
                                                 ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
@@ -732,6 +749,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     case EnumObjectType.InventoryDetail:
 
                                         var childInventoryDetail = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(c => c.InventoryDetailId == r.ObjectId);
+
+                                        if (!updatedInventoryDetails.Contains(childInventoryDetail))
+                                        {
+                                            updatedInventoryDetails.Add(childInventoryDetail);
+                                        }
 
                                         var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
 
@@ -797,6 +819,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
+                //Validate data before save
                 foreach (var obj in p.AffectObjects)
                 {
                     if (obj.NewPrimaryQuantity < 0 || obj.NewProductUnitConversionQuantity < 0)
@@ -815,9 +838,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                     }
                 }
-                if (firstPackage.PrimaryQuantityRemaining < 0 || firstPackage.ProductUnitConversionRemaining < 0)
+
+                foreach (var packageInfo in updatedPackages)
                 {
-                    throw new Exception("Invalid negative first package data");
+                    if (packageInfo.PrimaryQuantityRemaining < 0 || packageInfo.ProductUnitConversionRemaining < 0)
+                    {
+                        throw new Exception("Invalid negative package data");
+                    }
+                }
+
+                foreach (var packageRef in updatedPackageRefs)
+                {
+                    if (packageRef.PrimaryQuantity < 0 || packageRef.ProductUnitConversionQuantity < 0)
+                    {
+                        throw new Exception("Invalid negative package ref data");
+                    }
+                }
+
+                foreach (var inventoryDetail in updatedInventoryDetails)
+                {
+                    if (inventoryDetail.PrimaryQuantity < 0 || inventoryDetail.ProductUnitConversionQuantity < 0)
+                    {
+                        throw new Exception("Invalid negative inventory detail data");
+                    }
                 }
 
                 if (stockProduct.PrimaryQuantityRemaining < 0 || stockProduct.ProductUnitConversionRemaining < 0)
