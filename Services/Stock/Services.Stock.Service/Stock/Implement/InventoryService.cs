@@ -1138,10 +1138,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     from s in _stockDbContext.StockProduct
                     join p in _stockDbContext.Product on s.ProductId equals p.ProductId
                     where stockIdList.Contains(s.StockId)// && s.PrimaryQuantityRemaining > 0
-                    orderby s.PrimaryQuantityRemaining descending
-                    select p
-                    )
-                    .Distinct();
+                    group 0 by p into p
+
+                    select p.Key
+                    );
+                    //.Distinct();
 
                 if (!string.IsNullOrEmpty(keyword))
                     productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
