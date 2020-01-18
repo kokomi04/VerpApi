@@ -1138,6 +1138,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     from s in _stockDbContext.StockProduct
                     join p in _stockDbContext.Product on s.ProductId equals p.ProductId
                     where stockIdList.Contains(s.StockId) && s.PrimaryQuantityRemaining > 0
+                    orderby p.ProductCode
                     select p
                     )
                     .Distinct();
