@@ -397,6 +397,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var query = from sp in productRemaining
                         join p in productQuery on sp.ProductId equals p.ProductId
                         join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
+                        where sp.PrimaryQuantityRemaining > 0
                         select new
                         {
                             p.ProductId,
@@ -588,7 +589,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, string fromDateString, string toDateString, int page, int size)
-        {            
+        {
             DateTime fromDate = DateTime.MinValue;
             DateTime toDate = DateTime.Now;
 
@@ -596,7 +597,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
                 {
-                    return (null, 0); 
+                    return (null, 0);
                 }
             }
             if (!string.IsNullOrEmpty(toDateString))

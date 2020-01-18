@@ -29,11 +29,19 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<Enum> ImportCustomerData(int currentUserId, long fileId);
 
         /// <summary>
-        /// Nhập dữ liệu tồn kho đầu kỳ
+        /// Nhập dữ liệu tồn kho (nhập kho) đầu kỳ
         /// </summary>
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceInputModel model);        
+        Task<ServiceResult<long>> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model);
+
+        /// <summary>
+        /// Nhập dữ liệu xuất kho đầu kỳ
+        /// </summary>
+        /// <param name="currentUserId"></param>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        Task<ServiceResult<long>> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model);
     }
 }
