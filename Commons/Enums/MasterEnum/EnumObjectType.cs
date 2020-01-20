@@ -46,6 +46,12 @@ namespace VErp.Commons.Enums.MasterEnum
 
         GenCodeConfig = 16,
 
-        Customer = 17
+        Customer = 17,
+
+        /// <summary>
+        /// BOM - Bill of Material - Thông tin vật tư cấu thành nên sản phẩm
+        /// </summary>
+        BillOfMaterial = 18,
+
     }
 }
