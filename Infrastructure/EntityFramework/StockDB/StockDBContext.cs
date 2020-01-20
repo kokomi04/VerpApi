@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
         }
 
+        public virtual DbSet<BillOfMaterial> BillOfMaterial { get; set; }
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
@@ -40,6 +41,28 @@ namespace VErp.Infrastructure.EF.StockDB
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
+
+            modelBuilder.Entity<BillOfMaterial>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 2)");
+
+                entity.HasOne(d => d.ParentProduct)
+                    .WithMany(p => p.BillOfMaterialParentProduct)
+                    .HasForeignKey(d => d.ParentProductId);
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.BillOfMaterialProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+            });
 
             modelBuilder.Entity<File>(entity =>
             {
