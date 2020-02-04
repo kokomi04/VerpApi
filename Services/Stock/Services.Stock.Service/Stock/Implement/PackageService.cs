@@ -13,6 +13,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Model.Package;
@@ -25,17 +26,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public PackageService(StockDBContext stockContext
            , IOptions<AppSetting> appSetting
            , ILogger<PackageService> logger
-           , IActivityService activityService)
+           , IActivityLogService activityLogService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<Enum> UpdatePackage(long packageId, PackageInputModel req)
@@ -43,7 +44,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             try
             {
                 var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
-                var oldPackageData = GetInfoForLog(obj);
+                
                 if (obj == null)
                 {
                     return PackageErrorCode.PackageNotFound;
@@ -58,9 +59,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 obj.LocationId = req.LocationId;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
                 obj.UpdatedDatetimeUtc = DateTime.Now;
-
-                _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
+                
                 await _stockDbContext.SaveChangesAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -425,11 +427,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, "GetList");
                 return (null, 0);
             }
-        }
-
-        private object GetInfoForLog(VErp.Infrastructure.EF.StockDB.Package obj)
-        {
-            return obj;
         }
 
     }

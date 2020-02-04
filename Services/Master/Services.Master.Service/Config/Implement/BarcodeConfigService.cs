@@ -14,6 +14,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Service.Activity;
 using System.Linq;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -23,18 +24,18 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public BarcodeConfigService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<BarcodeConfigService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
         public async Task<ServiceResult<int>> AddBarcodeConfig(BarcodeConfigModel data)
         {
@@ -68,7 +69,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", null, model);
+            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", data.JsonSerialize());
 
             return model.BarcodeConfigId;
         }
@@ -80,14 +81,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 return BarcodeConfigErrorCode.BarcodeNotFound;
             }
-
-            var dataBefore = model.JsonSerialize();
+            
 
             model.IsDeleted = true;
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", dataBefore, model);
+            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", model.JsonSerialize());
             return GeneralCode.Success;
         }
 
@@ -217,14 +217,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             //    }
             //}
 
-            var dataBefore = model.JsonSerialize();
+           
             model.Name = data.Name;
             model.IsActived = data.IsActived;
             model.ConfigurationJson = config;
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", dataBefore, model);
+            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", model.JsonSerialize());
 
             return GeneralCode.Success;
         }

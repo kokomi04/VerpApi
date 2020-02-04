@@ -10,7 +10,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Activity;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
@@ -20,19 +20,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public ProductCateService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductCateService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddProductCate(ProductCateInput req)
@@ -71,7 +71,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", null, productCate);
+            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
             return productCate.ProductCateId;
         }
@@ -100,7 +100,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize(), null);
+            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -165,8 +165,6 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 return ProductCateErrorCode.ProductCateNameAlreadyExisted;
             }
 
-            var beforeJson = productCate.JsonSerialize();
-
             productCate.ProductCateName = req.ProductCateName;
             productCate.ParentProductCateId = req.ParentProductCateId;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -174,7 +172,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", beforeJson, productCate);
+            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
             return GeneralCode.Success;
         }

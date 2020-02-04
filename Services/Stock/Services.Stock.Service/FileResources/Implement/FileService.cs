@@ -16,7 +16,6 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 using StockDBContext = VErp.Infrastructure.EF.StockDB.StockDBContext;
@@ -28,8 +27,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunnerService;
+
         private readonly string _rootFolder = "";
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<FileService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             , IDataProtectionProvider dataProtectionProvider
             , IAsyncRunnerService asyncRunnerService
         )
@@ -51,7 +51,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
             _rootFolder = _appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\');
             _dataProtectionProvider = dataProtectionProvider;
             _asyncRunnerService = asyncRunnerService;
@@ -201,7 +201,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 File.Delete(GetPhysicalFilePath(fileInfo.LargeThumb));
             }
 
-            _activityService.CreateActivityAsync(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson, null);
+            await _activityLogService.CreateLog(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson);
             return GeneralCode.Success;
         }
         public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
@@ -249,7 +249,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         await _stockContext.SaveChangesAsync();
                         trans.Commit();
 
-                        _activityService.CreateActivityAsync(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", null, fileRes);
+                        await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
 
                         return fileRes.FileId;
                     }
@@ -338,7 +338,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             return fileList;
         }
-        
+
         #region private
 
         public async Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
@@ -377,7 +377,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 }
 
 
-                var beforeJson = fileInfo.JsonSerialize();
 
                 using (var trans = await _stockContext.Database.BeginTransactionAsync())
                 {
@@ -391,7 +390,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         await _stockContext.SaveChangesAsync();
                         trans.Commit();
 
-                        _activityService.CreateActivityAsync(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", beforeJson, fileInfo);
+                        await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
 
                         _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
 

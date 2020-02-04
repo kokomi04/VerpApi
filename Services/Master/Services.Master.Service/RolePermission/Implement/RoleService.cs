@@ -12,6 +12,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
@@ -23,18 +24,18 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<RoleService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
@@ -61,7 +62,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.Role.AddAsync(roleInfo);
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", null, roleInfo);
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
 
             return roleInfo.RoleId;
         }
@@ -134,8 +135,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleIsReadonly;
             }
-            var dataBefore = roleInfo.JsonSerialize();
-
+          
             roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             roleInfo.RoleName = role.RoleName;
             roleInfo.Description = role.Description;
@@ -143,7 +143,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", dataBefore, roleInfo);
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -163,7 +163,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             roleInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize(), null);
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -186,9 +186,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var rolePermissions = await _masterContext.RolePermission.Where(p => p.RoleId == roleId).ToListAsync();
-
-                var beforeJson = rolePermissions.JsonSerialize();
-
+               
                 _masterContext.RolePermission.RemoveRange(rolePermissions);
 
                 var newPermissions = new List<Infrastructure.EF.MasterDB.RolePermission>();
@@ -209,7 +207,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 trans.Commit();
 
-                _activityService.CreateActivityAsync(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", permissions.JsonSerialize());
 
                 return GeneralCode.Success;
             }

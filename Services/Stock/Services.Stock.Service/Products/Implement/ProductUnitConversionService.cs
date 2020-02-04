@@ -11,6 +11,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Inventory;
@@ -25,13 +26,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         private readonly IUnitService _unitService;
 
         public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductUnitConversionService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             , IUnitService unitService
         )
         {
@@ -39,7 +40,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _masterDBContext = masterDBContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
             _unitService = unitService;
         }
 

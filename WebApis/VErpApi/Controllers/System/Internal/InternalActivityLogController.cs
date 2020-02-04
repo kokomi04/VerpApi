@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Services.Master.Model.Activity;
 using VErp.Services.Master.Service.Activity;
 
 namespace VErpApi.Controllers.System.Internal
@@ -22,9 +24,10 @@ namespace VErpApi.Controllers.System.Internal
 
         [Route("Log")]
         [HttpPost]
-        public async Task<ApiResponse> ChangePassword([FromBody] UserChangepasswordInput req)
+        public async Task<ApiResponse> Log([FromBody] ActivityInput req)
         {
-            return await _activityService.CreateActivityAsync(UserId, req);
+            _activityService.CreateActivityAsync(req);
+            return GeneralCode.Success;
         }
     }
 }
