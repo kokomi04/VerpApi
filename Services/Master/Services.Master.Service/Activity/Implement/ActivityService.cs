@@ -12,6 +12,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Model.Activity;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -36,14 +37,16 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
         }
+        
 
-
-        public void CreateActivityAsync(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
+        public void CreateActivityAsync(ActivityInput input)
         {
-            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(objectTypeId, objectId, message, oldJsonObject, newObject));
+            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
-        public async Task<Enum> CreateActivityTask(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
+
+
+        public async Task<Enum> CreateActivityTask(ActivityInput input)
         {
             var userId = _currentContextService.UserId;
             var actionId = (int)_currentContextService.Action;
@@ -55,20 +58,20 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserId = userId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     ActionId = actionId,
-                    ObjectTypeId = (int)objectTypeId,
-                    ObjectId = objectId,
-                    Message = message
+                    ObjectTypeId = (int)input.ObjectTypeId,
+                    ObjectId = input.ObjectId,
+                    Message = input.Message
                 };
 
                 await _masterContext.UserActivityLog.AddAsync(activity);
                 await _masterContext.SaveChangesAsync();
 
-                var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
+                // var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
 
                 var change = new UserActivityLogChange()
                 {
                     UserActivityLogId = activity.UserActivityLogId,
-                    ObjectChange = changeLog
+                    ObjectChange = input.Data,//changeLog
                 };
 
                 await _masterContext.UserActivityLogChange.AddAsync(change);
