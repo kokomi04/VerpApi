@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
 
-        public ActivityLogService(HttpClient httpClient, ILogger logger, IOptionsSnapshot<AppSetting> appSetting)
+        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting)
         {
             _httpClient = httpClient;
             _logger = logger;
