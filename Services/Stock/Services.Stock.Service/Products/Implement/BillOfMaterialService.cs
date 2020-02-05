@@ -14,6 +14,7 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -22,17 +23,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public BillOfMaterialService(StockDBContext stockContext
            , IOptions<AppSetting> appSetting
            , ILogger<BillOfMaterialService> logger
-           , IActivityService activityService)
+           , IActivityLogService activityLogService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<BillOfMaterialOutput>> Get(long billOfMaterialId)
@@ -151,7 +152,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _stockDbContext.BillOfMaterial.AddAsync(entity);
                 await _stockDbContext.SaveChangesAsync();
 
-                _activityService.CreateActivityAsync(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", null, entity);
+                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
 
                 return entity.BillOfMaterialId;
             }
@@ -169,7 +170,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var entity = _stockDbContext.BillOfMaterial.FirstOrDefault(q => q.BillOfMaterialId == billOfMaterialId);
                 if (entity == null)
                     return GeneralCode.InvalidParams;
-                var beforeJson = entity.JsonSerialize();
 
                 entity.ProductId = req.ProductId;
                 entity.ParentProductId = req.ParentProductId;
@@ -178,7 +178,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 entity.Description = req.Description;
                 entity.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _stockDbContext.SaveChangesAsync();
-                _activityService.CreateActivityAsync(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", beforeJson, entity);
+                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -206,7 +206,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     item.UpdatedDatetimeUtc = DateTime.UtcNow;
                 }
                 await _stockDbContext.SaveChangesAsync();
-                _activityService.CreateActivityAsync(EnumObjectType.BillOfMaterial, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize(), null);
+                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
 
                 return GeneralCode.Success;
             }
