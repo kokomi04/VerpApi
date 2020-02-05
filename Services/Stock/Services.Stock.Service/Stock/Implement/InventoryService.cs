@@ -33,7 +33,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         private readonly IUnitService _unitService;
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<InventoryService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             , IUnitService unitService
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
@@ -54,7 +54,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
             _unitService = unitService;
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
@@ -378,8 +378,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
 
                         trans.Commit();
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", null, objLog);
+
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", req.JsonSerialize());
 
                         //Move file from tmp folder
                         if (req.FileIdList != null)
@@ -487,8 +487,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", null, objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", req.JsonSerialize());
 
                         //Move file from tmp folder
                         if (req.FileIdList != null)
@@ -572,8 +571,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return GeneralCode.NotYetSupported;
                         }
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
+                       
                         //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
                         inventoryObj.InventoryCode = req.InventoryCode;
                         inventoryObj.DateUtc = issuedDate;
@@ -631,9 +629,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
+                       
                         var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -694,9 +692,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return InventoryErrorCode.CanNotChangeStock;
                         }
-
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
+                        
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
                         {
@@ -750,10 +746,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
-
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
+                        
                         var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -789,7 +784,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteInventoryInput(long inventoryId, int currentUserId)
         {
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-            var objLog = GetInventoryInfoForLog(inventoryObj);
+           
             if (inventoryObj == null)
             {
                 return InventoryErrorCode.InventoryNotFound;
@@ -812,9 +807,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //}
             }
 
-
-            var dataBefore = objLog.JsonSerialize();
-
+          
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -824,7 +817,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryObj.UpdatedByUserId = currentUserId;
                     inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -848,7 +841,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteInventoryOutput(long inventoryId, int currentUserId)
         {
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-            var objLog = GetInventoryInfoForLog(inventoryObj);
+            
             if (inventoryObj == null)
             {
                 return InventoryErrorCode.InventoryNotFound;
@@ -858,9 +851,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InvalidParams;
             }
 
-
-            var dataBefore = objLog.JsonSerialize();
-
+          
             // Xử lý xoá thông tin phiếu xuất kho
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -883,7 +874,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryObj.UpdatedByUserId = currentUserId;
                     inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -934,9 +925,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             return InventoryErrorCode.InventoryAlreadyApproved;
                         }
-
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
+                        
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -953,10 +942,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
 
                         trans.Commit();
-
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
+                       
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
 
                         return GeneralCode.Success;
                     }
@@ -1070,9 +1058,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return InventoryErrorCode.InventoryNotFound;
                         }
-
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
+                       
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
@@ -1101,10 +1087,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
-
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
+                        
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog,inventoryObj.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -1738,12 +1723,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return GeneralCode.Success;
         }
-
-
-        private object GetInventoryInfoForLog(VErp.Infrastructure.EF.StockDB.Inventory inventoryObj)
-        {
-            return inventoryObj;
-        }
+       
 
         private string CreatePackageCode(string inventoryCode, string productCode, DateTime productManufactureDateTimeUtc)
         {

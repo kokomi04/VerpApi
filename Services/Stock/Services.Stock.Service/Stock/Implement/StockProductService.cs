@@ -52,10 +52,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
         #region Helper methods
-        private object GetStockProductInfoForLog(VErp.Infrastructure.EF.StockDB.StockProduct obj)
-        {
-            return obj;
-        }
+        
         #endregion
     }
 }

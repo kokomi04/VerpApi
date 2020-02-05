@@ -11,6 +11,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
@@ -24,19 +25,19 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
             , IRoleService roleService
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _roleService = roleService;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
@@ -68,7 +69,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     var info = await GetUserFullInfo(user.Data);
 
-                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", null, info);
+                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
 
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
 
@@ -117,9 +118,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<Enum> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
-
-            var beforeJson = userInfo.JsonSerialize();
-
+          
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -139,7 +138,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     }
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", beforeJson, null);
+                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -222,7 +221,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     var newUserInfo = await GetUserFullInfo(userId);
 
-                    _activityService.CreateActivityAsync(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize(), newUserInfo);
+                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", req.JsonSerialize());
 
                     return GeneralCode.Success;
                 }

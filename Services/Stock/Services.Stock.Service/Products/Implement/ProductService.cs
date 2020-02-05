@@ -26,7 +26,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         private readonly IFileService _fileService;
         private readonly IAsyncRunnerService _asyncRunner;
 
@@ -35,7 +35,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<ProductService> logger
             , IUnitService unitService
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             , IFileService fileService
             , IAsyncRunnerService asyncRunner
             )
@@ -44,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _unitService = unitService;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
             _fileService = fileService;
             _asyncRunner = asyncRunner;
         }
@@ -178,9 +178,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
-
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", null, objLog);
+                    
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", req.JsonSerialize());
 
                     productId = productInfo.ProductId;
                 }
@@ -311,9 +310,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
 
-
-                    var beforeData = GetProductForLog(productInfo, productExtra, productStockInfo, stockValidations, unitConverions);
-
+                   
 
                     //Update
 
@@ -405,11 +402,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     trans.Commit();
 
                     var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
-
-
-                    var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, lstStockValidations, lstUnitConverions);
-
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", beforeData.JsonSerialize(), objLog);
+                  
+                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
                 }
                 catch (Exception ex)
                 {
@@ -448,9 +442,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-            var objLog = GetProductForLog(productInfo, productExtra, productStockInfo, stockValidations, unitConverions);
-            var dataBefore = objLog.JsonSerialize();
-
+           
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -469,7 +461,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", dataBefore, null);
+                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -572,18 +564,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
             return (pageData, total);
-        }
-
-        private object GetProductForLog(Product productInfo, ProductExtraInfo extraInfo, ProductStockInfo stockInfo, IEnumerable<ProductStockValidation> stocks, IEnumerable<Infrastructure.EF.StockDB.ProductUnitConversion> converts)
-        {
-            return new
-            {
-                ProductInfo = productInfo,
-                ProductExtraInfo = extraInfo,
-                ProductStockInfo = stockInfo,
-                ProductStockValidations = stocks,
-                ProductUnitConversions = converts
-            };
         }
     }
 }

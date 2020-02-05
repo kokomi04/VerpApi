@@ -13,6 +13,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
@@ -26,7 +27,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public StockService(
             MasterDBContext masterDBContext,
@@ -34,7 +35,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<StockService> logger
             , IUnitService unitService
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterDBContext = masterDBContext;
@@ -42,7 +43,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _unitService = unitService;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddStock(StockModel req)
@@ -72,9 +73,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    var objLog = GetStockForLog(stockInfo);
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", null, objLog);
+                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", req.JsonSerialize());
 
                     return stockInfo.StockId;
                 }
@@ -126,8 +126,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         return StockErrorCode.StockNotFound;
                     }
-                    var originalObj = GetStockForLog(stockInfo);
-
+                   
                     //Update
 
                     //stockInfo.StockId = req.StockId;
@@ -142,9 +141,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    var objLog = GetStockForLog(stockInfo);
-
-                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", originalObj.JsonSerialize(), objLog);
+                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", req.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -164,9 +161,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (stockInfo == null)
             {
                 return StockErrorCode.StockNotFound;
-            }
-            var objLog = GetStockForLog(stockInfo);
-            var dataBefore = objLog.JsonSerialize();
+            }           
 
             stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
@@ -179,7 +174,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Stock, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", stockInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -920,11 +915,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         #region Private Methods
 
 
-        private object GetStockForLog(VErp.Infrastructure.EF.StockDB.Stock stockInfo)
-        {
-            return stockInfo;
-        }
-
+       
         #endregion
 
         private class ProductUnitModel

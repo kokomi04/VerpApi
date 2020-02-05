@@ -59,7 +59,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EFExtensions", "Infrastruct
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SynTool", "ZTools\SynTool\SynTool.csproj", "{B43FFE1D-818F-40F1-B922-F672AA5162AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PurchaseOrderDB", "Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj", "{0E4F9350-3751-48B6-A044-7FB12DB2ABA1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PurchaseOrderDB", "Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj", "{0E4F9350-3751-48B6-A044-7FB12DB2ABA1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Constants", "Commons\Constants\Constants.csproj", "{A22045F0-5777-44F7-84A5-26051F6B582A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,6 +149,10 @@ Global
 		{0E4F9350-3751-48B6-A044-7FB12DB2ABA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E4F9350-3751-48B6-A044-7FB12DB2ABA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E4F9350-3751-48B6-A044-7FB12DB2ABA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A22045F0-5777-44F7-84A5-26051F6B582A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A22045F0-5777-44F7-84A5-26051F6B582A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A22045F0-5777-44F7-84A5-26051F6B582A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A22045F0-5777-44F7-84A5-26051F6B582A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -176,6 +182,7 @@ Global
 		{D7103ECD-97A8-45AE-A0C8-AD33C5EF2ACC} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
 		{B43FFE1D-818F-40F1-B922-F672AA5162AE} = {F9CC3F1A-C548-498E-9464-8F45EA648F2A}
 		{0E4F9350-3751-48B6-A044-7FB12DB2ABA1} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
+		{A22045F0-5777-44F7-84A5-26051F6B582A} = {FE26A100-80D3-4095-B513-AE3D39A2A216}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}
