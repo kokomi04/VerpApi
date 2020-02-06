@@ -49,15 +49,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return PackageErrorCode.PackageNotFound;
                 }
 
-                var expiredDate = DateTime.MinValue;
+                //var expiredDate = DateTime.MinValue;
 
-                if (!string.IsNullOrEmpty(req.ExpiryTime))
-                    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
+                //if (!string.IsNullOrEmpty(req.ExpiryTime))
+                //    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
+                var expiredDate = req.ExpiryTime > 0 ? req.ExpiryTime.UnixToDateTime() : DateTime.MinValue;
+
 
                 obj.PackageCode = req.PackageCode;
                 obj.LocationId = req.LocationId;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
-                obj.UpdatedDatetimeUtc = DateTime.Now;
+                obj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 _activityService.CreateActivityAsync(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", oldPackageData.JsonSerialize(), obj);
                 await _stockDbContext.SaveChangesAsync();
@@ -299,8 +301,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     LocationId = obj.LocationId ?? 0,
                     StockId = obj.StockId,
                     ProductId = obj.ProductId,
-                    Date = obj.Date,
-                    ExpiryTime = obj.ExpiryTime,
+                    Date = obj.Date != null ? ((DateTime)obj.Date).GetUnix() : 0,
+                    ExpiryTime = obj.ExpiryTime != null ? ((DateTime)obj.ExpiryTime).GetUnix() : 0,
                     PrimaryUnitId = obj.PrimaryUnitId,
                     ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
@@ -308,8 +310,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
                     ProductUnitConversionRemaining = obj.ProductUnitConversionRemaining,
 
-                    CreatedDatetimeUtc = obj.CreatedDatetimeUtc,
-                    UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc,
+                    CreatedDatetimeUtc = obj.CreatedDatetimeUtc != null ? ((DateTime)obj.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc != null ? ((DateTime)obj.UpdatedDatetimeUtc).GetUnix() : 0,
 
                     LocationOutputModel = locationOutputModel
                 };
@@ -363,13 +365,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             LocationId = item.Package.LocationId ?? 0,
                             StockId = item.Package.StockId,
                             ProductId = item.Package.ProductId,
-                            Date = item.Package.Date,
-                            ExpiryTime = item.Package.ExpiryTime,
+                            Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
+                            ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
 
                             PrimaryUnitId = item.Package.PrimaryUnitId,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
-                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
-                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
+                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc != null ? ((DateTime)item.Package.CreatedDatetimeUtc).GetUnix() : 0,
+                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc != null ? ((DateTime)item.Package.UpdatedDatetimeUtc).GetUnix() : 0,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
                             ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
@@ -402,12 +404,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             LocationId = item.Package.LocationId ?? 0,
                             StockId = item.Package.StockId,
                             ProductId = item.Package.ProductId,
-                            Date = item.Package.Date,
-                            ExpiryTime = item.Package.ExpiryTime,
+                            Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
+                            ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
                             ProductUnitConversionId = item.Package.ProductUnitConversionId,
                             PrimaryUnitId = item.Package.PrimaryUnitId,
-                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc,
-                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc,
+                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc != null ? ((DateTime)item.Package.CreatedDatetimeUtc).GetUnix() : 0,
+                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc != null ? ((DateTime)item.Package.UpdatedDatetimeUtc).GetUnix() : 0,
                             PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
                             PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
                             ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,

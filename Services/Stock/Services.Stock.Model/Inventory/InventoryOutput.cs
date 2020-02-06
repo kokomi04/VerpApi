@@ -19,7 +19,9 @@ namespace VErp.Services.Stock.Model.Inventory
         public int InventoryTypeId { get; set; }
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public DateTime DateUtc { get; set; }
+        //public DateTime DateUtc { get; set; }
+        public long DateUtc { get; set; }
+
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
@@ -28,17 +30,20 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public string BillSerial { set; get; }
 
-        public DateTime? BillDate { set; get; }
+        //public DateTime? BillDate { set; get; }
+        public long? BillDate { set; get; }
 
         public decimal TotalMoney { get; set; }
 
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
-        
-        public DateTime CreatedDatetimeUtc { set; get; }
 
-        public DateTime UpdatedDatetimeUtc { set; get; }
+        //public DateTime CreatedDatetimeUtc { set; get; }
 
+        //public DateTime UpdatedDatetimeUtc { set; get; }
+        public long CreatedDatetimeUtc { set; get; }
+
+        public long UpdatedDatetimeUtc { set; get; }
 
 
         public bool IsApproved { set; get; }

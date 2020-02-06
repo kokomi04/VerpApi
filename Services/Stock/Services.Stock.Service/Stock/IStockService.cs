@@ -74,7 +74,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, string fromDate, string toDate, int page, int size);
+        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, int page, int size);
 
         /// <summary>
         /// Báo cáo chi tiết nvl/sp
@@ -86,7 +86,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, string fromDate, string toDate);
+        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, long fromDate, long toDate);
 
     }
 }

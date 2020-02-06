@@ -17,7 +17,7 @@ namespace VErp.Services.Stock.Model.Package
         //public int ProductId { set; get; }
 
         //public string Date { get; set; }
-        public string ExpiryTime { get; set; }
+        public long ExpiryTime { get; set; }
 
         //public int PrimaryUnitId { get; set; }
         //public decimal PrimaryQuantity { get; set; }

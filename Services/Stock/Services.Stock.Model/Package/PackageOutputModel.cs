@@ -27,8 +27,8 @@ namespace VErp.Services.Stock.Model.Package
 
         public int ProductId { set; get; }
 
-        public DateTime? Date { get; set; }
-        public DateTime? ExpiryTime { get; set; }
+        public long? Date { get; set; }
+        public long? ExpiryTime { get; set; }
         public int PrimaryUnitId { get; set; }
 
         [Obsolete]
@@ -44,8 +44,8 @@ namespace VErp.Services.Stock.Model.Package
         public decimal ProductUnitConversionWaitting { get; set; }
         public decimal ProductUnitConversionRemaining { get; set; }
 
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
+        public long? CreatedDatetimeUtc { get; set; }
+        public long? UpdatedDatetimeUtc { get; set; }
 
         public LocationOutput LocationOutputModel { get; set; }
 

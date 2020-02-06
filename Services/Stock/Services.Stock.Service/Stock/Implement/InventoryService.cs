@@ -72,25 +72,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, string beginTime = null, string endTime = null, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
             var bTime = DateTime.MinValue;
             var eTime = DateTime.MinValue;
 
-            if (!string.IsNullOrEmpty(beginTime))
+            if(beginTime > 0)
             {
-                if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
-                {
-                    return null;
-                }
+                bTime =  beginTime.UnixToDateTime();
             }
-            if (!string.IsNullOrEmpty(endTime))
+            if (endTime > 0)
             {
-                if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
-                {
-                    return null;
-                }
+                eTime = endTime.UnixToDateTime();
             }
+
+            //if (!string.IsNullOrEmpty(beginTime))
+            //{
+            //    if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
+            //    {
+            //        return null;
+            //    }
+            //}
+            //if (!string.IsNullOrEmpty(endTime))
+            //{
+            //    if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
+            //    {
+            //        return null;
+            //    }
+            //}
             var query = from i in _stockDbContext.Inventory
                         select i;
             if (stockId > 0)
@@ -146,20 +155,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = item.InventoryTypeId,
                     Shipper = item.Shipper,
                     Content = item.Content,
-                    DateUtc = item.DateUtc,
+                    DateUtc = item.DateUtc.GetUnix(),
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
                     BillCode = item.BillCode,
                     BillSerial = item.BillSerial,
-                    BillDate = item.BillDate,
+                    BillDate = item.BillDate != null ? ((DateTime)item.BillDate).GetUnix() : 0,
                     TotalMoney = item.TotalMoney,
-
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
-                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
-                    CreatedDatetimeUtc = item.CreatedDatetimeUtc,
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
 
                     StockOutput = stockInfo == null ? null : new Model.Stock.StockOutput
                     {
@@ -261,13 +269,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = inventoryObj.InventoryTypeId,
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
-                    DateUtc = inventoryObj.DateUtc,
+                    DateUtc = inventoryObj.DateUtc.GetUnix(),
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
                     BillCode = inventoryObj.BillCode,
                     BillSerial = inventoryObj.BillSerial,
-                    BillDate = inventoryObj.BillDate,
+                    BillDate = inventoryObj.BillDate != null ? ((DateTime)inventoryObj.BillDate).GetUnix() : 0,
                     TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
@@ -311,16 +319,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
-                var billDate = DateTime.MinValue;
-                if (!string.IsNullOrEmpty(req.BillDate))
-                {
-                    DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-                }
-
+               
+                var issuedDate = req.DateUtc.UnixToDateTime();
+                var billDate = req.DateUtc.UnixToDateTime();
                 var validInventoryDetails = await ValidateInventoryIn(false, req, IsFreeStyle);
 
                 if (!validInventoryDetails.Code.IsSuccess())
@@ -351,8 +352,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             TotalMoney = totalMoney,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -434,10 +435,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //{
+                //    return GeneralCode.InvalidParams;
+                //}
+                var issuedDate = req.DateUtc.UnixToDateTime();
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -458,8 +461,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             BillDate = null,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -525,16 +528,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel req)
         {
-            if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-            {
-                return GeneralCode.InvalidParams;
-            }
-            var billDate = DateTime.MinValue;
-            if (!string.IsNullOrEmpty(req.BillDate))
-            {
-                DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-            }
-
+            //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
+            //var billDate = DateTime.MinValue;
+            //if (!string.IsNullOrEmpty(req.BillDate))
+            //{
+            //    DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
+            //}
+            var issuedDate = req.DateUtc.UnixToDateTime();
+            var billDate = req.DateUtc.UnixToDateTime();
             try
             {
                 if (inventoryId <= 0)
@@ -586,7 +590,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.BillSerial = req.BillSerial;
                         inventoryObj.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         #endregion
 
@@ -672,10 +676,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //{
+                //    return GeneralCode.InvalidParams;
+                //}
+                var issuedDate = req.DateUtc.UnixToDateTime();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -724,7 +729,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
                         inventoryObj.IsApproved = false;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
@@ -1075,7 +1080,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
@@ -1241,8 +1246,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         LocationId = item.LocationId ?? 0,
                         StockId = item.StockId,
                         ProductId = item.ProductId,
-                        Date = item.Date,
-                        ExpiryTime = item.ExpiryTime,
+                        Date = item.Date != null ? ((DateTime)item.Date).GetUnix() : 0,
+                        ExpiryTime = item.ExpiryTime != null ? ((DateTime)item.ExpiryTime).GetUnix() : 0,
                         PrimaryUnitId = item.PrimaryUnitId,
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
@@ -1250,8 +1255,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
                         ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
 
-                        CreatedDatetimeUtc = item.CreatedDatetimeUtc,
-                        UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
+                        CreatedDatetimeUtc = item.CreatedDatetimeUtc != null ? ((DateTime)item.CreatedDatetimeUtc).GetUnix() : 0,
+                        UpdatedDatetimeUtc = item.UpdatedDatetimeUtc != null ? ((DateTime)item.UpdatedDatetimeUtc).GetUnix() : 0,
                         LocationOutputModel = locationOutputModel,
                         ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
                     });
@@ -1432,8 +1437,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryDetailId = isApproved ? details.InventoryDetailId ?? 0 : 0,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryUnitId = productInfo.UnitId,
                     PrimaryQuantity = primaryQty,
@@ -1520,8 +1525,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     PrimaryUnitId = fromPackageInfo.PrimaryUnitId,
                     PrimaryQuantity = primaryQualtity,
