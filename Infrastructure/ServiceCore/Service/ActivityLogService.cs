@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 
@@ -30,24 +31,32 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData)
         {
-            var uri = $"{_appSetting.ServiceUrls.ApiService}api/internal/InternalActivityLog/Log";
-
-            var request = new HttpRequestMessage
+            try
             {
-                RequestUri = new Uri(uri),
-                Method = HttpMethod.Post,
-                Content = new StringContent(new
+                var uri = $"{_appSetting.ServiceUrls.ApiService}api/internal/InternalActivityLog/Log";
+
+                var request = new HttpRequestMessage
                 {
-                    objectTypeId,
-                    objectId,
-                    message,
-                    data = jsonData
-                }.JsonSerialize(), Encoding.UTF8, "application/json"),
-            };
+                    RequestUri = new Uri(uri),
+                    Method = HttpMethod.Post,
+                    Content = new StringContent(new
+                    {
+                        objectTypeId,
+                        objectId,
+                        message,
+                        data = jsonData
+                    }.JsonSerialize(), Encoding.UTF8, "application/json"),
+                };
 
-            var data = await _httpClient.SendAsync(request);
+                var data = await _httpClient.SendAsync(request);
 
-            return data.IsSuccessStatusCode;
+                return data.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ActivityLogService:CreateLog");
+                return GeneralCode.InternalError;
+            }
         }
     }
 }
