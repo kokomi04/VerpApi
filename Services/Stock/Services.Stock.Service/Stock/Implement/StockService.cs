@@ -498,8 +498,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageCode = pk.PackageCode,
                     LocationId = pk.LocationId,
                     LocationName = l == null ? null : l.Name,
-                    Date = pk.Date,
-                    ExpriredDate = pk.ExpiryTime,
+                    Date = pk.Date != null ? ((DateTime)pk.Date).GetUnix() : 0,
+                    ExpriredDate = pk.ExpiryTime != null ? ((DateTime)pk.ExpiryTime).GetUnix() : 0,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
@@ -564,8 +564,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductName = p.ProductName,
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
-                    Date = pk.Date,
-                    ExpriredDate = pk.ExpiryTime,
+                    Date = pk.Date != null ? ((DateTime)pk.Date).GetUnix() : 0,
+                    ExpriredDate = pk.ExpiryTime != null ? ((DateTime)pk.ExpiryTime).GetUnix() : 0,
                     PrimaryUnitId = pk.PrimaryUnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
@@ -583,25 +583,31 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
-        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, string fromDateString, string toDateString, int page, int size)
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long beginTime, long endTime, int page, int size)
         {
             DateTime fromDate = DateTime.MinValue;
-            DateTime toDate = DateTime.Now;
+            DateTime toDate = DateTime.UtcNow;
 
-            if (!string.IsNullOrEmpty(fromDateString))
-            {
-                if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
-                {
-                    return (null, 0);
-                }
-            }
-            if (!string.IsNullOrEmpty(toDateString))
-            {
-                if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
-                {
-                    return (null, 0);
-                }
-            }
+            //if (!string.IsNullOrEmpty(fromDateString))
+            //{
+            //    if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
+            //    {
+            //        return (null, 0);
+            //    }
+            //}
+            //if (!string.IsNullOrEmpty(toDateString))
+            //{
+            //    if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
+            //    {
+            //        return (null, 0);
+            //    }
+            //}
+            if (beginTime > 0)
+                fromDate = beginTime.UnixToDateTime();
+
+            if (endTime > 0)
+                toDate = endTime.UnixToDateTime();
+
             var productQuery = _stockContext.Product.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -762,12 +768,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, string fromDateString, string toDateString)
+        public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, long bTime, long eTime)
         {
             if (productId <= 0)
                 return GeneralCode.InvalidParams;
-            if (string.IsNullOrEmpty(fromDateString) && string.IsNullOrEmpty(toDateString))
-                return GeneralCode.InvalidParams;
+           
             var resultData = new StockProductDetailsReportOutput
             {
                 OpeningStock = null,
@@ -775,20 +780,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             };
             DateTime fromDate = DateTime.MinValue;
             DateTime toDate = DateTime.MinValue;
-            if (!string.IsNullOrEmpty(fromDateString))
-            {
-                if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
-            }
-            if (!string.IsNullOrEmpty(toDateString))
-            {
-                if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
-            }
+            //if (!string.IsNullOrEmpty(fromDateString))
+            //{
+            //    if (!DateTime.TryParseExact(fromDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out fromDate))
+            //    {
+            //        return GeneralCode.InvalidParams;
+            //    }
+            //}
+            //if (!string.IsNullOrEmpty(toDateString))
+            //{
+            //    if (!DateTime.TryParseExact(toDateString, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out toDate))
+            //    {
+            //        return GeneralCode.InvalidParams;
+            //    }
+            //}
+            if (bTime > 0)
+                fromDate = bTime.UnixToDateTime();
+
+            if (eTime > 0)
+                toDate = eTime.UnixToDateTime();
+
             try
             {
                 DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);

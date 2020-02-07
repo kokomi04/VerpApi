@@ -441,18 +441,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
             if (!updateStatus.IsSuccess()) return updateStatus;
 
+            //if (!DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
 
-            if (!DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-            {
-                return GeneralCode.InvalidParams;
-            }
-
-            var billDate = DateTime.MinValue;
-            if (!string.IsNullOrEmpty(req.Inventory.BillDate))
-            {
-                DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-            }
-
+            //var billDate = DateTime.MinValue;
+            //if (!string.IsNullOrEmpty(req.Inventory.BillDate))
+            //{
+            //    DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
+            //}
+            var issuedDate = req.Inventory.DateUtc.UnixToDateTime();
+            var billDate = req.Inventory.BillDate.UnixToDateTime();
 
             await _stockDbContext.SaveChangesAsync();
 

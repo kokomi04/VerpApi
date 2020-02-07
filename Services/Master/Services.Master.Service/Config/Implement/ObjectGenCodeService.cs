@@ -73,9 +73,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     LastCode = item.LastCode,
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
-                    CreatedTime = item.CreatedTime,
-                    UpdatedTime = item.UpdatedTime,
-
+                    CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
+                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
                 };
                 pagedData.Add(info);
             }
@@ -103,8 +102,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     LastCode = obj.LastCode,
                     IsActived = obj.IsActived,
                     UpdatedUserId = obj.UpdatedUserId,
-                    CreatedTime = obj.CreatedTime,
-                    UpdatedTime = obj.UpdatedTime,
+                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
                 };
                 return info;
             }

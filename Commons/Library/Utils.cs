@@ -118,6 +118,11 @@ namespace VErp.Commons.Library
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
+        public static DateTime UnixToDateTime(this long unixTime)
+        {
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime);
+        }
+
         public static decimal Eval(string expression)
         {
             try

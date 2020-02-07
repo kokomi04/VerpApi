@@ -56,8 +56,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Quantity = entity.Quantity,
                     Wastage = entity.Wastage,
                     Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc,
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc
+                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
                 };
                 return billOfMaterialOutputModel;
             }
@@ -88,8 +88,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Quantity = entity.Quantity,
                     Wastage = entity.Wastage,
                     Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc,
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc
+                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
                 };
                 resultList.Add(billOfMaterialOutputModel);
             }
@@ -121,8 +121,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Quantity = entity.Quantity,
                     Wastage = entity.Wastage,
                     Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc,
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc
+                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
                 };
                 resultList.Add(billOfMaterialOutputModel);
             }

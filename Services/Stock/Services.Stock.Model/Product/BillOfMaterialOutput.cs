@@ -25,8 +25,8 @@ namespace VErp.Services.Stock.Model.Product
         public decimal? Quantity { get; set; }
         public decimal? Wastage { get; set; }
         public string Description { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
+        public long CreatedDatetimeUtc { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
         
     }
 }
