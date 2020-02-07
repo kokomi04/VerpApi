@@ -55,7 +55,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ActivityLogService:CreateLog");
-                return GeneralCode.InternalError;
+                return false;
             }
         }
     }
