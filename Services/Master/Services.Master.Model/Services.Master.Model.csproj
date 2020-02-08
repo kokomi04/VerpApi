@@ -10,4 +10,8 @@
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Activity\" />
+  </ItemGroup>
+
 </Project>

@@ -12,7 +12,6 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Model.Activity;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -21,20 +20,17 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         public ActivityService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
-            , ICurrentContextService currentContextService
             , IAsyncRunnerService asyncRunnerService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
         }
         
@@ -48,16 +44,13 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public async Task<Enum> CreateActivityTask(ActivityInput input)
         {
-            var userId = _currentContextService.UserId;
-            var actionId = (int)_currentContextService.Action;
-
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var activity = new UserActivityLog()
                 {
-                    UserId = userId,
+                    UserId = input.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
-                    ActionId = actionId,
+                    ActionId = (int)input.ActionId,
                     ObjectTypeId = (int)input.ObjectTypeId,
                     ObjectId = input.ObjectId,
                     Message = input.Message

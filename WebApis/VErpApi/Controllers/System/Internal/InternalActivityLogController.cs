@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
-using VErp.Services.Master.Model.Activity;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
 
 namespace VErpApi.Controllers.System.Internal
