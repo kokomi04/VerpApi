@@ -4,9 +4,9 @@ using System.Text;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class BillOfMaterialOutput
+    public class ProductBomOutput
     {
-        public long BillOfMaterialId { get; set; }
+        public long ProductBomId { get; set; }
         public int? Level { get; set; }
 
         //public int RootProductId { get; set; }

@@ -51,7 +51,7 @@ namespace VErp.Commons.Enums.MasterEnum
         /// <summary>
         /// BOM - Bill of Material - Thông tin vật tư cấu thành nên sản phẩm
         /// </summary>
-        BillOfMaterial = 18,
+        ProductBom = 18,
 
     }
 }

@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Service.Products
     /// <summary>
     /// I - BOM 
     /// </summary>
-    public interface IBillOfMaterialService
+    public interface IProductBomService
     {
         /// <summary>
         /// Lấy danh sách BOM của một sản phẩm
@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Service.Products
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<BillOfMaterialOutput>> GetList(int productId, int page, int size);
+        Task<PageData<ProductBomOutput>> GetList(int productId, int page, int size);
 
 
         /// <summary>
@@ -27,36 +27,36 @@ namespace VErp.Services.Stock.Service.Products
         /// </summary>
         /// <param name="productId">Mã Id sản phẩm</param>
         /// <returns></returns>
-        Task<PageData<BillOfMaterialOutput>> GetAll(int productId);
+        Task<PageData<ProductBomOutput>> GetAll(int productId);
 
         /// <summary>
         /// Lấy thông tin của BOM
         /// </summary>
-        /// <param name="billOfMaterialId">Mã Id BOM</param>        
+        /// <param name="productBomId">Mã Id BOM</param>        
         /// <returns></returns>
-        Task<ServiceResult<BillOfMaterialOutput>> Get(long billOfMaterialId);
+        Task<ServiceResult<ProductBomOutput>> Get(long productBomId);
 
         /// <summary>
         /// Thêm mới thông tin BOM
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> Add(BillOfMaterialInput req);
+        Task<ServiceResult<long>> Add(ProductBomInput req);
 
         /// <summary>
         /// Cập nhật thông tin BOM
         /// </summary>
-        /// <param name="billOfMaterialId">Mã Id BOM</param>
+        /// <param name="productBomId">Mã Id BOM</param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> Update(long billOfMaterialId, BillOfMaterialInput req);
+        Task<Enum> Update(long productBomId, ProductBomInput req);
 
         /// <summary>
         /// Xóa thông tin BOM (đánh dấu xóa)
         /// </summary>
-        /// <param name="billOfMaterialId">Mã BOM</param>
+        /// <param name="productBomId">Mã BOM</param>
         /// <param name="rootProductId">Mã id sản phẩm gốc</param>
         /// <returns></returns>
-        Task<Enum> Delete(long billOfMaterialId, int rootProductId);
+        Task<Enum> Delete(long productBomId, int rootProductId);
     }
 }

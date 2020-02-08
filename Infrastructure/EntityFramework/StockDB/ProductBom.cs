@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public partial class BillOfMaterial
+    public partial class ProductBom
     {
-        public long BillOfMaterialId { get; set; }
+        public long ProductBomId { get; set; }
         public int? Level { get; set; }
         public int RootProductId { get; set; }
         public int ProductId { get; set; }

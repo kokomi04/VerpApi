@@ -18,16 +18,16 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
-    public class BillOfMaterialService : IBillOfMaterialService
+    public class ProductBomService : IProductBomService
     {
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
 
-        public BillOfMaterialService(StockDBContext stockContext
+        public ProductBomService(StockDBContext stockContext
            , IOptions<AppSetting> appSetting
-           , ILogger<BillOfMaterialService> logger
+           , ILogger<ProductBomService> logger
            , IActivityLogService activityLogService)
         {
             _stockDbContext = stockContext;
@@ -36,16 +36,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<BillOfMaterialOutput>> Get(long billOfMaterialId)
+        public async Task<ServiceResult<ProductBomOutput>> Get(long productBomId)
         {
-            var entity = _stockDbContext.BillOfMaterial.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.BillOfMaterialId == billOfMaterialId);
+            var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == productBomId);
             if (entity != null)
             {
                 var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
                 var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new BillOfMaterialOutput
+                var billOfMaterialOutputModel = new ProductBomOutput
                 {
-                    BillOfMaterialId = entity.BillOfMaterialId,
+                    ProductBomId = entity.ProductBomId,
                     Level = entity.Level,
                     ProductId = entity.ProductId,
                     ParentProductId = entity.ParentProductId,
@@ -64,20 +64,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return null;
         }
 
-        public async Task<PageData<BillOfMaterialOutput>> GetAll(int productId)
+        public async Task<PageData<ProductBomOutput>> GetAll(int productId)
         {
             
-            var BomData = new List<BillOfMaterial>();
+            var BomData = new List<ProductBom>();
             GetAllBom(productId, BomData);
-            var resultList = new List<BillOfMaterialOutput>(BomData.Count);
+            var resultList = new List<ProductBomOutput>(BomData.Count);
             foreach (var item in BomData)
             {
-                var entity = _stockDbContext.BillOfMaterial.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.BillOfMaterialId == item.BillOfMaterialId);
+                var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == item.ProductBomId);
                 var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
                 var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new BillOfMaterialOutput
+                var billOfMaterialOutputModel = new ProductBomOutput
                 {
-                    BillOfMaterialId = entity.BillOfMaterialId,
+                    ProductBomId = entity.ProductBomId,
                     Level = entity.Level,
                     ProductId = entity.ProductId,
                     ParentProductId = entity.ParentProductId,
@@ -95,22 +95,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             return (resultList, resultList.Count);
         }
-        public async Task<PageData<BillOfMaterialOutput>> GetList(int productId, int page = 1, int size = 20)
+        public async Task<PageData<ProductBomOutput>> GetList(int productId, int page = 1, int size = 20)
         {
-            var bomQuery = _stockDbContext.BillOfMaterial.Where(q => q.RootProductId == productId);
+            var bomQuery = _stockDbContext.ProductBom.Where(q => q.RootProductId == productId);
 
             var totalRecord = bomQuery.Count();
             var bomDataList = bomQuery.Skip((page - 1) * size).Take(size).AsNoTracking().ToList();
 
-            var resultList = new List<BillOfMaterialOutput>(totalRecord);
+            var resultList = new List<ProductBomOutput>(totalRecord);
             foreach (var item in bomDataList)
             {
-                var entity = _stockDbContext.BillOfMaterial.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.BillOfMaterialId == item.BillOfMaterialId);
+                var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == item.ProductBomId);
                 var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
                 var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new BillOfMaterialOutput
+                var billOfMaterialOutputModel = new ProductBomOutput
                 {
-                    BillOfMaterialId = entity.BillOfMaterialId,
+                    ProductBomId = entity.ProductBomId,
                     Level = entity.Level,
                     ProductId = entity.ProductId,
                     ParentProductId = entity.ParentProductId,
@@ -129,14 +129,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return (resultList, totalRecord);
         }
 
-        public async Task<ServiceResult<long>> Add(BillOfMaterialInput req)
+        public async Task<ServiceResult<long>> Add(ProductBomInput req)
         {
             try
             {
-                var checkExists = _stockDbContext.BillOfMaterial.Any(q =>q.RootProductId == req.RootProductId && q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
+                var checkExists = _stockDbContext.ProductBom.Any(q =>q.RootProductId == req.RootProductId && q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
                 if (checkExists)
                     return GeneralCode.InvalidParams;
-                var entity = new BillOfMaterial
+                var entity = new ProductBom
                 {
                     Level = 0,
                     RootProductId = req.RootProductId,
@@ -149,12 +149,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                 };
-                await _stockDbContext.BillOfMaterial.AddAsync(entity);
+                await _stockDbContext.ProductBom.AddAsync(entity);
                 await _stockDbContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
 
-                return entity.BillOfMaterialId;
+                return entity.ProductBomId;
             }
             catch (Exception ex)
             {
@@ -163,22 +163,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<Enum> Update(long billOfMaterialId, BillOfMaterialInput req)
+        public async Task<Enum> Update(long productBomId, ProductBomInput req)
         {
             try
             {
-                var entity = _stockDbContext.BillOfMaterial.FirstOrDefault(q => q.BillOfMaterialId == billOfMaterialId);
+                if(productBomId <= 0)
+                    return GeneralCode.InvalidParams;
+                var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
                 if (entity == null)
                     return GeneralCode.InvalidParams;
 
-                entity.ProductId = req.ProductId;
-                entity.ParentProductId = req.ParentProductId;
+                //entity.ProductId = req.ProductId;
+                //entity.ParentProductId = req.ParentProductId;
                 entity.Quantity = req.Quantity;
                 entity.Wastage = req.Wastage;
                 entity.Description = req.Description;
                 entity.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _stockDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.BillOfMaterialId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -189,16 +191,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        public async Task<Enum> Delete(long billOfMaterialId,int rootProductId)
+        public async Task<Enum> Delete(long productBomId,int rootProductId)
         {
             try
             {
-                var entity = _stockDbContext.BillOfMaterial.FirstOrDefault(q =>q.RootProductId == rootProductId && q.BillOfMaterialId == billOfMaterialId);
+                var entity = _stockDbContext.ProductBom.FirstOrDefault(q =>q.RootProductId == rootProductId && q.ProductBomId == productBomId);
                 if (entity == null)
                     return GeneralCode.InvalidParams;
                 entity.IsDeleted = true;
                 entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-                var childList = new List<BillOfMaterial>();
+                var childList = new List<ProductBom>();
                 GetAllBom(entity.ProductId, childList);                
                 foreach (var item in childList)
                 {
@@ -206,7 +208,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     item.UpdatedDatetimeUtc = DateTime.UtcNow;
                 }
                 await _stockDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.BillOfMaterial, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -218,9 +220,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
         #region Private methods
-        protected void GetAllBom(int productId, List<BillOfMaterial> bomList)
+        protected void GetAllBom(int productId, List<ProductBom> bomList)
         {
-            var BomDataList = _stockDbContext.BillOfMaterial.Where(q => q.ParentProductId == productId).AsNoTracking().ToList();
+            var BomDataList = _stockDbContext.ProductBom.Where(q => q.ParentProductId == productId).AsNoTracking().ToList();
             foreach (var item in BomDataList)
             {
                 if (item.ProductId > 0 && item.IsDeleted == false)

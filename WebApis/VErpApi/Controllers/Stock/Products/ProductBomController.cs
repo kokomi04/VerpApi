@@ -16,23 +16,23 @@ namespace VErpApi.Controllers.Stock.Products
     [Route("api/productBom")]
     public class ProductBomController: VErpBaseController
     {
-        private readonly IBillOfMaterialService _billOfMaterialService;
-        public ProductBomController(IBillOfMaterialService billOfMaterialService
+        private readonly IProductBomService _productBomService;
+        public ProductBomController(IProductBomService productBomService
             )
         {
-            _billOfMaterialService = billOfMaterialService;
+            _productBomService = productBomService;
         }
 
         /// <summary>
         /// Lấy thông tin 1 bom theo mã
         /// </summary>
-        /// <param name="billOfMaterialId">Id của 1 bom</param>
+        /// <param name="productBomId">Id của 1 bom</param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<ServiceResult<BillOfMaterialOutput>>> Get([FromQuery] int billOfMaterialId)
+        public async Task<ApiResponse<ServiceResult<ProductBomOutput>>> Get([FromQuery] int productBomId)
         {
-            return await _billOfMaterialService.Get(billOfMaterialId);
+            return await _productBomService.Get(productBomId);
         }
 
         /// <summary>
@@ -42,9 +42,48 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("GetAll")]
-        public async Task<ApiResponse<PageData<BillOfMaterialOutput>>> GetAll([FromQuery] int productId)
+        public async Task<ApiResponse<PageData<ProductBomOutput>>> GetAll([FromQuery] int productId)
         {
-            return await _billOfMaterialService.GetAll(productId);
+            return await _productBomService.GetAll(productId);
         }
+
+        /// <summary>
+        /// Thêm mới thông tin vào ProductBom
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("")]
+        public async Task<ApiResponse<long>> Add([FromBody] ProductBomInput model)
+        {
+            return await _productBomService.Add(model);
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin 
+        /// </summary>
+        /// <param name="productBomId">Id của productBom</param>
+        /// <param name="model">input productBom model </param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("")]
+        public async Task<ApiResponse> Update([FromQuery] long productBomId ,[FromBody] ProductBomInput model)
+        {
+            return await _productBomService.Update(productBomId, model);
+        }
+
+        /// <summary>
+        /// Xoá thông tin productBom của sản phẩm
+        /// </summary>
+        /// <param name="productBomId">Id của bom</param>
+        /// <param name="rootProductId">Id của sản phẩm có chứa bom đó</param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("")]
+        public async Task<ApiResponse> Delete([FromQuery] long productBomId,[FromQuery] int rootProductId)
+        {
+            return await _productBomService.Delete(productBomId, rootProductId);
+        }
+
     }
 }

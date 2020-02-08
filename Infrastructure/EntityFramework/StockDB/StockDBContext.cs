@@ -15,7 +15,6 @@ namespace VErp.Infrastructure.EF.StockDB
         {
         }
 
-        public virtual DbSet<BillOfMaterial> BillOfMaterial { get; set; }
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
@@ -26,6 +25,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<PackageOperation> PackageOperation { get; set; }
         public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
+        public virtual DbSet<ProductBom> ProductBom { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
@@ -41,28 +41,6 @@ namespace VErp.Infrastructure.EF.StockDB
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
-
-            modelBuilder.Entity<BillOfMaterial>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Description).HasMaxLength(1024);
-
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 2)");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 2)");
-
-                entity.HasOne(d => d.ParentProduct)
-                    .WithMany(p => p.BillOfMaterialParentProduct)
-                    .HasForeignKey(d => d.ParentProductId);
-
-                entity.HasOne(d => d.Product)
-                    .WithMany(p => p.BillOfMaterialProduct)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
-            });
 
             modelBuilder.Entity<File>(entity =>
             {
@@ -308,6 +286,30 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.Product)
                     .HasForeignKey(d => d.ProductTypeId)
                     .HasConstraintName("FK_Product_ProductType");
+            });
+
+            modelBuilder.Entity<ProductBom>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 4)");
+
+                entity.HasOne(d => d.ParentProduct)
+                    .WithMany(p => p.ProductBomParentProduct)
+                    .HasForeignKey(d => d.ParentProductId)
+                    .HasConstraintName("FK_BillOfMaterial_Product_ParentProductId");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductBomProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
 
             modelBuilder.Entity<ProductCate>(entity =>
