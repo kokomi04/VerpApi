@@ -8,6 +8,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -21,30 +22,34 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
+        private readonly ICurrentContextService _currentContext;
 
-        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting)
+        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
         {
             _httpClient = httpClient;
             _logger = logger;
             _appSetting = appSetting.Value;
+            _currentContext = currentContext;
         }
 
         public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData)
         {
             try
             {
-                var uri = $"{_appSetting.ServiceUrls.ApiService}api/internal/InternalActivityLog/Log";
+                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
 
                 var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri(uri),
                     Method = HttpMethod.Post,
-                    Content = new StringContent(new
+                    Content = new StringContent(new ActivityInput
                     {
-                        objectTypeId,
-                        objectId,
-                        message,
-                        data = jsonData
+                        UserId = _currentContext.UserId,
+                        ActionId = _currentContext.Action,
+                        ObjectTypeId = objectTypeId,
+                        ObjectId = objectId,
+                        Message = message,
+                        Data = jsonData
                     }.JsonSerialize(), Encoding.UTF8, "application/json"),
                 };
 
