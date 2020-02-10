@@ -4,6 +4,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -52,6 +53,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         Data = jsonData
                     }.JsonSerialize(), Encoding.UTF8, "application/json"),
                 };
+
+                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
 
                 var data = await _httpClient.SendAsync(request);
 
