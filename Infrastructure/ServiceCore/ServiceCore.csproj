@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Commons\Constants\Constants.csproj" />
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\AppSettings\AppSettings.csproj" />
