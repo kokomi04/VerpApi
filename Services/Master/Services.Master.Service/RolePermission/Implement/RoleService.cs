@@ -40,7 +40,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
         {
-            var validate = ValidateRoleInput(role);
+            var validate = ValidateRoleInput(null, role);
             if (!validate.IsSuccess())
             {
                 return validate;
@@ -56,10 +56,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
                 IsEditable = true,
-                RoleStatusId = (int)role.RoleStatusId
+                RoleStatusId = (int)role.RoleStatusId,
+                RootPath = ""
             };
 
+            Role parentInfo = null;
+            if (role.ParentRoleId.HasValue)
+            {
+                parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
+                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+            }
+
+
             await _masterContext.Role.AddAsync(roleInfo);
+            await _masterContext.SaveChangesAsync();
+
+            roleInfo.RootPath = FormatRootPath(parentInfo?.RootPath, roleInfo.RoleId);
             await _masterContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
@@ -75,11 +87,13 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                  from r in _masterContext.Role
                  select new RoleOutput()
                  {
+                     ParentRoleId = r.ParentRoleId,
                      RoleId = r.RoleId,
                      RoleName = r.RoleName,
                      Description = r.Description,
                      RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
-                     IsEditable = r.IsEditable
+                     IsEditable = r.IsEditable,
+                     RootPath = r.RootPath
                  }
              );
 
@@ -90,7 +104,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         select r;
             }
 
-            var lst = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lst = size>0
+                ? await query.OrderBy(r => r.RootPath).Skip((page - 1) * size).Take(size).ToListAsync()
+                : await query.OrderBy(r => r.RootPath).ToListAsync();
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -100,11 +116,13 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         {
             var roleInfo = await _masterContext.Role.Select(r => new RoleOutput()
             {
+                ParentRoleId = r.ParentRoleId,
                 RoleId = r.RoleId,
                 RoleName = r.RoleName,
                 Description = r.Description,
                 RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
-                IsEditable = r.IsEditable
+                IsEditable = r.IsEditable,
+                RootPath = r.RootPath
             }).FirstOrDefaultAsync(r => r.RoleId == roleId);
 
             if (roleInfo == null)
@@ -117,11 +135,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<Enum> UpdateRole(int roleId, RoleInput role)
         {
-            var validate = ValidateRoleInput(role);
+            var validate = ValidateRoleInput(roleId, role);
             if (!validate.IsSuccess())
             {
                 return validate;
             }
+
 
             role.RoleName = role.RoleName.Trim();
 
@@ -135,7 +154,17 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleIsReadonly;
             }
-          
+
+            Role parentInfo = null;
+            if (role.ParentRoleId.HasValue)
+            {
+                parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
+                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+            }
+
+            roleInfo.RootPath = FormatRootPath(parentInfo?.RootPath, roleId);
+
+            roleInfo.ParentRoleId = role.ParentRoleId;
             roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             roleInfo.RoleName = role.RoleName;
             roleInfo.Description = role.Description;
@@ -186,7 +215,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var rolePermissions = await _masterContext.RolePermission.Where(p => p.RoleId == roleId).ToListAsync();
-               
+
                 _masterContext.RolePermission.RemoveRange(rolePermissions);
 
                 var newPermissions = new List<Infrastructure.EF.MasterDB.RolePermission>();
@@ -227,7 +256,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
 
         #region private
-        private Enum ValidateRoleInput(RoleInput req)
+
+        private string FormatRootPath(string parentRootPath, int roleId)
+        {
+            return string.IsNullOrWhiteSpace(parentRootPath) ? $"{roleId}" : $"{parentRootPath}_{roleId}";
+        }
+        private Enum ValidateRoleInput(int? currentRoleId, RoleInput req)
         {
             //if (!Enum.IsDefined(req.RoleStatusId.GetType(), req.RoleStatusId))
             //{
@@ -238,6 +272,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.EmptyRoleName;
             }
+
+            if (currentRoleId == req.ParentRoleId)
+            {
+                return RoleErrorCode.LoopbackParentRole;
+            }
+
             return GeneralCode.Success;
         }
 
