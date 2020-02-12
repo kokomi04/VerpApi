@@ -40,6 +40,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<PackageOption> PackageOption { get; set; }
         public virtual DbSet<PackageType> PackageType { get; set; }
         public virtual DbSet<Role> Role { get; set; }
+        public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
         public virtual DbSet<RoleStatus> RoleStatus { get; set; }
         public virtual DbSet<StockOutputRule> StockOutputRule { get; set; }
@@ -370,13 +371,34 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.RootPath)
+                    .IsRequired()
+                    .HasMaxLength(1024)
+                    .HasDefaultValueSql("('')");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
+
+                entity.HasOne(d => d.ParentRole)
+                    .WithMany(p => p.InverseParentRole)
+                    .HasForeignKey(d => d.ParentRoleId)
+                    .HasConstraintName("FK_Role_Role");
 
                 entity.HasOne(d => d.RoleStatus)
                     .WithMany(p => p.Role)
                     .HasForeignKey(d => d.RoleStatusId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Role_RoleStatus");
+            });
+
+            modelBuilder.Entity<RoleDataPermission>(entity =>
+            {
+                entity.HasKey(e => new { e.RoleId, e.ObjectTypeId, e.ObjectId });
+
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.RoleDataPermission)
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_RoleDataPermission_Role");
             });
 
             modelBuilder.Entity<RolePermission>(entity =>
