@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;

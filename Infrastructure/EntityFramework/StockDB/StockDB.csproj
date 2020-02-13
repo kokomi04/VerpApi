@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\EFExtensions\EFExtensions.csproj" />
   </ItemGroup>
 

@@ -3,18 +3,17 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
-    public interface ICurrentContextFactory
-    {
-        void SetCurrentContext(ICurrentContextService currentContext);
-        ICurrentContextService GetCurrentContext();
-    }
+
 
     public class CurrentContextFactory : ICurrentContextFactory
     {
@@ -27,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
         public void SetCurrentContext(ICurrentContextService currentContext)
-        {            
+        {
             _currentContext = currentContext;
         }
 
@@ -40,33 +39,33 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             _used = true;
             return _currentContext;
-        }       
+        }
     }
 
-    public interface ICurrentContextService
-    {
-        int UserId { get; }
-        EnumAction Action { get; }
-    }
+
 
     public class HttpCurrentContextService : ICurrentContextService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly MasterDBContext _masterDBContext;
 
         private int _userId = 0;
         private EnumAction? _action;
+        private IList<int> _stockIds;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
+            , MasterDBContext masterDBContext
             )
         {
             _appSetting = appSetting.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
+            _masterDBContext = masterDBContext;
         }
 
         public int UserId
@@ -113,19 +112,42 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        public IList<int> StockIds
+        {
+            get
+            {
+                if (_stockIds != null)
+                {
+                    return _stockIds;
+                }
+
+                var userInfo = _masterDBContext.User.FirstOrDefault(u => u.UserId == UserId);
+
+                _stockIds = _masterDBContext.RoleDataPermission
+                    .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && d.RoleId == userInfo.RoleId)
+                    .Select(d => d.ObjectId)
+                    .ToList()
+                    .Select(d => (int)d)
+                    .ToArray();
+
+                return _stockIds;
+            }
+        }
     }
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
-        public ScopeCurrentContextService(int userId, EnumAction action)
+        public ScopeCurrentContextService(int userId, EnumAction action, IList<int> stockIds)
         {
             UserId = userId;
             Action = action;
+            StockIds = stockIds;
         }
 
         public int UserId { get; } = 0;
 
         public EnumAction Action { get; }
 
+        public IList<int> StockIds { get; }
     }
 }
