@@ -104,7 +104,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         select r;
             }
 
-            var lst = size>0
+            var lst = size > 0
                 ? await query.OrderBy(r => r.RootPath).Skip((page - 1) * size).Take(size).ToListAsync()
                 : await query.OrderBy(r => r.RootPath).ToListAsync();
             var total = await query.CountAsync();
@@ -255,6 +255,33 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         }
 
 
+        public async Task<IList<StockPemissionOutput>> GetStockPermission()
+        {
+            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Stock);
+            return roleDataPermissions.Select(d => new StockPemissionOutput()
+            {
+                RoleId = d.RoleId,
+                StockId = (int)d.ObjectId
+            })
+            .ToList();
+        }
+
+        public async Task<Enum> UpdateStockPermission(IList<StockPemissionOutput> req)
+        {
+            if (req == null) req = new List<StockPemissionOutput>();
+
+            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Stock);
+
+            _masterContext.RoleDataPermission.RemoveRange(lst);
+            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
+            {
+                ObjectTypeId = (int)EnumObjectType.Stock,
+                ObjectId = d.StockId,
+                RoleId = d.RoleId
+            }));
+            await _masterContext.SaveChangesAsync();
+            return GeneralCode.Success;
+        }
         #region private
 
         private string FormatRootPath(string parentRootPath, int roleId)
@@ -280,7 +307,13 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             return GeneralCode.Success;
         }
-
+        private async Task<IList<RoleDataPermission>> RoleDataPermission(EnumObjectType objectTypeId)
+        {
+            return await _masterContext.RoleDataPermission
+                .Where(p => p.ObjectTypeId == (int)objectTypeId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
         #endregion
     }
 }
