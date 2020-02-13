@@ -11,6 +11,8 @@ namespace VErp.Services.Master.Model.RolePermission
         public string RoleName { get; set; }
         public string Description { get; set; }
         public EnumRoleStatus RoleStatusId { get; set; }
+        public bool IsModulePermissionInherit { get; set; }
+        public bool IsDataPermissionInheritOnStock { get; set; }
     }
     public class RoleOutput : RoleInput
     {

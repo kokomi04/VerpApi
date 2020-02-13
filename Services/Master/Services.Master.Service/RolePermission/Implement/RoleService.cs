@@ -57,7 +57,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 IsDeleted = false,
                 IsEditable = true,
                 RoleStatusId = (int)role.RoleStatusId,
-                RootPath = ""
+                RootPath = "",
+                IsModulePermissionInherit = role.IsModulePermissionInherit,
+                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock
             };
 
             Role parentInfo = null;
@@ -93,7 +95,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                      Description = r.Description,
                      RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
                      IsEditable = r.IsEditable,
-                     RootPath = r.RootPath
+                     RootPath = r.RootPath,
+                     IsModulePermissionInherit = r.IsModulePermissionInherit,
+                     IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
                  }
              );
 
@@ -122,7 +126,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 Description = r.Description,
                 RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
                 IsEditable = r.IsEditable,
-                RootPath = r.RootPath
+                RootPath = r.RootPath,
+                IsModulePermissionInherit = r.IsModulePermissionInherit,
+                IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
             }).FirstOrDefaultAsync(r => r.RoleId == roleId);
 
             if (roleInfo == null)
@@ -169,6 +175,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             roleInfo.RoleName = role.RoleName;
             roleInfo.Description = role.Description;
             roleInfo.RoleStatusId = (int)role.RoleStatusId;
+            roleInfo.IsModulePermissionInherit = role.IsModulePermissionInherit;
+            roleInfo.IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock;
 
             await _masterContext.SaveChangesAsync();
 
