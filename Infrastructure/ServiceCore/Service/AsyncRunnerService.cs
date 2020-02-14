@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -28,6 +29,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             var userId = _currentContext.UserId;
             var actionId = _currentContext.Action;
+            var stockIds = _currentContext.StockIds;
             Task.Run(async () =>
             {
                 try
@@ -35,7 +37,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId));
+                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, stockIds));
                         var obj = scope.ServiceProvider.GetService<T>();
                         var fn = action.Compile();
                         await fn.Invoke(obj);

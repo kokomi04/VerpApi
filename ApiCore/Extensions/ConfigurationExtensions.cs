@@ -24,13 +24,13 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             }, contextScope);
         }
 
-        public static void ConfigStockDBContext(this IServiceCollection services, AppSetting appSetting, ServiceLifetime contextScope)
+        public static void ConfigStockDBContext(this IServiceCollection services, AppSetting appSetting)
         {
-            services.AddDbContext<StockDBContext>((option) =>
+            services.AddDbContext<StockDBContext, StockDBRestrictionContext>((option) =>
             {
                 option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
-            }, contextScope);
+            }, ServiceLifetime.Scoped);
         }
 
         public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)

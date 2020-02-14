@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore
