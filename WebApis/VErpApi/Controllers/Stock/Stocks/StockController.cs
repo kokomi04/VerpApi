@@ -27,6 +27,21 @@ namespace VErpApi.Controllers.Stock.Stocks
             _stockService = stockService;
         }
 
+
+        /// <summary>
+        /// Tìm kiếm tất cả danh sách kho (Bao gồm cả những kho mà user không có quyền)
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAll")]
+        public async Task<ApiResponse<PageData<StockOutput>>> GetAll([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.GetAll(keyword, page, size);
+        }
+
         /// <summary>
         /// Tìm kiếm kho sản phẩm
         /// </summary>

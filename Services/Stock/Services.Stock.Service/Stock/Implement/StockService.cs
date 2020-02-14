@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -14,7 +13,6 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
 
@@ -46,10 +44,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityLogService = activityLogService;
         }
 
+
+        #region CRUD Stocks
         public async Task<ServiceResult<int>> AddStock(StockModel req)
         {
-            if (_stockContext.Stock.Any(q => q.StockName.ToLower() == req.StockName.ToLower()))
+            if (_stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).Any(q => q.StockName.ToLower() == req.StockName.ToLower()))
                 return StockErrorCode.StockNameAlreadyExisted;
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -89,7 +90,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<ServiceResult<StockOutput>> StockInfo(int stockId)
         {
-            var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+            var stockInfo = await _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).FirstOrDefaultAsync(p => p.StockId == stockId);
             if (stockInfo == null)
             {
                 return StockErrorCode.StockNotFound;
@@ -110,7 +111,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             req.StockName = (req.StockName ?? "").Trim();
 
-            var checkExistsName = await _stockContext.Stock.AnyAsync(p => p.StockName == req.StockName && p.StockId != stockId);
+            var checkExistsName = await _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).AnyAsync(p => p.StockName == req.StockName && p.StockId != stockId);
             if (checkExistsName)
             {
                 return StockErrorCode.StockCodeAlreadyExisted;
@@ -126,7 +127,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         return StockErrorCode.StockNotFound;
                     }
-                   
+
                     //Update
 
                     //stockInfo.StockId = req.StockId;
@@ -156,12 +157,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<Enum> DeleteStock(int stockId)
         {
-            var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+            var stockInfo = await _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).FirstOrDefaultAsync(p => p.StockId == stockId);
 
             if (stockInfo == null)
             {
                 return StockErrorCode.StockNotFound;
-            }           
+            }
 
             stockInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
@@ -186,6 +187,42 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
+        public async Task<PageData<StockOutput>> GetAll(string keyword, int page, int size)
+        {
+            var query = from p in _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted)
+                        select p;
+
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.StockName.Contains(keyword)
+                        select q;
+            }
+
+            var total = await query.CountAsync();
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+
+            var pagedData = new List<StockOutput>();
+            foreach (var item in lstData)
+            {
+                var stockInfo = new StockOutput()
+                {
+                    StockId = item.StockId,
+                    StockName = item.StockName,
+                    Description = item.Description,
+                    StockKeeperId = item.StockKeeperId,
+                    StockKeeperName = item.StockKeeperName,
+                    Type = item.Type,
+                    Status = item.Status
+
+                };
+                pagedData.Add(stockInfo);
+            }
+            return (pagedData, total);
+        }
+        #endregion
+
 
         public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size)
         {
@@ -772,7 +809,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             if (productId <= 0)
                 return GeneralCode.InvalidParams;
-           
+
             var resultData = new StockProductDetailsReportOutput
             {
                 OpeningStock = null,
@@ -926,7 +963,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         #region Private Methods
 
 
-       
+
         #endregion
 
         private class ProductUnitModel
