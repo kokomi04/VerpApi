@@ -321,7 +321,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                
                 var issuedDate = req.DateUtc.UnixToDateTime();
-                var billDate = req.DateUtc.UnixToDateTime();
+                var billDate = req.BillDate.UnixToDateTime();
                 var validInventoryDetails = await ValidateInventoryIn(false, req, IsFreeStyle);
 
                 if (!validInventoryDetails.Code.IsSuccess())
@@ -990,7 +990,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             break;
 
                         case EnumPackageOption.NoPackageManager:
-                            var defaultPackge = await AppendToDefaultPackage(stockId, item);
+                            var defaultPackge = await AppendToDefaultPackage(stockId, date, item);
                             item.ToPackageId = defaultPackge.PackageId;
 
                             break;
@@ -1602,10 +1602,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             packageInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
             //packageInfo.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
             packageInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
+            packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             return GeneralCode.Success;
         }
 
-        private async Task<PackageEntity> AppendToDefaultPackage(int stockId, InventoryDetail detail)
+        private async Task<PackageEntity> AppendToDefaultPackage(int stockId, DateTime billDate,InventoryDetail detail)
         {
             var ensureDefaultPackage = await _stockDbContext.Package
                                           .FirstOrDefaultAsync(p =>
@@ -1634,7 +1635,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
                     ProductUnitConversionRemaining = 0,
-                    Date = null,
+                    Date = billDate,
                     ExpiryTime = null,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,

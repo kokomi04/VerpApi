@@ -63,6 +63,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             };
 
             Role parentInfo = null;
+            if (role.ParentRoleId == 0)
+                role.ParentRoleId = null;
+
             if (role.ParentRoleId.HasValue)
             {
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
@@ -339,7 +342,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 return RoleErrorCode.EmptyRoleName;
             }
 
-            if (currentRoleId == req.ParentRoleId)
+            if (currentRoleId == req.ParentRoleId && currentRoleId > 0)
             {
                 return RoleErrorCode.LoopbackParentRole;
             }
