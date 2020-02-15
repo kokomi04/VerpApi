@@ -128,8 +128,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
                 var roleInfo = (
-                    from u in _masterDBContext.User
-                    join r in _masterDBContext.Role on u.RoleId equals r.RoleId
+                    from r in _masterDBContext.Role
+                    where r.RoleId == userInfo.RoleId
                     select new
                     {
                         r.RoleId,
