@@ -226,5 +226,21 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _stockService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
         }
 
+        /// <summary>
+        /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - theo mẫu báo cáo kho 03
+        /// </summary>
+        /// <param name="stockIds"></param>
+        /// <param name="keyword"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockSumaryReportForm03")]
+        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockSumaryReportForm03(keyword, stockIds, fromDate, toDate, page, size);
+        }
     }
 }

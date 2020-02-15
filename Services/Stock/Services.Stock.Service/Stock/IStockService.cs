@@ -97,5 +97,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, long fromDate, long toDate);
 
+
+        Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long fromDate, long toDate, int page, int size);
     }
 }

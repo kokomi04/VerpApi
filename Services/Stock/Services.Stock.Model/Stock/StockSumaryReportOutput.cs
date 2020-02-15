@@ -10,6 +10,9 @@ namespace VErp.Services.Stock.Model.Stock
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public int UnitId { get; set; }
+
+        public string UnitName { get; set; }
+
         public decimal PrimaryQualtityBefore { get; set; }
         public decimal PrimaryQualtityInput { get; set; }
         public decimal PrimaryQualtityOutput { get; set; }
