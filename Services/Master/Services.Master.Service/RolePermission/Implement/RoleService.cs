@@ -40,18 +40,24 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
         {
+            if (role.ParentRoleId == 0)
+                role.ParentRoleId = null;
+
+            role.RoleName = role.RoleName.Trim();
+
             var validate = ValidateRoleInput(null, role);
             if (!validate.IsSuccess())
             {
                 return validate;
             }
 
-
-            role.RoleName = role.RoleName.Trim();
+            Role parentInfo = null;
+           
             var roleInfo = new Role()
             {
                 RoleName = role.RoleName,
                 Description = role.Description,
+                ParentRoleId = role.ParentRoleId,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
@@ -62,9 +68,6 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock
             };
 
-            Role parentInfo = null;
-            if (role.ParentRoleId == 0)
-                role.ParentRoleId = null;
 
             if (role.ParentRoleId.HasValue)
             {
@@ -151,14 +154,16 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<Enum> UpdateRole(int roleId, RoleInput role)
         {
+            if (role.ParentRoleId == 0)
+                role.ParentRoleId = null;
+
+            role.RoleName = role.RoleName.Trim();
+
             var validate = ValidateRoleInput(roleId, role);
             if (!validate.IsSuccess())
             {
                 return validate;
             }
-
-
-            role.RoleName = role.RoleName.Trim();
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
             if (roleInfo == null)
@@ -171,7 +176,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 return RoleErrorCode.RoleIsReadonly;
             }
 
-            Role parentInfo = null;
+            Role parentInfo = null;          
+
             if (role.ParentRoleId.HasValue)
             {
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
