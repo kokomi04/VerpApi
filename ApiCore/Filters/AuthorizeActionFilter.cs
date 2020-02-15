@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -27,19 +28,19 @@ namespace VErp.Infrastructure.ApiCore.Filters
         private readonly AppSetting _appSetting;
         private readonly MasterDBContext _masterContext;
         private readonly ILogger _logger;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ICurrentContextService _currentContextService;
 
         public AuthorizeActionFilter(
            IOptionsSnapshot<AppSetting> appSetting
            , ILogger<AuthorizeActionFilter> logger
             , MasterDBContext masterContext
-            , IHttpContextAccessor httpContextAccessor
+            , ICurrentContextService currentContextService
        )
         {
             _appSetting = appSetting.Value;
             _masterContext = masterContext;
             _logger = logger;
-            _httpContextAccessor = httpContextAccessor;
+            _currentContextService = currentContextService;
         }
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -51,7 +52,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-#if DEBUG
+#if DEBUG1
             await next();
             return;
 #endif
@@ -109,25 +110,24 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-            var userId = 0;
-            foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
-            {
-                if (claim.Type != "userId")
-                    continue;
+            var userId = _currentContextService.UserId;
+            var roleInfo = _currentContextService.RoleInfo;
+            var roleIds = new List<int>() { roleInfo.RoleId };
 
-                int.TryParse(claim.Value, out userId);
-                break;
+            if (roleInfo.IsModulePermissionInherit && roleInfo.ChildrenRoleIds?.Count > 0)
+            {
+                roleIds.AddRange(roleInfo.ChildrenRoleIds);
             }
 
 
-            var permission = await (
-                from u in _masterContext.User
-                join p in _masterContext.RolePermission on u.RoleId equals p.RoleId
+            var permission = (
+                from p in _masterContext.RolePermission
                 where p.ModuleId == moduleId
-                && u.UserId == userId
+                && roleIds.Contains(p.RoleId)
                 select p.Permission
                 )
-                .FirstOrDefaultAsync();
+                .ToList()
+                .Aggregate((p1, p2) => p1 | p2);
 
             if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
