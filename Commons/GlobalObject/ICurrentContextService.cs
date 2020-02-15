@@ -9,5 +9,6 @@ namespace VErp.Commons.GlobalObject
         int UserId { get; }
         EnumAction Action { get; }
         IList<int> StockIds { get; }
+        RoleInfo RoleInfo { get; }
     }
 }

@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsModulePermissionInherit { get; set; }
         public bool IsDataPermissionInheritOnStock { get; set; }
+        public string ChildrenRoleIds { get; set; }
 
         public virtual Role ParentRole { get; set; }
         public virtual RoleStatus RoleStatus { get; set; }

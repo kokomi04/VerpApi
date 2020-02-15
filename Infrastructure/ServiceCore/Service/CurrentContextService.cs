@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -53,7 +55,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private int _userId = 0;
         private EnumAction? _action;
+
         private IList<int> _stockIds;
+        private IList<int> _roleIds;
+        private RoleInfo _roleInfo;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
@@ -112,6 +117,41 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        public RoleInfo RoleInfo
+        {
+            get
+            {
+                if (_roleInfo != null)
+                {
+                    return _roleInfo;
+                }
+
+                var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var roleInfo = (
+                    from u in _masterDBContext.User
+                    join r in _masterDBContext.Role on u.RoleId equals r.RoleId
+                    select new
+                    {
+                        r.RoleId,
+                        r.IsDataPermissionInheritOnStock,
+                        r.IsModulePermissionInherit,
+                        r.ChildrenRoleIds
+                    }
+                   )
+                   .First();
+
+                _roleInfo = new RoleInfo(                
+                    roleInfo.RoleId,
+                    roleInfo.ChildrenRoleIds?.Split(',')?.Select(c => int.Parse(c)).ToList(),
+                    roleInfo.IsDataPermissionInheritOnStock,
+                    roleInfo.IsModulePermissionInherit
+                );
+
+
+                return _roleInfo;
+            }
+        }
+
         public IList<int> StockIds
         {
             get
@@ -121,10 +161,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return _stockIds;
                 }
 
-                var userInfo = _masterDBContext.User.FirstOrDefault(u => u.UserId == UserId);
+                var roleInfo = RoleInfo;
+
+                var roleIds = new List<int>();
+                roleIds.Add(roleInfo.RoleId);
+                if (roleInfo.IsDataPermissionInheritOnStock && roleInfo.ChildrenRoleIds?.Count > 0)
+                {
+                    roleIds.AddRange(roleInfo.ChildrenRoleIds);
+                }
 
                 _stockIds = _masterDBContext.RoleDataPermission
-                    .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && d.RoleId == userInfo.RoleId)
+                    .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
                     .Select(d => d.ObjectId)
                     .ToList()
                     .Select(d => (int)d)
@@ -137,10 +184,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
-        public ScopeCurrentContextService(int userId, EnumAction action, IList<int> stockIds)
+        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds)
         {
             UserId = userId;
             Action = action;
+            RoleInfo = roleInfo;
             StockIds = stockIds;
         }
 
@@ -149,5 +197,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public EnumAction Action { get; }
 
         public IList<int> StockIds { get; }
+        public RoleInfo RoleInfo { get; }
     }
 }
