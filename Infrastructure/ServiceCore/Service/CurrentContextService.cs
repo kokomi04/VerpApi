@@ -140,9 +140,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
                    )
                    .First();
 
-                _roleInfo = new RoleInfo(                
+                _roleInfo = new RoleInfo(
                     roleInfo.RoleId,
-                    roleInfo.ChildrenRoleIds?.Split(',')?.Select(c => int.Parse(c)).ToList(),
+                    roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
                     roleInfo.IsDataPermissionInheritOnStock,
                     roleInfo.IsModulePermissionInherit
                 );
