@@ -1031,6 +1031,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 #region product  - ProductUnitModel  
                 var productList = new List<ProductUnitModel>();
+                var productAltUnitModelList = new List<ProductAltUnitModel>();
                 foreach (var b in befores)
                 {
                     if (!productList.Any(p => p.ProductId == b.ProductId && p.PrimaryUnitId == b.PrimaryUnitId))
@@ -1057,25 +1058,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var b in beforesByAltUnit)
                 {
-                    if (!productList.Any(p => p.ProductId == b.ProductId && p.ProductUnitConversionId == b.ProductUnitConversionId) && b.ProductUnitConversionId > 0)
+                    if (!productAltUnitModelList.Any(p => p.ProductId == b.ProductId && p.ProductUnitConversionId == b.ProductUnitConversionId) && b.ProductUnitConversionId > 0)
                     {
-                        productList.Add(new ProductUnitModel()
+                        productAltUnitModelList.Add(new ProductAltUnitModel()
                         {
-                            ProductId = b.ProductId,
-                            PrimaryUnitId = 0,
+                            ProductId = b.ProductId,                            
                             ProductUnitConversionId = (int)b.ProductUnitConversionId
-                        }); ;
+                        }); 
                     }
                 }
 
                 foreach (var a in aftersByAltUnit)
                 {
-                    if (!productList.Any(p => p.ProductId == a.ProductId && p.ProductUnitConversionId == a.ProductUnitConversionId) && a.ProductUnitConversionId > 0)
+                    if (!productAltUnitModelList.Any(p => p.ProductId == a.ProductId && p.ProductUnitConversionId == a.ProductUnitConversionId) && a.ProductUnitConversionId > 0)
                     {
-                        productList.Add(new ProductUnitModel()
+                        productAltUnitModelList.Add(new ProductAltUnitModel()
                         {
-                            ProductId = a.ProductId,
-                            PrimaryUnitId = 0,
+                            ProductId = a.ProductId,                            
                             ProductUnitConversionId = (int)a.ProductUnitConversionId
                         });
                     }
@@ -1085,12 +1084,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var total = productList.Count;
                 var productPaged = productList.Skip((page - 1) * size).Take(size);
+                
                 var productIds = productPaged.Select(p => p.ProductId);
                 var primaryUnitIds = productPaged.Select(p => p.PrimaryUnitId).ToList();
 
                 var productInfos = await _stockContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
                 var productUnitConversionInfos = await _stockContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
                 var unitInfos = await _masterDBContext.Unit.Where(p => primaryUnitIds.Contains(p.UnitId)).Select(q=>new { q.UnitId,q.UnitName}).ToListAsync();
+
+                var productAltUnitPaged = productAltUnitModelList.Where(q => productIds.Contains(q.ProductId)).ToList();
 
                 var packageQuery = _stockContext.Package.AsQueryable();
                 if (stockIds != null && stockIds.Count > 0)
@@ -1118,7 +1120,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                       }).ToList();
 
                 var productAltSummaryData = (
-                 from p in productPaged
+                 from p in productAltUnitPaged
                  join c in productUnitConversionInfos on p.ProductUnitConversionId equals c.ProductUnitConversionId                 
                  //join info in productInfos on p.ProductId equals info.ProductId
                  join b in beforesByAltUnit on new { p.ProductId, p.ProductUnitConversionId } equals new { b.ProductId, b.ProductUnitConversionId } into bp
@@ -1199,8 +1201,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private class ProductUnitModel
         {
             public int ProductId { get; set; }
-            public int PrimaryUnitId { get; set; }
+            public int PrimaryUnitId { get; set; }           
+        }
 
+        private class ProductAltUnitModel
+        {
+            public int ProductId { get; set; }
+            
             public int? ProductUnitConversionId { get; set; }
         }
     }
