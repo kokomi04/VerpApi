@@ -251,18 +251,18 @@ namespace VErpApi.Controllers.Stock.Inventory
         [VErpAction(EnumAction.View)]
         [HttpPost]
         [Route("{inventoryId}/InputGetAffectedPackages")]
-        public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromBody] InventoryInModel req)
+        public async Task<ApiResponse<IList<CensoredInventoryInputProducts>>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] InventoryInModel req)
         {
-            return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId, req);
+            return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId,fromDate, toDate, req);
         }
 
         [HttpPut]
         [Route("{inventoryId}/ApprovedInputDataUpdate")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, ApprovedInputDataSubmitModel req)
+        public async Task<ApiResponse> ApprovedInputDataUpdate([FromRoute] long inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] ApprovedInputDataSubmitModel req)
         {
 
-            return await _inventoryService.ApprovedInputDataUpdate(UserId, inventoryId, req);
+            return await _inventoryService.ApprovedInputDataUpdate(UserId, inventoryId, fromDate, toDate, req);
         }
 
     }
