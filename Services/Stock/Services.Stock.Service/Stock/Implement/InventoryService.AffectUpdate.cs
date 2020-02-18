@@ -11,16 +11,14 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService
     {
-
-        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req)
+        public async Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req)
         {
-            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req);
+            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, fromDate, toDate, req);
             if (!data.Code.IsSuccess())
             {
                 return data.Code;
@@ -29,7 +27,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return data.Data.Products.ToList();
 
         }
-        public async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, InventoryInModel req)
+
+        private async Task<ServiceResult<InventoryInputUpdateGetAffectedModel>> CensoredInventoryInputUpdateGetAffected(long inventoryId, long fromDate, long toDate, InventoryInModel req)
         {
             var inventoryInfo = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
             if (inventoryInfo == null)
@@ -51,6 +50,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
 
             var updateDetail = await ValidateInventoryIn(true, req);
+
             if (!updateDetail.Code.IsSuccess())
             {
                 return updateDetail.Code;
@@ -101,44 +101,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     OldProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                     NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
-                    ToPackageId = d.ToPackageId.Value
+                    ToPackageId = d.ToPackageId.Value,
+                    AffectObjects = new CensoredInventoryInputUpdateContext(_stockDbContext, inventoryInfo, d, fromDate, toDate)
+                    .GetAffectObjects(newPrimaryQuantity, newProductUnitConversionQuantity)
                 };
-
-
-                var topPackage = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == product.ToPackageId);
-
-                var affectObjects = new List<CensoredInventoryInputObject>();
-
-                //Lấy thông tin về phiếu nhập -> Kiện
-                _affectInventoryInput(affectObjects, d.InventoryDetailId, req.InventoryCode, topPackage.PackageId,
-                    d.PrimaryQuantity, newPrimaryQuantity, d.ProductUnitConversionQuantity, newProductUnitConversionQuantity
-                    );
-
-                var queue = new Queue<long>();
-
-                //Duyệt đồng cấp (nút cha duyệt trước)
-                queue.Enqueue(topPackage.PackageId);
-                while (queue.Count > 0)
-                {
-                    var packageId = queue.Dequeue();
-
-                    //Lấy các kiện cha ảnh hưởng tới kiện hiện tại
-                    await _affectAddParentPackages(affectObjects, packageId);
-
-                    //Lấy các phiếu nhập ảnh hưởng đến kiện hiện tại
-                    await _affectAddParentInputs(affectObjects, packageId);
-
-
-                    //Lấy các kiện con và phiếu xuất mà kiện hiện tại ảnh hưởng đến
-                    var childPackgeIds = await _affectAddChildren(affectObjects, packageId);
-
-                    foreach (var id in childPackgeIds)
-                    {
-                        queue.Enqueue(id);
-                    }
-
-                }
-                product.AffectObjects = affectObjects;
 
                 products.Add(product);
 
@@ -147,259 +113,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
         }
 
-
-        private void _affectInventoryInput(
-            IList<CensoredInventoryInputObject> affectObjects, long inInventoryDetailId, string inInventoryCode
-            , long toPackageId
-            , decimal oldPrimaryQuantity, decimal newPrimaryQuantity
-            , decimal oldProductUnitConversionQuantity, decimal newProductUnitConversionQuantity
-            )
-        {
-            affectObjects.Add(new CensoredInventoryInputObject()
-            {
-                ObjectId = inInventoryDetailId,
-                ObjectCode = inInventoryCode,
-                ObjectTypeId = EnumObjectType.InventoryDetail,
-                IsRoot = true,
-                IsCurrentFlow = true,
-
-                OldPrimaryQuantity = oldPrimaryQuantity,
-                NewPrimaryQuantity = newPrimaryQuantity,
-
-                OldProductUnitConversionQuantity = oldProductUnitConversionQuantity,
-                NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
-
-                Children = new List<TransferToObject>()
-                    {
-                        new TransferToObject {
-                            IsEditable = false,
-                            ObjectId = toPackageId,
-                            ObjectTypeId = EnumObjectType.Package,
-                            PackageOperationTypeId = EnumPackageOperationType.Join,
-
-                            OldTransferPrimaryQuantity = oldPrimaryQuantity,
-                            NewTransferPrimaryQuantity = newPrimaryQuantity,
-
-                            OldTransferProductUnitConversionQuantity = oldProductUnitConversionQuantity,
-                            NewTransferProductUnitConversionQuantity = newProductUnitConversionQuantity,
-                        }
-                    }
-            });
-        }
-
-        private async Task _affectAddParentPackages(IList<CensoredInventoryInputObject> affectObjects, long packageId)
-        {
-            var refParentPackages = await _stockDbContext.PackageRef.Where(r => r.PackageId == packageId).ToListAsync();
-
-            var refParentPackageIds = refParentPackages.Select(r => r.RefPackageId);
-
-            var refParentPackageInfos = await _stockDbContext.Package.Where(p => refParentPackageIds.Contains(p.PackageId)).ToListAsync();
-
-            foreach (var r in refParentPackageInfos)
-            {
-                var refQuantity = refParentPackages.FirstOrDefault(q => q.RefPackageId == r.PackageId);
-
-                var newObject = new CensoredInventoryInputObject()
-                {
-                    ObjectId = r.PackageId,
-                    ObjectCode = r.PackageCode,
-                    ObjectTypeId = EnumObjectType.Package,
-                    IsRoot = false,
-                    IsCurrentFlow = false,
-
-                    OldPrimaryQuantity = r.PrimaryQuantityRemaining,
-                    NewPrimaryQuantity = r.PrimaryQuantityRemaining,
-
-                    OldProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
-                    NewProductUnitConversionQuantity = r.ProductUnitConversionRemaining,
-
-                    Children = new List<TransferToObject>()
-                            {
-                                new TransferToObject{
-                                    IsEditable = false,
-                                    ObjectId = packageId,
-                                    ObjectTypeId = EnumObjectType.Package,
-                                    PackageOperationTypeId = (EnumPackageOperationType)refQuantity.PackageOperationTypeId,
-
-                                    OldTransferPrimaryQuantity = refQuantity.PrimaryQuantity.Value,
-                                    NewTransferPrimaryQuantity = refQuantity.PrimaryQuantity.Value,
-
-                                    OldTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value,
-                                    NewTransferProductUnitConversionQuantity = refQuantity.ProductUnitConversionQuantity.Value
-                                }
-                            }
-                };
-
-                if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
-                {
-                    affectObjects.Add(newObject);
-                }
-            }
-
-        }
-
-        private async Task _affectAddParentInputs(IList<CensoredInventoryInputObject> affectObjects, long packageId)
-        {
-            var refInventoryIns = await (
-                       from id in _stockDbContext.InventoryDetail
-                       join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
-                       where id.ToPackageId == packageId
-                       select new
-                       {
-                           iv.InventoryId,
-                           iv.InventoryCode,
-                           id.InventoryDetailId,
-                           id.PrimaryQuantity,
-                           id.ProductUnitConversionQuantity
-                       }
-                       ).ToListAsync();
-
-            foreach (var r in refInventoryIns)
-            {
-                var newObject = new CensoredInventoryInputObject()
-                {
-                    ObjectId = r.InventoryDetailId,
-                    ObjectCode = r.InventoryCode,
-                    ObjectTypeId = EnumObjectType.InventoryDetail,
-                    IsRoot = false,
-
-                    OldPrimaryQuantity = r.PrimaryQuantity,
-                    NewPrimaryQuantity = r.PrimaryQuantity,
-
-                    OldProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
-
-                    Children = new List<TransferToObject>()
-                            {
-                                new TransferToObject{
-                                    IsEditable = false,
-                                    ObjectId = packageId,
-                                    ObjectTypeId =EnumObjectType.Package,
-                                    PackageOperationTypeId = EnumPackageOperationType.Join,
-
-                                    OldTransferPrimaryQuantity = r.PrimaryQuantity,
-                                    NewTransferPrimaryQuantity = r.PrimaryQuantity,
-
-                                    OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity,
-                                    NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity
-                                }
-                            }
-                };
-
-                if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
-                {
-                    affectObjects.Add(newObject);
-                }
-            }
-
-        }
-        private async Task<IList<long>> _affectAddChildren(IList<CensoredInventoryInputObject> affectObjects, long packageId)
-        {
-            var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
-
-            var childrenPackages = await _stockDbContext.PackageRef.Where(p => p.RefPackageId == packageId).ToListAsync();
-
-            var currentPackageNode = new CensoredInventoryInputObject()
-            {
-                ObjectId = packageInfo.PackageId,
-                ObjectCode = packageInfo.PackageCode,
-                ObjectTypeId = EnumObjectType.Package,
-                IsRoot = false,
-
-                OldPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
-                NewPrimaryQuantity = packageInfo.PrimaryQuantityRemaining,
-
-                OldProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
-                NewProductUnitConversionQuantity = packageInfo.ProductUnitConversionRemaining,
-
-                Children = childrenPackages.Select(r => new TransferToObject()
-                {
-                    IsEditable = true,
-                    ObjectId = r.PackageId,
-                    ObjectTypeId = EnumObjectType.Package,
-                    PackageOperationTypeId = (EnumPackageOperationType)r.PackageOperationTypeId,
-
-                    OldTransferPrimaryQuantity = r.PrimaryQuantity.Value,
-                    NewTransferPrimaryQuantity = r.PrimaryQuantity.Value,
-
-                    OldTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value,
-                    NewTransferProductUnitConversionQuantity = r.ProductUnitConversionQuantity.Value
-                }).ToList()
-            };
-
-            await _affectAddChildrenOut(affectObjects, currentPackageNode, packageId);
-
-            if (!affectObjects.Any(o => o.ObjectKey == currentPackageNode.ObjectKey))
-                affectObjects.Add(currentPackageNode);
-
-            return childrenPackages.Select(c => c.PackageId).ToList();
-        }
-
-        private async Task _affectAddChildrenOut(IList<CensoredInventoryInputObject> affectObjects, CensoredInventoryInputObject currentPackageNode, long packageId)
-        {
-
-            var childrenInventoryOuts = await (
-                        from id in _stockDbContext.InventoryDetail
-                        join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
-                        where id.FromPackageId == packageId
-                        select new
-                        {
-                            iv.InventoryId,
-                            iv.InventoryCode,
-                            id.InventoryDetailId,
-                            id.PrimaryQuantity,
-                            id.ProductUnitConversionQuantity
-                        }
-                        ).ToListAsync();
-
-            foreach (var iv in childrenInventoryOuts)
-            {
-                currentPackageNode.Children.Add(new TransferToObject()
-                {
-                    IsEditable = true,
-                    ObjectId = iv.InventoryDetailId,
-                    ObjectTypeId = EnumObjectType.InventoryDetail,
-                    PackageOperationTypeId = EnumPackageOperationType.Split,
-
-                    OldTransferPrimaryQuantity = iv.PrimaryQuantity,
-                    NewTransferPrimaryQuantity = iv.PrimaryQuantity,
-
-                    OldTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
-                    NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
-                });
-
-                var outObject = new CensoredInventoryInputObject()
-                {
-                    IsRoot = false,
-                    IsCurrentFlow = true,
-                    ObjectId = iv.InventoryDetailId,
-                    ObjectCode = iv.InventoryCode,
-                    ObjectTypeId = EnumObjectType.InventoryDetail,
-
-                    OldPrimaryQuantity = iv.PrimaryQuantity,
-                    NewPrimaryQuantity = iv.PrimaryQuantity,
-
-                    OldProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
-                    NewProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
-
-                    Children = null
-                };
-
-                if (!affectObjects.Any(o => o.ObjectKey == outObject.ObjectKey))
-                    affectObjects.Add(outObject);
-            }
-
-
-        }
-
-
-        public async Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req)
+        public async Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    var r = await ApprovedInputDataUpdateAction(currentUserId, inventoryId, req);
+                    var r = await ApprovedInputDataUpdateAction(currentUserId, inventoryId, fromDate, toDate, req);
                     if (!r.Code.IsSuccess())
                     {
                         trans.Rollback();
@@ -422,9 +142,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req)
+
+        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
-            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, req.Inventory);
+            var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, fromDate, toDate, req.Inventory);
 
             if (!data.Code.IsSuccess())
             {
@@ -435,27 +156,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var dbDetails = data.Data.DbDetails;
             var updateDetails = data.Data.UpdateDetails;
 
-            var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products, dbDetails);
+            var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products);
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
             var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
             if (!updateStatus.IsSuccess()) return updateStatus;
 
-            //if (!DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-            //{
-            //    return GeneralCode.InvalidParams;
-            //}
-
-            //var billDate = DateTime.MinValue;
-            //if (!string.IsNullOrEmpty(req.Inventory.BillDate))
-            //{
-            //    DateTime.TryParseExact(req.Inventory.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-            //}
             var issuedDate = req.Inventory.DateUtc.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
 
             await _stockDbContext.SaveChangesAsync();
-
 
 
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
@@ -510,7 +220,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-        private async Task<Enum> ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        private async Task<Enum> ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)
         {
             foreach (var p in products)
             {
@@ -674,24 +384,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 foreach (var obj in p.AffectObjects)
                 {
                     object parent = null;
-                    switch (obj.ObjectTypeId)
+                    if (obj.ObjectId > 0)
                     {
-                        case EnumObjectType.Package:
-                            parent = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == obj.ObjectId);
-                            if (!updatedPackages.Contains((Package)parent))
-                            {
-                                updatedPackages.Add((Package)parent);
-                            }
-                            break;
-                        case EnumObjectType.InventoryDetail:
-                            parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
-                            if (!updatedInventoryDetails.Contains((InventoryDetail)parent))
-                            {
-                                updatedInventoryDetails.Add((InventoryDetail)parent);
-                            }
-                            break;
-                        default:
-                            throw new NotSupportedException();
+                        switch (obj.ObjectTypeId)
+                        {
+                            case EnumObjectType.Package:
+                                parent = await _stockDbContext.Package.FirstOrDefaultAsync(d => d.PackageId == obj.ObjectId);
+                                if (!updatedPackages.Contains((Package)parent))
+                                {
+                                    updatedPackages.Add((Package)parent);
+                                }
+                                break;
+                            case EnumObjectType.InventoryDetail:
+                                parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
+                                if (!updatedInventoryDetails.Contains((InventoryDetail)parent))
+                                {
+                                    updatedInventoryDetails.Add((InventoryDetail)parent);
+                                }
+                                break;
+                            default:
+                                throw new NotSupportedException();
+                        }
                     }
 
                     if (obj.Children != null)
@@ -703,6 +416,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 //substract parent
                                 var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
                                 var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
+
+                                if (deltaPrimaryQuantity == 0 && deltaConversionQuantity == 0) continue;
 
                                 //addition children
                                 switch (r.ObjectTypeId)
@@ -732,8 +447,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         switch (obj.ObjectTypeId)
                                         {
                                             case EnumObjectType.Package:
-                                                ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                                ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                ((Package)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                ((Package)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
 
                                                 break;
                                             case EnumObjectType.InventoryDetail:
@@ -779,8 +494,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             switch (obj.ObjectTypeId)
                                             {
                                                 case EnumObjectType.Package:
-                                                    ((PackageEntity)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                                    ((PackageEntity)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                    ((Package)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
+                                                    ((Package)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
 
                                                     stockProduct.PrimaryQuantityRemaining -= deltaPrimaryQuantity;
                                                     stockProduct.ProductUnitConversionRemaining -= deltaConversionQuantity;
@@ -796,8 +511,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             switch (obj.ObjectTypeId)
                                             {
                                                 case EnumObjectType.Package:
-                                                    ((PackageEntity)parent).PrimaryQuantityWaiting += deltaPrimaryQuantity;
-                                                    ((PackageEntity)parent).ProductUnitConversionWaitting += deltaConversionQuantity;
+                                                    ((Package)parent).PrimaryQuantityWaiting += deltaPrimaryQuantity;
+                                                    ((Package)parent).ProductUnitConversionWaitting += deltaConversionQuantity;
 
                                                     stockProduct.PrimaryQuantityWaiting += deltaPrimaryQuantity;
                                                     stockProduct.ProductUnitConversionWaitting += deltaConversionQuantity;

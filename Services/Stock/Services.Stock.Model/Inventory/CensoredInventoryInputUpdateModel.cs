@@ -4,14 +4,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 
 namespace VErp.Services.Stock.Model.Inventory
-{
-    public class CensoredInventoryInputUpdateModel
-    {
-        public long InventoryId { get; set; }
-        public Guid TransactionId { get; set; }
-        public InventoryInModel InventoryIn { get; set; }
-        public IList<CensoredInventoryInputProducts> AffectProducts { get; set; }
-    }
+{   
 
     public class CensoredInventoryInputProducts
     {
