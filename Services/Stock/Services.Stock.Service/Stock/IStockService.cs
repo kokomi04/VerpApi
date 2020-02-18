@@ -97,7 +97,27 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, long fromDate, long toDate);
 
-
+        /// <summary>
+        /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - mẫu báo cáo 03
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long fromDate, long toDate, int page, int size);
+
+        /// <summary>
+        /// Nhật ký nhập xuất kho - mẫu báo cáo 04
+        /// </summary>
+        /// <param name="stockIds"></param>
+        /// <param name="beginTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<StockSumaryReportForm04Output>> StockSumaryReportForm04(IList<int> stockIds, long beginTime , long endTime, int page, int size);
     }
 }
