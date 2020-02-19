@@ -741,10 +741,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             var newProductUnitConversion = new ProductUnitConversion
                             {
-                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")),
+                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")).Replace(@",", ""),
                                 ProductId = productObj.ProductId,
                                 SecondaryUnitId = unit2.UnitId,
-                                FactorExpression = item.Factor.ToString("N6"),
+                                FactorExpression = item.Factor.ToString("N6").Replace(@",",""),
                                 ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor.ToString("N6")),
                                 IsDefault = false
                             };
