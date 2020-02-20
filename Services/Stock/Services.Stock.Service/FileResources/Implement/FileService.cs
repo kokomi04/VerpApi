@@ -30,8 +30,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
-        private readonly string _rootFolder = "";
-
         private readonly IDataProtectionProvider _dataProtectionProvider;
         private static readonly Dictionary<EnumFileType, string[]> ValidFileExtensions = new Dictionary<EnumFileType, string[]>()
         {
@@ -52,7 +50,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _rootFolder = _appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\');
             _dataProtectionProvider = dataProtectionProvider;
             _asyncRunnerService = asyncRunnerService;
         }
@@ -88,69 +85,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             return lstData;
         }
-
-
-        public async Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey)
-        {
-            await Task.CompletedTask;
-            var rawString = Decrypt(fileKey);
-            var data = rawString.Split('|');
-
-            var fileId = data[0];
-            var relativeFilePath = data[1];
-            var contentType = data[2];
-            var timeUnix = data[3];
-
-            if (long.Parse(timeUnix) < DateTime.UtcNow.AddDays(-1).GetUnix())
-            {
-                return FileErrorCode.FileUrlExpired;
-            }
-
-            var filePath = GetPhysicalFilePath(relativeFilePath);
-            try
-            {
-                return (File.OpenRead(filePath), contentType);
-            }
-            catch (FileNotFoundException ex)
-            {
-                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
-                return FileErrorCode.FileNotFound;
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
-                return FileErrorCode.FileNotFound;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
-                throw;
-            }
-        }
-
-        public async Task<ServiceResult<(FileEnity info, Stream file)>> GetFileStream(long fileId)
-        {
-            var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
-            if (fileInfo == null)
-            {
-                return FileErrorCode.FileNotFound;
-            }
-            var filePath = GetPhysicalFilePath(fileInfo.FilePath);
-            try
-            {
-                return (fileInfo, File.OpenRead(filePath));
-            }
-            catch (FileNotFoundException ex)
-            {
-                _logger.LogDebug(ex, $"GetFileStream(long fileId={fileId})");
-                return FileErrorCode.FileNotFound;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, $"GetFileStream(long fileId={fileId})");
-                throw;
-            }
-        }
+            
 
         public async Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId)
         {
@@ -216,7 +151,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                 string filePath = GenerateTempFilePath(file.FileName);
 
-                using (var stream = File.Create(_rootFolder + filePath))
+                using (var stream = File.Create(filePath.GetPhysicalFilePath(_appSetting)))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -511,23 +446,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private string GetFileUrl(long fileId, string filePath, string contentType)
         {
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
-            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + Encrypt(data);
-        }
-        private string Encrypt(string input)
-        {
-            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
-            return protector.Protect(input);
-        }
-
-        private string Decrypt(string cipherText)
-        {
-            var protector = _dataProtectionProvider.CreateProtector(_appSetting.FileUrlEncryptPepper);
-            return protector.Unprotect(cipherText);
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
 
         private string GetPhysicalFilePath(string filePath)
         {
-            return _rootFolder + filePath;
+            return filePath.GetPhysicalFilePath(_appSetting);
         }
         #endregion
     }
