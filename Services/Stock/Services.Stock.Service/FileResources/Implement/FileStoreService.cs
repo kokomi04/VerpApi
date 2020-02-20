@@ -20,7 +20,7 @@ using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 
 namespace VErp.Services.Stock.Service.FileResources.Implement
 {
-    public class FileStoreService
+    public class FileStoreService: IFileStoreService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
