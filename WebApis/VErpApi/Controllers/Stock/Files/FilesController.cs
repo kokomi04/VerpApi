@@ -15,9 +15,11 @@ namespace VErpApi.Controllers.Stock.Files
     public class FilesController : VErpBaseController
     {
         private readonly IFileService _fileService;
-        public FilesController(IFileService fileService)
+        private readonly IFileStoreService _fileStoreService;
+        public FilesController(IFileService fileService, IFileStoreService fileStoreService)
         {
             _fileService = fileService;
+            _fileStoreService = fileStoreService;
         }
 
         /// <summary>
@@ -53,7 +55,7 @@ namespace VErpApi.Controllers.Stock.Files
         [HttpGet]
         public async Task<IActionResult> Preview([FromQuery] string fileKey)
         {
-            var r = await _fileService.GetFileStream(fileKey);
+            var r = await _fileStoreService.GetFileStream(fileKey);
             if (!r.Code.IsSuccess())
             {
                 return new JsonResult(r);
