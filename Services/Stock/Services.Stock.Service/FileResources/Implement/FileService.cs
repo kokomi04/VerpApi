@@ -446,7 +446,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private string GetFileUrl(long fileId, string filePath, string contentType)
         {
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
-            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/api/files/preview?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/filestorage/preview?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
 
         private string GetPhysicalFilePath(string filePath)
