@@ -20,7 +20,8 @@ namespace VErp.Infrastructure.AppSettings
             var exeFolder = basePath ?? Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase) ?? string.Empty;
             exeFolder = exeFolder
                 .Replace(@"file:\", "")
-                .Replace(@"file:", "");
+                .Replace(@"file:", "")
+                .TrimStart('/');
 
             var modeName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             var builder = new ConfigurationBuilder()
