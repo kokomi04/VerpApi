@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
+    <ProjectReference Include="..\Commons\Library\Library.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="PurchaseRequest\Implement\" />
+  </ItemGroup>
+
+</Project>
