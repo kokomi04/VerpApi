@@ -387,10 +387,11 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             };
 
-            await _masterContext.User.AddAsync(user);
+            _masterContext.User.Add(user);
 
             await _masterContext.SaveChangesAsync();
 
+            var a = _masterContext.User.ToList();
             return user.UserId;
         }
 

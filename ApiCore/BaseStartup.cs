@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
@@ -23,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Text.Json;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings;
@@ -63,7 +65,7 @@ namespace VErp.Infrastructure.ApiCore
                     .SetIsOriginAllowed((host) => true)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    .AllowCredentials()
+                    //.AllowCredentials()
                     .AllowAnyOrigin()
                     );
             })
@@ -77,7 +79,7 @@ namespace VErp.Infrastructure.ApiCore
                   ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
               });
 
-            services.AddMvc(options =>
+            services.AddControllers(options =>
             {
                 options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
 
@@ -87,18 +89,35 @@ namespace VErp.Infrastructure.ApiCore
                 {
                     options.Filters.Add(typeof(AuthorizeActionFilter));
                 }
+            });
+
+
+            services.AddRazorPages(options =>
+            {
+                //options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
+
+                //options.Filters.Add(typeof(HttpGlobalExceptionFilter));
+                //options.Filters.Add(typeof(ValidateModelStateFilter));
+                //if (isRequireAuthrize)
+                //{
+                //    options.Filters.Add(typeof(AuthorizeActionFilter));
+                //}
 
             })
             .AddJsonOptions(options =>
             {
-                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-            })
-           .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
-           .AddControllersAsServices();
+                //options.JsonSerializerOptions
+                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                options.JsonSerializerOptions.IgnoreNullValues = true;
 
+
+                //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+                //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+                //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+            })
+           .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
+           .AddControllersAsServices();
 
             ConfigureAuthService(services);
 
@@ -115,58 +134,71 @@ namespace VErp.Infrastructure.ApiCore
         {
             services.AddSwaggerGen(options =>
             {
-                options.DocumentFilter<CustomModelDocumentFilter>();
-                //options.UseReferencedDefinitionsForEnums();
-                //options.DescribeAllEnumsAsStrings();
-                //options.UseReferencedDefinitionsForEnums();
+                // options.DocumentFilter<CustomModelDocumentFilter>();
+                //        //options.UseReferencedDefinitionsForEnums();
+                //        //options.DescribeAllEnumsAsStrings();
+                //        //options.UseReferencedDefinitionsForEnums();
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));
 
 
-                options.SwaggerDoc("stock", new Info
+                options.SwaggerDoc("stock", new OpenApiInfo
                 {
                     Title = "VERP Stock HTTP API",
                     Version = "v1",
                     Description = "The Stock Service HTTP API"
                 });
 
-                options.SwaggerDoc("system", new Info
+                options.SwaggerDoc("system", new OpenApiInfo
                 {
                     Title = "VERP System HTTP API",
                     Version = "v1",
                     Description = "The system Service HTTP API"
                 });
 
-                options.AddSecurityDefinition("oauth2", new OAuth2Scheme
+                options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
                 {
-                    Type = "oauth2",
-                    Flow = GrantTypes.Password,
-                    AuthorizationUrl = $"/connect/authorize",
-                    TokenUrl = $"/connect/token",
-                    Scopes = new Dictionary<string, string>()
+                    Type = SecuritySchemeType.OAuth2,
+                    Flows = new OpenApiOAuthFlows()
                     {
-                        { "scope", "verp offline_access openId" }
+                        Password = new OpenApiOAuthFlow()
+                        {
+                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/authorize"),
+                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/token"),
+                            Scopes = new Dictionary<string, string>()
+                            {
+                                { "scope", "verp offline_access openId" }
+                            }
+                        }
+                    },
+                    In = ParameterLocation.Header,
+                    Scheme = "Bearer",
+                    Name = "Authorization",
+
+                });
+
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.ApiKey,                   
+                    In = ParameterLocation.Header,
+                    Scheme = "Bearer",
+                    Name = "Authorization",
+                    BearerFormat = "Bearer {token}",
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+                {
+                    {
+                        new OpenApiSecurityScheme(){ Reference = new OpenApiReference(){ Type = ReferenceType.SecurityScheme, Id="OAuth2" } }, new List<string>()
+                    },
+                    {
+                        new OpenApiSecurityScheme(){ Reference = new OpenApiReference(){ Type = ReferenceType.SecurityScheme, Id="Bearer" } }, new List<string>()
                     }
                 });
-
-
-                options.AddSecurityDefinition("Bearer", new ApiKeyScheme
-                {
-                    Description =
-                        "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                    Name = "Authorization",
-                    In = "header",
-                    Type = "apiKey"
-                });
-
-                options.OperationFilter<AuthorizeCheckOperationFilter>();
-
-                options.OperationFilter<SwaggerFileOperationFilter>();
-
-                options.SchemaFilter<DataSchemaFilter>();
-
-                options.OperationFilter<HeaderFilter>();
             });
         }
 
@@ -179,7 +211,7 @@ namespace VErp.Infrastructure.ApiCore
             return new AutofacServiceProvider(container.Build());
         }
 
-        protected void ConfigureBase(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
+        protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
             loggerFactory.AddSerilog();
 
@@ -201,14 +233,25 @@ namespace VErp.Infrastructure.ApiCore
             //     app.UseExceptionHandler("/Home/Error");
             // }
 
-            app.UseCors("CorsPolicy");
+
 
             app.UseForwardedHeaders();
             if (isIdentiy)
             {
                 app.UseIdentityServer();
             }
-            app.UseMvc();
+
+            app.UseRouting();
+
+            /*For most apps, calls to UseAuthentication, UseAuthorization, and UseCors must appear between the calls to UseRouting and UseEndpoints to be effective.
+*/
+            app.UseCors("CorsPolicy");
+            app.UseAuthorization();
+
+            app.UseEndpoints(config =>
+            {
+                config.MapControllers();
+            });
 
             app.UseSwagger()
                .UseSwaggerUI(c =>

@@ -72,7 +72,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(StockServiceAssembly.Assembly);            
             services.AddServiceCoreDependency();
         }
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {            
             ConfigureBase(app, env, loggerFactory, true);
             
