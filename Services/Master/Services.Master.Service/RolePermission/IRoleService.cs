@@ -15,6 +15,7 @@ namespace VErp.Services.Master.Service.RolePermission
         Task<Enum> UpdateRole(int roleId, RoleInput role);
         Task<Enum> DeleteRole(int roleId);
         Task<IList<RolePermissionModel>> GetRolePermission(int roleId);
+        Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds);
         Task<Enum> UpdateRolePermission(int roleId, IList<RolePermissionModel> permissions);
 
         Task<IList<StockPemissionOutput>> GetStockPermission();
