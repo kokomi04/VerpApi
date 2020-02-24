@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermission()
         {
-            return (await _userService.GetUserPermission(UserId)).ToList();
+            return (await _userService.GetMePermission()).ToList();
         }
 
 

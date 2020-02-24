@@ -40,6 +40,7 @@ namespace VErpApi.Controllers.System
         /// Lấy danh sách đối tác
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="customerStatusId"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>

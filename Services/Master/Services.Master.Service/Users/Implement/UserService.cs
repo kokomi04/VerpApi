@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
@@ -26,11 +27,14 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
+
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
             , IRoleService roleService
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _masterContext = masterContext;
@@ -38,6 +42,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _logger = logger;
             _roleService = roleService;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
@@ -262,14 +267,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<IList<RolePermissionModel>> GetUserPermission(int userId)
-        {
-            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
-            if (user == null || !user.RoleId.HasValue)
-            {
-                return null;
-            }
-            return await _roleService.GetRolePermission(user.RoleId.Value);
+        public async Task<IList<RolePermissionModel>> GetMePermission()
+        {           
+            return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds);
         }
 
         /// <summary>
