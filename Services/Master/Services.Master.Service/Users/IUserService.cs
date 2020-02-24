@@ -19,7 +19,7 @@ namespace VErp.Services.Master.Service.Users
         Task<Enum> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size);
 
-        Task<IList<RolePermissionModel>> GetUserPermission(int userId);
+        Task<IList<RolePermissionModel>> GetMePermission();
 
         /// <summary>
         /// Lấy danh sách user đc quyền truy cập vào moduleId input
