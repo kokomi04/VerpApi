@@ -901,7 +901,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details = new List<StockProductDetailsModel>(totalRecord);
 
                 var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-                foreach (var item in inPeriodData)
+                foreach (var item in inPeriodData.OrderBy(q=>q.IssuedDate).ToList())
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
                     var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
