@@ -137,7 +137,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = packageInfo.ProductId,
                     Date = packageInfo.Date,
                     ExpiryTime = packageInfo.ExpiryTime,
-                    PrimaryUnitId = packageInfo.PrimaryUnitId,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -166,7 +165,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         PackageId = newPackage.PackageId,
                         RefPackageId = packageId,
-                        PrimaryUnitId = newPackage.PrimaryUnitId,
                         PrimaryQuantity = newPackage.PrimaryQuantityRemaining,
                         ProductUnitConversionId = newPackage.ProductUnitConversionId,
                         ProductUnitConversionQuantity = newPackage.ProductUnitConversionRemaining,
@@ -201,7 +199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var fromPackages = await _stockDbContext.Package.Where(p => req.FromPackageIds.Contains(p.PackageId)).ToListAsync();
 
             if (fromPackages
-                .GroupBy(p => new { p.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId })
+                .GroupBy(p => new { p.StockId, p.ProductId, p.ProductUnitConversionId })
                 .Count() > 1)
             {
                 return PackageErrorCode.PackagesToJoinMustBeSameProductAndUnit;
@@ -233,7 +231,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = fromPackages[0].ProductId,
                     Date = fromPackages.Max(p => p.Date),
                     ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
-                    PrimaryUnitId = fromPackages[0].PrimaryUnitId,
                     ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -254,7 +251,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         PackageId = newPackage.PackageId,
                         RefPackageId = package.PackageId,
-                        PrimaryUnitId = package.PrimaryUnitId,
                         PrimaryQuantity = package.PrimaryQuantityRemaining,
                         ProductUnitConversionId = package.ProductUnitConversionId,
                         ProductUnitConversionQuantity = package.ProductUnitConversionRemaining,
@@ -284,6 +280,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
+
+                var productInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == obj.ProductId);
+
                 var locationObj = _stockDbContext.Location.FirstOrDefault(q => q.LocationId == obj.LocationId);
                 var locationOutputModel = locationObj == null ? null : new LocationOutput
                 {
@@ -304,7 +303,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = obj.ProductId,
                     Date = obj.Date != null ? ((DateTime)obj.Date).GetUnix() : 0,
                     ExpiryTime = obj.ExpiryTime != null ? ((DateTime)obj.ExpiryTime).GetUnix() : 0,
-                    PrimaryUnitId = obj.PrimaryUnitId,
+                    PrimaryUnitId = productInfo.UnitId,
                     ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
                     PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
@@ -343,82 +342,56 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var totalRecord = query.AsNoTracking().Count();
                 var resultList = new List<PackageOutputModel>(totalRecord);
 
-                if (page > 0 && size > 0)
-                {
-                    var dataFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).Select(q => new { Package = q.p, Location = q.lo }).ToList();
-                    foreach (var d in dataFromDb)
-                    {
-                        var item = d;
-                        var locationOutputModel = item.Location == null ? null : new LocationOutput()
-                        {
-                            LocationId = item.Location.LocationId,
-                            StockId = item.Location.StockId,
-                            StockName = string.Empty,
-                            Name = item.Location.Name,
-                            Description = item.Location.Description,
-                            Status = item.Location.Status,
-                        };
-                        var model = new PackageOutputModel
-                        {
-                            PackageId = item.Package.PackageId,
-                            PackageTypeId = item.Package.PackageTypeId,
-                            PackageCode = item.Package.PackageCode,
-                            LocationId = item.Package.LocationId ?? 0,
-                            StockId = item.Package.StockId,
-                            ProductId = item.Package.ProductId,
-                            Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
-                            ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
 
-                            PrimaryUnitId = item.Package.PrimaryUnitId,
-                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
-                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc != null ? ((DateTime)item.Package.CreatedDatetimeUtc).GetUnix() : 0,
-                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc != null ? ((DateTime)item.Package.UpdatedDatetimeUtc).GetUnix() : 0,
-                            PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
-                            PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
-                            ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
-                            LocationOutputModel = locationOutputModel
-                        };
-                        resultList.Add(model);
-                    }
-                }
-                else
+                var dataFromDb = page > 0 && size > 0 ?
+                    query.AsNoTracking().Skip((page - 1) * size).Take(size).Select(q => new { Package = q.p, Location = q.lo }).ToList()
+                    : query.AsNoTracking().Select(q => new { Package = q.p, Location = q.lo }).ToList();
+
+                var productIds = dataFromDb.Select(d => d.Package.ProductId).Distinct().ToList();
+
+                var productUnitInfos = (
+                    await _stockDbContext.Product
+                    .Where(p => productIds.Contains(p.ProductId))
+                    .AsNoTracking()
+                    .Select(p => new { p.ProductId, p.UnitId })
+                    .ToListAsync()
+                    ).ToDictionary(p => p.ProductId, p => p);
+
+
+                foreach (var d in dataFromDb)
                 {
-                    var dataFromDb = query.AsNoTracking().Select(q => new { Package = q.p, Location = q.lo }).ToList();
-                    foreach (var d in dataFromDb)
+                    var item = d;
+                    var locationOutputModel = item.Location == null ? null : new LocationOutput()
                     {
-                        var item = d;
-                        var locationOutputModel = item.Location == null ? null : new LocationOutput
-                        {
-                            LocationId = item.Location.LocationId,
-                            StockId = item.Location.StockId,
-                            StockName = string.Empty,
-                            Name = item.Location.Name,
-                            Description = item.Location.Description,
-                            Status = item.Location.Status,
-                        };
-                        var model = new PackageOutputModel
-                        {
-                            PackageId = item.Package.PackageId,
-                            PackageTypeId = item.Package.PackageTypeId,
-                            PackageCode = item.Package.PackageCode,
-                            LocationId = item.Package.LocationId ?? 0,
-                            StockId = item.Package.StockId,
-                            ProductId = item.Package.ProductId,
-                            Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
-                            ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
-                            ProductUnitConversionId = item.Package.ProductUnitConversionId,
-                            PrimaryUnitId = item.Package.PrimaryUnitId,
-                            CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc != null ? ((DateTime)item.Package.CreatedDatetimeUtc).GetUnix() : 0,
-                            UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc != null ? ((DateTime)item.Package.UpdatedDatetimeUtc).GetUnix() : 0,
-                            PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
-                            PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
-                            ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
-                            ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
-                            LocationOutputModel = locationOutputModel
-                        };
-                        resultList.Add(model);
-                    }
+                        LocationId = item.Location.LocationId,
+                        StockId = item.Location.StockId,
+                        StockName = string.Empty,
+                        Name = item.Location.Name,
+                        Description = item.Location.Description,
+                        Status = item.Location.Status,
+                    };
+                    var model = new PackageOutputModel
+                    {
+                        PackageId = item.Package.PackageId,
+                        PackageTypeId = item.Package.PackageTypeId,
+                        PackageCode = item.Package.PackageCode,
+                        LocationId = item.Package.LocationId ?? 0,
+                        StockId = item.Package.StockId,
+                        ProductId = item.Package.ProductId,
+                        Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
+                        ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
+
+                        PrimaryUnitId = productUnitInfos[item.Package.ProductId].UnitId,
+                        ProductUnitConversionId = item.Package.ProductUnitConversionId,
+                        CreatedDatetimeUtc = item.Package.CreatedDatetimeUtc != null ? ((DateTime)item.Package.CreatedDatetimeUtc).GetUnix() : 0,
+                        UpdatedDatetimeUtc = item.Package.UpdatedDatetimeUtc != null ? ((DateTime)item.Package.UpdatedDatetimeUtc).GetUnix() : 0,
+                        PrimaryQuantityWaiting = item.Package.PrimaryQuantityWaiting,
+                        PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
+                        ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
+                        ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
+                        LocationOutputModel = locationOutputModel
+                    };
+                    resultList.Add(model);
                 }
 
                 return (resultList, totalRecord);
