@@ -38,10 +38,9 @@ namespace VErp.Services.Stock.Service.Stock
         /// Thêm mới phiếu nhập kho
         /// </summary>
         /// <param name="currentUserId"></param>
-        /// <param name="req"></param>
-        /// <param name="IsFreeStyle">IsFreeStyle = true: by pass unit conversion qty</param>
+        /// <param name="req"></param>        
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req,bool IsFreeStyle = false);
+        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req);
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
@@ -50,7 +49,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="req"></param>
         /// <param name="IsFreeStyle">IsFreeStyle = true: by pass unit conversion qty</param>
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req, bool IsFreeStyle = false);
+        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req);
 
         /// <summary>
         /// Cập nhật thông tin phiếu nhập kho

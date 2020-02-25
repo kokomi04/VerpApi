@@ -853,7 +853,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item, true);
+                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item);
                             if (ret.Data > 0)
                             {
                                 // Duyệt phiếu nhập kho
@@ -1060,7 +1060,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             foreach (var item in inventoryOutputList)
                             {
-                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item, true);
+                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item);
                                 if (ret.Data > 0)
                                 {
                                     // Duyệt phiếu xuất kho

@@ -14,6 +14,8 @@ namespace VErp.Services.Stock.Model.Stock
         public long DateUtc { get; set; }
         public string BillCode { set; get; }
 
+        public string Content { set; get; }
+
         public int? CustomerId { get; set; }
         public string CustomerCode { set; get; }
         public string CustomerName { set; get; }
