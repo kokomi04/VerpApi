@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Logging;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
@@ -14,8 +15,9 @@ namespace VErp.Infrastructure.EF.StockDB
         //ICurrentContextService _currentContext;
         public List<int> StockIds { get; set; }
         public StockDBRestrictionContext(DbContextOptions<StockDBRestrictionContext> options
-            , ICurrentContextService currentContext)
-            : base(options.ChangeOptionsType<StockDBContext>())
+            , ICurrentContextService currentContext
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
             // _currentContext = currentContext;
             StockIds = currentContext.StockIds?.ToList();
