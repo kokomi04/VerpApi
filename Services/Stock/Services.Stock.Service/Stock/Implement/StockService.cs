@@ -1295,6 +1295,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.BillCode = inventory.BillCode;
                     item.DateUtc = inventory.DateUtc.GetUnix();
                     item.InventoryTypeId = inventory.InventoryTypeId;
+                    item.Content = inventory.Content;
                     item.CustomerId = inventory.CustomerId;
                     item.CustomerCode = customerDataList.FirstOrDefault(q => q.CustomerId == inventory.CustomerId)?.CustomerCode ?? string.Empty;
                     item.CustomerName = customerDataList.FirstOrDefault(q => q.CustomerId == inventory.CustomerId)?.CustomerName ?? string.Empty;
