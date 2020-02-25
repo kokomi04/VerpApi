@@ -57,7 +57,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var productIds = details.Select(d => d.ProductId);
-            var productInfos = _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
+            var productInfos = _stockDbContext.Product
+                .Where(p => productIds.Contains(p.ProductId))
+                .AsNoTracking()
+                .Select(p => new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.UnitId
+                })
+                .ToList()
+                .ToDictionary(p => p.ProductId, p => p);
 
             var productUnitConversions = _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToList();
 
@@ -84,12 +94,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
 
+                if (!productInfos.TryGetValue(d.ProductId, out var productInfo))
+                {
+                    throw new KeyNotFoundException("Product not found " + d.ProductId);
+                }
+
                 var product = new CensoredInventoryInputProducts()
                 {
                     InventoryDetailId = d.InventoryDetailId,
                     ProductId = d.ProductId,
-                    ProductCode = productInfos.FirstOrDefault(p => p.ProductId == d.ProductId)?.ProductCode,
-                    PrimaryUnitId = d.PrimaryUnitId,
+                    ProductCode = productInfo.ProductCode,
+                    PrimaryUnitId = productInfo.UnitId,
 
 
                     OldPrimaryQuantity = d.PrimaryQuantity,
@@ -372,7 +387,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
                 firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
 
-                var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.PrimaryUnitId, p.ProductUnitConversionId);
+                var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.ProductUnitConversionId);
 
                 stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
                 stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
