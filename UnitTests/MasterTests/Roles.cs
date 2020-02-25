@@ -79,7 +79,7 @@ namespace MasterTests
             var activityLogService = new Mock<IActivityLogService>();
             //var setting = new Mock<IOptions<AppSetting>>();//AppConfigSetting
 
-            IUserService user = new UserService(DbContext.Object, setting.Object, logger.Object, roleService.Object, activityLogService.Object);
+            IUserService user = new UserService(DbContext.Object, setting.Object, logger.Object, roleService.Object, activityLogService.Object, null);
             // var paymentServiceMock = new Mock<IUserService>();
 
             //paymentServiceMock.Verify(p => p.GetInfo(1),);
@@ -111,7 +111,7 @@ namespace MasterTests
             var roleService = new Mock<IRoleService>();
             var activityLogService = new Mock<IActivityLogService>();
 
-            IUserService user = new UserService(DbContext.Object, setting.Object, logger.Object, roleService.Object, activityLogService.Object);
+            IUserService user = new UserService(DbContext.Object, setting.Object, logger.Object, roleService.Object, activityLogService.Object, null);
 
             var b = user.CreateUser(new UserInfoInput()
             {

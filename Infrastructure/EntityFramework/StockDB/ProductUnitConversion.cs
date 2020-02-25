@@ -18,8 +18,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public int SecondaryUnitId { get; set; }
         public string FactorExpression { get; set; }
         public string ConversionDescription { get; set; }
-        public bool? IsFreeStyle { get; set; }
         public bool IsDefault { get; set; }
+        public bool? IsFreeStyle { get; set; }
 
         public virtual Product Product { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }

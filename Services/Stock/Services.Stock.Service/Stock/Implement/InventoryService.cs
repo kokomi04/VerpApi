@@ -228,7 +228,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryId = details.InventoryId,
                         InventoryDetailId = details.InventoryDetailId,
                         ProductId = details.ProductId,
-                        PrimaryUnitId = details.PrimaryUnitId,
+                        PrimaryUnitId = productInfo?.UnitId,
                         PrimaryQuantity = details.PrimaryQuantity,
                         UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
@@ -1083,7 +1083,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
                             fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
 
-                            var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+                            var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                             stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
                             stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
@@ -1169,7 +1169,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             StockId = q.StockId,
                             ProductId = q.ProductId,
-                            PrimaryUnitId = q.PrimaryUnitId,
+                            PrimaryUnitId = item.UnitId,
                             PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
                             ProductUnitConversionId = q.ProductUnitConversionId,
                             ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
@@ -1198,9 +1198,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var query = from p in _stockDbContext.Package
-                            where stockIdList.Contains(p.StockId) && p.ProductId == productId && p.PrimaryQuantityRemaining > 0
-                            select p;
+                var query = from pk in _stockDbContext.Package
+                            join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                            where stockIdList.Contains(pk.StockId) && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
+                            select new
+                            {
+                                pk.LocationId,
+                                pk.ProductUnitConversionId,
+                                pk.PackageId,
+                                pk.PackageCode,
+                                pk.PackageTypeId,
+                                pk.StockId,
+                                pk.ProductId,
+                                pk.Date,
+                                pk.ExpiryTime,
+                                p.UnitId,
+                                pk.PrimaryQuantityRemaining,
+                                pk.PrimaryQuantityWaiting,
+                                pk.ProductUnitConversionRemaining,
+                                pk.ProductUnitConversionWaitting,
+                                pk.CreatedDatetimeUtc,
+                                pk.UpdatedDatetimeUtc
+                            };
 
                 var total = query.Count();
                 var packageData = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -1233,7 +1252,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductId = item.ProductId,
                         Date = item.Date != null ? ((DateTime)item.Date).GetUnix() : 0,
                         ExpiryTime = item.ExpiryTime != null ? ((DateTime)item.ExpiryTime).GetUnix() : 0,
-                        PrimaryUnitId = item.PrimaryUnitId,
+                        PrimaryUnitId = item.UnitId,
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
                         PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
@@ -1329,7 +1348,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             StockId = q.StockId,
                             ProductId = q.ProductId,
-                            PrimaryUnitId = q.PrimaryUnitId,
+                            PrimaryUnitId = item.UnitId,
                             PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
                             ProductUnitConversionId = q.ProductUnitConversionId,
                             ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
@@ -1425,7 +1444,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    PrimaryUnitId = productInfo.UnitId,
                     PrimaryQuantity = primaryQty,
                     UnitPrice = details.UnitPrice,
                     ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
@@ -1513,7 +1531,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    PrimaryUnitId = fromPackageInfo.PrimaryUnitId,
                     PrimaryQuantity = primaryQualtity,
                     UnitPrice = details.UnitPrice,
                     ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
@@ -1532,7 +1549,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
                 fromPackageInfo.ProductUnitConversionWaitting += details.ProductUnitConversionQuantity;
 
-                var stockProductInfo = await EnsureStockProduct(inventory.StockId, fromPackageInfo.ProductId, fromPackageInfo.PrimaryUnitId, fromPackageInfo.ProductUnitConversionId);
+                var stockProductInfo = await EnsureStockProduct(inventory.StockId, fromPackageInfo.ProductId, fromPackageInfo.ProductUnitConversionId);
 
                 stockProductInfo.PrimaryQuantityWaiting += primaryQualtity;
                 stockProductInfo.ProductUnitConversionWaitting += details.ProductUnitConversionQuantity;
@@ -1540,13 +1557,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryDetailList;
         }
 
-        private async Task<StockProduct> EnsureStockProduct(int stockId, int productId, int primaryUnitId, int? productUnitConversionId)
+        private async Task<StockProduct> EnsureStockProduct(int stockId, int productId, int? productUnitConversionId)
         {
             var stockProductInfo = await _stockDbContext.StockProduct
                                 .FirstOrDefaultAsync(s =>
                                                 s.StockId == stockId
                                                 && s.ProductId == productId
-                                                && s.PrimaryUnitId == primaryUnitId
                                                 && s.ProductUnitConversionId == productUnitConversionId
                                                 );
 
@@ -1557,7 +1573,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockId = stockId,
                     ProductId = productId,
                     ProductUnitConversionId = productUnitConversionId,
-                    PrimaryUnitId = primaryUnitId,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
@@ -1572,7 +1587,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task UpdateStockProduct(int stockId, InventoryDetail detail, EnumInventoryType type = EnumInventoryType.Input)
         {
-            var stockProductInfo = await EnsureStockProduct(stockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+            var stockProductInfo = await EnsureStockProduct(stockId, detail.ProductId, detail.ProductUnitConversionId);
             switch (type)
             {
                 case EnumInventoryType.Input:
@@ -1612,7 +1627,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                           .FirstOrDefaultAsync(p =>
                                               p.StockId == stockId
                                               && p.ProductId == detail.ProductId
-                                              && p.PrimaryUnitId == detail.PrimaryUnitId
                                               && p.ProductUnitConversionId == detail.ProductUnitConversionId
                                               && p.PackageTypeId == (int)EnumPackageType.Default
                                               );
@@ -1627,7 +1641,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     LocationId = null,
                     StockId = stockId,
                     ProductId = detail.ProductId,
-                    PrimaryUnitId = detail.PrimaryUnitId,
                     //PrimaryQuantity = 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
                     //ProductUnitConversionQuantity = 0,
@@ -1670,7 +1683,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 LocationId = null,
                 StockId = stockId,
                 ProductId = detail.ProductId,
-                PrimaryUnitId = detail.PrimaryUnitId,
                 //PrimaryQuantity = detail.PrimaryQuantity,
                 ProductUnitConversionId = detail.ProductUnitConversionId,
                 //ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity,
@@ -1702,7 +1714,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var fromPackageInfo = fromPackages.FirstOrDefault(f => f.PackageId == detail.FromPackageId);
                 if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                 if (!inventory.IsApproved)
                 {
