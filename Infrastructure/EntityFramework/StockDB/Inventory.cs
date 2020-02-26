@@ -21,6 +21,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
         public string BillCode { get; set; }
+        public string BillSerial { get; set; }
+        public DateTime? BillDate { get; set; }
         public decimal TotalMoney { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -28,8 +30,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsApproved { get; set; }
-        public string BillSerial { get; set; }
-        public DateTime? BillDate { get; set; }
 
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }

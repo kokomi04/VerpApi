@@ -106,9 +106,9 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductionOrderCode)
                     .HasMaxLength(64)
@@ -200,13 +200,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -231,9 +231,9 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasKey(e => new { e.PackageId, e.RefPackageId });
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.Package)
                     .WithMany(p => p.PackageRefPackage)
@@ -425,13 +425,13 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
                     .IsUnique();
 
-                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
-                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
