@@ -16,7 +16,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int InventoryTypeId { get; set; }
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public DateTime DateUtc { get; set; }
+        public DateTime Date { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
