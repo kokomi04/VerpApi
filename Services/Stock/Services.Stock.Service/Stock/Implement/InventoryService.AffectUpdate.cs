@@ -283,7 +283,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             if (productUnitConversionInfo.IsFreeStyle == false)
                             {
-                                if (obj.NewProductUnitConversionQuantity > 0)
+                                if (c.NewTransferProductUnitConversionQuantity > 0)
                                 {
                                     var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                                     if (!(primaryQualtity > 0))
