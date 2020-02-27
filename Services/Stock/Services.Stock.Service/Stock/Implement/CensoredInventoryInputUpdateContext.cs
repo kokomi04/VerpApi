@@ -70,7 +70,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FromPackageId = id.FromPackageId,
                     PrimaryQuantity = id.PrimaryQuantity,
                     ProductUnitConversionQuantity = id.ProductUnitConversionQuantity,
-                    Date = iv.DateUtc
+                    Date = iv.Date
                 })
                 .ToList();
         }

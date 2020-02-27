@@ -117,17 +117,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
-                query = query.Where(q => q.DateUtc >= bTime && q.DateUtc <= eTime);
+                query = query.Where(q => q.Date >= bTime && q.Date <= eTime);
             }
             else
             {
                 if (bTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc >= bTime);
+                    query = query.Where(q => q.Date >= bTime);
                 }
                 if (eTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc <= eTime);
+                    query = query.Where(q => q.Date <= eTime);
                 }
             }
 
@@ -153,7 +153,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = item.InventoryTypeId,
                     Shipper = item.Shipper,
                     Content = item.Content,
-                    DateUtc = item.DateUtc.GetUnix(),
+                    DateUtc = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
@@ -267,7 +267,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = inventoryObj.InventoryTypeId,
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
-                    DateUtc = inventoryObj.DateUtc.GetUnix(),
+                    DateUtc = inventoryObj.Date.GetUnix(),
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
@@ -340,7 +340,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Input,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = issuedDate,
+                            Date = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -433,7 +433,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
                 //{
                 //    return GeneralCode.InvalidParams;
                 //}
@@ -450,7 +450,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Output,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = issuedDate,
+                            Date = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -525,14 +525,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel req)
         {
-            //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
             //{
             //    return GeneralCode.InvalidParams;
             //}
             //var billDate = DateTime.MinValue;
             //if (!string.IsNullOrEmpty(req.BillDate))
             //{
-            //    DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
+            //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
             //}
             var issuedDate = req.DateUtc.UnixToDateTime();
             var billDate = req.DateUtc.UnixToDateTime();
@@ -576,7 +576,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
                         inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.DateUtc = issuedDate;
+                        inventoryObj.Date = issuedDate;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
                         inventoryObj.CustomerId = req.CustomerId;
@@ -672,7 +672,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                //if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
                 //{
                 //    return GeneralCode.InvalidParams;
                 //}
@@ -717,7 +717,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.InventoryCode = req.InventoryCode;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
-                        inventoryObj.DateUtc = issuedDate;
+                        inventoryObj.Date = issuedDate;
                         inventoryObj.CustomerId = req.CustomerId;
                         inventoryObj.Department = req.Department;
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
@@ -937,7 +937,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
-                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.DateUtc, inventoryDetails);
+                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails);
                         if (!r.IsSuccess())
                         {
                             trans.Rollback();
