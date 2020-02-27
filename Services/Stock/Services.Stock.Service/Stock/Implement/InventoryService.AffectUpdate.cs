@@ -199,7 +199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _stockDbContext.InventoryDetail.AddRange(newDetails);
                 _stockDbContext.SaveChanges();
 
-                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.DateUtc, newDetails);
+                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails);
                 if (!r.IsSuccess())
                 {
                     return r;
@@ -211,7 +211,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
                 inventoryInfo.Shipper = req.Inventory.Shipper;
                 inventoryInfo.Content = req.Inventory.Content;
-                inventoryInfo.DateUtc = issuedDate;
+                inventoryInfo.Date = issuedDate;
                 inventoryInfo.CustomerId = req.Inventory.CustomerId;
                 inventoryInfo.Department = req.Inventory.Department;
                 inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;

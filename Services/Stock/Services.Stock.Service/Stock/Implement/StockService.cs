@@ -705,7 +705,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                from iv in inventories
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
-               where iv.IsApproved && iv.DateUtc < fromDate
+               where iv.IsApproved && iv.Date < fromDate
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                select new
                {
@@ -718,7 +718,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
-                where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                 select new
                 {
@@ -798,7 +798,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             try
             {
-                DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.DateUtc).Select(q => q.DateUtc).FirstOrDefault().AddDays(-1);
+                DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.Date).Select(q => q.Date).FirstOrDefault().AddDays(-1);
 
                 #region Lấy dữ liệu tồn đầu
                 var openingStockQuery = from i in _stockContext.Inventory
@@ -809,7 +809,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     openingStockQuery = openingStockQuery.Where(q => stockIds.Contains(q.i.StockId));
 
                 if (beginTime.HasValue && beginTime != DateTime.MinValue)
-                    openingStockQuery = openingStockQuery.Where(q => q.i.DateUtc < beginTime);
+                    openingStockQuery = openingStockQuery.Where(q => q.i.Date < beginTime);
 #if DEBUG
                 var openingStockQueryDataInput = (from q in openingStockQuery
                                                   where q.i.InventoryTypeId == (int)EnumInventoryType.Input
@@ -835,17 +835,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
-                    inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate && q.i.DateUtc <= toDate);
+                    inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date >= fromDate && q.i.Date <= toDate);
                 }
                 else
                 {
                     if (fromDate != DateTime.MinValue)
                     {
-                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc >= fromDate);
+                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date >= fromDate);
                     }
                     if (toDate != DateTime.MinValue)
                     {
-                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.DateUtc <= toDate);
+                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date <= toDate);
                     }
                 }
 
@@ -854,7 +854,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = q.i.InventoryId,
                     q.i.StockId,
-                    IssuedDate = q.i.DateUtc,
+                    IssuedDate = q.i.Date,
                     InventoryCode = q.i.InventoryCode,
                     InventoryTypeId = q.i.InventoryTypeId,
                     Description = q.i.Content,
@@ -960,7 +960,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                from iv in inventoryQuery
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
-               where iv.IsApproved && iv.DateUtc < fromDate
+               where iv.IsApproved && iv.Date < fromDate
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                select new
                {
@@ -973,7 +973,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     from iv in inventoryQuery
                     join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                     join p in productQuery on d.ProductId equals p.ProductId
-                    where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                    where iv.IsApproved && iv.Date >= fromDate && iv.Date<= toDate
                     group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                     select new
                     {
@@ -989,7 +989,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
              from iv in inventoryQuery
              join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
              join p in productQuery on d.ProductId equals p.ProductId
-             where iv.IsApproved && iv.DateUtc < fromDate
+             where iv.IsApproved && iv.Date < fromDate
              group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
              select new
              {
@@ -1004,7 +1004,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                    from iv in inventoryQuery
                    join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                    join p in productQuery on d.ProductId equals p.ProductId
-                   where iv.IsApproved && iv.DateUtc >= fromDate && iv.DateUtc <= toDate
+                   where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
                    group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
                    select new
                    {
@@ -1072,13 +1072,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var packageInfoData = (from pkg in packageQuery
                                        join p in productInfos on pkg.ProductId equals p.ProductId
                                        //join id in _stockContext.InventoryDetail on p.ProductId equals id.InventoryId
-                                       //join i in inventoryQuery.Where(q => (q.DateUtc > fromDate && q.DateUtc <= toDate) && q.IsApproved) on id.InventoryId equals i.InventoryId
+                                       //join i in inventoryQuery.Where(q => (q.Date > fromDate && q.Date <= toDate) && q.IsApproved) on id.InventoryId equals i.InventoryId
                                        select new
                                        {
                                            //i.InventoryId,
                                            //i.InventoryCode,
                                            //i.InventoryTypeId,
-                                           //i.DateUtc,
+                                           //i.Date,
                                            p.ProductId,
                                            pkg.PackageId,
                                            pkg.PackageCode,
@@ -1134,7 +1134,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (packageInfoData != null && packageInfoData.Count > 0)
                 {
                     var pakageExportIdsList = (from id in _stockContext.InventoryDetail
-                                               join i in _stockContext.Inventory.Where(q => q.IsApproved && q.InventoryTypeId == (int)EnumInventoryType.Output && (q.DateUtc > fromDate && q.DateUtc <= toDate)) on id.InventoryId equals i.InventoryId
+                                               join i in _stockContext.Inventory.Where(q => q.IsApproved && q.InventoryTypeId == (int)EnumInventoryType.Output && (q.Date > fromDate && q.Date <= toDate)) on id.InventoryId equals i.InventoryId
                                                where id.FromPackageId > 0 && productIds.Contains(id.ProductId)
                                                select new { id.FromPackageId }
                                               ).ToList();
@@ -1191,17 +1191,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
                 {
-                    inventoryQuery = inventoryQuery.Where(q => q.DateUtc >= bTime && q.DateUtc <= eTime);
+                    inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date <= eTime);
                 }
                 else
                 {
                     if (bTime != DateTime.MinValue)
                     {
-                        inventoryQuery = inventoryQuery.Where(q => q.DateUtc >= bTime);
+                        inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime);
                     }
                     if (eTime != DateTime.MinValue)
                     {
-                        inventoryQuery = inventoryQuery.Where(q => q.DateUtc <= eTime);
+                        inventoryQuery = inventoryQuery.Where(q => q.Date <= eTime);
                     }
                 }
                 var total = inventoryQuery.Count();
@@ -1253,7 +1253,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.InventoryId = inventory.InventoryId;                    
                     item.InventoryCode = inventory.InventoryCode;
                     item.BillCode = inventory.BillCode;
-                    item.DateUtc = inventory.DateUtc.GetUnix();
+                    item.DateUtc = inventory.Date.GetUnix();
                     item.InventoryTypeId = inventory.InventoryTypeId;
                     item.Content = inventory.Content;
                     item.CustomerId = inventory.CustomerId;
