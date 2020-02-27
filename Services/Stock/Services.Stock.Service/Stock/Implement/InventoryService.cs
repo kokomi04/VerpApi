@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -14,7 +13,6 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.FileResources;
@@ -1122,68 +1120,72 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            try
-            {
-                var productInStockQuery = (
-                    from s in _stockDbContext.StockProduct
-                    join p in _stockDbContext.Product on s.ProductId equals p.ProductId
-                    where stockIdList.Contains(s.StockId)// && s.PrimaryQuantityRemaining > 0
+
+            var productInStockQuery = (
+                from s in _stockDbContext.StockProduct
+                join p in _stockDbContext.Product on s.ProductId equals p.ProductId
+                where stockIdList.Contains(s.StockId)// && s.PrimaryQuantityRemaining > 0
                     group 0 by p into p
 
-                    select p.Key
-                    );
-                //.Distinct();
+                select p.Key
+                );
+            //.Distinct();
 
-                if (!string.IsNullOrEmpty(keyword))
-                    productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
+            if (!string.IsNullOrEmpty(keyword))
+                productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
 
-                var total = productInStockQuery.Count();
-                var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var total = productInStockQuery.Count();
+            var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
-                var productIdList = pagedData.Select(q => q.ProductId).ToList();
-                var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
-                var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
-                var unitOutputList = await _unitService.GetListByIds(unitIdList);
+            var productIdList = pagedData.Select(q => q.ProductId).ToList();
+            var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking()
+                .Where(q => productIdList.Contains(q.ProductId))
+                .ToList()
+                .ToDictionary(e => e.ProductId, e => e);
 
-                var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
+            var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
+            var unitOutputList = (await _unitService.GetListByIds(unitIdList)).ToDictionary(u => u.UnitId, u => u);
 
-                var productList = new List<ProductListOutput>(total);
-                foreach (var item in pagedData)
-                {
-                    productList.Add(new ProductListOutput
-                    {
-                        ProductId = item.ProductId,
-                        ProductCode = item.ProductCode,
-                        ProductName = item.ProductName,
-                        MainImageFileId = item.MainImageFileId,
-                        ProductTypeId = item.ProductTypeId,
-                        ProductTypeName = string.Empty,
-                        ProductCateId = item.ProductCateId,
-                        ProductCateName = string.Empty,
-                        Barcode = item.Barcode,
-                        Specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId).Specification,
-                        UnitId = item.UnitId,
-                        UnitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId).UnitName ?? string.Empty,
-                        EstimatePrice = item.EstimatePrice ?? 0,
-                        StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
-                        {
-                            StockId = q.StockId,
-                            ProductId = q.ProductId,
-                            PrimaryUnitId = item.UnitId,
-                            PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
-                            ProductUnitConversionId = q.ProductUnitConversionId,
-                            ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
-                        }).ToList()
-                    });
-                }
-                return (productList, total);
+            var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
 
-            }
-            catch (Exception ex)
+            var productList = new List<ProductListOutput>(total);
+            foreach (var item in pagedData)
             {
-                _logger.LogError(ex, "GetProductListForExport");
-                return (null, 0);
+
+                if (!unitOutputList.TryGetValue(item.UnitId, out var unitInfo))
+                {
+                    throw new Exception($"Unit {item.UnitId} not found");
+                }
+
+                productList.Add(new ProductListOutput
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    MainImageFileId = item.MainImageFileId,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductTypeName = string.Empty,
+                    ProductCateId = item.ProductCateId,
+                    ProductCateName = string.Empty,
+                    Barcode = item.Barcode,
+                    Specification = productExtraData[item.ProductId].Specification,
+                    UnitId = item.UnitId,
+                    UnitName = unitInfo.UnitName,
+                    EstimatePrice = item.EstimatePrice ?? 0,
+                    StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
+                    {
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                    }).ToList()
+                });
             }
+            return (productList, total);
+
+
         }
 
         /// <summary>
@@ -1494,7 +1496,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var primaryQualtity = details.PrimaryQuantity;
-                
+
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
