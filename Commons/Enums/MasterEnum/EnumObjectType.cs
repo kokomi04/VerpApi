@@ -53,5 +53,9 @@ namespace VErp.Commons.Enums.MasterEnum
         /// </summary>
         ProductBom = 18,
 
+        PurchasingRequest = 19,
+
+        PurchasingRequestDetail = 20
+
     }
 }

@@ -15,8 +15,8 @@ namespace Services.PurchaseOrder.Model.PurchaseRequest
         //public bool IsDeleted { get; set; }
         public int? CreatedByUserId { get; set; }
         public int? UpdatedByUserId { get; set; }
-        public DateTime? CreatedDatetime { get; set; }
-        public DateTime? UpdatedDatetime { get; set; }
+        public long CreatedDatetime { get; set; }
+        public long UpdatedDatetime { get; set; }
 
         public List<PurchasingRequestDetailOutputModel> DetailList { set; get; }
     }
