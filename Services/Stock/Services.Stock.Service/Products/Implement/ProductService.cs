@@ -52,6 +52,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<ServiceResult<int>> AddProduct(ProductModel req)
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
+            Enum validate;
+            if (!(validate = ValidateProduct(req)).IsSuccess())
+            {
+                return validate;
+            }
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
             if (productExisted != null)
@@ -258,6 +263,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<Enum> UpdateProduct(int productId, ProductModel req)
         {
+            Enum validate;
+            if (!(validate = ValidateProduct(req)).IsSuccess())
+            {
+                return validate;
+            }
+
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
@@ -564,6 +575,31 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
             return (pageData, total);
+        }
+
+        private Enum ValidateProduct(ProductModel req)
+        {
+            if (req.StockInfo.UnitConversions?.Count > 0)
+            {
+                foreach(var unitConversion in req.StockInfo.UnitConversions)
+                {
+                    try
+                    {
+                        var eval = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
+                        if (!(eval > 0))
+                        {
+                            return ProductErrorCode.InvalidUnitConversionExpression;
+                        }
+                    }
+                    catch (Exception)
+                    {
+
+                        return ProductErrorCode.InvalidUnitConversionExpression;
+                    }
+                    
+                }
+            }
+            return GeneralCode.Success;
         }
     }
 }
