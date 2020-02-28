@@ -1121,6 +1121,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
 
+
             var productInStockQuery = (
                 from s in _stockDbContext.StockProduct
                 join p in _stockDbContext.Product on s.ProductId equals p.ProductId
@@ -1184,8 +1185,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 });
             }
             return (productList, total);
-
-
         }
 
         /// <summary>

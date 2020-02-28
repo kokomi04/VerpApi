@@ -705,7 +705,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                from iv in inventories
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
+
                where iv.IsApproved && iv.Date < fromDate
+
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                select new
                {
@@ -719,6 +721,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
                 where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
+
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                 select new
                 {
@@ -961,6 +964,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
                where iv.IsApproved && iv.Date < fromDate
+
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                select new
                {
@@ -974,6 +978,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                     join p in productQuery on d.ProductId equals p.ProductId
                     where iv.IsApproved && iv.Date >= fromDate && iv.Date<= toDate
+
                     group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                     select new
                     {
