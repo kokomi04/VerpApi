@@ -1001,7 +1001,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var inPeriodData = (
-                  from i in inventories
+                  from i in inPerdiodInventories
                   join id in _stockContext.InventoryDetail on i.InventoryId equals id.InventoryId
                   where i.IsApproved && id.ProductId == productId
                   select new
