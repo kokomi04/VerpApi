@@ -107,7 +107,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long fromDate, long toDate, int page, int size);
+        Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long fromDate, long toDate, int page, int size);
 
         /// <summary>
         /// Nhật ký nhập xuất kho - mẫu báo cáo 04
@@ -118,6 +118,6 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockSumaryReportForm04Output>> StockSumaryReportForm04(IList<int> stockIds, long beginTime , long endTime, int page, int size);
+        Task<ServiceResult<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04(IList<int> stockIds, long beginTime , long endTime, int page, int size);
     }
 }

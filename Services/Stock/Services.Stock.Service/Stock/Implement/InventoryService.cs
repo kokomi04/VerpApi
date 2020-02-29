@@ -1120,20 +1120,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
-
-
+            var products = _stockDbContext.Product.AsQueryable();
+            if (!string.IsNullOrEmpty(keyword))
+                products = products.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
             var productInStockQuery = (
                 from s in _stockDbContext.StockProduct
-                join p in _stockDbContext.Product on s.ProductId equals p.ProductId
-                where stockIdList.Contains(s.StockId)// && s.PrimaryQuantityRemaining > 0
-                    group 0 by p into p
-
+                join p in products on s.ProductId equals p.ProductId
+                where stockIdList.Contains(s.StockId) // && s.PrimaryQuantityRemaining > 0
+                group 0 by p into p
                 select p.Key
                 );
-            //.Distinct();
-
-            if (!string.IsNullOrEmpty(keyword))
-                productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
 
             var total = productInStockQuery.Count();
             var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -1152,7 +1148,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var productList = new List<ProductListOutput>(total);
             foreach (var item in pagedData)
             {
-
                 if (!unitOutputList.TryGetValue(item.UnitId, out var unitInfo))
                 {
                     throw new Exception($"Unit {item.UnitId} not found");
@@ -1364,7 +1359,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return (null, 0);
             }
         }
-
 
         #region Private helper method
 
