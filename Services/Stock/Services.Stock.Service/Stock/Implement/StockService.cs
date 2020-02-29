@@ -971,7 +971,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         ProductUnitConversionId = pu.Key,
                         TotalPrimaryUnit = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.PrimaryQuantity : -v.PrimaryQuantity),
-                        TotalProductUnitConversion = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.PrimaryQuantity : -v.PrimaryQuantity),
+                        TotalProductUnitConversion = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.ProductUnitConversionQuantity : -v.ProductUnitConversionQuantity),
                     }).ToList();
 
                 #endregion
@@ -1046,15 +1046,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName : string.Empty;
                     var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
 
-                    if (totalByTimes.ContainsKey(item.ProductUnitConversionId.Value))
+                    if (!totalByTimes.ContainsKey(item.ProductUnitConversionId.Value))
+                    {                    
+                        totalByTimes.Add(item.ProductUnitConversionId.Value, 0);
+                    }
+
+                    if (item.InventoryTypeId == (int)EnumInventoryType.Input)
                     {
                         totalByTimes[item.ProductUnitConversionId.Value] += item.ProductUnitConversionQuantity;
+                        totalPrimary += item.PrimaryQuantity;
                     }
                     else
                     {
-                        totalByTimes.Add(item.ProductUnitConversionId.Value, item.ProductUnitConversionQuantity);
+                        totalByTimes[item.ProductUnitConversionId.Value] -= item.ProductUnitConversionQuantity;
+                        totalPrimary -= item.PrimaryQuantity;
                     }
-                    totalPrimary += item.PrimaryQuantity;
+
                     resultData.Details.Add(new StockProductDetailsModel
                     {
                         InventoryId = item.InventoryId,
