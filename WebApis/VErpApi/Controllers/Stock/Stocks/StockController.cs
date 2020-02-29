@@ -27,6 +27,21 @@ namespace VErpApi.Controllers.Stock.Stocks
             _stockService = stockService;
         }
 
+
+        /// <summary>
+        /// Tìm kiếm tất cả danh sách kho (Bao gồm cả những kho mà user không có quyền)
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAll")]
+        public async Task<ApiResponse<PageData<StockOutput>>> GetAll([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.GetAll(keyword, page, size);
+        }
+
         /// <summary>
         /// Tìm kiếm kho sản phẩm
         /// </summary>
@@ -191,7 +206,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReport")]
-        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] string fromDate, [FromQuery] string toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
@@ -206,10 +221,42 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockProductDetailsReport")]
-        public async Task<ApiResponse<ServiceResult<StockProductDetailsReportOutput>>> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] string fromDate, [FromQuery] string toDate)
+        public async Task<ApiResponse<ServiceResult<StockProductDetailsReportOutput>>> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
             return await _stockService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
         }
 
+        /// <summary>
+        /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - - Mẫu báo cáo kho 03
+        /// </summary>
+        /// <param name="stockIds">Danh sách id kho cần báo cáo</param>
+        /// <param name="keyword">Từ khóa tìm kiếm: mã sp, tên sp</param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockSumaryReportForm03")]
+        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockSumaryReportForm03(keyword, stockIds, fromDate, toDate, page, size);
+        }
+
+        /// <summary>
+        /// Báo cáo nhật ký nhập xuất kho - Mẫu báo cáo kho 04
+        /// </summary>
+        /// <param name="stockIds">Danh sách id kho cần báo cáo</param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("StockSumaryReportForm04")]
+        public async Task<ApiResponse<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04([FromQuery] IList<int> stockIds,  [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.StockSumaryReportForm04(stockIds, fromDate, toDate, page, size);
+        }
     }
 }

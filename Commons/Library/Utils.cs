@@ -118,6 +118,11 @@ namespace VErp.Commons.Library
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
+        public static DateTime UnixToDateTime(this long unixTime)
+        {
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -137,6 +142,13 @@ namespace VErp.Commons.Library
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
+
+        public static decimal GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression)
+        {
+            var expression = $"({primaryQuantity})*({factorExpression})";
+            return Eval(expression);
+        }
+
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
         {
             return $"{((int)objectTypeId)}_{objectId}";

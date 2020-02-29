@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -14,7 +13,6 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.FileResources;
@@ -33,7 +31,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
         private readonly IUnitService _unitService;
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
@@ -43,7 +41,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<InventoryService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             , IUnitService unitService
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
@@ -54,7 +52,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
             _unitService = unitService;
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
@@ -72,25 +70,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, string beginTime = null, string endTime = null, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
             var bTime = DateTime.MinValue;
             var eTime = DateTime.MinValue;
 
-            if (!string.IsNullOrEmpty(beginTime))
+            if (beginTime > 0)
             {
-                if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
-                {
-                    return null;
-                }
+                bTime = beginTime.UnixToDateTime();
             }
-            if (!string.IsNullOrEmpty(endTime))
+            if (endTime > 0)
             {
-                if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
-                {
-                    return null;
-                }
+                eTime = endTime.UnixToDateTime();
             }
+
+            //if (!string.IsNullOrEmpty(beginTime))
+            //{
+            //    if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
+            //    {
+            //        return null;
+            //    }
+            //}
+            //if (!string.IsNullOrEmpty(endTime))
+            //{
+            //    if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
+            //    {
+            //        return null;
+            //    }
+            //}
             var query = from i in _stockDbContext.Inventory
                         select i;
             if (stockId > 0)
@@ -110,17 +117,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
-                query = query.Where(q => q.DateUtc >= bTime && q.DateUtc <= eTime);
+                query = query.Where(q => q.Date >= bTime && q.Date <= eTime);
             }
             else
             {
                 if (bTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc >= bTime);
+                    query = query.Where(q => q.Date >= bTime);
                 }
                 if (eTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.DateUtc <= eTime);
+                    query = query.Where(q => q.Date <= eTime);
                 }
             }
 
@@ -146,20 +153,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = item.InventoryTypeId,
                     Shipper = item.Shipper,
                     Content = item.Content,
-                    DateUtc = item.DateUtc,
+                    DateUtc = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
                     BillCode = item.BillCode,
                     BillSerial = item.BillSerial,
-                    BillDate = item.BillDate,
+                    BillDate = item.BillDate != null ? ((DateTime)item.BillDate).GetUnix() : 0,
                     TotalMoney = item.TotalMoney,
-
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
-                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
-                    CreatedDatetimeUtc = item.CreatedDatetimeUtc,
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
 
                     StockOutput = stockInfo == null ? null : new Model.Stock.StockOutput
                     {
@@ -220,7 +226,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryId = details.InventoryId,
                         InventoryDetailId = details.InventoryDetailId,
                         ProductId = details.ProductId,
-                        PrimaryUnitId = details.PrimaryUnitId,
+                        PrimaryUnitId = productInfo?.UnitId,
                         PrimaryQuantity = details.PrimaryQuantity,
                         UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
@@ -261,13 +267,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = inventoryObj.InventoryTypeId,
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
-                    DateUtc = inventoryObj.DateUtc,
+                    DateUtc = inventoryObj.Date.GetUnix(),
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
                     BillCode = inventoryObj.BillCode,
                     BillSerial = inventoryObj.BillSerial,
-                    BillDate = inventoryObj.BillDate,
+                    BillDate = inventoryObj.BillDate != null ? ((DateTime)inventoryObj.BillDate).GetUnix() : 0,
                     TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
@@ -298,7 +304,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req, bool IsFreeStyle = false)
+        public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req)
         {
             try
             {
@@ -311,17 +317,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
-                var billDate = DateTime.MinValue;
-                if (!string.IsNullOrEmpty(req.BillDate))
-                {
-                    DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-                }
 
-                var validInventoryDetails = await ValidateInventoryIn(false, req, IsFreeStyle);
+                var issuedDate = req.DateUtc.UnixToDateTime();
+                var billDate = req.BillDate.UnixToDateTime();
+                var validInventoryDetails = await ValidateInventoryIn(false, req);
 
                 if (!validInventoryDetails.Code.IsSuccess())
                 {
@@ -341,7 +340,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Input,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = issuedDate,
+                            Date = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -351,8 +350,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             TotalMoney = totalMoney,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -378,8 +377,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
 
                         trans.Commit();
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", null, objLog);
+
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", req.JsonSerialize());
 
                         //Move file from tmp folder
                         if (req.FileIdList != null)
@@ -422,7 +421,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="currentUserId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req, bool IsFreeStyle = false)
+        public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req)
         {
             try
             {
@@ -434,10 +433,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //{
+                //    return GeneralCode.InvalidParams;
+                //}
+                var issuedDate = req.DateUtc.UnixToDateTime();
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -449,7 +450,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InventoryTypeId = (int)EnumInventoryType.Output,
                             Shipper = req.Shipper,
                             Content = req.Content,
-                            DateUtc = issuedDate,
+                            Date = issuedDate,
                             CustomerId = req.CustomerId,
                             Department = req.Department,
                             StockKeeperUserId = req.StockKeeperUserId,
@@ -458,8 +459,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             BillDate = null,
                             CreatedByUserId = currentUserId,
                             UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             IsApproved = false
                         };
@@ -487,8 +488,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", null, objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", req.JsonSerialize());
 
                         //Move file from tmp folder
                         if (req.FileIdList != null)
@@ -525,16 +525,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel req)
         {
-            if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-            {
-                return GeneralCode.InvalidParams;
-            }
-            var billDate = DateTime.MinValue;
-            if (!string.IsNullOrEmpty(req.BillDate))
-            {
-                DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-            }
-
+            //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+            //{
+            //    return GeneralCode.InvalidParams;
+            //}
+            //var billDate = DateTime.MinValue;
+            //if (!string.IsNullOrEmpty(req.BillDate))
+            //{
+            //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
+            //}
+            var issuedDate = req.DateUtc.UnixToDateTime();
+            var billDate = req.DateUtc.UnixToDateTime();
             try
             {
                 if (inventoryId <= 0)
@@ -572,11 +573,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return GeneralCode.NotYetSupported;
                         }
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
                         inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.DateUtc = issuedDate;
+                        inventoryObj.Date = issuedDate;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
                         inventoryObj.CustomerId = req.CustomerId;
@@ -586,7 +586,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.BillSerial = req.BillSerial;
                         inventoryObj.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         #endregion
 
@@ -631,9 +631,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
+
                         var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -672,10 +672,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                if (!DateTime.TryParseExact(req.DateUtc, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
+                //{
+                //    return GeneralCode.InvalidParams;
+                //}
+                var issuedDate = req.DateUtc.UnixToDateTime();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -694,8 +695,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             trans.Rollback();
                             return InventoryErrorCode.CanNotChangeStock;
                         }
-
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -718,13 +717,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.InventoryCode = req.InventoryCode;
                         inventoryObj.Shipper = req.Shipper;
                         inventoryObj.Content = req.Content;
-                        inventoryObj.DateUtc = issuedDate;
+                        inventoryObj.Date = issuedDate;
                         inventoryObj.CustomerId = req.CustomerId;
                         inventoryObj.Department = req.Department;
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
                         inventoryObj.IsApproved = false;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
@@ -751,9 +750,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
                         var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -789,7 +787,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteInventoryInput(long inventoryId, int currentUserId)
         {
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-            var objLog = GetInventoryInfoForLog(inventoryObj);
+
             if (inventoryObj == null)
             {
                 return InventoryErrorCode.InventoryNotFound;
@@ -813,8 +811,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
-            var dataBefore = objLog.JsonSerialize();
-
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -824,7 +820,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryObj.UpdatedByUserId = currentUserId;
                     inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -848,7 +844,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Enum> DeleteInventoryOutput(long inventoryId, int currentUserId)
         {
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-            var objLog = GetInventoryInfoForLog(inventoryObj);
+
             if (inventoryObj == null)
             {
                 return InventoryErrorCode.InventoryNotFound;
@@ -858,8 +854,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InvalidParams;
             }
 
-
-            var dataBefore = objLog.JsonSerialize();
 
             // Xử lý xoá thông tin phiếu xuất kho
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -883,7 +877,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryObj.UpdatedByUserId = currentUserId;
                     inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
@@ -935,8 +929,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return InventoryErrorCode.InventoryAlreadyApproved;
                         }
 
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -945,7 +937,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
-                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.DateUtc, inventoryDetails);
+                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails);
                         if (!r.IsSuccess())
                         {
                             trans.Rollback();
@@ -954,9 +946,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
 
                         return GeneralCode.Success;
                     }
@@ -997,7 +988,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             break;
 
                         case EnumPackageOption.NoPackageManager:
-                            var defaultPackge = await AppendToDefaultPackage(stockId, item);
+                            var defaultPackge = await AppendToDefaultPackage(stockId, date, item);
                             item.ToPackageId = defaultPackge.PackageId;
 
                             break;
@@ -1071,11 +1062,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return InventoryErrorCode.InventoryNotFound;
                         }
 
-                        var originalObj = GetInventoryInfoForLog(inventoryObj);
-
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.Now;
+                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
@@ -1092,7 +1081,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
                             fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
 
-                            var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+                            var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                             stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
                             stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
@@ -1102,9 +1091,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-                        var objLog = GetInventoryInfoForLog(inventoryObj);
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        _activityService.CreateActivityAsync(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, originalObj.JsonSerialize(), objLog);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -1132,68 +1120,66 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            try
+            var products = _stockDbContext.Product.AsQueryable();
+            if (!string.IsNullOrEmpty(keyword))
+                products = products.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
+            var productInStockQuery = (
+                from s in _stockDbContext.StockProduct
+                join p in products on s.ProductId equals p.ProductId
+                where stockIdList.Contains(s.StockId) // && s.PrimaryQuantityRemaining > 0
+                group 0 by p into p
+                select p.Key
+                );
+
+            var total = productInStockQuery.Count();
+            var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+
+            var productIdList = pagedData.Select(q => q.ProductId).ToList();
+            var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking()
+                .Where(q => productIdList.Contains(q.ProductId))
+                .ToList()
+                .ToDictionary(e => e.ProductId, e => e);
+
+            var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
+            var unitOutputList = (await _unitService.GetListByIds(unitIdList)).ToDictionary(u => u.UnitId, u => u);
+
+            var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
+
+            var productList = new List<ProductListOutput>(total);
+            foreach (var item in pagedData)
             {
-                var productInStockQuery = (
-                    from s in _stockDbContext.StockProduct
-                    join p in _stockDbContext.Product on s.ProductId equals p.ProductId
-                    where stockIdList.Contains(s.StockId)// && s.PrimaryQuantityRemaining > 0
-                    group 0 by p into p
-
-                    select p.Key
-                    );
-                    //.Distinct();
-
-                if (!string.IsNullOrEmpty(keyword))
-                    productInStockQuery = productInStockQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
-
-                var total = productInStockQuery.Count();
-                var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
-
-                var productIdList = pagedData.Select(q => q.ProductId).ToList();
-                var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
-                var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
-                var unitOutputList = await _unitService.GetListByIds(unitIdList);
-
-                var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
-
-                var productList = new List<ProductListOutput>(total);
-                foreach (var item in pagedData)
+                if (!unitOutputList.TryGetValue(item.UnitId, out var unitInfo))
                 {
-                    productList.Add(new ProductListOutput
-                    {
-                        ProductId = item.ProductId,
-                        ProductCode = item.ProductCode,
-                        ProductName = item.ProductName,
-                        MainImageFileId = item.MainImageFileId,
-                        ProductTypeId = item.ProductTypeId,
-                        ProductTypeName = string.Empty,
-                        ProductCateId = item.ProductCateId,
-                        ProductCateName = string.Empty,
-                        Barcode = item.Barcode,
-                        Specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId).Specification,
-                        UnitId = item.UnitId,
-                        UnitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId).UnitName ?? string.Empty,
-                        EstimatePrice = item.EstimatePrice ?? 0,
-                        StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
-                        {
-                            StockId = q.StockId,
-                            ProductId = q.ProductId,
-                            PrimaryUnitId = q.PrimaryUnitId,
-                            PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
-                            ProductUnitConversionId = q.ProductUnitConversionId,
-                            ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
-                        }).ToList()
-                    });
+                    throw new Exception($"Unit {item.UnitId} not found");
                 }
-                return (productList, total);
 
+                productList.Add(new ProductListOutput
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    MainImageFileId = item.MainImageFileId,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductTypeName = string.Empty,
+                    ProductCateId = item.ProductCateId,
+                    ProductCateName = string.Empty,
+                    Barcode = item.Barcode,
+                    Specification = productExtraData[item.ProductId].Specification,
+                    UnitId = item.UnitId,
+                    UnitName = unitInfo.UnitName,
+                    EstimatePrice = item.EstimatePrice ?? 0,
+                    StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
+                    {
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                    }).ToList()
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetProductListForExport");
-                return (null, 0);
-            }
+            return (productList, total);
         }
 
         /// <summary>
@@ -1208,9 +1194,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var query = from p in _stockDbContext.Package
-                            where stockIdList.Contains(p.StockId) && p.ProductId == productId && p.PrimaryQuantityRemaining > 0
-                            select p;
+                var query = from pk in _stockDbContext.Package
+                            join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                            where stockIdList.Contains(pk.StockId) && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
+                            select new
+                            {
+                                pk.LocationId,
+                                pk.ProductUnitConversionId,
+                                pk.PackageId,
+                                pk.PackageCode,
+                                pk.PackageTypeId,
+                                pk.StockId,
+                                pk.ProductId,
+                                pk.Date,
+                                pk.ExpiryTime,
+                                p.UnitId,
+                                pk.PrimaryQuantityRemaining,
+                                pk.PrimaryQuantityWaiting,
+                                pk.ProductUnitConversionRemaining,
+                                pk.ProductUnitConversionWaitting,
+                                pk.CreatedDatetimeUtc,
+                                pk.UpdatedDatetimeUtc
+                            };
 
                 var total = query.Count();
                 var packageData = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -1241,17 +1246,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         LocationId = item.LocationId ?? 0,
                         StockId = item.StockId,
                         ProductId = item.ProductId,
-                        Date = item.Date,
-                        ExpiryTime = item.ExpiryTime,
-                        PrimaryUnitId = item.PrimaryUnitId,
+                        Date = item.Date != null ? ((DateTime)item.Date).GetUnix() : 0,
+                        ExpiryTime = item.ExpiryTime != null ? ((DateTime)item.ExpiryTime).GetUnix() : 0,
+                        PrimaryUnitId = item.UnitId,
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
                         PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
                         ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
                         ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
 
-                        CreatedDatetimeUtc = item.CreatedDatetimeUtc,
-                        UpdatedDatetimeUtc = item.UpdatedDatetimeUtc,
+                        CreatedDatetimeUtc = item.CreatedDatetimeUtc != null ? ((DateTime)item.CreatedDatetimeUtc).GetUnix() : 0,
+                        UpdatedDatetimeUtc = item.UpdatedDatetimeUtc != null ? ((DateTime)item.UpdatedDatetimeUtc).GetUnix() : 0,
                         LocationOutputModel = locationOutputModel,
                         ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
                     });
@@ -1339,7 +1344,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             StockId = q.StockId,
                             ProductId = q.ProductId,
-                            PrimaryUnitId = q.PrimaryUnitId,
+                            PrimaryUnitId = item.UnitId,
                             PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
                             ProductUnitConversionId = q.ProductUnitConversionId,
                             ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
@@ -1355,10 +1360,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-
         #region Private helper method
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool IsFreeStyle = false)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req)
         {
             if (req.InProducts == null)
                 req.InProducts = new List<InventoryInProductModel>();
@@ -1391,7 +1395,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
                 }
-                if (IsFreeStyle == false)
+                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)
@@ -1432,10 +1436,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryDetailId = isApproved ? details.InventoryDetailId ?? 0 : 0,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    PrimaryUnitId = productInfo.UnitId,
                     PrimaryQuantity = primaryQty,
                     UnitPrice = details.UnitPrice,
                     ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
@@ -1454,7 +1457,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryDetailList;
         }
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ProcessInventoryOut(Inventory inventory, InventoryOutModel req, bool IsFreeStyle = false)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ProcessInventoryOut(Inventory inventory, InventoryOutModel req)
         {
             var productIds = req.OutProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -1489,30 +1492,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
-                    if (IsFreeStyle == false)
+                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                    if (productUnitConversionInfo == null)
                     {
-                        var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                        if (productUnitConversionInfo == null)
-                        {
-                            return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                        }
+                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                    }
 
-                        if (details.ProductUnitConversionQuantity <= 0)
+                    if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
+                    {
+                        details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
+                        if (!(details.ProductUnitConversionQuantity > 0))
                         {
-                            return GeneralCode.InvalidParams;
+                            return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
                         }
+                        //return GeneralCode.InvalidParams;
+                    }
 
-                        if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
+                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
+                    {
+                        return InventoryErrorCode.NotEnoughQuantity;
+                    }
+                    if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
+                    {
+                        primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                        if (!(primaryQualtity > 0))
                         {
-                            return InventoryErrorCode.NotEnoughQuantity;
-                        }
-                        if (primaryQualtity == 0)
-                        {
-                            primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                            if (!(primaryQualtity > 0))
-                            {
-                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                            }
+                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         }
                     }
                 }
@@ -1520,10 +1525,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.Now,
-                    UpdatedDatetimeUtc = DateTime.Now,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    PrimaryUnitId = fromPackageInfo.PrimaryUnitId,
                     PrimaryQuantity = primaryQualtity,
                     UnitPrice = details.UnitPrice,
                     ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
@@ -1542,7 +1546,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
                 fromPackageInfo.ProductUnitConversionWaitting += details.ProductUnitConversionQuantity;
 
-                var stockProductInfo = await EnsureStockProduct(inventory.StockId, fromPackageInfo.ProductId, fromPackageInfo.PrimaryUnitId, fromPackageInfo.ProductUnitConversionId);
+                var stockProductInfo = await EnsureStockProduct(inventory.StockId, fromPackageInfo.ProductId, fromPackageInfo.ProductUnitConversionId);
 
                 stockProductInfo.PrimaryQuantityWaiting += primaryQualtity;
                 stockProductInfo.ProductUnitConversionWaitting += details.ProductUnitConversionQuantity;
@@ -1550,13 +1554,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryDetailList;
         }
 
-        private async Task<StockProduct> EnsureStockProduct(int stockId, int productId, int primaryUnitId, int? productUnitConversionId)
+        private async Task<StockProduct> EnsureStockProduct(int stockId, int productId, int? productUnitConversionId)
         {
             var stockProductInfo = await _stockDbContext.StockProduct
                                 .FirstOrDefaultAsync(s =>
                                                 s.StockId == stockId
                                                 && s.ProductId == productId
-                                                && s.PrimaryUnitId == primaryUnitId
                                                 && s.ProductUnitConversionId == productUnitConversionId
                                                 );
 
@@ -1567,7 +1570,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockId = stockId,
                     ProductId = productId,
                     ProductUnitConversionId = productUnitConversionId,
-                    PrimaryUnitId = primaryUnitId,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
@@ -1582,7 +1584,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task UpdateStockProduct(int stockId, InventoryDetail detail, EnumInventoryType type = EnumInventoryType.Input)
         {
-            var stockProductInfo = await EnsureStockProduct(stockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+            var stockProductInfo = await EnsureStockProduct(stockId, detail.ProductId, detail.ProductUnitConversionId);
             switch (type)
             {
                 case EnumInventoryType.Input:
@@ -1612,16 +1614,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             packageInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
             //packageInfo.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
             packageInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
+            packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             return GeneralCode.Success;
         }
 
-        private async Task<PackageEntity> AppendToDefaultPackage(int stockId, InventoryDetail detail)
+        private async Task<PackageEntity> AppendToDefaultPackage(int stockId, DateTime billDate, InventoryDetail detail)
         {
             var ensureDefaultPackage = await _stockDbContext.Package
                                           .FirstOrDefaultAsync(p =>
                                               p.StockId == stockId
                                               && p.ProductId == detail.ProductId
-                                              && p.PrimaryUnitId == detail.PrimaryUnitId
                                               && p.ProductUnitConversionId == detail.ProductUnitConversionId
                                               && p.PackageTypeId == (int)EnumPackageType.Default
                                               );
@@ -1636,7 +1638,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     LocationId = null,
                     StockId = stockId,
                     ProductId = detail.ProductId,
-                    PrimaryUnitId = detail.PrimaryUnitId,
                     //PrimaryQuantity = 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
                     //ProductUnitConversionQuantity = 0,
@@ -1644,7 +1645,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
                     ProductUnitConversionRemaining = 0,
-                    Date = null,
+                    Date = billDate,
                     ExpiryTime = null,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -1679,7 +1680,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 LocationId = null,
                 StockId = stockId,
                 ProductId = detail.ProductId,
-                PrimaryUnitId = detail.PrimaryUnitId,
                 //PrimaryQuantity = detail.PrimaryQuantity,
                 ProductUnitConversionId = detail.ProductUnitConversionId,
                 //ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity,
@@ -1711,7 +1711,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var fromPackageInfo = fromPackages.FirstOrDefault(f => f.PackageId == detail.FromPackageId);
                 if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.PrimaryUnitId, detail.ProductUnitConversionId);
+                var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                 if (!inventory.IsApproved)
                 {
@@ -1739,11 +1739,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-
-        private object GetInventoryInfoForLog(VErp.Infrastructure.EF.StockDB.Inventory inventoryObj)
-        {
-            return inventoryObj;
-        }
 
         private string CreatePackageCode(string inventoryCode, string productCode, DateTime productManufactureDateTimeUtc)
         {

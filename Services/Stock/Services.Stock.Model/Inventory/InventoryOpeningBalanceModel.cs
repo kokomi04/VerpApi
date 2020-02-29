@@ -15,9 +15,9 @@ namespace VErp.Services.Stock.Model.Inventory
         public EnumInventoryType Type { set; get; }
 
         /// <summary>
-        /// Ngày phát sinh
+        /// Ngày phát sinh (UnixTime)
         /// </summary>
-        public string IssuedDate { get; set; }
+        public long IssuedDate { get; set; }
 
         public string Description { get; set; }
 

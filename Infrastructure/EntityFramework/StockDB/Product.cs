@@ -8,6 +8,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public Product()
         {
             InventoryDetail = new HashSet<InventoryDetail>();
+            ProductBomParentProduct = new HashSet<ProductBom>();
+            ProductBomProduct = new HashSet<ProductBom>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -37,6 +39,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ProductExtraInfo ProductExtraInfo { get; set; }
         public virtual ProductStockInfo ProductStockInfo { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
+        public virtual ICollection<ProductBom> ProductBomParentProduct { get; set; }
+        public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }

@@ -10,7 +10,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Activity;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
@@ -20,19 +20,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public ProductTypeService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductTypeService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddProductType(ProductTypeInput req)
@@ -72,7 +72,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", null, productType);
+            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
             return productType.ProductTypeId;
         }
@@ -100,7 +100,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize(), null);
+            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -168,7 +168,6 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
             }
 
-            var beforeJson = productType.JsonSerialize();
 
             productType.ProductTypeName = req.ProductTypeName;
             productType.IdentityCode = req.IdentityCode;
@@ -178,7 +177,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", beforeJson, productType);
+            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
             return GeneralCode.Success;
         }

@@ -450,8 +450,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                     Description = item.Description,
                                     IsActived = true,
                                     IsDeleted = false,
-                                    CreatedDatetimeUtc = DateTime.Now,
-                                    UpdatedDatetimeUtc = DateTime.Now,
+                                    CreatedDatetimeUtc = DateTime.UtcNow,
+                                    UpdatedDatetimeUtc = DateTime.UtcNow,
                                 });
                             }
                             var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
@@ -580,8 +580,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             {
                                 ProductCateName = item,
                                 ParentProductCateId = null,
-                                CreatedDatetimeUtc = DateTime.Now,
-                                UpdatedDatetimeUtc = DateTime.Now,
+                                CreatedDatetimeUtc = DateTime.UtcNow,
+                                UpdatedDatetimeUtc = DateTime.UtcNow,
                                 IsDeleted = false
                             };
                             _stockDbContext.ProductCate.Add(newCate);
@@ -604,8 +604,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 ProductTypeName = item,
                                 ParentProductTypeId = null,
                                 IdentityCode = item,
-                                CreatedDatetimeUtc = DateTime.Now,
-                                UpdatedDatetimeUtc = DateTime.Now,
+                                CreatedDatetimeUtc = DateTime.UtcNow,
+                                UpdatedDatetimeUtc = DateTime.UtcNow,
                                 IsDeleted = false
                             };
                             _stockDbContext.ProductType.Add(newProductType);
@@ -629,8 +629,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             {
                                 UnitName = u,
                                 IsDeleted = false,
-                                CreatedDatetimeUtc = DateTime.Now,
-                                UpdatedDatetimeUtc = DateTime.Now
+                                CreatedDatetimeUtc = DateTime.UtcNow,
+                                UpdatedDatetimeUtc = DateTime.UtcNow
                             };
                             _masterDBContext.Unit.Add(newUnit);
                         }
@@ -664,8 +664,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             Long = item.Long,
                             Width = item.Width,
                             Height = item.Height,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false
                         };
                         productDataList.Add(productEntity);
@@ -741,10 +741,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             var newProductUnitConversion = new ProductUnitConversion
                             {
-                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")),
+                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")).Replace(@",", ""),
                                 ProductId = productObj.ProductId,
                                 SecondaryUnitId = unit2.UnitId,
-                                FactorExpression = item.Factor.ToString("N6"),
+                                FactorExpression = item.Factor.ToString("N6").Replace(@",",""),
                                 ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor.ToString("N6")),
                                 IsDefault = false
                             };
@@ -814,7 +814,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             var newInventory = new InventoryInModel
                             {
                                 StockId = model.StockId,
-                                InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                                InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                                 DateUtc = model.IssuedDate,
                                 Shipper = string.Empty,
                                 Content = model.Description,
@@ -823,7 +823,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 StockKeeperUserId = null,
                                 BillCode = string.Empty,
                                 BillSerial = string.Empty,
-                                BillDate = null,
+                                BillDate = model.IssuedDate,
                                 FileIdList = null,
                                 InProducts = new List<InventoryInProductModel>(details.Count)
                             };
@@ -839,7 +839,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                     UnitPrice = item.UnitPrice,
                                     RefObjectTypeId = item.RefObjectTypeId,
                                     RefObjectId = item.RefObjectId,
-                                    RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.Now.ToString("ddMMyyyyHHmmss"), item.RefObjectCode),
+                                    RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), item.RefObjectCode),
                                     ToPackageId = null,
                                     PackageOptionId = EnumPackageOption.NoPackageManager
                                 });
@@ -853,7 +853,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item, true);
+                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item);
                             if (ret.Data > 0)
                             {
                                 // Duyệt phiếu nhập kho
@@ -962,8 +962,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             Long = item.Long,
                             Width = item.Width,
                             Height = item.Height,
-                            CreatedDatetimeUtc = DateTime.Now,
-                            UpdatedDatetimeUtc = DateTime.Now,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false
                         };
                         productDataList.Add(productEntity);
@@ -1024,7 +1024,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             UnitPrice = item.UnitPrice,
                             RefObjectTypeId = null,
                             RefObjectId = null,
-                            RefObjectCode = string.Format("PX_{0}", DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                            RefObjectCode = string.Format("PX_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                             FromPackageId = packageObj.PackageId,
                             OrderCode = string.Empty,
                             POCode = string.Empty,
@@ -1044,7 +1044,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             var inventoryOutputEntity = new InventoryOutModel
                             {
                                 StockId = model.StockId,
-                                InventoryCode = string.Format("PX_TonDau_{0}_{1}", pageIndex, DateTime.Now.ToString("ddMMyyyyHHmmss")),
+                                InventoryCode = string.Format("PX_TonDau_{0}_{1}", pageIndex, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                                 Shipper = string.Empty,
                                 Content = model.Description,
                                 DateUtc = model.IssuedDate,
@@ -1060,7 +1060,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             foreach (var item in inventoryOutputList)
                             {
-                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item, true);
+                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item);
                                 if (ret.Data > 0)
                                 {
                                     // Duyệt phiếu xuất kho

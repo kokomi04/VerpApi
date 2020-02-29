@@ -7,9 +7,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Customer;
 using VErp.Services.Master.Service.Activity;
 using CustomerEntity = VErp.Infrastructure.EF.MasterDB.Customer;
@@ -21,18 +23,18 @@ namespace VErp.Services.Master.Service.Customer.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public CustomerService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<CustomerService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddCustomer(CustomerModel data)
@@ -87,6 +89,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
                 await _masterContext.SaveChangesAsync();
             }
+            await _activityLogService.CreateLog(EnumObjectType.Customer, customer.CustomerId, $"Thêm đối tác {customer.CustomerName}", data.JsonSerialize());
             return customer.CustomerId;
         }
 
@@ -108,6 +111,9 @@ namespace VErp.Services.Master.Service.Customer.Implement
             customerInfo.IsDeleted = true;
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Xóa đối tác {customerInfo.CustomerName}", customerInfo.JsonSerialize());
+
             return GeneralCode.Success;
         }
 
@@ -301,6 +307,9 @@ namespace VErp.Services.Master.Service.Customer.Implement
             }
 
             await _masterContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
+
             return GeneralCode.Success;
         }
     }

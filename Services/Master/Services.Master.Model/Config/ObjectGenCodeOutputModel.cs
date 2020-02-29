@@ -20,7 +20,7 @@ namespace VErp.Services.Master.Model.Config
         //public bool IsDeleted { get; set; }
         public int? UpdatedUserId { get; set; }
         //public DateTime? ResetDate { get; set; }
-        public DateTime? CreatedTime { get; set; }
-        public DateTime? UpdatedTime { get; set; }
+        public long CreatedTime { get; set; }
+        public long UpdatedTime { get; set; }
     }
 }

@@ -13,6 +13,7 @@ using VErp.Services.Master.Service.Activity;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -21,19 +22,19 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
 
         )
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
 
         }
 
@@ -72,9 +73,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     LastCode = item.LastCode,
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
-                    CreatedTime = item.CreatedTime,
-                    UpdatedTime = item.UpdatedTime,
-
+                    CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
+                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
                 };
                 pagedData.Add(info);
             }
@@ -102,8 +102,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     LastCode = obj.LastCode,
                     IsActived = obj.IsActived,
                     UpdatedUserId = obj.UpdatedUserId,
-                    CreatedTime = obj.CreatedTime,
-                    UpdatedTime = obj.UpdatedTime,
+                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
                 };
                 return info;
             }
@@ -124,8 +124,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     return ObjectGenCodeErrorCode.ConfigNotFound;
                 }
-                var oldEntity = GetInfoForLog(obj);
-
+               
                 obj.CodeLength = model.CodeLength;
                 obj.Prefix = model.Prefix;
                 obj.Suffix = model.Suffix;
@@ -133,7 +132,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.UpdatedUserId = currentUserId;
                 obj.UpdatedTime = DateTime.Now;
 
-                _activityService.CreateActivityAsync(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Cập nhật cấu hình gen code cho {obj.ObjectTypeName} ", oldEntity.JsonSerialize(), obj);
+                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Cập nhật cấu hình gen code cho {obj.ObjectTypeName} ", model.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
                 return GeneralCode.Success;
@@ -159,7 +158,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.UpdatedUserId = currentUserId;
                 obj.UpdatedTime = DateTime.Now;
 
-                _activityService.CreateActivityAsync(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Xoá cấu hình gen code cho {obj.ObjectTypeName} ", null, obj);
+                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Xoá cấu hình gen code cho {obj.ObjectTypeName} ", obj.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
 
@@ -211,7 +210,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedTime = DateTime.Now
                 };
                 _masterDbContext.ObjectGenCode.Add(entity);
-                _activityService.CreateActivityAsync(EnumObjectType.GenCodeConfig, entity.ObjectGenCodeId, $"Thêm mới cấu hình gen code cho {entity.ObjectTypeName} ", null, entity);
+                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, entity.ObjectGenCodeId, $"Thêm mới cấu hình gen code cho {entity.ObjectTypeName} ", model.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
 
@@ -309,11 +308,6 @@ namespace VErp.Services.Master.Service.Config.Implement
                 _logger.LogError(ex, "GetAllObjectType");
                 return (null, 0);
             }
-        }
-
-        private object GetInfoForLog(ObjectGenCode obj)
-        {
-            return obj;
-        }
+        }      
     }
 }

@@ -5,6 +5,7 @@
     {
         ProductUnitConversionNotFound = 1,
         ProductSecondaryUnitAlreadyExisted = 2,
-        SecondaryUnitConversionError = 3
+        SecondaryUnitConversionError = 3,
+        PrimaryUnitConversionError = 4
     }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -12,7 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     {
         void RunAsync<T>(Expression<Func<T, Task>> action);
     }
-    public class AsyncRunnerService: IAsyncRunnerService
+    public class AsyncRunnerService : IAsyncRunnerService
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ICurrentContextService _currentContext;
@@ -28,6 +29,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             var userId = _currentContext.UserId;
             var actionId = _currentContext.Action;
+            var stockIds = _currentContext.StockIds;
+            var roleInfo = _currentContext.RoleInfo;
             Task.Run(async () =>
             {
                 try
@@ -35,7 +38,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId));
+                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds));
                         var obj = scope.ServiceProvider.GetService<T>();
                         var fn = action.Compile();
                         await fn.Invoke(obj);
@@ -45,9 +48,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     _logger.LogError(ex, "RunAsync");
                 }
-                
+
             });
-            
+
         }
     }
 }

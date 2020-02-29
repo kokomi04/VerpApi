@@ -12,6 +12,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
@@ -23,45 +24,72 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<RoleService> logger
-            , IActivityService activityService
+            , IActivityLogService activityLogService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<ServiceResult<int>> AddRole(RoleInput role)
         {
-            var validate = ValidateRoleInput(role);
+            if (role.ParentRoleId == 0)
+                role.ParentRoleId = null;
+
+            role.RoleName = role.RoleName.Trim();
+
+            var validate = ValidateRoleInput(null, role);
             if (!validate.IsSuccess())
             {
                 return validate;
             }
 
-
-            role.RoleName = role.RoleName.Trim();
+            Role parentInfo = null;
+           
             var roleInfo = new Role()
             {
                 RoleName = role.RoleName,
                 Description = role.Description,
+                ParentRoleId = role.ParentRoleId,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
                 IsEditable = true,
-                RoleStatusId = (int)role.RoleStatusId
+                RoleStatusId = (int)role.RoleStatusId,
+                RootPath = "",
+                IsModulePermissionInherit = role.IsModulePermissionInherit,
+                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock
             };
 
-            await _masterContext.Role.AddAsync(roleInfo);
-            await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", null, roleInfo);
+            if (role.ParentRoleId.HasValue)
+            {
+                parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
+                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+            }
+
+            using (var trans = _masterContext.Database.BeginTransaction())
+            {
+
+                await _masterContext.Role.AddAsync(roleInfo);
+                await _masterContext.SaveChangesAsync();
+
+                roleInfo.RootPath = FormatRootPath(parentInfo?.RootPath, roleInfo.RoleId);
+                await _masterContext.SaveChangesAsync();
+
+                UpdateRoleChildren(roleInfo.RootPath);
+
+                trans.Commit();
+            }
+
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
 
             return roleInfo.RoleId;
         }
@@ -74,11 +102,15 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                  from r in _masterContext.Role
                  select new RoleOutput()
                  {
+                     ParentRoleId = r.ParentRoleId,
                      RoleId = r.RoleId,
                      RoleName = r.RoleName,
                      Description = r.Description,
                      RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
-                     IsEditable = r.IsEditable
+                     IsEditable = r.IsEditable,
+                     RootPath = r.RootPath,
+                     IsModulePermissionInherit = r.IsModulePermissionInherit,
+                     IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
                  }
              );
 
@@ -89,7 +121,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         select r;
             }
 
-            var lst = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lst = size > 0
+                ? await query.OrderBy(r => r.RootPath).Skip((page - 1) * size).Take(size).ToListAsync()
+                : await query.OrderBy(r => r.RootPath).ToListAsync();
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -99,11 +133,15 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         {
             var roleInfo = await _masterContext.Role.Select(r => new RoleOutput()
             {
+                ParentRoleId = r.ParentRoleId,
                 RoleId = r.RoleId,
                 RoleName = r.RoleName,
                 Description = r.Description,
                 RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
-                IsEditable = r.IsEditable
+                IsEditable = r.IsEditable,
+                RootPath = r.RootPath,
+                IsModulePermissionInherit = r.IsModulePermissionInherit,
+                IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
             }).FirstOrDefaultAsync(r => r.RoleId == roleId);
 
             if (roleInfo == null)
@@ -116,13 +154,16 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<Enum> UpdateRole(int roleId, RoleInput role)
         {
-            var validate = ValidateRoleInput(role);
+            if (role.ParentRoleId == 0)
+                role.ParentRoleId = null;
+
+            role.RoleName = role.RoleName.Trim();
+
+            var validate = ValidateRoleInput(roleId, role);
             if (!validate.IsSuccess())
             {
                 return validate;
             }
-
-            role.RoleName = role.RoleName.Trim();
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
             if (roleInfo == null)
@@ -134,16 +175,35 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleIsReadonly;
             }
-            var dataBefore = roleInfo.JsonSerialize();
 
-            roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-            roleInfo.RoleName = role.RoleName;
-            roleInfo.Description = role.Description;
-            roleInfo.RoleStatusId = (int)role.RoleStatusId;
+            Role parentInfo = null;          
 
-            await _masterContext.SaveChangesAsync();
+            if (role.ParentRoleId.HasValue)
+            {
+                parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
+                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+            }
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", dataBefore, roleInfo);
+            using (var trans = _masterContext.Database.BeginTransaction())
+            {
+                roleInfo.RootPath = FormatRootPath(parentInfo?.RootPath, roleId);
+
+                roleInfo.ParentRoleId = role.ParentRoleId;
+                roleInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                roleInfo.RoleName = role.RoleName;
+                roleInfo.Description = role.Description;
+                roleInfo.RoleStatusId = (int)role.RoleStatusId;
+                roleInfo.IsModulePermissionInherit = role.IsModulePermissionInherit;
+                roleInfo.IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock;
+
+                await _masterContext.SaveChangesAsync();
+
+                UpdateRoleChildren(roleInfo.RootPath);
+
+                trans.Commit();
+            }
+
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -159,11 +219,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.RoleIsReadonly;
             }
+            if (_masterContext.Role.Any(r => r.ParentRoleId == roleId))
+            {
+                return RoleErrorCode.ExistedChildrenRoles;
+            }
 
-            roleInfo.IsDeleted = true;
-            await _masterContext.SaveChangesAsync();
+            using (var trans = _masterContext.Database.BeginTransaction())
+            {
+                roleInfo.IsDeleted = true;
+                await _masterContext.SaveChangesAsync();
 
-            _activityService.CreateActivityAsync(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize(), null);
+                UpdateRoleChildren(roleInfo.RootPath);
+
+                trans.Commit();
+            }
+
+            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize());
 
             return GeneralCode.Success;
         }
@@ -187,8 +258,6 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 var rolePermissions = await _masterContext.RolePermission.Where(p => p.RoleId == roleId).ToListAsync();
 
-                var beforeJson = rolePermissions.JsonSerialize();
-
                 _masterContext.RolePermission.RemoveRange(rolePermissions);
 
                 var newPermissions = new List<Infrastructure.EF.MasterDB.RolePermission>();
@@ -209,27 +278,69 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 trans.Commit();
 
-                _activityService.CreateActivityAsync(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", beforeJson, newPermissions.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", permissions.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<IList<RolePermissionModel>> GetRolePermission(int roleId)
+        public Task<IList<RolePermissionModel>> GetRolePermission(int roleId)
         {
-            return await _masterContext.RolePermission
-                .Where(p => p.RoleId == roleId)
-                     .Select(p => new RolePermissionModel()
-                     {
-                         ModuleId = p.ModuleId,
-                         Permission = p.Permission,
-                     })
-                     .ToListAsync();
+            return GetRolesPermission(new List<int> { roleId });
         }
 
+        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds)
+        {
+            return await _masterContext.RolePermission
+               .Where(p => roleIds.Contains(p.RoleId))
+                    .Select(p => new RolePermissionModel()
+                    {
+                        ModuleId = p.ModuleId,
+                        Permission = p.Permission,
+                    })
+                    .ToListAsync();
+        }
 
+        public async Task<IList<StockPemissionOutput>> GetStockPermission()
+        {
+            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Stock);
+            return roleDataPermissions.Select(d => new StockPemissionOutput()
+            {
+                RoleId = d.RoleId,
+                StockId = (int)d.ObjectId
+            })
+            .ToList();
+        }
+
+        public async Task<Enum> UpdateStockPermission(IList<StockPemissionOutput> req)
+        {
+            if (req == null) req = new List<StockPemissionOutput>();
+
+            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Stock);
+
+            _masterContext.RoleDataPermission.RemoveRange(lst);
+            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
+            {
+                ObjectTypeId = (int)EnumObjectType.Stock,
+                ObjectId = d.StockId,
+                RoleId = d.RoleId
+            }));
+            await _masterContext.SaveChangesAsync();
+            return GeneralCode.Success;
+        }
         #region private
-        private Enum ValidateRoleInput(RoleInput req)
+
+        private string FormatRootPath(string parentRootPath, int roleId)
+        {
+            return string.IsNullOrWhiteSpace(parentRootPath) ? $"{roleId}" : $"{parentRootPath}_{roleId}";
+        }
+
+        private IList<int> RootPathToArray(string rootPath)
+        {
+            return rootPath.Split('_').Select(p => int.Parse(p)).ToList();
+        }
+
+        private Enum ValidateRoleInput(int? currentRoleId, RoleInput req)
         {
             //if (!Enum.IsDefined(req.RoleStatusId.GetType(), req.RoleStatusId))
             //{
@@ -240,9 +351,51 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 return RoleErrorCode.EmptyRoleName;
             }
+
+            if (currentRoleId == req.ParentRoleId && currentRoleId > 0)
+            {
+                return RoleErrorCode.LoopbackParentRole;
+            }
+
             return GeneralCode.Success;
         }
+        private async Task<IList<RoleDataPermission>> RoleDataPermission(EnumObjectType objectTypeId)
+        {
+            return await _masterContext.RoleDataPermission
+                .Where(p => p.ObjectTypeId == (int)objectTypeId)
+                .AsNoTracking()
+                .ToListAsync();
+        }
 
+        private void UpdateRoleChildren(string rootPath)
+        {
+            var roles = _masterContext.Role.ToList();
+            var st = new Stack<int>();
+            var childrenRoleIds = new List<int>();
+            foreach (var roleId in RootPathToArray(rootPath))
+            {
+                st.Clear();
+                childrenRoleIds.Clear();
+
+                st.Push(roleId);
+                while (st.Count > 0)
+                {
+                    var topRoleId = st.Pop();
+                    if (roleId != topRoleId)
+                        childrenRoleIds.Add(topRoleId);
+                    var children = roles.Where(r => r.ParentRoleId == topRoleId).ToList();
+                    foreach (var c in children)
+                    {
+                        st.Push(c.RoleId);
+                    }
+                }
+
+                var roleInfo = roles.FirstOrDefault(r => r.RoleId == roleId);
+                roleInfo.ChildrenRoleIds = string.Join(",", childrenRoleIds);
+            }
+            _masterContext.SaveChanges();
+        }
+       
         #endregion
     }
 }

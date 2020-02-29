@@ -20,6 +20,15 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<StockOutput>> GetList(string keyword, int page, int size);
 
+        /// <summary>
+        /// Lấy toàn bộ danh sách kho, bao gồm cả những kho mà user đang đăng nhập không có quyền
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<PageData<StockOutput>> GetAll(string keyword, int page, int size);
+
         Task<PageData<StockOutput>> GetListByUserId(int userId,string keyword, int page, int size);
 
         Task<IList<SimpleStockInfo>> GetSimpleList();
@@ -74,7 +83,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, string fromDate, string toDate, int page, int size);
+        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, int page, int size);
 
         /// <summary>
         /// Báo cáo chi tiết nvl/sp
@@ -86,7 +95,29 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, string fromDate, string toDate);
+        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId,IList<int> stockIds, long fromDate, long toDate);
 
+        /// <summary>
+        /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - mẫu báo cáo 03
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long fromDate, long toDate, int page, int size);
+
+        /// <summary>
+        /// Nhật ký nhập xuất kho - mẫu báo cáo 04
+        /// </summary>
+        /// <param name="stockIds"></param>
+        /// <param name="beginTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        Task<ServiceResult<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04(IList<int> stockIds, long beginTime , long endTime, int page, int size);
     }
 }

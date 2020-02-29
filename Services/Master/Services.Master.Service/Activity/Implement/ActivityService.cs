@@ -20,55 +20,51 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         public ActivityService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
-            , ICurrentContextService currentContextService
             , IAsyncRunnerService asyncRunnerService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
         }
+        
 
-
-        public void CreateActivityAsync(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
+        public void CreateActivityAsync(ActivityInput input)
         {
-            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(objectTypeId, objectId, message, oldJsonObject, newObject));
+            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
-        public async Task<Enum> CreateActivityTask(EnumObjectType objectTypeId, long objectId, string message, string oldJsonObject, object newObject)
-        {
-            var userId = _currentContextService.UserId;
-            var actionId = (int)_currentContextService.Action;
 
+
+        public async Task<Enum> CreateActivityTask(ActivityInput input)
+        {
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 var activity = new UserActivityLog()
                 {
-                    UserId = userId,
+                    UserId = input.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
-                    ActionId = actionId,
-                    ObjectTypeId = (int)objectTypeId,
-                    ObjectId = objectId,
-                    Message = message
+                    ActionId = (int)input.ActionId,
+                    ObjectTypeId = (int)input.ObjectTypeId,
+                    ObjectId = input.ObjectId,
+                    Message = input.Message
                 };
 
                 await _masterContext.UserActivityLog.AddAsync(activity);
                 await _masterContext.SaveChangesAsync();
 
-                var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
+                // var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
 
                 var change = new UserActivityLogChange()
                 {
                     UserActivityLogId = activity.UserActivityLogId,
-                    ObjectChange = changeLog
+                    ObjectChange = input.Data,//changeLog
                 };
 
                 await _masterContext.UserActivityLogChange.AddAsync(change);

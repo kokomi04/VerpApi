@@ -15,6 +15,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {
@@ -24,19 +25,19 @@ namespace VErp.Services.Stock.Service.Location.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
-        private readonly IActivityService _activityService;
+        private readonly IActivityLogService _activityLogService;
 
         public LocationService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<LocationService> logger
             , IUnitService unitService
-            , IActivityService activityService)
+            , IActivityLogService activityLogService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _unitService = unitService;
-            _activityService = activityService;
+            _activityLogService = activityLogService;
         }
 
 
@@ -67,10 +68,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.AddAsync(locationInfo);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
-
-                    var objLog = GetLocationInfoForLog(locationInfo);
-
-                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", null, objLog);
+                   
+                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", req.JsonSerialize());
 
                     return locationInfo.StockId;
                 }
@@ -95,10 +94,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
             locationInfo.IsDeleted = true;
             locationInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-
-            var objLog = GetLocationInfoForLog(locationInfo);
-            var dataBefore = objLog.JsonSerialize();
-
+          
+           
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -109,7 +106,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", dataBefore, null);
+                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", locationInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -211,8 +208,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     {
                         return LocationErrorCode.LocationNotFound;
                     }
-                    var originalObj = GetLocationInfoForLog(locationInfo);
-
+                   
                     //Update
 
                     locationInfo.StockId = req.StockId;
@@ -223,10 +219,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
-
-                    var objLog = GetLocationInfoForLog(locationInfo);
-
-                    _activityService.CreateActivityAsync(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", originalObj.JsonSerialize(), objLog);
+                   
+                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", req.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -237,11 +231,6 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     return GeneralCode.InternalError;
                 }
             }
-        }
-
-        private object GetLocationInfoForLog(VErp.Infrastructure.EF.StockDB.Location locationInfo)
-        {
-            return locationInfo;
-        }
+        }       
     }
 }

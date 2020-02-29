@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, string beginTime = null, string endTime = null, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0,long endTime = 0, int page = 1, int size = 10);
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
@@ -38,10 +38,9 @@ namespace VErp.Services.Stock.Service.Stock
         /// Thêm mới phiếu nhập kho
         /// </summary>
         /// <param name="currentUserId"></param>
-        /// <param name="req"></param>
-        /// <param name="IsFreeStyle">IsFreeStyle = true: by pass unit conversion qty</param>
+        /// <param name="req"></param>        
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req,bool IsFreeStyle = false);
+        Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req);
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
@@ -50,7 +49,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="req"></param>
         /// <param name="IsFreeStyle">IsFreeStyle = true: by pass unit conversion qty</param>
         /// <returns></returns>
-        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req, bool IsFreeStyle = false);
+        Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req);
 
         /// <summary>
         /// Cập nhật thông tin phiếu nhập kho
@@ -133,7 +132,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);                      
 
-        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, InventoryInModel req);
-        Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, ApprovedInputDataSubmitModel req);
+        Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
+        Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
     }
 }

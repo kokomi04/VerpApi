@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
+    <ProjectReference Include="..\Commons\Library\Library.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
+  </ItemGroup>
+
+</Project>
