@@ -84,20 +84,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 eTime = endTime.UnixToDateTime();
             }
 
-            //if (!string.IsNullOrEmpty(beginTime))
-            //{
-            //    if (!DateTime.TryParseExact(beginTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out bTime))
-            //    {
-            //        return null;
-            //    }
-            //}
-            //if (!string.IsNullOrEmpty(endTime))
-            //{
-            //    if (!DateTime.TryParseExact(endTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out eTime))
-            //    {
-            //        return null;
-            //    }
-            //}
             var query = from i in _stockDbContext.Inventory
                         select i;
             if (stockId > 0)
@@ -114,10 +100,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
             }
-
+            eTime = eTime.AddDays(1);
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
-                query = query.Where(q => q.Date >= bTime && q.Date <= eTime);
+                query = query.Where(q => q.Date >= bTime && q.Date < eTime);
             }
             else
             {
@@ -127,10 +113,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 if (eTime != DateTime.MinValue)
                 {
-                    query = query.Where(q => q.Date <= eTime);
+                    query = query.Where(q => q.Date < eTime);
                 }
             }
-
+            query = query.OrderByDescending(q => q.Date);
             var total = query.Count();
             var inventoryDataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
@@ -306,103 +292,97 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req)
         {
-            try
+
+            if (req == null || req.InProducts.Count == 0)
             {
-                if (req == null || req.InProducts.Count == 0)
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                return GeneralCode.InvalidParams;
+            }
 
-                if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
-                {
-                    return InventoryErrorCode.InventoryCodeAlreadyExisted;
-                }
+            if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
+            {
+                return InventoryErrorCode.InventoryCodeAlreadyExisted;
+            }
 
-                var issuedDate = req.DateUtc.UnixToDateTime();
-                var billDate = req.BillDate.UnixToDateTime();
-                var validInventoryDetails = await ValidateInventoryIn(false, req);
+            var issuedDate = req.DateUtc.UnixToDateTime();
+            var billDate = req.BillDate.UnixToDateTime();
+            var validInventoryDetails = await ValidateInventoryIn(false, req);
 
-                if (!validInventoryDetails.Code.IsSuccess())
-                {
-                    return validInventoryDetails.Code;
-                }
+            if (!validInventoryDetails.Code.IsSuccess())
+            {
+                return validInventoryDetails.Code;
+            }
 
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    try
+                    var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
+
+                    var inventoryObj = new Infrastructure.EF.StockDB.Inventory
                     {
-                        var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
+                        StockId = req.StockId,
+                        InventoryCode = req.InventoryCode,
+                        InventoryTypeId = (int)EnumInventoryType.Input,
+                        Shipper = req.Shipper,
+                        Content = req.Content,
+                        Date = issuedDate,
+                        CustomerId = req.CustomerId,
+                        Department = req.Department,
+                        StockKeeperUserId = req.StockKeeperUserId,
+                        BillCode = req.BillCode,
+                        BillSerial = req.BillSerial,
+                        BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate,
+                        TotalMoney = totalMoney,
+                        CreatedByUserId = currentUserId,
+                        UpdatedByUserId = currentUserId,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        IsDeleted = false,
+                        IsApproved = false
+                    };
+                    await _stockDbContext.AddAsync(inventoryObj);
+                    await _stockDbContext.SaveChangesAsync();
 
-                        var inventoryObj = new Infrastructure.EF.StockDB.Inventory
-                        {
-                            StockId = req.StockId,
-                            InventoryCode = req.InventoryCode,
-                            InventoryTypeId = (int)EnumInventoryType.Input,
-                            Shipper = req.Shipper,
-                            Content = req.Content,
-                            Date = issuedDate,
-                            CustomerId = req.CustomerId,
-                            Department = req.Department,
-                            StockKeeperUserId = req.StockKeeperUserId,
-                            BillCode = req.BillCode,
-                            BillSerial = req.BillSerial,
-                            BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate,
-                            TotalMoney = totalMoney,
-                            CreatedByUserId = currentUserId,
-                            UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.UtcNow,
-                            UpdatedDatetimeUtc = DateTime.UtcNow,
-                            IsDeleted = false,
-                            IsApproved = false
-                        };
-                        await _stockDbContext.AddAsync(inventoryObj);
-                        await _stockDbContext.SaveChangesAsync();
-
-                        // Thêm danh sách file đính kèm vào phiếu nhập | xuất
-                        if (req.FileIdList != null && req.FileIdList.Count > 0)
-                        {
-                            var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
-                            attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
-                            await _stockDbContext.AddRangeAsync(attachedFiles);
-                            await _stockDbContext.SaveChangesAsync();
-                        }
-
-
-                        foreach (var item in validInventoryDetails.Data)
-                        {
-                            item.InventoryId = inventoryObj.InventoryId;
-                        }
-                        inventoryObj.TotalMoney = totalMoney;
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
-                        await _stockDbContext.SaveChangesAsync();
-
-                        trans.Commit();
-
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", req.JsonSerialize());
-
-                        //Move file from tmp folder
-                        if (req.FileIdList != null)
-                        {
-                            foreach (var fileId in req.FileIdList)
-                            {
-                                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
-                            }
-                        }
-                        return inventoryObj.InventoryId;
-                    }
-                    catch (Exception ex)
+                    // Thêm danh sách file đính kèm vào phiếu nhập | xuất
+                    if (req.FileIdList != null && req.FileIdList.Count > 0)
                     {
-                        trans.Rollback();
-                        _logger.LogError(ex, "AddInventoryInput");
-                        return GeneralCode.InternalError;
+                        var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
+                        attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
+                        await _stockDbContext.AddRangeAsync(attachedFiles);
+                        await _stockDbContext.SaveChangesAsync();
                     }
+
+
+                    foreach (var item in validInventoryDetails.Data)
+                    {
+                        item.InventoryId = inventoryObj.InventoryId;
+                    }
+                    inventoryObj.TotalMoney = totalMoney;
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", req.JsonSerialize());
+
+                    //Move file from tmp folder
+                    if (req.FileIdList != null)
+                    {
+                        foreach (var fileId in req.FileIdList)
+                        {
+                            _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                        }
+                    }
+                    return inventoryObj.InventoryId;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "AddInventoryInput");
+                    return GeneralCode.InternalError;
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "AddInventoryInput");
-                return GeneralCode.InternalError;
-            }
+
         }
 
         private decimal InputCalTotalMoney(IList<InventoryDetail> data)
@@ -423,97 +403,85 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req)
         {
-            try
+            if (req == null || req.OutProducts.Count == 0)
             {
-                if (req == null || req.OutProducts.Count == 0)
-                {
-                    return GeneralCode.InvalidParams;
-                }
-                if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
-                {
-                    return InventoryErrorCode.InventoryCodeAlreadyExisted;
-                }
-                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                //{
-                //    return GeneralCode.InvalidParams;
-                //}
-                var issuedDate = req.DateUtc.UnixToDateTime();
+                return GeneralCode.InvalidParams;
+            }
+            if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
+            {
+                return InventoryErrorCode.InventoryCodeAlreadyExisted;
+            }
+            var issuedDate = req.DateUtc.UnixToDateTime();
 
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    try
+                    var inventoryObj = new Inventory
                     {
-                        var inventoryObj = new Inventory
-                        {
-                            StockId = req.StockId,
-                            InventoryCode = req.InventoryCode,
-                            InventoryTypeId = (int)EnumInventoryType.Output,
-                            Shipper = req.Shipper,
-                            Content = req.Content,
-                            Date = issuedDate,
-                            CustomerId = req.CustomerId,
-                            Department = req.Department,
-                            StockKeeperUserId = req.StockKeeperUserId,
-                            BillCode = string.Empty,
-                            BillSerial = string.Empty,
-                            BillDate = null,
-                            CreatedByUserId = currentUserId,
-                            UpdatedByUserId = currentUserId,
-                            CreatedDatetimeUtc = DateTime.UtcNow,
-                            UpdatedDatetimeUtc = DateTime.UtcNow,
-                            IsDeleted = false,
-                            IsApproved = false
-                        };
-                        await _stockDbContext.AddAsync(inventoryObj);
+                        StockId = req.StockId,
+                        InventoryCode = req.InventoryCode,
+                        InventoryTypeId = (int)EnumInventoryType.Output,
+                        Shipper = req.Shipper,
+                        Content = req.Content,
+                        Date = issuedDate,
+                        CustomerId = req.CustomerId,
+                        Department = req.Department,
+                        StockKeeperUserId = req.StockKeeperUserId,
+                        BillCode = string.Empty,
+                        BillSerial = string.Empty,
+                        BillDate = null,
+                        CreatedByUserId = currentUserId,
+                        UpdatedByUserId = currentUserId,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        IsDeleted = false,
+                        IsApproved = false
+                    };
+                    await _stockDbContext.AddAsync(inventoryObj);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    if (req.FileIdList != null && req.FileIdList.Count > 0)
+                    {
+                        var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
+                        attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
+                        await _stockDbContext.AddRangeAsync(attachedFiles);
                         await _stockDbContext.SaveChangesAsync();
-
-                        if (req.FileIdList != null && req.FileIdList.Count > 0)
-                        {
-                            var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
-                            attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
-                            await _stockDbContext.AddRangeAsync(attachedFiles);
-                            await _stockDbContext.SaveChangesAsync();
-                        }
-
-                        var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
-
-                        if (!processInventoryOut.Code.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return processInventoryOut.Code;
-                        }
-
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
-                        await _stockDbContext.SaveChangesAsync();
-
-                        trans.Commit();
-
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", req.JsonSerialize());
-
-                        //Move file from tmp folder
-                        if (req.FileIdList != null)
-                        {
-                            foreach (var fileId in req.FileIdList)
-                            {
-                                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
-                            }
-                        }
-
-                        return inventoryObj.InventoryId;
                     }
-                    catch (Exception ex)
+
+                    var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
+
+                    if (!processInventoryOut.Code.IsSuccess())
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "AddInventoryOutput");
-                        return GeneralCode.InternalError;
+                        return processInventoryOut.Code;
                     }
+
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu xuất kho, mã: {inventoryObj.InventoryCode} ", req.JsonSerialize());
+
+                    //Move file from tmp folder
+                    if (req.FileIdList != null)
+                    {
+                        foreach (var fileId in req.FileIdList)
+                        {
+                            _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                        }
+                    }
+                    return inventoryObj.InventoryId;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "AddInventoryOutput");
+                    return GeneralCode.InternalError;
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "AddInventoryOutput");
-                return GeneralCode.InternalError;
-            }
+
         }
 
         /// <summary>
@@ -525,140 +493,122 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel req)
         {
-            //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-            //{
-            //    return GeneralCode.InvalidParams;
-            //}
-            //var billDate = DateTime.MinValue;
-            //if (!string.IsNullOrEmpty(req.BillDate))
-            //{
-            //    DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out billDate);
-            //}
+            if (inventoryId <= 0)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
             var issuedDate = req.DateUtc.UnixToDateTime();
             var billDate = req.DateUtc.UnixToDateTime();
-            try
+
+            var validate = await ValidateInventoryIn(false, req);
+
+            if (!validate.Code.IsSuccess())
             {
-                if (inventoryId <= 0)
+                return validate.Code;
+            }
+
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    return InventoryErrorCode.InventoryNotFound;
-                }
-
-                var validate = await ValidateInventoryIn(false, req);
-
-                if (!validate.Code.IsSuccess())
-                {
-                    return validate.Code;
-                }
-
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        #region Update Inventory - Phiếu nhập kho
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-
-                        if (inventoryObj.StockId != req.StockId)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.CanNotChangeStock;
-                        }
-
-                        if (inventoryObj.IsApproved)
-                        {
-                            trans.Rollback();
-                            return GeneralCode.NotYetSupported;
-                        }
-
-                        //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
-                        inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.Date = issuedDate;
-                        inventoryObj.Shipper = req.Shipper;
-                        inventoryObj.Content = req.Content;
-                        inventoryObj.CustomerId = req.CustomerId;
-                        inventoryObj.Department = req.Department;
-                        inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
-                        inventoryObj.BillCode = req.BillCode;
-                        inventoryObj.BillSerial = req.BillSerial;
-                        inventoryObj.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-                        #endregion
-
-                        var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
-                        foreach (var d in inventoryDetails)
-                        {
-                            d.IsDeleted = true;
-                            d.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        }
-                        var totalMoney = (decimal)0;
-                        foreach (var item in validate.Data)
-                        {
-                            item.InventoryId = inventoryObj.InventoryId;
-
-                            totalMoney += (item.UnitPrice * item.PrimaryQuantity);
-                        }
-                        inventoryObj.TotalMoney = totalMoney;
-
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
-
-                        var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
-
-                        if (req.FileIdList != null && req.FileIdList.Count > 0)
-                        {
-                            foreach (var f in files)
-                            {
-                                if (!req.FileIdList.Contains(f.FileId))
-                                    f.IsDeleted = true;
-                            }
-                            foreach (var newFileId in req.FileIdList)
-                            {
-                                if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
-                                    _stockDbContext.InventoryFile.Add(new InventoryFile()
-                                    {
-                                        InventoryId = inventoryId,
-                                        FileId = newFileId,
-                                        IsDeleted = false
-                                    });
-                            }
-                        }
-
-                        await _stockDbContext.SaveChangesAsync();
-                        trans.Commit();
-
-
-                        var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
-                    }
-                    catch (Exception ex)
+                    #region Update Inventory - Phiếu nhập kho
+                    var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                    if (inventoryObj == null)
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "UpdateInventoryInput");
-                        return GeneralCode.InternalError;
+                        return InventoryErrorCode.InventoryNotFound;
                     }
-                }
 
-                //Move file from tmp folder
-                if (req.FileIdList != null)
-                {
-                    foreach (var fileId in req.FileIdList)
+                    if (inventoryObj.StockId != req.StockId)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                        trans.Rollback();
+                        return InventoryErrorCode.CanNotChangeStock;
                     }
-                }
 
-                return GeneralCode.Success;
+                    if (inventoryObj.IsApproved)
+                    {
+                        trans.Rollback();
+                        return GeneralCode.NotYetSupported;
+                    }
+
+                    //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
+                    inventoryObj.InventoryCode = req.InventoryCode;
+                    inventoryObj.Date = issuedDate;
+                    inventoryObj.Shipper = req.Shipper;
+                    inventoryObj.Content = req.Content;
+                    inventoryObj.CustomerId = req.CustomerId;
+                    inventoryObj.Department = req.Department;
+                    inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
+                    inventoryObj.BillCode = req.BillCode;
+                    inventoryObj.BillSerial = req.BillSerial;
+                    inventoryObj.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    #endregion
+
+                    var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
+                    foreach (var d in inventoryDetails)
+                    {
+                        d.IsDeleted = true;
+                        d.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    }
+                    var totalMoney = (decimal)0;
+                    foreach (var item in validate.Data)
+                    {
+                        item.InventoryId = inventoryObj.InventoryId;
+
+                        totalMoney += (item.UnitPrice * item.PrimaryQuantity);
+                    }
+                    inventoryObj.TotalMoney = totalMoney;
+
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
+
+                    var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
+
+                    if (req.FileIdList != null && req.FileIdList.Count > 0)
+                    {
+                        foreach (var f in files)
+                        {
+                            if (!req.FileIdList.Contains(f.FileId))
+                                f.IsDeleted = true;
+                        }
+                        foreach (var newFileId in req.FileIdList)
+                        {
+                            if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
+                                _stockDbContext.InventoryFile.Add(new InventoryFile()
+                                {
+                                    InventoryId = inventoryId,
+                                    FileId = newFileId,
+                                    IsDeleted = false
+                                });
+                        }
+                    }
+
+                    await _stockDbContext.SaveChangesAsync();
+                    trans.Commit();
+
+
+                    var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "UpdateInventoryInput");
+                    return GeneralCode.InternalError;
+                }
             }
-            catch (Exception ex)
+
+            //Move file from tmp folder
+            if (req.FileIdList != null)
             {
-                _logger.LogError(ex, "UpdateInventoryInput");
-                return GeneralCode.InternalError;
+                foreach (var fileId in req.FileIdList)
+                {
+                    _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                }
             }
+            return GeneralCode.Success;
         }
 
         /// <summary>
@@ -670,112 +620,100 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryOutput(long inventoryId, int currentUserId, InventoryOutModel req)
         {
-            try
+            var issuedDate = req.DateUtc.UnixToDateTime();
+
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                //if (!DateTime.TryParseExact(req.Date, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var issuedDate))
-                //{
-                //    return GeneralCode.InvalidParams;
-                //}
-                var issuedDate = req.DateUtc.UnixToDateTime();
-
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                try
                 {
-                    try
-                    {
 
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-
-                        if (inventoryObj.StockId != req.StockId)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.CanNotChangeStock;
-                        }
-
-                        var rollbackResult = await RollbackInventoryOutput(inventoryObj);
-                        if (!rollbackResult.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return rollbackResult;
-                        }
-
-                        var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
-
-                        if (!processInventoryOut.Code.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return processInventoryOut.Code;
-                        }
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
-
-
-                        //note: update IsApproved after RollbackInventoryOutput
-                        inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.Shipper = req.Shipper;
-                        inventoryObj.Content = req.Content;
-                        inventoryObj.Date = issuedDate;
-                        inventoryObj.CustomerId = req.CustomerId;
-                        inventoryObj.Department = req.Department;
-                        inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
-                        inventoryObj.IsApproved = false;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-
-                        var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
-
-                        if (req.FileIdList != null && req.FileIdList.Count > 0)
-                        {
-                            foreach (var f in files)
-                            {
-                                if (!req.FileIdList.Contains(f.FileId))
-                                    f.IsDeleted = true;
-                            }
-                            foreach (var newFileId in req.FileIdList)
-                            {
-                                if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
-                                    _stockDbContext.InventoryFile.Add(new InventoryFile()
-                                    {
-                                        InventoryId = inventoryId,
-                                        FileId = newFileId,
-                                        IsDeleted = false
-                                    });
-                            }
-                        }
-
-                        await _stockDbContext.SaveChangesAsync();
-                        trans.Commit();
-
-                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
-                    }
-                    catch (Exception ex)
+                    var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                    if (inventoryObj == null)
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "UpdateInventoryOutput");
-                        return GeneralCode.InternalError;
+                        return InventoryErrorCode.InventoryNotFound;
                     }
-                }
 
-                //Move file from tmp folder
-                if (req.FileIdList != null)
-                {
-                    foreach (var fileId in req.FileIdList)
+                    if (inventoryObj.StockId != req.StockId)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                        trans.Rollback();
+                        return InventoryErrorCode.CanNotChangeStock;
                     }
+
+                    var rollbackResult = await RollbackInventoryOutput(inventoryObj);
+                    if (!rollbackResult.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return rollbackResult;
+                    }
+
+                    var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
+
+                    if (!processInventoryOut.Code.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return processInventoryOut.Code;
+                    }
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
+
+
+                    //note: update IsApproved after RollbackInventoryOutput
+                    inventoryObj.InventoryCode = req.InventoryCode;
+                    inventoryObj.Shipper = req.Shipper;
+                    inventoryObj.Content = req.Content;
+                    inventoryObj.Date = issuedDate;
+                    inventoryObj.CustomerId = req.CustomerId;
+                    inventoryObj.Department = req.Department;
+                    inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
+                    inventoryObj.IsApproved = false;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+
+                    var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
+
+                    if (req.FileIdList != null && req.FileIdList.Count > 0)
+                    {
+                        foreach (var f in files)
+                        {
+                            if (!req.FileIdList.Contains(f.FileId))
+                                f.IsDeleted = true;
+                        }
+                        foreach (var newFileId in req.FileIdList)
+                        {
+                            if (!files.Select(q => q.FileId).ToList().Contains(newFileId))
+                                _stockDbContext.InventoryFile.Add(new InventoryFile()
+                                {
+                                    InventoryId = inventoryId,
+                                    FileId = newFileId,
+                                    IsDeleted = false
+                                });
+                        }
+                    }
+
+                    await _stockDbContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                 }
-                return GeneralCode.Success;
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "UpdateInventoryOutput");
+                    return GeneralCode.InternalError;
+                }
             }
-            catch (Exception ex)
+
+            //Move file from tmp folder
+            if (req.FileIdList != null)
             {
-                _logger.LogError(ex, "UpdateInventoryOutput");
-                return GeneralCode.InternalError;
+                foreach (var fileId in req.FileIdList)
+                {
+                    _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                }
             }
+            return GeneralCode.Success;
         }
 
         /// <summary>
@@ -809,7 +747,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //    return GeneralCode.InvalidParams;
                 //}
             }
-
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -854,16 +791,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InvalidParams;
             }
 
-
             // Xử lý xoá thông tin phiếu xuất kho
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-
-
                     //Cần rollback cả 2 loại phiếu đã duyệt và chưa duyệt All approved or not need tobe rollback, bỏ if (inventoryObj.IsApproved)
-
                     var processResult = await RollbackInventoryOutput(inventoryObj);
                     if (!processResult.IsSuccess())
                     {
@@ -902,68 +835,59 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> ApproveInventoryInput(long inventoryId, int currentUserId)
         {
-            try
+            if (inventoryId < 0)
             {
-                if (inventoryId < 0)
+                return InventoryErrorCode.InventoryNotFound;
+            }
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    return InventoryErrorCode.InventoryNotFound;
-                }
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-                        if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-
-                        if (inventoryObj.IsApproved)
-                        {
-                            return InventoryErrorCode.InventoryAlreadyApproved;
-                        }
-
-                        inventoryObj.IsApproved = true;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-                        await _stockDbContext.SaveChangesAsync();
-
-                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
-
-                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails);
-                        if (!r.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return r;
-                        }
-
-                        trans.Commit();
-
-                        var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
-
-                        return GeneralCode.Success;
-                    }
-                    catch (Exception ex)
+                    var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                    if (inventoryObj == null)
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "ApproveInventoryInput");
-                        return GeneralCode.InternalError;
+                        return InventoryErrorCode.InventoryNotFound;
                     }
-                }
+                    if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
+                    {
+                        trans.Rollback();
+                        return InventoryErrorCode.InventoryNotFound;
+                    }
 
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ApproveInventoryInput");
-                return GeneralCode.InternalError;
+                    if (inventoryObj.IsApproved)
+                    {
+                        return InventoryErrorCode.InventoryAlreadyApproved;
+                    }
+
+                    inventoryObj.IsApproved = true;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    await _stockDbContext.SaveChangesAsync();
+
+                    var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
+
+                    var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails);
+                    if (!r.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r;
+                    }
+
+                    trans.Commit();
+
+                    var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
+
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "ApproveInventoryInput");
+                    return GeneralCode.InternalError;
+                }
             }
         }
 
@@ -1029,8 +953,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
             return GeneralCode.Success;
-
         }
+
         /// <summary>
         /// Duyệt phiếu xuất kho
         /// </summary>
@@ -1040,73 +964,66 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> ApproveInventoryOutput(long inventoryId, int currentUserId)
         {
-            try
+            if (inventoryId <= 0)
             {
-                if (inventoryId <= 0)
+                return InventoryErrorCode.InventoryNotFound;
+            }
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    return InventoryErrorCode.InventoryNotFound;
-                }
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-                        if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Output)
-                        {
-                            trans.Rollback();
-                            return InventoryErrorCode.InventoryNotFound;
-                        }
-
-                        inventoryObj.IsApproved = true;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-                        var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
-
-                        var fromPackageIds = inventoryDetails.Select(f => f.FromPackageId).ToList();
-                        var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
-
-                        foreach (var detail in inventoryDetails)
-                        {
-                            var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
-                            if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
-
-                            fromPackageInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                            fromPackageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                            fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
-                            fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
-
-                            var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
-
-                            stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                            stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                            stockProduct.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
-                            stockProduct.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
-                        }
-                        await _stockDbContext.SaveChangesAsync();
-                        trans.Commit();
-
-                        var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
-                    }
-                    catch (Exception ex)
+                    var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                    if (inventoryObj == null)
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "ApproveInventoryOutput");
-                        return GeneralCode.InternalError;
+                        return InventoryErrorCode.InventoryNotFound;
                     }
+                    if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Output)
+                    {
+                        trans.Rollback();
+                        return InventoryErrorCode.InventoryNotFound;
+                    }
+
+                    inventoryObj.IsApproved = true;
+                    inventoryObj.UpdatedByUserId = currentUserId;
+                    inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
+
+                    var fromPackageIds = inventoryDetails.Select(f => f.FromPackageId).ToList();
+                    var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
+
+                    foreach (var detail in inventoryDetails)
+                    {
+                        var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
+                        if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
+
+                        fromPackageInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
+                        fromPackageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+                        fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                        fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+
+                        var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
+
+                        stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
+                        stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
+                        stockProduct.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                        stockProduct.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                    }
+                    await _stockDbContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
+                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
+
+                    return GeneralCode.Success;
                 }
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ApproveInventoryOutput");
-                return GeneralCode.InternalError;
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "ApproveInventoryOutput");
+                    return GeneralCode.InternalError;
+                }
             }
         }
 
@@ -1261,7 +1178,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
                     });
                 }
-
                 return (packageList, total);
             }
             catch (Exception ex)
@@ -1602,7 +1518,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 default:
                     break;
             }
-
         }
 
         private async Task<Enum> AppendToCustomPackage(InventoryDetail detail)
@@ -1663,7 +1578,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
             return ensureDefaultPackage;
-
         }
 
         private async Task<ServiceResult<PackageEntity>> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
@@ -1735,7 +1649,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.IsDeleted = true;
                 detail.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
-
             return GeneralCode.Success;
         }
 
@@ -1746,7 +1659,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             //var package = await _objectGenCodeService.GenerateCode(EnumObjectType.Package);
             return packageCode;
         }
-
         #endregion
     }
 }
