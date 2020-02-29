@@ -417,11 +417,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var productRemaining = from sp in _stockContext.StockProduct
                                    join p in productQuery on sp.ProductId equals p.ProductId
                                    where sp.StockId == stockId
-                                   group sp by new { sp.ProductId, sp.StockId} into g
+                                   group sp by new { sp.ProductId, sp.StockId } into g
                                    //from p in g
                                    select new
                                    {
-                                       g.Key.ProductId,                                      
+                                       g.Key.ProductId,
                                        PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
                                    };
 
@@ -661,8 +661,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
                 }
-
-
                 productQuery = from p in productQuery
                                where types.Contains(p.ProductTypeId)
                                select p;
@@ -687,9 +685,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             st.Push(t.ProductCateId);
                         }
                     }
-
                 }
-
                 productQuery = from p in productQuery
                                where cates.Contains(p.ProductCateId)
                                select p;
@@ -705,9 +701,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                from iv in inventories
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
-
                where iv.IsApproved && iv.Date < fromDate
-
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                select new
                {
@@ -721,7 +715,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
                 where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
-
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                 select new
                 {
@@ -741,8 +734,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var total = productIds.Count;
             var productPaged = productIds.Skip((page - 1) * size).Take(size);
-           
-            var productInfos = await _stockContext.Product.Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+
+            var productInfos = await _stockContext.Product.Where(p => productPaged.Contains(p.ProductId)).ToListAsync();
 
             var unitIds = productInfos.Select(p => p.UnitId).ToList();
 
@@ -751,9 +744,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var data = (
                 from p in productInfos
                 join u in unitInfos on p.UnitId equals u.UnitId
-                join b in befores on p.ProductId equals  b.ProductId  into bp
+                join b in befores on p.ProductId equals b.ProductId into bp
                 from b in bp.DefaultIfEmpty()
-                join a in afters on p.ProductId equals  a.ProductId  into ap
+                join a in afters on p.ProductId equals a.ProductId into ap
                 from a in ap.DefaultIfEmpty()
                 select new StockSumaryReportOutput
                 {
@@ -862,7 +855,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = q.i.InventoryTypeId,
                     Description = q.i.Content,
                     InventoryDetailId = q.id.InventoryDetailId,
-                    RefObjectCode = q.id.RefObjectCode,                 
+                    RefObjectCode = q.id.RefObjectCode,
                     PrimaryQuantity = q.id.PrimaryQuantity,
                     //SecondaryUnitId = q.conversion.SecondaryUnitId,
                     SecondaryQuantity = q.id.ProductUnitConversionQuantity,
@@ -885,7 +878,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details = new List<StockProductDetailsModel>(totalRecord);
 
                 var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-                foreach (var item in inPeriodData.OrderBy(q=>q.IssuedDate).ToList())
+                foreach (var item in inPeriodData.OrderBy(q => q.IssuedDate).ToList())
                 {
                     var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
                     var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
@@ -931,7 +924,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
+        public async Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
             try
             {
@@ -977,7 +970,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     from iv in inventoryQuery
                     join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                     join p in productQuery on d.ProductId equals p.ProductId
-                    where iv.IsApproved && iv.Date >= fromDate && iv.Date<= toDate
+                    where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
 
                     group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                     select new
@@ -1004,7 +997,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
              }
              ).ToListAsync();
 
-
                 var aftersByAltUnit = await (
                    from iv in inventoryQuery
                    join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
@@ -1020,8 +1012,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                        Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
                    }
                    ).ToListAsync();
-
-
 
                 #region product  - ProductUnitModel  
                 var productAltUnitModelList = new List<ProductAltUnitModel>();
@@ -1061,13 +1051,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var total = productIds.Count;
                 var productPaged = productIds.Skip((page - 1) * size).Take(size);
 
-                var productInfos = await _stockContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
-                var productUnitConversionInfos = await _stockContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
+                var productInfos = await _stockContext.Product.Where(p => productPaged.Contains(p.ProductId)).AsNoTracking().ToListAsync();
+                var productUnitConversionInfos = await _stockContext.ProductUnitConversion.Where(p => productPaged.Contains(p.ProductId)).AsNoTracking().ToListAsync();
 
                 var unitIds = productInfos.Select(p => p.UnitId).ToList();
                 var unitInfos = await _masterDBContext.Unit.Where(p => unitIds.Contains(p.UnitId)).Select(q => new { q.UnitId, q.UnitName }).ToListAsync();
 
-                var productAltUnitPaged = productAltUnitModelList.Where(q => productIds.Contains(q.ProductId)).ToList();
+                var productAltUnitPaged = productAltUnitModelList.Where(q => productPaged.Contains(q.ProductId)).ToList();
 
                 var packageQuery = _stockContext.Package.AsQueryable();
                 if (stockIds != null && stockIds.Count > 0)
@@ -1120,7 +1110,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join u in unitInfos on p.UnitId equals u.UnitId
                 join b in befores on p.ProductId equals b.ProductId into bp
                 from b in bp.DefaultIfEmpty()
-                join a in afters on  p.ProductId equals a.ProductId into ap
+                join a in afters on p.ProductId equals a.ProductId into ap
                 from a in ap.DefaultIfEmpty()
                 select new StockSumaryReportForm03Output
                 {
@@ -1154,15 +1144,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         item.PakageDateNotExport = pakageNotExport != null ? (pakageNotExport.Date.HasValue ? ((DateTime)pakageNotExport.Date).GetUnix() : 0) : 0;
                     }
                 }
-
-                return (resultData, total);
-
+                return new PageData<StockSumaryReportForm03Output>
+                {
+                    List = resultData,
+                    Total = total
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "StockSumaryReportForm03");
+                return GeneralCode.InternalError;
             }
-            return (null, 0);
         }
 
         /// <summary>
@@ -1174,7 +1166,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<StockSumaryReportForm04Output>> StockSumaryReportForm04(IList<int> stockIds, long beginTime, long endTime, int page = 1, int size = int.MaxValue)
+        public async Task<ServiceResult<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04(IList<int> stockIds, long beginTime, long endTime, int page = 1, int size = int.MaxValue)
         {
             try
             {
@@ -1213,6 +1205,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var inventoryDataList = inventoryQuery.Skip((page - 1) * size).Take(size).ToList();
                 var inventoryIds = inventoryDataList.Select(q => q.InventoryId).ToList();
                 var customerIds = inventoryDataList.Select(q => q.CustomerId).ToList();
+
                 var customerDataList = await _masterDBContext.Customer.Where(q => customerIds.Contains(q.CustomerId)).Select(q => new { q.CustomerId, q.CustomerCode, q.CustomerName }).ToListAsync();
                 var inventoryDetailsData = _stockContext.InventoryDetail.AsNoTracking().Where(q => inventoryIds.Contains(q.InventoryId)).ToList();
                 var productIds = inventoryDetailsData.Select(q => q.ProductId).ToList();
@@ -1237,7 +1230,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.ProductId = inventoryDetail.ProductId;
                     item.ProductCode = productInfo?.ProductCode ?? string.Empty;
                     item.ProductName = productInfo?.ProductName ?? string.Empty;
-                    item.PrimaryUnitId = productInfo?.UnitId??0;
+                    item.PrimaryUnitId = productInfo?.UnitId ?? 0;
                     item.UnitName = unitDataList.FirstOrDefault(q => q.UnitId == productInfo?.UnitId)?.UnitName ?? string.Empty;
                     item.ProductUnitConversionId = inventoryDetail.ProductUnitConversionId;
                     item.PrimaryQuantity = inventoryDetail.PrimaryQuantity;
@@ -1252,10 +1245,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var reportInventoryOutputModelList = new List<StockSumaryReportForm04Output>(inventoryDataList.Count) { };
                 foreach (var inventory in inventoryDataList)
                 {
-                    var item = new StockSumaryReportForm04Output() {
+                    var item = new StockSumaryReportForm04Output()
+                    {
                         InventoryDetailsOutputModel = new List<ReportForm04InventoryDetailsOutputModel>()
                     };
-                    item.InventoryId = inventory.InventoryId;                    
+                    item.InventoryId = inventory.InventoryId;
                     item.InventoryCode = inventory.InventoryCode;
                     item.BillCode = inventory.BillCode;
                     item.DateUtc = inventory.Date.GetUnix();
@@ -1265,25 +1259,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.CustomerCode = customerDataList.FirstOrDefault(q => q.CustomerId == inventory.CustomerId)?.CustomerCode ?? string.Empty;
                     item.CustomerName = customerDataList.FirstOrDefault(q => q.CustomerId == inventory.CustomerId)?.CustomerName ?? string.Empty;
                     item.CreatedByUserId = inventory.CreatedByUserId;
-                    item.CreatedByUserName = userDataList.FirstOrDefault(q=>q.UserId == inventory.CreatedByUserId)?.UserName ?? string.Empty;
+                    item.CreatedByUserName = userDataList.FirstOrDefault(q => q.UserId == inventory.CreatedByUserId)?.UserName ?? string.Empty;
                     item.CreatedDatetimeUtc = inventory.CreatedDatetimeUtc.GetUnix();
                     item.UpdatedByUserId = inventory.UpdatedByUserId;
                     item.UpdatedByUserName = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
                     item.UpdatedDatetimeUtc = inventory.UpdatedDatetimeUtc.GetUnix();
-                    item.Censor= userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
+                    item.Censor = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
                     item.CensorDate = inventory.UpdatedDatetimeUtc.GetUnix();
 
                     item.InventoryDetailsOutputModel = reportInventoryDetailsOutputModelList.Where(q => q.InventoryId == inventory.InventoryId).ToList();
                     reportInventoryOutputModelList.Add(item);
                 }
 
-                return (reportInventoryOutputModelList, total);
+                return new PageData<StockSumaryReportForm04Output> { List = reportInventoryOutputModelList, Total = total };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "StockSumaryReportForm04");
-                return (null, 0);
-            }            
+                return GeneralCode.InternalError;
+            }
         }
 
         #region Private Methods
@@ -1291,12 +1285,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
         #endregion
-
-        //private class ProductUnitModel
-        //{
-        //    public int ProductId { get; set; }
-        //    public int PrimaryUnitId { get; set; }
-        //}
 
         private class ProductAltUnitModel
         {
