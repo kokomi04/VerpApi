@@ -412,7 +412,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryErrorCode.InventoryCodeAlreadyExisted;
             }
             var issuedDate = req.DateUtc.UnixToDateTime();
-
+            
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -481,7 +481,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return GeneralCode.InternalError;
                 }
             }
-
         }
 
         /// <summary>

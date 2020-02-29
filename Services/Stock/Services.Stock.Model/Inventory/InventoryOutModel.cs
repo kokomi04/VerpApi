@@ -30,7 +30,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int ProductId { get; set; }
         public int? ProductUnitConversionId { set; get; }
 
-        public bool? IsFreeStyle { set; get; }
+        //public bool? IsFreeStyle { set; get; }
 
         public decimal PrimaryQuantity { get; set; }
 
