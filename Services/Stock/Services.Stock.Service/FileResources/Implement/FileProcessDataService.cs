@@ -741,11 +741,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             var newProductUnitConversion = new ProductUnitConversion
                             {
-                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor.ToString("N6")).Replace(@",", ""),
+                                ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor).Replace(@",", ""),
                                 ProductId = productObj.ProductId,
                                 SecondaryUnitId = unit2.UnitId,
-                                FactorExpression = item.Factor.ToString("N6").Replace(@",",""),
-                                ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor.ToString("N6")),
+                                FactorExpression = item.Factor.ToString().Replace(@",",""),
+                                ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor),
                                 IsDefault = false
                             };
                             if (newProductUnitConversionList.Any(q => q.ProductUnitConversionName == newProductUnitConversion.ProductUnitConversionName && q.ProductId == newProductUnitConversion.ProductId))
@@ -780,8 +780,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             var unit2 = unitDataList.FirstOrDefault(q => q.UnitName == item.Unit2);
                             if (unit2 != null && item.Factor > 0)
                             {
-                                var factorExpression = item.Factor.ToString("N6");
-                                productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression && !q.IsDefault);
+                                var factorExpression = item.Factor;
+                                productUnitConversionObj = newProductUnitConversionList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.SecondaryUnitId == unit2.UnitId && q.FactorExpression == factorExpression.ToString() && !q.IsDefault);
                             }
                         }
                         else
@@ -979,7 +979,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     foreach (var item in excelModel)
                     {
                         var productEntity = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor.ToString("N6"));
+                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);
                         if (productEntity != null)
                         {
                             var productUnitConversionEntity = new ProductUnitConversion
@@ -1009,7 +1009,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         if (string.IsNullOrEmpty(item.ProductCode) || (item.Qty1 == 0 && item.Qty2 == 0))
                             continue;
 
-                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor.ToString("N6"));
+                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var productUnitConversionObj = productUnitConversionDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.ProductUnitConversionName == productUnitConversionName);
                         var packageObj = defaultPackageDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
@@ -1017,8 +1017,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         var inventoryOutProductModel = new InventoryOutProductModel
                         {
                             ProductId = productObj.ProductId,
-                            ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
-                            IsFreeStyle = true,
+                            ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,                            
                             PrimaryQuantity = item.Qty1,
                             ProductUnitConversionQuantity = item.Qty2,
                             UnitPrice = item.UnitPrice,
