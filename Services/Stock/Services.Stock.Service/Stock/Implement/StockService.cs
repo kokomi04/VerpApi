@@ -829,9 +829,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
+                toDate = toDate.AddDays(1);
+
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
-                    inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date >= fromDate && q.i.Date <= toDate);
+                    inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date >= fromDate && q.i.Date < toDate);
                 }
                 else
                 {
@@ -841,7 +843,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     if (toDate != DateTime.MinValue)
                     {
-                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date <= toDate);
+                        inPerdiodQuery = inPerdiodQuery.Where(q => q.i.Date < toDate);
                     }
                 }
 
@@ -1186,9 +1188,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     inventoryQuery = inventoryQuery.Where(iv => stockIds.Contains(iv.StockId));
                 }
+
+                eTime = eTime.AddDays(1);
                 if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
                 {
-                    inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date <= eTime);
+                    inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date < eTime);
                 }
                 else
                 {
@@ -1198,9 +1202,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     if (eTime != DateTime.MinValue)
                     {
-                        inventoryQuery = inventoryQuery.Where(q => q.Date <= eTime);
+                        inventoryQuery = inventoryQuery.Where(q => q.Date < eTime);
                     }
                 }
+                inventoryQuery = inventoryQuery.OrderByDescending(q => q.Date);
                 var total = inventoryQuery.Count();
                 var inventoryDataList = inventoryQuery.Skip((page - 1) * size).Take(size).ToList();
                 var inventoryIds = inventoryDataList.Select(q => q.InventoryId).ToList();
@@ -1224,20 +1229,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     var productInfo = productDataList.FirstOrDefault(q => q.ProductId == inventoryDetail.ProductId);
 
-                    var item = new ReportForm04InventoryDetailsOutputModel();
-                    item.InventoryDetailId = inventoryDetail.InventoryDetailId;
-                    item.InventoryId = inventoryDetail.InventoryId;
-                    item.ProductId = inventoryDetail.ProductId;
-                    item.ProductCode = productInfo?.ProductCode ?? string.Empty;
-                    item.ProductName = productInfo?.ProductName ?? string.Empty;
-                    item.PrimaryUnitId = productInfo?.UnitId ?? 0;
-                    item.UnitName = unitDataList.FirstOrDefault(q => q.UnitId == productInfo?.UnitId)?.UnitName ?? string.Empty;
-                    item.ProductUnitConversionId = inventoryDetail.ProductUnitConversionId;
-                    item.PrimaryQuantity = inventoryDetail.PrimaryQuantity;
-                    item.UnitPrice = inventoryDetail.UnitPrice;
-                    item.POCode = inventoryDetail.Pocode ?? string.Empty;
-                    item.ProductionOrderCode = inventoryDetail.ProductionOrderCode ?? string.Empty;
-                    item.OrderCode = inventoryDetail.OrderCode ?? string.Empty;
+                    var item = new ReportForm04InventoryDetailsOutputModel
+                    {
+                        InventoryDetailId = inventoryDetail.InventoryDetailId,
+                        InventoryId = inventoryDetail.InventoryId,
+                        ProductId = inventoryDetail.ProductId,
+                        ProductCode = productInfo?.ProductCode ?? string.Empty,
+                        ProductName = productInfo?.ProductName ?? string.Empty,
+                        PrimaryUnitId = productInfo?.UnitId ?? 0,
+                        UnitName = unitDataList.FirstOrDefault(q => q.UnitId == productInfo?.UnitId)?.UnitName ?? string.Empty,
+                        ProductUnitConversionId = inventoryDetail.ProductUnitConversionId,
+                        PrimaryQuantity = inventoryDetail.PrimaryQuantity,
+                        UnitPrice = inventoryDetail.UnitPrice,
+                        POCode = inventoryDetail.Pocode ?? string.Empty,
+                        ProductionOrderCode = inventoryDetail.ProductionOrderCode ?? string.Empty,
+                        OrderCode = inventoryDetail.OrderCode ?? string.Empty
+                    };
 
                     reportInventoryDetailsOutputModelList.Add(item);
                 }
