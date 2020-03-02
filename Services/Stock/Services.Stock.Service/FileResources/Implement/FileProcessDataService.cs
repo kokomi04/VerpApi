@@ -23,6 +23,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library;
 
 namespace VErp.Services.Stock.Service.FileResources.Implement
 {
@@ -744,10 +745,19 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 ProductUnitConversionName = string.Format("{0}-{1}", unit2.UnitName, item.Factor).Replace(@",", ""),
                                 ProductId = productObj.ProductId,
                                 SecondaryUnitId = unit2.UnitId,
-                                FactorExpression = item.Factor.ToString().Replace(@",",""),
+                                FactorExpression = item.Factor.ToString().Replace(@",", ""),
                                 ConversionDescription = string.Format("{0} {1} {2}", unit1.UnitName, unit2.UnitName, item.Factor),
                                 IsDefault = false
                             };
+
+                            if (Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(0, newProductUnitConversion.FactorExpression) != 0
+                                ||
+                                Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, newProductUnitConversion.FactorExpression)<=0
+                                )
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                            }
+
                             if (newProductUnitConversionList.Any(q => q.ProductUnitConversionName == newProductUnitConversion.ProductUnitConversionName && q.ProductId == newProductUnitConversion.ProductId))
                                 continue;
                             else
@@ -987,6 +997,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 ProductId = productEntity.ProductId,
                                 ProductUnitConversionName = productUnitConversionName
                             };
+
                             productUnitConversionDataList.Add(productUnitConversionEntity);
                         }
                     }
