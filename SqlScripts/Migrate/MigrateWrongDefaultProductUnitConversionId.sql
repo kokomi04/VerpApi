@@ -1,15 +1,17 @@
 SET NOCOUNT ON;  
+
+BEGIN TRANSACTION Trans
   
 DECLARE @StockId int
 DECLARE @InventoryDetailId bigint
 DECLARE @ProductId int
 DECLARE @ProductUnitConversionId int
-DECLARE @PrimaryQuantity decimal
-DECLARE @ProductUnitConversionQuantity decimal
+DECLARE @PrimaryQuantity DECIMAL(32,16)
+DECLARE @ProductUnitConversionQuantity decimal(32,16);
 
 
   
-DECLARE inventoryDetail_cursor CURSOR LOCAL FOR  
+DECLARE inventoryDetail_cursor CURSOR LOCAL READ_ONLY FORWARD_ONLY FOR  
  
 SELECT 
 	i.StockId, 
@@ -44,6 +46,11 @@ BEGIN
 	SELECT @DefaultUnitConversionId = puc.ProductUnitConversionId 
 		FROM dbo.ProductUnitConversion puc 
 		WHERE puc.ProductId = @ProductId AND puc.IsDefault = 1
+	IF ISNULL(@DefaultUnitConversionId,0)=0
+	BEGIN
+	    ROLLBACK TRANSACTION Trans
+		RETURN
+	END
 
 	SELECT @DefaultToPackgeId = p.PackageId 
 		FROM dbo.Package p 
@@ -89,8 +96,8 @@ BEGIN
 		    0, -- ProductUnitConversionRemaining - decimal
 		    NULL, -- Date - datetime2
 		    NULL, -- ExpiryTime - datetime2
-		    GETDATE(), -- CreatedDatetimeUtc - datetime2
-		    GETDATE(), -- UpdatedDatetimeUtc - datetime2
+		    GETUTCDATE(), -- CreatedDatetimeUtc - datetime2
+		    GETUTCDATE(), -- UpdatedDatetimeUtc - datetime2
 		    0 -- IsDeleted - bit
 		)
 		SET @DefaultToPackgeId = Scope_identity()
@@ -125,11 +132,14 @@ BEGIN
 		SET @DefaultStockProductId = Scope_identity()
 	END
 
+	DECLARE @Old_ToPackgeId						BIGINT = 0;
+	DECLARE @Old_StockProductId					BIGINT = 0;
+
 	DECLARE @Old_UnitConversionId				int = @ProductUnitConversionId;	
-	DECLARE @Old_PrimaryQuantityWaiting			decimal = 0;
-	DECLARE @Old_PrimaryQuantityRemaining		decimal = 0;
-	DECLARE @Old_ProductUnitConversionWaitting	decimal = 0;
-	DECLARE @Old_ProductUnitConversionRemaining decimal = 0;
+	DECLARE @Old_PrimaryQuantityWaiting			decimal(32,16) = 0;
+	DECLARE @Old_PrimaryQuantityRemaining		decimal(32,16) = 0;
+	DECLARE @Old_ProductUnitConversionWaitting	decimal(32,16) = 0;
+	DECLARE @Old_ProductUnitConversionRemaining decimal(32,16) = 0;
 	
 	SELECT  @Old_ToPackgeId						= p.PackageId,
 			@Old_PrimaryQuantityWaiting			= PrimaryQuantityWaiting,
@@ -157,7 +167,7 @@ BEGIN
 			ProductUnitConversionRemaining	= ProductUnitConversionRemaining	+ @Old_ProductUnitConversionRemaining-- decimal	  
 		WHERE StockProductId = @DefaultStockProductId
 
-	UPDATE top(1) InventoryDetail SET ProductUnitConversionId = @DefaultUnitConversionId WHERE InventoryDetailId = @InventoryDetailId
+	UPDATE top(1) dbo.InventoryDetail SET ProductUnitConversionId = @DefaultUnitConversionId WHERE InventoryDetailId = @InventoryDetailId
 	
 	UPDATE TOP(1) dbo.InventoryDetailToPackage
 		SET
@@ -171,7 +181,7 @@ BEGIN
 	DELETE TOP(1) dbo.StockProduct WHERE StockProductId = @Old_StockProductId
 	
     FETCH NEXT FROM inventoryDetail_cursor   
-    INTO INTO @StockId, 
+    INTO @StockId, 
 			@InventoryDetailId, 
 			@ProductId, 
 			@ProductUnitConversionId, 
@@ -180,3 +190,5 @@ BEGIN
 END   
 CLOSE inventoryDetail_cursor;  
 DEALLOCATE inventoryDetail_cursor;  
+
+COMMIT TRANSACTION Trans
