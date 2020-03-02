@@ -14,7 +14,8 @@ namespace VErp.Infrastructure.ServiceCore
         public static IServiceCollection AddServiceCoreDependency(this IServiceCollection services)
         {
             services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
-            services.AddHttpClient<IActivityLogService, ActivityLogService>();            
+            services.AddHttpClient<IActivityLogService, ActivityLogService>();
+            services.AddHttpClient<IPhysicalFileService, PhysicalFileService>();
             services.AddScoped<HttpCurrentContextService>();
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());
