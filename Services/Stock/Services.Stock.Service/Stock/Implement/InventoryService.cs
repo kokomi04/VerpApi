@@ -412,7 +412,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryErrorCode.InventoryCodeAlreadyExisted;
             }
             var issuedDate = req.DateUtc.UnixToDateTime();
-            
+
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -1317,6 +1317,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     }
+                    if (productUnitConversionInfo.ProductId != details.ProductId)
+                    {
+                        return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
+                    }
+
                     primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                     if (!isApproved && primaryQty <= 0)
                     {
@@ -1412,7 +1417,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     }
-
+                    if (productUnitConversionInfo.ProductId != details.ProductId)
+                    {
+                        return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
+                    }
                     if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
                     {
                         details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
