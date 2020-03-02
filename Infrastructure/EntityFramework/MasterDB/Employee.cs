@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Address { get; set; }
         public int? GenderId { get; set; }
         public bool IsDeleted { get; set; }
+        public long? AvatarFileId { get; set; }
 
         public virtual Gender Gender { get; set; }
     }

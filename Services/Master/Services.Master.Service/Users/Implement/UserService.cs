@@ -28,6 +28,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly IRoleService _roleService;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IAsyncRunnerService _asyncRunnerService;
 
         public UserService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
@@ -35,6 +36,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             , IRoleService roleService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
+            , IAsyncRunnerService asyncRunnerService
             )
         {
             _masterContext = masterContext;
@@ -43,6 +45,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _roleService = roleService;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _asyncRunnerService = asyncRunnerService;
         }
 
         public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
@@ -78,6 +81,11 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
 
+                    if (req.AvatarFileId.HasValue)
+                    {
+                        _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, user.Data));
+                    }
+
                     return user.Data;
                 }
                 catch (Exception ex)
@@ -88,6 +96,9 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
+
+
+
         }
 
         public async Task<ServiceResult<UserInfoOutput>> GetInfo(int userId)
@@ -107,7 +118,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                      Address = em.Address,
                      Email = em.Email,
                      GenderId = (EnumGender?)em.GenderId,
-                     Phone = em.Phone
+                     Phone = em.Phone,
+                     AvatarFileId = em.AvatarFileId
                  }
              )
              .FirstOrDefaultAsync();
@@ -123,7 +135,8 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<Enum> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
-          
+            long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -145,7 +158,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize());
 
-                    return GeneralCode.Success;
+
                 }
                 catch (Exception ex)
                 {
@@ -155,6 +168,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
+
+            if (oldAvatarFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
+            }
+
+            return GeneralCode.Success;
         }
 
         public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size)
@@ -205,6 +225,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var userInfo = await GetUserFullInfo(userId);
 
+            long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -228,7 +249,6 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", req.JsonSerialize());
 
-                    return GeneralCode.Success;
                 }
                 catch (Exception ex)
                 {
@@ -238,6 +258,19 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
+
+
+
+            if (req.AvatarFileId.HasValue && oldAvatarFileId != req.AvatarFileId)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, userId));
+                if (oldAvatarFileId.HasValue)
+                {
+                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
+                }
+            }
+
+            return GeneralCode.Success;
         }
 
         public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
@@ -268,7 +301,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         }
 
         public async Task<IList<RolePermissionModel>> GetMePermission()
-        {           
+        {
             return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds);
         }
 
@@ -404,7 +437,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Address = req.Address,
                 GenderId = (int?)req.GenderId,
                 Phone = req.Phone,
-                UserId = userId
+                UserId = userId,
+                AvatarFileId = req.AvatarFileId
             };
 
             await _masterContext.Employee.AddAsync(employee);
@@ -453,6 +487,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.Address = req.Address;
             employee.GenderId = (int?)req.GenderId;
             employee.Phone = req.Phone;
+            employee.AvatarFileId = req.AvatarFileId;
 
             await _masterContext.SaveChangesAsync();
 
