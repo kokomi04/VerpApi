@@ -1399,6 +1399,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     || fromPackageInfo.ProductUnitConversionId != details.ProductUnitConversionId
                     || fromPackageInfo.StockId != req.StockId)
                 {
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error InvalidPackage. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}");
                     return InventoryErrorCode.InvalidPackage;
                 }
 
@@ -1415,6 +1416,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)
                     {
+                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error ProductUnitConversionNotFound. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}");
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     }
                     if (productUnitConversionInfo.ProductId != details.ProductId)
@@ -1426,6 +1428,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
                         if (!(details.ProductUnitConversionQuantity > 0))
                         {
+                            _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
                             return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
                         }
                         //return GeneralCode.InvalidParams;
@@ -1433,6 +1436,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
                     {
+                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
                         return InventoryErrorCode.NotEnoughQuantity;
                     }
                     if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)

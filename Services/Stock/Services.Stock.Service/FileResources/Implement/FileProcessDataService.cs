@@ -988,6 +988,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     var productUnitConversionDataList = new List<ProductUnitConversion>(excelModel.Count);
                     foreach (var item in excelModel)
                     {
+                        if (string.IsNullOrEmpty(item.Unit2) || item.Factor == 0)
+                            continue;
                         var productEntity = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);
                         if (productEntity != null)
@@ -1019,16 +1021,26 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         if (string.IsNullOrEmpty(item.ProductCode) || (item.Qty1 == 0 && item.Qty2 == 0))
                             continue;
-
-                        var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);
-                        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
-                        var productUnitConversionObj = productUnitConversionDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.ProductUnitConversionName == productUnitConversionName);
+                        
+                        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);                        
                         var packageObj = defaultPackageDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
+
+                        int? productUnitConversionId = null;
+                        if (!string.IsNullOrEmpty(item.Unit2) && item.Factor != 0)
+                        {
+                            var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);
+                            var productUnitConversionObj = productUnitConversionDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId && q.ProductUnitConversionName == productUnitConversionName);
+
+                            if (productUnitConversionObj != null)
+                                productUnitConversionId = productUnitConversionObj.ProductUnitConversionId;
+                        }
+                        else
+                            productUnitConversionId = packageObj.ProductUnitConversionId;
 
                         var inventoryOutProductModel = new InventoryOutProductModel
                         {
                             ProductId = productObj.ProductId,
-                            ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,                            
+                            ProductUnitConversionId = productUnitConversionId > 0 ? productUnitConversionId : packageObj.ProductUnitConversionId,
                             PrimaryQuantity = item.Qty1,
                             ProductUnitConversionQuantity = item.Qty2,
                             UnitPrice = item.UnitPrice,
@@ -1080,6 +1092,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 else
                                 {
                                     _logger.LogWarning(string.Format("ProcessInventoryOutputExcelSheet not success, please recheck -> AddInventoryOutput: {0}", item.InventoryCode));
+                                    return GeneralCode.InternalError;
                                 }
                             }
                         }
