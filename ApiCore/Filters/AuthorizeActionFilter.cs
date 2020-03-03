@@ -119,15 +119,17 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 roleIds.AddRange(roleInfo.ChildrenRoleIds);
             }
 
-
-            var permission = (
+            var lstPermission = (
                 from p in _masterContext.RolePermission
                 where p.ModuleId == moduleId
                 && roleIds.Contains(p.RoleId)
                 select p.Permission
                 )
-                .ToList()
-                .Aggregate((p1, p2) => p1 | p2);
+                .ToList();
+
+            var permission = 0;
+            if (lstPermission.Count > 0)
+                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
 
             if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
