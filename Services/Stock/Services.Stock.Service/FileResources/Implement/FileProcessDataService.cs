@@ -727,6 +727,34 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     _stockDbContext.BulkInsertOrUpdate<ProductExtraInfo>(productExtraInfoList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false });
                     #endregion
 
+                    #region Cập nhật thông tin cảnh báo tồn kho của sản phẩm
+                    var productStockInfoList = new List<ProductStockInfo>(productDataList.Count);
+
+                    foreach (var p in productDataList)
+                    {
+                        if (p.ProductId > 0)
+                        {
+                            var productStockInfo = new ProductStockInfo
+                            {
+                                ProductId = p.ProductId,
+                                StockOutputRuleId = 0,
+                                AmountWarningMin = 1,
+                                AmountWarningMax = 1000000,
+                                TimeWarningAmount = 0,
+                                TimeWarningTimeTypeId = 4,
+                                DescriptionToStock = string.Empty,
+                                IsDeleted = false,
+                                ExpireTimeTypeId = 4,
+                                ExpireTimeAmount = 0,
+                            };
+                            productStockInfoList.Add(productStockInfo);
+                        }
+                    }
+                    var readProductStockInfoListBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(ProductStockInfo.ProductId) } };
+                    _stockDbContext.BulkRead<ProductStockInfo>(productStockInfoList, readProductStockInfoListBulkConfig);
+                    _stockDbContext.BulkInsertOrUpdate<ProductStockInfo>(productStockInfoList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false });
+                    #endregion
+
                     #region Cập nhật đơn vị chuyển đổi - ProductUnitConversion
                     var newProductUnitConversionList = new List<ProductUnitConversion>(productDataList.Count);
                     foreach (var item in excelModel)
@@ -752,7 +780,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
                             if (Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(0, newProductUnitConversion.FactorExpression) != 0
                                 ||
-                                Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, newProductUnitConversion.FactorExpression)<=0
+                                Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, newProductUnitConversion.FactorExpression) <= 0
                                 )
                             {
                                 return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
@@ -892,9 +920,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             try
             {
                 foreach (var sheet in sheetList)
-                {                    
+                {
                     var totalRowCount = sheet.LastRowNum + 1;
-                    var excelModel = new List<OpeningBalanceModel>(totalRowCount);                    
+                    var excelModel = new List<OpeningBalanceModel>(totalRowCount);
                     try
                     {
                         for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
@@ -1021,8 +1049,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         if (string.IsNullOrEmpty(item.ProductCode) || (item.Qty1 == 0 && item.Qty2 == 0))
                             continue;
-                        
-                        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);                        
+
+                        var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var packageObj = defaultPackageDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
 
                         int? productUnitConversionId = null;

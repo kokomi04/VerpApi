@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Services.PurchaseOrder.Model.PurchaseRequest
+namespace VErp.Services.PurchaseOrder.Model.PurchasingRequest
 {
     public class PurchasingRequestDetailOutputModel
     {
