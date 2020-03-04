@@ -466,19 +466,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     OtherInventoryOutput.OldProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
                     OtherInventoryOutput.NewProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
 
-                    currentPackageNode.Children.Add(new TransferToObject()
+                    var currentOutput = currentPackageNode.Children.FirstOrDefault(c => c.ObjectTypeId == EnumObjectType.InventoryDetail && c.ObjectId == otherOutputputId);
+                    if (currentOutput == null)
                     {
-                        IsEditable = false,
-                        ObjectId = otherOutputputId,
-                        ObjectTypeId = EnumObjectType.InventoryDetail,
-                        PackageOperationTypeId = EnumPackageOperationType.Split,
+                        currentOutput = new TransferToObject()
+                        {
+                            IsEditable = false,
+                            ObjectId = otherOutputputId,
+                            ObjectTypeId = EnumObjectType.InventoryDetail,
+                            PackageOperationTypeId = EnumPackageOperationType.Split,
 
-                        OldTransferPrimaryQuantity = iv.PrimaryQuantity,
-                        NewTransferPrimaryQuantity = iv.PrimaryQuantity,
+                            OldTransferPrimaryQuantity = 0,
+                            NewTransferPrimaryQuantity = 0,
 
-                        OldTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity,
-                        NewTransferProductUnitConversionQuantity = iv.ProductUnitConversionQuantity
-                    });
+                            OldTransferProductUnitConversionQuantity = 0,
+                            NewTransferProductUnitConversionQuantity = 0
+                        };
+
+                        currentPackageNode.Children.Add(currentOutput);
+                    }
+
+                    currentOutput.OldTransferPrimaryQuantity += iv.PrimaryQuantity;
+                    currentOutput.NewTransferPrimaryQuantity += iv.PrimaryQuantity;
+
+                    currentOutput.OldTransferProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
+                    currentOutput.NewTransferProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
+
+
                 }
 
             }
