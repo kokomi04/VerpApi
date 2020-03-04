@@ -51,6 +51,8 @@
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
+    <ProjectReference Include="..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Model\Services.Accountant.Model.csproj" />
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
