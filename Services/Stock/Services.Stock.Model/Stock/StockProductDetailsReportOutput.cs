@@ -30,7 +30,7 @@ namespace VErp.Services.Stock.Model.Stock
         public int StockId { get; set; }
         public string StockName { get; set; }
 
-        public DateTime IssuedDate { set; get; }
+        public long IssuedDate { set; get; }
 
         public string InventoryCode { set; get; }
 
