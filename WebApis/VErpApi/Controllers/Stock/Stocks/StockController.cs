@@ -229,8 +229,10 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <summary>
         /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - - Mẫu báo cáo kho 03
         /// </summary>
-        /// <param name="stockIds">Danh sách id kho cần báo cáo</param>
-        /// <param name="keyword">Từ khóa tìm kiếm: mã sp, tên sp</param>
+        /// <param name="stockIds"></param>
+        /// <param name="keyword"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
         /// <param name="page"></param>
@@ -238,9 +240,9 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReportForm03")]
-        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReportForm03(keyword, stockIds, fromDate, toDate, page, size);
+            return await _stockService.StockSumaryReportForm03(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
 
         /// <summary>

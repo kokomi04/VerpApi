@@ -1047,7 +1047,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
 
                     if (!totalByTimes.ContainsKey(item.ProductUnitConversionId.Value))
-                    {                    
+                    {
                         totalByTimes.Add(item.ProductUnitConversionId.Value, 0);
                     }
 
@@ -1104,7 +1104,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
+        public async Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
             try
             {
@@ -1125,6 +1125,57 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                    || p.ProductCode.Contains(keyword)
                                    select p;
                 }
+                if (productTypeIds != null && productTypeIds.Count > 0)
+                {
+                    var productTypes = await _stockContext.ProductType.ToListAsync();
+
+                    var types = new List<int?>();
+                    foreach (var productTypeId in productTypeIds)
+                    {
+                        var st = new Stack<int>();
+                        st.Push(productTypeId);
+                        while (st.Count > 0)
+                        {
+                            var parentId = st.Pop();
+                            types.Add(parentId);
+                            var children = productTypes.Where(p => p.ParentProductTypeId == parentId);
+                            foreach (var t in children)
+                            {
+                                st.Push(t.ProductTypeId);
+                            }
+                        }
+
+                    }
+                    productQuery = from p in productQuery
+                                   where types.Contains(p.ProductTypeId)
+                                   select p;
+                }
+
+                if (productCateIds != null && productCateIds.Count > 0)
+                {
+                    var productCates = await _stockContext.ProductCate.ToListAsync();
+
+                    var cates = new List<int>();
+                    foreach (var productCateId in productCateIds)
+                    {
+                        var st = new Stack<int>();
+                        st.Push(productCateId);
+                        while (st.Count > 0)
+                        {
+                            var parentId = st.Pop();
+                            cates.Add(parentId);
+                            var children = productCates.Where(p => p.ParentProductCateId == parentId);
+                            foreach (var t in children)
+                            {
+                                st.Push(t.ProductCateId);
+                            }
+                        }
+                    }
+                    productQuery = from p in productQuery
+                                   where cates.Contains(p.ProductCateId)
+                                   select p;
+                }
+
                 var inventoryQuery = _stockContext.Inventory.AsQueryable();
 
                 if (stockIds != null && stockIds.Count > 0)
