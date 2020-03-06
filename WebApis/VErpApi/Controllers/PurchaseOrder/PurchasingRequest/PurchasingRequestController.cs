@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <param name="req">Model PurchasingRequestInputModel</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("Add")]
+        [Route("")]
         public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInputModel req)
         {
             return await _purchasingRequestService.AddPurchasingRequest(UserId, req);
@@ -71,7 +71,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <param name="req">Model PurchasingRequestInputModel</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("Update/{purchasingRequestId}")]
+        [Route("{purchasingRequestId}")]
         public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInputModel req)
         {
             return await _purchasingRequestService.UpdatePurchasingRequest(purchasingRequestId, UserId, req);
@@ -83,7 +83,8 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("ApprovePurchasingRequest/{purchasingRequestId}")]
+        [Route("{purchasingRequestId}/Approve")]
+        [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.ApprovePurchasingRequest(purchasingRequestId, UserId);
@@ -95,7 +96,8 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <param name="purchasingRequestId"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("ApprovePurchasingRequest/{purchasingRequestId}")]
+        [Route("{purchasingRequestId}/Reject")]
+        [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Reject([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.RejectPurchasingRequest(purchasingRequestId, UserId);

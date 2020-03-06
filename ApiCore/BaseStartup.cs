@@ -138,6 +138,13 @@ namespace VErp.Infrastructure.ApiCore
                     Description = "The system Service HTTP API"
                 });
 
+                options.SwaggerDoc("purchaseorder", new Info
+                {
+                    Title = "VERP System HTTP API",
+                    Version = "v1",
+                    Description = "The system Service HTTP API"
+                });
+
                 options.AddSecurityDefinition("oauth2", new OAuth2Scheme
                 {
                     Type = "oauth2",
@@ -216,6 +223,8 @@ namespace VErp.Infrastructure.ApiCore
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
 
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
+
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
 
                    c.OAuthClientId("web");
                    c.OAuthClientSecret("secretWeb");
