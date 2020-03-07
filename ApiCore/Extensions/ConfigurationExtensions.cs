@@ -9,6 +9,7 @@ using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.IdentityDB;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Infrastructure.ApiCore.Extensions
@@ -32,7 +33,15 @@ namespace VErp.Infrastructure.ApiCore.Extensions
                 option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
             }, ServiceLifetime.Scoped);
         }
-
+        public static void ConfigPurchaseOrderContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<PurchaseOrderDBContext>((option) =>
+            {
+                option.UseLazyLoadingProxies(false);
+                option.UseSqlServer(appSetting.DatabaseConnections.PurchaseOrderDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+       
         public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)
         {
             return services

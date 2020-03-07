@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Services.Accountant.Service;
+using Services.PurchaseOrder.Service;
 using System;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -45,6 +46,7 @@ namespace MigrateAndMappingApi
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
             services.AddScopedServices(StockServiceAssembly.Assembly);
+            services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

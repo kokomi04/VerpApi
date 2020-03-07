@@ -47,48 +47,48 @@ namespace VErp.Infrastructure.ApiCore.Filters
         public void Apply(Schema schema, SchemaFilterContext context)
         {
 
-            if (Nullable.GetUnderlyingType(context.SystemType)?.IsEnum == true)
-            {
-                var lst = new List<object>();
-                object example = null;
-                foreach (var item in Enum.GetValues(Nullable.GetUnderlyingType(context.SystemType)))
-                {
-                    if (example == null)
-                    {
-                        example = item;
-                    }
-                    lst.Add(item.ToString() + ": " + (int)item);
-                }
-                schema.Example = example;
-                schema.Enum = lst;
-            }
+            //if (Nullable.GetUnderlyingType(context.SystemType)?.IsEnum == true)
+            //{
+            //    var lst = new List<object>();
+            //    object example = null;
+            //    foreach (var item in Enum.GetValues(Nullable.GetUnderlyingType(context.SystemType)))
+            //    {
+            //        if (example == null)
+            //        {
+            //            example = item;
+            //        }
+            //        lst.Add(item.ToString() + ": " + (int)item);
+            //    }
+            //    schema.Example = example;
+            //    schema.Enum = lst;
+            //}
 
-            if (context.SystemType.IsEnum)
-            {
-                var lst = new List<object>();
+            //if (context.SystemType.IsEnum)
+            //{
+            //    var lst = new List<object>();
 
-                var prefix = context.SystemType.GetErrorCodePrefix(false);
+            //    var prefix = context.SystemType.GetErrorCodePrefix(false);
 
-                object example = null;
-                foreach (var item in Enum.GetValues(context.SystemType))
-                {
-                    if (example == null)
-                    {
-                        example = item;
-                    }
+            //    object example = null;
+            //    foreach (var item in Enum.GetValues(context.SystemType))
+            //    {
+            //        if (example == null)
+            //        {
+            //            example = item;
+            //        }
 
-                    if (string.IsNullOrWhiteSpace(prefix))
-                    {
-                        lst.Add(item.ToString() + ": " + (int)item);
-                    }
-                    else
-                    {
-                        lst.Add($"{item}: \"{prefix}-{(int)item}\"");
-                    }
-                }
-                schema.Example = example;
-                schema.Enum = lst;
-            }
+            //        if (string.IsNullOrWhiteSpace(prefix))
+            //        {
+            //            lst.Add(item.ToString() + ": " + (int)item);
+            //        }
+            //        else
+            //        {
+            //            lst.Add($"{item}: \"{prefix}-{(int)item}\"");
+            //        }
+            //    }
+            //    schema.Example = example;
+            //    schema.Enum = lst;
+            //}
 
             if (Nullable.GetUnderlyingType(context.SystemType) != null)
             {

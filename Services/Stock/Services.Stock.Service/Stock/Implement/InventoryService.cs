@@ -82,6 +82,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (endTime > 0)
             {
                 eTime = endTime.UnixToDateTime();
+                eTime = eTime.AddDays(1);
             }
 
             var query = from i in _stockDbContext.Inventory
@@ -100,7 +101,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
             }
-            eTime = eTime.AddDays(1);
+            
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
                 query = query.Where(q => q.Date >= bTime && q.Date < eTime);

@@ -11,12 +11,19 @@ namespace VErp.Services.PurchaseOrder.Model.PurchasingRequest
         public string OrderCode { get; set; }
         public long Date { get; set; }
         public string Content { get; set; }
-        public bool IsApproved { get; set; }
-        //public bool IsDeleted { get; set; }
+        
+        public int Status { set; get; }
+
+        public int RejectCount { set; get; }        
+
         public int? CreatedByUserId { get; set; }
         public int? UpdatedByUserId { get; set; }
-        public long CreatedDatetime { get; set; }
-        public long UpdatedDatetime { get; set; }
+        public long CreatedDatetimeUtc { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
+
+        public int? CensorByUserId { get; set; }
+
+        public long CensorDatetimeUtc { get; set; }
 
         public List<PurchasingRequestDetailOutputModel> DetailList { set; get; }
     }

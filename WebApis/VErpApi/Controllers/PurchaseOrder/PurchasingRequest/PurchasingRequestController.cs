@@ -28,16 +28,17 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// Lấy danh sách phiếu yêu cầu mua hàng
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="statusList"></param>
         /// <param name="beginTime"></param>
         /// <param name="endTime"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("")]
-        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> Get([FromQuery] string keyword, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        [Route("GetList")]
+        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingRequestService.GetList(keyword: keyword, beginTime: beginTime, endTime: endTime, page: page, size: size);
+            return await _purchasingRequestService.GetList(keyword: keyword, statusList: statusList, beginTime: beginTime, endTime: endTime, page: page, size: size);
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <summary>
         /// Cập nhật phiếu yêu cầu mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu nhập/xuất kho</param>
+        /// <param name="purchasingRequestId">Id phiếu</param>
         /// <param name="req">Model PurchasingRequestInputModel</param>
         /// <returns></returns>
         [HttpPut]
@@ -75,6 +76,19 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInputModel req)
         {
             return await _purchasingRequestService.UpdatePurchasingRequest(purchasingRequestId, UserId, req);
+        }
+
+        /// <summary>
+        /// Gửi duyệt phiếu yêu cầu mua hàng
+        /// </summary>
+        /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{purchasingRequestId}/SendApprove")]
+        [VErpAction(EnumAction.Censor)]
+        public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingRequestId)
+        {
+            return await _purchasingRequestService.SendToApprove(purchasingRequestId, UserId);
         }
 
         /// <summary>

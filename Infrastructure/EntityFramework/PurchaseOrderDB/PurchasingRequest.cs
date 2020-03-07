@@ -10,11 +10,14 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string OrderCode { get; set; }
         public DateTime Date { get; set; }
         public string Content { get; set; }
-        public bool IsApproved { get; set; }
+        public int RejectCount { get; set; }
+        public int Status { get; set; }
         public bool IsDeleted { get; set; }
         public int? CreatedByUserId { get; set; }
         public int? UpdatedByUserId { get; set; }
-        public DateTime? CreatedDatetime { get; set; }
-        public DateTime? UpdatedDatetime { get; set; }
+        public int? CensorByUserId { get; set; }
+        public DateTime? CensorDatetimeUtc { get; set; }
+        public DateTime? CreatedDatetimeUtc { get; set; }
+        public DateTime? UpdatedDatetimeUtc { get; set; }
     }
 }

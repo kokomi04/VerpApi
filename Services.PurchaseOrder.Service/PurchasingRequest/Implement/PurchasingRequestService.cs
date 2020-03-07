@@ -11,14 +11,16 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using Microsoft.Extensions.Options;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.ErrorCodes;
+using VErp.Commons.Enums.MasterEnum;
 using MasterDBContext = VErp.Infrastructure.EF.MasterDB.MasterDBContext;
 using VErp.Commons.Library;
-using VErp.Commons.Enums.MasterEnum;
+
 using System.Linq;
 
 namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 {
-    class PurchasingRequestService : IPurchasingRequestService
+    public class PurchasingRequestService : IPurchasingRequestService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly MasterDBContext _masterDBContext;
@@ -51,9 +53,27 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.AsNoTracking().FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
                 if (purchasingRequestObj == null)
                 {
-                    return GeneralCode.InternalError;
+                    return PurchasingRequestErrorCode.NotFound;
                 }
                 var purchasingRequestDetailList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => q.PurchasingRequestId == purchasingRequestObj.PurchasingRequestId).ToListAsync();
+
+                var productIdsList = purchasingRequestDetailList.Select(q => q.ProductId).ToList();
+                var productModelList = await _stockDbContext.Product.Where(q => productIdsList.Contains(q.ProductId)).AsNoTracking().Select(q=> new { q.ProductId,q.ProductCode,q.ProductName,q.UnitId }).ToListAsync();
+
+                var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
+                var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+
+                var detailsModelOutput = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+                {
+                    PurchasingRequestDetailId = q.PurchasingRequestDetailId,
+                    PurchasingRequestId = q.PurchasingRequestId,
+                    ProductId = q.ProductId,
+                    PrimaryUnitId = q.PrimaryUnitId,
+                    PrimaryQuantity = q.PrimaryQuantity,
+                    PrimaryUnitName = unitModelList.FirstOrDefault(v=>v.UnitId == q.PrimaryUnitId)?.UnitName,
+                    ProductName = productModelList.FirstOrDefault(v=> v.ProductId == q.ProductId)?.ProductName,
+                    ProductCode = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
+                }).ToList();
 
                 var result = new PurchasingRequestOutputModel
                 {
@@ -62,26 +82,125 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     OrderCode = purchasingRequestObj.OrderCode,
                     Date = purchasingRequestObj.Date.GetUnix(),
                     Content = purchasingRequestObj.Content,
-                    IsApproved = purchasingRequestObj.IsApproved,
+                    Status = purchasingRequestObj.Status,
+                    RejectCount  = purchasingRequestObj.RejectCount,
+
+
                     CreatedByUserId = purchasingRequestObj.CreatedByUserId,
                     UpdatedByUserId = purchasingRequestObj.UpdatedByUserId,
-                    CreatedDatetime = purchasingRequestObj.CreatedDatetime != null ? ((DateTime)purchasingRequestObj.CreatedDatetime).GetUnix() : 0,
-                    UpdatedDatetime = purchasingRequestObj.UpdatedDatetime != null ? ((DateTime)purchasingRequestObj.UpdatedDatetime).GetUnix() : 0,
-                    DetailList = null
+                    CreatedDatetimeUtc = purchasingRequestObj.CreatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = purchasingRequestObj.UpdatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.UpdatedDatetimeUtc).GetUnix() : 0,
+
+                    CensorByUserId = purchasingRequestObj.CensorByUserId,
+                    CensorDatetimeUtc = purchasingRequestObj.CensorDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CensorDatetimeUtc).GetUnix() : 0,
+
+                    DetailList = detailsModelOutput
                 };
 
-                return GeneralCode.Success;
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ApprovePurchasingRequest");
+                _logger.LogError(ex, "Get PurchasingRequest");
                 return GeneralCode.InternalError;
             }
         }
 
-        public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
+        public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
-            throw new NotImplementedException();
+            var purchasingRequestQuery = from pr in _purchaseOrderDBContext.PurchasingRequest
+                                         select pr;
+                
+            if(!string.IsNullOrEmpty(keyword))
+            {
+                purchasingRequestQuery = purchasingRequestQuery.Where(q => q.PurchasingRequestCode.Contains(keyword) || q.OrderCode.Contains(keyword));
+            }
+            if(statusList.Count > 0)
+            {
+                var enumStatusList = statusList.Select(q => Convert.ToInt32(q)).ToList();
+                purchasingRequestQuery = purchasingRequestQuery.Where(q => enumStatusList.Contains(q.Status));
+            }
+            var bTime = DateTime.MinValue;
+            var eTime = DateTime.MinValue;
+
+            if (beginTime > 0)
+            {
+                bTime = beginTime.UnixToDateTime();
+            }
+            if (endTime > 0)
+            {
+                eTime = endTime.UnixToDateTime();
+                eTime = eTime.AddDays(1);
+            }
+            
+            if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
+            {
+                purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date >= bTime && q.Date < eTime);
+            }
+            else
+            {
+                if (bTime != DateTime.MinValue)
+                {
+                    purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date >= bTime);
+                }
+                if (eTime != DateTime.MinValue)
+                {
+                    purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date < eTime);
+                }
+            }
+
+            purchasingRequestQuery = purchasingRequestQuery.OrderByDescending(q => q.Date);
+            var total = purchasingRequestQuery.Count();
+            var purchasingRequestDataList = purchasingRequestQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var purchasingRequestIdsList = purchasingRequestDataList.Select(q => q.PurchasingRequestId).ToList();
+
+            var purchasingRequestDetailList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => purchasingRequestIdsList.Contains(q.PurchasingRequestId)).ToListAsync();
+
+            var productIdsList = purchasingRequestDetailList.Select(q => q.ProductId).ToList();
+            var productModelList = await _stockDbContext.Product.Where(q => productIdsList.Contains(q.ProductId)).AsNoTracking().Select(q => new { q.ProductId, q.ProductCode, q.ProductName, q.UnitId }).ToListAsync();
+
+            var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
+            var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+
+            var detailsModelOutputList = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+            {
+                PurchasingRequestDetailId = q.PurchasingRequestDetailId,
+                PurchasingRequestId = q.PurchasingRequestId,
+                ProductId = q.ProductId,
+                PrimaryUnitId = q.PrimaryUnitId,
+                PrimaryQuantity = q.PrimaryQuantity,
+                PrimaryUnitName = unitModelList.FirstOrDefault(v => v.UnitId == q.PrimaryUnitId)?.UnitName,
+                ProductName = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductName,
+                ProductCode = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
+            }).ToList();
+
+
+            var pagedData = new List<PurchasingRequestOutputModel>(purchasingRequestDataList.Count);
+            foreach (var purchasingRequestObj in purchasingRequestDataList)
+            {
+                var prItem = new PurchasingRequestOutputModel
+                {
+                    PurchasingRequestId = purchasingRequestObj.PurchasingRequestId,
+                    PurchasingRequestCode = purchasingRequestObj.PurchasingRequestCode,
+                    OrderCode = purchasingRequestObj.OrderCode,
+                    Date = purchasingRequestObj.Date.GetUnix(),
+                    Content = purchasingRequestObj.Content,
+                    Status = purchasingRequestObj.Status,
+                    RejectCount = purchasingRequestObj.RejectCount,
+
+                    CreatedByUserId = purchasingRequestObj.CreatedByUserId,
+                    UpdatedByUserId = purchasingRequestObj.UpdatedByUserId,
+                    CreatedDatetimeUtc = purchasingRequestObj.CreatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = purchasingRequestObj.UpdatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.UpdatedDatetimeUtc).GetUnix() : 0,
+
+                    CensorByUserId = purchasingRequestObj.CensorByUserId,
+                    CensorDatetimeUtc = purchasingRequestObj.CensorDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CensorDatetimeUtc).GetUnix() : 0,
+
+                    DetailList = detailsModelOutputList.Where(q=>q.PurchasingRequestId == purchasingRequestObj.PurchasingRequestId).ToList()
+                };
+                pagedData.Add(prItem);
+            }
+            return (pagedData, total);
         }
 
         public async Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingRequestInputModel model)
@@ -96,11 +215,14 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                         OrderCode = model.OrderCode,
                         Date = model.Date.UnixToDateTime(),
                         Content = model.Content,
+                        Status = (int)EnumPurchasingRequestStatus.Editing,
+                        RejectCount = 0,
+
                         CreatedByUserId = currentUserId,
                         UpdatedByUserId = currentUserId,
-                        IsApproved = false,
-                        CreatedDatetime = DateTime.UtcNow,
-                        UpdatedDatetime = DateTime.UtcNow,
+
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false
                     };
 
@@ -118,8 +240,8 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                             PrimaryUnitId = details.PrimaryUnitId,
                             PrimaryQuantity = details.PrimaryQuantity,
                             IsDeleted = false,
-                            CreatedDatetime = DateTime.UtcNow,
-                            UpdatedDatetime = DateTime.UtcNow,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                         });
                     }
                     await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(purchasingRequestDetailList);
@@ -134,7 +256,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "AddStock");
+                    _logger.LogError(ex, "AddPurchasingRequest");
                     return GeneralCode.InternalError;
                 }
             }
@@ -149,14 +271,14 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
                     if (purchasingRequestObj == null)
                     {
-                        return GeneralCode.InternalError;
+                        return PurchasingRequestErrorCode.NotFound;
                     }
-                    purchasingRequestObj.PurchasingRequestCode = model.PurchasingRequestCode;
+                    //purchasingRequestObj.PurchasingRequestCode = model.PurchasingRequestCode;
                     purchasingRequestObj.OrderCode = model.OrderCode;
                     purchasingRequestObj.Date = model.Date.UnixToDateTime();
                     purchasingRequestObj.Content = model.Content;
                     purchasingRequestObj.UpdatedByUserId = currentUserId;
-                    purchasingRequestObj.UpdatedDatetime = DateTime.UtcNow;
+                    purchasingRequestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -165,7 +287,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     foreach (var details in oldPurchasingRequestDetailList)
                     {
                         details.IsDeleted = true;
-                        details.UpdatedDatetime = DateTime.UtcNow;
+                        details.UpdatedDatetimeUtc = DateTime.UtcNow;
                     }
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -180,8 +302,8 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                             PrimaryUnitId = details.PrimaryUnitId,
                             PrimaryQuantity = details.PrimaryQuantity,
                             IsDeleted = false,
-                            CreatedDatetime = DateTime.UtcNow,
-                            UpdatedDatetime = DateTime.UtcNow,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow,
                         });
                     }
                     await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(newPurchasingRequestDetailList);
@@ -208,15 +330,15 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
                 if (purchasingRequestObj == null)
                 {
-                    return GeneralCode.InternalError;
+                    return PurchasingRequestErrorCode.NotFound;
                 }
-                if (purchasingRequestObj.IsApproved)
+                if (purchasingRequestObj.Status == (int)EnumPurchasingRequestStatus.Approved)
                 {
-                    return GeneralCode.InternalError;
+                    return PurchasingRequestErrorCode.AlreadyApproved;
                 }
                 purchasingRequestObj.IsDeleted = true;
                 purchasingRequestObj.UpdatedByUserId = currentUserId;
-                purchasingRequestObj.UpdatedDatetime = DateTime.UtcNow;
+                purchasingRequestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -231,6 +353,32 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }
         }
 
+        public async Task<Enum> SendToApprove(long purchasingRequestId, int currentUserId)
+        {
+            try
+            {
+                var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
+                if (purchasingRequestObj == null)
+                {
+                    return GeneralCode.InternalError;
+                }
+                purchasingRequestObj.Status = (int)EnumPurchasingRequestStatus.WaitingApproved;
+                purchasingRequestObj.UpdatedByUserId = currentUserId;
+                purchasingRequestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Gửi duyệt phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SendToApprove");
+                return GeneralCode.InternalError;
+            }
+        }
+
         public async Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, int currentUserId)
         {
             try
@@ -240,9 +388,9 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 {
                     return GeneralCode.InternalError;
                 }
-                purchasingRequestObj.IsApproved = true;
+                purchasingRequestObj.Status = (int)EnumPurchasingRequestStatus.Approved;
                 purchasingRequestObj.UpdatedByUserId = currentUserId;
-                purchasingRequestObj.UpdatedDatetime = DateTime.UtcNow;
+                purchasingRequestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -264,11 +412,18 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
                 if (purchasingRequestObj == null)
                 {
-                    return GeneralCode.InternalError;
+                    return PurchasingRequestErrorCode.NotFound;
                 }
-                purchasingRequestObj.IsApproved = false;
-                purchasingRequestObj.UpdatedByUserId = currentUserId;
-                purchasingRequestObj.UpdatedDatetime = DateTime.UtcNow;
+                if(purchasingRequestObj.IsDeleted || purchasingRequestObj.Status == (int)EnumPurchasingRequestStatus.Approved)
+                {
+                    return PurchasingRequestErrorCode.AlreadyApproved;
+                }
+
+
+                purchasingRequestObj.Status = (int)EnumPurchasingRequestStatus.Rejected;
+                purchasingRequestObj.RejectCount += 1;
+                purchasingRequestObj.CensorByUserId = currentUserId;
+                purchasingRequestObj.CensorDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 

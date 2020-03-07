@@ -30,7 +30,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
 
-                entity.Property(e => e.CreatedDatetime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
 
@@ -40,18 +40,16 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.UpdatedDatetime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<PurchasingRequestDetail>(entity =>
             {
-                entity.Property(e => e.PurchasingRequestDetailId).ValueGeneratedNever();
-
-                entity.Property(e => e.CreatedDatetime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
 
-                entity.Property(e => e.UpdatedDatetime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<Test>(entity =>

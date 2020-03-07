@@ -1411,14 +1411,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (endTime > 0)
                 {
                     eTime = endTime.UnixToDateTime();
+                    eTime = eTime.AddDays(1);
                 }
                 var inventoryQuery = _stockContext.Inventory.AsNoTracking().Where(q => q.IsApproved);
                 if (stockIds != null && stockIds.Count > 0)
                 {
                     inventoryQuery = inventoryQuery.Where(iv => stockIds.Contains(iv.StockId));
-                }
-
-                eTime = eTime.AddDays(1);
+                }               
                 if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
                 {
                     inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date < eTime);

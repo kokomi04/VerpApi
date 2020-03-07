@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Services.Accountant.Service;
+using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
 using VErp.Infrastructure.ApiCore;
@@ -69,7 +70,8 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
-            services.AddScopedServices(StockServiceAssembly.Assembly);            
+            services.AddScopedServices(StockServiceAssembly.Assembly);
+            services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
