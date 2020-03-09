@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
 
@@ -39,19 +40,38 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
             else
             {
-                var json = new ApiResponse<Exception>
+                if (context.Exception.GetType() == typeof(DistributedLockExeption))
                 {
-                    Code = GeneralCode.InternalError.GetErrorCodeString(),
-                    Message = context.Exception.Message
-                };
+                    var json = new ApiResponse<Exception>
+                    {
+                        Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
+                        Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
+                    };
 
-                if (_env.IsDevelopment())
-                {
-                    json.Data = context.Exception;
+                    if (_env.IsDevelopment())
+                    {
+                        json.Data = context.Exception;
+                    }
+
+                    context.Result = new InternalServerErrorObjectResult(json);
+                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadGateway;
                 }
+                else
+                {
+                    var json = new ApiResponse<Exception>
+                    {
+                        Code = GeneralCode.InternalError.GetErrorCodeString(),
+                        Message = context.Exception.Message
+                    };
 
-                context.Result = new InternalServerErrorObjectResult(json);
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    if (_env.IsDevelopment())
+                    {
+                        json.Data = context.Exception;
+                    }
+
+                    context.Result = new InternalServerErrorObjectResult(json);
+                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                }
             }
             context.ExceptionHandled = true;
         }

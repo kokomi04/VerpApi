@@ -90,7 +90,13 @@ namespace VErp.Infrastructure.ApiCore
                 {
                     options.Filters.Add(typeof(AuthorizeActionFilter));
                 }
-            });
+            })
+           .AddNewtonsoftJson(options => {
+               options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+               options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+               options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+               options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+           });
 
 
             services.AddRazorPages(options =>
@@ -143,7 +149,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
-                
+
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));

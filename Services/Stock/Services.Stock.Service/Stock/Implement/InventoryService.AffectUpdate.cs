@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -130,30 +131,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId)))
             {
-                try
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var r = await ApprovedInputDataUpdateAction(currentUserId, inventoryId, fromDate, toDate, req);
-                    if (!r.Code.IsSuccess())
+                    try
                     {
-                        trans.Rollback();
+                        var r = await ApprovedInputDataUpdateAction(currentUserId, inventoryId, fromDate, toDate, req);
+                        if (!r.Code.IsSuccess())
+                        {
+                            trans.Rollback();
+                            return r;
+                        }
+
+
+                        trans.Commit();
+
+                        var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryId, messageLog, req.JsonSerialize());
+
                         return r;
                     }
-
-
-                    trans.Commit();
-
-                    var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
-                    await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryId, messageLog, req.JsonSerialize());
-
-                    return r;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "ApprovedInputDataUpdate");
-                    return GeneralCode.InternalError;
+                    catch (Exception ex)
+                    {
+                        trans.Rollback();
+                        _logger.LogError(ex, "ApprovedInputDataUpdate");
+                        return GeneralCode.InternalError;
+                    }
                 }
             }
         }
