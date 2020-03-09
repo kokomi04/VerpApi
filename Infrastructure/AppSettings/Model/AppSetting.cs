@@ -16,5 +16,7 @@ namespace VErp.Infrastructure.AppSettings.Model
         public IdentitySetting Identity { get; set; }
         public ServiceUrlsModel ServiceUrls { get; set; }
         public LoggingSetting Logging { get; set; }
+
+        public RedisSetting Redis { get; set; }
     }
 }

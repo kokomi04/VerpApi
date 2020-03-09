@@ -24,6 +24,9 @@ namespace VErp.Commons.Enums.StandardEnum
         Forbidden = 5,
 
         [Description("Không thực hiện được. Chức năng này tạm thời chưa được hỗ trợ")]
-        NotYetSupported = 6
+        NotYetSupported = 6,
+
+        [Description("Đang có tranh chấp tài nguyên bởi xử lý khác, vui lòng thử lại sau ít phút")]
+        DistributedLockExeption = 7
     }
 }
