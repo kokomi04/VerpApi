@@ -71,9 +71,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MasterTests", "UnitTests\Ma
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PurchaseOrder", "PurchaseOrder", "{DB617FAF-DF36-44E5-8348-7D9F57E5D72F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.PurchaseOrder.Model", "Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj", "{96A20CC9-62F6-45A2-B9F0-6875EEBE6B9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.PurchaseOrder.Model", "Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj", "{96A20CC9-62F6-45A2-B9F0-6875EEBE6B9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Services.PurchaseOrder.Service", "Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj", "{0E5C17BF-F126-4CB8-B278-F279325CD5D5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.PurchaseOrder.Service", "Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj", "{0E5C17BF-F126-4CB8-B278-F279325CD5D5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Cache", "Cache", "{6E047406-F8AF-40AD-804C-7B6EA4103D70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedisCache", "Infrastructure\Cache\RedisCache\RedisCache.csproj", "{94CFABDD-4EFB-4848-ABD3-18A94C0BF130}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemCache", "Infrastructure\Cache\MemCache\MemCache.csproj", "{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -181,6 +187,14 @@ Global
 		{0E5C17BF-F126-4CB8-B278-F279325CD5D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0E5C17BF-F126-4CB8-B278-F279325CD5D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E5C17BF-F126-4CB8-B278-F279325CD5D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94CFABDD-4EFB-4848-ABD3-18A94C0BF130}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94CFABDD-4EFB-4848-ABD3-18A94C0BF130}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94CFABDD-4EFB-4848-ABD3-18A94C0BF130}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94CFABDD-4EFB-4848-ABD3-18A94C0BF130}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -216,6 +230,9 @@ Global
 		{DB617FAF-DF36-44E5-8348-7D9F57E5D72F} = {BA64BC8E-AA48-43AA-9FB3-F7EC82CC0966}
 		{96A20CC9-62F6-45A2-B9F0-6875EEBE6B9D} = {DB617FAF-DF36-44E5-8348-7D9F57E5D72F}
 		{0E5C17BF-F126-4CB8-B278-F279325CD5D5} = {DB617FAF-DF36-44E5-8348-7D9F57E5D72F}
+		{6E047406-F8AF-40AD-804C-7B6EA4103D70} = {40D3EA91-8579-41B8-A738-DA93A8220EE7}
+		{94CFABDD-4EFB-4848-ABD3-18A94C0BF130} = {6E047406-F8AF-40AD-804C-7B6EA4103D70}
+		{59BB575A-0F8C-43F1-A954-D0A3FC4B12C3} = {6E047406-F8AF-40AD-804C-7B6EA4103D70}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

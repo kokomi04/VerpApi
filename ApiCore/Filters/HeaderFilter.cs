@@ -8,7 +8,7 @@ using System.Text;
 namespace VErp.Infrastructure.ApiCore.Filters
 {
     public class HeaderFilter : IOperationFilter
-    {      
+    {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             if (operation.Parameters == null)
@@ -18,9 +18,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 Name = "X-Module",
                 In = ParameterLocation.Header,
                 Required = true,
-                Schema=new OpenApiSchema()
+                Schema = new OpenApiSchema()
                 {
-                    Type = "interger",
+                    Type = "integer",
                 }
             });
         }
