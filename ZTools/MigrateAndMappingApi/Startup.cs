@@ -50,7 +50,7 @@ namespace MigrateAndMappingApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
 
             ConfigureBase(app, env, loggerFactory, false);
@@ -65,7 +65,7 @@ namespace MigrateAndMappingApi
                 spa.Options.SourcePath = "ClientApp";
 
                 //if (env.IsDevelopment())
-                if(env.IsEnvironment("Local"))
+                if(env.EnvironmentName == "Local")
                 {
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }

@@ -22,7 +22,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                     filterBuilder.AddFilter("IsDeleted", isDeleted);
                 }
 
-                entityType.QueryFilter = filterBuilder.Build();
+                entityType.SetQueryFilter(filterBuilder.Build());
             }
 
         }

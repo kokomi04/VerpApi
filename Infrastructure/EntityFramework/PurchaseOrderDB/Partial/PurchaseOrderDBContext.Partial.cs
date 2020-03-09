@@ -22,7 +22,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     filterBuilder.AddFilter("IsDeleted", isDeleted);
                 }
 
-                entityType.QueryFilter = filterBuilder.Build();
+                entityType.SetQueryFilter(filterBuilder.Build());
             }
 
         }

@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     filterBuilder.AddFilterListContains<int>("StockId", stockIds);
                 }
 
-                entityType.QueryFilter = filterBuilder.Build();
+                entityType.SetQueryFilter(filterBuilder.Build());
             }
 
         }
