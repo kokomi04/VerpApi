@@ -140,6 +140,10 @@ namespace VErp.Infrastructure.ApiCore
                 //        //options.UseReferencedDefinitionsForEnums();
                 //        //options.DescribeAllEnumsAsStrings();
                 //        //options.UseReferencedDefinitionsForEnums();
+
+                options.OperationFilter<HeaderFilter>();
+                options.OperationFilter<AuthorizeCheckOperationFilter>();
+                
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));

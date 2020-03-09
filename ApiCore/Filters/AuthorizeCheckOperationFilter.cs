@@ -18,32 +18,20 @@ namespace VErp.Infrastructure.ApiCore.Filters
 {
     // IOperationFilter implementation that will validate whether an action has an applicable Authorize attribute.
     // If it does, we add the VerpApi scope so IdentityServer can validate permission for that scope.
-    //public class AuthorizeCheckOperationFilter : IOperationFilter
-    //{
-    //    public void Apply(Operation operation, OperationFilterContext context)
-    //    {
-    //        // Check for authorize attribute
-    //        var hasAuthorize = context.MethodInfo.DeclaringType.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any() ||
-    //                           context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any();
+    public class AuthorizeCheckOperationFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            // Check for authorize attribute
+            var hasAuthorize = context.MethodInfo.DeclaringType.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any() ||
+                               context.MethodInfo.GetCustomAttributes(true).OfType<AuthorizeAttribute>().Any();
 
-    //        if (!hasAuthorize) return;
+            if (!hasAuthorize) return;
 
-    //        operation.Responses.TryAdd("401", new Response { Description = "Unauthorized - Chưa đăng nhập" });
-    //        operation.Responses.TryAdd("403", new Response { Description = "Forbidden - Không có quyền truy cập module" });
-
-    //        operation.Security = new List<IDictionary<string, IEnumerable<string>>>
-    //        {
-    //            new Dictionary<string, IEnumerable<string>>
-    //            {
-    //                { "oauth2", new [] { "VerpApi" } },
-    //                { "Bearer", new string[] { } },
-    //            }
-    //        };
-
-    //        operation.Produces = new List<string>() { "application/json" };
-    //        operation.Consumes = new List<string>() { "application/json" };
-    //    }
-    //}
+            operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized - Chưa đăng nhập" });
+            operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden - Không có quyền truy cập module" });
+        }
+    }
 
     //public class DataSchemaFilter : ISchemaFilter
     //{
@@ -194,9 +182,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
     //            var prefix = enumType.GetErrorCodePrefix(false);
 
     //           // var sc = context.SchemaGenerator.GenerateSchema(enumType, new SchemaRepository());
-               
-                
-               
+
+
+
     //            schema.Enum = new List<OpenApiAny>()
     //            {
 
@@ -207,7 +195,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
     //            sc.Add(new OpenApiSchema()
     //            {
     //                Title= $"{enumType.Name} ({prefix}-)",
-                    
+
     //            })
 
     //            if (!string.IsNullOrWhiteSpace(prefix))
