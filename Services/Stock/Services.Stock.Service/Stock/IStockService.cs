@@ -83,7 +83,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, int page, int size);
+        Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, string sortBy, bool asc, int page, int size);
 
         /// <summary>
         /// Báo cáo chi tiết nvl/sp

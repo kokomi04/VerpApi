@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
@@ -154,5 +156,33 @@ namespace VErp.Commons.Library
             return $"{((int)objectTypeId)}_{objectId}";
         }
 
+
+        public static Expression<Func<T, object>> ToMemberOf<T>(this string name)
+        {
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var propertyOrField = Expression.PropertyOrField(parameter, name);
+            var unaryExpression = Expression.MakeUnary(ExpressionType.Convert, propertyOrField, typeof(object));
+
+            return Expression.Lambda<Func<T, object>>(unaryExpression, parameter);
+        }
+
+        public static IQueryable<T> SortByFieldName<T>(this IQueryable<T> query, string filedName, bool asc)
+        {
+            var type = typeof(T);
+
+            PropertyInfo propertyInfo = null;
+            foreach (var p in type.GetProperties())
+            {
+                if (p.Name.Equals(filedName, StringComparison.OrdinalIgnoreCase))
+                {
+                    propertyInfo = p;
+                    break;
+                }
+            }
+            if (propertyInfo == null) return query;
+
+            var ex = propertyInfo.Name.ToMemberOf<T>();
+            return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
+        }
     }
 }
