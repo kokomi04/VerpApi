@@ -1065,12 +1065,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from s in _stockDbContext.StockProduct
                 join p in products on s.ProductId equals p.ProductId
                 where stockIdList.Contains(s.StockId) // && s.PrimaryQuantityRemaining > 0
-                group 0 by p into p
-                select p.Key
-                );
+                select p
+                ).Distinct();
 
             var total = productInStockQuery.Count();
-            var pagedData = productInStockQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var pagedData = productInStockQuery.AsNoTracking().OrderBy(p => p.ProductCode).Skip((page - 1) * size).Take(size).ToList();
 
             var productIdList = pagedData.Select(q => q.ProductId).ToList();
             var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking()
