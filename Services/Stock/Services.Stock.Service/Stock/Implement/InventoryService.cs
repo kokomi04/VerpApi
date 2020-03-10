@@ -1129,82 +1129,76 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            try
+
+            var query = from pk in _stockDbContext.Package
+                        join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                        where stockIdList.Contains(pk.StockId) && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
+                        select new
+                        {
+                            pk.LocationId,
+                            pk.ProductUnitConversionId,
+                            pk.PackageId,
+                            pk.PackageCode,
+                            pk.PackageTypeId,
+                            pk.StockId,
+                            pk.ProductId,
+                            pk.Date,
+                            pk.ExpiryTime,
+                            p.UnitId,
+                            pk.PrimaryQuantityRemaining,
+                            pk.PrimaryQuantityWaiting,
+                            pk.ProductUnitConversionRemaining,
+                            pk.ProductUnitConversionWaitting,
+                            pk.CreatedDatetimeUtc,
+                            pk.UpdatedDatetimeUtc
+                        };
+
+            var total = query.Count();
+            var packageData = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var locationIdList = packageData.Select(q => q.LocationId).ToList();
+            var productUnitConversionIdList = packageData.Select(q => q.ProductUnitConversionId).ToList();
+            var locationData = await _stockDbContext.Location.AsNoTracking().Where(q => locationIdList.Contains(q.LocationId)).ToListAsync();
+            var productUnitConversionData = _stockDbContext.ProductUnitConversion.Where(q => productUnitConversionIdList.Contains(q.ProductUnitConversionId)).AsNoTracking().ToList();
+
+            var packageList = new List<PackageOutputModel>(total);
+            foreach (var item in packageData)
             {
-                var query = from pk in _stockDbContext.Package
-                            join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
-                            where stockIdList.Contains(pk.StockId) && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
-                            select new
-                            {
-                                pk.LocationId,
-                                pk.ProductUnitConversionId,
-                                pk.PackageId,
-                                pk.PackageCode,
-                                pk.PackageTypeId,
-                                pk.StockId,
-                                pk.ProductId,
-                                pk.Date,
-                                pk.ExpiryTime,
-                                p.UnitId,
-                                pk.PrimaryQuantityRemaining,
-                                pk.PrimaryQuantityWaiting,
-                                pk.ProductUnitConversionRemaining,
-                                pk.ProductUnitConversionWaitting,
-                                pk.CreatedDatetimeUtc,
-                                pk.UpdatedDatetimeUtc
-                            };
-
-                var total = query.Count();
-                var packageData = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
-                var locationIdList = packageData.Select(q => q.LocationId).ToList();
-                var productUnitConversionIdList = packageData.Select(q => q.ProductUnitConversionId).ToList();
-                var locationData = await _stockDbContext.Location.AsNoTracking().Where(q => locationIdList.Contains(q.LocationId)).ToListAsync();
-                var productUnitConversionData = _stockDbContext.ProductUnitConversion.Where(q => productUnitConversionIdList.Contains(q.ProductUnitConversionId)).AsNoTracking().ToList();
-
-                var packageList = new List<PackageOutputModel>(total);
-                foreach (var item in packageData)
+                var locationObj = item.LocationId > 0 ? locationData.FirstOrDefault(q => q.LocationId == item.LocationId) : null;
+                var locationOutputModel = locationObj != null ? new VErp.Services.Stock.Model.Location.LocationOutput
                 {
-                    var locationObj = item.LocationId > 0 ? locationData.FirstOrDefault(q => q.LocationId == item.LocationId) : null;
-                    var locationOutputModel = locationObj != null ? new VErp.Services.Stock.Model.Location.LocationOutput
-                    {
-                        LocationId = locationObj.LocationId,
-                        StockId = locationObj.StockId,
-                        StockName = string.Empty,
-                        Name = locationObj.Name,
-                        Description = locationObj.Description,
-                        Status = 0
-                    } : null;
+                    LocationId = locationObj.LocationId,
+                    StockId = locationObj.StockId,
+                    StockName = string.Empty,
+                    Name = locationObj.Name,
+                    Description = locationObj.Description,
+                    Status = 0
+                } : null;
 
-                    packageList.Add(new PackageOutputModel
-                    {
-                        PackageId = item.PackageId,
-                        PackageCode = item.PackageCode,
-                        PackageTypeId = item.PackageTypeId,
-                        LocationId = item.LocationId ?? 0,
-                        StockId = item.StockId,
-                        ProductId = item.ProductId,
-                        Date = item.Date != null ? ((DateTime)item.Date).GetUnix() : 0,
-                        ExpiryTime = item.ExpiryTime != null ? ((DateTime)item.ExpiryTime).GetUnix() : 0,
-                        PrimaryUnitId = item.UnitId,
-                        ProductUnitConversionId = item.ProductUnitConversionId,
-                        PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
-                        PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
-                        ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
-                        ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
+                packageList.Add(new PackageOutputModel
+                {
+                    PackageId = item.PackageId,
+                    PackageCode = item.PackageCode,
+                    PackageTypeId = item.PackageTypeId,
+                    LocationId = item.LocationId ?? 0,
+                    StockId = item.StockId,
+                    ProductId = item.ProductId,
+                    Date = item.Date != null ? ((DateTime)item.Date).GetUnix() : 0,
+                    ExpiryTime = item.ExpiryTime != null ? ((DateTime)item.ExpiryTime).GetUnix() : 0,
+                    PrimaryUnitId = item.UnitId,
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
+                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
 
-                        CreatedDatetimeUtc = item.CreatedDatetimeUtc != null ? ((DateTime)item.CreatedDatetimeUtc).GetUnix() : 0,
-                        UpdatedDatetimeUtc = item.UpdatedDatetimeUtc != null ? ((DateTime)item.UpdatedDatetimeUtc).GetUnix() : 0,
-                        LocationOutputModel = locationOutputModel,
-                        ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
-                    });
-                }
-                return (packageList, total);
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc != null ? ((DateTime)item.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc != null ? ((DateTime)item.UpdatedDatetimeUtc).GetUnix() : 0,
+                    LocationOutputModel = locationOutputModel,
+                    ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetPackageListForExport");
-                return (null, 0);
-            }
+            return (packageList, total);
+
         }
 
         /// <summary>
@@ -1217,83 +1211,65 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            try
+
+            var products = _stockDbContext.Product.AsQueryable();
+            if (!string.IsNullOrEmpty(keyword))
             {
-                var productWithStockValidationIdList = _stockDbContext.ProductStockValidation.Select(q => q.ProductId).ToList();
+                products = products.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
+            }
 
-                var productWithStockValidationQuery = from p in _stockDbContext.Product
-                                                      join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
-                                                      join pv in _stockDbContext.ProductStockValidation on p.ProductId equals pv.ProductId
-                                                      where stockIdList.Contains(pv.StockId)
-                                                      select p;
-                if (!string.IsNullOrEmpty(keyword))
+            products = (
+                from p in products
+                join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
+                join pv in _stockDbContext.ProductStockValidation.Where(s => stockIdList.Contains(s.StockId)) on p.ProductId equals pv.ProductId into pvs
+                from pv in pvs.DefaultIfEmpty()
+                select p
+               ).Distinct();
+
+            var total = products.Count();
+
+            var pagedData = products.OrderBy(q => q.ProductCode).Skip((page - 1) * size).Take(size).ToList();
+            var productIdList = pagedData.Select(q => q.ProductId).ToList();
+            var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
+            var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
+            var unitOutputList = await _unitService.GetListByIds(unitIdList);
+
+            var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
+
+            var productList = new List<ProductListOutput>(total);
+            foreach (var item in pagedData)
+            {
+                var specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId)?.Specification ?? string.Empty;
+                var unitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId)?.UnitName ?? string.Empty;
+
+                productList.Add(new ProductListOutput
                 {
-                    productWithStockValidationQuery = productWithStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
-                }
-
-                productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q => q.ProductId).Select(v => v.First());
-
-                var productWithoutStockValidationQuery = from p in _stockDbContext.Product
-                                                         join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
-                                                         where !productWithStockValidationIdList.Contains(p.ProductId)
-                                                         select p;
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    productWithoutStockValidationQuery = productWithoutStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
-                }
-
-                var productQuery = productWithStockValidationQuery.Union(productWithoutStockValidationQuery);
-
-                var total = productQuery.Count();
-                productQuery = productQuery.AsNoTracking().OrderBy(q => q.ProductId).Skip((page - 1) * size).Take(size);
-
-                var pagedData = productQuery.ToList();
-                var productIdList = pagedData.Select(q => q.ProductId).ToList();
-                var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
-                var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
-                var unitOutputList = await _unitService.GetListByIds(unitIdList);
-
-                var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
-
-                var productList = new List<ProductListOutput>(total);
-                foreach (var item in pagedData)
-                {
-                    var specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId)?.Specification ?? string.Empty;
-                    var unitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId)?.UnitName ?? string.Empty;
-
-                    productList.Add(new ProductListOutput
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    MainImageFileId = item.MainImageFileId,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductTypeName = string.Empty,
+                    ProductCateId = item.ProductCateId,
+                    ProductCateName = string.Empty,
+                    Barcode = item.Barcode,
+                    Specification = specification,
+                    UnitId = item.UnitId,
+                    UnitName = unitName,
+                    EstimatePrice = item.EstimatePrice ?? 0,
+                    StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {
-                        ProductId = item.ProductId,
-                        ProductCode = item.ProductCode,
-                        ProductName = item.ProductName,
-                        MainImageFileId = item.MainImageFileId,
-                        ProductTypeId = item.ProductTypeId,
-                        ProductTypeName = string.Empty,
-                        ProductCateId = item.ProductCateId,
-                        ProductCateName = string.Empty,
-                        Barcode = item.Barcode,
-                        Specification = specification,
-                        UnitId = item.UnitId,
-                        UnitName = unitName,
-                        EstimatePrice = item.EstimatePrice ?? 0,
-                        StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
-                        {
-                            StockId = q.StockId,
-                            ProductId = q.ProductId,
-                            PrimaryUnitId = item.UnitId,
-                            PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
-                            ProductUnitConversionId = q.ProductUnitConversionId,
-                            ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
-                        }).ToList()
-                    });
-                }
-                return (productList, total);
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                    }).ToList()
+                });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetProductListForImport");
-                return (null, 0);
-            }
+            return (productList, total);
+
         }
 
         #region Private helper method

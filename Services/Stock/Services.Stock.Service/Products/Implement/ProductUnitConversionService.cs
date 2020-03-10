@@ -46,50 +46,44 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0)
         {
-            try
+
+            var query = from p in _stockDbContext.ProductUnitConversion
+                        select p;
+
+            if (productId > 0)
             {
-                var query = from p in _stockDbContext.ProductUnitConversion
-                            select p;
-
-                if (productId > 0)
-                {
-                    query = query.Where(q => q.ProductId == productId);
-                }
-                var total = query.Count();
-                var secondUnitIdList = query.Select(q => q.SecondaryUnitId).ToList();
-
-                var unitList = await _masterDBContext.Unit.AsNoTracking().Where(q => secondUnitIdList.Contains(q.UnitId)).ToListAsync();
-
-                var resultFromDb = new List<VErp.Infrastructure.EF.StockDB.ProductUnitConversion>(total);
-                if (page > 0 && size > 0)
-                    resultFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
-                else
-                    resultFromDb = query.AsNoTracking().ToList();
-
-                var resultList = new List<ProductUnitConversionOutput>(total);
-                foreach (var item in resultFromDb)
-                {
-                    var unitObj = unitList.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId);
-                    var p = new ProductUnitConversionOutput
-                    {
-                        ProductUnitConversionId = item.ProductUnitConversionId,
-                        ProductUnitConversionName = item.ProductUnitConversionName,
-                        ProductId = item.ProductId,
-                        SecondaryUnitId = item.SecondaryUnitId,
-                        SecondaryUnitName = unitObj != null ? unitObj.UnitName : null,
-                        FactorExpression = item.FactorExpression,
-                        ConversionDescription = item.ConversionDescription,
-                        IsDefault = item.IsDefault
-                    };
-                    resultList.Add(p);
-                }
-                return (resultList, total);
+                query = query.Where(q => q.ProductId == productId);
             }
-            catch (Exception ex)
+            var total = query.Count();
+            var secondUnitIdList = query.Select(q => q.SecondaryUnitId).ToList();
+
+            var unitList = await _masterDBContext.Unit.AsNoTracking().Where(q => secondUnitIdList.Contains(q.UnitId)).ToListAsync();
+
+            var resultFromDb = new List<VErp.Infrastructure.EF.StockDB.ProductUnitConversion>(total);
+            if (page > 0 && size > 0)
+                resultFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            else
+                resultFromDb = query.AsNoTracking().ToList();
+
+            var resultList = new List<ProductUnitConversionOutput>(total);
+            foreach (var item in resultFromDb)
             {
-                _logger.LogError(ex, "GetList");
-                return (new PageData<ProductUnitConversionOutput> { Total = 0, List = null });
+                var unitObj = unitList.FirstOrDefault(q => q.UnitId == item.SecondaryUnitId);
+                var p = new ProductUnitConversionOutput
+                {
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionName = item.ProductUnitConversionName,
+                    ProductId = item.ProductId,
+                    SecondaryUnitId = item.SecondaryUnitId,
+                    SecondaryUnitName = unitObj != null ? unitObj.UnitName : null,
+                    FactorExpression = item.FactorExpression,
+                    ConversionDescription = item.ConversionDescription,
+                    IsDefault = item.IsDefault
+                };
+                resultList.Add(p);
             }
+            return (resultList, total);
+
         }
 
         public async Task<ServiceResult<PageData<ProductUnitConversionByProductOutput>>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0)

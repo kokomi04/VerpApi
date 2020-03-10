@@ -83,35 +83,29 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<ServiceResult<ObjectGenCodeOutputModel>> GetInfo(int objectGenCodeId)
         {
-            try
+
+            var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
+            if (obj == null)
             {
-                var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-                if (obj == null)
-                {
-                    return ObjectGenCodeErrorCode.ConfigNotFound;
-                }
-                var info = new ObjectGenCodeOutputModel()
-                {
-                    ObjectGenCodeId = obj.ObjectGenCodeId,
-                    ObjectTypeId = obj.ObjectTypeId,
-                    ObjectTypeName = obj.ObjectTypeName,
-                    CodeLength = obj.CodeLength,
-                    Prefix = obj.Prefix,
-                    Suffix = obj.Suffix,
-                    Seperator = obj.Seperator,
-                    LastCode = obj.LastCode,
-                    IsActived = obj.IsActived,
-                    UpdatedUserId = obj.UpdatedUserId,
-                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
-                };
-                return info;
+                return ObjectGenCodeErrorCode.ConfigNotFound;
             }
-            catch (Exception ex)
+            var info = new ObjectGenCodeOutputModel()
             {
-                _logger.LogError(ex, "GetInfo");
-                return null;
-            }
+                ObjectGenCodeId = obj.ObjectGenCodeId,
+                ObjectTypeId = obj.ObjectTypeId,
+                ObjectTypeName = obj.ObjectTypeName,
+                CodeLength = obj.CodeLength,
+                Prefix = obj.Prefix,
+                Suffix = obj.Suffix,
+                Seperator = obj.Seperator,
+                LastCode = obj.LastCode,
+                IsActived = obj.IsActived,
+                UpdatedUserId = obj.UpdatedUserId,
+                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+            };
+            return info;
+
         }
 
         public async Task<Enum> Update(int objectGenCodeId, int currentUserId, ObjectGenCodeInputModel model)
@@ -124,7 +118,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     return ObjectGenCodeErrorCode.ConfigNotFound;
                 }
-               
+
                 obj.CodeLength = model.CodeLength;
                 obj.Prefix = model.Prefix;
                 obj.Suffix = model.Suffix;
@@ -296,18 +290,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<ObjectType>> GetAllObjectType()
         {
-            try
-            {
-                var total = _masterDbContext.ObjectType.Count();
-                var allData = _masterDbContext.ObjectType.AsNoTracking().ToList();
 
-                return (allData, total);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetAllObjectType");
-                return (null, 0);
-            }
-        }      
+            var total = _masterDbContext.ObjectType.Count();
+            var allData = _masterDbContext.ObjectType.AsNoTracking().ToList();
+
+            return (allData, total);
+
+        }
     }
 }
