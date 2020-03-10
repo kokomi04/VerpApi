@@ -4,6 +4,8 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -59,18 +61,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _asyncRunner = asyncRunner;
         }
 
-        /// <summary>
-        /// Lấy danh sách phiếu nhập / xuất kho
-        /// </summary>
-        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
-        /// <param name="type">Loại typeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>
-        /// <param name="beginTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
+       
+
+        public Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
             var bTime = DateTime.MinValue;
             var eTime = DateTime.MinValue;
@@ -116,7 +109,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     query = query.Where(q => q.Date < eTime);
                 }
             }
-            query = query.OrderByDescending(q => q.Date);
+            query = query.SortByFieldName(sortBy, asc);           
+
             var total = query.Count();
             var inventoryDataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
@@ -139,7 +133,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = item.InventoryTypeId,
                     Shipper = item.Shipper,
                     Content = item.Content,
-                    DateUtc = item.Date.GetUnix(),
+                    Date = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
@@ -165,7 +159,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 };
                 pagedData.Add(inventoryOutput);
             }
-            return (pagedData, total);
+            return Task.FromResult((PageData<InventoryOutput>)(pagedData, total));
         }
 
         public async Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId)
@@ -253,7 +247,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryTypeId = inventoryObj.InventoryTypeId,
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
-                    DateUtc = inventoryObj.Date.GetUnix(),
+                    Date = inventoryObj.Date.GetUnix(),
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,

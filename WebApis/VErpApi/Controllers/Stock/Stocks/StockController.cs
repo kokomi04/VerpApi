@@ -201,14 +201,16 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
         /// <param name="keyword">Từ khoá tìm kiếm: ProductCode | ProductName</param>
+        /// <param name="sortBy">sort by column (default: date) </param>
+        /// <param name="asc">true/false (default: false. It mean sort desc)</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReport")]
-        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportOutput>>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string keyword, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
+            return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, sortBy, asc, page, size);
         }
 
         /// <summary>
@@ -238,7 +240,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReportForm03")]
-        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockSumaryReportForm03(keyword, stockIds, fromDate, toDate, page, size);
         }
@@ -254,7 +256,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReportForm04")]
-        public async Task<ApiResponse<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04([FromQuery] IList<int> stockIds,  [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04([FromQuery] IList<int> stockIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.StockSumaryReportForm04(stockIds, fromDate, toDate, page, size);
         }

@@ -39,14 +39,19 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
         /// <param name="beginTime"></param>
         /// <param name="endTime"></param>
+        /// <param name="sortBy">sort by column (default: date) </param>
+        /// <param name="asc">true/false (default: false. It mean sort desc)</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<InventoryOutput>>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] EnumInventoryType type, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, beginTime: beginTime, endTime: endTime, page: page, size: size);
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "date";
+
+            return await _inventoryService.GetList(keyword: keyword, stockId: stockId, type: type, beginTime: beginTime, endTime: endTime, sortBy: sortBy, asc: asc, page: page, size: size);
         }
 
 
