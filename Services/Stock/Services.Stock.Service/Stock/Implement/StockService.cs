@@ -1295,7 +1295,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     packageQuery = packageQuery.Where(q => stockIds.Contains(q.StockId));
                 }
-                var packageInfoData = (from pkg in packageQuery
+
+                var packageList = packageQuery.ToList();
+                var packageInfoData = (from pkg in packageList
                                        join p in productInfos on pkg.ProductId equals p.ProductId
                                        //join id in _stockContext.InventoryDetail on p.ProductId equals id.InventoryId
                                        //join i in inventoryQuery.Where(q => (q.Date > fromDate && q.Date <= toDate) && q.IsApproved) on id.InventoryId equals i.InventoryId
