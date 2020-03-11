@@ -193,6 +193,21 @@ namespace VErpApi.Controllers.Stock.Stocks
         }
 
         /// <summary>
+        /// Lấy danh sách sản phẩm có số lượng tồn kho và có cảnh báo tồn mix max trong kho
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="stockIds"></param>
+        /// <param name="productTypeIds"></param>
+        /// <param name="productCateIds"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        public async Task<ApiResponse<PageData<StockProductQuantityWarning>>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size);
+        }
+
+        /// <summary>
         /// Báo cáo xuất, nhập tồn
         /// </summary>
         /// <param name="stockIds"></param>
