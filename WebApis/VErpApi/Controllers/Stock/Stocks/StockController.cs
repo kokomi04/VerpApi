@@ -202,6 +202,8 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
+        [HttpGet]
+        [Route("GetStockProductQuantityWarning")]
         public async Task<ApiResponse<PageData<StockProductQuantityWarning>>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size);

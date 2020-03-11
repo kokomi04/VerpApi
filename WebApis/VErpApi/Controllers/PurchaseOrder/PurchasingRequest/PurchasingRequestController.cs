@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<PurchasingSuggestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingRequestService.GetList(keyword: keyword, statusList: statusList, beginTime: beginTime, endTime: endTime, page: page, size: size);
         }
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns>PurchasingRequestOutputModel</returns>
         [HttpGet]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse<PurchasingRequestOutputModel>> Get([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse<PurchasingSuggestOutputModel>> Get([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.Get(purchasingRequestId);
         }
@@ -60,7 +60,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInputModel req)
+        public async Task<ApiResponse<long>> Add([FromBody] PurchasingSuggestInputModel req)
         {
             return await _purchasingRequestService.AddPurchasingRequest(UserId, req);
         }
@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInputModel req)
+        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingSuggestInputModel req)
         {
             return await _purchasingRequestService.UpdatePurchasingRequest(purchasingRequestId, UserId, req);
         }

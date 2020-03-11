@@ -17,6 +17,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
+        public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
+        public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
         public virtual DbSet<Test> Test { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -24,8 +26,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected void OnModelCreated(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
-
             modelBuilder.Entity<PurchasingRequest>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -52,10 +52,46 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
+            modelBuilder.Entity<PurchasingSuggest>(entity =>
+            {
+                entity.Property(e => e.Content).HasMaxLength(512);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.PurchasingSuggestCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<PurchasingSuggestDetail>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PurchasingRequestCode).HasMaxLength(255);
+
+                entity.Property(e => e.Tax).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
             modelBuilder.Entity<Test>(entity =>
             {
                 entity.Property(e => e.TestName).HasMaxLength(50);
             });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }

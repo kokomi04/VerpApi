@@ -11,13 +11,13 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest
 {
     public interface IPurchasingRequestService
     {
-        Task<ServiceResult<PurchasingRequestOutputModel>> Get(long purchasingRequestId);
+        Task<ServiceResult<PurchasingSuggestOutputModel>> Get(long purchasingRequestId);
 
-        Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10);
+        Task<PageData<PurchasingSuggestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10);
 
-        Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingRequestInputModel model);
+        Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingSuggestInputModel model);
 
-        Task<Enum> UpdatePurchasingRequest(long purchasingRequestId, int currentUserId, PurchasingRequestInputModel model);              
+        Task<Enum> UpdatePurchasingRequest(long purchasingRequestId, int currentUserId, PurchasingSuggestInputModel model);              
 
         Task<Enum> DeletePurchasingRequest(long purchasingRequestId, int currentUserId);
 

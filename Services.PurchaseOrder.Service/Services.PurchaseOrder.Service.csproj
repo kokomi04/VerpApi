@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="PurchasingSuggest\Implement\" />
+  </ItemGroup>
+
 </Project>

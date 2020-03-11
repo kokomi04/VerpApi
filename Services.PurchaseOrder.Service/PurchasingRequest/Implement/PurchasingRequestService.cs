@@ -46,7 +46,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             _asyncRunner = asyncRunner;
         }
 
-        public async Task<ServiceResult<PurchasingRequestOutputModel>> Get(long purchasingRequestId)
+        public async Task<ServiceResult<PurchasingSuggestOutputModel>> Get(long purchasingRequestId)
         {
             try
             {
@@ -63,7 +63,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
                 var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
 
-                var detailsModelOutput = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+                var detailsModelOutput = purchasingRequestDetailList.Select(q => new PurchasingSuggestDetailOutputModel
                 {
                     PurchasingRequestDetailId = q.PurchasingRequestDetailId,
                     PurchasingRequestId = q.PurchasingRequestId,
@@ -75,7 +75,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     ProductCode = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
                 }).ToList();
 
-                var result = new PurchasingRequestOutputModel
+                var result = new PurchasingSuggestOutputModel
                 {
                     PurchasingRequestId = purchasingRequestObj.PurchasingRequestId,
                     PurchasingRequestCode = purchasingRequestObj.PurchasingRequestCode,
@@ -106,7 +106,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }
         }
 
-        public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
+        public async Task<PageData<PurchasingSuggestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
             var purchasingRequestQuery = from pr in _purchaseOrderDBContext.PurchasingRequest
                                          select pr;
@@ -162,7 +162,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
             var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
 
-            var detailsModelOutputList = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+            var detailsModelOutputList = purchasingRequestDetailList.Select(q => new PurchasingSuggestDetailOutputModel
             {
                 PurchasingRequestDetailId = q.PurchasingRequestDetailId,
                 PurchasingRequestId = q.PurchasingRequestId,
@@ -175,10 +175,10 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }).ToList();
 
 
-            var pagedData = new List<PurchasingRequestOutputModel>(purchasingRequestDataList.Count);
+            var pagedData = new List<PurchasingSuggestOutputModel>(purchasingRequestDataList.Count);
             foreach (var purchasingRequestObj in purchasingRequestDataList)
             {
-                var prItem = new PurchasingRequestOutputModel
+                var prItem = new PurchasingSuggestOutputModel
                 {
                     PurchasingRequestId = purchasingRequestObj.PurchasingRequestId,
                     PurchasingRequestCode = purchasingRequestObj.PurchasingRequestCode,
@@ -203,7 +203,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             return (pagedData, total);
         }
 
-        public async Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingRequestInputModel model)
+        public async Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingSuggestInputModel model)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -262,7 +262,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }
         }            
 
-        public async Task<Enum> UpdatePurchasingRequest(long purchasingRequestId, int currentUserId, PurchasingRequestInputModel model)
+        public async Task<Enum> UpdatePurchasingRequest(long purchasingRequestId, int currentUserId, PurchasingSuggestInputModel model)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
