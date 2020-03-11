@@ -621,6 +621,136 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (lstData, total);
         }
 
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
+        {
+            var productQuery = _stockContext.Product.AsQueryable();
+            
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
+            
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var productTypes = await _stockContext.ProductType.ToListAsync();
+
+                var types = new List<int?>();
+                foreach (var productTypeId in productTypeIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productTypeId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        types.Add(parentId);
+                        var children = productTypes.Where(p => p.ParentProductTypeId == parentId);
+                        foreach (var t in children)
+                        {
+                            st.Push(t.ProductTypeId);
+                        }
+                    }
+                }
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                var productCates = await _stockContext.ProductCate.ToListAsync();
+
+                var cates = new List<int>();
+                foreach (var productCateId in productCateIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productCateId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        cates.Add(parentId);
+                        var children = productCates.Where(p => p.ParentProductCateId == parentId);
+                        foreach (var t in children)
+                        {
+                            st.Push(t.ProductCateId);
+                        }
+                    }
+                }
+                productQuery = from p in productQuery
+                               where cates.Contains(p.ProductCateId)
+                               select p;
+            }
+            
+            var stockProductQuery = _stockContext.StockProduct.AsQueryable();
+
+            if (stockIds != null && stockIds.Count > 0)
+            {
+                stockProductQuery = stockProductQuery.Where(q => stockIds.Contains(q.StockId));
+            }
+            var productStockInfoQuery = _stockContext.ProductStockInfo.AsQueryable();
+
+            var productInfoQuery = from p in productQuery
+                           join psi in productStockInfoQuery on p.ProductId equals psi.ProductId
+                           select new
+                           {
+                               p.ProductId,
+                               p.ProductCode,
+                               p.ProductName,
+                               p.UnitId,
+                               p.ProductTypeId,
+                               p.ProductCateId,                               
+                               psi.AmountWarningMin,
+                               psi.AmountWarningMax,
+                           };
+
+            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
+            var total = productInfoPaged.Count;
+
+            var productIdList = productInfoPaged.Select(q => q.ProductId).ToList();
+            var primaryUnitIdList = productInfoPaged.Select(q => q.UnitId).ToList();
+
+            var primaryUnitDataList = await _masterDBContext.Unit.Where(q => primaryUnitIdList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+
+            var stockProductDataList = (from sp in stockProductQuery
+                                       join s in _stockContext.Stock.AsQueryable() on sp.StockId equals s.StockId
+                                       select new
+                                       {                                           
+                                           s.StockName,
+                                           sp.StockId,
+                                           sp.ProductId,
+                                           sp.PrimaryQuantityRemaining,
+                                           sp.ProductUnitConversionId,
+                                           sp.ProductUnitConversionRemaining
+                                       }).ToList();
+
+            var result = new List<StockProductQuantityWarning>(total);
+
+            foreach (var pi in productInfoPaged)
+            {
+                var item = new StockProductQuantityWarning
+                {
+                    ProductId = pi.ProductId,
+                    ProductCode = pi.ProductCode,
+                    ProductName = pi.ProductName,
+                    PrimaryUnitId = pi.UnitId,
+                    PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
+                    AmountWarningMin = pi.AmountWarningMin ?? 0,
+                    AmountWarningMax = pi.AmountWarningMax ?? 0
+                };
+                var spList = stockProductDataList.Where(q => q.ProductId == pi.ProductId).Select(q => new StockProductQuantity
+                {
+                    StockId = q.StockId,
+                    StockName = q.StockName,
+                    PrimaryQuantityRemaining = q.PrimaryQuantityRemaining
+                }).ToList();
+                item.StockProductQuantityList = spList;
+                result.Add(item);
+            }
+            return (result, total);
+        }
+
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long beginTime, long endTime, int page, int size)
         {
             DateTime fromDate = DateTime.MinValue;

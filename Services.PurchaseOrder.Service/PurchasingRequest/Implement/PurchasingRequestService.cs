@@ -213,7 +213,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     {
                         PurchasingRequestCode = model.PurchasingRequestCode,
                         OrderCode = model.OrderCode,
-                        Date = model.Date.UnixToDateTime(),
+                        Date = model.Date > 0 ? model.Date.UnixToDateTime() : DateTime.UtcNow,
                         Content = model.Content,
                         Status = (int)EnumPurchasingRequestStatus.Editing,
                         RejectCount = 0,
