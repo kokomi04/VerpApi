@@ -256,16 +256,19 @@ namespace VErp.Infrastructure.ApiCore
 
 
             app.UseForwardedHeaders();
-            if (isIdentiy)
-            {
-                app.UseIdentityServer();
-            }
+            
 
             app.UseRouting();
 
             /*For most apps, calls to UseAuthentication, UseAuthorization, and UseCors must appear between the calls to UseRouting and UseEndpoints to be effective.
 */
             app.UseCors("CorsPolicy");
+
+            if (isIdentiy)
+            {
+                app.UseIdentityServer();
+            }
+
             app.UseAuthorization();
 
             app.UseEndpoints(config =>
