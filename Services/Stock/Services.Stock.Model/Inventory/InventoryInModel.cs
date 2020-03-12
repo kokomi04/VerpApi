@@ -67,6 +67,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? ToPackageId { set; get; }
 
         public EnumPackageOption PackageOptionId { set; get; }
+
+        public int SortOrder { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel
