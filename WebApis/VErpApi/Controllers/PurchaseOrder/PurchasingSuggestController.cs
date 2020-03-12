@@ -15,7 +15,7 @@ using VErp.Services.PurchaseOrder.Model.PurchasingSuggest;
 
 namespace VErpApi.Controllers.PurchaseOrder
 {
-    [Route("api/purchasingrequest")]
+    [Route("api/purchasingsuggest")]
     public class PurchasingSuggestController : VErpBaseController
     {
         private readonly IPurchasingSuggestService _purchasingSuggestService;
