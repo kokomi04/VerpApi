@@ -32,5 +32,8 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Không thể thay đổi kho ở phiếu nhập/xuất")]
         CanNotChangeStock = 10,
+
+        [Description("Phiếu chưa được duyệt")]
+        InventoryNotApprovedYet = 11,
     }
 }

@@ -65,7 +65,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _asyncRunner = asyncRunner;
         }
 
-       
+
 
         public Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
@@ -114,7 +114,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     query = query.Where(q => q.Date < eTime);
                 }
             }
-            query = query.SortByFieldName(sortBy, asc);           
+            query = query.SortByFieldName(sortBy, asc);
 
             var total = query.Count();
             var inventoryDataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
@@ -182,7 +182,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 #region Get inventory details
-                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s=>s.CreatedDatetimeUtc).ToListAsync();
+                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedDatetimeUtc).ToListAsync();
 
                 var productIds = inventoryDetails.Select(d => d.ProductId).ToList();
 
@@ -309,13 +309,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<ServiceResult<long>> AddInventoryInput(int currentUserId, InventoryInModel req)
         {
+            if (req == null || req.InProducts.Count == 0)
+            {
+                return GeneralCode.InvalidParams;
+            }
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                if (req == null || req.InProducts.Count == 0)
-                {
-                    return GeneralCode.InvalidParams;
-                }
-
                 if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
@@ -336,7 +336,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
 
-                        var inventoryObj = new Infrastructure.EF.StockDB.Inventory
+                        var inventoryObj = new Inventory
                         {
                             StockId = req.StockId,
                             InventoryCode = req.InventoryCode,
@@ -421,12 +421,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<ServiceResult<long>> AddInventoryOutput(int currentUserId, InventoryOutModel req)
         {
+            if (req == null || req.OutProducts.Count == 0)
+            {
+                return GeneralCode.InvalidParams;
+            }
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                if (req == null || req.OutProducts.Count == 0)
-                {
-                    return GeneralCode.InvalidParams;
-                }
                 if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
@@ -513,12 +513,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> UpdateInventoryInput(long inventoryId, int currentUserId, InventoryInModel req)
         {
+            if (inventoryId <= 0)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                if (inventoryId <= 0)
-                {
-                    return InventoryErrorCode.InventoryNotFound;
-                }
+
                 var issuedDate = req.DateUtc.UnixToDateTime();
                 var billDate = req.DateUtc.UnixToDateTime();
 
@@ -750,18 +752,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<Enum> DeleteInventoryInput(long inventoryId, int currentUserId)
         {
-
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
+            if (inventoryObj == null)
+            {
+                return InventoryErrorCode.InventoryNotFound;
+            }
+
+           
+            if (inventoryObj.InventoryTypeId == (int)EnumInventoryType.Output)
+            {
+                return GeneralCode.InvalidParams;
+            }
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
-                if (inventoryObj == null)
-                {
-                    return InventoryErrorCode.InventoryNotFound;
-                }
-                if (inventoryObj.InventoryTypeId == (int)EnumInventoryType.Output)
-                {
-                    return GeneralCode.InvalidParams;
-                }
+                //reload inventory after lock
+                inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
 
                 if (inventoryObj.IsApproved)
                 {
@@ -819,9 +825,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return GeneralCode.InvalidParams;
             }
-
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
+                //reload from db after lock
+                inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
+
                 // Xử lý xoá thông tin phiếu xuất kho
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -879,12 +887,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
             {
+               
                 return InventoryErrorCode.InventoryNotFound;
-            }
-
-            if (inventoryObj.IsApproved)
-            {
-                return InventoryErrorCode.InventoryAlreadyApproved;
             }
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
@@ -893,6 +897,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     try
                     {
+                        //reload after lock
+                        inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+
+                        if (inventoryObj.IsApproved)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.InventoryAlreadyApproved;
+                        }
+
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -1002,6 +1015,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 return InventoryErrorCode.InventoryNotFound;
             }
+
             var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
             if (inventoryObj == null)
             {
@@ -1012,12 +1026,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryErrorCode.InventoryNotFound;
             }
 
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
+                        inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                        
+                        if (inventoryObj.IsApproved)
+                        {
+                            trans.Rollback();
+                            return InventoryErrorCode.InventoryAlreadyApproved;
+                        }
+
                         inventoryObj.IsApproved = true;
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -1474,7 +1497,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
                         return InventoryErrorCode.NotEnoughQuantity;
                     }
-                   
+
                 }
                 inventoryDetailList.Add(new InventoryDetail
                 {

@@ -164,6 +164,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
+            var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
+
+            if (!inventoryInfo.IsApproved)
+            {
+                return InventoryErrorCode.InventoryNotApprovedYet;
+            }
+
+
             var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, fromDate, toDate, req.Inventory);
 
             if (!data.Code.IsSuccess())
@@ -187,8 +195,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
 
-            var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
-
+            
             var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
 
             if (!isDelete)
