@@ -11,8 +11,9 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Service.PurchasingRequest;
 using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
+using VErp.Services.Master.Model.Activity;
 
-namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
+namespace VErpApi.Controllers.PurchaseOrder
 {
     [Route("api/purchasingrequest")]
     public class PurchasingRequestController : VErpBaseController
@@ -36,7 +37,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchasingSuggestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingRequestService.GetList(keyword: keyword, statusList: statusList, beginTime: beginTime, endTime: endTime, page: page, size: size);
         }
@@ -48,7 +49,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns>PurchasingRequestOutputModel</returns>
         [HttpGet]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse<PurchasingSuggestOutputModel>> Get([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse<PurchasingRequestOutputModel>> Get([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.Get(purchasingRequestId);
         }
@@ -60,7 +61,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Add([FromBody] PurchasingSuggestInputModel req)
+        public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInputModel req)
         {
             return await _purchasingRequestService.AddPurchasingRequest(UserId, req);
         }
@@ -73,7 +74,7 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingSuggestInputModel req)
+        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInputModel req)
         {
             return await _purchasingRequestService.UpdatePurchasingRequest(purchasingRequestId, UserId, req);
         }
@@ -128,6 +129,22 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         {
             var currentUserId = UserId;
             return await _purchasingRequestService.DeletePurchasingRequest(purchasingRequestId, currentUserId);
+        }
+
+        [HttpPost]
+        [Route("AddNote")]
+        public async Task<ApiResponse> AddNote(long objectId, int actionTypeId = 0, string note = "")
+        {
+            var currentUserId = UserId;
+            return await _purchasingRequestService.AddNote(objectId, currentUserId, actionTypeId, note);
+        }
+
+
+        [HttpGet]
+        [Route("GetNoteList")]
+        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList(long objectId, int page = 1, int size  = 20)
+        {
+            return await _purchasingRequestService.GetNoteList(objectId, page, size);
         }
     }
 }

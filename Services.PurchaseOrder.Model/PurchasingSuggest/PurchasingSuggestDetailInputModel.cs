@@ -8,6 +8,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchasingSuggest
     {
         public int CustomerId { get; set; }
 
+        /// <summary>
+        /// Mã yêu cầu VT HH
+        /// </summary>
         public string PurchasingRequestCode { get; set; }
 
         public int ProductId { get; set; }
@@ -18,6 +21,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchasingSuggest
 
         public decimal PrimaryUnitPrice { get; set; }
 
+        /// <summary>
+        /// Thuế
+        /// </summary>
         public decimal Tax { get; set; }
 
     }
