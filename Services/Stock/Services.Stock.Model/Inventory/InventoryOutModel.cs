@@ -51,5 +51,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string POCode { get; set; }
 
         public string ProductionOrderCode { get; set; }
+
+        public int SortOrder { get; set; }
     }
 }

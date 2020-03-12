@@ -120,11 +120,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var total = query.Count();
             var inventoryDataList = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
 
-            var inventoryIdList = inventoryDataList.Select(q => q.InventoryId).ToList();
-            var inventoryDetailsDataList = _stockDbContext.InventoryDetail.AsNoTracking().Where(q => inventoryIdList.Contains(q.InventoryId)).ToList();
+            // var inventoryIdList = inventoryDataList.Select(q => q.InventoryId).ToList();
+            // var inventoryDetailsDataList = _stockDbContext.InventoryDetail.AsNoTracking().Where(q => inventoryIdList.Contains(q.InventoryId)).ToList();
 
-            var productIdList = inventoryDetailsDataList.Select(q => q.ProductId).Distinct().ToList();
-            var productDataList = _stockDbContext.Product.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
+            // var productIdList = inventoryDetailsDataList.Select(q => q.ProductId).Distinct().ToList();
+            //var productDataList = _stockDbContext.Product.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
 
             var pagedData = new List<InventoryOutput>();
             foreach (var item in inventoryDataList)
@@ -145,7 +145,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockKeeperUserId = item.StockKeeperUserId,
                     BillCode = item.BillCode,
                     BillSerial = item.BillSerial,
-                    BillDate = item.BillDate != null ? ((DateTime)item.BillDate).GetUnix() : 0,
+                    BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
                     TotalMoney = item.TotalMoney,
                     IsApproved = item.IsApproved,
                     CreatedByUserId = item.CreatedByUserId,
@@ -181,15 +181,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return GeneralCode.InvalidParams;
                 }
+
                 #region Get inventory details
-                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().ToListAsync();
+                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s=>s.CreatedDatetimeUtc).ToListAsync();
+
+                var productIds = inventoryDetails.Select(d => d.ProductId).ToList();
+
+                var productInfos = _stockDbContext.Product.AsNoTracking()
+                    .Where(p => productIds.Contains(p.ProductId))
+                    .ToList()
+                    .ToDictionary(p => p.ProductId, p => p);
+
+                var productUnitConversionIds = inventoryDetails.Select(d => d.ProductUnitConversionId).ToList();
+
+                var productUnitConversions = _stockDbContext.ProductUnitConversion.AsNoTracking()
+                    .Where(pu => productUnitConversionIds.Contains(pu.ProductUnitConversionId))
+                    .ToList()
+                    .ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
+
                 var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
                 foreach (var details in inventoryDetails)
                 {
-                    var productInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(q => q.ProductId == details.ProductId);
-                    var productUnitConversionInfo = _stockDbContext.ProductUnitConversion.AsNoTracking().FirstOrDefault(q => q.ProductUnitConversionId == details.ProductUnitConversionId);
                     ProductListOutput productOutput = null;
-                    if (productInfo != null)
+                    if (productInfos.TryGetValue(details.ProductId, out var productInfo))
                     {
                         productOutput = new ProductListOutput
                         {
@@ -207,6 +221,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             UnitName = string.Empty
                         };
                     }
+
+                    productUnitConversions.TryGetValue(details.ProductUnitConversionId ?? 0, out var productUnitConversionInfo);
+
                     listInventoryDetailsOutput.Add(new InventoryDetailOutput
                     {
                         InventoryId = details.InventoryId,
@@ -229,7 +246,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductionOrderCode = details.ProductionOrderCode,
 
                         ProductOutput = productOutput,
-                        ProductUnitConversion = productUnitConversionInfo ?? null
+                        ProductUnitConversion = productUnitConversionInfo ?? null,
+                        SortOrder = details.SortOrder
                     });
                 }
                 #endregion
@@ -318,7 +336,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
 
-                    var inventoryObj = new Infrastructure.EF.StockDB.Inventory
+                    var inventoryObj = new Inventory
                     {
                         StockId = req.StockId,
                         InventoryCode = req.InventoryCode,
@@ -1197,8 +1215,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
-            {
-                var productWithStockValidationIdList = _stockDbContext.ProductStockValidation.Select(q => q.ProductId).ToList();
+            {               
 
                 var productWithStockValidationQuery = from p in _stockDbContext.Product
                                                       join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
@@ -1210,7 +1227,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     productWithStockValidationQuery = productWithStockValidationQuery.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
                 }
 
-                productWithStockValidationQuery = productWithStockValidationQuery.GroupBy(q => q.ProductId).Select(v => v.First());
+                productWithStockValidationQuery = productWithStockValidationQuery.Distinct();
+
+                var productWithStockValidationIdList = productWithStockValidationQuery.Select(q => q.ProductId);
 
                 var productWithoutStockValidationQuery = from p in _stockDbContext.Product
                                                          join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
@@ -1371,7 +1390,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductionOrderCode = details.ProductionOrderCode,
                     FromPackageId = null,
                     ToPackageId = details.ToPackageId,
-                    PackageOptionId = (int)details.PackageOptionId
+                    PackageOptionId = (int)details.PackageOptionId,
+                    SortOrder = details.SortOrder
                 });
             }
             return inventoryDetailList;
@@ -1463,7 +1483,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductionOrderCode = details.ProductionOrderCode,
                     FromPackageId = details.FromPackageId,
                     ToPackageId = null,
-                    PackageOptionId = null
+                    PackageOptionId = null,
+                    SortOrder = details.SortOrder
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
