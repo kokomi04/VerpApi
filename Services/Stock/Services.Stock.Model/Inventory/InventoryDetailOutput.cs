@@ -40,6 +40,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public string ProductionOrderCode { get; set; }
 
+        public int? SortOrder { get; set; }
+
         public ProductListOutput ProductOutput { get; set; }
 
         public ProductUnitConversion ProductUnitConversion { set; get; }
