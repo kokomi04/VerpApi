@@ -31,6 +31,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService : IInventoryService
     {
+        const decimal MINIMUM_JS_NUMBER = 0.00000000000001M;
+
         private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
@@ -1429,10 +1431,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _logger.LogInformation($"InventoryService.ProcessInventoryOut error ProductUnitConversionNotFound. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}");
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                     }
+
                     if (productUnitConversionInfo.ProductId != details.ProductId)
                     {
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                     }
+
                     if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
                     {
                         details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
@@ -1444,11 +1448,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //return GeneralCode.InvalidParams;
                     }
 
-                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
-                    {
-                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
-                        return InventoryErrorCode.NotEnoughQuantity;
-                    }
+
                     if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
                     {
                         primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
@@ -1457,6 +1457,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         }
                     }
+
+
+                    if (Math.Abs(details.ProductUnitConversionQuantity - fromPackageInfo.ProductUnitConversionRemaining) <= MINIMUM_JS_NUMBER)
+                    {
+                        primaryQualtity = fromPackageInfo.PrimaryQuantityRemaining;
+                    }
+
+                    if (Math.Abs(primaryQualtity - fromPackageInfo.PrimaryQuantityRemaining) <= MINIMUM_JS_NUMBER)
+                    {
+                        details.ProductUnitConversionQuantity = fromPackageInfo.ProductUnitConversionRemaining;
+                    }
+
+                    if (details.ProductUnitConversionQuantity > fromPackageInfo.ProductUnitConversionRemaining)
+                    {
+                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
+                        return InventoryErrorCode.NotEnoughQuantity;
+                    }
+                   
                 }
                 inventoryDetailList.Add(new InventoryDetail
                 {
