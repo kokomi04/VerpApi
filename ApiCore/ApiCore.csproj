@@ -44,6 +44,7 @@
     <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\AccountantDB\AccountantDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\IdentityDB\IdentityDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
