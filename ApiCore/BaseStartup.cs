@@ -337,7 +337,7 @@ namespace VErp.Infrastructure.ApiCore
             var seqServerUrl = configuration["Logging"];
             var logstashUrl = configuration["Serilog:LogstashgUrl"];
             var filePathFormat = $"{AppSetting.Logging.OutputPath}/{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
-            var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
+            var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss.fff} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
             var logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .Enrich.With(new ExceptionEnricher())
