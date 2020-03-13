@@ -35,6 +35,12 @@
     <StartAction>Project</StartAction>
     <LaunchBrowser></LaunchBrowser>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <Content Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <EmbeddedResource Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <None Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+  </ItemGroup>
   
   <ItemGroup>    
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
@@ -66,10 +72,6 @@
     <Content Update="web.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\PurchaseOrder\PurchasingRequest\" />
   </ItemGroup>
 
 </Project>
