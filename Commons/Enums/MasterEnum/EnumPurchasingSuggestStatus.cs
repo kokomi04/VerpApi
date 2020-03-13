@@ -5,9 +5,9 @@ using System.Text;
 namespace VErp.Commons.Enums.MasterEnum
 {
     /// <summary>
-    /// PurchasingRequest Status- Trạng thái của phiếu yêu cầu VT HH
+    /// PurchasingSuggest Status - Trạng thái của phiếu đề nghị mua VT HH
     /// </summary>
-    public enum EnumPurchasingRequestStatus
+    public enum EnumPurchasingSuggestStatus
     {
         /// <summary>
         /// Nháp 
@@ -33,8 +33,7 @@ namespace VErp.Commons.Enums.MasterEnum
         /// Đã gửi nhà cung cấp
         /// </summary>
         SendedToProvider = 4,
-
-
+        
         /// <summary>
         /// Đã hoàn thành
         /// </summary>

@@ -16,6 +16,8 @@ namespace VErp.Services.Stock.Model.Stock
         
         public string ProductName { get; set; }
 
+        public string Specifications { set; get; }
+
         public int PrimaryUnitId { set; get; }
 
         public string PrimaryUnitName { set; get; }
@@ -23,6 +25,8 @@ namespace VErp.Services.Stock.Model.Stock
         public long AmountWarningMin { set; get; }
 
         public long AmountWarningMax { set; get; }
+
+        public decimal TotalPrimaryQuantityRemaining { set; get; }
 
         public List<StockProductQuantity> StockProductQuantityList { set; get; }
     }

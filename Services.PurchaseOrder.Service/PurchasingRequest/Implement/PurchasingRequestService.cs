@@ -1,5 +1,6 @@
-﻿using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
+﻿
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -15,8 +16,9 @@ using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using MasterDBContext = VErp.Infrastructure.EF.MasterDB.MasterDBContext;
 using VErp.Commons.Library;
-
-using System.Linq;
+using VErp.Services.Master.Service.Activity;
+using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
+using VErp.Services.Master.Model.Activity;
 
 namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 {
@@ -28,12 +30,14 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly IActivityService _activityService;
         private readonly IAsyncRunnerService _asyncRunner;
 
         public PurchasingRequestService(MasterDBContext masterDBContext, StockDBContext stockContext, PurchaseOrderDBContext purchaseOrderDBContext
            , IOptions<AppSetting> appSetting
            , ILogger<PurchasingRequestService> logger
            , IActivityLogService activityLogService
+            , IActivityService activityService
            , IAsyncRunnerService asyncRunner
            )
         {
@@ -43,6 +47,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _activityService = activityService;
             _asyncRunner = asyncRunner;
         }
 
@@ -50,49 +55,46 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
         {
             try
             {
-                var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.AsNoTracking().FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
-                if (purchasingRequestObj == null)
+                var prObj = await _purchaseOrderDBContext.PurchasingRequest.AsNoTracking().FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
+                if (prObj == null)
                 {
                     return PurchasingRequestErrorCode.NotFound;
                 }
-                var purchasingRequestDetailList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => q.PurchasingRequestId == purchasingRequestObj.PurchasingRequestId).ToListAsync();
+                var prDetailsDataList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => q.PurchasingRequestId == prObj.PurchasingRequestId).ToListAsync();
 
-                var productIdsList = purchasingRequestDetailList.Select(q => q.ProductId).ToList();
-                var productModelList = await _stockDbContext.Product.Where(q => productIdsList.Contains(q.ProductId)).AsNoTracking().Select(q=> new { q.ProductId,q.ProductCode,q.ProductName,q.UnitId }).ToListAsync();
+                var productIdList = prDetailsDataList.Select(q => q.ProductId).ToList();
+                var productDataList = await _stockDbContext.Product.Where(q => productIdList.Contains(q.ProductId)).AsNoTracking().Select(q => new { q.ProductId, q.ProductCode, q.ProductName, q.UnitId }).ToListAsync();
 
-                var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
-                var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+                var unitIdList = prDetailsDataList.Select(q => q.PrimaryUnitId).ToList();
+                var unitDataList = await _masterDBContext.Unit.Where(q => unitIdList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
 
-                var detailsModelOutput = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+                var detailsModelOutput = prDetailsDataList.Select(q => new PurchasingRequestDetailOutputModel
                 {
                     PurchasingRequestDetailId = q.PurchasingRequestDetailId,
                     PurchasingRequestId = q.PurchasingRequestId,
                     ProductId = q.ProductId,
                     PrimaryUnitId = q.PrimaryUnitId,
                     PrimaryQuantity = q.PrimaryQuantity,
-                    PrimaryUnitName = unitModelList.FirstOrDefault(v=>v.UnitId == q.PrimaryUnitId)?.UnitName,
-                    ProductName = productModelList.FirstOrDefault(v=> v.ProductId == q.ProductId)?.ProductName,
-                    ProductCode = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
+                    PrimaryUnitName = unitDataList.FirstOrDefault(v => v.UnitId == q.PrimaryUnitId)?.UnitName,
+                    ProductName = productDataList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductName,
+                    ProductCode = productDataList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
                 }).ToList();
 
                 var result = new PurchasingRequestOutputModel
                 {
-                    PurchasingRequestId = purchasingRequestObj.PurchasingRequestId,
-                    PurchasingRequestCode = purchasingRequestObj.PurchasingRequestCode,
-                    OrderCode = purchasingRequestObj.OrderCode,
-                    Date = purchasingRequestObj.Date.GetUnix(),
-                    Content = purchasingRequestObj.Content,
-                    Status = purchasingRequestObj.Status,
-                    RejectCount  = purchasingRequestObj.RejectCount,
-
-
-                    CreatedByUserId = purchasingRequestObj.CreatedByUserId,
-                    UpdatedByUserId = purchasingRequestObj.UpdatedByUserId,
-                    CreatedDatetimeUtc = purchasingRequestObj.CreatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CreatedDatetimeUtc).GetUnix() : 0,
-                    UpdatedDatetimeUtc = purchasingRequestObj.UpdatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.UpdatedDatetimeUtc).GetUnix() : 0,
-
-                    CensorByUserId = purchasingRequestObj.CensorByUserId,
-                    CensorDatetimeUtc = purchasingRequestObj.CensorDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CensorDatetimeUtc).GetUnix() : 0,
+                    PurchasingRequestId = prObj.PurchasingRequestId,
+                    PurchasingRequestCode = prObj.PurchasingRequestCode,
+                    OrderCode = prObj.OrderCode,
+                    Date = prObj.Date.GetUnix(),
+                    Content = prObj.Content,
+                    Status = prObj.Status,
+                    RejectCount = prObj.RejectCount,
+                    CreatedByUserId = prObj.CreatedByUserId,
+                    UpdatedByUserId = prObj.UpdatedByUserId,
+                    CreatedDatetimeUtc = prObj.CreatedDatetimeUtc != null ? ((DateTime)prObj.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = prObj.UpdatedDatetimeUtc != null ? ((DateTime)prObj.UpdatedDatetimeUtc).GetUnix() : 0,
+                    CensorByUserId = prObj.CensorByUserId,
+                    CensorDatetimeUtc = prObj.CensorDatetimeUtc != null ? ((DateTime)prObj.CensorDatetimeUtc).GetUnix() : 0,
 
                     DetailList = detailsModelOutput
                 };
@@ -108,17 +110,17 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
         public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
-            var purchasingRequestQuery = from pr in _purchaseOrderDBContext.PurchasingRequest
-                                         select pr;
-                
-            if(!string.IsNullOrEmpty(keyword))
+            var prQuery = from pr in _purchaseOrderDBContext.PurchasingRequest
+                          select pr;
+
+            if (!string.IsNullOrEmpty(keyword))
             {
-                purchasingRequestQuery = purchasingRequestQuery.Where(q => q.PurchasingRequestCode.Contains(keyword) || q.OrderCode.Contains(keyword));
+                prQuery = prQuery.Where(q => q.PurchasingRequestCode.Contains(keyword) || q.OrderCode.Contains(keyword));
             }
-            if(statusList.Count > 0)
+            if (statusList.Count > 0)
             {
                 var enumStatusList = statusList.Select(q => Convert.ToInt32(q)).ToList();
-                purchasingRequestQuery = purchasingRequestQuery.Where(q => enumStatusList.Contains(q.Status));
+                prQuery = prQuery.Where(q => enumStatusList.Contains(q.Status));
             }
             var bTime = DateTime.MinValue;
             var eTime = DateTime.MinValue;
@@ -132,71 +134,71 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 eTime = endTime.UnixToDateTime();
                 eTime = eTime.AddDays(1);
             }
-            
+
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
             {
-                purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date >= bTime && q.Date < eTime);
+                prQuery = prQuery.Where(q => q.Date >= bTime && q.Date < eTime);
             }
             else
             {
                 if (bTime != DateTime.MinValue)
                 {
-                    purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date >= bTime);
+                    prQuery = prQuery.Where(q => q.Date >= bTime);
                 }
                 if (eTime != DateTime.MinValue)
                 {
-                    purchasingRequestQuery = purchasingRequestQuery.Where(q => q.Date < eTime);
+                    prQuery = prQuery.Where(q => q.Date < eTime);
                 }
             }
 
-            purchasingRequestQuery = purchasingRequestQuery.OrderByDescending(q => q.Date);
-            var total = purchasingRequestQuery.Count();
-            var purchasingRequestDataList = purchasingRequestQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
-            var purchasingRequestIdsList = purchasingRequestDataList.Select(q => q.PurchasingRequestId).ToList();
+            prQuery = prQuery.OrderByDescending(q => q.Date);
+            var total = prQuery.Count();
+            var prDataList = prQuery.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
+            var prIdList = prDataList.Select(q => q.PurchasingRequestId).ToList();
 
-            var purchasingRequestDetailList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => purchasingRequestIdsList.Contains(q.PurchasingRequestId)).ToListAsync();
+            var prDetailsDataList = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking().Where(q => prIdList.Contains(q.PurchasingRequestId)).ToListAsync();
 
-            var productIdsList = purchasingRequestDetailList.Select(q => q.ProductId).ToList();
-            var productModelList = await _stockDbContext.Product.Where(q => productIdsList.Contains(q.ProductId)).AsNoTracking().Select(q => new { q.ProductId, q.ProductCode, q.ProductName, q.UnitId }).ToListAsync();
+            var productIdList = prDetailsDataList.Select(q => q.ProductId).ToList();
+            var productDataList = await _stockDbContext.Product.Where(q => productIdList.Contains(q.ProductId)).AsNoTracking().Select(q => new { q.ProductId, q.ProductCode, q.ProductName, q.UnitId }).ToListAsync();
 
-            var unitIdsList = purchasingRequestDetailList.Select(q => q.PrimaryUnitId).ToList();
-            var unitModelList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+            var unitIdsList = prDetailsDataList.Select(q => q.PrimaryUnitId).ToList();
+            var unitDataList = await _masterDBContext.Unit.Where(q => unitIdsList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
 
-            var detailsModelOutputList = purchasingRequestDetailList.Select(q => new PurchasingRequestDetailOutputModel
+            var detailsModelOutputList = prDetailsDataList.Select(q => new PurchasingRequestDetailOutputModel
             {
                 PurchasingRequestDetailId = q.PurchasingRequestDetailId,
                 PurchasingRequestId = q.PurchasingRequestId,
                 ProductId = q.ProductId,
                 PrimaryUnitId = q.PrimaryUnitId,
                 PrimaryQuantity = q.PrimaryQuantity,
-                PrimaryUnitName = unitModelList.FirstOrDefault(v => v.UnitId == q.PrimaryUnitId)?.UnitName,
-                ProductName = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductName,
-                ProductCode = productModelList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
+                PrimaryUnitName = unitDataList.FirstOrDefault(v => v.UnitId == q.PrimaryUnitId)?.UnitName,
+                ProductName = productDataList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductName,
+                ProductCode = productDataList.FirstOrDefault(v => v.ProductId == q.ProductId)?.ProductCode
             }).ToList();
 
 
-            var pagedData = new List<PurchasingRequestOutputModel>(purchasingRequestDataList.Count);
-            foreach (var purchasingRequestObj in purchasingRequestDataList)
+            var pagedData = new List<PurchasingRequestOutputModel>(prDataList.Count);
+            foreach (var prObj in prDataList)
             {
                 var prItem = new PurchasingRequestOutputModel
                 {
-                    PurchasingRequestId = purchasingRequestObj.PurchasingRequestId,
-                    PurchasingRequestCode = purchasingRequestObj.PurchasingRequestCode,
-                    OrderCode = purchasingRequestObj.OrderCode,
-                    Date = purchasingRequestObj.Date.GetUnix(),
-                    Content = purchasingRequestObj.Content,
-                    Status = purchasingRequestObj.Status,
-                    RejectCount = purchasingRequestObj.RejectCount,
+                    PurchasingRequestId = prObj.PurchasingRequestId,
+                    PurchasingRequestCode = prObj.PurchasingRequestCode,
+                    OrderCode = prObj.OrderCode,
+                    Date = prObj.Date.GetUnix(),
+                    Content = prObj.Content,
+                    Status = prObj.Status,
+                    RejectCount = prObj.RejectCount,
 
-                    CreatedByUserId = purchasingRequestObj.CreatedByUserId,
-                    UpdatedByUserId = purchasingRequestObj.UpdatedByUserId,
-                    CreatedDatetimeUtc = purchasingRequestObj.CreatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CreatedDatetimeUtc).GetUnix() : 0,
-                    UpdatedDatetimeUtc = purchasingRequestObj.UpdatedDatetimeUtc != null ? ((DateTime)purchasingRequestObj.UpdatedDatetimeUtc).GetUnix() : 0,
+                    CreatedByUserId = prObj.CreatedByUserId,
+                    UpdatedByUserId = prObj.UpdatedByUserId,
+                    CreatedDatetimeUtc = prObj.CreatedDatetimeUtc != null ? ((DateTime)prObj.CreatedDatetimeUtc).GetUnix() : 0,
+                    UpdatedDatetimeUtc = prObj.UpdatedDatetimeUtc != null ? ((DateTime)prObj.UpdatedDatetimeUtc).GetUnix() : 0,
 
-                    CensorByUserId = purchasingRequestObj.CensorByUserId,
-                    CensorDatetimeUtc = purchasingRequestObj.CensorDatetimeUtc != null ? ((DateTime)purchasingRequestObj.CensorDatetimeUtc).GetUnix() : 0,
+                    CensorByUserId = prObj.CensorByUserId,
+                    CensorDatetimeUtc = prObj.CensorDatetimeUtc != null ? ((DateTime)prObj.CensorDatetimeUtc).GetUnix() : 0,
 
-                    DetailList = detailsModelOutputList.Where(q=>q.PurchasingRequestId == purchasingRequestObj.PurchasingRequestId).ToList()
+                    DetailList = detailsModelOutputList.Where(q => q.PurchasingRequestId == prObj.PurchasingRequestId).ToList()
                 };
                 pagedData.Add(prItem);
             }
@@ -249,7 +251,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Thêm mới phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", model.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", model.JsonSerialize());
 
                     return purchasingRequestObj.PurchasingRequestId;
                 }
@@ -260,7 +262,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                     return GeneralCode.InternalError;
                 }
             }
-        }            
+        }
 
         public async Task<Enum> UpdatePurchasingRequest(long purchasingRequestId, int currentUserId, PurchasingRequestInputModel model)
         {
@@ -311,7 +313,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Cập nhật phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -342,13 +344,13 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Xóa phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
 
                 return GeneralCode.Success;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ApprovePurchasingRequest");
+                _logger.LogError(ex, "DeletePurchasingRequest");
                 return GeneralCode.InternalError;
             }
         }
@@ -368,7 +370,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Gửi duyệt phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Gửi duyệt phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -394,7 +396,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Duyệt phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Duyệt phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -414,7 +416,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 {
                     return PurchasingRequestErrorCode.NotFound;
                 }
-                if(purchasingRequestObj.IsDeleted || purchasingRequestObj.Status == (int)EnumPurchasingRequestStatus.Approved)
+                if (purchasingRequestObj.IsDeleted || purchasingRequestObj.Status == (int)EnumPurchasingRequestStatus.Approved)
                 {
                     return PurchasingRequestErrorCode.AlreadyApproved;
                 }
@@ -427,7 +429,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Từ chối phiếu đề nghị mua  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestObj.PurchasingRequestId, $"Từ chối phiếu yêu cầu VTHH  {purchasingRequestObj.PurchasingRequestCode}", purchasingRequestObj.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -436,6 +438,21 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
                 _logger.LogError(ex, "RejectPurchasingRequest");
                 return GeneralCode.InternalError;
             }
+        }
+
+        public async Task<Enum> AddNote(long objectId, int currentUserId, int actionTypeId = 0, string note = "")
+        {
+            var otId = (int)EnumObjectType.PurchasingRequest;
+            if (actionTypeId == 0)
+                actionTypeId = 1;
+
+            return await _activityService.CreateUserActivityLog(objectId: objectId, objectTypeId: otId, userId: currentUserId, actionTypeId: actionTypeId, message: note);
+        }
+
+        public async Task<PageData<UserActivityLogOuputModel>> GetNoteList(long objectId, int pageIndex = 1, int pageSize = 20)
+        {
+            var otId = (int)EnumObjectType.PurchasingRequest;
+            return await _activityService.GetListUserActivityLog(objectId: objectId, objectTypeId: otId, pageIndex, pageSize);
         }
     }
 }

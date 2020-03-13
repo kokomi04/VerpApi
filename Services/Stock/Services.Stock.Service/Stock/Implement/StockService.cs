@@ -691,24 +691,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 stockProductQuery = stockProductQuery.Where(q => stockIds.Contains(q.StockId));
             }
             var productStockInfoQuery = _stockContext.ProductStockInfo.AsQueryable();
+            var productExtraInfoQuery = _stockContext.ProductExtraInfo.AsQueryable();
 
             var productInfoQuery = from p in productQuery
-                           join psi in productStockInfoQuery on p.ProductId equals psi.ProductId
+                           join ps in productStockInfoQuery on p.ProductId equals ps.ProductId 
+                           join pe in productExtraInfoQuery on p.ProductId equals pe.ProductId into pse
+                           from pe in pse.DefaultIfEmpty()
                            select new
                            {
                                p.ProductId,
                                p.ProductCode,
                                p.ProductName,
+                               Specifications = pe != null ? pe.Specification : string.Empty,
                                p.UnitId,
                                p.ProductTypeId,
-                               p.ProductCateId,                               
-                               psi.AmountWarningMin,
-                               psi.AmountWarningMax,
+                               p.ProductCateId,
+                               ps.AmountWarningMin,
+                               ps.AmountWarningMax,
                            };
-
+            
+            var total = productInfoQuery.Count();
             var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
-            var total = productInfoPaged.Count;
-
+           
             var productIdList = productInfoPaged.Select(q => q.ProductId).ToList();
             var primaryUnitIdList = productInfoPaged.Select(q => q.UnitId).ToList();
 
@@ -730,23 +734,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var pi in productInfoPaged)
             {
-                var item = new StockProductQuantityWarning
-                {
-                    ProductId = pi.ProductId,
-                    ProductCode = pi.ProductCode,
-                    ProductName = pi.ProductName,
-                    PrimaryUnitId = pi.UnitId,
-                    PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
-                    AmountWarningMin = pi.AmountWarningMin ?? 0,
-                    AmountWarningMax = pi.AmountWarningMax ?? 0
-                };
                 var spList = stockProductDataList.Where(q => q.ProductId == pi.ProductId).Select(q => new StockProductQuantity
                 {
                     StockId = q.StockId,
                     StockName = q.StockName,
                     PrimaryQuantityRemaining = q.PrimaryQuantityRemaining
                 }).ToList();
+
+                var item = new StockProductQuantityWarning
+                {
+                    ProductId = pi.ProductId,
+                    ProductCode = pi.ProductCode,
+                    ProductName = pi.ProductName,
+                    Specifications = pi.Specifications,
+                    PrimaryUnitId = pi.UnitId,
+                    PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
+                    AmountWarningMin = pi.AmountWarningMin ?? 0,
+                    AmountWarningMax = pi.AmountWarningMax ?? 0
+                };               
                 item.StockProductQuantityList = spList;
+                item.TotalPrimaryQuantityRemaining = spList.Count > 0 ? item.StockProductQuantityList.Sum(q => q.PrimaryQuantityRemaining) : 0;
                 result.Add(item);
             }
             return (result, total);

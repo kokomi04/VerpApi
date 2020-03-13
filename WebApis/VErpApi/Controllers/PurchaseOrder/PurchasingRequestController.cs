@@ -11,8 +11,9 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Service.PurchasingRequest;
 using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
+using VErp.Services.Master.Model.Activity;
 
-namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
+namespace VErpApi.Controllers.PurchaseOrder
 {
     [Route("api/purchasingrequest")]
     public class PurchasingRequestController : VErpBaseController
@@ -128,6 +129,22 @@ namespace VErpApi.Controllers.PurchaseOrder.PurchasingRequest
         {
             var currentUserId = UserId;
             return await _purchasingRequestService.DeletePurchasingRequest(purchasingRequestId, currentUserId);
+        }
+
+        [HttpPost]
+        [Route("AddNote")]
+        public async Task<ApiResponse> AddNote(long objectId, int actionTypeId = 0, string note = "")
+        {
+            var currentUserId = UserId;
+            return await _purchasingRequestService.AddNote(objectId, currentUserId, actionTypeId, note);
+        }
+
+
+        [HttpGet]
+        [Route("GetNoteList")]
+        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList(long objectId, int page = 1, int size  = 20)
+        {
+            return await _purchasingRequestService.GetNoteList(objectId, page, size);
         }
     }
 }

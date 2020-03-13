@@ -53,9 +53,26 @@ namespace VErp.Commons.Enums.MasterEnum
         /// </summary>
         ProductBom = 18,
 
+        /// <summary>
+        /// Yêu cầu VT HH
+        /// </summary>
         PurchasingRequest = 19,
 
-        PurchasingRequestDetail = 20
+        PurchasingRequestDetail = 20,
+
+        /// <summary>
+        /// Đề nghị mua VT HH
+        /// </summary>
+        PurchasingSuggest = 21,
+
+        PurchasingSuggestDetail = 22,
+
+        /// <summary>
+        /// PO - Đơn đặt hàng
+        /// </summary>
+        PurchaseOrder = 23,
+
+        PurchaseOrderDetail = 24,
 
     }
 }

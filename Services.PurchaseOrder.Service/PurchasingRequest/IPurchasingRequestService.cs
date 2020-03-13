@@ -6,6 +6,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Services.Master.Model.Activity;
 
 namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest
 {
@@ -26,5 +27,9 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest
         Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, int currentUserId);
 
         Task<Enum> RejectPurchasingRequest(long purchasingRequestId, int currentUserId);
+
+        Task<Enum> AddNote(long objectId, int currentUserId, int actionTypeId = 0, string note = "");
+
+        Task<PageData<UserActivityLogOuputModel>> GetNoteList(long objectId, int pageIndex = 1, int pageSize = 20);
     }
 }
