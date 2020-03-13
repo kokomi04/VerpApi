@@ -123,7 +123,7 @@ namespace Services.PurchaseOrder.Service.PurchasingSuggest.Implement
             }
         }
 
-        public async Task<PageData<PurchasingSuggestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
+        public async Task<PageData<PurchasingSuggestOutputModel>> GetList(string keyword, IList<EnumPurchasingSuggestStatus> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
             var psQuery = from pr in _purchaseOrderDBContext.PurchasingSuggest
                           select pr;

@@ -14,7 +14,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest
     {
         Task<ServiceResult<PurchasingRequestOutputModel>> Get(long purchasingRequestId);
 
-        Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10);
+        Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<EnumPurchasingRequestStatus> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10);
 
         Task<ServiceResult<long>> AddPurchasingRequest(int currentUserId, PurchasingRequestInputModel model);
 

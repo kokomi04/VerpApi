@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<int> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<EnumPurchasingRequestStatus> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingRequestService.GetList(keyword: keyword, statusList: statusList, beginTime: beginTime, endTime: endTime, page: page, size: size);
         }
@@ -131,6 +131,13 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchasingRequestService.DeletePurchasingRequest(purchasingRequestId, currentUserId);
         }
 
+        /// <summary>
+        /// Thêm ghi chú vào phiếu yêu cầu
+        /// </summary>
+        /// <param name="objectId"></param>
+        /// <param name="actionTypeId"></param>
+        /// <param name="note"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("AddNote")]
         public async Task<ApiResponse> AddNote(long objectId, int actionTypeId = 0, string note = "")
@@ -139,7 +146,13 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchasingRequestService.AddNote(objectId, currentUserId, actionTypeId, note);
         }
 
-
+        /// <summary>
+        /// Lấy danh sách ghi chú của phiếu yêu cầu
+        /// </summary>
+        /// <param name="objectId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("GetNoteList")]
         public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList(long objectId, int page = 1, int size  = 20)

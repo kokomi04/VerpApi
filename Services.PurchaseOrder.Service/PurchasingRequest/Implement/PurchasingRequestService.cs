@@ -108,7 +108,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }
         }
 
-        public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<int> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
+        public async Task<PageData<PurchasingRequestOutputModel>> GetList(string keyword, IList<EnumPurchasingRequestStatus> statusList, long beginTime = 0, long endTime = 0, int page = 1, int size = 10)
         {
             var prQuery = from pr in _purchaseOrderDBContext.PurchasingRequest
                           select pr;

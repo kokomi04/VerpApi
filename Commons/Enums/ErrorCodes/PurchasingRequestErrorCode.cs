@@ -7,16 +7,16 @@ namespace VErp.Commons.Enums.ErrorCodes
 {
     public enum PurchasingRequestErrorCode
     {
-        [Description("Không tìm thấy phiếu yêu cầu mua hàng tương ứng")]
+        [Description("Không tìm thấy phiếu yêu cầu VTHH tương ứng")]
         NotFound = 1,
         
-        [Description("Mã phiếu yêu cầu mua hàng không có")]
+        [Description("Mã phiếu yêu cầu VTHH không có")]
         PurchasingRequestCodeEmpty = 2,
 
-        [Description("Phiếu yêu cầu mua hàng đã tồn tại")]
+        [Description("Phiếu yêu cầu VTHH đã tồn tại")]
         AlreadyExisted = 3,
 
-        [Description("Phiếu yêu cầu mua hàng đã được duyệt")]
-        AlreadyApproved = 3,
+        [Description("Không thế xóa phiếu yêu cầu VTHH đã được duyệt")]
+        AlreadyApproved = 4,
     }
 }

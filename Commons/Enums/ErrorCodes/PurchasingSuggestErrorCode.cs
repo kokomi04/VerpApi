@@ -16,7 +16,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         [Description("Phiếu đề nghị mua hàng đã tồn tại")]
         AlreadyExisted = 3,
 
-        [Description("Phiếu đề nghị mua hàng đã được duyệt")]
-        AlreadyApproved = 3,
+        [Description("Không thế xóa phiếu đề nghị mua hàng đã được duyệt")]
+        AlreadyApproved = 4,
     }
 }
