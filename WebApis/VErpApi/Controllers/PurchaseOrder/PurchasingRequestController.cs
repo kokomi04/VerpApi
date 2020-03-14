@@ -100,9 +100,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [HttpPut]
         [Route("{purchasingRequestId}/Approve")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId, EnumPurchasingRequestStatus status)
         {
-            return await _purchasingRequestService.ApprovePurchasingRequest(purchasingRequestId, UserId);
+            return await _purchasingRequestService.ApprovePurchasingRequest(purchasingRequestId, status,UserId);
         }
 
         /// <summary>

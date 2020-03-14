@@ -24,7 +24,7 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest
 
         Task<Enum> SendToApprove(long purchasingRequestId, int currentUserId);
 
-        Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, int currentUserId);
+        Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, EnumPurchasingRequestStatus status, int currentUserId);
 
         Task<Enum> RejectPurchasingRequest(long purchasingRequestId, int currentUserId);
 

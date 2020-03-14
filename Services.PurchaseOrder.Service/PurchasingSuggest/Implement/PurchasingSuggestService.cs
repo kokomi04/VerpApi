@@ -415,7 +415,7 @@ namespace Services.PurchaseOrder.Service.PurchasingSuggest.Implement
             }
         }
 
-        public async Task<Enum> ApprovePurchasingSuggest(long purchasingSuggestId, int currentUserId)
+        public async Task<Enum> ApprovePurchasingSuggest(long purchasingSuggestId, EnumPurchasingSuggestStatus status, int currentUserId)
         {
             try
             {
@@ -424,7 +424,7 @@ namespace Services.PurchaseOrder.Service.PurchasingSuggest.Implement
                 {
                     return GeneralCode.InternalError;
                 }
-                purchasingSuggestObj.Status = (int)EnumPurchasingSuggestStatus.Approved;
+                purchasingSuggestObj.Status = (int) status;
                 purchasingSuggestObj.UpdatedByUserId = currentUserId;
                 purchasingSuggestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
