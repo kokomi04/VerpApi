@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -28,7 +29,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService : IInventoryService
     {
-        const decimal MINIMUM_JS_NUMBER = 0.00000000000001M;
+        const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_JS_NUMBER;
 
         private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockDbContext;
