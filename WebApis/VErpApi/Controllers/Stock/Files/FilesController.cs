@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -38,16 +39,15 @@ namespace VErpApi.Controllers.Stock.Files
 
         /// <summary>
         /// Lấy danh sách thumbnail
-        /// </summary>
-        /// <param name="fileIds"></param>
-        /// <param name="thumb">EnumThumbnailSize: loại thumbnail sẽ trả về</param>
+        /// </summary>  
         /// <returns></returns>
         [GlobalApi]
-        [HttpGet]
+        [HttpPost]
         [Route("GetThumbnails")]
-        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] IList<long> fileIds, EnumThumbnailSize? thumb)
+        [VErpAction(EnumAction.View)]
+        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] GetThumbnailsInput req)
         {
-            return await _fileService.GetThumbnails(fileIds, thumb);
+            return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize);
         }
 
       
