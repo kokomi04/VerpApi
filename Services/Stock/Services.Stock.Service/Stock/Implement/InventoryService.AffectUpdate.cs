@@ -274,6 +274,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             }
 
                             obj.NewPrimaryQuantity = primaryQualtity;
+
+                            if (obj.NewProductUnitConversionQuantity == obj.OldProductUnitConversionQuantity)
+                            {
+                                obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
+                            }
                         }
                         else
                         {
@@ -292,7 +297,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         foreach (var c in obj.Children)
                         {
-                            if (productUnitConversionInfo.IsFreeStyle == false)
+                            if (productUnitConversionInfo.IsFreeStyle??false == false)
                             {
                                 if (c.NewTransferProductUnitConversionQuantity > 0)
                                 {
@@ -349,9 +354,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (obj.Children != null && updatedObj.Children != null)
                     {
+
                         foreach (var child in obj.Children)
                         {
                             var updatedChild = updatedObj.Children.FirstOrDefault(c => c.ObjectKey == child.ObjectKey);
+                            if (updatedChild == null) throw new Exception($"Không tìm thấy {child.ObjectKey} từ {obj.ObjectKey}");
 
                             child.NewTransferPrimaryQuantity = updatedChild.NewTransferPrimaryQuantity;
                             child.NewTransferProductUnitConversionQuantity = updatedChild.NewTransferProductUnitConversionQuantity;
@@ -360,11 +367,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             totalOutProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
                         }
                     }
-
                     if (totalOutPrimaryQuantity > totalInPrimaryQuantity || totalOutProductUnitConversionQuantity > totalInProductUnitConversionQuantity)
                     {
                         return InventoryErrorCode.InOuputAffectObjectsInvalid;
                     }
+
+                    //if (totalOutPrimaryQuantity.SubDecimal(totalInPrimaryQuantity) > 0 || totalOutProductUnitConversionQuantity.SubDecimal(totalInProductUnitConversionQuantity) > 0)
+                    //{
+                    //    return InventoryErrorCode.InOuputAffectObjectsInvalid;
+                    //}
                 }
             }
             return GeneralCode.Success;

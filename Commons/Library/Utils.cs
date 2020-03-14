@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library
@@ -156,7 +157,6 @@ namespace VErp.Commons.Library
             return $"{((int)objectTypeId)}_{objectId}";
         }
 
-
         public static Expression<Func<T, object>> ToMemberOf<T>(this string name)
         {
             var parameter = Expression.Parameter(typeof(T), "x");
@@ -183,6 +183,35 @@ namespace VErp.Commons.Library
 
             var ex = propertyInfo.Name.ToMemberOf<T>();
             return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
+        }
+
+        public static decimal AddDecimal(this decimal a, decimal b)
+        {
+            if (a < 0 && b > 0 || a > 0 && b < 0)
+            {
+                var c = a + b;
+                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                return c;
+            }
+            return a + b;
+        }
+
+        public static decimal SubDecimal(this decimal a, decimal b)
+        {
+            if (a > 0 && b > 0 || a < 0 && b < 0)
+            {
+                var c = a - b;
+                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                return c;
+            }
+            return a - b;
+        }
+
+        public static decimal RelativeTo(this decimal value, decimal relValue)
+        {
+            if (Math.Abs(value) < Numbers.MINIMUM_JS_NUMBER) return 0;
+            if (value.SubDecimal(relValue) == 0) return relValue;
+            return value;
         }
     }
 }
