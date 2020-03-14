@@ -381,16 +381,16 @@ namespace VErp.Services.PurchaseOrder.Service.PurchasingRequest.Implement
             }
         }
 
-        public async Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, int currentUserId)
+        public async Task<Enum> ApprovePurchasingRequest(long purchasingRequestId, EnumPurchasingRequestStatus status, int currentUserId)
         {
             try
             {
-                var purchasingRequestObj = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(q => q.PurchasingRequestId == purchasingRequestId);
+                var purchasingRequestObj = _purchaseOrderDBContext.PurchasingRequest.FirstOrDefault(q => q.PurchasingRequestId == purchasingRequestId);
                 if (purchasingRequestObj == null)
                 {
                     return GeneralCode.InternalError;
                 }
-                purchasingRequestObj.Status = (int)EnumPurchasingRequestStatus.Approved;
+                purchasingRequestObj.Status = (int)status;
                 purchasingRequestObj.UpdatedByUserId = currentUserId;
                 purchasingRequestObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
