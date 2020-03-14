@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
-{    
+{
     public partial class PurchasingSuggest
     {
         public long PurchasingSuggestId { get; set; }
