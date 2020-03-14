@@ -149,7 +149,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
-
+                options.OperationFilter<SwaggerFileOperationFilter>();
                 options.IncludeXmlComments(Path.Combine(
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));
