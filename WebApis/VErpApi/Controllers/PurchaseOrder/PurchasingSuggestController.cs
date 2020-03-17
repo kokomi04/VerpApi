@@ -16,18 +16,18 @@ using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
 {
-    [Route("api/PurchaseOrder/Request")]
-    public class PurchasingRequestController : VErpBaseController
+    [Route("api/PurchaseOrder/Suggest")]
+    public class PurchasingSuggestController : VErpBaseController
     {
         private readonly IPurchasingRequestService _purchasingRequestService;
 
-        public PurchasingRequestController(IPurchasingRequestService purchasingRequestService)
+        public PurchasingSuggestController(IPurchasingRequestService purchasingRequestService)
         {
             _purchasingRequestService = purchasingRequestService;
         }
 
         /// <summary>
-        /// Lấy danh sách phiếu yêu cầu vật tư
+        /// Lấy danh sách phiếu đề nghị mua hàng
         /// </summary>     
         /// <returns></returns>
         [HttpGet]
@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Lấy thông tin phiếu yêu cầu vật tư
+        /// Lấy thông tin phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId">Id phiếu</param>
         /// <returns>PurchasingRequestOutputModel</returns>
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Thêm mới phiếu yêu cầu vật tư
+        /// Thêm mới phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="req">Model PurchasingRequestInputModel</param>
         /// <returns></returns>
@@ -62,7 +62,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Cập nhật phiếu yêu cầu vật tư
+        /// Cập nhật phiếu đề nghịmua hàng
         /// </summary>
         /// <param name="purchasingRequestId">Id phiếu</param>
         /// <param name="req">Model PurchasingRequestInputModel</param>
@@ -75,7 +75,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Gửi duyệt phiếu yêu cầu vật tư
+        /// Gửi duyệt phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
@@ -87,7 +87,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Duyệt phiếu yêu cầu vật tư
+        /// Duyệt phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
@@ -100,7 +100,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        ///  Từ chối phiếu yêu cầu vật tư
+        ///  Từ chối phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId"></param>
         /// <returns></returns>
@@ -113,7 +113,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Xóa phiếu yêu cầu vật tư
+        /// Xóa phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId"></param>
         /// <returns></returns>
@@ -125,12 +125,11 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Cập nhật trạng thái mua hàng cho đơn yêu cầu vật tư
+        /// Cập nhật trạng thái mua hàng cho phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingRequestId"></param>
         /// <param name="poProcessStatusId"></param>
         /// <returns></returns>
-
         [HttpPut]
         [Route("{purchasingRequestId}/UpdatePoProcessStatus")]
         public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingRequestId, [FromBody] EnumPoProcessStatus poProcessStatusId)

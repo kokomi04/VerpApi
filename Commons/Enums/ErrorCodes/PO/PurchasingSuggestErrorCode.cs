@@ -11,10 +11,10 @@ namespace VErp.Commons.Enums.ErrorCodes
         NotFound = 1,
         
         [Description("Mã phiếu đề nghị mua hàng không có")]
-        PurchasingRequestCodeEmpty = 2,
+        PurchasingSuggestCodeEmpty = 2,
 
         [Description("Phiếu đề nghị mua hàng đã tồn tại")]
-        AlreadyExisted = 3,
+        CodeAlreadyExisted = 3,
 
         [Description("Không thế xóa phiếu đề nghị mua hàng đã được duyệt")]
         AlreadyApproved = 4,
