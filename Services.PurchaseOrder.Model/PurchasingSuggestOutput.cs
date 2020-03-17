@@ -6,13 +6,13 @@ using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
-    public class PurchasingRequestOutputList
+    public class PurchasingSuggestOutputList
     {
-        public long PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
+        public long PurchasingSuggestId { get; set; }
+        public string PurchasingSuggestCode { get; set; }
         public string OrderCode { get; set; }
         public long Date { get; set; }   
-        public EnumPurchasingRequestStatus PurchasingRequestStatusId { get; set; }
+        public EnumPurchasingSuggestStatus PurchasingSuggestStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public int CreatedByUserId { get; set; }
@@ -25,17 +25,16 @@ namespace VErp.Services.PurchaseOrder.Model
     }
 
 
-    public class PurchasingRequestOutput: PurchasingRequestOutputList
+    public class PurchasingSuggestOutput: PurchasingSuggestOutputList
     {
         public string Content { get; set; }
         public int RejectCount { get; set; }
-        public IList<long> FileIds { get; set; }
-        public List<PurchasingRequestOutputDetail> Details { set; get; }
+        public List<PurchasingSuggestOutputDetail> Details { set; get; }
     }
 
 
-    public class PurchasingRequestOutputDetail: PurchasingRequestInputDetail
+    public class PurchasingSuggestOutputDetail: PurchasingSuggestInputDetail
     {
-        public long PurchasingRequestDetailId { get; set; }
+        public long PurchasingSuggestDetailId { get; set; }
     }
 }
