@@ -8,10 +8,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PurchasingRequestDetailId { get; set; }
         public long PurchasingRequestId { get; set; }
         public int ProductId { get; set; }
-        public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public DateTime? CreatedDatetimeUtc { get; set; }
-        public DateTime? UpdatedDatetimeUtc { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
+
+        public virtual PurchasingRequest PurchasingRequest { get; set; }
     }
 }

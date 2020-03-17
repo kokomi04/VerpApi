@@ -863,6 +863,11 @@
           "System.Xml.ReaderWriter": "4.3.0"
         }
       },
+      "VErp.Commons.Constants/1.0.0": {
+        "runtime": {
+          "VErp.Commons.Constants.dll": {}
+        }
+      },
       "VErp.Commons.Enums/1.0.0": {
         "runtime": {
           "VErp.Commons.Enums.dll": {}
@@ -874,6 +879,7 @@
           "NPOI": "2.4.1",
           "Newtonsoft.Json": "12.0.2",
           "Sodium.Core": "1.2.0",
+          "VErp.Commons.Constants": "1.0.0",
           "VErp.Commons.Enums": "1.0.0"
         },
         "runtime": {
@@ -1489,6 +1495,11 @@
       "sha512": "sha512-5zJ0XDxAIg8iy+t4aMnQAu0MqVbqyvfoUVl1yDV61xdo3Vth45oA2FoY4pPkxYAH5f8ixpmTqXeEIya95x0aCQ==",
       "path": "system.xml.xdocument/4.3.0",
       "hashPath": "system.xml.xdocument.4.3.0.nupkg.sha512"
+    },
+    "VErp.Commons.Constants/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     },
     "VErp.Commons.Enums/1.0.0": {
       "type": "project",

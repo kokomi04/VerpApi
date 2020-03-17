@@ -3,15 +3,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.PurchaseOrder.Service.PurchasingRequest;
-using VErp.Services.PurchaseOrder.Model.PurchasingRequest;
 using VErp.Services.Master.Model.Activity;
+using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
 {
@@ -27,19 +28,13 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         /// <summary>
         /// Lấy danh sách phiếu yêu cầu mua hàng
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="statusList"></param>
-        /// <param name="beginTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
+        /// </summary>     
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchasingRequestOutputModel>>> GetList([FromQuery] string keyword, [FromQuery] List<EnumPurchasingRequestStatus> statusList, [FromQuery] long beginTime, [FromQuery] long endTime, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<PurchasingRequestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingRequestService.GetList(keyword: keyword, statusList: statusList, beginTime: beginTime, endTime: endTime, page: page, size: size);
+            return await _purchasingRequestService.GetList(keyword, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
         }
 
         /// <summary>
@@ -49,9 +44,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns>PurchasingRequestOutputModel</returns>
         [HttpGet]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse<PurchasingRequestOutputModel>> Get([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse<PurchasingRequestOutput>> GetInfo([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Get(purchasingRequestId);
+            return await _purchasingRequestService.GetInfo(purchasingRequestId);
         }
 
         /// <summary>
@@ -61,9 +56,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInputModel req)
+        public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.AddPurchasingRequest(UserId, req);
+            return await _purchasingRequestService.Create(req);
         }
 
         /// <summary>
@@ -74,9 +69,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInputModel req)
+        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.UpdatePurchasingRequest(purchasingRequestId, UserId, req);
+            return await _purchasingRequestService.Update(purchasingRequestId, req);
         }
 
         /// <summary>
@@ -85,11 +80,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}/SendApprove")]
-        [VErpAction(EnumAction.Censor)]
+        [Route("{purchasingRequestId}/SendCensor")]
         public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.SendToApprove(purchasingRequestId, UserId);
+            return await _purchasingRequestService.SendToCensor(purchasingRequestId);
         }
 
         /// <summary>
@@ -100,9 +94,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [HttpPut]
         [Route("{purchasingRequestId}/Approve")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId, EnumPurchasingRequestStatus status)
+        public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.ApprovePurchasingRequest(purchasingRequestId, status,UserId);
+            return await _purchasingRequestService.Approve(purchasingRequestId);
         }
 
         /// <summary>
@@ -115,7 +109,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Reject([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.RejectPurchasingRequest(purchasingRequestId, UserId);
+            return await _purchasingRequestService.Reject(purchasingRequestId);
         }
 
         /// <summary>
@@ -127,37 +121,15 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<ApiResponse> Delete([FromRoute] long purchasingRequestId)
         {
-            var currentUserId = UserId;
-            return await _purchasingRequestService.DeletePurchasingRequest(purchasingRequestId, currentUserId);
+            return await _purchasingRequestService.Delete(purchasingRequestId);
         }
 
-        /// <summary>
-        /// Thêm ghi chú vào phiếu yêu cầu
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <param name="actionTypeId"></param>
-        /// <param name="note"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("AddNote")]
-        public async Task<ApiResponse> AddNote(long objectId, int actionTypeId = 0, string note = "")
-        {
-            var currentUserId = UserId;
-            return await _purchasingRequestService.AddNote(objectId, currentUserId, actionTypeId, note);
-        }
 
-        /// <summary>
-        /// Lấy danh sách ghi chú của phiếu yêu cầu
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetNoteList")]
-        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList(long objectId, int page = 1, int size  = 20)
+        [HttpPut]
+        [Route("{purchasingRequestId}/UpdatePoProcessStatus")]
+        public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingRequestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
-            return await _purchasingRequestService.GetNoteList(objectId, page, size);
+            return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusId);
         }
     }
 }

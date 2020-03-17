@@ -53,7 +53,7 @@ namespace SynTool
             }
 
             var text = System.IO.File.ReadAllText(contextPath);
-            text = text.Replace("protected override void OnModelCreating", "protected void OnModelCreated");
+            //text = text.Replace("protected override void OnModelCreating", "protected void OnModelCreated");
             //text.Replace("OnModelCreating", "OnModelCreated");
 
             var reg = new Regex("(?<fName>protected override void OnConfiguring[^}]*})");

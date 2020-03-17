@@ -38,10 +38,8 @@ namespace VErp.Infrastructure.EF.StockDB
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
-        protected void OnModelCreated(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
-
             modelBuilder.Entity<File>(entity =>
             {
                 entity.Property(e => e.ContentType).HasMaxLength(128);
@@ -95,6 +93,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
+
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -117,6 +117,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.RefObjectCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
+
+                entity.Property(e => e.ToPackageId).HasComment("Nhập kho vào kiện nào");
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
 
@@ -435,6 +437,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }
