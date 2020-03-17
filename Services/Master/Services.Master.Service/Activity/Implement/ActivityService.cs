@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -52,6 +53,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     ActionId = (int)input.ActionId,
                     ObjectTypeId = (int)input.ObjectTypeId,
+                    MessageTypeId = (int)input.MessageTypeId,
                     ObjectId = input.ObjectId,
                     Message = input.Message
                 };
@@ -60,15 +62,16 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 await _masterContext.SaveChangesAsync();
 
                 // var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
-
-                var change = new UserActivityLogChange()
+                if (!string.IsNullOrWhiteSpace(input.Data))
                 {
-                    UserActivityLogId = activity.UserActivityLogId,
-                    ObjectChange = input.Data,//changeLog
-                };
+                    var change = new UserActivityLogChange()
+                    {
+                        UserActivityLogId = activity.UserActivityLogId,
+                        ObjectChange = input.Data,//changeLog
+                    };
 
-                await _masterContext.UserActivityLogChange.AddAsync(change);
-
+                    await _masterContext.UserActivityLogChange.AddAsync(change);
+                }
                 await _masterContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -77,7 +80,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
-        public async Task<Enum> CreateUserActivityLog(long objectId,int objectTypeId,int userId,int actionTypeId,string message)
+        public async Task<Enum> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message)
         {
             var activity = new UserActivityLog()
             {
@@ -85,6 +88,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 ObjectTypeId = objectTypeId,
                 ObjectId = objectId,
                 ActionId = actionTypeId,
+                MessageTypeId = (int)messageTypeId,
                 Message = message,
                 CreatedDatetimeUtc = DateTime.UtcNow,
             };
@@ -97,13 +101,14 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, int objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _masterContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == objectTypeId).OrderByDescending(q=>q.UserActivityLogId);
+            var query = _masterContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == objectTypeId).OrderByDescending(q => q.UserActivityLogId);
 
             var total = query.Count();
             var ualDataList = query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList();
 
             var userIdList = ualDataList.Select(q => q.UserId).ToList();
-            var userDataList = _masterContext.User.Where(q => userIdList.Contains(q.UserId)).Select(q=> new { 
+            var userDataList = _masterContext.User.Where(q => userIdList.Contains(q.UserId)).Select(q => new
+            {
                 q.UserId,
                 q.UserName
             }).ToList();
@@ -115,39 +120,14 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 {
                     UserId = item.UserId,
                     UserName = userDataList.FirstOrDefault(q => q.UserId == item.UserId)?.UserName,
-                    ObjectId = item.ObjectId,
-                    ActionId = item.ActionId ?? 0,
-                    ActionName = GetActionName(item.ActionId ?? 0),
+                    ActionId = (EnumAction?)item.ActionId,
                     Message = item.Message,
-                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix()
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    MessageTypeId = (EnumMessageType)item.MessageTypeId,
                 };
                 result.Add(actLogOutput);
             }
             return (result, total);
-        }
-
-        private string GetActionName(int actionTypeId)
-        {
-            var actionName = string.Empty;
-            switch(actionTypeId)
-            {
-                case 1:
-                    actionName = "Xem";
-                        break;
-                case 2:
-                    actionName = "Thêm mới";
-                    break;
-                case 4:
-                    actionName = "Sửa";
-                    break;
-                case 8:
-                    actionName = "Xóa";
-                    break;
-                case 16:
-                    actionName = "Duyệt";
-                    break;
-            }
-            return actionName;
         }
     }
 }

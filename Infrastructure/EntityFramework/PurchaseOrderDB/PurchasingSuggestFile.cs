@@ -8,5 +8,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PurchasingSuggestId { get; set; }
         public long FileId { get; set; }
         public bool IsDeleted { get; set; }
+
+        public virtual PurchasingSuggest PurchasingSuggest { get; set; }
     }
 }

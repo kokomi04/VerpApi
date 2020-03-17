@@ -14,7 +14,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         PurchasingRequestCodeEmpty = 2,
 
         [Description("Phiếu yêu cầu VTHH đã tồn tại")]
-        AlreadyExisted = 3,
+        CodeAlreadyExisted = 3,
 
         [Description("Không thế xóa phiếu yêu cầu VTHH đã được duyệt")]
         AlreadyApproved = 4,

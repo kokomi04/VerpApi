@@ -3,13 +3,11 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class PurchasingSuggestDetail
+    public partial class PurchaseOrderDetail
     {
-        public long PurchasingSuggestDetailId { get; set; }
-        public long PurchasingSuggestId { get; set; }
-        public int? CustomerId { get; set; }
-        public string PurchasingRequestIds { get; set; }
-        public int ProductId { get; set; }
+        public long PurchaseOrderDetailId { get; set; }
+        public long PurchaseOrderId { get; set; }
+        public long PoAssignmentDetailId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
         public decimal? Tax { get; set; }
@@ -18,7 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual PurchasingSuggest PurchasingSuggest { get; set; }
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
+        public virtual PurchaseOrder PurchaseOrder { get; set; }
     }
 }

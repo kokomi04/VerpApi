@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Master.Model.Activity
 {
@@ -10,19 +12,9 @@ namespace VErp.Services.Master.Model.Activity
 
         public string UserName { set; get; }
 
-        public long ObjectId { set; get; }
+        public EnumAction? ActionId { set; get; }
 
-        //public int ObjectTypeId { set; get; }
-
-        //public string ObjectName { set; get; }
-
-        public int ActionId { set; get; }
-
-        public string ActionName { set; get; }
-
-        //public int MessageTypeId { set; get; }
-
-        //public string MessageTypeName { set; get; }
+        public EnumMessageType MessageTypeId { set; get; }
 
         public string Message { set; get; }
 

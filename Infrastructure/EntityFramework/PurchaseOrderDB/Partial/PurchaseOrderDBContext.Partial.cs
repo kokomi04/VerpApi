@@ -6,10 +6,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchaseOrderDBContext
     {
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
         {
-            OnModelCreated(modelBuilder);
-
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
 

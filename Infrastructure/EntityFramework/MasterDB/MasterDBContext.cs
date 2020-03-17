@@ -39,6 +39,10 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<PackageOperationType> PackageOperationType { get; set; }
         public virtual DbSet<PackageOption> PackageOption { get; set; }
         public virtual DbSet<PackageType> PackageType { get; set; }
+        public virtual DbSet<PoProcessStatus> PoProcessStatus { get; set; }
+        public virtual DbSet<PurchaseOrderStatus> PurchaseOrderStatus { get; set; }
+        public virtual DbSet<PurchasingRequestStatus> PurchasingRequestStatus { get; set; }
+        public virtual DbSet<PurchasingSuggestStatus> PurchasingSuggestStatus { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -55,10 +59,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
-        protected void OnModelCreated(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("ProductVersion", "2.2.6-servicing-10079");
-
             modelBuilder.Entity<Action>(entity =>
             {
                 entity.Property(e => e.ActionId).ValueGeneratedNever();
@@ -316,7 +318,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.Seperator)
                     .HasMaxLength(1)
-                    .IsUnicode(false);
+                    .IsUnicode(false)
+                    .IsFixedLength();
 
                 entity.Property(e => e.Suffix)
                     .HasMaxLength(32)
@@ -361,8 +364,46 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
+            modelBuilder.Entity<PoProcessStatus>(entity =>
+            {
+                entity.Property(e => e.PoProcessStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.PoProcessStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<PurchaseOrderStatus>(entity =>
+            {
+                entity.Property(e => e.PurchaseOrderStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.PurchaseOrderStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<PurchasingRequestStatus>(entity =>
+            {
+                entity.Property(e => e.PurchasingRequestStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.PurchasingRequestStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<PurchasingSuggestStatus>(entity =>
+            {
+                entity.Property(e => e.PurchasingSuggestStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.PurchasingSuggestStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Role>(entity =>
             {
+                entity.Property(e => e.ChildrenRoleIds).HasMaxLength(1024);
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
 
                 entity.Property(e => e.Description).HasMaxLength(512);
@@ -485,6 +526,8 @@ namespace VErp.Infrastructure.EF.MasterDB
             modelBuilder.Entity<UserActivityLog>(entity =>
             {
                 entity.Property(e => e.Message).HasMaxLength(512);
+
+                entity.Property(e => e.MessageTypeId).HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<UserActivityLogChange>(entity =>
@@ -502,6 +545,10 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
             });
+
+            OnModelCreatingPartial(modelBuilder);
         }
+
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
     }
 }
