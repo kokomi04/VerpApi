@@ -187,7 +187,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 #region Get inventory details
-                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s=>s.CreatedDatetimeUtc).ToListAsync();
+                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedDatetimeUtc).ToListAsync();
 
                 var productIds = inventoryDetails.Select(d => d.ProductId).ToList();
 
@@ -320,7 +320,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
-            {              
+            {
                 if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode.Trim()))
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
@@ -769,7 +769,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 //reload inventory after lock
                 inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-               
+
                 if (inventoryObj.IsApproved)
                 {
                     /*Khong duoc phep xoa phieu nhap da duyet (Cần xóa theo lưu đồ, flow)*/
@@ -888,7 +888,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
             {
-               
+
                 return InventoryErrorCode.InventoryNotFound;
             }
 
@@ -1035,7 +1035,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     try
                     {
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        
+
                         if (inventoryObj.IsApproved)
                         {
                             trans.Rollback();
@@ -1061,12 +1061,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
                             fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
 
+                            ValidatePackage(fromPackageInfo);
+
                             var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                             stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
                             stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
                             stockProduct.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
                             stockProduct.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+
+                            ValidateStockProduct(stockProduct);
                         }
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
@@ -1085,6 +1089,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
+
+        private void ValidatePackage(Package package)
+        {
+
+            if (package.PrimaryQuantityWaiting < 0) throw new Exception("Negative PrimaryQuantityWaiting!");
+
+            if (package.PrimaryQuantityRemaining < 0) throw new Exception("Negative PrimaryQuantityRemaining!");
+
+            if (package.ProductUnitConversionWaitting < 0) throw new Exception("Negative ProductUnitConversionWaitting!");
+
+            if (package.ProductUnitConversionRemaining < 0) throw new Exception("Negative ProductUnitConversionRemaining!");
+
+
+        }
+
+        private void ValidateStockProduct(StockProduct stockProduct)
+        {
+
+            if (stockProduct.PrimaryQuantityWaiting < 0) throw new Exception("Negative PrimaryQuantityWaiting!");
+
+            if (stockProduct.PrimaryQuantityRemaining < 0) throw new Exception("Negative PrimaryQuantityRemaining!");
+
+            if (stockProduct.ProductUnitConversionWaitting < 0) throw new Exception("Negative ProductUnitConversionWaitting!");
+
+            if (stockProduct.ProductUnitConversionRemaining < 0) throw new Exception("Negative ProductUnitConversionRemaining!");
+
+        }
+
 
         /// <summary>
         /// Lấy danh sách sản phẩm để xuất kho
@@ -1257,7 +1289,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
             try
-            {               
+            {
 
                 var productWithStockValidationQuery = from p in _stockDbContext.Product
                                                       join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId
@@ -1355,8 +1387,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 var productInfo = productInfos.FirstOrDefault(p => p.ProductId == details.ProductId);
 
-                var primaryQty = details.PrimaryQuantity;
-
                 if (details.ProductUnitConversionQuantity == 0)
                     details.ProductUnitConversionQuantity = details.PrimaryQuantity;
 
@@ -1371,6 +1401,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
                 }
+
+
                 if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
@@ -1383,8 +1415,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                     }
 
-                    primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                    if (!isApproved && primaryQty <= 0)
+                    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                    {
+                        // primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                        details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                    }
+
+                    if (!isApproved && details.ProductUnitConversionQuantity <= 0)
                     {
                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     }
@@ -1420,7 +1457,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    PrimaryQuantity = primaryQty,
+                    PrimaryQuantity = details.PrimaryQuantity,
                     UnitPrice = details.UnitPrice,
                     ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
                     ProductUnitConversionId = details.ProductUnitConversionId,
@@ -1487,7 +1524,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
                     {
-                        details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
+                        if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                        {
+                            details.ProductUnitConversionQuantity = primaryQualtity * fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining;
+                        }
+                        //Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
+
                         if (!(details.ProductUnitConversionQuantity > 0))
                         {
                             return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
@@ -1497,7 +1539,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
                     {
-                        primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+                        if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                        {
+                            primaryQualtity = details.ProductUnitConversionQuantity * fromPackageInfo.PrimaryQuantityRemaining / fromPackageInfo.ProductUnitConversionRemaining;
+                        }
+
+                        //primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                         if (!(primaryQualtity > 0))
                         {
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
@@ -1727,6 +1774,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     stockProductInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
                     stockProductInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
                 }
+
+                ValidatePackage(fromPackageInfo);
+                ValidateStockProduct(stockProductInfo);
+
                 fromPackageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                 stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
