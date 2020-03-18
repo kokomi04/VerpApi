@@ -73,6 +73,7 @@ namespace VErp.Commons.Enums.MasterEnum
         PurchaseOrder = 23,
 
         PurchaseOrderDetail = 24,
-
+        CustomGenCodeConfig = 25,
+        
     }
 }
