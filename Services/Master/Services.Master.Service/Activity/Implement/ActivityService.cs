@@ -99,27 +99,37 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, int objectTypeId, int pageIdex = 1, int pageSize = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _masterContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == objectTypeId).OrderByDescending(q => q.UserActivityLogId);
+            var query = _masterContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
 
             var total = query.Count();
             var ualDataList = query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList();
 
             var userIdList = ualDataList.Select(q => q.UserId).ToList();
-            var userDataList = _masterContext.User.Where(q => userIdList.Contains(q.UserId)).Select(q => new
-            {
-                q.UserId,
-                q.UserName
-            }).ToList();
+            var userDataList = (
+                from u in _masterContext.User
+                join e in _masterContext.Employee on u.UserId equals e.UserId
+                where userIdList.Contains(u.UserId)
+                select new
+                {
+                    u.UserId,
+                    u.UserName,
+                    e.FullName,
+                    e.AvatarFileId
+                }).ToList()
+                .ToDictionary(u=>u.UserId, u=>u);
 
             var result = new List<UserActivityLogOuputModel>(ualDataList.Count);
             foreach (var item in ualDataList)
             {
+                userDataList.TryGetValue(item.UserId, out var userInfo);
                 var actLogOutput = new UserActivityLogOuputModel
                 {
                     UserId = item.UserId,
-                    UserName = userDataList.FirstOrDefault(q => q.UserId == item.UserId)?.UserName,
+                    UserName = userInfo?.UserName,
+                    FullName = userInfo?.FullName,
+                    AvatarFileId = userInfo?.AvatarFileId,
                     ActionId = (EnumAction?)item.ActionId,
                     Message = item.Message,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
