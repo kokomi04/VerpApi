@@ -28,7 +28,17 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         /// <summary>
         /// Lấy danh sách phiếu yêu cầu vật tư
-        /// </summary>     
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="purchasingRequestStatusId"></param>
+        /// <param name="poProcessStatusId"></param>
+        /// <param name="isApproved"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
@@ -40,8 +50,8 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <summary>
         /// Lấy thông tin phiếu yêu cầu vật tư
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu</param>
-        /// <returns>PurchasingRequestOutputModel</returns>
+        /// <param name="purchasingRequestId"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("{purchasingRequestId}")]
         public async Task<ApiResponse<PurchasingRequestOutput>> GetInfo([FromRoute] long purchasingRequestId)
@@ -52,7 +62,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <summary>
         /// Thêm mới phiếu yêu cầu vật tư
         /// </summary>
-        /// <param name="req">Model PurchasingRequestInputModel</param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
         [Route("")]
@@ -64,8 +74,8 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <summary>
         /// Cập nhật phiếu yêu cầu vật tư
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu</param>
-        /// <param name="req">Model PurchasingRequestInputModel</param>
+        /// <param name="purchasingRequestId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}")]

@@ -28,7 +28,17 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         /// <summary>
         /// Lấy danh sách phiếu đề nghị mua hàng
-        /// </summary>     
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="purchasingRequestStatusId"></param>
+        /// <param name="poProcessStatusId"></param>
+        /// <param name="isApproved"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]

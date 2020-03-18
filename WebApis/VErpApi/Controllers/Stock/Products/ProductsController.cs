@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
@@ -54,6 +57,19 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<ApiResponse<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm theo ids
+        /// </summary>
+        /// <param name="productIds"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumAction.View)]
+        public async Task<ApiResponse<IList<ProductListOutput>>> GetByIds([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetListByIds(productIds)).ToList();
         }
 
         /// <summary>
