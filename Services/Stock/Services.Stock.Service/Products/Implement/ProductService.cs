@@ -577,6 +577,70 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return (pageData, total);
         }
 
+        public async Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds)
+        {
+            if (productIds == null || productIds.Count == 0) return new List<ProductListOutput>();
+
+            var query = (
+                from p in _stockContext.Product
+                join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId
+                join pt in _stockContext.ProductType on p.ProductTypeId equals pt.ProductTypeId into pts
+                from pt in pts.DefaultIfEmpty()
+                join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
+                from pc in pcs.DefaultIfEmpty()
+                where productIds.Contains(p.ProductId)
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.MainImageFileId,
+                    p.ProductTypeId,
+                    ProductTypeName = pt == null ? null : pt.ProductTypeName,
+                    p.ProductCateId,
+                    ProductCateName = pc == null ? null : pc.ProductCateName,
+                    p.Barcode,
+                    pe.Specification,
+                    pe.Description,
+                    p.UnitId,
+                    p.EstimatePrice
+                });
+           
+            var lstData = await query.ToListAsync();
+
+            var unitIds = lstData.Select(p => p.UnitId).ToList();
+            var unitInfos = await _unitService.GetListByIds(unitIds);
+
+
+            var data = new List<ProductListOutput>();
+            foreach (var item in lstData)
+            {
+                var product = new ProductListOutput()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    Barcode = item.Barcode,
+                    MainImageFileId = item.MainImageFileId,
+                    ProductCateId = item.ProductCateId,
+                    ProductCateName = item.ProductCateName,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductTypeName = item.ProductTypeName,
+                    Specification = item.Specification,
+                    UnitId = item.UnitId,
+                    EstimatePrice = item.EstimatePrice
+                };
+
+                var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
+
+                product.UnitName = unitInfo?.UnitName;
+
+                data.Add(product);
+            }
+
+
+            return data;
+        }
         private Enum ValidateProduct(ProductModel req)
         {
             if (req.StockInfo.UnitConversions?.Count > 0)
