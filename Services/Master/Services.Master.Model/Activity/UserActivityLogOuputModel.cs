@@ -11,7 +11,8 @@ namespace VErp.Services.Master.Model.Activity
         public int UserId { set; get; }
 
         public string UserName { set; get; }
-
+        public string FullName { get; set; }
+        public long? AvatarFileId { get; set; }
         public EnumAction? ActionId { set; get; }
 
         public EnumMessageType MessageTypeId { set; get; }
