@@ -195,7 +195,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
 
-            
+
             var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
 
             if (!isDelete)
@@ -265,24 +265,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (productUnitConversionInfo.IsFreeStyle == false)
                     {
 
-                        if (obj.NewProductUnitConversionQuantity > 0)
+                        if (obj.NewPrimaryQuantity >= 0)
                         {
-                            var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                            if (!(primaryQualtity > 0))
+                            //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+
+                            if (obj.OldPrimaryQuantity != 0)
+                            {
+                                obj.NewProductUnitConversionQuantity = obj.NewPrimaryQuantity * obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity;
+                            }
+                            else
+                            {
+                                obj.NewProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                            }
+
+                            if (!(obj.NewProductUnitConversionQuantity > 0) && obj.NewPrimaryQuantity > 0)
                             {
                                 return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                             }
 
-                            obj.NewPrimaryQuantity = primaryQualtity;
-
-                            if (obj.NewProductUnitConversionQuantity == obj.OldProductUnitConversionQuantity)
-                            {
-                                obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
-                            }
+                            //if (obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
+                            //{
+                            //    obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
+                            //}
                         }
                         else
                         {
-                            obj.NewPrimaryQuantity = 0;
+                            throw new Exception($"Negative PrimaryQuantity {obj.ObjectTypeId} {obj.ObjectId} {obj.ObjectCode}");
                         }
                     }
 
@@ -297,21 +305,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         foreach (var c in obj.Children)
                         {
-                            if (productUnitConversionInfo.IsFreeStyle??false == false)
+                            if (productUnitConversionInfo.IsFreeStyle ?? false == false)
                             {
-                                if (c.NewTransferProductUnitConversionQuantity > 0)
+                                if (c.NewTransferPrimaryQuantity >= 0)
                                 {
-                                    var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                                    if (!(primaryQualtity > 0))
+                                    //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
+
+                                    c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
+
+                                    if (!(c.NewTransferProductUnitConversionQuantity > 0) && c.NewTransferPrimaryQuantity > 0)
                                     {
                                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                                     }
-
-                                    c.NewTransferPrimaryQuantity = primaryQualtity;
                                 }
                                 else
                                 {
-                                    c.NewTransferPrimaryQuantity = 0;
+                                    throw new Exception($"Negative TransferPrimaryQuantity from {obj.ObjectCode} to {c.ObjectTypeId} {c.ObjectId}");
                                 }
                             }
                         }
