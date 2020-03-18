@@ -163,7 +163,7 @@ namespace VErp.Commons.Library
             {
                 format.Append("#");
             }
-            return number.ToString(format.ToString())
+            return number.ToString(format.ToString());
         }
 
         public static decimal AddDecimal(this decimal a, decimal b)
