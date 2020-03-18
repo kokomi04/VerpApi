@@ -84,7 +84,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="inventoryId">Mã phiếu nhập / xuất kho</param>
         /// <param name="currentUserId"></param>        
         /// <returns></returns>
-        Task<Enum> ApproveInventoryOutput(long inventoryId, int currentUserId);
+        Task<ServiceResult> ApproveInventoryOutput(long inventoryId, int currentUserId);
 
         /// <summary>
         /// Xóa thông tin phiếu nhập kho
