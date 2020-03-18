@@ -155,6 +155,17 @@ namespace VErp.Commons.Library
             return $"{((int)objectTypeId)}_{objectId}";
         }
 
+        public static string Format(this decimal number, int decimalplace = 16)
+        {
+            var format = new StringBuilder();
+            format.Append("#,#.");
+            for (var i = 1; i < decimalplace; i++)
+            {
+                format.Append("#");
+            }
+            return number.ToString(format.ToString())
+        }
+
         public static decimal AddDecimal(this decimal a, decimal b)
         {
             if (a < 0 && b > 0 || a > 0 && b < 0)

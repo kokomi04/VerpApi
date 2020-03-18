@@ -1081,14 +1081,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     return ProductErrorCode.ProductNotFound;
                                 }
 
-                                var message = $"Số dư trong kho mặt hàng {productInfo.ProductCode} ({original[detail.FromPackageId.Value].ToString("#,#")} {productInfo.ProductUnitConversionName}) không đủ để xuất ";
+
+                                var message = $"Số dư trong kho mặt hàng {productInfo.ProductCode} ({original[detail.FromPackageId.Value].Format()} {productInfo.ProductUnitConversionName}) không đủ để xuất ";
                                 var samPackages = inventoryDetails.Where(d => d.FromPackageId == detail.FromPackageId);
 
+                                var total = inventoryDetails.Sum(d => d.PrimaryQuantity).Format();
 
-                                message += " (" + string.Join(" + ", inventoryDetails.Select(d => d.PrimaryQuantity.ToString("#,#")))
-                                    + " = "
-                                    + inventoryDetails.Sum(d => d.PrimaryQuantity).ToString("#,#")
-                                    + " " + productInfo.ProductUnitConversionName;
+                                message += $" < {total} {productInfo.ProductUnitConversionName} = "
+                                    + string.Join(" + ", inventoryDetails.Select(d => d.PrimaryQuantity.Format()));
 
                                 trans.Rollback();
                                 return (InventoryErrorCode.NotEnoughQuantity, message);
