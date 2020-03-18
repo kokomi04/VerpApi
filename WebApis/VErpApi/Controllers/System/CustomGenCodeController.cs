@@ -18,85 +18,83 @@ using VErp.Services.Master.Service.Users;
 namespace VErpApi.Controllers.System
 {
 
-    [Route("api/GenCodeConfigs")]
-    public class ObjectGenCodeController : VErpBaseController
+    [Route("api/CustomGenCodeConfigs")]
+    public class CustomGenCodeController : VErpBaseController
     {
-        private readonly IObjectGenCodeService _customGenCodeService;
-        public ObjectGenCodeController(IObjectGenCodeService objectGenCodeService
+        private readonly ICustomGenCodeService _customGenCodeService;
+        public CustomGenCodeController(ICustomGenCodeService customGenCodeService
             )
         {
-            _customGenCodeService = objectGenCodeService;
+            _customGenCodeService = customGenCodeService;
         }
 
         /// <summary>
         /// Lấy danh sách cấu hình gen code
         /// </summary>
-        /// <param name="objectType"></param>
         /// <param name="keyword"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ObjectGenCodeOutputModel>>> Get([FromQuery] EnumObjectType objectType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<CustomGenCodeOutputModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? objectTypeId)
         {
-            return await _customGenCodeService.GetList(objectType,keyword, page, size);
+            return await _customGenCodeService.GetList(keyword, page, size, objectTypeId);
         }
 
         /// <summary>
         /// Lấy thông tin cấu hình gen code cho đối tượng
         /// </summary>
-        /// <param name="objectGenCodeId">Id cấu hình</param>
+        /// <param name="customGenCodeId">Id cấu hình</param>
         /// <returns></returns>
         [HttpGet]
-        [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse<ObjectGenCodeOutputModel>> GetInfo([FromRoute] int objectGenCodeId)
+        [Route("{customGenCodeId}")]
+        public async Task<ApiResponse<CustomGenCodeOutputModel>> GetInfo([FromRoute] int customGenCodeId)
         {
-            return await _customGenCodeService.GetInfo(objectGenCodeId);
+            return await _customGenCodeService.GetInfo(customGenCodeId);
         }
 
 
         /// <summary>
         /// Thêm mới cấu hình gen code cho đối tượng
         /// </summary>
-        /// <param name="objectType">Loại đối tượng</param>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> Post([FromQuery] EnumObjectType objectType, [FromBody] ObjectGenCodeInputModel req)
+        public async Task<ApiResponse<int>> Post([FromBody] CustomGenCodeInputModel req)
         {
             var currentId = UserId;
-            return await _customGenCodeService.Create(objectType, currentId, req);
+            return await _customGenCodeService.Create(currentId, req);
         }
 
 
         /// <summary>
         /// Cập nhật cấu hình gen code cho đối tượng
         /// </summary>
-        /// <param name="objectGenCodeId"></param>
+        /// <param name="customGenCodeId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse> Update([FromRoute] int objectGenCodeId, [FromBody] ObjectGenCodeInputModel req)
+        [Route("{customGenCodeId}")]
+        public async Task<ApiResponse> Update([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeInputModel req)
         {
             var currentId = UserId;
-            return await _customGenCodeService.Update(objectGenCodeId, currentId,req);
+            return await _customGenCodeService.Update(customGenCodeId, currentId,req);
         }
 
 
         /// <summary>
         /// Xóa cấu hình gen code cho đối tượng
         /// </summary>
-        /// <param name="objectGenCodeId"></param>
+        /// <param name="customGenCodeId"></param>
         /// <returns></returns>
         [HttpDelete]
-        [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int objectGenCodeId)
+        [Route("{customGenCodeId}")]
+        public async Task<ApiResponse> Delete([FromRoute] int customGenCodeId)
         {
             var currentId = UserId;
-            return await _customGenCodeService.Delete(currentId, objectGenCodeId);
+            return await _customGenCodeService.Delete(currentId, customGenCodeId);
         }
 
         /// <summary>
@@ -106,9 +104,9 @@ namespace VErpApi.Controllers.System
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("GenerateCode")]
-        public async Task<ApiResponse<string>> GenerateCode([FromQuery] EnumObjectType objectType)
+        public async Task<ApiResponse<string>> GenerateCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
-            return await _customGenCodeService.GenerateCode(objectType);
+            return await _customGenCodeService.GenerateCode(objectTypeId, objectId);
         }
 
         /// <summary>
@@ -121,6 +119,5 @@ namespace VErpApi.Controllers.System
         {
             return await _customGenCodeService.GetAllObjectType();
         }
-
     }
 }

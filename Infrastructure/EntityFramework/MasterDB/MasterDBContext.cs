@@ -51,6 +51,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
+        public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }

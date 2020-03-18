@@ -252,7 +252,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockKeeperName = item.StockKeeperName,
                     Type = item.Type,
                     Status = item.Status
-
                 };
                 pagedData.Add(stockInfo);
             }
