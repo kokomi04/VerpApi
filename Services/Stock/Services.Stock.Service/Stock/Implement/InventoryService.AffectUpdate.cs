@@ -195,7 +195,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
 
-            
+
             var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
 
             if (!isDelete)
@@ -269,7 +269,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
-                            obj.NewProductUnitConversionQuantity = obj.NewPrimaryQuantity * obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity;
+                            if (obj.OldPrimaryQuantity != 0)
+                            {
+                                obj.NewProductUnitConversionQuantity = obj.NewPrimaryQuantity * obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity;
+                            }
+                            else
+                            {
+                                obj.NewProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                            }
 
                             if (!(obj.NewProductUnitConversionQuantity > 0))
                             {
