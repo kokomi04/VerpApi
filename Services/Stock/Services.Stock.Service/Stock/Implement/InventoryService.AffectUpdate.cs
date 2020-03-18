@@ -278,7 +278,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 obj.NewProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression);
                             }
 
-                            if (!(obj.NewProductUnitConversionQuantity > 0))
+                            if (!(obj.NewProductUnitConversionQuantity > 0) && obj.NewPrimaryQuantity > 0)
                             {
                                 return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                             }
@@ -313,7 +313,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                     c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
 
-                                    if (!(c.NewTransferProductUnitConversionQuantity > 0))
+                                    if (!(c.NewTransferProductUnitConversionQuantity > 0) && c.NewTransferPrimaryQuantity > 0)
                                     {
                                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                                     }
