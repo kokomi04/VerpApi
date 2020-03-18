@@ -19,18 +19,18 @@ namespace VErpApi.Controllers.PurchaseOrder
     [Route("api/PurchaseOrder/Suggest")]
     public class PurchasingSuggestController : VErpBaseController
     {
-        private readonly IPurchasingRequestService _purchasingRequestService;
+        private readonly IPurchasingSuggestService _purchasingSuggestService;
 
-        public PurchasingSuggestController(IPurchasingRequestService purchasingRequestService)
+        public PurchasingSuggestController(IPurchasingSuggestService purchasingSuggestService)
         {
-            _purchasingRequestService = purchasingRequestService;
+            _purchasingSuggestService = purchasingSuggestService;
         }
 
         /// <summary>
         /// Lấy danh sách phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="keyword"></param>
-        /// <param name="purchasingRequestStatusId"></param>
+        /// <param name="purchasingSuggestStatusId"></param>
         /// <param name="poProcessStatusId"></param>
         /// <param name="isApproved"></param>
         /// <param name="fromDate"></param>
@@ -42,109 +42,109 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchasingRequestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ApiResponse<PageData<PurchasingSuggestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingRequestService.GetList(keyword, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
+            return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
         }
 
         /// <summary>
         /// Lấy thông tin phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu</param>
-        /// <returns>PurchasingRequestOutputModel</returns>
+        /// <param name="purchasingSuggestId">Id phiếu</param>
+        /// <returns>PurchasingSuggestOutputModel</returns>
         [HttpGet]
-        [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse<PurchasingRequestOutput>> GetInfo([FromRoute] long purchasingRequestId)
+        [Route("{PurchasingSuggestId}")]
+        public async Task<ApiResponse<PurchasingSuggestOutput>> GetInfo([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingRequestService.GetInfo(purchasingRequestId);
+            return await _purchasingSuggestService.GetInfo(purchasingSuggestId);
         }
 
         /// <summary>
         /// Thêm mới phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="req">Model PurchasingRequestInputModel</param>
+        /// <param name="req">Model PurchasingSuggestInputModel</param>
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Add([FromBody] PurchasingRequestInput req)
+        public async Task<ApiResponse<long>> Add([FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingRequestService.Create(req);
+            return await _purchasingSuggestService.Create(req);
         }
 
         /// <summary>
         /// Cập nhật phiếu đề nghịmua hàng
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu</param>
-        /// <param name="req">Model PurchasingRequestInputModel</param>
+        /// <param name="purchasingSuggestId">Id phiếu</param>
+        /// <param name="req">Model PurchasingSuggestInputModel</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
+        [Route("{PurchasingSuggestId}")]
+        public async Task<ApiResponse> Update([FromRoute] long purchasingSuggestId, [FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingRequestService.Update(purchasingRequestId, req);
+            return await _purchasingSuggestService.Update(purchasingSuggestId, req);
         }
 
         /// <summary>
         /// Gửi duyệt phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
+        /// <param name="purchasingSuggestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}/SendCensor")]
-        public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingRequestId)
+        [Route("{PurchasingSuggestId}/SendCensor")]
+        public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingRequestService.SendToCensor(purchasingRequestId);
+            return await _purchasingSuggestService.SendToCensor(purchasingSuggestId);
         }
 
         /// <summary>
         /// Duyệt phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId">Id phiếu yêu cầu mua hàng</param>        
+        /// <param name="purchasingSuggestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}/Approve")]
+        [Route("{PurchasingSuggestId}/Approve")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Approve([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse> Approve([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingRequestService.Approve(purchasingRequestId);
+            return await _purchasingSuggestService.Approve(purchasingSuggestId);
         }
 
         /// <summary>
         ///  Từ chối phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId"></param>
+        /// <param name="purchasingSuggestId"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}/Reject")]
+        [Route("{PurchasingSuggestId}/Reject")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Reject([FromRoute] long purchasingRequestId)
+        public async Task<ApiResponse> Reject([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingRequestService.Reject(purchasingRequestId);
+            return await _purchasingSuggestService.Reject(purchasingSuggestId);
         }
 
         /// <summary>
         /// Xóa phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId"></param>
+        /// <param name="PurchasingSuggestId"></param>
         /// <returns></returns>
         [HttpDelete]
-        [Route("{purchasingRequestId}")]
-        public async Task<ApiResponse> Delete([FromRoute] long purchasingRequestId)
+        [Route("{PurchasingSuggestId}")]
+        public async Task<ApiResponse> Delete([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingRequestService.Delete(purchasingRequestId);
+            return await _purchasingSuggestService.Delete(purchasingSuggestId);
         }
 
         /// <summary>
         /// Cập nhật trạng thái mua hàng cho phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="purchasingRequestId"></param>
+        /// <param name="purchasingSuggestId"></param>
         /// <param name="poProcessStatusId"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{purchasingRequestId}/UpdatePoProcessStatus")]
-        public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingRequestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
+        [Route("{PurchasingSuggestId}/UpdatePoProcessStatus")]
+        public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingSuggestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
-            return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusId);
+            return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId);
         }
     }
 }
