@@ -29,12 +29,6 @@ namespace VErp.Services.PurchaseOrder.Model
     {
         public string Content { get; set; }
         public int RejectCount { get; set; }
-        public List<PurchasingSuggestOutputDetail> Details { set; get; }
-    }
-
-
-    public class PurchasingSuggestOutputDetail: PurchasingSuggestInputDetail
-    {
-        public long PurchasingSuggestDetailId { get; set; }
+        public List<PurchasingSuggestDetailModel> Details { set; get; }
     }
 }
