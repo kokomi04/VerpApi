@@ -37,9 +37,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<CustomGenCodeOutputModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? objectTypeId)
+        public async Task<ApiResponse<PageData<CustomGenCodeOutputModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _customGenCodeService.GetList(keyword, page, size, objectTypeId);
+            return await _customGenCodeService.GetList(keyword, page, size);
         }
 
         /// <summary>
@@ -54,6 +54,12 @@ namespace VErpApi.Controllers.System
             return await _customGenCodeService.GetInfo(customGenCodeId);
         }
 
+        [HttpGet]
+        [Route("currentConfig")]
+        public async Task<ApiResponse<CustomGenCodeOutputModel>> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        {
+            return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
+        }
 
         /// <summary>
         /// Thêm mới cấu hình gen code cho đối tượng
@@ -68,9 +74,8 @@ namespace VErpApi.Controllers.System
             return await _customGenCodeService.Create(currentId, req);
         }
 
-
         /// <summary>
-        /// Cập nhật cấu hình gen code cho đối tượng
+        /// Cập nhật cấu hình gen code
         /// </summary>
         /// <param name="customGenCodeId"></param>
         /// <param name="req"></param>
@@ -80,9 +85,21 @@ namespace VErpApi.Controllers.System
         public async Task<ApiResponse> Update([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeInputModel req)
         {
             var currentId = UserId;
-            return await _customGenCodeService.Update(customGenCodeId, currentId,req);
+            return await _customGenCodeService.Update(customGenCodeId, currentId, req);
         }
 
+        /// <summary>
+        /// Mapping cấu hình gen code cho đối tượng
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("objectCustomGenCode")]
+        public async Task<ApiResponse> MapObjectCustomGenCode([FromBody] ObjectCustomGenCodeMapping req)
+        {
+            var currentId = UserId;
+            return await _customGenCodeService.MapObjectCustomGenCode(currentId, req);
+        }
 
         /// <summary>
         /// Xóa cấu hình gen code cho đối tượng
@@ -100,13 +117,21 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Tạo mã code
         /// </summary>
-        /// <param name="objectType">Loại đối tượng cần tạo mã code</param>
+        /// <param name="objectTypeId">Loại đối tượng cần tạo mã code</param>
+        /// <param name="objectId">Id đối tượng cần tạo mã code</param>
         /// <returns>string Code</returns>
         [HttpGet]
-        [Route("GenerateCode")]
+        [Route("generateCode")]
         public async Task<ApiResponse<string>> GenerateCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GenerateCode(objectTypeId, objectId);
+        }
+
+        [HttpPut]
+        [Route("confirmCode")]
+        public async Task<Enum> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        {
+            return await _customGenCodeService.ConfirmCode(objectTypeId, objectId);
         }
 
         /// <summary>
@@ -114,7 +139,7 @@ namespace VErpApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("GetAllObjectType")]
+        [Route("getAllObjectType")]
         public async Task<ApiResponse<PageData<ObjectType>>> GetAllObjectType()
         {
             return await _customGenCodeService.GetAllObjectType();

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
@@ -11,7 +12,7 @@ namespace VErp.Services.Master.Service.Config
 {
     public interface ICustomGenCodeService
     {
-        Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword, int page, int size, int? objectTypeId);
+        Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword, int page, int size);
         
         Task<ServiceResult<CustomGenCodeOutputModel>> GetInfo(int objectGenCodeId);
         
@@ -24,5 +25,11 @@ namespace VErp.Services.Master.Service.Config
         Task<ServiceResult<string>> GenerateCode(int objectTypeId, int objectId);
 
         Task<PageData<ObjectType>> GetAllObjectType();
+
+        Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig(int objectTypeId, int objectId);
+
+        Task<Enum> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
+
+        Task<Enum> ConfirmCode(int objectTypeId, int objectId);
     }
 }

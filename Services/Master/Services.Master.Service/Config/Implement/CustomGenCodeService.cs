@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -38,17 +39,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10, int? objectTypeId = null)
+        public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
         {
             var query = from ogc in _masterDbContext.CustomGenCode
                         where ogc.IsActived
                         select ogc;
-            if (objectTypeId.HasValue)
-            {
-                query = from q in query
-                        where q.ObjectTypeId == objectTypeId
-                        select q;
-            }
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
@@ -75,11 +71,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
                     CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
-                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
-                    ObjectId = item.ObjectId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectName = item.ObjectName,
-                    ObjectTypeName = item.ObjectTypeName
+                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0
                 };
                 pagedData.Add(info);
             }
@@ -92,7 +84,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
             if (obj == null)
             {
-                return CustomGenCodeErrorCode.ConfigNotFound;
+                return CustomGenCodeErrorCode.CustomConfigNotFound;
             }
             var info = new CustomGenCodeOutputModel()
             {
@@ -107,14 +99,42 @@ namespace VErp.Services.Master.Service.Config.Implement
                 IsActived = obj.IsActived,
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
-                ObjectId = obj.ObjectId,
-                ObjectTypeId = obj.ObjectTypeId,
-                ObjectName = obj.ObjectName,
-                ObjectTypeName = obj.ObjectTypeName
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
             };
             return info;
+        }
 
+        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig(int objectTypeId, int objectId)
+        {
+            var obj = await _masterDbContext.ObjectCustomGenCodeMapping
+                .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
+                {
+                    ObjectCustomGenCodeMapping = m,
+                    CustomGenCodeId = c
+                })
+                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId && q.ObjectCustomGenCodeMapping.ObjectId == objectId && q.CustomGenCodeId.IsActived && !q.CustomGenCodeId.IsDeleted)
+                .Select(q => q.CustomGenCodeId)
+                .FirstOrDefaultAsync();
+            CustomGenCodeOutputModel info = null;
+            if (obj != null)
+            {
+                info = new CustomGenCodeOutputModel()
+                {
+                    CustomGenCodeId = obj.CustomGenCodeId,
+                    CustomGenCodeName = obj.CustomGenCodeName,
+                    Description = obj.Description,
+                    CodeLength = obj.CodeLength,
+                    Prefix = obj.Prefix,
+                    Suffix = obj.Suffix,
+                    Seperator = obj.Seperator,
+                    LastCode = obj.LastCode,
+                    IsActived = obj.IsActived,
+                    UpdatedUserId = obj.UpdatedUserId,
+                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+                };
+            }
+            return info;
         }
 
         public async Task<Enum> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model)
@@ -125,12 +145,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                 if (obj == null)
                 {
-                    return CustomGenCodeErrorCode.ConfigNotFound;
-                }
-
-                if (model.ObjectId.HasValue)
-                {
-                    await DeactiveConflictConfigAsync(customGenCodeId, model.ObjectTypeId, model.ObjectId.Value);
+                    return CustomGenCodeErrorCode.CustomConfigNotFound;
                 }
 
                 obj.CodeLength = model.CodeLength;
@@ -140,10 +155,6 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.Description = model.Description;
                 obj.UpdatedUserId = currentUserId;
                 obj.UpdatedTime = DateTime.Now;
-                obj.ObjectId = model.ObjectId;
-                obj.ObjectTypeId = model.ObjectTypeId;
-                obj.ObjectName = model.ObjectName;
-                obj.ObjectTypeName = model.ObjectTypeName;
 
                 await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
 
@@ -157,6 +168,34 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
+        public async Task<Enum> MapObjectCustomGenCode(int currentUserId, ObjectCustomGenCodeMapping model)
+        {
+            try
+            {
+                var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && !c.IsDeleted && c.CustomGenCodeId == model.CustomGenCodeId);
+                if (config == null)
+                {
+                    return CustomGenCodeErrorCode.CustomConfigNotFound;
+                }
+                var obj = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == model.ObjectTypeId && m.ObjectId == model.ObjectId);
+                if (obj == null)
+                {
+                    _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
+                }
+                else
+                {
+                    obj.CustomGenCodeId = model.CustomGenCodeId;
+                    obj.UpdatedUserId = currentUserId;
+                }
+                await _masterDbContext.SaveChangesAsync();
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
+            }
+        }
 
         public async Task<Enum> Delete(int currentUserId, int customGenCodeId)
         {
@@ -210,9 +249,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedUserId = currentUserId,
                     ResetDate = DateTime.Now,
                     CreatedTime = DateTime.Now,
-                    UpdatedTime = DateTime.Now,
-                    ObjectId = model.ObjectId,
-                    ObjectTypeId = model.ObjectTypeId
+                    UpdatedTime = DateTime.Now
                 };
                 _masterDbContext.CustomGenCode.Add(entity);
                 await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
@@ -240,11 +277,19 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     try
                     {
-                        var config = _masterDbContext.CustomGenCode.FirstOrDefault(q => q.ObjectTypeId == objectTypeId && q.ObjectId == objectId && q.IsActived && !q.IsDeleted);
+                        var config = _masterDbContext.ObjectCustomGenCodeMapping
+                            .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
+                            {
+                                ObjectCustomGenCodeMapping = m,
+                                CustomGenCodeId = c
+                            })
+                            .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId && q.ObjectCustomGenCodeMapping.ObjectId == objectId && q.CustomGenCodeId.IsActived && !q.CustomGenCodeId.IsDeleted)
+                            .Select(q => q.CustomGenCodeId)
+                            .FirstOrDefault();
                         if (config == null)
                         {
                             trans.Rollback();
-                            return CustomGenCodeErrorCode.ConfigNotFound;
+                            return CustomGenCodeErrorCode.CustomConfigNotFound;
                         }
                         string newCode = string.Empty;
                         var newId = 0;
@@ -267,8 +312,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                             config.CodeLength += 1;
                             config.ResetDate = DateTime.Now;
                         }
-                        config.LastValue = newId;
-                        config.LastCode = newCode;
+                        config.TempValue = newId;
+                        config.TempCode = newCode;
 
                         _masterDbContext.SaveChanges();
                         trans.Commit();
@@ -304,17 +349,36 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        private async Task DeactiveConflictConfigAsync(int customGenCodeId, int objectTypeId, int objectId)
+        public async Task<Enum> ConfirmCode(int objectTypeId, int objectId)
         {
-            if (_masterDbContext.CustomGenCode.Any(q => q.ObjectTypeId == objectTypeId && q.ObjectId == objectId && q.CustomGenCodeId != customGenCodeId && q.IsActived))
+            try
             {
-                List<int> conflictConfigIds = _masterDbContext.CustomGenCode.Where(q => q.ObjectTypeId == objectTypeId && q.ObjectId == objectId && q.IsActived).Select(q => q.CustomGenCodeId).ToList();
-                foreach (var configId in conflictConfigIds)
+                var config = await _masterDbContext.CustomGenCode
+                    .Join(_masterDbContext.ObjectCustomGenCodeMapping, c => c.CustomGenCodeId, m => m.CustomGenCodeId, (c, m) => new
+                    {
+                        CustomGenCode = c,
+                        m.ObjectId,
+                        m.ObjectTypeId
+                    })
+                    .Where(cm => cm.ObjectId == objectId && cm.ObjectTypeId == objectTypeId)
+                    .Select(cm => cm.CustomGenCode)
+                    .FirstOrDefaultAsync();
+                if (config == null)
                 {
-                    var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == configId);
-                    obj.IsActived = false;
+                    return CustomGenCodeErrorCode.CustomConfigNotFound;
                 }
-                await _masterDbContext.SaveChangesAsync();
+                if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
+                {
+                    config.LastValue = config.TempValue.Value;
+                    config.LastCode = config.TempCode;
+                    await _masterDbContext.SaveChangesAsync();
+                }
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
     }

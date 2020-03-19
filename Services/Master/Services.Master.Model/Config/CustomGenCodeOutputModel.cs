@@ -18,9 +18,5 @@ namespace VErp.Services.Master.Model.Config
         public long CreatedTime { get; set; }
         public long UpdatedTime { get; set; }
         public string Description { get; set; }
-        public int ObjectTypeId { get; set; }
-        public int? ObjectId { get; set; }
-        public string ObjectTypeName { get; set; }
-        public string ObjectName { get; set; }
     }
 }

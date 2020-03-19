@@ -122,7 +122,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 try
                 {
                     //Getdata
-                    var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+                    var stockInfo = await _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).FirstOrDefaultAsync(p => p.StockId == stockId);
                     if (stockInfo == null)
                     {
                         return StockErrorCode.StockNotFound;

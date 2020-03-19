@@ -21,11 +21,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime? CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
         public string Description { get; set; }
-
-        public int ObjectTypeId { get; set; }
-        public int? ObjectId { get; set; }
-
-        public string ObjectTypeName { get; set; }
-        public string ObjectName { get; set; }
+        public int? TempValue { get; set; }
+        public string TempCode { get; set; }
     }
 }

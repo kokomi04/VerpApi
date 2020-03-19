@@ -23,16 +23,5 @@ namespace VErp.Services.Master.Model.Config
 
         [StringLength(128)]
         public string Description { get; set; }
-
-        public int ObjectTypeId { get; set; }
-
-        public int? ObjectId { get; set; }
-
-        [StringLength(128)]
-        public string ObjectName { get; set; }
-
-        [StringLength(128)]
-        public string ObjectTypeName { get; set; }
-
     }
 }

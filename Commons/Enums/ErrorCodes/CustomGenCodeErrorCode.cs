@@ -9,7 +9,7 @@ namespace VErp.Commons.Enums.StandardEnum
     public enum CustomGenCodeErrorCode
     {
         ConfigAlreadyExisted = 1,
-        ConfigNotFound,
+        CustomConfigNotFound,
         EmptyConfig,
         AllowOnlyOneConfigActivedAtTheSameTime,
         NoActivedConfigWasFound,
