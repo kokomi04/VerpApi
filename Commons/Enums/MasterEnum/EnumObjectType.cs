@@ -67,12 +67,15 @@ namespace VErp.Commons.Enums.MasterEnum
 
         PurchasingSuggestDetail = 22,
 
+        PoAssignment = 23,
+        PoAssignmentDetail = 24,
+
         /// <summary>
         /// PO - Đơn đặt hàng
         /// </summary>
-        PurchaseOrder = 23,
+        PurchaseOrder = 25,
 
-        PurchaseOrderDetail = 24,
+        PurchaseOrderDetail = 26,
 
     }
 }

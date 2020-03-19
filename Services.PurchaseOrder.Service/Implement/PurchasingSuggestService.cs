@@ -50,15 +50,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult<PurchasingSuggestOutput>> GetInfo(long PurchasingSuggestId)
+        public async Task<ServiceResult<PurchasingSuggestOutput>> GetInfo(long purchasingSuggestId)
         {
             var info = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking()
-                .FirstOrDefaultAsync(r => r.PurchasingSuggestId == PurchasingSuggestId);
+                .FirstOrDefaultAsync(r => r.PurchasingSuggestId == purchasingSuggestId);
 
             if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
             var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.AsNoTracking()
-                .Where(d => d.PurchasingSuggestId == PurchasingSuggestId)
+                .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
                 .ToListAsync();
 
             return new PurchasingSuggestOutput()
@@ -174,7 +174,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
 
-                var PurchasingSuggest = new PurchasingSuggest()
+                var purchasingSuggest = new PurchasingSuggest()
                 {
                     PurchasingSuggestCode = model.PurchasingSuggestCode,
                     OrderCode = model.OrderCode,
@@ -191,12 +191,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     UpdatedDatetimeUtc = DateTime.UtcNow
                 };
 
-                await _purchaseOrderDBContext.AddAsync(PurchasingSuggest);
+                await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var PurchasingSuggestDetailList = model.Details.Select(d => new PurchasingSuggestDetail
+                var purchasingSuggestDetailList = model.Details.Select(d => new PurchasingSuggestDetail
                 {
-                    PurchasingSuggestId = PurchasingSuggest.PurchasingSuggestId,
+                    PurchasingSuggestId = purchasingSuggest.PurchasingSuggestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
                     CreatedDatetimeUtc = DateTime.UtcNow,
@@ -210,30 +210,30 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 });
 
 
-                await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(PurchasingSuggestDetailList);
+                await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(purchasingSuggestDetailList);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu yêu cầu VTHH  {PurchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
 
-                return PurchasingSuggest.PurchasingSuggestId;
+                return purchasingSuggest.PurchasingSuggestId;
             }
         }
 
-        public async Task<Enum> Update(long PurchasingSuggestId, PurchasingSuggestInput model)
+        public async Task<Enum> Update(long purchasingSuggestId, PurchasingSuggestInput model)
         {
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
             if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
             {
-                var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != PurchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
+                var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
                 if (existedItem != null) return PurchasingSuggestErrorCode.CodeAlreadyExisted;
             }
 
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
 
@@ -246,7 +246,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.UpdatedByUserId = _currentContext.UserId;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == PurchasingSuggestId).ToListAsync();
+                var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                 foreach (var item in oldDetails)
                 {
@@ -256,7 +256,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var PurchasingSuggestDetailList = model.Details.Select(d => new PurchasingSuggestDetail
                 {
-                    PurchasingSuggestId = PurchasingSuggestId,
+                    PurchasingSuggestId = purchasingSuggestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
                     CreatedDatetimeUtc = DateTime.UtcNow,
@@ -275,24 +275,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingSuggestCode}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<Enum> Delete(long PurchasingSuggestId)
+        public async Task<Enum> Delete(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
 
                 info.IsDeleted = true;
                 info.DeletedDatetimeUtc = DateTime.UtcNow;
 
-                var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == PurchasingSuggestId).ToListAsync();
+                var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                 foreach (var item in oldDetails)
                 {
@@ -305,17 +305,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Xóa phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<Enum> SendToCensor(long PurchasingSuggestId)
+        public async Task<Enum> SendToCensor(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
                 info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.WaitToCensor;
@@ -327,17 +327,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Gửi duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<Enum> Approve(long PurchasingSuggestId)
+        public async Task<Enum> Approve(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
                 info.IsApproved = true;
@@ -349,17 +349,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<Enum> Reject(long PurchasingSuggestId)
+        public async Task<Enum> Reject(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
                 info.IsApproved = false;
@@ -373,17 +373,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Từ chối đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
 
-        public async Task<Enum> UpdatePoProcessStatus(long PurchasingSuggestId, EnumPoProcessStatus poProcessStatusId)
+        public async Task<Enum> UpdatePoProcessStatus(long purchasingSuggestId, EnumPoProcessStatus poProcessStatusId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == PurchasingSuggestId);
+                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                 if (info == null) return PurchasingSuggestErrorCode.NotFound;
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
@@ -392,10 +392,254 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, PurchasingSuggestId, $"Cập nhật trạng thái PO yêu cầu VTHH  {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật trạng thái PO đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
         }
+
+
+
+        public async Task<PageData<PoAssignmentOutputList>> PoAssignmentList(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        {
+            var query = (
+                from s in _purchaseOrderDBContext.PurchasingSuggest
+                join a in _purchaseOrderDBContext.PoAssignment on s.PurchasingSuggestId equals a.PurchasingSuggestId
+                select new
+                {
+                    a.PoAssignmentId,
+                    a.PurchasingSuggestId,
+                    s.PurchasingSuggestCode,
+                    s.OrderCode,
+                    a.PoAssignmentCode,
+                    a.AssigneeUserId,
+                    a.PoAssignmentStatusId,
+                    a.IsConfirmed,
+                    a.CreatedDatetimeUtc
+                });
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.PurchasingSuggestCode.Contains(keyword)
+                        || q.PoAssignmentCode.Contains(keyword)
+                        || q.OrderCode.Contains(keyword)
+                        select q;
+            }
+            if (poAssignmentStatusId.HasValue)
+            {
+                query = from q in query
+                        where q.PoAssignmentStatusId == (int)poAssignmentStatusId.Value
+                        select q;
+            }
+
+            if (assigneeUserId.HasValue)
+            {
+                query = from q in query
+                        where q.AssigneeUserId == assigneeUserId.Value
+                        select q;
+            }
+
+            if (purchasingSuggestId.HasValue)
+            {
+                query = from q in query
+                        where q.PurchasingSuggestId == purchasingSuggestId.Value
+                        select q;
+            }
+
+            if (fromDate.HasValue)
+            {
+                var time = fromDate.Value.UnixToDateTime();
+                query = from q in query
+                        where q.CreatedDatetimeUtc >= time
+                        select q;
+            }
+
+            if (toDate.HasValue)
+            {
+                var time = toDate.Value.UnixToDateTime();
+                query = from q in query
+                        where q.CreatedDatetimeUtc <= time
+                        select q;
+            }
+
+            var total = await query.CountAsync();
+
+            query = query.SortByFieldName(sortBy, asc);
+            var pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+
+            var lst = pagedData.Select(a => new PoAssignmentOutputList
+            {
+                PoAssignmentId = a.PoAssignmentId,
+                PurchasingSuggestId = a.PurchasingSuggestId,
+                PurchasingSuggestCode = a.PurchasingSuggestCode,
+                OrderCode = a.OrderCode,
+                PoAssignmentCode = a.PoAssignmentCode,
+                AssigneeUserId = a.AssigneeUserId,
+                IsConfirmed = a.IsConfirmed,
+                CreatedDatetimeUtc = a.CreatedDatetimeUtc.GetUnix()
+            }).ToList();
+
+            return (lst, total);
+
+        }
+        public async Task<ServiceResult<IList<PoAssignmentOutput>>> PoAssignmentListBySuggest(long purchasingSuggestId)
+        {
+
+            var suggestInfo = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().FirstOrDefaultAsync(s => s.PurchasingSuggestId == purchasingSuggestId);
+
+            if (suggestInfo == null)
+            {
+                return PurchasingSuggestErrorCode.NotFound;
+            }
+
+            var assignments = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+            var assignmentDetails = await (
+                from d in _purchaseOrderDBContext.PoAssignmentDetail
+                join a in _purchaseOrderDBContext.PoAssignment on d.PoAssignmentId equals a.PoAssignmentId
+                where a.PurchasingSuggestId == purchasingSuggestId
+                select d
+                ).AsNoTracking()
+                .ToListAsync();
+            var data = new List<PoAssignmentOutput>();
+
+            foreach (var item in assignments)
+            {
+                data.Add(new PoAssignmentOutput()
+                {
+                    PoAssignmentId = item.PoAssignmentId,
+                    PurchasingSuggestId = item.PurchasingSuggestId,
+                    PurchasingSuggestCode = suggestInfo.PurchasingSuggestCode,
+                    OrderCode = suggestInfo.OrderCode,
+                    PoAssignmentCode = item.PoAssignmentCode,
+                    AssigneeUserId = item.AssigneeUserId,
+                    IsConfirmed = item.IsConfirmed,
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    Content = item.Content,
+                    PoAssignmentStatusId = (EnumPoAssignmentStatus)item.PoAssignmentStatusId,
+                    Details = assignmentDetails
+                        .Where(d => d.PoAssignmentId == item.PoAssignmentId)
+                        .Select(d => new PoAssimentDetailModel()
+                        {
+                            PoAssignmentDetailId = d.PoAssignmentDetailId,
+                            PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                            ProviderProductName = d.ProviderProductName,
+                            PrimaryQuantity = d.PrimaryQuantity,
+                            PrimaryUnitPrice = d.PrimaryUnitPrice,
+                            Tax = d.Tax
+                        })
+                        .ToList()
+                });
+            }
+            return data;
+        }
+        public async Task<ServiceResult<long>> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
+        {
+            model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();
+            if (!string.IsNullOrEmpty(model.PoAssignmentCode))
+            {
+                var existedItem = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode);
+                if (existedItem != null) return PurchasingSuggestErrorCode.PoAssignmentCodeAlreadyExisted;
+            }
+
+            var suggestInfo = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId == purchasingSuggestId);
+
+            if (suggestInfo == null)
+            {
+                return PurchasingSuggestErrorCode.NotFound;
+            }
+
+            if (model.Details.GroupBy(d => d.PurchasingSuggestDetailId).Any(g => g.Count() > 1))
+            {
+                return GeneralCode.InvalidParams;
+            }
+
+            var assignDetails = await (
+                from d in _purchaseOrderDBContext.PoAssignmentDetail
+                join a in _purchaseOrderDBContext.PoAssignment on d.PoAssignmentId equals a.PoAssignmentId
+                where a.PurchasingSuggestId == purchasingSuggestId
+                select new
+                {
+                    d.PoAssignmentDetailId,
+                    d.PurchasingSuggestDetailId,
+                    d.PrimaryQuantity
+                }).ToListAsync();
+
+            var suggestDetails = (
+                await _purchaseOrderDBContext.PurchasingSuggestDetail
+                .AsNoTracking()
+                .Where(r => r.PurchasingSuggestId == purchasingSuggestId)
+                .ToListAsync()
+                ).ToDictionary(d => d.PurchasingSuggestDetailId, d => d);
+
+            foreach (var detail in model.Details)
+            {
+                if (!suggestDetails.TryGetValue(detail.PurchasingSuggestDetailId, out var suggestDetail))
+                {
+                    return PurchasingSuggestErrorCode.PurchasingSuggestDetailNotfound;
+                }
+
+                var totalSameSuggestDetail = assignDetails
+                    .Where(d => d.PurchasingSuggestDetailId == detail.PurchasingSuggestDetailId
+                        && d.PoAssignmentDetailId != detail.PoAssignmentDetailId
+                    )
+                    .Sum(d => d.PrimaryQuantity);
+
+                if (totalSameSuggestDetail + detail.PrimaryQuantity > suggestDetail.PrimaryQuantity)
+                {
+
+                    return PurchasingSuggestErrorCode.PoAssignmentOverload;
+                }
+            }
+
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+
+                var poAssignment = new PoAssignment()
+                {
+                    PurchasingSuggestId = purchasingSuggestId,
+                    PoAssignmentCode = model.PoAssignmentCode,
+                    Date = null,
+                    Content = model.Content,
+                    AssigneeUserId = model.AssigneeUserId,
+                    PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff,
+                    IsConfirmed = null,
+                    CreatedByUsersId = _currentContext.UserId,
+                    UpdatedByUserId = _currentContext.UserId,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    DeletedDatetimeUtc = null
+                };
+
+                await _purchaseOrderDBContext.AddAsync(poAssignment);
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                var poAssignmentDetails = model.Details.Select(d => new PoAssignmentDetail
+                {
+                    PoAssignmentId = poAssignment.PoAssignmentId,
+                    PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                    PrimaryQuantity = d.PrimaryQuantity,
+                    PrimaryUnitPrice = d.PrimaryUnitPrice,
+                    Tax = d.Tax,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    DeletedDatetimeUtc = null
+                });
+
+
+                await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(poAssignmentDetails);
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignment.PoAssignmentId, $"Thêm phân công mua hàng {poAssignment.PoAssignmentCode}", model.JsonSerialize());
+
+                return poAssignment.PoAssignmentId;
+            }
+        }
+
     }
 }

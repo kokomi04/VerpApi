@@ -47,29 +47,29 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PoAssignmentDetail>(entity =>
             {
-                entity.Property(e => e.PoAssignmentDetailId).ValueGeneratedOnAdd();
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.ProviderProductName).HasMaxLength(128);
+
                 entity.Property(e => e.Tax).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-
-                entity.HasOne(d => d.PoAssignmentDetailNavigation)
-                    .WithOne(p => p.PoAssignmentDetail)
-                    .HasForeignKey<PoAssignmentDetail>(d => d.PoAssignmentDetailId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
 
                 entity.HasOne(d => d.PoAssignment)
                     .WithMany(p => p.PoAssignmentDetail)
                     .HasForeignKey(d => d.PoAssignmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoAssignmentDetail_PoAssignment");
+
+                entity.HasOne(d => d.PurchasingSuggestDetail)
+                    .WithMany(p => p.PoAssignmentDetail)
+                    .HasForeignKey(d => d.PurchasingSuggestDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
             });
 
             modelBuilder.Entity<PurchaseOrder>(entity =>
