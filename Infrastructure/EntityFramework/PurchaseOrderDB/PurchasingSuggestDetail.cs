@@ -17,7 +17,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
-        public decimal? Tax { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }

@@ -19,6 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string ProviderProductName { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
-        public decimal? Tax { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
     }
 }

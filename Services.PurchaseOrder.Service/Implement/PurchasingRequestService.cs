@@ -305,6 +305,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) return PurchasingRequestErrorCode.NotFound;
 
+                if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Draff)
+                {
+                    return GeneralCode.InvalidParams;
+                }
+
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
                 info.UpdatedByUserId = _currentContext.UserId;
@@ -327,6 +332,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) return PurchasingRequestErrorCode.NotFound;
 
+                //allow re censored
+                if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
+                    && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
+                    )
+                {
+                    return GeneralCode.InvalidParams;
+                }
+
                 info.IsApproved = true;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
                 info.CensorDatetimeUtc = DateTime.UtcNow;
@@ -348,6 +361,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) return PurchasingRequestErrorCode.NotFound;
+                //allow re censored
+                if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
+                    && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
+                    )
+                {
+                    return GeneralCode.InvalidParams;
+                }
 
                 info.IsApproved = false;
                 info.RejectCount++;

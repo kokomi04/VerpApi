@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetList")]
         public async Task<ApiResponse<PageData<PurchasingSuggestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
+            return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -56,7 +56,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse<PurchasingSuggestOutput>> GetInfo([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.GetInfo(purchasingSuggestId);
+            return await _purchasingSuggestService.GetInfo(purchasingSuggestId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<ApiResponse<long>> Add([FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingSuggestService.Create(req);
+            return await _purchasingSuggestService.Create(req).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse> Update([FromRoute] long purchasingSuggestId, [FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingSuggestService.Update(purchasingSuggestId, req);
+            return await _purchasingSuggestService.Update(purchasingSuggestId, req).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -93,7 +93,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/SendCensor")]
         public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.SendToCensor(purchasingSuggestId);
+            return await _purchasingSuggestService.SendToCensor(purchasingSuggestId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Approve([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Approve(purchasingSuggestId);
+            return await _purchasingSuggestService.Approve(purchasingSuggestId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -119,19 +119,19 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Reject([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Reject(purchasingSuggestId);
+            return await _purchasingSuggestService.Reject(purchasingSuggestId).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Xóa phiếu đề nghị mua hàng
         /// </summary>
-        /// <param name="PurchasingSuggestId"></param>
+        /// <param name="purchasingSuggestId"></param>
         /// <returns></returns>
         [HttpDelete]
         [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse> Delete([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Delete(purchasingSuggestId);
+            return await _purchasingSuggestService.Delete(purchasingSuggestId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -144,22 +144,85 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/UpdatePoProcessStatus")]
         public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingSuggestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
-            return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId);
+            return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId).ConfigureAwait(false);
         }
 
-
+        /// <summary>
+        /// Lấy danh sách phân công mua hàng
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("{purchasingSuggestId}/Assignments")]
         public async Task<ApiResponse<IList<PoAssignmentOutput>>> SuggestAssignments([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.PoAssignmentListBySuggest(purchasingSuggestId);
+            return await _purchasingSuggestService.PoAssignmentListBySuggest(purchasingSuggestId).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Thêm mới phân công mua hàng
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="poAssignment"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("{purchasingSuggestId}/Assignments")]
-        public async Task<ApiResponse<long>> CreateSuggestAssignments([FromRoute] long purchasingSuggestId, [FromBody] PoAssignmentInput poAssignment)
+        public async Task<ApiResponse<long>> CreatePoAssignments([FromRoute] long purchasingSuggestId, [FromBody] PoAssignmentInput poAssignment)
         {
-            return await _purchasingSuggestService.PoAssignmentCreate(purchasingSuggestId, poAssignment);
+            return await _purchasingSuggestService.PoAssignmentCreate(purchasingSuggestId, poAssignment).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Cập nhật phân công mua hàng
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="poAssignmentId"></param>
+        /// <param name="poAssignment"></param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}")]
+        public async Task<ApiResponse> UpdatePoAssignments([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId, [FromBody] PoAssignmentInput poAssignment)
+        {
+            return await _purchasingSuggestService.PoAssignmentUpdate(purchasingSuggestId, poAssignmentId, poAssignment).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Gửi đến người được phân công
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="poAssignmentId">Id phân công</param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}/SendToUser")]
+        public async Task<ApiResponse> PoAssignmentsSendToUser([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
+        {
+            return await _purchasingSuggestService.PoAssignmentSendToUser(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Xác nhận phân công
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="poAssignmentId"></param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}/UserConfirm")]
+        public async Task<ApiResponse> PoAssignmentsUserConfirm([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
+        {
+            return await _purchasingSuggestService.PoAssignmentUserConfirm(poAssignmentId).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Xóa phân công mua hàng
+        /// </summary>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="poAssignmentId"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}")]
+        public async Task<ApiResponse> DeletePoAssignments([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
+        {
+            return await _purchasingSuggestService.PoAssignmentDelete(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
         }
     }
 }
