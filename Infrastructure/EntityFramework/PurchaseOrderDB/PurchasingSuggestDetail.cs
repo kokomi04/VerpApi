@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchasingSuggestDetail
     {
+        public PurchasingSuggestDetail()
+        {
+            PoAssignmentDetail = new HashSet<PoAssignmentDetail>();
+        }
+
         public long PurchasingSuggestDetailId { get; set; }
         public long PurchasingSuggestId { get; set; }
         public int? CustomerId { get; set; }
@@ -19,6 +24,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }
-        public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
+        public virtual ICollection<PoAssignmentDetail> PoAssignmentDetail { get; set; }
     }
 }

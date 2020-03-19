@@ -53,7 +53,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="purchasingSuggestId">Id phiếu</param>
         /// <returns>PurchasingSuggestOutputModel</returns>
         [HttpGet]
-        [Route("{PurchasingSuggestId}")]
+        [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse<PurchasingSuggestOutput>> GetInfo([FromRoute] long purchasingSuggestId)
         {
             return await _purchasingSuggestService.GetInfo(purchasingSuggestId);
@@ -78,7 +78,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="req">Model PurchasingSuggestInputModel</param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{PurchasingSuggestId}")]
+        [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse> Update([FromRoute] long purchasingSuggestId, [FromBody] PurchasingSuggestInput req)
         {
             return await _purchasingSuggestService.Update(purchasingSuggestId, req);
@@ -90,7 +90,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="purchasingSuggestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("{PurchasingSuggestId}/SendCensor")]
+        [Route("{purchasingSuggestId}/SendCensor")]
         public async Task<ApiResponse> SentToApprove([FromRoute] long purchasingSuggestId)
         {
             return await _purchasingSuggestService.SendToCensor(purchasingSuggestId);
@@ -102,7 +102,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="purchasingSuggestId">Id phiếu yêu cầu mua hàng</param>        
         /// <returns></returns>
         [HttpPut]
-        [Route("{PurchasingSuggestId}/Approve")]
+        [Route("{purchasingSuggestId}/Approve")]
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Approve([FromRoute] long purchasingSuggestId)
         {
@@ -115,7 +115,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="purchasingSuggestId"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{PurchasingSuggestId}/Reject")]
+        [Route("{purchasingSuggestId}/Reject")]
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Reject([FromRoute] long purchasingSuggestId)
         {
@@ -128,7 +128,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="PurchasingSuggestId"></param>
         /// <returns></returns>
         [HttpDelete]
-        [Route("{PurchasingSuggestId}")]
+        [Route("{purchasingSuggestId}")]
         public async Task<ApiResponse> Delete([FromRoute] long purchasingSuggestId)
         {
             return await _purchasingSuggestService.Delete(purchasingSuggestId);
@@ -141,10 +141,25 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <param name="poProcessStatusId"></param>
         /// <returns></returns>
         [HttpPut]
-        [Route("{PurchasingSuggestId}/UpdatePoProcessStatus")]
+        [Route("{purchasingSuggestId}/UpdatePoProcessStatus")]
         public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchasingSuggestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
             return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId);
+        }
+
+
+        [HttpGet]
+        [Route("{purchasingSuggestId}/Assignments")]
+        public async Task<ApiResponse<IList<PoAssignmentOutput>>> SuggestAssignments([FromRoute] long purchasingSuggestId)
+        {
+            return await _purchasingSuggestService.PoAssignmentListBySuggest(purchasingSuggestId);
+        }
+
+        [HttpPost]
+        [Route("{purchasingSuggestId}/Assignments")]
+        public async Task<ApiResponse<long>> CreateSuggestAssignments([FromRoute] long purchasingSuggestId, [FromBody] PoAssignmentInput poAssignment)
+        {
+            return await _purchasingSuggestService.PoAssignmentCreate(purchasingSuggestId, poAssignment);
         }
     }
 }

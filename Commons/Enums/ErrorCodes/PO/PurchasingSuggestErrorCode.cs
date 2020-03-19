@@ -18,5 +18,14 @@ namespace VErp.Commons.Enums.ErrorCodes
 
         [Description("Không thế xóa phiếu đề nghị mua hàng đã được duyệt")]
         AlreadyApproved = 4,
+
+        [Description("Mã phân công đã tồn tại")]
+        PoAssignmentCodeAlreadyExisted = 5,
+
+        [Description("Không tìm thấy sản phẩm trong đề nghị mua hàng")]
+        PurchasingSuggestDetailNotfound = 6,
+
+        [Description("Phân công vượt mức đề nghị mua")]
+        PoAssignmentOverload = 6,
     }
 }
