@@ -49,9 +49,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList(long objectId, int page = 1, int size = 20)
+        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
-            return await _activityService.GetListUserActivityLog(objectId, page, size);
+            return await _activityService.GetListUserActivityLog(objectId, objectTypeId, page, size);
         }
     }
 }

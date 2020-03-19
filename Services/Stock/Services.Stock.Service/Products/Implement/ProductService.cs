@@ -15,6 +15,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using static VErp.Services.Stock.Model.Product.ProductModel;
 
@@ -183,7 +184,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    
+
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", req.JsonSerialize());
 
                     productId = productInfo.ProductId;
@@ -321,7 +322,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
 
-                   
+
 
                     //Update
 
@@ -413,8 +414,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     trans.Commit();
 
                     var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
-                  
-                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
+
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
                 }
                 catch (Exception ex)
                 {
@@ -453,7 +454,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-           
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -472,7 +473,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -605,11 +606,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.UnitId,
                     p.EstimatePrice
                 });
-           
+
             var lstData = await query.ToListAsync();
 
             var unitIds = lstData.Select(p => p.UnitId).ToList();
             var unitInfos = await _unitService.GetListByIds(unitIds);
+
+            var stockProductData = _stockContext.StockProduct.AsNoTracking().Where(q => productIds.Contains(q.ProductId)).ToList();
 
 
             var data = new List<ProductListOutput>();
@@ -628,7 +631,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductTypeName = item.ProductTypeName,
                     Specification = item.Specification,
                     UnitId = item.UnitId,
-                    EstimatePrice = item.EstimatePrice
+                    EstimatePrice = item.EstimatePrice,
+                    StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
+                    {
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                    }).ToList()
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -645,7 +657,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             if (req.StockInfo.UnitConversions?.Count > 0)
             {
-                foreach(var unitConversion in req.StockInfo.UnitConversions)
+                foreach (var unitConversion in req.StockInfo.UnitConversions)
                 {
                     try
                     {
@@ -660,7 +672,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                         return ProductErrorCode.InvalidUnitConversionExpression;
                     }
-                    
+
                 }
             }
             return GeneralCode.Success;
