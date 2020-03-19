@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -50,6 +52,36 @@ namespace VErpApi.Controllers.Stock.Files
             return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize);
         }
 
-      
+
+        /// <summary>
+        /// Upload file
+        /// </summary>
+        /// <param name="objectTypeId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [GlobalApi]
+        [HttpPost]
+        [Route("{objectTypeId}/upload")]
+        public async Task<ApiResponse<long>> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
+        {
+            var fileType = EnumFileType.Image;
+
+            switch (objectTypeId)
+            {
+                case EnumObjectType.UserAndEmployee:
+                    fileType = EnumFileType.Image;
+                    break;
+
+                case EnumObjectType.PurchasingSuggest:
+                case EnumObjectType.PurchaseOrder:
+                    fileType = EnumFileType.Document;
+                    break;
+
+                default:
+                    return null;
+            }
+            return await _fileService.Upload(objectTypeId, fileType, string.Empty, file).ConfigureAwait(false);
+        }
+
     }
 }
