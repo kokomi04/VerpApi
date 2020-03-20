@@ -59,7 +59,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
             return result;
         }
 
-        public async Task<Enum> UpdateBusinessInfo(BusinessInfoModel data)
+        public async Task<Enum> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data)
         {
             var businessInfo = await _masterContext.BusinessInfo.FirstOrDefaultAsync();
             if (businessInfo == null)
@@ -74,7 +74,9 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                     Website = data.Website,
                     PhoneNumber = data.PhoneNumber,
                     Email = data.Email,
-                    LogoFileId = data.LogoFileId
+                    LogoFileId = data.LogoFileId,
+                    CreatedTime = DateTime.Now,
+                    UpdatedUserId = updatedUserId
                 };
                 _masterContext.BusinessInfo.Add(businessInfo);
             }
@@ -89,6 +91,8 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                 businessInfo.PhoneNumber = data.PhoneNumber;
                 businessInfo.Email = data.Email;
                 businessInfo.LogoFileId = data.LogoFileId;
+                businessInfo.UpdatedTime = DateTime.Now;
+                businessInfo.UpdatedUserId = updatedUserId;
             }
             await _masterContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.BusinessInfo, businessInfo.BusinessInfoId, $"Cập nhật thông tin doanh nghiệp {businessInfo.CompanyName}", data.JsonSerialize());

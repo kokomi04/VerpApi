@@ -9,6 +9,6 @@ namespace VErp.Services.Master.Service.BusinessInfo
     public interface IBusinessInfoService
     {
         Task<ApiResponse<BusinessInfoModel>> GetBusinessInfo();
-        Task<Enum> UpdateBusinessInfo(BusinessInfoModel data);
+        Task<Enum> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data);
     }
 }

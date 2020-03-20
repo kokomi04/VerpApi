@@ -47,7 +47,8 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ApiResponse> UpdateCustomer([FromBody] BusinessInfoModel businessInfo)
         {
-            return await _businessInfoService.UpdateBusinessInfo(businessInfo);
+            var currentUserId = UserId;
+            return await _businessInfoService.UpdateBusinessInfo(currentUserId, businessInfo);
         }
 
     }

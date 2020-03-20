@@ -14,5 +14,9 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
         public int? LogoFileId { get; set; }
+
+        public DateTime CreatedTime { get; set; }
+        public DateTime UpdatedTime { get; set; }
+        public int UpdatedUserId { get; set; }
     }
 }
