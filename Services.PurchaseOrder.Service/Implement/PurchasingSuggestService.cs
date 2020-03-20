@@ -20,6 +20,7 @@ using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.Master.Service.Config;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -31,6 +32,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
+        private readonly IObjectGenCodeService _objectGenCodeService;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -39,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
+            , IObjectGenCodeService objectGenCodeService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -47,6 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
+            _objectGenCodeService = objectGenCodeService;
         }
 
 
@@ -546,8 +550,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var assignmentDetails = await (
                 from d in _purchaseOrderDBContext.PoAssignmentDetail
                 join a in _purchaseOrderDBContext.PoAssignment on d.PoAssignmentId equals a.PoAssignmentId
+                join s in _purchaseOrderDBContext.PurchasingSuggestDetail on d.PurchasingSuggestDetailId equals s.PurchasingSuggestDetailId
                 where a.PurchasingSuggestId == purchasingSuggestId
-                select d
+                select new
+                {
+                    d.PoAssignmentId,
+                    d.PoAssignmentDetailId,
+                    d.PurchasingSuggestDetailId,
+                    s.ProductId,
+                    d.ProviderProductName,
+                    d.PrimaryQuantity,
+                    d.PrimaryUnitPrice,
+                    d.TaxInPercent,
+                    d.TaxInMoney
+                }
                 ).AsNoTracking()
                 .ToListAsync();
             var data = new List<PoAssignmentOutput>();
@@ -572,6 +588,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             PoAssignmentDetailId = d.PoAssignmentDetailId,
                             PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                            ProductId = d.ProductId,
                             ProviderProductName = d.ProviderProductName,
                             PrimaryQuantity = d.PrimaryQuantity,
                             PrimaryUnitPrice = d.PrimaryUnitPrice,
@@ -586,7 +603,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult<long>> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
         {
-            model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();
 
             var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
 
@@ -600,7 +616,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var poAssignment = new PoAssignment()
                 {
                     PurchasingSuggestId = purchasingSuggestId,
-                    PoAssignmentCode = model.PoAssignmentCode,
+                    PoAssignmentCode = string.Empty,
                     Date = null,
                     Content = model.Content,
                     AssigneeUserId = model.AssigneeUserId,
@@ -634,7 +650,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model)
         {
-            model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -653,7 +668,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return PurchasingSuggestErrorCode.PoAssignmentNotfound;
                 }
 
-                assignmentInfo.PoAssignmentCode = model.PoAssignmentCode;
                 assignmentInfo.Date = null;
                 assignmentInfo.Content = model.Content;
                 assignmentInfo.AssigneeUserId = model.AssigneeUserId;
@@ -731,6 +745,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return GeneralCode.InvalidParams;
                 }
 
+                var code = await _objectGenCodeService.GenerateCode(EnumObjectType.PoAssignment);
+                if (!code.Code.IsSuccess())
+                {
+                    return code.Code;
+                }
+                assignmentInfo.PoAssignmentCode = code.Data;
                 assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.WaitToConfirm;
                 assignmentInfo.UpdatedByUserId = _currentContext.UserId;
                 assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -755,7 +775,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     return PurchasingSuggestErrorCode.PoAssignmentNotfound;
                 }
-                
+
                 if (assignmentInfo.PoAssignmentStatusId != (int)EnumPoAssignmentStatus.WaitToConfirm)
                 {
                     return GeneralCode.InvalidParams;
@@ -861,11 +881,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         private async Task<Enum> ValidatePoAssignmentInput(long purchasingSuggestId, long? poAssignmentId, PoAssignmentInput model)
         {
-            if (!string.IsNullOrEmpty(model.PoAssignmentCode))
-            {
-                var existedItem = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
-                if (existedItem != null) return PurchasingSuggestErrorCode.PoAssignmentCodeAlreadyExisted;
-            }
+            //if (!string.IsNullOrEmpty(model.PoAssignmentCode))
+            //{
+            //    var existedItem = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
+            //    if (existedItem != null) return PurchasingSuggestErrorCode.PoAssignmentCodeAlreadyExisted;
+            //}
 
             PoAssignment assignmentInfo = null;
 
