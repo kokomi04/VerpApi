@@ -147,7 +147,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     return CustomGenCodeErrorCode.CustomConfigNotFound;
                 }
-
+                obj.CustomGenCodeName = model.CustomGenCodeName;
                 obj.CodeLength = model.CodeLength;
                 obj.Prefix = model.Prefix;
                 obj.Suffix = model.Suffix;
