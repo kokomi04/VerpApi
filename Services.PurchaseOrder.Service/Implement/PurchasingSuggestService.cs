@@ -65,6 +65,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
                 .ToListAsync();
 
+            var files = await _purchaseOrderDBContext.PurchasingSuggestFile.AsNoTracking().Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
             return new PurchasingSuggestOutput()
             {
                 PurchasingSuggestId = info.PurchasingSuggestId,
@@ -84,6 +86,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 RejectCount = info.RejectCount,
                 Content = info.Content,
+                FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d => new PurchasingSuggestDetailModel()
                 {
                     PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
@@ -201,6 +204,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d));
 
+                if (model.FileIds?.Count > 0)
+                {
+                    await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(model.FileIds.Select(f => new PurchasingSuggestFile()
+                    {
+                        FileId = f,
+                        PurchasingSuggestId = purchasingSuggest.PurchasingSuggestId
+                    }));
+                }
 
                 await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(purchasingSuggestDetailList);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -280,6 +291,35 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     detail.IsDeleted = true;
                     detail.DeletedDatetimeUtc = DateTime.UtcNow;
+                }
+
+                var files = await _purchaseOrderDBContext.PurchasingSuggestFile.Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+                var dbFileIds = files.Select(f => f.FileId).ToList();
+
+                if (model.FileIds?.Count > 0)
+                {
+                    var removeFiles = files.Where(f => !model.FileIds.Contains(f.FileId)).ToList();
+                    foreach (var f in removeFiles)
+                    {
+                        f.IsDeleted = true;
+                    }
+                    var newFileIds = model.FileIds.Where(f => !dbFileIds.Contains(f)).ToList();
+                    if (newFileIds.Count > 0)
+                    {
+                        await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(newFileIds.Select(f => new PurchasingSuggestFile()
+                        {
+                            FileId = f,
+                            PurchasingSuggestId = purchasingSuggestId
+                        }));
+                    }
+                }
+                else
+                {
+                    foreach (var f in files)
+                    {
+                        f.IsDeleted = true;
+                    }
                 }
 
                 await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(newDetails);
@@ -661,7 +701,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return validate;
                 }
 
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId != poAssignmentId);
+                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
 
                 if (assignmentInfo == null)
                 {
@@ -728,7 +768,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
 
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId != poAssignmentId);
+                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
 
                 if (assignmentInfo == null)
                 {
@@ -769,7 +809,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId != poAssignmentId);
+                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
 
                 if (assignmentInfo == null)
                 {
@@ -800,7 +840,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId != poAssignmentId);
+                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
 
                 if (assignmentInfo == null)
                 {

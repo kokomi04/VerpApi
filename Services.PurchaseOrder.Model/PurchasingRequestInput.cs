@@ -9,8 +9,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PurchasingRequestCode { get; set; }
         public string OrderCode { get; set; }
         public long Date { get; set; }
-        public string Content { get; set; }
-        public IList<long> FileIds { get; set; }
+        public string Content { get; set; }        
         public List<PurchasingRequestInputDetail> Details { set; get; }
     }
 
