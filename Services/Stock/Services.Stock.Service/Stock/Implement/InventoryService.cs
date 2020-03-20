@@ -1281,7 +1281,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
         {
-
             var productDatas = _stockDbContext.Product.AsQueryable();
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -1289,25 +1288,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var query = (
-                from p in productDatas               
-                join pv in _stockDbContext.ProductStockValidation.Where(s => stockIdList.Contains(s.StockId)) on p.ProductId equals pv.ProductId into pvs
+                from p in productDatas
+                join pv in _stockDbContext.ProductStockValidation on p.ProductId equals pv.ProductId into pvs
                 from pv in pvs.DefaultIfEmpty()
-                group p by p into g
-                from p in g
+                where pv == null || stockIdList.Contains(pv.StockId)
                 select new
                 {
-                    ProductId = p.ProductId,
-                    ProductCode = p.ProductCode,
-                    ProductName = p.ProductName,
-                    MainImageFileId = p.MainImageFileId,
-                    ProductTypeId = p.ProductTypeId,
-                    ProductCateId = p.ProductCateId,
-                    UnitId = p.UnitId,
-                    Barcode = p.Barcode,
-                    EstimatePrice = p.EstimatePrice
-                }
-               );
-
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.MainImageFileId,
+                    p.ProductTypeId,
+                    p.ProductCateId,
+                    p.UnitId,
+                    p.Barcode,
+                    p.EstimatePrice
+                })
+                .Distinct();
+                
             var total = query.Count();
 
             var pagedData = query.OrderBy(q => q.ProductCode).Skip((page - 1) * size).Take(size).ToList();
