@@ -7,7 +7,6 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PoAssignmentInput
     {
         public int AssigneeUserId { get; set; }
-        public string PoAssignmentCode { get; set; }
         public string Content { get; set; }
         public IList<PoAssimentDetailModel> Details { get; set; }
     }
@@ -16,6 +15,7 @@ namespace VErp.Services.PurchaseOrder.Model
     {
         public long? PoAssignmentDetailId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }
+        public int ProductId { get; set; }
         public string ProviderProductName { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
