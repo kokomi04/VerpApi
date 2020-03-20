@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\ApiCore\ApiCore.csproj" />
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />

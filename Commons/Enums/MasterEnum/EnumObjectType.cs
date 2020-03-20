@@ -74,8 +74,15 @@ namespace VErp.Commons.Enums.MasterEnum
         /// PO - Đơn đặt hàng
         /// </summary>
         PurchaseOrder = 25,
-
         PurchaseOrderDetail = 26,
 
+        /// <summary>
+        /// Cấu hình mã tự sinh tùy chọn
+        /// </summary>
+        CustomGenCodeConfig = 27,
+        /// <summary>
+        /// 
+        /// </summary>
+        BusinessInfo = 28,
     }
 }

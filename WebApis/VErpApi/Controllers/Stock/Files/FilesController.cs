@@ -69,6 +69,7 @@ namespace VErpApi.Controllers.Stock.Files
             switch (objectTypeId)
             {
                 case EnumObjectType.UserAndEmployee:
+                case EnumObjectType.BusinessInfo:
                     fileType = EnumFileType.Image;
                     break;
 
