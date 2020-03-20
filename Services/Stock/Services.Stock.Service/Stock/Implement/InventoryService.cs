@@ -1085,10 +1085,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 var message = $"Số dư trong kho mặt hàng {productInfo.ProductCode} ({original[detail.FromPackageId.Value].Format()} {productInfo.ProductUnitConversionName}) không đủ để xuất ";
                                 var samPackages = inventoryDetails.Where(d => d.FromPackageId == detail.FromPackageId);
 
-                                var total = inventoryDetails.Sum(d => d.PrimaryQuantity).Format();
+                                var total = samPackages.Sum(d => d.PrimaryQuantity).Format();
 
                                 message += $" < {total} {productInfo.ProductUnitConversionName} = "
-                                    + string.Join(" + ", inventoryDetails.Select(d => d.PrimaryQuantity.Format()));
+                                    + string.Join(" + ", samPackages.Select(d => d.PrimaryQuantity.Format()));
 
                                 trans.Rollback();
                                 return (InventoryErrorCode.NotEnoughQuantity, message);
