@@ -6,8 +6,8 @@ namespace VErp.Commons.Enums.StandardEnum
 {
 
     [ErrorCodePrefix("CGC")]
-    public enum CustomGenCodeErrorCode
+    public enum BusinessInfoErrorCode
     {
-        CustomConfigNotFound = 1,
+        BusinessInfoNotFound = 1,
     }
 }

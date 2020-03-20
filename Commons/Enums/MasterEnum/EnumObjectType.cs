@@ -80,6 +80,9 @@ namespace VErp.Commons.Enums.MasterEnum
         /// Cấu hình mã tự sinh tùy chọn
         /// </summary>
         CustomGenCodeConfig = 27,
-
+        /// <summary>
+        /// 
+        /// </summary>
+        BusinessInfo = 28,
     }
 }
