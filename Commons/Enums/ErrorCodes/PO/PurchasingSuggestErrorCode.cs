@@ -27,5 +27,23 @@ namespace VErp.Commons.Enums.ErrorCodes
 
         [Description("Phân công vượt mức đề nghị mua")]
         PoAssignmentOverload = 6,
+
+        [Description("Không tìm thấy phân công mua hàng")]
+        PoAssignmentNotfound = 7,
+
+        [Description("Vui lòng xóa phân công mua hàng của đơn đề nghị này trước khi xóa!")]
+        PoAssignmentNotEmpty = 8,
+
+        [Description("Vui lòng xóa phân công mua hàng của mặt hàng với mặt hàng xóa!")]
+        PoAssignmentDetailNotEmpty = 9,
+
+        [Description("Vui lòng xóa PO liên quan đến mặt hàng phân công mua bị xóa!")]
+        PoDetailNotEmpty = 10,
+
+        [Description("Đề nghị mua hàng đang được phân công không được từ chối!")]
+        CanNotRejectPurchasingSuggestInUse = 11,
+
+        [Description("Đề nghị mua hàng chưa được duyệt!")]
+        PurchasingSuggestIsNotApprovedYet = 12,
     }
 }
