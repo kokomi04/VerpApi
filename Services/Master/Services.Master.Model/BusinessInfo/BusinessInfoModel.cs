@@ -23,7 +23,6 @@ namespace VErp.Services.Master.Model.BusinessInfo
         public string Website { get; set; }
         [MaxLength(128, ErrorMessage = "Email quá dài")]
         public string Email { get; set; }
-        [MaxLength(128, ErrorMessage = "Mô tả quá dài")]
-        public string Logo { get; set; }
+        public int? LogoFileId { get; set; }
     }
 }

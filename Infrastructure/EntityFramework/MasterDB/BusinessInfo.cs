@@ -13,6 +13,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Website { get; set; }
         public string PhoneNumber { get; set; }
         public string Email { get; set; }
-        public string Logo { get; set; }
+        public int? LogoFileId { get; set; }
     }
 }

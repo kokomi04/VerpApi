@@ -52,7 +52,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                     Website = businessInfo.Website,
                     PhoneNumber = businessInfo.PhoneNumber,
                     Email = businessInfo.Email,
-                    Logo = businessInfo.Logo
+                    LogoFileId = businessInfo.LogoFileId
                 };
             }
 
@@ -74,7 +74,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                     Website = data.Website,
                     PhoneNumber = data.PhoneNumber,
                     Email = data.Email,
-                    Logo = data.Logo
+                    LogoFileId = data.LogoFileId
                 };
                 _masterContext.BusinessInfo.Add(businessInfo);
             }
@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                 businessInfo.Website = data.Website;
                 businessInfo.PhoneNumber = data.PhoneNumber;
                 businessInfo.Email = data.Email;
-                businessInfo.Logo = data.Logo;
+                businessInfo.LogoFileId = data.LogoFileId;
             }
             await _masterContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.BusinessInfo, businessInfo.BusinessInfoId, $"Cập nhật thông tin doanh nghiệp {businessInfo.CompanyName}", data.JsonSerialize());
