@@ -3,9 +3,9 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Master.Model.Customer
 {
-    public class BankAccountModel
+    public class CustomerBankAccountModel
     {
-        public int BankAccountId { get; set; }
+        public int CustomerBankAccountId { get; set; }
         [MaxLength(128, ErrorMessage = "Tên ngân hàng quá dài")]
         public string BankName { get; set; }
         [MaxLength(32, ErrorMessage = "Số tài khoản quá dài")]

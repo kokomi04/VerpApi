@@ -58,7 +58,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
-        public virtual DbSet<BankAccount> BankAccount { get; set; }
+        public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -613,7 +613,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CustomGenCodeId).IsRequired();
             });
 
-            modelBuilder.Entity<BankAccount>(entity =>
+            modelBuilder.Entity<CustomerBankAccount>(entity =>
             {
                 entity.Property(ba => ba.BankName).IsRequired().HasMaxLength(128);
 
@@ -622,7 +622,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(ba => ba.SwiffCode).IsRequired().HasMaxLength(64);
 
                 entity.HasOne(d => d.Customer)
-                    .WithMany(p => p.BankAccount)
+                    .WithMany(p => p.CustomerBankAccount)
                     .HasForeignKey(d => d.CustomerId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BankAccount_Customer");

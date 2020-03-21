@@ -35,6 +35,6 @@ namespace VErp.Services.Master.Model.Customer
         public EnumCustomerStatus CustomerStatusId { get; set; }
 
         public IList<CustomerContactModel> Contacts { get; set; }
-        public IList<BankAccountModel> BankAccounts { get; set; }
+        public IList<CustomerBankAccountModel> BankAccounts { get; set; }
     }
 }

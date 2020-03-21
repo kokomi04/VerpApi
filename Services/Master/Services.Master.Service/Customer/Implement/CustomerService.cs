@@ -95,7 +95,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
                     if (data.BankAccounts != null && data.BankAccounts.Count > 0)
                     {
-                        await _masterContext.BankAccount.AddRangeAsync(data.BankAccounts.Select(ba => new BankAccount()
+                        await _masterContext.CustomerBankAccount.AddRangeAsync(data.BankAccounts.Select(ba => new CustomerBankAccount()
                         {
                             CustomerId = customer.CustomerId,
                             BankName = ba.BankName,
@@ -154,7 +154,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 return CustomerErrorCode.CustomerNotFound;
             }
             var customerContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
-            var bankAccounts = await _masterContext.BankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+            var bankAccounts = await _masterContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
 
             return new CustomerModel()
             {
@@ -179,9 +179,9 @@ namespace VErp.Services.Master.Service.Customer.Implement
                     PhoneNumber = c.PhoneNumber,
                     Email = c.Email
                 }).ToList(),
-                BankAccounts = bankAccounts.Select(ba => new BankAccountModel()
+                BankAccounts = bankAccounts.Select(ba => new CustomerBankAccountModel()
                 {
-                    BankAccountId = ba.BankAccountId,
+                    CustomerBankAccountId = ba.CustomerBankAccountId,
                     BankName = ba.BankName,
                     AccountNumber = ba.AccountNumber,
                     SwiffCode = ba.SwiffCode
@@ -292,7 +292,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 try
                 {
                     var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
-                    var dbBankAccounts = await _masterContext.BankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+                    var dbBankAccounts = await _masterContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
 
                     customerInfo.CustomerCode = data.CustomerCode;
                     customerInfo.CustomerName = data.CustomerName;
@@ -313,7 +313,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                     }
                     if (data.Contacts == null)
                     {
-                        data.BankAccounts = new List<BankAccountModel>();
+                        data.BankAccounts = new List<CustomerBankAccountModel>();
                     }
 
                     var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
@@ -351,7 +351,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                         }
                     }
 
-                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.BankAccountId)).ToList();
+                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.CustomerBankAccountId == ba.CustomerBankAccountId)).ToList();
                     foreach (var ba in deletedBankAccounts)
                     {
                         ba.IsDeleted = true;
@@ -359,7 +359,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                         ba.UpdatedUserId = updatedUserId;
                     }
 
-                    var newBankAccounts = data.BankAccounts.Where(ba => !(ba.BankAccountId > 0)).Select(ba => new BankAccount()
+                    var newBankAccounts = data.BankAccounts.Where(ba => !(ba.CustomerBankAccountId > 0)).Select(ba => new CustomerBankAccount()
                     {
                         CustomerId = customerInfo.CustomerId,
                         BankName = ba.BankName,
@@ -370,11 +370,11 @@ namespace VErp.Services.Master.Service.Customer.Implement
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow
                     });
-                    await _masterContext.BankAccount.AddRangeAsync(newBankAccounts);
+                    await _masterContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
                     foreach (var ba in dbBankAccounts)
                     {
-                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.BankAccountId);
+                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.CustomerBankAccountId == ba.CustomerBankAccountId);
                         if (reqBankAccount != null)
                         {
                             ba.AccountNumber = reqBankAccount.AccountNumber;

@@ -8,7 +8,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public Customer()
         {
             CustomerContact = new HashSet<CustomerContact>();
-            BankAccount = new HashSet<BankAccount>();
+            CustomerBankAccount = new HashSet<CustomerBankAccount>();
         }
 
         public int CustomerId { get; set; }
@@ -30,6 +30,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int? DebtDays { get; set; }
 
         public virtual ICollection<CustomerContact> CustomerContact { get; set; }
-        public virtual ICollection<BankAccount> BankAccount { get; set; }
+        public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }
     }
 }
