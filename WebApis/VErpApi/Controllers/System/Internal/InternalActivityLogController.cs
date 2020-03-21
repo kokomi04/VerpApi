@@ -13,7 +13,6 @@ using VErp.Services.Master.Service.Activity;
 namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
-    [ApiController]
     public class InternalActivityLogController : CrossServiceBaseController
     {
         private readonly IActivityService _activityService;
