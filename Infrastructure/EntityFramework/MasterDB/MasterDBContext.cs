@@ -58,7 +58,10 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        public virtual DbSet<BankAccount> BankAccount { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -145,6 +148,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+
+                entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
             });
 
             modelBuilder.Entity<CustomerContact>(entity =>
@@ -546,6 +551,81 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UserStatusName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<BusinessInfo>(entity =>
+            {
+                entity.Property(bi => bi.CompanyName).IsRequired().HasMaxLength(128);
+
+                entity.Property(bi => bi.LegalRepresentative).IsRequired().HasMaxLength(128);
+
+                entity.Property(bi => bi.Address).IsRequired().HasMaxLength(128);
+
+                entity.Property(bi => bi.TaxIdNo).IsRequired().HasMaxLength(64);
+
+                entity.Property(bi => bi.Website).HasMaxLength(128);
+
+                entity.Property(bi => bi.PhoneNumber).IsRequired().HasMaxLength(32);
+
+                entity.Property(bi => bi.Email).IsRequired().HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<CustomGenCode>(entity =>
+            {
+                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
+
+                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.DateFormat)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Prefix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ResetDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Seperator)
+                    .HasMaxLength(1)
+                    .IsUnicode(false)
+                    .IsFixedLength();
+
+                entity.Property(e => e.Suffix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            {
+                entity.Property(e => e.ObjectTypeId).IsRequired();
+                entity.Property(e => e.ObjectId).IsRequired();
+                entity.Property(e => e.CustomGenCodeId).IsRequired();
+            });
+
+            modelBuilder.Entity<BankAccount>(entity =>
+            {
+                entity.Property(ba => ba.BankName).IsRequired().HasMaxLength(128);
+
+                entity.Property(ba => ba.AccountNumber).IsRequired().HasMaxLength(32);
+
+                entity.Property(ba => ba.SwiffCode).IsRequired().HasMaxLength(64);
+
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.BankAccount)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_BankAccount_Customer");
             });
 
             OnModelCreatingPartial(modelBuilder);

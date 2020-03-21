@@ -60,7 +60,8 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ApiResponse<int>> AddCustomer([FromBody] CustomerModel customer)
         {
-            return await _customerService.AddCustomer(customer);
+            var updatedUserId = UserId;
+            return await _customerService.AddCustomer(updatedUserId, customer);
         }
 
         /// <summary>
@@ -85,7 +86,8 @@ namespace VErpApi.Controllers.System
         [Route("{customerId}")]
         public async Task<ApiResponse> UpdateCustomer([FromRoute] int customerId, [FromBody] CustomerModel customer)
         {
-            return await _customerService.UpdateCustomer(customerId, customer);
+            var updatedUserId = UserId;
+            return await _customerService.UpdateCustomer(updatedUserId, customerId, customer);
         }
 
         /// <summary>

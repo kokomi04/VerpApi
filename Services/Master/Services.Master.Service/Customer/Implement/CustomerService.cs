@@ -37,7 +37,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddCustomer(CustomerModel data)
+        public async Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data)
         {
             var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
@@ -50,47 +50,76 @@ namespace VErp.Services.Master.Service.Customer.Implement
 
                 return CustomerErrorCode.CustomerNameAlreadyExisted;
             }
-
-            var customer = new CustomerEntity()
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                CustomerCode = data.CustomerCode,
-                CustomerName = data.CustomerName,
-                CustomerTypeId = (int)data.CustomerTypeId,
-                Address = data.Address,
-                TaxIdNo = data.TaxIdNo,
-                PhoneNumber = data.PhoneNumber,
-                Website = data.Website,
-                Email = data.Email,
-                Description = data.Description,
-                IsActived = data.IsActived,
-                IsDeleted = false,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow,
-                CustomerStatusId = (int)data.CustomerStatusId
-            };
-
-            await _masterContext.Customer.AddAsync(customer);
-            await _masterContext.SaveChangesAsync();
-
-            if (data.Contacts != null && data.Contacts.Count > 0)
-            {
-                await _masterContext.CustomerContact.AddRangeAsync(data.Contacts.Select(c => new CustomerContact()
+                try
                 {
-                    CustomerId = customer.CustomerId,
-                    FullName = c.FullName,
-                    GenderId = (int?)c.GenderId,
-                    Position = c.Position,
-                    PhoneNumber = c.PhoneNumber,
-                    Email = c.Email,
-                    IsDeleted = false,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
-                }));
+                    var customer = new CustomerEntity()
+                    {
+                        CustomerCode = data.CustomerCode,
+                        CustomerName = data.CustomerName,
+                        CustomerTypeId = (int)data.CustomerTypeId,
+                        Address = data.Address,
+                        TaxIdNo = data.TaxIdNo,
+                        PhoneNumber = data.PhoneNumber,
+                        Website = data.Website,
+                        Email = data.Email,
+                        Description = data.Description,
+                        IsActived = data.IsActived,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        CustomerStatusId = (int)data.CustomerStatusId
+                    };
 
-                await _masterContext.SaveChangesAsync();
+                    await _masterContext.Customer.AddAsync(customer);
+                    await _masterContext.SaveChangesAsync();
+
+                    if (data.Contacts != null && data.Contacts.Count > 0)
+                    {
+                        await _masterContext.CustomerContact.AddRangeAsync(data.Contacts.Select(c => new CustomerContact()
+                        {
+                            CustomerId = customer.CustomerId,
+                            FullName = c.FullName,
+                            GenderId = (int?)c.GenderId,
+                            Position = c.Position,
+                            PhoneNumber = c.PhoneNumber,
+                            Email = c.Email,
+                            IsDeleted = false,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow
+                        }));
+
+                        await _masterContext.SaveChangesAsync();
+                    }
+
+                    if (data.BankAccounts != null && data.BankAccounts.Count > 0)
+                    {
+                        await _masterContext.BankAccount.AddRangeAsync(data.BankAccounts.Select(ba => new BankAccount()
+                        {
+                            CustomerId = customer.CustomerId,
+                            BankName = ba.BankName,
+                            AccountNumber = ba.AccountNumber,
+                            SwiffCode = ba.SwiffCode,
+                            UpdatedUserId = updatedUserId,
+                            IsDeleted = false,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            UpdatedDatetimeUtc = DateTime.UtcNow
+                        }));
+
+                        await _masterContext.SaveChangesAsync();
+                    }
+                    trans.Commit();
+                    await _activityLogService.CreateLog(EnumObjectType.Customer, customer.CustomerId, $"Thêm đối tác {customer.CustomerName}", data.JsonSerialize());
+                    return customer.CustomerId;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Create");
+                    return GeneralCode.InternalError;
+                }
             }
-            await _activityLogService.CreateLog(EnumObjectType.Customer, customer.CustomerId, $"Thêm đối tác {customer.CustomerName}", data.JsonSerialize());
-            return customer.CustomerId;
         }
 
         public async Task<Enum> DeleteCustomer(int customerId)
@@ -125,6 +154,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 return CustomerErrorCode.CustomerNotFound;
             }
             var customerContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
+            var bankAccounts = await _masterContext.BankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
 
             return new CustomerModel()
             {
@@ -148,6 +178,14 @@ namespace VErp.Services.Master.Service.Customer.Implement
                     Position = c.Position,
                     PhoneNumber = c.PhoneNumber,
                     Email = c.Email
+                }).ToList(),
+                BankAccounts = bankAccounts.Select(ba => new BankAccountModel()
+                {
+                    BankAccountId = ba.BankAccountId,
+                    BankName = ba.BankName,
+                    AccountNumber = ba.AccountNumber,
+                    SwiffCode = ba.SwiffCode
+
                 }).ToList()
             };
         }
@@ -179,7 +217,6 @@ namespace VErp.Services.Master.Service.Customer.Implement
                         u.CustomerStatusId == customerStatusId
                         select u;
             }
-
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -228,7 +265,7 @@ namespace VErp.Services.Master.Service.Customer.Implement
             ).ToListAsync();
         }
 
-        public async Task<Enum> UpdateCustomer(int customerId, CustomerModel data)
+        public async Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
         {
             var customerInfo = await _masterContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
@@ -241,76 +278,125 @@ namespace VErp.Services.Master.Service.Customer.Implement
                 return CustomerErrorCode.CustomerCodeAlreadyExisted;
             //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
-                //if (existedCustomer != null)
-                //{
-                //    if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
-                //    {
-                //        return CustomerErrorCode.CustomerCodeAlreadyExisted;
-                //    }
+            //if (existedCustomer != null)
+            //{
+            //    if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+            //    {
+            //        return CustomerErrorCode.CustomerCodeAlreadyExisted;
+            //    }
 
-                //    return CustomerErrorCode.CustomerNameAlreadyExisted;
-                //}
-
-            var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
-
-            customerInfo.CustomerCode = data.CustomerCode;
-            customerInfo.CustomerName = data.CustomerName;
-            customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
-            customerInfo.Address = data.Address;
-            customerInfo.TaxIdNo = data.TaxIdNo;
-            customerInfo.PhoneNumber = data.PhoneNumber;
-            customerInfo.Website = data.Website;
-            customerInfo.Email = data.Email;
-            customerInfo.Description = data.Description;
-            customerInfo.IsActived = data.IsActived;
-            customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-            customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
-
-            if (data.Contacts == null)
+            //    return CustomerErrorCode.CustomerNameAlreadyExisted;
+            //}
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
-                data.Contacts = new List<CustomerContactModel>();
-            }
-
-            var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
-            foreach (var c in deletedContacts)
-            {
-                c.IsDeleted = true;
-                c.UpdatedDatetimeUtc = DateTime.UtcNow;
-            }
-
-            var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
-            {
-                CustomerId = customerInfo.CustomerId,
-                FullName = c.FullName,
-                GenderId = (int?)c.GenderId,
-                Position = c.Position,
-                PhoneNumber = c.PhoneNumber,
-                Email = c.Email,
-                IsDeleted = false,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow
-            });
-            await _masterContext.CustomerContact.AddRangeAsync(newContacts);
-
-            foreach (var c in dbContacts)
-            {
-                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
-                if (reqContact != null)
+                try
                 {
-                    c.FullName = reqContact.FullName;
-                    c.GenderId = (int?)reqContact.GenderId;
-                    c.Position = reqContact.Position;
-                    c.PhoneNumber = reqContact.PhoneNumber;
-                    c.Email = reqContact.Email;
-                    c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    var dbContacts = await _masterContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
+                    var dbBankAccounts = await _masterContext.BankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+
+                    customerInfo.CustomerCode = data.CustomerCode;
+                    customerInfo.CustomerName = data.CustomerName;
+                    customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
+                    customerInfo.Address = data.Address;
+                    customerInfo.TaxIdNo = data.TaxIdNo;
+                    customerInfo.PhoneNumber = data.PhoneNumber;
+                    customerInfo.Website = data.Website;
+                    customerInfo.Email = data.Email;
+                    customerInfo.Description = data.Description;
+                    customerInfo.IsActived = data.IsActived;
+                    customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
+
+                    if (data.Contacts == null)
+                    {
+                        data.Contacts = new List<CustomerContactModel>();
+                    }
+                    if (data.Contacts == null)
+                    {
+                        data.BankAccounts = new List<BankAccountModel>();
+                    }
+
+                    var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
+                    foreach (var c in deletedContacts)
+                    {
+                        c.IsDeleted = true;
+                        c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    }
+
+                    var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
+                    {
+                        CustomerId = customerInfo.CustomerId,
+                        FullName = c.FullName,
+                        GenderId = (int?)c.GenderId,
+                        Position = c.Position,
+                        PhoneNumber = c.PhoneNumber,
+                        Email = c.Email,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    });
+                    await _masterContext.CustomerContact.AddRangeAsync(newContacts);
+
+                    foreach (var c in dbContacts)
+                    {
+                        var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
+                        if (reqContact != null)
+                        {
+                            c.FullName = reqContact.FullName;
+                            c.GenderId = (int?)reqContact.GenderId;
+                            c.Position = reqContact.Position;
+                            c.PhoneNumber = reqContact.PhoneNumber;
+                            c.Email = reqContact.Email;
+                            c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        }
+                    }
+
+                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.BankAccountId)).ToList();
+                    foreach (var ba in deletedBankAccounts)
+                    {
+                        ba.IsDeleted = true;
+                        ba.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        ba.UpdatedUserId = updatedUserId;
+                    }
+
+                    var newBankAccounts = data.BankAccounts.Where(ba => !(ba.BankAccountId > 0)).Select(ba => new BankAccount()
+                    {
+                        CustomerId = customerInfo.CustomerId,
+                        BankName = ba.BankName,
+                        UpdatedUserId = updatedUserId,
+                        SwiffCode = ba.SwiffCode,
+                        AccountNumber = ba.AccountNumber,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    });
+                    await _masterContext.BankAccount.AddRangeAsync(newBankAccounts);
+
+                    foreach (var ba in dbBankAccounts)
+                    {
+                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.BankAccountId);
+                        if (reqBankAccount != null)
+                        {
+                            ba.AccountNumber = reqBankAccount.AccountNumber;
+                            ba.SwiffCode = reqBankAccount.SwiffCode;
+                            ba.BankName = reqBankAccount.BankName;
+                            ba.UpdatedUserId = updatedUserId;
+                            ba.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        }
+                    }
+
+                    await _masterContext.SaveChangesAsync();
+                    trans.Commit();
+                    await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Update");
+                    return GeneralCode.InternalError;
                 }
             }
-
-            await _masterContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
-
-            return GeneralCode.Success;
         }
     }
 }

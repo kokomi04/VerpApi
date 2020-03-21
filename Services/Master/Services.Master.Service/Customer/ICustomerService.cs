@@ -10,11 +10,11 @@ namespace VErp.Services.Master.Service.Customer
 {
     public interface ICustomerService
     {
-        Task<ServiceResult<int>> AddCustomer(CustomerModel data);
+        Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data);
         Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size);
         Task<IList<CustomerListOutput>> GetListByIds(IList<int> customerIds);
         Task<ServiceResult<CustomerModel>> GetCustomerInfo(int customerId);
-        Task<Enum> UpdateCustomer(int customerId, CustomerModel data);
+        Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
         Task<Enum> DeleteCustomer(int customerId);
     }
 }
