@@ -794,6 +794,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (eTime > 0)
                 toDate = eTime.UnixToDateTime();
 
+            toDate = toDate.AddDays(1);
+
             try
             {
                 DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.Date).Select(q => q.Date).FirstOrDefault().AddDays(-1);
@@ -831,7 +833,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
-                toDate = toDate.AddDays(1);
+               
 
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
@@ -985,8 +987,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (stockIds.Count > 0)
                     inPerdiodInventories = inPerdiodInventories.Where(q => stockIds.Contains(q.StockId));
-
-                toDate = toDate.AddDays(1);
 
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
