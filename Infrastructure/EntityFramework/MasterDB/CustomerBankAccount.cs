@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.MasterDB
 {
-    public partial class BankAccount
+    public partial class CustomerBankAccount
     {
-        public int BankAccountId { get; set; }
+        public int CustomerBankAccountId { get; set; }
         public int CustomerId { get; set; }
         public string BankName { get; set; }
         public string AccountNumber { get; set; }
