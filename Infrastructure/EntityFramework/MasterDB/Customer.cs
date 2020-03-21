@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public Customer()
         {
             CustomerContact = new HashSet<CustomerContact>();
+            BankAccount = new HashSet<BankAccount>();
         }
 
         public int CustomerId { get; set; }
@@ -25,7 +26,10 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime? UpdatedDatetimeUtc { get; set; }
         public int CustomerStatusId { get; set; }
+        public string LegalRepresentative { get; set; }
+        public int? DebtDays { get; set; }
 
         public virtual ICollection<CustomerContact> CustomerContact { get; set; }
+        public virtual ICollection<BankAccount> BankAccount { get; set; }
     }
 }

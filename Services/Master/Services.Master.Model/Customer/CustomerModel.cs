@@ -28,8 +28,13 @@ namespace VErp.Services.Master.Model.Customer
         public string Description { get; set; }
         public bool IsActived { get; set; }
 
+        [MaxLength(128, ErrorMessage = "Tên người đại diện quá dài")]
+        public string LegalRepresentative { get; set; }
+        public int? DebtDays { get; set; }
+
         public EnumCustomerStatus CustomerStatusId { get; set; }
 
         public IList<CustomerContactModel> Contacts { get; set; }
+        public IList<BankAccountModel> BankAccounts { get; set; }
     }
 }
