@@ -51,6 +51,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Data = jsonData
                 }.JsonSerialize();
 
+                var body = new ActivityInput
+                {
+                    UserId = _currentContext.UserId,
+                    ActionId = _currentContext.Action,
+                    ObjectTypeId = objectTypeId,
+                    ObjectId = objectId,
+                    Message = message,
+                    Data = jsonData
+                }.JsonSerialize();
+
                 var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri(uri),
@@ -67,6 +77,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     var response = await data.Content.ReadAsStringAsync();
                     _logger.LogError($"CreateLog {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
                 }
+
                 return data.IsSuccessStatusCode;
             }
             catch (Exception ex)
