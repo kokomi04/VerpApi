@@ -184,6 +184,16 @@ namespace VErp.Commons.Library
             var ex = propertyInfo.Name.ToMemberOf<T>();
             return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
         }
+        public static string Format(this decimal number, int decimalplace = 16)
+        {
+            var format = new StringBuilder();
+            format.Append("#,#.");
+            for (var i = 1; i < decimalplace; i++)
+            {
+                format.Append("#");
+            }
+            return number.ToString(format.ToString());
+        }
 
         public static decimal AddDecimal(this decimal a, decimal b)
         {

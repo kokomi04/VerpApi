@@ -18,6 +18,15 @@ namespace VErp.Infrastructure.ServiceCore.Model
                 Message = code.GetEnumDescription()
             };
         }
+
+        public static implicit operator ServiceResult((Enum code, string message) data)
+        {
+            return new ServiceResult()
+            {
+                Code = data.code,
+                Message = data.message
+            };
+        }
     }
 
     public class ServiceResult<T> : ServiceResult

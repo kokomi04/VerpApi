@@ -1010,7 +1010,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<Enum> ApproveInventoryOutput(long inventoryId, int currentUserId)
+        public async Task<ServiceResult> ApproveInventoryOutput(long inventoryId, int currentUserId)
         {
             if (inventoryId <= 0)
             {
@@ -1051,6 +1051,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var fromPackageIds = inventoryDetails.Select(f => f.FromPackageId).ToList();
                         var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
 
+                        var original = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
                         foreach (var detail in inventoryDetails)
                         {
                             var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
@@ -1060,6 +1061,38 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             fromPackageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
                             fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
                             fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+
+                            if (fromPackageInfo.PrimaryQuantityRemaining < 0)
+                            {
+                                var productInfo = await (
+                                    from p in _stockDbContext.Product
+                                    join c in _stockDbContext.ProductUnitConversion on p.ProductId equals c.ProductId
+                                    where p.ProductId == detail.ProductId
+                                          && c.ProductUnitConversionId == detail.ProductUnitConversionId
+                                    select new
+                                    {
+                                        p.ProductCode,
+                                        p.ProductName,
+                                        c.ProductUnitConversionName
+                                    }).FirstOrDefaultAsync();
+
+                                if (productInfo == null)
+                                {
+                                    return ProductErrorCode.ProductNotFound;
+                                }
+
+
+                                var message = $"Số dư trong kho mặt hàng {productInfo.ProductCode} ({original[detail.FromPackageId.Value].Format()} {productInfo.ProductUnitConversionName}) không đủ để xuất ";
+                                var samPackages = inventoryDetails.Where(d => d.FromPackageId == detail.FromPackageId);
+
+                                var total = samPackages.Sum(d => d.PrimaryQuantity).Format();
+
+                                message += $" < {total} {productInfo.ProductUnitConversionName} = "
+                                    + string.Join(" + ", samPackages.Select(d => d.PrimaryQuantity.Format()));
+
+                                trans.Rollback();
+                                return (InventoryErrorCode.NotEnoughQuantity, message);
+                            }
 
                             ValidatePackage(fromPackageInfo);
 

@@ -33,8 +33,9 @@ namespace VErp.Infrastructure.ApiCore.Attributes
         public override Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             context.HttpContext.Request.Headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
-            if (crossServiceKeys != _appSetting?.Configuration?.InternalCrossServiceKey)
+            if (crossServiceKeys.ToString() != _appSetting?.Configuration?.InternalCrossServiceKey)
             {
+                _logger.LogError("InternalCrossAuthorizeAttribute: " + crossServiceKeys);
                 context.Result = new UnauthorizedResult();
                 return Task.CompletedTask;
             }
