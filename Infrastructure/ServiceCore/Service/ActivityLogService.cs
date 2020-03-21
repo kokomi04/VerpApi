@@ -46,6 +46,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ActionId = _currentContext.Action,
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
+                    MessageTypeId = EnumMessageType.ActivityLog,
                     Message = message,
                     Data = jsonData
                 }.JsonSerialize();
