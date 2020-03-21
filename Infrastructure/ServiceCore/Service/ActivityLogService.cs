@@ -63,8 +63,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    var response = data.Content.ReadAsStringAsync();
-                    _logger.LogError($"CreateLog {} Error {{0}}", body);
+                    var response = await data.Content.ReadAsStringAsync();
+                    _logger.LogError($"CreateLog {uri} {{0}} Error {{1}}", body, response);
                 }
                 return data.IsSuccessStatusCode;
             }
