@@ -5,6 +5,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 namespace VErp.Infrastructure.ApiCore
 {
     [ApiController]
+    [AllowAnonymous]
     [TypeFilter(typeof(InternalCrossAuthorizeAttribute))]
     public class CrossServiceBaseController : ControllerBase
     {

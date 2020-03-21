@@ -40,24 +40,32 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
 
+                var body = new ActivityInput
+                {
+                    UserId = _currentContext.UserId,
+                    ActionId = _currentContext.Action,
+                    ObjectTypeId = objectTypeId,
+                    ObjectId = objectId,
+                    Message = message,
+                    Data = jsonData
+                }.JsonSerialize();
+
                 var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri(uri),
                     Method = HttpMethod.Post,
-                    Content = new StringContent(new ActivityInput
-                    {
-                        UserId = _currentContext.UserId,
-                        ActionId = _currentContext.Action,
-                        ObjectTypeId = objectTypeId,
-                        ObjectId = objectId,
-                        Message = message,
-                        Data = jsonData
-                    }.JsonSerialize(), Encoding.UTF8, "application/json"),
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
                 request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
 
                 var data = await _httpClient.SendAsync(request);
+
+                if (!data.IsSuccessStatusCode)
+                {
+                    var response = await data.Content.ReadAsStringAsync();
+                    _logger.LogError($"CreateLog {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
+                }
 
                 return data.IsSuccessStatusCode;
             }
