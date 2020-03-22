@@ -78,6 +78,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
 
+                entity.Property(e => e.AdditionNote).HasMaxLength(512);                
+
                 entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
 
                 entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 4)");

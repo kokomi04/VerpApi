@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? Date { get; set; }
         public string DeliveryDestination { get; set; }
         public string Content { get; set; }
+        public string AdditionNote { get; set; }
         public int PurchaseOrderStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public int PoProcessStatusId { get; set; }
