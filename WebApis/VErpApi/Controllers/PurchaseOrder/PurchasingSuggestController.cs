@@ -185,6 +185,18 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
+        /// Xác nhận phân công
+        /// </summary>
+        /// <param name="poAssignmentId"></param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("CurrentUser/Assignments/{poAssignmentId}/Confirm")]
+        public async Task<ApiResponse> PoAssignmentsUserConfirm([FromRoute] long poAssignmentId)
+        {
+            return await _purchasingSuggestService.PoAssignmentUserConfirm(poAssignmentId).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Lấy danh sách phân công mua hàng
         /// </summary>
         /// <param name="purchasingSuggestId"></param>
@@ -235,19 +247,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService.PoAssignmentSendToUser(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
         }
-
-        /// <summary>
-        /// Xác nhận phân công
-        /// </summary>
-        /// <param name="purchasingSuggestId"></param>
-        /// <param name="poAssignmentId"></param>
-        /// <returns></returns>
-        [HttpPut]
-        [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}/UserConfirm")]
-        public async Task<ApiResponse> PoAssignmentsUserConfirm([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
-        {
-            return await _purchasingSuggestService.PoAssignmentUserConfirm(poAssignmentId).ConfigureAwait(false);
-        }
+        
 
         /// <summary>
         /// Xóa phân công mua hàng
