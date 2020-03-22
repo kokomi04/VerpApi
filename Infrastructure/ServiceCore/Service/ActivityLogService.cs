@@ -50,16 +50,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Message = message,
                     Data = jsonData
                 }.JsonSerialize();
-
-                var body = new ActivityInput
-                {
-                    UserId = _currentContext.UserId,
-                    ActionId = _currentContext.Action,
-                    ObjectTypeId = objectTypeId,
-                    ObjectId = objectId,
-                    Message = message,
-                    Data = jsonData
-                }.JsonSerialize();
+              
 
                 var request = new HttpRequestMessage
                 {
