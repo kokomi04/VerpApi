@@ -19,7 +19,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int AssigneeUserId { get; set; }
         public int PoAssignmentStatusId { get; set; }
         public bool? IsConfirmed { get; set; }
-        public int CreatedByUsersId { get; set; }
+        public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
