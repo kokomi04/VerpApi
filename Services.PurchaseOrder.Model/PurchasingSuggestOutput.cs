@@ -11,7 +11,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public long PurchasingSuggestId { get; set; }
         public string PurchasingSuggestCode { get; set; }
         public string OrderCode { get; set; }
-        public long Date { get; set; }   
         public EnumPurchasingSuggestStatus PurchasingSuggestStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }

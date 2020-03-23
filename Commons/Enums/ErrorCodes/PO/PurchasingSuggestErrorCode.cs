@@ -11,22 +11,22 @@ namespace VErp.Commons.Enums.ErrorCodes
     {
         [EnumStatusCode(HttpStatusCode.NotFound)]
         [Description("Không tìm thấy phiếu đề nghị mua hàng tương ứng")]
-        NotFound = 1,
+        SuggestNotFound = 1,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Mã phiếu đề nghị mua hàng không có")]
-        PurchasingSuggestCodeEmpty = 2,
+        SuggestCodeEmpty = 2,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Phiếu đề nghị mua hàng đã tồn tại")]
-        CodeAlreadyExisted = 3,
+        SuggestCodeAlreadyExisted = 3,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Không thế xóa phiếu đề nghị mua hàng đã được duyệt")]
-        AlreadyApproved = 4,
+        SuggestAlreadyApproved = 4,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Mã phân công đã tồn tại")]
         PoAssignmentCodeAlreadyExisted = 5,
         [EnumStatusCode(HttpStatusCode.NotFound)]
         [Description("Không tìm thấy sản phẩm trong đề nghị mua hàng")]
-        PurchasingSuggestDetailNotfound = 6,
+        SuggestDetailNotfound = 6,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Phân công vượt mức đề nghị mua")]
         PoAssignmentOverload = 6,
@@ -41,10 +41,10 @@ namespace VErp.Commons.Enums.ErrorCodes
         PoAssignmentDetailNotEmpty = 9,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Vui lòng xóa PO liên quan đến mặt hàng phân công mua bị xóa!")]
-        PoDetailNotEmpty = 10,
+        PurchaseOrderDetailNotEmpty = 10,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Đề nghị mua hàng đang được phân công không được từ chối!")]
-        CanNotRejectPurchasingSuggestInUse = 11,
+        CanNotRejectSuggestInUse = 11,
         [EnumStatusCode(HttpStatusCode.BadRequest)]
         [Description("Đề nghị mua hàng chưa được duyệt!")]
         PurchasingSuggestIsNotApprovedYet = 12,

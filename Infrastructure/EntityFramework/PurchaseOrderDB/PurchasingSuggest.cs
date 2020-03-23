@@ -15,7 +15,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PurchasingSuggestId { get; set; }
         public string PurchasingSuggestCode { get; set; }
         public string OrderCode { get; set; }
-        public DateTime Date { get; set; }
         public string Content { get; set; }
         public int RejectCount { get; set; }
         public int PurchasingSuggestStatusId { get; set; }

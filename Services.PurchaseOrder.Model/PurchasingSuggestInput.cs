@@ -17,7 +17,7 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PurchasingSuggestDetailModel
     {
         public long? PurchasingSuggestDetailId { get; set; }
-        public int? CustomerId { get; set; }
+        public int CustomerId { get; set; }
         public IList<long> PurchasingRequestIds { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }

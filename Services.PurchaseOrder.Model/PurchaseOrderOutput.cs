@@ -7,9 +7,9 @@ namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchaseOrderOutputList
     {
-        public long PurchaseOrder { get; set; }
+        public long PurchaseOrderId { get; set; }
         public string PurchaseOrderCode { get; set; }
-        public long Date { get; set; }
+        public long? Date { get; set; }
         public int CustomerId { get; set; }
         public DeliveryDestinationModel DeliveryDestination { get; set; }
         public string Content { get; set; }
@@ -34,15 +34,13 @@ namespace VErp.Services.PurchaseOrder.Model
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
     }
 
-    public class PurchaseOrderOutputDetail
+    public class PurchaseOrderOutputDetail: PurchaseOrderInputDetail
     {
-        public long PurchaseOrderOutputDetailId { get; set; }
-        public long PoAssignmentDetailId { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public decimal PrimaryUnitPrice { get; set; }
-        public decimal TaxInPercent { get; set; }
-        public decimal TaxInMoney { get; set; }
+        public decimal? PrimaryUnitPrice { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
     }
 
 }
