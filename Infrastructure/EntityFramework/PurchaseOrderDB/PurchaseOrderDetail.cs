@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PurchaseOrderDetailId { get; set; }
         public long PurchaseOrderId { get; set; }
         public long PoAssignmentDetailId { get; set; }
+        public string ProviderProductName { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
         public decimal? TaxInPercent { get; set; }

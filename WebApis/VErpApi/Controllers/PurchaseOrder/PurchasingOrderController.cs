@@ -21,8 +21,10 @@ namespace VErpApi.Controllers.PurchaseOrder
     public class PurchasingOrderController : VErpBaseController
     {
 
-        public PurchasingOrderController()
+        private readonly IPurchaseOrderService _purchaseOrderService;
+        public PurchasingOrderController(IPurchaseOrderService purchaseOrderService)
         {
+            _purchaseOrderService = purchaseOrderService;
 
         }
 
@@ -44,7 +46,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetList")]
         public async Task<ApiResponse<PageData<PurchaseOrderOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .GetList(keyword, purchaseOrderStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -56,7 +60,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}")]
         public async Task<ApiResponse<PurchaseOrderOutput>> GetInfo([FromRoute] long purchaseOrderId)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .GetInfo(purchaseOrderId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -66,9 +72,11 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Add([FromBody] PurchaseOrderInput req)
+        public async Task<ApiResponse<long>> Create([FromBody] PurchaseOrderInput req)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .Create(req)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -81,7 +89,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}")]
         public async Task<ApiResponse> Update([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput req)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .Update(purchaseOrderId, req)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -91,9 +101,11 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/SendCensor")]
-        public async Task<ApiResponse> SentToApprove([FromRoute] long purchaseOrderId)
+        public async Task<ApiResponse> SentToCensor([FromRoute] long purchaseOrderId)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .SentToCensor(purchaseOrderId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -106,7 +118,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Approve([FromRoute] long purchaseOrderId)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                 .Approve(purchaseOrderId)
+                 .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -119,7 +133,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ApiResponse> Reject([FromRoute] long purchaseOrderId)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .Reject(purchaseOrderId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -131,7 +147,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}")]
         public async Task<ApiResponse> Delete([FromRoute] long purchaseOrderId)
         {
-            throw new NotImplementedException();
+            return await _purchaseOrderService
+                .Delete(purchaseOrderId)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -144,7 +162,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}/UpdatePoProcessStatus")]
         public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchaseOrderId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
-            throw new NotImplementedException();
-        }       
+            return await _purchaseOrderService
+                .UpdatePoProcessStatus(purchaseOrderId, poProcessStatusId)
+                .ConfigureAwait(false);
+        }
     }
 }

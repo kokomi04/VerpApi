@@ -55,7 +55,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var info = await _purchaseOrderDBContext.PurchasingRequest.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingRequestId == purchasingRequestId);
 
-            if (info == null) return PurchasingRequestErrorCode.NotFound;
+            if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
             var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
                 .Where(d => d.PurchasingRequestId == purchasingRequestId)
@@ -66,7 +66,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchasingRequestId = info.PurchasingRequestId,
                 PurchasingRequestCode = info.PurchasingRequestCode,
                 OrderCode = info.OrderCode,
-                Date = info.Date.GetUnix(),
                 PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -119,13 +118,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (fromDate.HasValue)
             {
                 var time = fromDate.Value.UnixToDateTime();
-                query = query.Where(q => q.Date >= time);
+                query = query.Where(q => q.CreatedDatetimeUtc >= time);
             }
 
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.Date <= time);
+                query = query.Where(q => q.CreatedDatetimeUtc <= time);
             }
 
             var total = await query.CountAsync();
@@ -138,7 +137,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
                     OrderCode = info.OrderCode,
-                    Date = info.Date.GetUnix(),
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -162,7 +160,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode);
-                if (existedItem != null) return PurchasingRequestErrorCode.CodeAlreadyExisted;
+                if (existedItem != null) return PurchasingRequestErrorCode.RequestCodeAlreadyExisted;
             }
 
 
@@ -173,7 +171,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestCode = model.PurchasingRequestCode,
                     OrderCode = model.OrderCode,
-                    Date = model.Date.UnixToDateTime(),
                     Content = model.Content,
                     RejectCount = 0,
                     PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff,
@@ -218,19 +215,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestId != purchasingRequestId && r.PurchasingRequestCode == model.PurchasingRequestCode);
-                if (existedItem != null) return PurchasingRequestErrorCode.CodeAlreadyExisted;
+                if (existedItem != null) return PurchasingRequestErrorCode.RequestCodeAlreadyExisted;
             }
 
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
 
                 info.PurchasingRequestCode = model.PurchasingRequestCode;
                 info.OrderCode = model.OrderCode;
-                info.Date = model.Date.UnixToDateTime();
                 info.Content = model.Content;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
                 info.IsApproved = null;
@@ -273,7 +269,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
 
                 info.IsDeleted = true;
@@ -303,7 +299,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Draff)
                 {
@@ -330,7 +326,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
@@ -360,7 +356,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
                     && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
@@ -391,7 +387,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.NotFound;
+                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -399,7 +395,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật trạng thái PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }

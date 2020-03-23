@@ -59,7 +59,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var info = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingSuggestId == purchasingSuggestId);
 
-            if (info == null) return PurchasingSuggestErrorCode.NotFound;
+            if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
             var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.AsNoTracking()
                 .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
@@ -70,7 +70,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchasingSuggestId = info.PurchasingSuggestId,
                 PurchasingSuggestCode = info.PurchasingSuggestCode,
                 OrderCode = info.OrderCode,
-                Date = info.Date.GetUnix(),
                 PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -129,13 +128,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (fromDate.HasValue)
             {
                 var time = fromDate.Value.UnixToDateTime();
-                query = query.Where(q => q.Date >= time);
+                query = query.Where(q => q.CreatedDatetimeUtc >= time);
             }
 
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.Date <= time);
+                query = query.Where(q => q.CreatedDatetimeUtc <= time);
             }
 
             var total = await query.CountAsync();
@@ -148,7 +147,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingSuggestId = info.PurchasingSuggestId,
                     PurchasingSuggestCode = info.PurchasingSuggestCode,
                     OrderCode = info.OrderCode,
-                    Date = info.Date.GetUnix(),
                     PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -172,7 +170,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                if (existedItem != null) return PurchasingSuggestErrorCode.CodeAlreadyExisted;
+                if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
             }
 
 
@@ -183,7 +181,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingSuggestCode = model.PurchasingSuggestCode,
                     OrderCode = model.OrderCode,
-                    Date = model.Date.UnixToDateTime(),
                     Content = model.Content,
                     RejectCount = 0,
                     PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff,
@@ -219,17 +216,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                if (existedItem != null) return PurchasingSuggestErrorCode.CodeAlreadyExisted;
+                if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
             }
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                 info.PurchasingSuggestCode = model.PurchasingSuggestCode;
                 info.OrderCode = model.OrderCode;
-                info.Date = model.Date.UnixToDateTime();
                 info.Content = model.Content;
                 info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff;
                 info.IsApproved = null;
@@ -294,17 +290,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
         public async Task<Enum> Delete(long purchasingSuggestId)
-        {
-            if (await _purchaseOrderDBContext.PoAssignment.Where(a => a.PurchasingSuggestId == purchasingSuggestId).AnyAsync())
-            {
-                return PurchasingSuggestErrorCode.PoAssignmentNotEmpty;
-            }
-
-
+        {           
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
 
                 var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
@@ -340,7 +330,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                 if (info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.Draff)
                 {
@@ -367,7 +357,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                 if (info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.WaitToCensor
                     && info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.Censored
@@ -396,7 +386,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                 if (info.PurchasingSuggestStatusId == (int)EnumPurchasingSuggestStatus.Censored)
                 {
@@ -404,7 +394,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var detailIds = details.Select(d => d.PurchasingSuggestDetailId).ToList();
                     if (!await ValidateInUsePurchasingSuggestDetail(detailIds))
                     {
-                        return PurchasingSuggestErrorCode.CanNotRejectPurchasingSuggestInUse;
+                        return PurchasingSuggestErrorCode.CanNotRejectSuggestInUse;
                     }
                     return GeneralCode.InvalidParams;
                 }
@@ -438,7 +428,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.NotFound;
+                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -446,7 +436,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật trạng thái PO đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật tiến trình PO đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -540,6 +530,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (lst, total);
 
         }
+       
         public async Task<ServiceResult<IList<PoAssignmentOutput>>> PoAssignmentListBySuggest(long purchasingSuggestId)
         {
 
@@ -547,7 +538,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (suggestInfo == null)
             {
-                return PurchasingSuggestErrorCode.NotFound;
+                return PurchasingSuggestErrorCode.SuggestNotFound;
             }
 
             var assignments = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
@@ -564,7 +555,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     d.PurchasingSuggestDetailId,
                     s.ProductId,
                     s.CustomerId,
-                    d.ProviderProductName,
                     d.PrimaryQuantity,
                     d.PrimaryUnitPrice,
                     d.TaxInPercent,
@@ -572,6 +562,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
                 ).AsNoTracking()
                 .ToListAsync();
+
+            var customerIds = assignmentDetails.Select(d => d.CustomerId).ToList();
+            var productIds = assignmentDetails.Select(d => d.ProductId).ToList();
+
+            var providerProductInfos = await (
+                from p in _purchaseOrderDBContext.ProviderProductInfo.AsNoTracking()
+                where customerIds.Contains(p.CustomerId) && productIds.Contains(p.ProductId)
+                select p
+                ).ToListAsync();
+
             var data = new List<PoAssignmentOutput>();
 
             foreach (var item in assignments)
@@ -597,7 +597,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
                             ProductId = d.ProductId,
                             CustomerId = d.CustomerId,
-                            ProviderProductName = d.ProviderProductName,
+                            ProviderProductName = providerProductInfos.FirstOrDefault(p => p.CustomerId == d.CustomerId && p.ProductId == d.ProductId)?.ProviderProductName,
                             PrimaryQuantity = d.PrimaryQuantity,
                             PrimaryUnitPrice = d.PrimaryUnitPrice,
                             TaxInPercent = d.TaxInPercent,
@@ -627,7 +627,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (suggestInfo == null)
             {
-                return PurchasingSuggestErrorCode.NotFound;
+                return PurchasingSuggestErrorCode.SuggestNotFound;
             }
 
             var assignmentDetails = await (
@@ -642,7 +642,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     d.PurchasingSuggestDetailId,
                     s.ProductId,
                     s.CustomerId,
-                    d.ProviderProductName,
                     d.PrimaryQuantity,
                     d.PrimaryUnitPrice,
                     d.TaxInPercent,
@@ -651,7 +650,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 ).AsNoTracking()
                 .ToListAsync();
 
+            var customerIds = assignmentDetails.Select(d => d.CustomerId).ToList();
+            var productIds = assignmentDetails.Select(d => d.ProductId).ToList();
 
+            var providerProductInfos = await (
+                from p in _purchaseOrderDBContext.ProviderProductInfo.AsNoTracking()
+                where customerIds.Contains(p.CustomerId) && productIds.Contains(p.ProductId)
+                select p
+                ).ToListAsync();
 
             var assignmentOutput = new PoAssignmentOutput()
             {
@@ -673,7 +679,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
                             ProductId = d.ProductId,
                             CustomerId = d.CustomerId,
-                            ProviderProductName = d.ProviderProductName,
+                            ProviderProductName = providerProductInfos.FirstOrDefault(p => p.CustomerId == d.CustomerId && p.ProductId == d.ProductId)?.ProviderProductName,
                             PrimaryQuantity = d.PrimaryQuantity,
                             PrimaryUnitPrice = d.PrimaryUnitPrice,
                             TaxInPercent = d.TaxInPercent,
@@ -911,7 +917,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
                 {
                     trans.Rollback();
-                    return PurchasingSuggestErrorCode.PoDetailNotEmpty;
+                    return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
                 }
 
                 assignmentInfo.IsDeleted = true;
@@ -999,7 +1005,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (suggestInfo == null)
             {
-                return PurchasingSuggestErrorCode.NotFound;
+                return PurchasingSuggestErrorCode.SuggestNotFound;
             }
 
             if (suggestInfo.IsApproved != true)
@@ -1030,7 +1036,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 if (!suggestDetails.TryGetValue(detail.PurchasingSuggestDetailId, out var suggestDetail))
                 {
-                    return PurchasingSuggestErrorCode.PurchasingSuggestDetailNotfound;
+                    return PurchasingSuggestErrorCode.SuggestDetailNotfound;
                 }
 
                 var totalSameSuggestDetail = sameSuggestAssignDetails
@@ -1053,7 +1059,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
             {
-                return PurchasingSuggestErrorCode.PoDetailNotEmpty;
+                return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
             }
             return GeneralCode.Success;
         }

@@ -8,15 +8,15 @@ namespace VErp.Commons.Enums.ErrorCodes
     public enum PurchasingRequestErrorCode
     {
         [Description("Không tìm thấy phiếu yêu cầu VTHH tương ứng")]
-        NotFound = 1,
+        RequestNotFound = 1,
         
         [Description("Mã phiếu yêu cầu VTHH không có")]
-        PurchasingRequestCodeEmpty = 2,
+        RequestCodeEmpty = 2,
 
         [Description("Phiếu yêu cầu VTHH đã tồn tại")]
-        CodeAlreadyExisted = 3,
+        RequestCodeAlreadyExisted = 3,
 
         [Description("Không thế xóa phiếu yêu cầu VTHH đã được duyệt")]
-        AlreadyApproved = 4,
+        RequestAlreadyApproved = 4,
     }
 }

@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public long PurchasingSuggestDetailId { get; set; }
         public long PurchasingSuggestId { get; set; }
-        public int? CustomerId { get; set; }
+        public int CustomerId { get; set; }
         public string PurchasingRequestIds { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
