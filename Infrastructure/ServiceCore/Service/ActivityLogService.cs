@@ -50,6 +50,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Message = message,
                     Data = jsonData
                 }.JsonSerialize();
+              
 
                 var request = new HttpRequestMessage
                 {
@@ -67,6 +68,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     var response = await data.Content.ReadAsStringAsync();
                     _logger.LogError($"CreateLog {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
                 }
+
                 return data.IsSuccessStatusCode;
             }
             catch (Exception ex)

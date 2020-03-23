@@ -14,14 +14,17 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public string PoAssignmentCode { get; set; }
         public int AssigneeUserId { get; set; }
+        
         public EnumPoAssignmentStatus PoAssignmentStatusId { get; set; }
         public bool? IsConfirmed { get; set; }
+        public int CreatedByUserId { get; set; }
         public long CreatedDatetimeUtc { get; set; }
+        public string Content { get; set; }
     }
 
     public class PoAssignmentOutput: PoAssignmentOutputList
     {
-        public string Content { get; set; }
+       
         public IList<PoAssimentDetailModel> Details { get; set; }
     }
 }

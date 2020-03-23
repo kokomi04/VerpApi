@@ -45,5 +45,8 @@ namespace VErp.Commons.Enums.ErrorCodes
 
         [Description("Đề nghị mua hàng chưa được duyệt!")]
         PurchasingSuggestIsNotApprovedYet = 12,
+
+        [Description("Bạn chỉ được xác nhận phân công của mình!")]
+        PoAssignmentConfirmInvalidCurrentUser = 13,
     }
 }

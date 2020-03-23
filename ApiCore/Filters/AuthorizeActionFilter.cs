@@ -51,8 +51,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-            var allowAnonymousDes = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is GlobalApiAttribute);
-            if (allowAnonymousDes != null)
+            var globalapi = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is GlobalApiAttribute);
+            if (globalapi != null)
             {
                 await next();
                 return;

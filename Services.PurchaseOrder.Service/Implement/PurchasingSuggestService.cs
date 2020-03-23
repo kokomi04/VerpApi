@@ -492,7 +492,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<PageData<PoAssignmentOutputList>> PoAssignmentList(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoAssignmentOutputList>> PoAssignmentListByUser(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = (
                 from s in _purchaseOrderDBContext.PurchasingSuggest
@@ -507,7 +507,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     a.AssigneeUserId,
                     a.PoAssignmentStatusId,
                     a.IsConfirmed,
-                    a.CreatedDatetimeUtc
+                    a.CreatedByUserId,
+                    a.CreatedDatetimeUtc,
+                    a.Content
                 });
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -567,9 +569,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchasingSuggestCode = a.PurchasingSuggestCode,
                 OrderCode = a.OrderCode,
                 PoAssignmentCode = a.PoAssignmentCode,
+                CreatedByUserId = a.CreatedByUserId,
                 AssigneeUserId = a.AssigneeUserId,
                 IsConfirmed = a.IsConfirmed,
-                CreatedDatetimeUtc = a.CreatedDatetimeUtc.GetUnix()
+                CreatedDatetimeUtc = a.CreatedDatetimeUtc.GetUnix(),
+                Content = a.Content,
+                PoAssignmentStatusId = (EnumPoAssignmentStatus)a.PoAssignmentStatusId,
             }).ToList();
 
             return (lst, total);
@@ -598,6 +603,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     d.PoAssignmentDetailId,
                     d.PurchasingSuggestDetailId,
                     s.ProductId,
+                    s.CustomerId,
                     d.ProviderProductName,
                     d.PrimaryQuantity,
                     d.PrimaryUnitPrice,
@@ -619,6 +625,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PoAssignmentCode = item.PoAssignmentCode,
                     AssigneeUserId = item.AssigneeUserId,
                     IsConfirmed = item.IsConfirmed,
+                    CreatedByUserId = item.CreatedByUserId,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     Content = item.Content,
                     PoAssignmentStatusId = (EnumPoAssignmentStatus)item.PoAssignmentStatusId,
@@ -629,6 +636,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PoAssignmentDetailId = d.PoAssignmentDetailId,
                             PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
                             ProductId = d.ProductId,
+                            CustomerId = d.CustomerId,
                             ProviderProductName = d.ProviderProductName,
                             PrimaryQuantity = d.PrimaryQuantity,
                             PrimaryUnitPrice = d.PrimaryUnitPrice,
@@ -640,6 +648,83 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
             return data;
         }
+
+        public async Task<ServiceResult<PoAssignmentOutput>> PoAssignmentInfo(long poAssignmentId, int? assigneeUserId)
+        {
+            var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PoAssignmentId == poAssignmentId).FirstOrDefaultAsync();
+
+            if (assignmentInfo == null)
+            {
+                return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+            }
+
+            if (assigneeUserId.HasValue && assignmentInfo.AssigneeUserId != assigneeUserId)
+            {
+                return PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser;
+            }
+
+            var suggestInfo = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().FirstOrDefaultAsync(s => s.PurchasingSuggestId == assignmentInfo.PurchasingSuggestId);
+
+            if (suggestInfo == null)
+            {
+                return PurchasingSuggestErrorCode.NotFound;
+            }
+
+            var assignmentDetails = await (
+                from d in _purchaseOrderDBContext.PoAssignmentDetail
+                join a in _purchaseOrderDBContext.PoAssignment on d.PoAssignmentId equals a.PoAssignmentId
+                join s in _purchaseOrderDBContext.PurchasingSuggestDetail on d.PurchasingSuggestDetailId equals s.PurchasingSuggestDetailId
+                where a.PoAssignmentId == poAssignmentId
+                select new
+                {
+                    d.PoAssignmentId,
+                    d.PoAssignmentDetailId,
+                    d.PurchasingSuggestDetailId,
+                    s.ProductId,
+                    s.CustomerId,
+                    d.ProviderProductName,
+                    d.PrimaryQuantity,
+                    d.PrimaryUnitPrice,
+                    d.TaxInPercent,
+                    d.TaxInMoney
+                }
+                ).AsNoTracking()
+                .ToListAsync();
+
+
+
+            var assignmentOutput = new PoAssignmentOutput()
+            {
+                PoAssignmentId = assignmentInfo.PoAssignmentId,
+                PurchasingSuggestId = assignmentInfo.PurchasingSuggestId,
+                PurchasingSuggestCode = suggestInfo.PurchasingSuggestCode,
+                OrderCode = suggestInfo.OrderCode,
+                PoAssignmentCode = assignmentInfo.PoAssignmentCode,
+                AssigneeUserId = assignmentInfo.AssigneeUserId,
+                IsConfirmed = assignmentInfo.IsConfirmed,
+                CreatedByUserId = assignmentInfo.CreatedByUserId,
+                CreatedDatetimeUtc = assignmentInfo.CreatedDatetimeUtc.GetUnix(),
+                Content = assignmentInfo.Content,
+                PoAssignmentStatusId = (EnumPoAssignmentStatus)assignmentInfo.PoAssignmentStatusId,
+                Details = assignmentDetails
+                        .Select(d => new PoAssimentDetailModel()
+                        {
+                            PoAssignmentDetailId = d.PoAssignmentDetailId,
+                            PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                            ProductId = d.ProductId,
+                            CustomerId = d.CustomerId,
+                            ProviderProductName = d.ProviderProductName,
+                            PrimaryQuantity = d.PrimaryQuantity,
+                            PrimaryUnitPrice = d.PrimaryUnitPrice,
+                            TaxInPercent = d.TaxInPercent,
+                            TaxInMoney = d.TaxInMoney
+                        })
+                        .ToList()
+            };
+
+            return assignmentOutput;
+        }
+
 
         public async Task<ServiceResult<long>> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
         {
@@ -662,7 +747,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     AssigneeUserId = model.AssigneeUserId,
                     PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff,
                     IsConfirmed = null,
-                    CreatedByUsersId = _currentContext.UserId,
+                    CreatedByUserId = _currentContext.UserId,
                     UpdatedByUserId = _currentContext.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -816,13 +901,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return PurchasingSuggestErrorCode.PoAssignmentNotfound;
                 }
 
+                if (assignmentInfo.AssigneeUserId != _currentContext.UserId)
+                {
+                    return PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser;
+                }
+
+
                 if (assignmentInfo.PoAssignmentStatusId != (int)EnumPoAssignmentStatus.WaitToConfirm)
                 {
                     return GeneralCode.InvalidParams;
                 }
 
+
                 assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Confirmed;
-                assignmentInfo.UpdatedByUserId = _currentContext.UserId;
+                //assignmentInfo.UpdatedByUserId = _currentContext.UserId;
                 assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
