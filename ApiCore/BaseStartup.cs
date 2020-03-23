@@ -86,6 +86,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
+                options.Filters.Add(typeof(ResponseStatusFilter));
                 if (isRequireAuthrize)
                 {
                     options.Filters.Add(typeof(AuthorizeActionFilter));

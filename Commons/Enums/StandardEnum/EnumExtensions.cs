@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net;
 using System.Reflection;
 using System.Text;
 
@@ -11,6 +12,20 @@ namespace VErp.Commons.Enums.StandardEnum
         public static bool IsSuccess(this Enum enumValue)
         {
             return (GeneralCode)enumValue == GeneralCode.Success;
+        }
+        public static HttpStatusCode GetEnumStatusCode(this Enum value)
+        {
+            HttpStatusCode statusCode = HttpStatusCode.OK;
+            FieldInfo fi = value.GetType().GetField(value.ToString());
+            if (fi != null)
+            {
+                var attrs = (EnumStatusCodeAttribute[])fi.GetCustomAttributes(typeof(EnumStatusCodeAttribute));
+                if (attrs != null && attrs.Length > 0)
+                {
+                    statusCode = (attrs[0]).StatusCode;
+                }
+            }
+            return statusCode;
         }
 
         public static string GetErrorCodeString(this Enum enumValue)
@@ -51,6 +66,5 @@ namespace VErp.Commons.Enums.StandardEnum
                 return value.ToString();
             }
         }
-
     }
 }

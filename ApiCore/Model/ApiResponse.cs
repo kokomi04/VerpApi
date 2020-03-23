@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ServiceCore.Model;
+using Newtonsoft.Json;
 
 namespace VErp.Infrastructure.ApiCore.Model
 {
     public class ApiResponse
     {
+        [JsonIgnore]
+        public HttpStatusCode StatusCode { get; set; }
         public string Code { get; set; }
         public string Message { get; set; }
 
@@ -15,6 +19,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse()
             {
+                StatusCode = code.GetEnumStatusCode(),
                 Code = code.GetErrorCodeString(),
                 Message = code.GetEnumDescription()
             };
@@ -24,6 +29,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse()
             {
+                StatusCode = result.Code.GetEnumStatusCode(),
                 Code = result.Code.GetErrorCodeString(),
                 Message = result.Message
             };
@@ -39,6 +45,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse<T>()
             {
+                StatusCode = HttpStatusCode.OK,
                 Code = GeneralCode.Success.GetErrorCodeString(),
                 Data = data
             };
@@ -49,6 +56,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse<T>()
             {
+                StatusCode = result.Code.GetEnumStatusCode(),
                 Code = result.Code.GetErrorCodeString(),
                 Data = result.Data,
                 Message = result.Message
@@ -59,6 +67,7 @@ namespace VErp.Infrastructure.ApiCore.Model
         {
             return new ApiResponse<T>()
             {
+                StatusCode = code.GetEnumStatusCode(),
                 Code = code.GetErrorCodeString(),
                 Message = code.GetEnumDescription()
             };
