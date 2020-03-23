@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
         public override void OnActionExecuted(ActionExecutedContext context)
         {
             IActionResult result = context.Result;
-            if(result is ObjectResult)
+            if(result is ObjectResult && !(context.Result as ObjectResult).StatusCode.HasValue)
             {
                 var data = (result as ObjectResult).Value;
                 if(data is ApiResponse)
