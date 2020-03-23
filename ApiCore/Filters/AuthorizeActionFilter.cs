@@ -58,10 +58,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-#if DEBUG
-            await next();
-            return;
-#endif
+//#if DEBUG
+//            await next();
+//            return;
+//#endif
 
             var headers = context.HttpContext.Request.Headers;
             var moduleIds = new StringValues();
