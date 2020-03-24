@@ -13,17 +13,28 @@ namespace VErp.Commons.Enums.StandardEnum
         {
             return (GeneralCode)enumValue == GeneralCode.Success;
         }
+
         public static HttpStatusCode GetEnumStatusCode(this Enum value)
         {
-            HttpStatusCode statusCode = HttpStatusCode.OK;
-            FieldInfo fi = value.GetType().GetField(value.ToString());
-            if (fi != null)
+            HttpStatusCode statusCode;
+            switch (value)
             {
-                var attrs = (EnumStatusCodeAttribute[])fi.GetCustomAttributes(typeof(EnumStatusCodeAttribute));
-                if (attrs != null && attrs.Length > 0)
-                {
-                    statusCode = (attrs[0]).StatusCode;
-                }
+                case GeneralCode.Success:
+                    statusCode = HttpStatusCode.OK;
+                    break;
+                case GeneralCode.InternalError:
+                    statusCode = HttpStatusCode.InternalServerError;
+                    break;
+                case GeneralCode.Forbidden:
+                case GeneralCode.X_ModuleMissing:
+                case GeneralCode.NotYetSupported:
+                case GeneralCode.DistributedLockExeption:
+                    statusCode = HttpStatusCode.Forbidden;
+                    break;
+                case GeneralCode.InvalidParams:
+                default:
+                    statusCode = HttpStatusCode.BadRequest;
+                    break;
             }
             return statusCode;
         }
@@ -43,8 +54,8 @@ namespace VErp.Commons.Enums.StandardEnum
             {
                 prefix = ((ErrorCodePrefixAttribute)attrs[0]).Prefix;
             }
-            
-            if(string.IsNullOrWhiteSpace(prefix) && fallbackToName)
+
+            if (string.IsNullOrWhiteSpace(prefix) && fallbackToName)
             {
                 prefix = type.Name;
             }
