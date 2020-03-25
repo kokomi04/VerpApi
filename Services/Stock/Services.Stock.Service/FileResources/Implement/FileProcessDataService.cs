@@ -1097,7 +1097,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 InventoryCode = string.Format("PX_TonDau_{0}_{1}", pageIndex, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                                 Shipper = string.Empty,
                                 Content = model.Description,
-                                DateUtc = model.IssuedDate,
+                                Date = model.IssuedDate,
                                 CustomerId = null,
                                 Department = string.Empty,
                                 StockKeeperUserId = null,
