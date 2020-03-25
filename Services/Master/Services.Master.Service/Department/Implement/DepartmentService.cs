@@ -125,10 +125,14 @@ namespace VErp.Services.Master.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool isActived, int page, int size)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _masterContext.Department.Where(d => d.IsActived == isActived).Include(d => d.Parent).AsQueryable();
+            var query = _masterContext.Department.Include(d => d.Parent).AsQueryable();
+            if (isActived.HasValue)
+            {
+                query = query.Where(d => d.IsActived == isActived);
+            }
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(d => d.DepartmentCode.Contains(keyword) || d.DepartmentName.Contains(keyword) || d.Description.Contains(keyword));
