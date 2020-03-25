@@ -259,6 +259,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                 }
 
+                if (p.NewPrimaryQuantity.SubDecimal(p.OldPrimaryQuantity) == 0)
+                {
+                    p.NewPrimaryQuantity = p.OldPrimaryQuantity;
+                }
+
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity)==0)
+                {
+                    p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
+                }
 
                 foreach (var obj in p.AffectObjects)
                 {
