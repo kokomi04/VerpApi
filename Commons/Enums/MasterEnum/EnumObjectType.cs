@@ -88,5 +88,7 @@ namespace VErp.Commons.Enums.MasterEnum
         /// 
         /// </summary>
         Department = 29,
+        InventoryInput = 30,
+        InventoryOutput = 31
     }
 }
