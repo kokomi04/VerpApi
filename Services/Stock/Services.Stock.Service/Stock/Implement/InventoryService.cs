@@ -322,7 +322,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
 
-                var issuedDate = req.DateUtc.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime();
                 var billDate = req.BillDate.UnixToDateTime();
                 var validInventoryDetails = await ValidateInventoryIn(false, req);
 
@@ -522,8 +522,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
 
-                var issuedDate = req.DateUtc.UnixToDateTime();
-                var billDate = req.DateUtc.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime();
+                var billDate = req.Date.UnixToDateTime();
 
                 var validate = await ValidateInventoryIn(false, req);
 

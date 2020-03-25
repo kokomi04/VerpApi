@@ -154,7 +154,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.Seperator = model.Seperator;
                 obj.Description = model.Description;
                 obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.Now;
+                obj.UpdatedTime = DateTime.UtcNow;
 
                 await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
 
@@ -208,7 +208,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
                 obj.IsDeleted = true;
                 obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.Now;
+                obj.UpdatedTime = DateTime.UtcNow;
 
                 await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
 
@@ -247,9 +247,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                     IsActived = true,
                     IsDeleted = false,
                     UpdatedUserId = currentUserId,
-                    ResetDate = DateTime.Now,
-                    CreatedTime = DateTime.Now,
-                    UpdatedTime = DateTime.Now
+                    ResetDate = DateTime.UtcNow,
+                    CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow
                 };
                 _masterDbContext.CustomGenCode.Add(entity);
                 await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
@@ -310,7 +310,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                         if (!(newId < maxId))
                         {
                             config.CodeLength += 1;
-                            config.ResetDate = DateTime.Now;
+                            config.ResetDate = DateTime.UtcNow;
                         }
                         config.TempValue = newId;
                         config.TempCode = newCode;

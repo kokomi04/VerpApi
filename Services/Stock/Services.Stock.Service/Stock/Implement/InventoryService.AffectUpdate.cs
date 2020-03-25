@@ -189,7 +189,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
             if (!updateStatus.IsSuccess()) return updateStatus;
 
-            var issuedDate = req.Inventory.DateUtc.UnixToDateTime();
+            var issuedDate = req.Inventory.Date.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
 
             await _stockDbContext.SaveChangesAsync();
