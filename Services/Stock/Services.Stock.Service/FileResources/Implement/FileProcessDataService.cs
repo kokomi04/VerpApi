@@ -853,7 +853,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             {
                                 StockId = model.StockId,
                                 InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                                DateUtc = model.IssuedDate,
+                                Date = model.IssuedDate,
                                 Shipper = string.Empty,
                                 Content = model.Description,
                                 CustomerId = null,

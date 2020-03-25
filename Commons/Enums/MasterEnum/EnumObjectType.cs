@@ -84,5 +84,9 @@ namespace VErp.Commons.Enums.MasterEnum
         /// 
         /// </summary>
         BusinessInfo = 28,
+        /// <summary>
+        /// 
+        /// </summary>
+        Department = 29,
     }
 }

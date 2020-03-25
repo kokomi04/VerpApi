@@ -13,6 +13,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Model.Department;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
@@ -48,7 +49,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
+        public async Task<ServiceResult<int>> CreateUser(UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(-1, req);
             if (!validate.IsSuccess())
@@ -67,12 +68,19 @@ namespace VErp.Services.Master.Service.Users.Implement
                         return user.Code;
                     }
                     var r = await CreateEmployee(user.Data, req);
-
                     if (!r.IsSuccess())
                     {
                         trans.Rollback();
                         return r;
                     }
+                    // Gắn phòng ban cho nhân sự
+                    var r2 = await UserDepartmentMapping(user.Data, req.DepartmentId, updatedUserId);
+                    if (!r2.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r2;
+                    }
+
                     trans.Commit();
 
                     var info = await GetUserFullInfo(user.Data);
@@ -94,11 +102,62 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "CreateUser");
                     return GeneralCode.InternalError;
                 }
-
             }
+        }
 
+        private async Task<Enum> UserDepartmentMapping(int userId, int departmentId, int updatedUserId)
+        {
+            var department = await _masterContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
+            if (department == null)
+            {
+                return DepartmentErrorCode.DepartmentNotFound;
+            }
+            if (!department.IsActived)
+            {
+                return DepartmentErrorCode.DepartmentInActived;
+            }
+            var userDepartmentMapping = _masterContext.UserDepartmentMapping
+                .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
+            var current = userDepartmentMapping
+           .Where(d => d.ExpirationDate >= DateTime.UtcNow.Date && d.EffectiveDate <= DateTime.UtcNow.Date)
+           .FirstOrDefault();
 
+            if (current == null)
+            {
+                // kiểm tra xem có bản ghi trong tương lai
+                var future = userDepartmentMapping.Where(d => d.EffectiveDate > DateTime.UtcNow.Date).OrderBy(d => d.EffectiveDate).FirstOrDefault();
+                DateTime expirationDate = future?.EffectiveDate.AddDays(-1) ?? DateTime.MaxValue.Date;
 
+                _masterContext.UserDepartmentMapping.Add(new UserDepartmentMapping()
+                {
+                    DepartmentId = departmentId,
+                    UserId = userId,
+                    EffectiveDate = DateTime.UtcNow.Date,
+                    ExpirationDate = expirationDate,
+                    UpdatedUserId = updatedUserId,
+                    CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                current.ExpirationDate = DateTime.UtcNow.AddDays(-1).Date;
+                current.UpdatedTime = DateTime.UtcNow;
+                current.UpdatedUserId = updatedUserId;
+
+                _masterContext.UserDepartmentMapping.Add(new UserDepartmentMapping()
+                {
+                    DepartmentId = departmentId,
+                    UserId = userId,
+                    EffectiveDate = DateTime.UtcNow.Date,
+                    ExpirationDate = current.ExpirationDate,
+                    UpdatedUserId = updatedUserId,
+                    CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow
+                });
+            }
+            await _masterContext.SaveChangesAsync();
+            return GeneralCode.Success;
         }
 
         public async Task<ServiceResult<UserInfoOutput>> GetInfo(int userId)
@@ -128,7 +187,22 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 return UserErrorCode.UserNotFound;
             }
-
+            // Thêm thông tin phòng ban cho nhân viên
+            DateTime currentDate = DateTime.UtcNow.Date;
+            var department = _masterContext.UserDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
+                .Join(_masterContext.Department, m => m.DepartmentId, d => d.DepartmentId, (m, d) => d)
+                .Select(d => new DepartmentModel()
+                {
+                    DepartmentId = d.DepartmentId,
+                    DepartmentCode = d.DepartmentCode,
+                    DepartmentName = d.DepartmentName,
+                    Description = d.Description,
+                    IsActived = d.IsActived,
+                    ParentId = d.ParentId,
+                    ParentName = d.Parent != null ? d.Parent.DepartmentName : null
+                })
+                .FirstOrDefault();
+            user.Department = department;
             return user;
         }
 
@@ -215,7 +289,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return (lst, total);
         }
 
-        public async Task<Enum> UpdateUser(int userId, UserInfoInput req)
+        public async Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(userId, req);
             if (!validate.IsSuccess())
@@ -236,13 +310,30 @@ namespace VErp.Services.Master.Service.Users.Implement
                         trans.Rollback();
                         return r1;
                     }
-                    var r2 = await UpdateEmployee(userId, req);
 
+                    var r2 = await UpdateEmployee(userId, req);
                     if (!r2.IsSuccess())
                     {
                         trans.Rollback();
                         return r2;
                     }
+
+                    // Lấy thông tin bộ phận hiện tại
+                    DateTime currentDate = DateTime.UtcNow.Date;
+                    var departmentId = _masterContext.UserDepartmentMapping
+                        .Where(m => m.UserId == userId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
+                        .Select(d => d.DepartmentId).FirstOrDefault();
+                    // Nếu khác update lại thông tin
+                    if (departmentId != req.DepartmentId)
+                    {
+                        var r3 = await UserDepartmentMapping(userId, req.DepartmentId, updatedUserId);
+                        if (!r3.IsSuccess())
+                        {
+                            trans.Rollback();
+                            return r3;
+                        }
+                    }
+
                     trans.Commit();
 
                     var newUserInfo = await GetUserFullInfo(userId);

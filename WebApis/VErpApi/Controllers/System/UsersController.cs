@@ -57,7 +57,8 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ApiResponse<int>> Post([FromBody] UserInfoInput req)
         {
-            return await _userService.CreateUser(req).ConfigureAwait(false);
+            int updatedUserId = UserId;
+            return await _userService.CreateUser(req, updatedUserId).ConfigureAwait(false);
         }
 
 
@@ -83,7 +84,8 @@ namespace VErpApi.Controllers.System
         [Route("{userId}")]
         public async Task<ApiResponse> Update([FromRoute] int userId, [FromBody] UserInfoInput req)
         {
-            return await _userService.UpdateUser(userId, req).ConfigureAwait(false);
+            int updatedUserId = UserId;
+            return await _userService.UpdateUser(userId, req, updatedUserId).ConfigureAwait(false);
         }
 
         /// <summary>

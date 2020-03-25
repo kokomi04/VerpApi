@@ -59,7 +59,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
-
+        public virtual DbSet<Department> Department { get; set; }
+        public virtual DbSet<UserDepartmentMapping> UserDepartmentMapping { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
         }
@@ -627,6 +628,36 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BankAccount_Customer");
             });
+
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.Property(d => d.DepartmentCode).IsRequired().HasMaxLength(32);
+
+                entity.Property(d => d.DepartmentName).IsRequired().HasMaxLength(128);
+
+                entity.Property(d => d.Description).HasMaxLength(128);
+
+                entity.HasOne(d => d.Parent)
+                  .WithMany(d => d.Childs)
+                  .HasForeignKey(d => d.ParentId)
+                  .OnDelete(DeleteBehavior.ClientSetNull)
+                  .HasConstraintName("FK_Department_SelfKey");
+            });
+
+            modelBuilder.Entity<UserDepartmentMapping>(entity =>
+            {
+                entity.HasOne(m => m.User)
+                  .WithMany(u => u.UserDepartmentMapping)
+                  .HasForeignKey(m => m.UserId)
+                  .OnDelete(DeleteBehavior.ClientSetNull)
+                  .HasConstraintName("FK_UserDepartment_User");
+                entity.HasOne(m => m.Department)
+                 .WithMany(d => d.UserDepartmentMapping)
+                 .HasForeignKey(m => m.DepartmentId)
+                 .OnDelete(DeleteBehavior.ClientSetNull)
+                 .HasConstraintName("FK_UserDepartment_Department");
+            });
+
 
             OnModelCreatingPartial(modelBuilder);
         }

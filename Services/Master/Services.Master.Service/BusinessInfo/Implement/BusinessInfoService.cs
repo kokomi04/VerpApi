@@ -37,7 +37,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ApiResponse<BusinessInfoModel>> GetBusinessInfo()
+        public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
         {
             var businessInfo = await _masterContext.BusinessInfo.FirstOrDefaultAsync();
             BusinessInfoModel result = null;
@@ -75,7 +75,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                     PhoneNumber = data.PhoneNumber,
                     Email = data.Email,
                     LogoFileId = data.LogoFileId,
-                    CreatedTime = DateTime.Now,
+                    CreatedTime = DateTime.UtcNow,
                     UpdatedUserId = updatedUserId
                 };
                 _masterContext.BusinessInfo.Add(businessInfo);
@@ -91,7 +91,7 @@ namespace VErp.Services.Master.Service.BusinessInfo.Implement
                 businessInfo.PhoneNumber = data.PhoneNumber;
                 businessInfo.Email = data.Email;
                 businessInfo.LogoFileId = data.LogoFileId;
-                businessInfo.UpdatedTime = DateTime.Now;
+                businessInfo.UpdatedTime = DateTime.UtcNow;
                 businessInfo.UpdatedUserId = updatedUserId;
             }
             await _masterContext.SaveChangesAsync();
