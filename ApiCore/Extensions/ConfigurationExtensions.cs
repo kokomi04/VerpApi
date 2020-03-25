@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.IdentityDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.StockDB;
