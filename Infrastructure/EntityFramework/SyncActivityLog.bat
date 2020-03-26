@@ -1,0 +1,1 @@
+Tools\\SynTool.exe Development $.DatabaseConnections.ActivityLogDatabase ActivityLogDB
