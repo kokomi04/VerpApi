@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission;
 
@@ -27,7 +28,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("moduleGroups")]
-        public async Task<ApiResponse<IList<ModuleGroupOutput>>> ModuleGroups()
+        public async Task<ServiceResult<IList<ModuleGroupOutput>>> ModuleGroups()
         {
             return (await _moduleService.GetModuleGroups()).ToList();
         }
@@ -38,7 +39,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<IList<ModuleOutput>>> Modules()
+        public async Task<ServiceResult<IList<ModuleOutput>>> Modules()
         {
             return (await _moduleService.GetList()).ToList();
         }

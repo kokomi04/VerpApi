@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse> AddNote(AddNoteInput req)
+        public async Task<ServiceResult> AddNote(AddNoteInput req)
         {
             return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, (int)EnumAction.View, EnumMessageType.Comment, req.Message);
         }
@@ -49,7 +49,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<UserActivityLogOuputModel>>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
+        public async Task<ServiceResult<PageData<UserActivityLogOuputModel>>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
             return await _activityService.GetListUserActivityLog(objectId, objectTypeId, page, size);
         }
