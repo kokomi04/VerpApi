@@ -259,6 +259,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                 }
 
+                if (p.NewPrimaryQuantity.SubDecimal(p.OldPrimaryQuantity) == 0)
+                {
+                    p.NewPrimaryQuantity = p.OldPrimaryQuantity;
+                }
+
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity)==0)
+                {
+                    p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
+                }
 
                 foreach (var obj in p.AffectObjects)
                 {
@@ -294,6 +303,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                     }
 
+
+
+                    if (obj.NewPrimaryQuantity.SubDecimal(obj.OldPrimaryQuantity) == 0)
+                    {
+                        obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
+                    }
+
+                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0)
+                    {
+                        obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
+                    }
+
+
+
                     if ((obj.NewProductUnitConversionQuantity != 0 || obj.NewPrimaryQuantity != 0)
                         && (obj.NewProductUnitConversionQuantity <= 0 || obj.NewPrimaryQuantity <= 0)
                         )
@@ -322,6 +345,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 {
                                     throw new Exception($"Negative TransferPrimaryQuantity from {obj.ObjectCode} to {c.ObjectTypeId} {c.ObjectId}");
                                 }
+                            }
+
+                            if (c.NewTransferPrimaryQuantity.SubDecimal(c.OldTransferPrimaryQuantity) == 0)
+                            {
+                                c.NewTransferPrimaryQuantity = c.OldTransferPrimaryQuantity;
+                            }
+
+                            if (c.NewTransferProductUnitConversionQuantity.SubDecimal(c.OldTransferProductUnitConversionQuantity) == 0)
+                            {
+                                c.NewTransferProductUnitConversionQuantity = c.OldTransferProductUnitConversionQuantity;
                             }
                         }
                     }
@@ -415,13 +448,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (firstPackage == null) throw new Exception("Invalid data");
 
-                firstPackage.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
-                firstPackage.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+                var primaryDelaRemain = p.NewPrimaryQuantity - p.OldPrimaryQuantity;
+                var secondDelaRemain = p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+
+                firstPackage.AddRemaining(primaryDelaRemain, secondDelaRemain);
 
                 var stockProduct = await EnsureStockProduct(req.Inventory.StockId, p.ProductId, p.ProductUnitConversionId);
 
-                stockProduct.PrimaryQuantityRemaining += p.NewPrimaryQuantity - p.OldPrimaryQuantity;
-                stockProduct.ProductUnitConversionRemaining += p.NewProductUnitConversionQuantity - p.OldProductUnitConversionQuantity;
+                stockProduct.AddRemaining(primaryDelaRemain, secondDelaRemain);
 
                 var updatedPackages = new List<Package>();
                 var updatedInventoryDetails = new List<InventoryDetail>();
@@ -460,8 +494,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             if (r.IsEditable)
                             {
                                 //substract parent
-                                var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity - r.OldTransferPrimaryQuantity;
-                                var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity - r.OldTransferProductUnitConversionQuantity;
+                                var deltaPrimaryQuantity = r.NewTransferPrimaryQuantity.SubDecimal(r.OldTransferPrimaryQuantity);
+                                var deltaConversionQuantity = r.NewTransferProductUnitConversionQuantity.SubDecimal(r.OldTransferProductUnitConversionQuantity);
 
                                 if (deltaPrimaryQuantity == 0 && deltaConversionQuantity == 0) continue;
 
@@ -471,13 +505,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     case EnumObjectType.Package:
 
                                         var refInfo = await _stockDbContext.PackageRef.FirstOrDefaultAsync(rd => rd.PackageId == r.ObjectId && rd.RefPackageId == obj.ObjectId);
-                                        refInfo.PrimaryQuantity += deltaPrimaryQuantity;
-                                        refInfo.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+                                        refInfo.AddTransfer(deltaPrimaryQuantity, deltaConversionQuantity);
 
                                         var childPackage = await _stockDbContext.Package.FirstOrDefaultAsync(c => c.PackageId == r.ObjectId);
 
-                                        childPackage.PrimaryQuantityRemaining += deltaPrimaryQuantity;
-                                        childPackage.ProductUnitConversionRemaining += deltaConversionQuantity;
+                                        childPackage.AddRemaining(deltaPrimaryQuantity, deltaConversionQuantity);
 
                                         if (!updatedPackages.Contains(childPackage))
                                         {
@@ -493,13 +526,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         switch (obj.ObjectTypeId)
                                         {
                                             case EnumObjectType.Package:
-                                                ((Package)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                                ((Package)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
-
+                                                ((Package)parent).AddRemaining(-deltaPrimaryQuantity, -deltaConversionQuantity);
                                                 break;
                                             case EnumObjectType.InventoryDetail:
-                                                ((InventoryDetail)parent).PrimaryQuantity -= deltaPrimaryQuantity;
-                                                ((InventoryDetail)parent).ProductUnitConversionQuantity -= deltaConversionQuantity;
+                                                ((InventoryDetail)parent).AddQuantity(-deltaPrimaryQuantity, -deltaConversionQuantity);
                                                 break;
                                             default:
                                                 throw new NotSupportedException();
@@ -519,8 +549,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
 
                                         //if(inventory.InventoryTypeId==(int)EnumInventoryType.Output)                                        
-                                        childInventoryDetail.PrimaryQuantity += deltaPrimaryQuantity;
-                                        childInventoryDetail.ProductUnitConversionQuantity += deltaConversionQuantity;
+
+                                        childInventoryDetail.AddQuantity(deltaPrimaryQuantity, deltaConversionQuantity);
 
                                         if (childInventoryDetail.PrimaryQuantity < 0 || childInventoryDetail.ProductUnitConversionQuantity < 0)
                                         {
@@ -540,11 +570,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             switch (obj.ObjectTypeId)
                                             {
                                                 case EnumObjectType.Package:
-                                                    ((Package)parent).PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                                    ((Package)parent).ProductUnitConversionRemaining -= deltaConversionQuantity;
 
-                                                    stockProduct.PrimaryQuantityRemaining -= deltaPrimaryQuantity;
-                                                    stockProduct.ProductUnitConversionRemaining -= deltaConversionQuantity;
+                                                    ((Package)parent).AddRemaining(-deltaPrimaryQuantity, -deltaConversionQuantity);
+
+                                                    stockProduct.AddRemaining(-deltaPrimaryQuantity, -deltaConversionQuantity);
 
                                                     break;
                                                 default:
@@ -557,11 +586,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             switch (obj.ObjectTypeId)
                                             {
                                                 case EnumObjectType.Package:
-                                                    ((Package)parent).PrimaryQuantityWaiting += deltaPrimaryQuantity;
-                                                    ((Package)parent).ProductUnitConversionWaitting += deltaConversionQuantity;
 
-                                                    stockProduct.PrimaryQuantityWaiting += deltaPrimaryQuantity;
-                                                    stockProduct.ProductUnitConversionWaitting += deltaConversionQuantity;
+                                                    ((Package)parent).AddWaiting(deltaPrimaryQuantity, deltaConversionQuantity);
+
+                                                    stockProduct.AddWaiting(deltaPrimaryQuantity, deltaConversionQuantity);
 
                                                     break;
                                                 default:

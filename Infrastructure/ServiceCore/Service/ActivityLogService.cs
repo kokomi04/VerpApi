@@ -38,7 +38,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             try
             {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
+                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";                
+
                 var body = new ActivityInput
                 {
                     UserId = _currentContext.UserId,
@@ -62,8 +63,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    _logger.LogError($"CreateLog {data.Content.ReadAsStringAsync()} Error {{0}}", body);
+                    var response = await data.Content.ReadAsStringAsync();
+                    _logger.LogError($"CreateLog {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
                 }
+
                 return data.IsSuccessStatusCode;
             }
             catch (Exception ex)
