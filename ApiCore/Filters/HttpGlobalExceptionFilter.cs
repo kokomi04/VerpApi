@@ -9,6 +9,7 @@ using System.Text;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -29,9 +30,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (context.Exception.GetType() == typeof(VerpException))
             {
-                var json = new ApiResponse
+                var json = new ServiceResult
                 {
-                    Code = GeneralCode.InternalError.GetErrorCodeString(),
+                    Code = GeneralCode.InternalError,
                     Message = context.Exception.Message
                 };
 
@@ -42,9 +43,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
             {
                 if (context.Exception.GetType() == typeof(DistributedLockExeption))
                 {
-                    var json = new ApiResponse<Exception>
+                    var json = new ServiceResult<Exception>
                     {
-                        Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
+                        Code = GeneralCode.DistributedLockExeption,
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
                     };
 
@@ -58,9 +59,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 }
                 else
                 {
-                    var json = new ApiResponse<Exception>
+                    var json = new ServiceResult<Exception>
                     {
-                        Code = GeneralCode.InternalError.GetErrorCodeString(),
+                        Code = GeneralCode.InternalError,
                         Message = context.Exception.Message
                     };
 

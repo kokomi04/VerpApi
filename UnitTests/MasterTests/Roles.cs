@@ -65,7 +65,7 @@ namespace MasterTests
                 Phone = "0000",
                 RoleId = 1,
                 UserStatusId = EnumUserStatus.Actived
-            }).GetAwaiter().GetResult();
+            }, 0).GetAwaiter().GetResult();
 
             Assert.Equal(1, result.Data);
         }

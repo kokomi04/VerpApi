@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -7,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -17,16 +19,43 @@ namespace VErp.Infrastructure.ApiCore.Filters
             IActionResult result = context.Result;
             if (result is ObjectResult && !(context.Result as ObjectResult).StatusCode.HasValue)
             {
-                var data = (result as ObjectResult).Value;
-                if (data is ApiResponse)
+                if ((result as ObjectResult).Value is ServiceResult)
                 {
-                    int statusCode = (int)(data as ApiResponse).StatusCode;
-                    (context.Result as ObjectResult).StatusCode = statusCode;
-                    if (statusCode == (int)HttpStatusCode.OK)
+                    var objectValue = (result as ObjectResult).Value as ServiceResult;
+                    HttpStatusCode statusCode;
+                    Enum code = objectValue.Code;
+                    switch (code)
                     {
-                        (data as ApiResponse).Code = null;
-                        (data as ApiResponse).Message = null;
+                        case GeneralCode.Success:
+                            statusCode = HttpStatusCode.OK;
+                            break;
+                        case GeneralCode.InternalError:
+                            statusCode = HttpStatusCode.InternalServerError;
+                            break;
+                        case GeneralCode.Forbidden:
+                        case GeneralCode.X_ModuleMissing:
+                        case GeneralCode.NotYetSupported:
+                        case GeneralCode.DistributedLockExeption:
+                            statusCode = HttpStatusCode.Forbidden;
+                            break;
+                        case GeneralCode.InvalidParams:
+                        default:
+                            statusCode = HttpStatusCode.BadRequest;
+                            break;
+                    }
+                    (context.Result as ObjectResult).StatusCode = (int)statusCode;
+                    if (statusCode == HttpStatusCode.OK)
+                    {
+                        var data = objectValue.GetType().GetProperty("Data")?.GetValue(objectValue) ?? true;
                         (context.Result as ObjectResult).Value = data;
+                    }
+                    else
+                    {
+                        (context.Result as ObjectResult).Value = new
+                        {
+                            Code = code.GetErrorCodeString(),
+                            Message = objectValue.Message ?? code.GetErrorCodeString()
+                        };
                     }
                 }
 

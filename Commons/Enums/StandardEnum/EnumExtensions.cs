@@ -14,31 +14,6 @@ namespace VErp.Commons.Enums.StandardEnum
             return (GeneralCode)enumValue == GeneralCode.Success;
         }
 
-        public static HttpStatusCode GetEnumStatusCode(this Enum value)
-        {
-            HttpStatusCode statusCode;
-            switch (value)
-            {
-                case GeneralCode.Success:
-                    statusCode = HttpStatusCode.OK;
-                    break;
-                case GeneralCode.InternalError:
-                    statusCode = HttpStatusCode.InternalServerError;
-                    break;
-                case GeneralCode.Forbidden:
-                case GeneralCode.X_ModuleMissing:
-                case GeneralCode.NotYetSupported:
-                case GeneralCode.DistributedLockExeption:
-                    statusCode = HttpStatusCode.Forbidden;
-                    break;
-                case GeneralCode.InvalidParams:
-                default:
-                    statusCode = HttpStatusCode.BadRequest;
-                    break;
-            }
-            return statusCode;
-        }
-
         public static string GetErrorCodeString(this Enum enumValue)
         {
             string prefix = enumValue.GetType().GetErrorCodePrefix();

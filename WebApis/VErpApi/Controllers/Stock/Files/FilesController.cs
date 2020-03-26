@@ -9,6 +9,7 @@ using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Service.FileResources;
 
@@ -34,7 +35,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
-        public async Task<ApiResponse<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
+        public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
         {
             return await _fileService.GetFileUrl(fileId, thumb);
         }
@@ -47,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Files
         [HttpPost]
         [Route("GetThumbnails")]
         [VErpAction(EnumAction.View)]
-        public async Task<ApiResponse<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] GetThumbnailsInput req)
+        public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] GetThumbnailsInput req)
         {
             return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize);
         }
@@ -62,7 +63,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpPost]
         [Route("{objectTypeId}/upload")]
-        public async Task<ApiResponse<long>> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
+        public async Task<ServiceResult<long>> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
         {
             var fileType = EnumFileType.Image;
 

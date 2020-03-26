@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -18,9 +19,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
             {
                 if (!ValidateEnum(context.ActionArguments.Select(a => a.Value)).IsSuccess())
                 {
-                    var invalidParams = new ApiResponse()
+                    var invalidParams = new ServiceResult()
                     {
-                        Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                        Code = GeneralCode.InvalidParams,
                         Message = GeneralCode.InvalidParams.GetEnumDescription()
                     };
 
@@ -38,9 +39,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 .ToArray();
 
 
-            var invalidModels = new ApiResponse()
+            var invalidModels = new ServiceResult()
             {
-                Code = GeneralCode.InvalidParams.GetErrorCodeString(),
+                Code = GeneralCode.InvalidParams,
                 Message = string.Join(",", validationErrors)
             };
 

@@ -25,14 +25,14 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [Route("{fileId}/FileAssignToObject")]
         [HttpPut]
-        public async Task<ApiResponse> FileAssignToObject([FromRoute] long fileId, [FromBody] FileAssignToObjectInput req)
+        public async Task<ServiceResult> FileAssignToObject([FromRoute] long fileId, [FromBody] FileAssignToObjectInput req)
         {
             return await _fileService.FileAssignToObject(req.ObjectTypeId, req.ObjectId, fileId);
         }
 
         [Route("{fileId}")]
         [HttpDelete]
-        public async Task<ApiResponse> DeleteFile([FromRoute] long fileId)
+        public async Task<ServiceResult> DeleteFile([FromRoute] long fileId)
         {
             return await _fileService.DeleteFile(fileId);
         }

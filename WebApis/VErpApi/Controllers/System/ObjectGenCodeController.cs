@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ObjectGenCodeOutputModel>>> Get([FromQuery] EnumObjectType objectType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<ObjectGenCodeOutputModel>>> Get([FromQuery] EnumObjectType objectType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customGenCodeService.GetList(objectType,keyword, page, size);
         }
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse<ObjectGenCodeOutputModel>> GetInfo([FromRoute] int objectGenCodeId)
+        public async Task<ServiceResult<ObjectGenCodeOutputModel>> GetInfo([FromRoute] int objectGenCodeId)
         {
             return await _customGenCodeService.GetInfo(objectGenCodeId);
         }
@@ -64,7 +64,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> Post([FromQuery] EnumObjectType objectType, [FromBody] ObjectGenCodeInputModel req)
+        public async Task<ServiceResult<int>> Post([FromQuery] EnumObjectType objectType, [FromBody] ObjectGenCodeInputModel req)
         {
             var currentId = UserId;
             return await _customGenCodeService.Create(objectType, currentId, req);
@@ -79,7 +79,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse> Update([FromRoute] int objectGenCodeId, [FromBody] ObjectGenCodeInputModel req)
+        public async Task<ServiceResult> Update([FromRoute] int objectGenCodeId, [FromBody] ObjectGenCodeInputModel req)
         {
             var currentId = UserId;
             return await _customGenCodeService.Update(objectGenCodeId, currentId,req);
@@ -93,7 +93,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{objectGenCodeId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int objectGenCodeId)
+        public async Task<ServiceResult> Delete([FromRoute] int objectGenCodeId)
         {
             var currentId = UserId;
             return await _customGenCodeService.Delete(currentId, objectGenCodeId);
@@ -106,7 +106,7 @@ namespace VErpApi.Controllers.System
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("GenerateCode")]
-        public async Task<ApiResponse<string>> GenerateCode([FromQuery] EnumObjectType objectType)
+        public async Task<ServiceResult<string>> GenerateCode([FromQuery] EnumObjectType objectType)
         {
             return await _customGenCodeService.GenerateCode(objectType);
         }
@@ -117,7 +117,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("GetAllObjectType")]
-        public async Task<ApiResponse<PageData<ObjectType>>> GetAllObjectType()
+        public async Task<ServiceResult<PageData<ObjectType>>> GetAllObjectType()
         {
             return await _customGenCodeService.GetAllObjectType();
         }

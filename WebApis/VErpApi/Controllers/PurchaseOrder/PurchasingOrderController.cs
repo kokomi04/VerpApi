@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ApiResponse<PageData<PurchaseOrderOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<PurchaseOrderOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
                 .GetList(keyword, purchaseOrderStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size)
@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("{purchaseOrderId}")]
-        public async Task<ApiResponse<PurchaseOrderOutput>> GetInfo([FromRoute] long purchaseOrderId)
+        public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .GetInfo(purchaseOrderId)
@@ -72,7 +72,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<long>> Create([FromBody] PurchaseOrderInput req)
+        public async Task<ServiceResult<long>> Create([FromBody] PurchaseOrderInput req)
         {
             return await _purchaseOrderService
                 .Create(req)
@@ -87,7 +87,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}")]
-        public async Task<ApiResponse> Update([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput req)
+        public async Task<ServiceResult> Update([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput req)
         {
             return await _purchaseOrderService
                 .Update(purchaseOrderId, req)
@@ -101,7 +101,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/SendCensor")]
-        public async Task<ApiResponse> SentToCensor([FromRoute] long purchaseOrderId)
+        public async Task<ServiceResult> SentToCensor([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .SentToCensor(purchaseOrderId)
@@ -116,7 +116,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [HttpPut]
         [Route("{purchaseOrderId}/Approve")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Approve([FromRoute] long purchaseOrderId)
+        public async Task<ServiceResult> Approve([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                  .Approve(purchaseOrderId)
@@ -131,7 +131,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [HttpPut]
         [Route("{purchaseOrderId}/Reject")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse> Reject([FromRoute] long purchaseOrderId)
+        public async Task<ServiceResult> Reject([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .Reject(purchaseOrderId)
@@ -145,7 +145,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpDelete]
         [Route("{purchaseOrderId}")]
-        public async Task<ApiResponse> Delete([FromRoute] long purchaseOrderId)
+        public async Task<ServiceResult> Delete([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .Delete(purchaseOrderId)
@@ -160,7 +160,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/UpdatePoProcessStatus")]
-        public async Task<ApiResponse> UpdatePoProcessStatus([FromRoute] long purchaseOrderId, [FromBody] EnumPoProcessStatus poProcessStatusId)
+        public async Task<ServiceResult> UpdatePoProcessStatus([FromRoute] long purchaseOrderId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
             return await _purchaseOrderService
                 .UpdatePoProcessStatus(purchaseOrderId, poProcessStatusId)

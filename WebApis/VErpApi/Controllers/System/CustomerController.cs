@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customerService.GetList(keyword, customerStatusId, page, size);
         }
@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddCustomer([FromBody] CustomerModel customer)
+        public async Task<ServiceResult<int>> AddCustomer([FromBody] CustomerModel customer)
         {
             var updatedUserId = UserId;
             return await _customerService.AddCustomer(updatedUserId, customer);
@@ -71,7 +71,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{customerId}")]
-        public async Task<ApiResponse<CustomerModel>> GetCustomerInfo([FromRoute] int customerId)
+        public async Task<ServiceResult<CustomerModel>> GetCustomerInfo([FromRoute] int customerId)
         {
             return await _customerService.GetCustomerInfo(customerId);
         }
@@ -84,7 +84,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{customerId}")]
-        public async Task<ApiResponse> UpdateCustomer([FromRoute] int customerId, [FromBody] CustomerModel customer)
+        public async Task<ServiceResult> UpdateCustomer([FromRoute] int customerId, [FromBody] CustomerModel customer)
         {
             var updatedUserId = UserId;
             return await _customerService.UpdateCustomer(updatedUserId, customerId, customer);
@@ -97,7 +97,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{customerId}")]
-        public async Task<ApiResponse> DeleteUnit([FromRoute] int customerId)
+        public async Task<ServiceResult> DeleteUnit([FromRoute] int customerId)
         {
             return await _customerService.DeleteCustomer(customerId);
         }
@@ -108,7 +108,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateCustomerCode")]
-        public async Task<ApiResponse<string>> GenerateCustomerCode()
+        public async Task<ServiceResult<string>> GenerateCustomerCode()
         {           
             return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
         }
@@ -121,7 +121,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ApiResponse<long>> UploadExcelDataFile([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<ServiceResult<long>> UploadExcelDataFile([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Customer, fileTypeId, string.Empty, file);
         }
@@ -133,7 +133,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("ImportCustomerData")]
-        public async Task<ApiResponse> ImportCustomerData([FromBody] long fileId)
+        public async Task<ServiceResult> ImportCustomerData([FromBody] long fileId)
         {
             var currentUserId = UserId;
             return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);

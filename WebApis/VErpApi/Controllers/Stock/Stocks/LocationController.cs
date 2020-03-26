@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<LocationOutput>>> Get([FromQuery] int stockId,[FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<LocationOutput>>> Get([FromQuery] int stockId,[FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _locationService.GetList(stockId,keyword, page, size);
         }
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddLocation([FromBody] LocationInput location)
+        public async Task<ServiceResult<int>> AddLocation([FromBody] LocationInput location)
         {
             return await _locationService.AddLocation(location);
         }
@@ -60,7 +60,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("{locationId}")]
-        public async Task<ApiResponse<LocationOutput>> GetLocation([FromRoute] int locationId)
+        public async Task<ServiceResult<LocationOutput>> GetLocation([FromRoute] int locationId)
         {
             return await _locationService.GetLocationInfo(locationId);
         }
@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpPut]
         [Route("{locationId}")]
-        public async Task<ApiResponse> UpdateLocation([FromRoute] int locationId, [FromBody] LocationInput location)
+        public async Task<ServiceResult> UpdateLocation([FromRoute] int locationId, [FromBody] LocationInput location)
         {
             return await _locationService.UpdateLocation(locationId, location);
         }
@@ -85,7 +85,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpDelete]
         [Route("{locationId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int locationId)
+        public async Task<ServiceResult> Delete([FromRoute] int locationId)
         {
             return await _locationService.DeleteLocation(locationId);
         }

@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<DepartmentModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<DepartmentModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
         {
             return await _departmentService.GetList(keyword, isActived, page, size);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddDepartment([FromBody] DepartmentModel department)
+        public async Task<ServiceResult<int>> AddDepartment([FromBody] DepartmentModel department)
         {
             var updatedUserId = UserId;
             return await _departmentService.AddDepartment(updatedUserId, department);
@@ -39,14 +39,14 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}")]
-        public async Task<ApiResponse<DepartmentModel>> GetDepartmentInfo([FromRoute] int departmentId)
+        public async Task<ServiceResult<DepartmentModel>> GetDepartmentInfo([FromRoute] int departmentId)
         {
             return await _departmentService.GetDepartmentInfo(departmentId);
         }
 
         [HttpPut]
         [Route("{departmentId}")]
-        public async Task<ApiResponse> UpdateDepartment([FromRoute] int departmentId, [FromBody] DepartmentModel department)
+        public async Task<ServiceResult> UpdateDepartment([FromRoute] int departmentId, [FromBody] DepartmentModel department)
         {
             var updatedUserId = UserId;
             return await _departmentService.UpdateDepartment(updatedUserId, departmentId, department);
@@ -54,7 +54,7 @@ namespace VErpApi.Controllers.System
 
         [HttpDelete]
         [Route("{departmentId}")]
-        public async Task<ApiResponse> DeleteDepartment([FromRoute] int departmentId)
+        public async Task<ServiceResult> DeleteDepartment([FromRoute] int departmentId)
         {
             var updatedUserId = UserId;
             return await _departmentService.DeleteDepartment(updatedUserId, departmentId);
