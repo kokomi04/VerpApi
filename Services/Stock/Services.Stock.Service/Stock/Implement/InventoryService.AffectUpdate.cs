@@ -187,7 +187,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
             var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
-            if (!updateStatus.IsSuccess()) return updateStatus;
+            if (!updateStatus.IsSuccessCode()) return updateStatus;
 
             var issuedDate = req.Inventory.DateUtc.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
@@ -264,7 +264,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
-                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity)==0)
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0)
                 {
                     p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
                 }
@@ -424,8 +424,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        private async Task<Enum> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        private async Task<ServiceResult> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
         {
+
+            var validateOutputDetails = new Dictionary<long, CensoredOutputInventoryDetailUpdate>();
+
             foreach (var p in products)
             {
                 var detail = details.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
@@ -579,6 +582,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                                 default:
                                                     throw new NotSupportedException();
                                             }
+
+
+                                            var outputDetail = new CensoredOutputInventoryDetailUpdate()
+                                            {
+                                                InventoryDetailId = childInventoryDetail.InventoryDetailId,
+                                                Date = inventory.Date,
+                                                ProductId = childInventoryDetail.ProductId,
+                                                ProductUnitConversionId = childInventoryDetail.ProductUnitConversionId.Value,
+                                                OutputPrimary = childInventoryDetail.PrimaryQuantity,
+                                                OutputSecondary = childInventoryDetail.ProductUnitConversionQuantity
+                                            };
+
+                                            if (!validateOutputDetails.ContainsKey(childInventoryDetail.InventoryDetailId))
+                                            {
+                                                validateOutputDetails.Add(childInventoryDetail.InventoryDetailId, outputDetail);
+                                            }
+                                            else
+                                            {
+                                                validateOutputDetails[childInventoryDetail.InventoryDetailId] = outputDetail;
+                                            }
                                         }
                                         else
                                         {
@@ -658,6 +681,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
+
+            foreach (var output in validateOutputDetails)
+            {
+                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
+
+                if (!validate.IsSuccessCode())
+                {
+                    return validate;
+                }
+            }
             return GeneralCode.Success;
         }
 
@@ -667,6 +700,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             public IList<InventoryDetail> DbDetails { get; set; }
 
             public IList<InventoryDetail> UpdateDetails { get; set; }
+        }
+
+        private class CensoredOutputInventoryDetailUpdate
+        {
+            public long InventoryDetailId { get; set; }
+            public DateTime Date { get; set; }
+            public int ProductId { get; set; }
+            public int ProductUnitConversionId { get; set; }
+            public decimal OutputPrimary { get; set; }
+            public decimal OutputSecondary { get; set; }
         }
     }
 

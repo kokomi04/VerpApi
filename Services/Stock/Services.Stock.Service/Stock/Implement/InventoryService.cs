@@ -1052,6 +1052,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
 
                         var original = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
+
+                        var groupByProducts = inventoryDetails
+                            .GroupBy(g => new { g.ProductId, g.ProductUnitConversionId })
+                            .Select(g => new
+                            {
+                                g.Key.ProductId,
+                                g.Key.ProductUnitConversionId,
+                                OutPrimary = g.Sum(d => d.PrimaryQuantity),
+                                OutSecondary = g.Sum(d => d.ProductUnitConversionQuantity)
+                            });
+                        foreach (var product in groupByProducts)
+                        {
+                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
+
+                            if (!validate.IsSuccessCode())
+                            {
+                                trans.Rollback();
+
+                                return validate;
+                            }
+                        }
+
                         foreach (var detail in inventoryDetails)
                         {
                             var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
@@ -1820,7 +1842,54 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
+        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
+        {
+            var sums = await (
+                from id in _stockDbContext.InventoryDetail
+                join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
+                where iv.StockId == stockId
+                && id.ProductId == productId
+                && id.ProductUnitConversionId == productUnitConversionId
+                && iv.Date <= endDate
+                select new
+                {
+                    iv.InventoryTypeId,
+                    id.PrimaryQuantity,
+                    id.ProductUnitConversionQuantity
+                }).GroupBy(g => true)
+                   .Select(g => new
+                   {
+                       TotalPrimary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+                       TotalSecondary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+                   }).FirstAsync();
 
+
+            if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER || sums.TotalSecondary - outSecondary < MINIMUM_JS_NUMBER)
+            {
+                var productCode = await _stockDbContext
+                                    .Product
+                                    .Where(p => p.ProductId == productId)
+                                    .Select(p => p.ProductCode)
+                                    .FirstOrDefaultAsync();
+
+                var total = sums.TotalSecondary;
+                var output = outSecondary;
+                
+                if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER)
+                {
+                    total = sums.TotalPrimary;
+                    output = outPrimary;
+                }
+
+                var message = $"Số lượng \"{productCode}\" trong kho tại thời điểm {endDate.ToString("dd-MM-yyyy")} là " +
+                   $"{total.Format()} không đủ để xuất ({output.Format()})";
+
+                return (InventoryErrorCode.NotEnoughQuantity, message);
+            }
+
+            return GeneralCode.Success;
+
+        }
         private string CreatePackageCode(string inventoryCode, string productCode, DateTime productManufactureDateTimeUtc)
         {
             var packageCode = string.Format("{0}-{1}-{2},", inventoryCode, productCode, productManufactureDateTimeUtc.ToString("YYYYMMdd"));
