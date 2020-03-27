@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Services.Stock.Service.FileResources;
-using VErp.Services.Master.Service.BusinessInfo;
-using VErp.Services.Master.Model.BusinessInfo;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Organization.Service.BusinessInfo;
+using VErp.Services.Organization.Model.BusinessInfo;
 
 namespace VErpApi.Controllers.System
 {

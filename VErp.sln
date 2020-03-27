@@ -81,13 +81,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AccountingDB", "Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj", "{0BD5131A-64B3-45A9-86C3-3753289ACA9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrganizationDB", "Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj", "{449FBFC2-6129-4233-BC16-D1DE7F28ECF7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrganizationDB", "Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj", "{449FBFC2-6129-4233-BC16-D1DE7F28ECF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActivityLogDB", "Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj", "{6635D24B-20DC-49DD-A4B5-7678EA5B8953}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActivityLogDB", "Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj", "{6635D24B-20DC-49DD-A4B5-7678EA5B8953}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManufacturingDB", "Infrastructure\EntityFramework\ManufacturingDB\ManufacturingDB.csproj", "{69B5656E-D4E2-4023-9FA2-1D6EF3068174}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManufacturingDB", "Infrastructure\EntityFramework\ManufacturingDB\ManufacturingDB.csproj", "{69B5656E-D4E2-4023-9FA2-1D6EF3068174}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EF.Generator", "Infrastructure\EntityFramework\EF.Generator\EF.Generator.csproj", "{42A05AFA-D540-43C4-B0C4-C2467C25AD9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EF.Generator", "Infrastructure\EntityFramework\EF.Generator\EF.Generator.csproj", "{42A05AFA-D540-43C4-B0C4-C2467C25AD9C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Organization", "Organization", "{8D214DB9-D1A1-423B-BC69-8B9E41CE554B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Organization.Model", "Services\Organization\Services.Organization.Model\Services.Organization.Model.csproj", "{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Organization.Service", "Services\Organization\Services.Organization.Service\Services.Organization.Service.csproj", "{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -215,6 +221,14 @@ Global
 		{42A05AFA-D540-43C4-B0C4-C2467C25AD9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42A05AFA-D540-43C4-B0C4-C2467C25AD9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42A05AFA-D540-43C4-B0C4-C2467C25AD9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -257,6 +271,9 @@ Global
 		{6635D24B-20DC-49DD-A4B5-7678EA5B8953} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
 		{69B5656E-D4E2-4023-9FA2-1D6EF3068174} = {B9578150-D172-4B6B-9334-EA60F6C9094B}
 		{42A05AFA-D540-43C4-B0C4-C2467C25AD9C} = {A1FD17BB-49D0-4EEF-88A4-DFCC9D3FB5A1}
+		{8D214DB9-D1A1-423B-BC69-8B9E41CE554B} = {BA64BC8E-AA48-43AA-9FB3-F7EC82CC0966}
+		{4345BD3F-5CE1-4FBE-B1C8-BE7D9A0AFF07} = {8D214DB9-D1A1-423B-BC69-8B9E41CE554B}
+		{ECC04E8F-555F-4A78-9A3E-A1CBC4AC952A} = {8D214DB9-D1A1-423B-BC69-8B9E41CE554B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

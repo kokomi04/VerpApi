@@ -13,6 +13,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Activity;
@@ -22,16 +23,19 @@ namespace VErp.Services.Master.Service.Activity.Implement
     public class ActivityService : IActivityService
     {
         private readonly MasterDBContext _masterContext;
+        private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         public ActivityService(MasterDBContext masterContext
+            , OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
             , IAsyncRunnerService asyncRunnerService
             )
         {
+            _organizationContext = organizationContext;
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -109,7 +113,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             var userIdList = ualDataList.Select(q => q.UserId).ToList();
             var userDataList = (
                 from u in _masterContext.User
-                join e in _masterContext.Employee on u.UserId equals e.UserId
+                join e in _organizationContext.Employee on u.UserId equals e.UserId
                 where userIdList.Contains(u.UserId)
                 select new
                 {
@@ -118,7 +122,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     e.FullName,
                     e.AvatarFileId
                 }).ToList()
-                .ToDictionary(u=>u.UserId, u=>u);
+                .ToDictionary(u => u.UserId, u => u);
 
             var result = new List<UserActivityLogOuputModel>(ualDataList.Count);
             foreach (var item in ualDataList)

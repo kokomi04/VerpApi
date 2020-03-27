@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.RolePermission;
@@ -37,6 +38,7 @@ namespace MasterTests
             var f = new LoggerFactory();
 
             var inMem = SetupInMemoryDbContext<MasterDBContext>(f);
+            var inMem1 = SetupInMemoryDbContext<OrganizationDBContext>(f);
 
             var setting = new Mock<IOptions<AppSetting>>();
             var basePath = Assembly.GetExecutingAssembly().CodeBase;
@@ -51,7 +53,7 @@ namespace MasterTests
 
             var currentContext = new ScopeCurrentContextService(1, EnumAction.Add, new RoleInfo(1, null, true, true), new List<int>());
 
-            IUserService user = new UserService(inMem, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object);
+            IUserService user = new UserService(inMem, inMem1, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object);
 
             var result = user.CreateUser(new UserInfoInput()
             {

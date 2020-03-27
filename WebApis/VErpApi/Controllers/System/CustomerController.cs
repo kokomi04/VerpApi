@@ -7,10 +7,10 @@ using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Customer;
 using VErp.Services.Master.Service.Config;
-using VErp.Services.Master.Service.Customer;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Services.Organization.Service.Customer;
+using VErp.Services.Organization.Model.Customer;
 
 namespace VErpApi.Controllers.System
 {

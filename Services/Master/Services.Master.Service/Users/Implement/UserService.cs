@@ -11,19 +11,21 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Model.Department;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
+using VErp.Services.Organization.Model.Department;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {
     public class UserService : IUserService
     {
         private readonly MasterDBContext _masterContext;
+        private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
@@ -32,6 +34,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         public UserService(MasterDBContext masterContext
+            , OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
             , IRoleService roleService
@@ -40,6 +43,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             , IAsyncRunnerService asyncRunnerService
             )
         {
+            _organizationContext = organizationContext;
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -74,7 +78,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                         return r;
                     }
                     // Gắn phòng ban cho nhân sự
-                    var r2 = await UserDepartmentMapping(user.Data, req.DepartmentId, updatedUserId);
+                    var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId, updatedUserId);
                     if (!r2.IsSuccess())
                     {
                         trans.Rollback();
@@ -105,9 +109,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
         }
 
-        private async Task<Enum> UserDepartmentMapping(int userId, int departmentId, int updatedUserId)
+        private async Task<Enum> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
         {
-            var department = await _masterContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
+            var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
                 return DepartmentErrorCode.DepartmentNotFound;
@@ -116,19 +120,19 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 return DepartmentErrorCode.DepartmentInActived;
             }
-            var userDepartmentMapping = _masterContext.UserDepartmentMapping
+            var EmployeeDepartmentMapping = _organizationContext.EmployeeDepartmentMapping
                 .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
-            var current = userDepartmentMapping
+            var current = EmployeeDepartmentMapping
            .Where(d => d.ExpirationDate >= DateTime.UtcNow.Date && d.EffectiveDate <= DateTime.UtcNow.Date)
            .FirstOrDefault();
 
             if (current == null)
             {
                 // kiểm tra xem có bản ghi trong tương lai
-                var future = userDepartmentMapping.Where(d => d.EffectiveDate > DateTime.UtcNow.Date).OrderBy(d => d.EffectiveDate).FirstOrDefault();
+                var future = EmployeeDepartmentMapping.Where(d => d.EffectiveDate > DateTime.UtcNow.Date).OrderBy(d => d.EffectiveDate).FirstOrDefault();
                 DateTime expirationDate = future?.EffectiveDate.AddDays(-1) ?? DateTime.MaxValue.Date;
 
-                _masterContext.UserDepartmentMapping.Add(new UserDepartmentMapping()
+                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
                 {
                     DepartmentId = departmentId,
                     UserId = userId,
@@ -145,7 +149,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 current.UpdatedTime = DateTime.UtcNow;
                 current.UpdatedUserId = updatedUserId;
 
-                _masterContext.UserDepartmentMapping.Add(new UserDepartmentMapping()
+                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
                 {
                     DepartmentId = departmentId,
                     UserId = userId,
@@ -164,7 +168,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var user = await (
                  from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
+                 join em in _organizationContext.Employee on u.UserId equals em.UserId
                  where u.UserId == userId
                  select new UserInfoOutput
                  {
@@ -189,8 +193,8 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
             // Thêm thông tin phòng ban cho nhân viên
             DateTime currentDate = DateTime.UtcNow.Date;
-            var department = _masterContext.UserDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
-                .Join(_masterContext.Department, m => m.DepartmentId, d => d.DepartmentId, (m, d) => d)
+            var department = _organizationContext.EmployeeDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
+                .Join(_organizationContext.Department, m => m.DepartmentId, d => d.DepartmentId, (m, d) => d)
                 .Select(d => new DepartmentModel()
                 {
                     DepartmentId = d.DepartmentId,
@@ -257,7 +261,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var query = (
                  from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
+                 join em in _organizationContext.Employee on u.UserId equals em.UserId
                  select new UserInfoOutput
                  {
                      UserId = u.UserId,
@@ -320,13 +324,13 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     // Lấy thông tin bộ phận hiện tại
                     DateTime currentDate = DateTime.UtcNow.Date;
-                    var departmentId = _masterContext.UserDepartmentMapping
+                    var departmentId = _organizationContext.EmployeeDepartmentMapping
                         .Where(m => m.UserId == userId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
                         .Select(d => d.DepartmentId).FirstOrDefault();
                     // Nếu khác update lại thông tin
                     if (departmentId != req.DepartmentId)
                     {
-                        var r3 = await UserDepartmentMapping(userId, req.DepartmentId, updatedUserId);
+                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
                         if (!r3.IsSuccess())
                         {
                             trans.Rollback();
@@ -425,7 +429,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     var query = (
                          from u in _masterContext.User
                          join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
-                         join em in _masterContext.Employee on u.UserId equals em.UserId
+                         join em in _organizationContext.Employee on u.UserId equals em.UserId
                          where rp.ModuleId == moduleId
                          select new UserInfoOutput
                          {
@@ -470,7 +474,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         #region private
         private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
         {
-            var findByCode = await _masterContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
+            var findByCode = await _organizationContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
             if (findByCode)
             {
                 return UserErrorCode.EmployeeCodeAlreadyExisted;
@@ -533,7 +537,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 AvatarFileId = req.AvatarFileId
             };
 
-            await _masterContext.Employee.AddAsync(employee);
+            await _organizationContext.Employee.AddAsync(employee);
 
             await _masterContext.SaveChangesAsync();
 
@@ -567,7 +571,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<Enum> UpdateEmployee(int userId, UserInfoInput req)
         {
 
-            var employee = await _masterContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
+            var employee = await _organizationContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
             if (employee == null)
             {
                 return UserErrorCode.UserNotFound;
@@ -604,7 +608,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<Enum> DeleteEmployee(int userId)
         {
 
-            var employee = await _masterContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
+            var employee = await _organizationContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
             if (employee == null)
             {
                 return UserErrorCode.UserNotFound;
@@ -621,7 +625,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var user = await (
                  from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
+                 join em in _organizationContext.Employee on u.UserId equals em.UserId
                  where u.UserId == userId
                  select new UserFullDbInfo
                  {

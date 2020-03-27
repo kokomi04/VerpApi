@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Stock.Service.Stock;
-using VErp.Services.Master.Service.Customer;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Services.Master.Service.Activity;
@@ -24,6 +23,7 @@ using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Stock.Service.FileResources.Implement
 {

@@ -6,9 +6,8 @@ using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Customer;
-using VErp.Services.Master.Service.Department;
-using VErp.Services.Master.Model.Department;
+using VErp.Services.Organization.Service.Department;
+using VErp.Services.Organization.Model.Department;
 
 namespace VErpApi.Controllers.System
 {
