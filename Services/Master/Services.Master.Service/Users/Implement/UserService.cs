@@ -535,7 +535,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             await _organizationContext.Employee.AddAsync(employee);
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
@@ -581,7 +581,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.Phone = req.Phone;
             employee.AvatarFileId = req.AvatarFileId;
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
@@ -612,7 +612,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             employee.IsDeleted = true;
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
