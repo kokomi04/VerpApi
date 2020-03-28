@@ -166,31 +166,27 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<ServiceResult<UserInfoOutput>> GetInfo(int userId)
         {
-            var user = await (
-                 from u in _masterContext.User
-                 join em in _organizationContext.Employee on u.UserId equals em.UserId
-                 where u.UserId == userId
-                 select new UserInfoOutput
-                 {
-                     UserId = u.UserId,
-                     UserName = u.UserName,
-                     UserStatusId = (EnumUserStatus)u.UserStatusId,
-                     RoleId = u.RoleId,
-                     EmployeeCode = em.EmployeeCode,
-                     FullName = em.FullName,
-                     Address = em.Address,
-                     Email = em.Email,
-                     GenderId = (EnumGender?)em.GenderId,
-                     Phone = em.Phone,
-                     AvatarFileId = em.AvatarFileId
-                 }
-             )
-             .FirstOrDefaultAsync();
-
-            if (user == null)
+            var ur = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            var em = await _organizationContext.Employee.FirstOrDefaultAsync(e => e.UserId == userId);
+            if (ur == null || em == null)
             {
                 return UserErrorCode.UserNotFound;
             }
+            var user = new UserInfoOutput
+            {
+                UserId = ur.UserId,
+                UserName = ur.UserName,
+                UserStatusId = (EnumUserStatus)ur.UserStatusId,
+                RoleId = ur.RoleId,
+                EmployeeCode = em.EmployeeCode,
+                FullName = em.FullName,
+                Address = em.Address,
+                Email = em.Email,
+                GenderId = (EnumGender?)em.GenderId,
+                Phone = em.Phone,
+                AvatarFileId = em.AvatarFileId
+            };
+
             // Thêm thông tin phòng ban cho nhân viên
             DateTime currentDate = DateTime.UtcNow.Date;
             var department = _organizationContext.EmployeeDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
@@ -259,36 +255,33 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = (
-                 from u in _masterContext.User
-                 join em in _organizationContext.Employee on u.UserId equals em.UserId
-                 select new UserInfoOutput
-                 {
-                     UserId = u.UserId,
-                     UserName = u.UserName,
-                     UserStatusId = (EnumUserStatus)u.UserStatusId,
-                     RoleId = u.RoleId,
-                     EmployeeCode = em.EmployeeCode,
-                     FullName = em.FullName,
-                     Address = em.Address,
-                     Email = em.Email,
-                     GenderId = (EnumGender?)em.GenderId,
-                     Phone = em.Phone
-                 }
-             );
+            var users = _masterContext.User.AsEnumerable();
+            var employees = _organizationContext.Employee.AsEnumerable();
+
+            var query = users.Join(employees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+            {
+                UserId = u.UserId,
+                UserName = u.UserName,
+                UserStatusId = (EnumUserStatus)u.UserStatusId,
+                RoleId = u.RoleId,
+                EmployeeCode = em.EmployeeCode,
+                FullName = em.FullName,
+                Address = em.Address,
+                Email = em.Email,
+                GenderId = (EnumGender?)em.GenderId,
+                Phone = em.Phone
+            });
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = from u in query
-                        where u.UserName.Contains(keyword)
-                        || u.FullName.Contains(keyword)
-                        || u.EmployeeCode.Contains(keyword)
-                        || u.Email.Contains(keyword)
-                        select u;
+                query = query.Where(u => u.UserName.Contains(keyword)
+                || u.FullName.Contains(keyword)
+                || u.EmployeeCode.Contains(keyword)
+                || u.Email.Contains(keyword));
             }
+            var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
 
-            var lst = await query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToListAsync();
-            var total = await query.CountAsync();
+            var total = lst.Count();
 
             return (lst, total);
         }
@@ -353,7 +346,6 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
-
 
 
             if (req.AvatarFileId.HasValue && oldAvatarFileId != req.AvatarFileId)
@@ -426,25 +418,27 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     keyword = (keyword ?? "").Trim();
 
-                    var query = (
-                         from u in _masterContext.User
-                         join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
-                         join em in _organizationContext.Employee on u.UserId equals em.UserId
-                         where rp.ModuleId == moduleId
-                         select new UserInfoOutput
-                         {
-                             UserId = u.UserId,
-                             UserName = u.UserName,
-                             UserStatusId = (EnumUserStatus)u.UserStatusId,
-                             RoleId = u.RoleId,
-                             EmployeeCode = em.EmployeeCode,
-                             FullName = em.FullName,
-                             Address = em.Address,
-                             Email = em.Email,
-                             GenderId = (EnumGender?)em.GenderId,
-                             Phone = em.Phone
-                         }
-                     );
+                    var users = (from u in _masterContext.User
+                                 join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
+                                 where rp.ModuleId == moduleId
+                                 select u).AsEnumerable();
+                    var userIds = users.Select(u => u.UserId);
+                    var employees = _organizationContext.Employee.Where(em => userIds.Contains(em.UserId)).AsEnumerable();
+
+
+                    var query = users.Join(employees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        UserStatusId = (EnumUserStatus)u.UserStatusId,
+                        RoleId = u.RoleId,
+                        EmployeeCode = em.EmployeeCode,
+                        FullName = em.FullName,
+                        Address = em.Address,
+                        Email = em.Email,
+                        GenderId = (EnumGender?)em.GenderId,
+                        Phone = em.Phone
+                    });
 
                     if (!string.IsNullOrWhiteSpace(keyword))
                     {
@@ -455,9 +449,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
+                   
+                    var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
-                    var userList = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
-                    var totalRecords = await query.CountAsync();
+
+                    var totalRecords = query.Count();
 
                     result.List = userList;
                     result.Total = totalRecords;
@@ -625,15 +621,15 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var user = await (
                  from u in _masterContext.User
-                 join em in _organizationContext.Employee on u.UserId equals em.UserId
                  where u.UserId == userId
                  select new UserFullDbInfo
                  {
                      User = u,
-                     Employee = em
                  }
              )
              .FirstOrDefaultAsync();
+
+            user.Employee = _organizationContext.Employee.FirstOrDefault(e => e.UserId == userId);
 
             return user;
         }

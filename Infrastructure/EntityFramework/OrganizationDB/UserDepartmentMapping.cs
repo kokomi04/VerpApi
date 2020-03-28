@@ -5,7 +5,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class EmployeeDepartmentMapping
     {
-        public int UserDepartmentMappingId { get; set; }
+        public int EmployeeDepartmentMappingId { get; set; }
         public int DepartmentId { get; set; }
         public int UserId { get; set; }
         public DateTime EffectiveDate { get; set; }
