@@ -15,7 +15,9 @@ namespace VErp.Services.PurchaseOrder.Service
     {
         Task<ServiceResult<PurchasingRequestOutput>> GetInfo(long purchasingRequestId);
 
-        Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
+        Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
+
+        Task<PageData<PurchasingRequestOutputListByProduct>> GeListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
 
         Task<ServiceResult<long>> Create(PurchasingRequestInput model);
 
