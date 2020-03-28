@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Services.Master.Model.Department;
+using VErp.Services.Organization.Model.Department;
 
 namespace VErp.Services.Master.Model.Users
 {  

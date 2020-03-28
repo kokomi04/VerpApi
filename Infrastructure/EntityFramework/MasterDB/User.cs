@@ -5,11 +5,6 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class User
     {
-        public User()
-        {
-            UserDepartmentMapping = new HashSet<UserDepartmentMapping>();
-        }
-
         public int UserId { get; set; }
         public string UserName { get; set; }
         public Guid UserNameHash { get; set; }
@@ -20,7 +15,5 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public int? RoleId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-
-        public virtual ICollection<UserDepartmentMapping> UserDepartmentMapping { get; set; }
     }
 }

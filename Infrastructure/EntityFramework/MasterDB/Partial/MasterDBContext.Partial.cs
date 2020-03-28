@@ -25,6 +25,4 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         }
     }
-
-
 }

@@ -15,6 +15,7 @@ using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service;
+using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
@@ -72,6 +73,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
             services.AddScopedServices(StockServiceAssembly.Assembly);
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
+            services.AddScopedServices(OrganizationServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)

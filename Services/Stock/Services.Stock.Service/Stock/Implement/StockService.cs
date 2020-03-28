@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -21,6 +22,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     public class StockService : IStockService
     {
         private readonly MasterDBContext _masterDBContext;
+        private readonly OrganizationDBContext _organizationDBContext;
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -29,6 +31,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public StockService(
             MasterDBContext masterDBContext,
+            OrganizationDBContext organizationDBContext,
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<StockService> logger
@@ -36,6 +39,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityLogService activityLogService
             )
         {
+            _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
@@ -1639,7 +1643,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var inventoryIds = inventoryDataList.Select(q => q.InventoryId).ToList();
                 var customerIds = inventoryDataList.Select(q => q.CustomerId).ToList();
 
-                var customerDataList = await _masterDBContext.Customer.Where(q => customerIds.Contains(q.CustomerId)).Select(q => new { q.CustomerId, q.CustomerCode, q.CustomerName }).ToListAsync();
+                var customerDataList = await _organizationDBContext.Customer.Where(q => customerIds.Contains(q.CustomerId)).Select(q => new { q.CustomerId, q.CustomerCode, q.CustomerName }).ToListAsync();
                 var inventoryDetailsData = _stockContext.InventoryDetail.AsNoTracking().Where(q => inventoryIds.Contains(q.InventoryId)).ToList();
                 var productIds = inventoryDetailsData.Select(q => q.ProductId).ToList();
 

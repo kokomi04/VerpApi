@@ -138,6 +138,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigMasterDBContext(AppSetting, ServiceLifetime.Scoped);
             services.ConfigStockDBContext(AppSetting);
             services.ConfigPurchaseOrderContext(AppSetting);
+            services.ConfigOrganizationContext(AppSetting);
         }
         private void ConfigSwagger(IServiceCollection services)
         {

@@ -61,6 +61,7 @@
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
+    <ProjectReference Include="..\..\Services\Organization\Services.Organization.Service\Services.Organization.Service.csproj" />
     <ProjectReference Include="..\..\Services\Stock\Services.Stock.Model\Services.Stock.Model.csproj" />
     <ProjectReference Include="..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
   </ItemGroup>
