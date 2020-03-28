@@ -20,6 +20,7 @@ using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.Stock.Service.Products;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -31,6 +32,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
+        private readonly IProductService _productService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -39,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
+            , IProductService productService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -47,6 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
+            _productService = productService;
         }
 
 
@@ -89,7 +93,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        public async Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = _purchaseOrderDBContext.PurchasingRequest.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -98,6 +102,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .Where(q => q.OrderCode.Contains(keyword)
                     || q.PurchasingRequestCode.Contains(keyword)
                     || q.Content.Contains(keyword));
+            }
+
+            if (productIds != null && productIds.Count > 0)
+            {
+                var purchasingRequestIds = (
+                    from d in _purchaseOrderDBContext.PurchasingRequestDetail
+                    where productIds.Contains(d.ProductId)
+                    select d.PurchasingRequestId
+                 ).Distinct();
+
+                query = query.Where(q => purchasingRequestIds.Contains(q.PurchasingRequestId));
             }
 
             if (purchasingRequestStatusId.HasValue)
@@ -147,6 +162,103 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                });
+            }
+
+            return (result, total);
+
+        }
+
+
+        public async Task<PageData<PurchasingRequestOutputListByProduct>> GeListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        {
+
+            var query = from r in _purchaseOrderDBContext.PurchasingRequest
+                        join d in _purchaseOrderDBContext.PurchasingRequestDetail on r.PurchasingRequestId equals d.PurchasingRequestId
+                        select new
+                        {
+                            r.PurchasingRequestId,
+                            r.PurchasingRequestStatusId,
+                            r.OrderCode,
+                            r.PurchasingRequestCode,
+                            r.Content,
+                            r.PoProcessStatusId,
+                            r.IsApproved,
+                            r.CreatedDatetimeUtc,
+                            r.CreatedByUserId,
+                            r.UpdatedByUserId,
+                            r.UpdatedDatetimeUtc,
+                            r.CensorByUserId,
+                            r.CensorDatetimeUtc,
+                            d.PurchasingRequestDetailId,
+                            d.ProductId,
+                            d.PrimaryQuantity
+                        };
+
+            if (productIds != null && productIds.Count > 0)
+            {
+                query = query.Where(q => productIds.Contains(q.ProductId));
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query
+                    .Where(q => q.OrderCode.Contains(keyword)
+                    || q.PurchasingRequestCode.Contains(keyword)
+                    || q.Content.Contains(keyword));
+            }
+
+            if (purchasingRequestStatusId.HasValue)
+            {
+                query = query.Where(q => q.PurchasingRequestStatusId == (int)purchasingRequestStatusId.Value);
+            }
+
+            if (poProcessStatusId.HasValue)
+            {
+                query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (isApproved.HasValue)
+            {
+                query = query.Where(q => q.IsApproved == isApproved);
+            }
+
+            if (fromDate.HasValue)
+            {
+                var time = fromDate.Value.UnixToDateTime();
+                query = query.Where(q => q.CreatedDatetimeUtc >= time);
+            }
+
+            if (toDate.HasValue)
+            {
+                var time = toDate.Value.UnixToDateTime();
+                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+            }
+
+            var total = await query.CountAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var result = new List<PurchasingRequestOutputListByProduct>();
+            foreach (var info in pagedData)
+            {
+                result.Add(new PurchasingRequestOutputListByProduct()
+                {
+                    PurchasingRequestId = info.PurchasingRequestId,
+                    PurchasingRequestCode = info.PurchasingRequestCode,
+                    OrderCode = info.OrderCode,
+                    PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
+                    IsApproved = info.IsApproved,
+                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
+                    CreatedByUserId = info.CreatedByUserId,
+                    UpdatedByUserId = info.UpdatedByUserId,
+                    CensorByUserId = info.CensorByUserId,
+
+                    CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
+                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+
+                    PurchasingRequestDetailId = info.PurchasingRequestDetailId,
+                    ProductId = info.ProductId,
+                    PrimaryQuantity = info.PrimaryQuantity
                 });
             }
 
