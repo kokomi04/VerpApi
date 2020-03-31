@@ -251,7 +251,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     OrderCode = info.OrderCode,
                     PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                     IsApproved = info.IsApproved,
-                    PoProcessStatusId = (EnumPoProcessStatus)info.PoProcessStatusId,
+                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
                     CensorByUserId = info.CensorByUserId,
@@ -264,7 +264,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     RejectCount = info.RejectCount,
                     PurchasingSuggestDetailId = info.PurchasingSuggestDetailId,
                     CustomerId = info.CustomerId,
-                    PurchasingRequestIds = info.PurchasingRequestIds.JsonDeserialize<IList<long>>(),
+                    PurchasingRequestIds = info.PurchasingRequestIds?.JsonDeserialize<IList<long>>(),
                     ProductId = info.ProductId,
                     PrimaryQuantity = info.PrimaryQuantity,
                     PrimaryUnitPrice = info.PrimaryUnitPrice,
@@ -754,6 +754,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var time = toDate.Value.UnixToDateTime();
                 query = from q in query
                         where q.CreatedDatetimeUtc <= time
+                        select q;
+            }
+
+            if(productIds!=null&& productIds.Count > 0)
+            {
+                query = from q in query
+                        where productIds.Contains(q.ProductId)
                         select q;
             }
 
