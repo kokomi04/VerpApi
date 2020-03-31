@@ -28,9 +28,13 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryFieldTitleAlreadyExisted = 9,
         [Description("Trường tham chiếu không tồn tại")]
         SourceCategoryFieldNotFound = 10,
-        [Description("Danh mục tham chiếu không phải là module")]
-        SourceCategoryNotModule = 11,
         [Description("Đang có trường dữ liệu tham chiếu tới")]
-        DestCategoryFieldAlreadyExisted = 12,
+        DestCategoryFieldAlreadyExisted = 11,
+        [Description("Trường dữ liệu không tồn tại")]
+        CategoryFieldNotFound = 12,
+        [Description("Kiểu dữ liệu không tồn tại")]
+        DataTypeNotFound = 13,
+        [Description("Kiểu nhập liệu không tồn tại")]
+        FormTypeNotFound = 14,
     }
 }

@@ -69,7 +69,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute]int categoryId, [FromQuery]string keyword, [FromRoute]int page, [FromRoute]int size, [FromRoute]bool? isFull)
+        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute]int categoryId, [FromQuery]string keyword, [FromQuery]int page, [FromQuery]int size, [FromQuery]bool? isFull)
         {
             var updatedUserId = UserId;
             return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
@@ -83,5 +83,20 @@ namespace VErpApi.Controllers.System
             return await _categoryFieldService.AddCategoryField(updatedUserId, categoryField);
         }
 
+        [HttpPut]
+        [Route("{categoryId}/categoryfields/{categoryFieldId}")]
+        public async Task<ServiceResult> UpdateCategoryField([FromRoute]int categoryFieldId, [FromBody] CategoryFieldInputModel categoryField)
+        {
+            var updatedUserId = UserId;
+            return await _categoryFieldService.UpdateCategoryField(updatedUserId, categoryFieldId, categoryField);
+        }
+
+        [HttpDelete]
+        [Route("{categoryId}/categoryfields/{categoryFieldId}")]
+        public async Task<ServiceResult> DeleteCategoryField([FromRoute]int categoryFieldId)
+        {
+            var updatedUserId = UserId;
+            return await _categoryFieldService.DeleteCategoryField(updatedUserId, categoryFieldId);
+        }
     }
 }

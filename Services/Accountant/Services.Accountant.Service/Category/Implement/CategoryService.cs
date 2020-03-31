@@ -153,7 +153,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (category.Code != data.Code || category.Title != data.Title)
             {
                 var existedCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.Code == data.Code || c.Title == c.Title));
+                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.Code == data.Code || c.Title == data.Title));
                 if (existedCategory != null)
                 {
                     if (string.Compare(existedCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
@@ -189,7 +189,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
-                    category = _mapper.Map<CategoryEntity>(data);
+                    category.Code = data.Code;
+                    category.Title = data.Title;
+                    category.IsModule = data.IsModule;
+                    category.IsReadonly = data.IsReadonly;
                     category.UpdatedUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                     foreach (var item in deleteSubCategories)

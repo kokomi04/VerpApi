@@ -73,11 +73,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data)
         {
             // Check category
-            if(!_accountingContext.Category.Any(c => c.CategoryId == data.CategoryId))
+            if (!_accountingContext.Category.Any(c => c.CategoryId == data.CategoryId))
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-
             var existedCategoryField = await _accountingContext.CategoryField
                 .FirstOrDefaultAsync(f => f.CategoryId == data.CategoryId && f.Name == data.Name || f.Title == f.Title);
             if (existedCategoryField != null)
@@ -89,7 +88,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                 return CategoryErrorCode.CategoryFieldTitleAlreadyExisted;
             }
-
             if (data.ReferenceCategoryFieldId.HasValue)
             {
                 var sourceCategoryField = _accountingContext.CategoryField.Include(f => f.Category).FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId);
@@ -97,10 +95,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.SourceCategoryFieldNotFound;
                 }
-                if (!sourceCategoryField.Category.IsModule)
-                {
-                    return CategoryErrorCode.SourceCategoryNotModule;
-                }
+            }
+            if(!_accountingContext.DataType.Any(d => d.DataTypeId == data.DataTypeId))
+            {
+                return CategoryErrorCode.DataTypeNotFound;
+            }
+
+            if (!_accountingContext.FormType.Any(f => f.FormTypeId == data.FormTypeId))
+            {
+                return CategoryErrorCode.FormTypeNotFound;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
@@ -110,10 +113,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var categoryField = _mapper.Map<CategoryField>(data);
 
                     categoryField.UpdatedUserId = updatedUserId;
-                   
+
                     await _accountingContext.CategoryField.AddAsync(categoryField);
                     await _accountingContext.SaveChangesAsync();
-                   
+
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Thêm trường danh mục {categoryField.Title}", data.JsonSerialize());
                     return categoryField.CategoryFieldId;
@@ -127,9 +130,114 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
+        public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryFieldId, CategoryFieldInputModel data)
+        {
+            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
+            if (categoryField == null)
+            {
+                return CategoryErrorCode.CategoryFieldNotFound;
+            }
+            if (categoryField.Name != data.Name || categoryField.Title != data.Title || categoryField.CategoryId != data.CategoryId)
+            {
+                var existedCategoryField = await _accountingContext.CategoryField
+                    .FirstOrDefaultAsync(f => f.CategoryFieldId != categoryFieldId && f.CategoryId == data.CategoryId && (f.Name == data.Name || f.Title == f.Title));
+                if (existedCategoryField != null)
+                {
+                    if (string.Compare(existedCategoryField.Name, data.Name, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
+                    }
+
+                    return CategoryErrorCode.CategoryFieldTitleAlreadyExisted;
+                }
+            }
+
+            if (categoryField.ReferenceCategoryFieldId != data.ReferenceCategoryFieldId && data.ReferenceCategoryFieldId.HasValue)
+            {
+                var sourceCategoryField = _accountingContext.CategoryField.Include(f => f.Category).FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId);
+                if (sourceCategoryField == null)
+                {
+                    return CategoryErrorCode.SourceCategoryFieldNotFound;
+                }
+            }
+
+            if (categoryField.DataTypeId != data.DataTypeId && !_accountingContext.DataType.Any(d => d.DataTypeId == data.DataTypeId))
+            {
+                return CategoryErrorCode.DataTypeNotFound;
+            }
+
+            if (categoryField.FormTypeId != data.FormTypeId && !_accountingContext.FormType.Any(f => f.FormTypeId == data.FormTypeId))
+            {
+                return CategoryErrorCode.FormTypeNotFound;
+            }
+
+            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    categoryField.Name = data.Name;
+                    categoryField.Title = data.Title;
+                    categoryField.Sequence = data.Sequence;
+                    categoryField.DataSize = data.DataSize;
+                    categoryField.DataTypeId = data.DataTypeId;
+                    categoryField.FormTypeId = data.FormTypeId;
+                    categoryField.IsHidden = data.IsHidden;
+                    categoryField.IsRequired = data.IsRequired;
+                    categoryField.IsUnique = data.IsUnique;
+                    categoryField.AutoIncrement = data.AutoIncrement;
+                    data.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
+                    categoryField.UpdatedUserId = updatedUserId;
+                    await _accountingContext.SaveChangesAsync();
+                    trans.Commit();
+                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Update");
+                    return GeneralCode.InternalError;
+                }
+            }
+        }
+
+        public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryFieldId)
+        {
+            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
+            if (categoryField == null)
+            {
+                return CategoryErrorCode.CategoryFieldNotFound;
+            }
+
+            // Check xem có trường dữ liệu nào đang tham chiếu tới
+            if(_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == categoryFieldId))
+            {
+                return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
+            }
+
+            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    categoryField.IsDeleted = true;
+                    categoryField.UpdatedUserId = updatedUserId;
+                    await _accountingContext.SaveChangesAsync();
+                    trans.Commit();
+                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
+                    return GeneralCode.Success;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Delete");
+                    return GeneralCode.InternalError;
+                }
+            }
+        }
+
         private int[] GetAllCategoryIds(int categoryId)
         {
-            List<int> ids = new List<int>(categoryId);
+            List<int> ids = new List<int> { categoryId };
             foreach (int id in _accountingContext.Category.Where(r => r.ParentId == categoryId).Select(r => r.CategoryId))
             {
                 ids.AddRange(GetAllCategoryIds(id));
