@@ -254,9 +254,17 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
+            IQueryable<Employee> employees = _organizationContext.Employee;
+            IQueryable<User> users = _masterContext.User;
 
-            var users = _masterContext.User.AsEnumerable();
-            var employees = _organizationContext.Employee.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var userIds = employees.Where(em => em.FullName.Contains(keyword)
+                    || em.EmployeeCode.Contains(keyword)
+                    || em.Email.Contains(keyword)).Select(em => em.UserId).AsEnumerable();
+
+                users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
+            }
 
             var query = users.Join(employees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
             {
@@ -279,6 +287,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 || u.EmployeeCode.Contains(keyword)
                 || u.Email.Contains(keyword));
             }
+
             var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
 
             var total = lst.Count();
@@ -449,7 +458,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
-                   
+
                     var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
 

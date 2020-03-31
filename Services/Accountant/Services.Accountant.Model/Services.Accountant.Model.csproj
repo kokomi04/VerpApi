@@ -6,4 +6,8 @@
     <AssemblyName>VErp.Services.Accountant.Model</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
+  </ItemGroup>
+
 </Project>
