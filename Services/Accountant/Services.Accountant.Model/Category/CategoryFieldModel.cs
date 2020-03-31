@@ -3,7 +3,7 @@
 namespace VErp.Services.Accountant.Model.Category
 
 {
-    public abstract class CategoryFieldModel
+    public class CategoryFieldModel
     {
         public int CategoryFieldId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
@@ -15,20 +15,17 @@ namespace VErp.Services.Accountant.Model.Category
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
         public string Name { get; set; }
         public int Sequence { get; set; }
+        public int DataTypeId { get; set; }
         public int DataSize { get; set; }
+        public int FormTypeId { get; set; }
         public bool AutoIncrement { get; set; }
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
+
     }
 
-    public class CategoryFieldInputModel : CategoryFieldModel
-    {
-        public int DataTypeId { get; set; }
-        public int FormTypeId { get; set; }
-    }
-
-    public class CategoryFieldOutputModel : CategoryFieldModel
+    public class CategoryFieldOutputModel: CategoryFieldModel
     {
         public DataTypeModel DataType { get; set; }
         public FormTypeModel FormType { get; set; }

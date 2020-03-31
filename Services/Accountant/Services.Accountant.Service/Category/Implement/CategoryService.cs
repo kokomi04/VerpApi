@@ -69,7 +69,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             query = query.OrderBy(c => c.Title);
-
+            var total = await query.CountAsync();
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
@@ -81,7 +81,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 CategoryModel categoryModel = _mapper.Map<CategoryModel>(item);
                 lst.Add(categoryModel);
             }
-            var total = lst.Count;
+           
             return (lst, total);
         }
 

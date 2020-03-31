@@ -14,8 +14,8 @@ namespace VErpApi.Controllers.System
             CreateMap<CategoryEntity, CategoryFullModel>();
             CreateMap<DataType, DataTypeModel>().ReverseMap();
             CreateMap<FormType, FormTypeModel>().ReverseMap();
-            CreateMap<CategoryField, CategoryFieldOutputModel>();
-            CreateMap<CategoryFieldInputModel, CategoryField>();
+            CreateMap<CategoryField, CategoryFieldModel>().ReverseMap();
+            CreateMap<CategoryValueInputModel, CategoryValue>();
         }
     }
 }

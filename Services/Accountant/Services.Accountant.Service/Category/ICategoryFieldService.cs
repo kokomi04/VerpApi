@@ -7,12 +7,8 @@ namespace VErp.Services.Accountant.Service.Category
 {
     public interface ICategoryFieldService
     {
-        Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull);
+        Task<PageData<CategoryFieldModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool isFull);
 
-        Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data);
-
-        Task<Enum> UpdateCategoryField(int updatedUserId, int categoryFieldId, CategoryFieldInputModel data);
-
-        Task<Enum> DeleteCategoryField(int updatedUserId, int categoryFieldId);
+        Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldModel data);
     }
 }

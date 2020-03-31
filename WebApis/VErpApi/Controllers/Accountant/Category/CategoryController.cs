@@ -22,6 +22,9 @@ namespace VErpApi.Controllers.System
         private readonly ICategoryFieldService _categoryFieldService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
+            , IObjectGenCodeService objectGenCodeService
+            , IFileService fileService
+            , IFileProcessDataService fileProcessDataService
             )
         {
             _categoryService = categoryService;
@@ -31,7 +34,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isModule, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword,[FromQuery] bool? isModule, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetCategories(keyword, isModule, page, size);
         }
@@ -67,36 +70,13 @@ namespace VErpApi.Controllers.System
             return await _categoryService.DeleteCategory(categoryId, updatedUserId);
         }
 
-        [HttpGet]
-        [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute]int categoryId, [FromQuery]string keyword, [FromQuery]int page, [FromQuery]int size, [FromQuery]bool? isFull)
-        {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
-        }
-
         [HttpPost]
-        [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<int>> AddCategoryField([FromBody] CategoryFieldInputModel categoryField)
+        [Route("{categoryId}/categoryfield")]
+        public async Task<ServiceResult<int>> AddCategoryField([FromBody] CategoryFieldModel categoryField)
         {
             var updatedUserId = UserId;
             return await _categoryFieldService.AddCategoryField(updatedUserId, categoryField);
         }
 
-        [HttpPut]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult> UpdateCategoryField([FromRoute]int categoryFieldId, [FromBody] CategoryFieldInputModel categoryField)
-        {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.UpdateCategoryField(updatedUserId, categoryFieldId, categoryField);
-        }
-
-        [HttpDelete]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult> DeleteCategoryField([FromRoute]int categoryFieldId)
-        {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.DeleteCategoryField(updatedUserId, categoryFieldId);
-        }
     }
 }
