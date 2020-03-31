@@ -102,7 +102,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        public async Task<PageData<PurchasingSuggestOutputList>> GetList(string keyword, EnumPurchasingSuggestStatus? PurchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchasingSuggestOutputList>> GetList(string keyword, EnumPurchasingSuggestStatus? purchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -113,9 +113,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     || q.Content.Contains(keyword));
             }
 
-            if (PurchasingSuggestStatusId.HasValue)
+            if (purchasingSuggestStatusId.HasValue)
             {
-                query = query.Where(q => q.PurchasingSuggestStatusId == (int)PurchasingSuggestStatusId.Value);
+                query = query.Where(q => q.PurchasingSuggestStatusId == (int)purchasingSuggestStatusId.Value);
             }
 
             if (poProcessStatusId.HasValue)
@@ -167,6 +167,116 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
+        public async Task<PageData<PurchasingSuggestOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchasingSuggestStatus? purchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        {
+
+            var query = from s in _purchaseOrderDBContext.PurchasingSuggest
+                        join d in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals d.PurchasingSuggestId
+                        select new
+                        {
+                            s.PurchasingSuggestId,
+                            s.PurchasingSuggestStatusId,
+                            s.OrderCode,
+                            s.PurchasingSuggestCode,
+                            s.Content,
+                            s.PoProcessStatusId,
+                            s.IsApproved,
+                            s.CreatedDatetimeUtc,
+                            s.CreatedByUserId,
+                            s.UpdatedByUserId,
+                            s.UpdatedDatetimeUtc,
+                            s.CensorByUserId,
+                            s.CensorDatetimeUtc,
+                            s.RejectCount,
+
+                            d.PurchasingSuggestDetailId,
+                            d.CustomerId,
+                            d.ProductId,
+                            d.PrimaryQuantity,
+                            d.PurchasingRequestIds,
+                            d.PrimaryUnitPrice,
+                            d.TaxInPercent,
+                            d.TaxInMoney
+                        };
+
+            if (productIds != null && productIds.Count > 0)
+            {
+                query = query.Where(q => productIds.Contains(q.ProductId));
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query
+                    .Where(q => q.OrderCode.Contains(keyword)
+                    || q.PurchasingSuggestCode.Contains(keyword)
+                    || q.Content.Contains(keyword));
+            }
+
+            if (purchasingSuggestStatusId.HasValue)
+            {
+                query = query.Where(q => q.PurchasingSuggestStatusId == (int)purchasingSuggestStatusId.Value);
+            }
+
+            if (poProcessStatusId.HasValue)
+            {
+                query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (isApproved.HasValue)
+            {
+                query = query.Where(q => q.IsApproved == isApproved);
+            }
+
+            if (fromDate.HasValue)
+            {
+                var time = fromDate.Value.UnixToDateTime();
+                query = query.Where(q => q.CreatedDatetimeUtc >= time);
+            }
+
+            if (toDate.HasValue)
+            {
+                var time = toDate.Value.UnixToDateTime();
+                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+            }
+
+            var total = await query.CountAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var result = new List<PurchasingSuggestOutputListByProduct>();
+            foreach (var info in pagedData)
+            {
+                result.Add(new PurchasingSuggestOutputListByProduct()
+                {
+                    PurchasingSuggestId = info.PurchasingSuggestId,
+                    PurchasingSuggestCode = info.PurchasingSuggestCode,
+                    OrderCode = info.OrderCode,
+                    PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
+                    IsApproved = info.IsApproved,
+                    PoProcessStatusId = (EnumPoProcessStatus)info.PoProcessStatusId,
+                    CreatedByUserId = info.CreatedByUserId,
+                    UpdatedByUserId = info.UpdatedByUserId,
+                    CensorByUserId = info.CensorByUserId,
+
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+
+                    Content = info.Content,
+                    RejectCount = info.RejectCount,
+                    PurchasingSuggestDetailId = info.PurchasingSuggestDetailId,
+                    CustomerId = info.CustomerId,
+                    PurchasingRequestIds = info.PurchasingRequestIds.JsonDeserialize<IList<long>>(),
+                    ProductId = info.ProductId,
+                    PrimaryQuantity = info.PrimaryQuantity,
+                    PrimaryUnitPrice = info.PrimaryUnitPrice,
+                    TaxInPercent = info.TaxInPercent,
+                    TaxInMoney = info.TaxInMoney,
+                });
+            }
+
+            return (result, total);
+
+        }
+        
         public async Task<ServiceResult<long>> Create(PurchasingSuggestInput model)
         {
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
@@ -330,7 +440,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
         public async Task<Enum> Delete(long purchasingSuggestId)
-        {           
+        {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
@@ -570,7 +680,129 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (lst, total);
 
         }
-       
+
+
+        public async Task<PageData<PoAssignmentOutputListByProduct>> PoAssignmentListByProduct(string keyword, IList<int> productIds, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        {
+            var query = (
+                from s in _purchaseOrderDBContext.PurchasingSuggest
+                join a in _purchaseOrderDBContext.PoAssignment on s.PurchasingSuggestId equals a.PurchasingSuggestId
+                join ad in _purchaseOrderDBContext.PoAssignmentDetail on a.PoAssignmentId equals ad.PoAssignmentId
+                join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on ad.PurchasingSuggestDetailId equals sd.PurchasingSuggestDetailId
+                select new
+                {
+                    a.PoAssignmentId,
+                    a.PurchasingSuggestId,
+                    s.PurchasingSuggestCode,
+                    s.OrderCode,
+                    a.PoAssignmentCode,
+                    a.AssigneeUserId,
+                    a.PoAssignmentStatusId,
+                    a.IsConfirmed,
+                    a.CreatedByUserId,
+                    a.CreatedDatetimeUtc,
+                    a.Content,
+                    ad.PoAssignmentDetailId,
+                    ad.PurchasingSuggestDetailId,
+                    sd.ProductId,
+                    sd.CustomerId,
+                    ad.PrimaryQuantity,
+                    ad.PrimaryUnitPrice,
+                    ad.TaxInPercent,
+                    ad.TaxInMoney
+                });
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.PurchasingSuggestCode.Contains(keyword)
+                        || q.PoAssignmentCode.Contains(keyword)
+                        || q.OrderCode.Contains(keyword)
+                        select q;
+            }
+            if (poAssignmentStatusId.HasValue)
+            {
+                query = from q in query
+                        where q.PoAssignmentStatusId == (int)poAssignmentStatusId.Value
+                        select q;
+            }
+
+            if (assigneeUserId.HasValue)
+            {
+                query = from q in query
+                        where q.AssigneeUserId == assigneeUserId.Value
+                        select q;
+            }
+
+            if (purchasingSuggestId.HasValue)
+            {
+                query = from q in query
+                        where q.PurchasingSuggestId == purchasingSuggestId.Value
+                        select q;
+            }
+
+            if (fromDate.HasValue)
+            {
+                var time = fromDate.Value.UnixToDateTime();
+                query = from q in query
+                        where q.CreatedDatetimeUtc >= time
+                        select q;
+            }
+
+            if (toDate.HasValue)
+            {
+                var time = toDate.Value.UnixToDateTime();
+                query = from q in query
+                        where q.CreatedDatetimeUtc <= time
+                        select q;
+            }
+
+            var total = await query.CountAsync();
+
+            query = query.SortByFieldName(sortBy, asc);
+            var pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+
+            var customerIds = pagedData.Select(d => d.CustomerId).ToList();
+            var pagedProductIds = pagedData.Select(d => d.ProductId).ToList();
+
+            var providerProductInfos = await (
+              from p in _purchaseOrderDBContext.ProviderProductInfo.AsNoTracking()
+              where customerIds.Contains(p.CustomerId) && pagedProductIds.Contains(p.ProductId)
+              select p
+              ).ToListAsync();
+
+            var lst = pagedData.Select(a => new PoAssignmentOutputListByProduct
+            {
+                PoAssignmentId = a.PoAssignmentId,
+                PurchasingSuggestId = a.PurchasingSuggestId,
+                PurchasingSuggestCode = a.PurchasingSuggestCode,
+                OrderCode = a.OrderCode,
+                PoAssignmentCode = a.PoAssignmentCode,
+                CreatedByUserId = a.CreatedByUserId,
+                AssigneeUserId = a.AssigneeUserId,
+                IsConfirmed = a.IsConfirmed,
+                CreatedDatetimeUtc = a.CreatedDatetimeUtc.GetUnix(),
+                Content = a.Content,
+                PoAssignmentStatusId = (EnumPoAssignmentStatus)a.PoAssignmentStatusId,
+
+                PoAssignmentDetailId = a.PoAssignmentDetailId,
+                PurchasingSuggestDetailId = a.PurchasingSuggestDetailId,
+                PrimaryQuantity = a.PrimaryQuantity,
+                PrimaryUnitPrice = a.PrimaryUnitPrice,
+                TaxInPercent = a.TaxInPercent,
+                TaxInMoney = a.TaxInMoney,
+
+
+                ProductId = a.ProductId,
+                ProviderProductName = providerProductInfos.FirstOrDefault(p => p.CustomerId == a.CustomerId && p.ProductId == a.ProductId)?.ProviderProductName,
+                CustomerId = a.CustomerId,
+
+            }).ToList();
+
+            return (lst, total);
+
+        }
+
         public async Task<ServiceResult<IList<PoAssignmentOutput>>> PoAssignmentListBySuggest(long purchasingSuggestId)
         {
 

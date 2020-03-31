@@ -170,7 +170,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<PageData<PurchasingRequestOutputListByProduct>> GeListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchasingRequestOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
 
             var query = from r in _purchaseOrderDBContext.PurchasingRequest

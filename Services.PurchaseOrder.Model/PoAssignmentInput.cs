@@ -11,7 +11,22 @@ namespace VErp.Services.PurchaseOrder.Model
         public IList<PoAssimentDetailModel> Details { get; set; }
     }
 
-    public class PoAssimentDetailModel
+    public interface IPoAssimentDetailModel
+    {
+        long? PoAssignmentDetailId { get; set; }
+        long PurchasingSuggestDetailId { get; set; }
+        decimal PrimaryQuantity { get; set; }
+        decimal? PrimaryUnitPrice { get; set; }
+        decimal? TaxInPercent { get; set; }
+        decimal? TaxInMoney { get; set; }
+
+        //output
+        int? ProductId { get; set; }
+        string ProviderProductName { get; set; }
+        int? CustomerId { get; set; }
+    }
+
+    public class PoAssimentDetailModel: IPoAssimentDetailModel
     {
         public long? PoAssignmentDetailId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }               
