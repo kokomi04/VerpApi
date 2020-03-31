@@ -48,6 +48,28 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
+        /// Lấy danh sách phiếu đề nghị mua hàng chi tiết theo sản phẩm
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="productIds"></param>
+        /// <param name="purchasingSuggestStatusId"></param>
+        /// <param name="poProcessStatusId"></param>
+        /// <param name="isApproved"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetListByProduct")]
+        public async Task<ServiceResult<PageData<PurchasingSuggestOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _purchasingSuggestService.GetListByProduct(keyword, productIds, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Lấy thông tin phiếu đề nghị mua hàng
         /// </summary>
         /// <param name="purchasingSuggestId">Id phiếu</param>
@@ -152,7 +174,6 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// </summary>
         /// <param name="keyword"></param>
         /// <param name="poAssignmentStatusId"></param>
-        /// <param name="assigneeUserId"></param>
         /// <param name="purchasingSuggestId"></param>
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
@@ -167,6 +188,29 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByUser(keyword, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
+                .ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Lấy danh sách phân công mua hàng được giao của user đang login chi tiết theo sản phẩm
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="productIds"></param>
+        /// <param name="poAssignmentStatusId"></param>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("CurrentUser/AssignmentsByProduct")]
+        public async Task<ServiceResult<PageData<PoAssignmentOutputListByProduct>>> AssignmentsByCurrentUserByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        {
+            return await _purchasingSuggestService
+                .PoAssignmentListByProduct(keyword, productIds, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(false);
         }
 
@@ -247,7 +291,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService.PoAssignmentSendToUser(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
         }
-        
+
 
         /// <summary>
         /// Xóa phân công mua hàng
