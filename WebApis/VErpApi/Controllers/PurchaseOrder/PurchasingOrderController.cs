@@ -51,6 +51,31 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
+
+        /// <summary>
+        /// Lấy danh sách đơn đặt hàng chi tiết theo sản phẩm
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="productIds"></param>
+        /// <param name="purchaseOrderStatusId"></param>
+        /// <param name="poProcessStatusId"></param>
+        /// <param name="isApproved"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetListByProduct")]
+        public async Task<ServiceResult<PageData<PurchaseOrderOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _purchaseOrderService
+                .GetListByProduct(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Lấy thông tin đặt hàng
         /// </summary>

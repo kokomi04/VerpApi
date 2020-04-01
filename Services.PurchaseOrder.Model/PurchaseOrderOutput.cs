@@ -29,13 +29,22 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
     }
 
-    public class PurchaseOrderOutput: PurchaseOrderOutputList
+    public class PurchaseOrderOutput : PurchaseOrderOutputList
     {
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
     }
 
-    public class PurchaseOrderOutputDetail: PurchaseOrderInputDetail
+    public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
     {
+
+    }
+
+    public class PurchaseOrderOutputListByProduct : PurchaseOrderOutputList, IPurchaseOrderInputDetail
+    {
+        public long? PurchaseOrderDetailId { get; set; }
+        public long? PoAssignmentDetailId { get; set; }
+        public string ProviderProductName { get; set; }
+
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }

@@ -123,6 +123,131 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (result, total);
         }
 
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        {
+            var query = from po in _purchaseOrderDBContext.PurchaseOrder
+                        join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
+                        select new
+                        {
+                            po.PurchaseOrderId,
+                            po.PurchaseOrderCode,
+                            po.Date,
+                            po.CustomerId,
+                            po.DeliveryDestination,
+                            po.Content,
+                            po.AdditionNote,
+                            po.DeliveryFee,
+                            po.OtherFee,
+                            po.TotalMoney,
+                            po.PurchaseOrderStatusId,
+                            po.IsApproved,
+                            po.PoProcessStatusId,
+                            po.CreatedByUserId,
+                            po.UpdatedByUserId,
+                            po.CensorByUserId,
+
+                            po.CensorDatetimeUtc,
+                            po.CreatedDatetimeUtc,
+                            po.UpdatedDatetimeUtc,
+
+                            //detail
+                            pod.PurchaseOrderDetailId,
+                            pod.PoAssignmentDetailId,
+                            pod.ProviderProductName,
+
+                            pod.ProductId,
+                            pod.PrimaryQuantity,
+                            pod.PrimaryUnitPrice,
+                            pod.TaxInPercent,
+                            pod.TaxInMoney,
+                        };
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query
+                    .Where(q => q.PurchaseOrderCode.Contains(keyword)
+                    || q.Content.Contains(keyword)
+                    || q.AdditionNote.Contains(keyword));
+            }
+
+            if (purchaseOrderStatusId.HasValue)
+            {
+                query = query.Where(q => q.PurchaseOrderStatusId == (int)purchaseOrderStatusId.Value);
+            }
+
+            if (poProcessStatusId.HasValue)
+            {
+                query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (isApproved.HasValue)
+            {
+                query = query.Where(q => q.IsApproved == isApproved);
+            }
+
+            if (fromDate.HasValue)
+            {
+                var time = fromDate.Value.UnixToDateTime();
+                query = query.Where(q => q.Date >= time);
+            }
+
+            if (toDate.HasValue)
+            {
+                var time = toDate.Value.UnixToDateTime();
+                query = query.Where(q => q.Date <= time);
+            }
+
+            if (productIds != null && productIds.Count > 0)
+            {
+                query = query.Where(q => productIds.Contains(q.ProductId));
+            }
+
+            var total = await query.CountAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+           
+            var result = new List<PurchaseOrderOutputListByProduct>();
+            foreach (var info in pagedData)
+            {
+                result.Add(new PurchaseOrderOutputListByProduct()
+                {
+                    PurchaseOrderId = info.PurchaseOrderId,
+                    PurchaseOrderCode = info.PurchaseOrderCode,
+                    Date = info.Date.GetUnix(),
+                    CustomerId = info.CustomerId,
+                    DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
+                    Content = info.Content,
+                    AdditionNote = info.AdditionNote,
+                    DeliveryFee = info.DeliveryFee,
+                    OtherFee = info.OtherFee,
+                    TotalMoney = info.TotalMoney,
+                    PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
+                    IsApproved = info.IsApproved,
+                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
+                    CreatedByUserId = info.CreatedByUserId,
+                    UpdatedByUserId = info.UpdatedByUserId,
+                    CensorByUserId = info.CensorByUserId,
+
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+
+
+                    //detail
+                    PurchaseOrderDetailId = info.PurchaseOrderDetailId,
+                    PoAssignmentDetailId = info.PoAssignmentDetailId,
+                    ProviderProductName = info.ProviderProductName,
+
+                    ProductId = info.ProductId,
+                    PrimaryQuantity = info.PrimaryQuantity,
+                    PrimaryUnitPrice = info.PrimaryUnitPrice,
+                    TaxInPercent = info.TaxInPercent,
+                    TaxInMoney = info.TaxInMoney,
+                });
+            }
+
+            return (result, total);
+        }
+
 
         public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo(long purchaseOrderId)
         {

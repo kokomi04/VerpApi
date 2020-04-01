@@ -22,7 +22,20 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal TotalMoney { get; set; }
     }
 
-    public class PurchaseOrderInputDetail
+    public interface IPurchaseOrderInputDetail
+    {
+        long? PurchaseOrderDetailId { get; set; }
+        long? PoAssignmentDetailId { get; set; }
+        string ProviderProductName { get; set; }
+
+        int ProductId { get; set; }
+        decimal PrimaryQuantity { get; set; }
+        decimal? PrimaryUnitPrice { get; set; }
+        decimal? TaxInPercent { get; set; }
+        decimal? TaxInMoney { get; set; }
+    }
+
+    public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
     {
         public long? PurchaseOrderDetailId { get; set; }
         public long? PoAssignmentDetailId { get; set; }
