@@ -180,6 +180,13 @@ namespace VErp.Infrastructure.ApiCore
                     Description = "The system Service HTTP API"
                 });
 
+                options.SwaggerDoc("accountant", new OpenApiInfo
+                {
+                    Title = "VERP Accountant HTTP API",
+                    Version = "v1",
+                    Description = "The Accountant Service HTTP API"
+                });
+
                 options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.OAuth2,
@@ -287,6 +294,8 @@ namespace VErp.Infrastructure.ApiCore
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
 
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
+
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
 
                    c.OAuthClientId("web");
                    c.OAuthClientSecret("secretWeb");

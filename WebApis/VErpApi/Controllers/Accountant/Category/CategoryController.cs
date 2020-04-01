@@ -13,7 +13,7 @@ using VErp.Services.Accountant.Service.Category;
 using VErp.Services.Accountant.Model.Category;
 using System.Collections.Generic;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.Accountant
 {
     [Route("api/categories")]
 
