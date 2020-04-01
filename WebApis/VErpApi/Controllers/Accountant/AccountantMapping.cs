@@ -4,7 +4,7 @@ using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Services.Accountant.Model.Category;
 using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.Accountant
 {
     public class AccountantMapping : Profile
     {
