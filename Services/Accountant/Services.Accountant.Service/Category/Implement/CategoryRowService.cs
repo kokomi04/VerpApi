@@ -52,8 +52,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
-            var requiredFields = categoryFields.Where(f => f.IsRequired);
-            var uniqueFields = categoryFields.Where(f => f.IsUnique);
+            var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
+            var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
+            var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.ReferenceCategoryFieldId.HasValue);
 
             // Check field required
             if (requiredFields.Count() > 0 && requiredFields.Any(rf => !data.Values.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrWhiteSpace(v.Value))))
@@ -61,7 +62,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.RequiredFieldIsEmpty;
             }
             // Check unique
-            foreach(var item in data.Values.Where(v => uniqueFields.Any(f => f.CategoryFieldId == v.CategoryFieldId)))
+            foreach (var item in data.Values.Where(v => uniqueFields.Any(f => f.CategoryFieldId == v.CategoryFieldId)))
             {
                 bool isExisted = _accountingContext.CategoryValue.Any(v => v.CategoryFieldId == item.CategoryFieldId && v.Value == item.Value);
                 if (isExisted)
@@ -69,6 +70,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     return CategoryErrorCode.UniqueValueAlreadyExisted;
                 }
             }
+            // Check refer
+            foreach (var field in selectFields)
+            {
+                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                if (valueItem != null)
+                {
+                    bool isExisted = _accountingContext.CategoryValue
+                        .Any(v => v.CategoryValueId == valueItem.CategoryValueId
+                        && v.CategoryFieldId == field.ReferenceCategoryFieldId
+                        && v.Value == valueItem.Value);
+                    if (!isExisted)
+                    {
+                        return CategoryErrorCode.ReferValueNotFound;
+                    }
+                }
+            }
+
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
             {
@@ -83,53 +101,51 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     await _accountingContext.SaveChangesAsync();
 
                     // Duyệt danh sách field
-                    var autoIncrementFields = categoryFields.Where(f => f.AutoIncrement);
-                    foreach(var field in autoIncrementFields)
+                    foreach (var field in categoryFields)
                     {
-                        // Lấy ra value lớn nhất
-                        string max = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.Value);
-                        string value = (int.Parse(max) + 1).ToString();
-                        // Thêm value
-                        var categoryValue = _mapper.Map<CategoryValue>(value);
-                        await _accountingContext.CategoryValue.AddAsync(categoryValue);
-                        await _accountingContext.SaveChangesAsync();
-                        // Thêm mapping
-                        var categoryRowValue = new CategoryRowValue
+                        int categoryValueId = 0;
+                        var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                        if (valueItem == null && !field.AutoIncrement)
                         {
-                            CategoryRowId = categoryRow.CategoryRowId,
-                            CategoryValueId = categoryValue.CategoryValueId,
-                        };
-                        await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
-                        await _accountingContext.SaveChangesAsync();
-                    }
+                            continue;
+                        }
 
-                    var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.ReferenceCategoryFieldId.HasValue);
-                    foreach (var field in selectFields)
-                    {
-                        var value = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        // Thêm mapping
-                        var categoryRowValue = new CategoryRowValue
+                        if (!field.ReferenceCategoryFieldId.HasValue)
                         {
-                            CategoryRowId = categoryRow.CategoryRowId,
-                            CategoryValueId = value.CategoryValueId,
-                        };
-                        await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
-                        await _accountingContext.SaveChangesAsync();
-                    }
+                            string value = string.Empty;
+                            if (field.AutoIncrement)
+                            {
+                                // Lấy ra value lớn nhất
+                                string max = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.Value);
+                                value = (int.Parse(max != null? max : "0") + 1).ToString();
+                            }
+                            else
+                            {
+                                value = valueItem.Value;
+                            }
+                            // Thêm value
+                            CategoryValue categoryValue = new CategoryValue
+                            {
+                                CategoryFieldId = field.CategoryFieldId,
+                                Value = value,
+                                UpdatedUserId = updatedUserId
+                            };
+                            await _accountingContext.CategoryValue.AddAsync(categoryValue);
+                            await _accountingContext.SaveChangesAsync();
+                            categoryValueId = categoryValue.CategoryValueId;
+                        }
+                        else
+                        {
+                            categoryValueId = valueItem.CategoryValueId;
+                        }
 
-                    var inputFields = categoryFields.Where(f => !f.AutoIncrement && !f.ReferenceCategoryFieldId.HasValue);
-                    foreach (var field in inputFields)
-                    {
-                        var value = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        // Thêm value
-                        var categoryValue = _mapper.Map<CategoryValue>(value);
-                        await _accountingContext.CategoryValue.AddAsync(categoryValue);
-                        await _accountingContext.SaveChangesAsync();
                         // Thêm mapping
                         var categoryRowValue = new CategoryRowValue
                         {
+                            CategoryFieldId = field.CategoryFieldId,
                             CategoryRowId = categoryRow.CategoryRowId,
-                            CategoryValueId = categoryValue.CategoryValueId,
+                            CategoryValueId = categoryValueId,
+                            UpdatedUserId = updatedUserId
                         };
                         await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
                         await _accountingContext.SaveChangesAsync();
@@ -155,13 +171,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                            .Join(_accountingContext.CategoryRowValue, r => r.CategoryRowId, rv => rv.CategoryRowId, (r, rv) => new
                            {
                                r.CategoryRowId,
-                               rv.CategoryValueId
+                               rv.CategoryValueId,
+                               rv.CategoryFieldId
                            })
                            .Join(_accountingContext.CategoryValue, rv => rv.CategoryValueId, v => v.CategoryValueId, (rv, v) => new
                            {
                                rv.CategoryRowId,
                                v.Value,
-                               v.CategoryFieldId
+                               rv.CategoryFieldId
                            })
                            .Join(_accountingContext.CategoryField, rv => rv.CategoryFieldId, f => f.CategoryFieldId, (rv, f) => new
                            {

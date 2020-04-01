@@ -40,7 +40,9 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryReadOnly = 15,
         [Description("Không được phép để trống trường thông tin bắt buộc")]
         RequiredFieldIsEmpty = 16,
-        [Description("Trường thông tin unique có giá trị  đã tồn tại")]
+        [Description("Trường thông tin unique có giá trị đã tồn tại")]
         UniqueValueAlreadyExisted = 17,
+        [Description("Thông tin được chọn không tồn tại")]
+        ReferValueNotFound = 18,
     }
 }

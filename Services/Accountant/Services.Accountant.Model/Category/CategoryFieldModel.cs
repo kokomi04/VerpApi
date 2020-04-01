@@ -3,7 +3,7 @@
 namespace VErp.Services.Accountant.Model.Category
 
 {
-    public class CategoryFieldModel
+    public class CategoryFieldInputModel
     {
         public int CategoryFieldId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
@@ -22,25 +22,11 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
-
     }
 
-    public class CategoryFieldOutputModel: CategoryFieldModel
+    public class CategoryFieldOutputModel: CategoryFieldInputModel
     {
         public DataTypeModel DataType { get; set; }
         public FormTypeModel FormType { get; set; }
     }
-
-    public class ReferenceCategoryFieldModel
-    {
-        public int CategoryFieldId { get; set; }
-        public int ReferenceCategoryFieldId { get; set; }
-        //public string CategoryTitle
-
-    }
-
-
-
-
-
 }
