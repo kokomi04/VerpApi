@@ -314,26 +314,57 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo(long purchaseOrderId)
         {
-            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking()
-               .FirstOrDefaultAsync(r => r.PurchaseOrderId == purchaseOrderId);
+            var info = await (
+                from po in _purchaseOrderDBContext.PurchaseOrder
+                join a in _purchaseOrderDBContext.PoAssignment on po.PoAssignmentId equals a.PoAssignmentId into ass
+                from a in ass.DefaultIfEmpty()
+                join s in _purchaseOrderDBContext.PurchasingSuggest on po.PurchasingSuggestId equals s.PurchasingSuggestId into ss
+                from s in ss.DefaultIfEmpty()
+                where po.PurchaseOrderId == purchaseOrderId
+                select new
+                {
+                    po.PurchaseOrderId,
+                    po.PurchaseOrderCode,
+                    po.Date,
+                    po.CustomerId,
+                    po.DeliveryDestination,
+                    po.Content,
+                    po.AdditionNote,
+                    po.DeliveryFee,
+                    po.OtherFee,
+                    po.TotalMoney,
+                    po.PurchaseOrderStatusId,
+                    po.IsApproved,
+                    po.PoProcessStatusId,
+                    po.CreatedByUserId,
+                    po.UpdatedByUserId,
+                    po.CensorByUserId,
+
+                    po.CensorDatetimeUtc,
+                    po.CreatedDatetimeUtc,
+                    po.UpdatedDatetimeUtc,
+
+                    PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
+                    PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
+
+                    PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
+                    PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
+                }).FirstOrDefaultAsync();
 
             if (info == null) return PurchaseOrderErrorCode.PoNotFound;
 
             var details = await (
                 from d in _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking()
-                join pd in _purchaseOrderDBContext.PoAssignmentDetail on d.PoAssignmentDetailId equals pd.PoAssignmentDetailId
-                join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on pd.PurchasingSuggestDetailId equals sd.PurchasingSuggestDetailId
-                where d.PurchaseOrderId == purchaseOrderId
                 select new
                 {
                     d.PurchaseOrderDetailId,
                     d.PoAssignmentDetailId,
                     d.ProviderProductName,
-                    sd.ProductId,
+                    d.ProductId,
                     d.PrimaryQuantity,
                     d.PrimaryUnitPrice,
                     d.TaxInPercent,
-                    d.TaxInMoney
+                    d.TaxInMoney,
                 }).ToListAsync();
 
             return new PurchaseOrderOutput()
@@ -358,6 +389,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
                 CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+
+                PoAssignmentId = info.PoAssignmentId,
+                PoAssignmentCode = info.PoAssignmentCode,
+                PurchasingSuggestId = info.PurchasingSuggestId,
+                PurchasingSuggestCode = info.PurchasingSuggestCode,
 
                 Details = details.Select(d => new PurchaseOrderOutputDetail()
                 {
