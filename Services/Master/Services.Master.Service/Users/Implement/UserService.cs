@@ -266,7 +266,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
             }
 
-            var query = users.Join(employees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+            var query = users.AsEnumerable().Join(employees.AsEnumerable(), u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
             {
                 UserId = u.UserId,
                 UserName = u.UserName,
@@ -280,17 +280,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Phone = em.Phone
             });
 
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                query = query.Where(u => u.UserName.Contains(keyword)
-                || u.FullName.Contains(keyword)
-                || u.EmployeeCode.Contains(keyword)
-                || u.Email.Contains(keyword));
-            }
+            var total = query.Count();
 
             var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
 
-            var total = lst.Count();
+            
 
             return (lst, total);
         }
@@ -355,7 +349,6 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
-
 
             if (req.AvatarFileId.HasValue && oldAvatarFileId != req.AvatarFileId)
             {
@@ -435,7 +428,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     var employees = _organizationContext.Employee.Where(em => userIds.Contains(em.UserId)).AsEnumerable();
 
 
-                    var query = users.Join(employees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+                    var query = users.AsEnumerable().Join(employees.AsEnumerable(), u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
                     {
                         UserId = u.UserId,
                         UserName = u.UserName,
@@ -458,12 +451,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
-
                     var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
-
-
                     var totalRecords = query.Count();
-
                     result.List = userList;
                     result.Total = totalRecords;
                 }
