@@ -36,5 +36,11 @@ namespace VErp.Commons.Enums.StandardEnum
         DataTypeNotFound = 13,
         [Description("Kiểu nhập liệu không tồn tại")]
         FormTypeNotFound = 14,
+        [Description("Danh mục không được phép thay đổi")]
+        CategoryReadOnly = 15,
+        [Description("Không được phép để trống trường thông tin bắt buộc")]
+        RequiredFieldIsEmpty = 16,
+        [Description("Trường thông tin unique có giá trị  đã tồn tại")]
+        UniqueValueAlreadyExisted = 17,
     }
 }

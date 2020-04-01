@@ -18,9 +18,8 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryFieldService : ICategoryFieldService
+    public class CategoryFieldService : CategoryBaseService, ICategoryFieldService
     {
-        private readonly AccountingDBContext _accountingContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
@@ -29,22 +28,21 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryFieldService> logger
             , IActivityLogService activityLogService
-             , IMapper mapper
-            )
+            , IMapper mapper
+            ) : base(accountingContext)
         {
-            _accountingContext = accountingContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
         }
 
-        public async Task<PageData<CategoryFieldModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool isFull)
+        public async Task<PageData<CategoryFieldModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.CategoryField.AsQueryable();
             int[] categoryIds;
-            if (isFull)
+            if (isFull.HasValue && isFull.Value)
             {
                 categoryIds = GetAllCategoryIds(categoryId);
             }
@@ -80,7 +78,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             var existedCategoryField = await _accountingContext.CategoryField
-                .FirstOrDefaultAsync(f => f.CategoryId == data.CategoryId && f.Name == data.Name || f.Title == f.Title);
+                .FirstOrDefaultAsync(f => f.CategoryId == data.CategoryId && f.Name == data.Name || f.Title == data.Title);
             if (existedCategoryField != null)
             {
                 if (string.Compare(existedCategoryField.Name, data.Name, StringComparison.OrdinalIgnoreCase) == 0)
@@ -122,17 +120,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     return GeneralCode.InternalError;
                 }
             }
-        }
-
-        private int[] GetAllCategoryIds(int categoryId)
-        {
-            List<int> ids = new List<int>(categoryId);
-            foreach (int id in _accountingContext.Category.Where(r => r.ParentId == categoryId).Select(r => r.CategoryId))
-            {
-                ids.AddRange(GetAllCategoryIds(id));
-            }
-
-            return ids.ToArray();
         }
     }
 }

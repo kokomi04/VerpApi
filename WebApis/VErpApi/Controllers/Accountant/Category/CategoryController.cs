@@ -11,6 +11,7 @@ using VErp.Services.Master.Service.Config;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Accountant.Service.Category;
 using VErp.Services.Accountant.Model.Category;
+using System.Collections.Generic;
 
 namespace VErpApi.Controllers.System
 {
@@ -20,21 +21,21 @@ namespace VErpApi.Controllers.System
     {
         private readonly ICategoryService _categoryService;
         private readonly ICategoryFieldService _categoryFieldService;
+        private readonly ICategoryRowService _categoryRowService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
-            , IObjectGenCodeService objectGenCodeService
-            , IFileService fileService
-            , IFileProcessDataService fileProcessDataService
+            , ICategoryRowService categoryRowService
             )
         {
             _categoryService = categoryService;
             _categoryFieldService = categoryFieldService;
+            _categoryRowService = categoryRowService;
         }
 
 
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword,[FromQuery] bool? isModule, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isModule, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetCategories(keyword, isModule, page, size);
         }
@@ -70,6 +71,15 @@ namespace VErpApi.Controllers.System
             return await _categoryService.DeleteCategory(categoryId, updatedUserId);
         }
 
+
+        [HttpGet]
+        [Route("{categoryId}/categoryfield")]
+        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] bool? isFull)
+        {
+            var updatedUserId = UserId;
+            return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
+        }
+
         [HttpPost]
         [Route("{categoryId}/categoryfield")]
         public async Task<ServiceResult<int>> AddCategoryField([FromBody] CategoryFieldModel categoryField)
@@ -78,5 +88,20 @@ namespace VErpApi.Controllers.System
             return await _categoryFieldService.AddCategoryField(updatedUserId, categoryField);
         }
 
+        [HttpGet]
+        [Route("{categoryId}/categoryrows")]
+        public async Task<ServiceResult<PageData<IDictionary<string, string>>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
+        {
+            var updatedUserId = UserId;
+            return await _categoryRowService.GetCategoryRows(categoryId, page, size);
+        }
+
+        [HttpPost]
+        [Route("{categoryId}/categoryrows")]
+        public async Task<ServiceResult<int>> AddCategoryRow([FromRoute] int categoryId, [FromBody] CategoryRowInputModel data)
+        {
+            var updatedUserId = UserId;
+            return await _categoryRowService.AddCategoryRow(updatedUserId, categoryId, data);
+        }
     }
 }

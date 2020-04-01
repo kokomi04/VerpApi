@@ -18,7 +18,6 @@ namespace VErp.Services.Accountant.Model.Category
         {
             Values = new HashSet<CategoryValueInputModel>();
         }
-        public int CategoryId { get; set; }
         public ICollection<CategoryValueInputModel> Values { get; set; }
     }
 
