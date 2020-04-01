@@ -1347,7 +1347,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             if (deletePoAssignmentDetailIds == null || deletePoAssignmentDetailIds.Count == 0) return true;
 
-            var poDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => deletePoAssignmentDetailIds.Contains(d.PoAssignmentDetailId)).ToListAsync();
+            var poAssignmentDetailIds = deletePoAssignmentDetailIds.Cast<long?>();
+            var poDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => poAssignmentDetailIds.Contains(d.PoAssignmentDetailId)).ToListAsync();
             foreach (var detail in deletePoAssignmentDetailIds)
             {
                 if (poDetails.Any(d => d.PoAssignmentDetailId == detail))

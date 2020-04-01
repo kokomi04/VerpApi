@@ -103,7 +103,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasOne(d => d.PoAssignment)
                     .WithMany(p => p.PurchaseOrder)
                     .HasForeignKey(d => d.PoAssignmentId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrder_PoAssignment1");
             });
 
@@ -126,7 +125,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasOne(d => d.PoAssignmentDetail)
                     .WithMany(p => p.PurchaseOrderDetail)
                     .HasForeignKey(d => d.PoAssignmentDetailId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderDetail_PoAssignmentDetail");
 
                 entity.HasOne(d => d.PurchaseOrder)
