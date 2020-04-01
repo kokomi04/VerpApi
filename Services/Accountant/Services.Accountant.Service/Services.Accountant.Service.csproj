@@ -1,9 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>VErp.Services.Accountant.Service</RootNamespace>
     <AssemblyName>VErp.Services.Accountant.Service</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\Services.Accountant.Model\Services.Accountant.Model.csproj" />
+  </ItemGroup>
 
 </Project>

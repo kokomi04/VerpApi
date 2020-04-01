@@ -1,4 +1,5 @@
-﻿using IdentityServer4.EntityFramework.Stores;
+﻿using AutoMapper;
+using IdentityServer4.EntityFramework.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -64,6 +65,7 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureBussinessService(services);
 
+            services.AddAutoMapper(typeof(Startup));
             return BuildService(services);
         }
         private void ConfigureBussinessService(IServiceCollection services)
