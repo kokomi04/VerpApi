@@ -111,18 +111,15 @@ namespace VErp.Services.Master.Service.Activity.Implement
             var ualDataList = query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList();
 
             var userIdList = ualDataList.Select(q => q.UserId).ToList();
-            var userDataList = (
-                from u in _masterContext.User
-                join e in _organizationContext.Employee on u.UserId equals e.UserId
-                where userIdList.Contains(u.UserId)
-                select new
-                {
-                    u.UserId,
-                    u.UserName,
-                    e.FullName,
-                    e.AvatarFileId
-                }).ToList()
-                .ToDictionary(u => u.UserId, u => u);
+            var users = _masterContext.User.Where(u => userIdList.Contains(u.UserId)).AsEnumerable();
+            var employees = _organizationContext.Employee.Where(e => userIdList.Contains(e.UserId)).AsEnumerable();
+            var userDataList = users.Join(employees, u => u.UserId, e => e.UserId, (u, e) => new
+            {
+                u.UserId,
+                u.UserName,
+                e.FullName,
+                e.AvatarFileId
+            }).ToList().ToDictionary(u => u.UserId, u => u);
 
             var result = new List<UserActivityLogOuputModel>(ualDataList.Count);
             foreach (var item in ualDataList)
