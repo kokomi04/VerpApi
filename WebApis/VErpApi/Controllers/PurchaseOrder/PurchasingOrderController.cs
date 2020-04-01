@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .GetList(keyword, purchaseOrderStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .GetInfo(purchaseOrderId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .Create(req)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .Update(purchaseOrderId, req)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -105,7 +105,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .SentToCensor(purchaseOrderId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                  .Approve(purchaseOrderId)
-                 .ConfigureAwait(false);
+                 .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .Reject(purchaseOrderId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .Delete(purchaseOrderId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService
                 .UpdatePoProcessStatus(purchaseOrderId, poProcessStatusId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetList")]
         public async Task<ServiceResult<PageData<PurchasingSuggestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(false);
+            return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetListByProduct")]
         public async Task<ServiceResult<PageData<PurchasingSuggestOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingSuggestService.GetListByProduct(keyword, productIds, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(false);
+            return await _purchasingSuggestService.GetListByProduct(keyword, productIds, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}")]
         public async Task<ServiceResult<PurchasingSuggestOutput>> GetInfo([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.GetInfo(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.GetInfo(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<ServiceResult<long>> Add([FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingSuggestService.Create(req).ConfigureAwait(false);
+            return await _purchasingSuggestService.Create(req).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}")]
         public async Task<ServiceResult> Update([FromRoute] long purchasingSuggestId, [FromBody] PurchasingSuggestInput req)
         {
-            return await _purchasingSuggestService.Update(purchasingSuggestId, req).ConfigureAwait(false);
+            return await _purchasingSuggestService.Update(purchasingSuggestId, req).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/SendCensor")]
         public async Task<ServiceResult> SentToApprove([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.SendToCensor(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.SendToCensor(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ServiceResult> Approve([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Approve(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.Approve(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ServiceResult> Reject([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Reject(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.Reject(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -153,7 +153,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}")]
         public async Task<ServiceResult> Delete([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.Delete(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.Delete(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/UpdatePoProcessStatus")]
         public async Task<ServiceResult> UpdatePoProcessStatus([FromRoute] long purchasingSuggestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
         {
-            return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId).ConfigureAwait(false);
+            return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByUser(keyword, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByProduct(keyword, productIds, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingSuggestService
                 .PoAssignmentInfo(poAssignmentId, UserId)
-                .ConfigureAwait(false);
+                .ConfigureAwait(true);
         }
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("CurrentUser/Assignments/{poAssignmentId}/Confirm")]
         public async Task<ServiceResult> PoAssignmentsUserConfirm([FromRoute] long poAssignmentId)
         {
-            return await _purchasingSuggestService.PoAssignmentUserConfirm(poAssignmentId).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentUserConfirm(poAssignmentId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -249,7 +249,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/Assignments")]
         public async Task<ServiceResult<IList<PoAssignmentOutput>>> SuggestAssignments([FromRoute] long purchasingSuggestId)
         {
-            return await _purchasingSuggestService.PoAssignmentListBySuggest(purchasingSuggestId).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentListBySuggest(purchasingSuggestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -262,7 +262,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/Assignments")]
         public async Task<ServiceResult<long>> CreatePoAssignments([FromRoute] long purchasingSuggestId, [FromBody] PoAssignmentInput poAssignment)
         {
-            return await _purchasingSuggestService.PoAssignmentCreate(purchasingSuggestId, poAssignment).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentCreate(purchasingSuggestId, poAssignment).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}")]
         public async Task<ServiceResult> UpdatePoAssignments([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId, [FromBody] PoAssignmentInput poAssignment)
         {
-            return await _purchasingSuggestService.PoAssignmentUpdate(purchasingSuggestId, poAssignmentId, poAssignment).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentUpdate(purchasingSuggestId, poAssignmentId, poAssignment).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -289,7 +289,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}/SendToUser")]
         public async Task<ServiceResult> PoAssignmentsSendToUser([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
         {
-            return await _purchasingSuggestService.PoAssignmentSendToUser(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentSendToUser(purchasingSuggestId, poAssignmentId).ConfigureAwait(true);
         }
 
 
@@ -303,7 +303,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingSuggestId}/Assignments/{poAssignmentId}")]
         public async Task<ServiceResult> DeletePoAssignments([FromRoute] long purchasingSuggestId, [FromRoute] long poAssignmentId)
         {
-            return await _purchasingSuggestService.PoAssignmentDelete(purchasingSuggestId, poAssignmentId).ConfigureAwait(false);
+            return await _purchasingSuggestService.PoAssignmentDelete(purchasingSuggestId, poAssignmentId).ConfigureAwait(true);
         }
     }
 }
