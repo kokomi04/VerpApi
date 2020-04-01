@@ -27,6 +27,12 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? CensorDatetimeUtc { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
+
+        public long? PoAssignmentId { get; set; }
+        public string PoAssignmentCode { get; set; }
+
+        public long? PurchasingSuggestId { get; set; }
+        public string PurchasingSuggestCode { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -58,11 +64,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
 
-        public long? PoAssignmentId { get; set; }
-        public string PoAssignmentCode { get; set; }
-
-        public long? PurchasingSuggestId { get; set; }
-        public string PurchasingSuggestCode { get; set; }
+      
     }
 
 }
