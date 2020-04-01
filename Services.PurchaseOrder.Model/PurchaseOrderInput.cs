@@ -7,6 +7,7 @@ namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchaseOrderInput
     {
+        public int CustomerId { get; set; }
         [Required(ErrorMessage = "")]
         [MinLength(1, ErrorMessage = "Vui lòng chọn mặt hàng")]
         public IList<PurchaseOrderInputDetail> Details { get; set; }
@@ -21,11 +22,30 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal TotalMoney { get; set; }
     }
 
-    public class PurchaseOrderInputDetail
+    public interface IPurchaseOrderInputDetail
+    {
+        long? PurchaseOrderDetailId { get; set; }
+        long? PoAssignmentDetailId { get; set; }
+        string ProviderProductName { get; set; }
+
+        int ProductId { get; set; }
+        decimal PrimaryQuantity { get; set; }
+        decimal? PrimaryUnitPrice { get; set; }
+        decimal? TaxInPercent { get; set; }
+        decimal? TaxInMoney { get; set; }
+    }
+
+    public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
     {
         public long? PurchaseOrderDetailId { get; set; }
-        public long PoAssignmentDetailId { get; set; }
+        public long? PoAssignmentDetailId { get; set; }
         public string ProviderProductName { get; set; }
+
+        public int ProductId { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public decimal? PrimaryUnitPrice { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
     }
 
     public class DeliveryDestinationModel
