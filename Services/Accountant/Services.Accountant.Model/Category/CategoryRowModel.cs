@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace VErp.Services.Accountant.Model.Category
 
 {
-    public class CategoryValueInputModel
+    public class CategoryValueModel
     {
         public int CategoryValueId { get; set; }
         public int CategoryFieldId { get; set; }
@@ -16,9 +16,18 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public CategoryRowInputModel()
         {
-            Values = new HashSet<CategoryValueInputModel>();
+            Values = new HashSet<CategoryValueModel>();
         }
-        public ICollection<CategoryValueInputModel> Values { get; set; }
+        public ICollection<CategoryValueModel> Values { get; set; }
     }
 
+    public class CategoryRowOutputModel
+    {
+        public CategoryRowOutputModel()
+        {
+            Values = new List<CategoryValueModel>();
+        }
+        public int CategoryRowId { get; set; }
+        public ICollection<CategoryValueModel> Values { get; set; }
+    }
 }

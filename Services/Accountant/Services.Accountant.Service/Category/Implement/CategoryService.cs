@@ -96,7 +96,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     return CategoryErrorCode.CategoryCodeAlreadyExisted;
                 }
 
-                return CategoryErrorCode.CategoryNameAlreadyExisted;
+                return CategoryErrorCode.CategoryTitleAlreadyExisted;
             }
             foreach (int subId in data.SubCategories.Select(c => c.CategoryId))
             {
@@ -161,7 +161,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         return CategoryErrorCode.CategoryCodeAlreadyExisted;
                     }
 
-                    return CategoryErrorCode.CategoryNameAlreadyExisted;
+                    return CategoryErrorCode.CategoryTitleAlreadyExisted;
                 }
             }
 
@@ -222,7 +222,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> DeleteCategory(int categoryId, int updatedUserId)
+        public async Task<Enum> DeleteCategory(int updatedUserId, int categoryId)
         {
             var category = await _accountingContext.Category.Include(c => c.Parent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
