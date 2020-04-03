@@ -10,7 +10,8 @@ namespace VErpApi.Controllers.Accountant
     {
         public AccountantMapping()
         {
-            CreateMap<CategoryEntity, CategoryModel>().ReverseMap();
+            CreateMap<CategoryEntity, CategoryModel>();
+            CreateMap<CategoryModel, CategoryEntity>().ForMember(c => c.SubCategories, act => act.Ignore());
             CreateMap<CategoryEntity, CategoryFullModel>();
             CreateMap<DataType, DataTypeModel>().ReverseMap();
             CreateMap<FormType, FormTypeModel>().ReverseMap();
