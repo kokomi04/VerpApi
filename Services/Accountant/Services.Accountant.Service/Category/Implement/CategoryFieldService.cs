@@ -120,9 +120,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryFieldId, CategoryFieldInputModel data)
+        public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data)
         {
-            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId);
+            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
@@ -181,9 +181,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryFieldId)
+        public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId)
         {
-            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId);
+            var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
                 return CategoryErrorCode.CategoryFieldNotFound;

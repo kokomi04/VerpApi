@@ -273,6 +273,39 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
+        public async Task<PageData<DataTypeModel>> GetDataTypes(int page, int size)
+        {
+            var query = _accountingContext.DataType.OrderBy(d => d.Name).AsQueryable();
+            var total = await query.CountAsync();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            List<DataTypeModel> lst = new List<DataTypeModel>();
+            foreach (var item in query)
+            {
+                DataTypeModel dataTypeModel = _mapper.Map<DataTypeModel>(item);
+                lst.Add(dataTypeModel);
+            }
+            return (lst, total);
+        }
+        public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)
+        {
+            var query = _accountingContext.FormType.OrderBy(f => f.Name).AsQueryable();
+            var total = await query.CountAsync();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            List<FormTypeModel> lst = new List<FormTypeModel>();
+            foreach (var item in query)
+            {
+                FormTypeModel formTypeModel = _mapper.Map<FormTypeModel>(item);
+                lst.Add(formTypeModel);
+            }
+            return (lst, total);
+        }
+
         private ICollection<CategoryFullModel> GetSubCategories(int categoryId)
         {
             List<CategoryFullModel> result = new List<CategoryFullModel>();
@@ -296,5 +329,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .OrderBy(f => f.Sequence)
                 .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToList();
         }
+    
     }
 }

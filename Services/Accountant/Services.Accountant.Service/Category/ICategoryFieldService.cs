@@ -11,8 +11,8 @@ namespace VErp.Services.Accountant.Service.Category
 
         Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data);
 
-        Task<Enum> UpdateCategoryField(int updatedUserId, int categoryFieldId, CategoryFieldInputModel data);
+        Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data);
 
-        Task<Enum> DeleteCategoryField(int updatedUserId, int categoryFieldId);
+        Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId);
     }
 }
