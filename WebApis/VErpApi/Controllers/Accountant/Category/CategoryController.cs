@@ -90,10 +90,18 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<IDictionary<string, string>>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
         {
             var updatedUserId = UserId;
             return await _categoryRowService.GetCategoryRows(categoryId, page, size);
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/categoryrows/{categoryRowId}")]
+        public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
+        {
+            var updatedUserId = UserId;
+            return await _categoryRowService.GetCategoryRow(categoryId, categoryRowId);
         }
 
         [HttpPost]
@@ -102,6 +110,22 @@ namespace VErpApi.Controllers.Accountant
         {
             var updatedUserId = UserId;
             return await _categoryRowService.AddCategoryRow(updatedUserId, categoryId, data);
+        }
+
+        [HttpPut]
+        [Route("{categoryId}/categoryrows/{categoryRowId}")]
+        public async Task<ServiceResult<int>> UpdateCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] CategoryRowInputModel data)
+        {
+            var updatedUserId = UserId;
+            return await _categoryRowService.UpdateCategoryRow(updatedUserId, categoryId, categoryRowId, data);
+        }
+
+        [HttpDelete]
+        [Route("{categoryId}/categoryrows/{categoryRowId}")]
+        public async Task<ServiceResult<int>> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
+        {
+            var updatedUserId = UserId;
+            return await _categoryRowService.DeleteCategoryRow(updatedUserId, categoryId, categoryRowId);
         }
     }
 }

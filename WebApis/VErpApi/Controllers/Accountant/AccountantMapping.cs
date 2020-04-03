@@ -16,7 +16,7 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<FormType, FormTypeModel>().ReverseMap();
             CreateMap<CategoryField, CategoryFieldOutputModel>();
             CreateMap<CategoryFieldInputModel, CategoryField>();
-            CreateMap<CategoryValueInputModel, CategoryValue>();
+            CreateMap<CategoryValueModel, CategoryValue>();
         }
     }
 }

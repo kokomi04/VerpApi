@@ -11,6 +11,6 @@ namespace VErp.Services.Accountant.Service.Category
         Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, int page, int size);
         Task<ServiceResult<int>> AddCategory(int updatedUserId, CategoryModel data);
         Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data);
-        Task<Enum> DeleteCategory(int categoryId, int updatedUserId);
+        Task<Enum> DeleteCategory(int updatedUserId, int categoryId);
     }
 }

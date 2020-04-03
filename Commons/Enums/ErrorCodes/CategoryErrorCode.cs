@@ -13,7 +13,7 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Mã danh mục đã tồn tại")]
         CategoryCodeAlreadyExisted = 2,
         [Description("Tên danh mục đã tồn tại")]
-        CategoryNameAlreadyExisted = 3,
+        CategoryTitleAlreadyExisted = 3,
         [Description("Không tìm thấy danh mục con")]
         SubCategoryNotFound = 4,
         [Description("Danh mục con đang là module")]
@@ -44,5 +44,7 @@ namespace VErp.Commons.Enums.StandardEnum
         UniqueValueAlreadyExisted = 17,
         [Description("Thông tin được chọn không tồn tại")]
         ReferValueNotFound = 18,
+        [Description("Dòng thông tin không tồn tại")]
+        CategoryRowNotFound = 19,
     }
 }
