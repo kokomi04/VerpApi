@@ -19,6 +19,9 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
         AssignmentDetailAlreadyCreatedPo = 3,
 
         [Description("Bạn chỉ có thể tạo PO cho 1 khách hàng")]
-        OnlyCreatePOFromOneCustomer = 4
+        OnlyCreatePOFromOneCustomer = 4,
+
+        [Description("Bạn chỉ có thể tạo PO từ phân công mua hàng hoặc từ đề nghị mua hàng, không thể cả 2")]
+        CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly= 5,
     }
 }
