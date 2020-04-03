@@ -144,14 +144,14 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("/datatypes")]
+        [Route("datatypes")]
         public async Task<ServiceResult<PageData<DataTypeModel>>> GetDataTypes([FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetDataTypes(page, size);
         }
 
         [HttpGet]
-        [Route("/formtypes")]
+        [Route("formtypes")]
         public async Task<ServiceResult<PageData<FormTypeModel>>> GetFormTypes([FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetFormTypes(page, size);
