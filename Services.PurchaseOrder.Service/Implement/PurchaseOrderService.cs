@@ -355,6 +355,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var details = await (
                 from d in _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking()
+                where d.PurchaseOrderId == purchaseOrderId
                 select new
                 {
                     d.PurchaseOrderDetailId,
