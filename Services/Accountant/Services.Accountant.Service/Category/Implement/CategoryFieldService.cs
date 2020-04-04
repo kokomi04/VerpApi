@@ -61,12 +61,34 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryFieldOutputModel> lst = await query.Include(f => f.DataType)
-                .Include(f => f.FormType)
+            List<CategoryFieldOutputModel> lst = await query
                 .OrderBy(f => f.Sequence)
                 .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToListAsync();
 
             return (lst, total);
+        }
+
+        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        {
+            var categoryField = await _accountingContext.CategoryField
+                .Include(f => f.DataType)
+                .Include(f => f.FormType)
+                .Include(f => f.SourceCategoryField)
+                .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
+            if (categoryField == null)
+            {
+                return CategoryErrorCode.CategoryFieldNotFound;
+            }
+            CategoryFieldOutputFullModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputFullModel>(categoryField);
+
+            if (categoryFieldOutputModel.SourceCategoryField != null)
+            {
+                CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryFieldOutputModel.SourceCategoryField.CategoryId);
+                categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+            }
+
+
+            return categoryFieldOutputModel;
         }
 
         public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data)
@@ -167,7 +189,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.UpdatedUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
-                  
+
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
                     return GeneralCode.Success;
@@ -188,7 +210,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-       
+
             // Check reference
             bool isRefer = await _accountingContext.CategoryField.AnyAsync(c => c.ReferenceCategoryFieldId == categoryFieldId);
             if (isRefer)
@@ -201,7 +223,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 // Delete value
                 var values = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == categoryFieldId);
-                foreach(var value in values)
+                foreach (var value in values)
                 {
                     value.IsDeleted = true;
                     value.UpdatedUserId = updatedUserId;
