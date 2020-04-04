@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
 namespace VErp.Services.Accountant.Model.Category
-
 {
-    public class CategoryFieldInputModel
+    public abstract class CategoryFieldModel
     {
         public int CategoryFieldId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
@@ -24,9 +23,19 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsHidden { get; set; }
     }
 
-    public class CategoryFieldOutputModel: CategoryFieldInputModel
+    public class CategoryFieldInputModel : CategoryFieldModel
+    {
+    }
+
+    public class CategoryFieldOutputModel: CategoryFieldModel
+    {
+    }
+    
+    public class CategoryFieldOutputFullModel : CategoryFieldOutputModel
     {
         public DataTypeModel DataType { get; set; }
         public FormTypeModel FormType { get; set; }
+        public CategoryFieldOutputFullModel SourceCategoryField { get; set; }
+        public CategoryModel SourceCategory { get; set; }
     }
 }

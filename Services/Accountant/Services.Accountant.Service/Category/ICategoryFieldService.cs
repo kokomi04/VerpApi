@@ -9,6 +9,8 @@ namespace VErp.Services.Accountant.Service.Category
     {
         Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull);
 
+        Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField(int categoryId, int categoryFieldId);
+
         Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data);
 
         Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data);

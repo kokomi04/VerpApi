@@ -73,10 +73,18 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldInputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] bool? isFull)
+        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] bool? isFull)
         {
             var updatedUserId = UserId;
             return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/categoryfields/{categoryFieldId}")]
+        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        {
+            var updatedUserId = UserId;
+            return await _categoryFieldService.GetCategoryField(categoryId, categoryFieldId);
         }
 
         [HttpPost]
