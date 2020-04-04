@@ -10,6 +10,9 @@ namespace VErpApi.Controllers.Accountant
     {
         public AccountantMapping()
         {
+            CreateMap<AccountingAccount, AccountingAccountOutputModel>();
+            CreateMap<AccountingAccountInputModel, AccountingAccount>();
+
             CreateMap<CategoryEntity, CategoryModel>();
             CreateMap<CategoryModel, CategoryEntity>().ForMember(c => c.SubCategories, act => act.Ignore());
             CreateMap<CategoryEntity, CategoryFullModel>();
