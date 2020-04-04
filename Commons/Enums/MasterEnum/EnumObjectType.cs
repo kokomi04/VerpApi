@@ -90,6 +90,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Department = 29,
         InventoryInput = 30,
         InventoryOutput = 31,
-        Category = 32
+        Category = 32,
+        AccountingAccount = 33
     }
 }

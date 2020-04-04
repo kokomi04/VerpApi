@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
 {
     public partial class AccountingDBContext : DbContext
     {
+        public virtual DbSet<AccountingAccount> AccountingAccount { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryRow> CategoryRow { get; set; }
         public virtual DbSet<DataType> DataType { get; set; }
@@ -28,6 +29,15 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AccountingAccount>(entity =>
+            {
+                entity.HasOne(a => a.ParentAccountingAccount)
+                .WithMany(a => a.SubAccountingAccount)
+                .HasForeignKey(a => a.ParentAccountingAccountId)
+                .HasConstraintName("FK_AccountingAccount_Relation");
+            });
+
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasOne(c => c.Parent)
