@@ -37,7 +37,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<CategoryFieldInputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull)
+        public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.CategoryField.AsQueryable();
@@ -61,10 +61,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryFieldInputModel> lst = await query.Include(f => f.DataType)
+            List<CategoryFieldOutputModel> lst = await query.Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .OrderBy(f => f.Sequence)
-                .Select(f => _mapper.Map<CategoryFieldInputModel>(f)).ToListAsync();
+                .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToListAsync();
 
             return (lst, total);
         }
