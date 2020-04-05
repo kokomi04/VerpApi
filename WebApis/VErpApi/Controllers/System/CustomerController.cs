@@ -11,6 +11,9 @@ using VErp.Services.Master.Service.Config;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Organization.Service.Customer;
 using VErp.Services.Organization.Model.Customer;
+using System.Collections.Generic;
+using VErp.Infrastructure.ApiCore.Attributes;
+using System.Linq;
 
 namespace VErpApi.Controllers.System
 {
@@ -49,6 +52,19 @@ namespace VErpApi.Controllers.System
         public async Task<ServiceResult<PageData<CustomerListOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customerService.GetList(keyword, customerStatusId, page, size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách khách hàng theo Ids
+        /// </summary>
+        /// <param name="customerIds"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetByIds")]
+        [VErpAction(EnumAction.View)]
+        public async Task<ServiceResult<IList<CustomerListOutput>>> GetListByIds([FromBody] IList<int> customerIds)
+        {
+            return (await _customerService.GetListByIds(customerIds)).ToList();
         }
 
         /// <summary>
