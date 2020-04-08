@@ -241,7 +241,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-
         public async Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data)
         {
             var categoryRow = await _accountingContext.CategoryRow.FirstOrDefaultAsync(c => c.CategoryRowId == categoryRowId && c.CategoryId == categoryId);
@@ -399,17 +398,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
-                    bool isExisted = _accountingContext.CategoryValue
-                        .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
-                        {
-                            v.CategoryValueId,
-                            rv.CategoryFieldId,
-                            v.Value,
-                            v.IsDefault
-                        })
-                        .Any(v => v.CategoryValueId == valueItem.CategoryValueId
-                        && (field.ReferenceCategoryFieldId.HasValue? v.CategoryFieldId == field.ReferenceCategoryFieldId.Value : v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                        && v.Value == valueItem.Value);
+                    bool isExisted = true;
+
+                    if (field.ReferenceCategoryFieldId.HasValue)
+                    {
+                        isExisted = _accountingContext.CategoryValue
+                            .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                            {
+                                v.CategoryValueId,
+                                rv.CategoryFieldId,
+                                v.Value
+                            })
+                            .Any(v => v.CategoryValueId == valueItem.CategoryValueId
+                            && v.CategoryFieldId == field.ReferenceCategoryFieldId.Value
+                            && v.Value == valueItem.Value);
+                    }
+                    else
+                    {
+                        isExisted = _accountingContext.CategoryValue
+                            .Any(v => v.CategoryFieldId == field.CategoryFieldId
+                            && v.CategoryValueId == valueItem.CategoryValueId
+                            && v.IsDefault);
+                    }
                     if (!isExisted)
                     {
                         return CategoryErrorCode.ReferValueNotFound;

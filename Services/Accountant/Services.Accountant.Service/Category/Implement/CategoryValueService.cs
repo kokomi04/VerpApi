@@ -38,6 +38,53 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _mapper = mapper;
         }
 
+
+        public async Task<PageData<CategoryValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
+        {
+            var field = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
+            IQueryable<CategoryValueModel> query;
+            if (field.ReferenceCategoryFieldId.HasValue)
+            {
+                query = _accountingContext.CategoryValue
+                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                    {
+                        v.CategoryValueId,
+                        rv.CategoryFieldId,
+                        v.Value
+                    })
+                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
+                    .Select(v => new CategoryValueModel { 
+                        CategoryFieldId = v.CategoryFieldId,
+                        CategoryValueId = v.CategoryValueId,
+                        Value = v.Value
+                    });
+            }
+            else
+            {
+                query = _accountingContext.CategoryValue
+                    .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
+                    .Select(v => new CategoryValueModel
+                    {
+                        CategoryFieldId = v.CategoryFieldId,
+                        CategoryValueId = v.CategoryValueId,
+                        Value = v.Value
+                    });
+            }
+           
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(v => v.Value.Contains(keyword));
+            }
+            int total = await query.CountAsync();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            List<CategoryValueModel> lst = query.ToList();
+            return (lst, total);
+        }
+
         public async Task<PageData<CategoryValueModel>> GetDefaultCategoryValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
         {
             var query = _accountingContext.CategoryValue
@@ -205,5 +252,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return GeneralCode.InternalError;
             }
         }
+
     }
 }
