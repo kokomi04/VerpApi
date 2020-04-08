@@ -195,6 +195,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.IsRequired = data.IsRequired;
                     categoryField.IsUnique = data.IsUnique;
                     categoryField.IsHidden = data.IsHidden;
+                    categoryField.IsShowList = data.IsShowList;
+                    categoryField.FormatDate = data.FormatDate;
+                    categoryField.RegularExpression = data.RegularExpression;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.UpdatedUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();

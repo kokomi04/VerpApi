@@ -42,7 +42,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var query = _accountingContext.CategoryValue
                         .Where(v => v.CategoryFieldId == categoryFieldId && v.IsDefault);
 
-            if (string.IsNullOrEmpty(keyword))
+            if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(v => v.Value.Contains(keyword));
             }

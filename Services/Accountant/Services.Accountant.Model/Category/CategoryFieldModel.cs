@@ -21,6 +21,9 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
+        public bool IsShowList { get; set; }
+        public string FormatDate { get; set; }
+        public string RegularExpression { get; set; }
     }
 
     public class CategoryFieldInputModel : CategoryFieldModel

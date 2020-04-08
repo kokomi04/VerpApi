@@ -126,8 +126,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
         public async Task<ServiceResult<CategoryValueModel>> GetDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId)
         {
-            var updatedUserId = UserId;
-            return await _categoryValueService.GetDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId);
+            return await _categoryValueService.GetDefaultCategoryValue(categoryId, categoryFieldId, categoryValueId);
         }
 
         [HttpPost]
