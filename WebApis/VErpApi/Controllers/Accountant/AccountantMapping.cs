@@ -21,7 +21,7 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<CategoryField, CategoryFieldOutputModel>();
             CreateMap<CategoryField, CategoryFieldOutputFullModel>();
             CreateMap<CategoryFieldInputModel, CategoryField>();
-            CreateMap<CategoryValueModel, CategoryValue>();
+            CreateMap<CategoryValueModel, CategoryValue>().ReverseMap();
         }
     }
 }
