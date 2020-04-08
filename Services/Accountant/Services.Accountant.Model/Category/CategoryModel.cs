@@ -11,7 +11,7 @@ namespace VErp.Services.Accountant.Model.Category
         {
             SubCategories = new List<T>();
         }
-
+        public int? ParentId { get; set; }
         public int CategoryId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
         [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]

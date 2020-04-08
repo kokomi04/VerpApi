@@ -91,10 +91,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return categoryFieldOutputModel;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, CategoryFieldInputModel data)
+        public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data)
         {
             // Check category
-            if (!_accountingContext.Category.Any(c => c.CategoryId == data.CategoryId))
+            if (!_accountingContext.Category.Any(c => c.CategoryId == categoryId))
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
@@ -118,13 +118,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.SourceCategoryFieldNotFound;
                 }
+                data.DataTypeId = sourceCategoryField.DataTypeId;
+                data.DataSize = sourceCategoryField.DataSize;
             }
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
                 var categoryField = _mapper.Map<CategoryField>(data);
-
+                categoryField.CategoryId = categoryId;
                 categoryField.UpdatedUserId = updatedUserId;
 
                 await _accountingContext.CategoryField.AddAsync(categoryField);
@@ -144,6 +146,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data)
         {
+            if (categoryFieldId == data.ReferenceCategoryFieldId)
+            {
+                return CategoryErrorCode.ReferenceFromItSelf;
+            }
             var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
@@ -171,6 +177,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.SourceCategoryFieldNotFound;
                 }
+                data.DataTypeId = sourceCategoryField.DataTypeId;
+                data.DataSize = sourceCategoryField.DataSize;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
@@ -186,6 +194,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.AutoIncrement = data.AutoIncrement;
                     categoryField.IsRequired = data.IsRequired;
                     categoryField.IsUnique = data.IsUnique;
+                    categoryField.IsHidden = data.IsHidden;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.UpdatedUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();

@@ -107,7 +107,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                v.CategoryValueId,
                                rv.CategoryFieldId
                            }).ToList();
-           
+
             CategoryRowOutputModel output = new CategoryRowOutputModel
             {
                 CategoryRowId = categoryRowId
@@ -351,7 +351,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 // Delete row
                 categoryRow.IsDeleted = true;
                 categoryRow.UpdatedUserId = updatedUserId;
-                foreach(var field in categoryFields)
+                foreach (var field in categoryFields)
                 {
                     var categoryRowValue = _accountingContext.CategoryRowValue
                       .Where(rv => rv.CategoryFieldId == field.CategoryFieldId && rv.CategoryRowId == categoryRowId)
@@ -438,5 +438,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return GeneralCode.Success;
         }
+
     }
 }

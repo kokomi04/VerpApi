@@ -11,5 +11,7 @@ namespace VErp.Services.Accountant.Model.Category
         public string Title { get; set; }
         public string Name { get; set; }
         public int DataSizeDefault { get; set; }
+
+        public string RegularExpression { get; set; }
     }
 }
