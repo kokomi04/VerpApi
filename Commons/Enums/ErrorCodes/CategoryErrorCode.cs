@@ -47,20 +47,20 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Dòng thông tin không tồn tại")]
         CategoryRowNotFound = 19,
         [Description("Danh mục con không thể là module")]
-        IsSubCategory = 19,
+        IsSubCategory = 20,
         [Description("Mã nhóm dữ liệu đã tồn tại")]
-        SubCategoryCodeAlreadyExisted = 19,
+        SubCategoryCodeAlreadyExisted = 21,
         [Description("Tên nhóm dữ liệu đã tồn tại")]
-        SubCategoryTitleAlreadyExisted = 20,
+        SubCategoryTitleAlreadyExisted = 22,
         [Description("Không thể tham chiếu từ chính trường dữ liệu")]
-        ReferenceFromItSelf = 21,
+        ReferenceFromItSelf = 23,
         [Description("Giá trị không tồn tại")]
-        CategoryValueNotFound = 22,
+        CategoryValueNotFound = 24,
         [Description("Trường dữ liệu không cần giá trị mặc định")]
-        CategoryFieldNotDefaultValue = 23,
+        CategoryFieldNotDefaultValue = 25,
         [Description("Giá trị không hợp lệ")]
-        CategoryValueInValid = 24,
+        CategoryValueInValid = 26,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
-        CategoryRowAlreadyExisted = 25,
+        CategoryRowAlreadyExisted = 27,
     }
 }
