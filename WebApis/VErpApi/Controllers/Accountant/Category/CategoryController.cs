@@ -36,6 +36,12 @@ namespace VErpApi.Controllers.Accountant
             _categoryValueService = categoryValueService;
         }
 
+        [HttpGet]
+        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
+        public async Task<ServiceResult<PageData<CategoryValueModel>>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, page, size);
+        }
 
         [HttpGet]
         [Route("")]
@@ -79,7 +85,6 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields")]
         public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] bool? isFull)
         {
-            var updatedUserId = UserId;
             return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
         }
 
@@ -87,7 +92,6 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
-            var updatedUserId = UserId;
             return await _categoryFieldService.GetCategoryField(categoryId, categoryFieldId);
         }
 
@@ -157,7 +161,6 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
         {
-            var updatedUserId = UserId;
             return await _categoryRowService.GetCategoryRows(categoryId, page, size);
         }
 
@@ -165,7 +168,6 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
         {
-            var updatedUserId = UserId;
             return await _categoryRowService.GetCategoryRow(categoryId, categoryRowId);
         }
 

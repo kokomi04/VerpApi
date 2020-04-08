@@ -7,6 +7,8 @@ namespace VErp.Services.Accountant.Service.Category
 {
     public interface ICategoryValueService
     {
+        Task<PageData<CategoryValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, int page, int size);
+
         Task<PageData<CategoryValueModel>> GetDefaultCategoryValues(int categoryId, int categoryFieldId, string keyword, int page, int size);
 
         Task<ServiceResult<CategoryValueModel>> GetDefaultCategoryValue(int categoryId, int categoryFieldId, int categoryValueId);

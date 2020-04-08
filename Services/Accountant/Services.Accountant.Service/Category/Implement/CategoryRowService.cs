@@ -144,7 +144,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
-            var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
+            var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
             var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.FormTypeId == (int)EnumFormType.Select);
@@ -241,7 +241,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-
         public async Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data)
         {
             var categoryRow = await _accountingContext.CategoryRow.FirstOrDefaultAsync(c => c.CategoryRowId == categoryRowId && c.CategoryId == categoryId);
@@ -251,7 +250,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
-            var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
+            var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
 
             // Lấy thông tin value hiện tại
             var currentValues = _accountingContext.CategoryRowValue
@@ -399,17 +398,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
-                    bool isExisted = _accountingContext.CategoryValue
-                        .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
-                        {
-                            v.CategoryValueId,
-                            rv.CategoryFieldId,
-                            v.Value,
-                            v.IsDefault
-                        })
-                        .Any(v => v.CategoryValueId == valueItem.CategoryValueId
-                        && (field.ReferenceCategoryFieldId.HasValue? v.CategoryFieldId == field.ReferenceCategoryFieldId.Value : v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                        && v.Value == valueItem.Value);
+                    bool isExisted = true;
+
+                    if (field.ReferenceCategoryFieldId.HasValue)
+                    {
+                        isExisted = _accountingContext.CategoryValue
+                            .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                            {
+                                v.CategoryValueId,
+                                rv.CategoryFieldId,
+                                v.Value
+                            })
+                            .Any(v => v.CategoryValueId == valueItem.CategoryValueId
+                            && v.CategoryFieldId == field.ReferenceCategoryFieldId.Value
+                            && v.Value == valueItem.Value);
+                    }
+                    else
+                    {
+                        isExisted = _accountingContext.CategoryValue
+                            .Any(v => v.CategoryFieldId == field.CategoryFieldId
+                            && v.CategoryValueId == valueItem.CategoryValueId
+                            && v.IsDefault);
+                    }
                     if (!isExisted)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
