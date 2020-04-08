@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int DataSizeDefault { get; set; }
         public bool IsDeleted { get; set; }
 
+        public string RegularExpression { get; set; }
+
         public virtual ICollection<CategoryField> CategoryFields { get; set; }
 
     }

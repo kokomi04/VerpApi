@@ -18,9 +18,8 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryService : ICategoryService
+    public class CategoryService : CategoryBaseService, ICategoryService
     {
-        private readonly AccountingDBContext _accountingContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
@@ -31,9 +30,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             , ILogger<CategoryService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            )
+            ) : base(accountingContext)
         {
-            _accountingContext = accountingContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
@@ -53,7 +51,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return categoryFullModel;
         }
 
-        public async Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, int page, int size)
+        public async Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, bool? hasParent, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -66,6 +64,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (isModule.HasValue)
             {
                 query = query.Where(c => c.IsModule == isModule.Value);
+            }
+            if (hasParent.HasValue)
+            {
+                query = query.Where(c => c.ParentId.HasValue == hasParent.Value);
             }
 
             query = query.OrderBy(c => c.Title);
@@ -81,7 +83,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 CategoryModel categoryModel = _mapper.Map<CategoryModel>(item);
                 lst.Add(categoryModel);
             }
-           
+
             return (lst, total);
         }
 
@@ -98,7 +100,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                 return CategoryErrorCode.CategoryTitleAlreadyExisted;
             }
-            foreach (int subId in data.SubCategories.Select(c => c.CategoryId))
+
+            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
+            foreach (int subId in data.SubCategories.Where(s => s.CategoryId > 0).Select(s => s.CategoryId))
             {
                 var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
                 if (subCategory == null)
@@ -113,23 +117,58 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.SubCategoryHasParent;
                 }
+                else
+                {
+                    selectSubCategories.Add(subCategory);
+                }
             }
+
+            List<CategoryEntity> newSubCategories = new List<CategoryEntity>();
+            foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
+            {
+                var existedsubCategory = await _accountingContext.Category
+                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                if (existedsubCategory != null)
+                {
+                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                    }
+
+                    return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                }
+                else
+                {
+                    var subCategory = _mapper.Map<CategoryEntity>(item);
+                    subCategory.IsModule = false;
+                    subCategory.IsReadonly = false;
+                    newSubCategories.Add(subCategory);
+                }
+            }
+
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                    category.IsModule = true;
                     category.UpdatedUserId = updatedUserId;
 
                     await _accountingContext.Category.AddAsync(category);
                     await _accountingContext.SaveChangesAsync();
-                    foreach (int subId in data.SubCategories.Select(c => c.CategoryId))
+                    foreach (var selectSubCategory in selectSubCategories)
                     {
-                        var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
-                        subCategory.ParentId = category.CategoryId;
-                        subCategory.UpdatedUserId = updatedUserId;
+                        selectSubCategory.ParentId = category.CategoryId;
+                        selectSubCategory.UpdatedUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                     }
+                    foreach (var newSubCategory in newSubCategories)
+                    {
+                        newSubCategory.ParentId = category.CategoryId;
+                        newSubCategory.UpdatedUserId = updatedUserId;
+                        await _accountingContext.Category.AddAsync(newSubCategory);
+                    }
+                    await _accountingContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
                     return category.CategoryId;
@@ -166,9 +205,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             var deleteSubCategories = category.SubCategories.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
-            var newSubCategories = data.SubCategories.Where(c => !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
+            var newSubCategoryModels = data.SubCategories.Where(c => !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
 
-            foreach (int subId in newSubCategories.Select(c => c.CategoryId))
+            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
+            foreach (int subId in newSubCategoryModels.Where(s => s.CategoryId > 0).Select(c => c.CategoryId))
             {
                 var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
                 if (subCategory == null)
@@ -182,6 +222,41 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 else if (subCategory.ParentId.HasValue)
                 {
                     return CategoryErrorCode.SubCategoryHasParent;
+                }
+                else
+                {
+                    selectSubCategories.Add(subCategory);
+                }
+            }
+
+            List<CategoryEntity> newSubCategories = new List<CategoryEntity>();
+            foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
+            {
+                var existedsubCategory = await _accountingContext.Category
+                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                if (existedsubCategory != null)
+                {
+                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        return CategoryErrorCode.SubCategoryCodeAlreadyExisted;
+                    }
+
+                    return CategoryErrorCode.SubCategoryTitleAlreadyExisted;
+                }
+                else
+                {
+                    var subCategory = _mapper.Map<CategoryEntity>(item);
+                    subCategory.IsModule = false;
+                    subCategory.IsReadonly = false;
+                    newSubCategories.Add(subCategory);
+                }
+            }
+
+            if (category.IsModule != data.IsModule)
+            {
+                if (category.ParentId.HasValue)
+                {
+                    return CategoryErrorCode.IsSubCategory;
                 }
             }
 
@@ -200,13 +275,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
                         subCategory.ParentId = null;
                         subCategory.UpdatedUserId = updatedUserId;
-                    }
-                    foreach (var item in newSubCategories)
-                    {
-                        var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
-                        subCategory.ParentId = category.CategoryId;
-                        subCategory.UpdatedUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
+                    }
+                    foreach (var item in selectSubCategories)
+                    {
+                        item.ParentId = category.CategoryId;
+                        item.UpdatedUserId = updatedUserId;
+                        await _accountingContext.SaveChangesAsync();
+                    }
+                    foreach (var newSubCategory in newSubCategories)
+                    {
+                        newSubCategory.ParentId = category.CategoryId;
+                        newSubCategory.UpdatedUserId = updatedUserId;
+                        await _accountingContext.Category.AddAsync(newSubCategory);
                     }
                     await _accountingContext.SaveChangesAsync();
                     trans.Commit();
@@ -237,27 +318,53 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
-                    category.IsDeleted = true;
-                    category.UpdatedUserId = updatedUserId;
-
-                    foreach (var item in category.SubCategories)
+                    // Xóa category, field
+                    var categoryIds = GetAllCategoryIds(categoryId);
+                    foreach (var id in categoryIds)
                     {
-                        var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
-                        subCategory.ParentId = null;
-                        subCategory.UpdatedUserId = updatedUserId;
-                    }
-
-                    var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == categoryId);
-                    foreach (var item in deleteFields)
-                    {
-                        // Check có trường đang tham chiếu tới
-                        if(_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == item.CategoryFieldId))
+                        category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == id);
+                        category.IsDeleted = true;
+                        category.UpdatedUserId = updatedUserId;
+                        await _accountingContext.SaveChangesAsync();
+                        var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
+                        foreach (var field in deleteFields)
                         {
-                            trans.Rollback();
-                            return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
+                            // Check có trường đang tham chiếu tới
+                            if (_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == field.CategoryFieldId))
+                            {
+                                trans.Rollback();
+                                return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
+                            }
+                            field.IsDeleted = true;
+                            field.UpdatedUserId = updatedUserId;
+                            await _accountingContext.SaveChangesAsync();
+
+                            // Xóa value
+                            var categoryValues = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId);
+                            foreach (var value in categoryValues)
+                            {
+                                value.IsDeleted = true;
+                                value.UpdatedUserId = updatedUserId;
+                                await _accountingContext.SaveChangesAsync();
+                            }
                         }
-                        item.IsDeleted = true;
-                        item.UpdatedUserId = updatedUserId;
+                    }
+                    // Xóa row
+                    var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
+                    foreach (var row in categoryRows)
+                    {
+                        row.IsDeleted = true;
+                        row.UpdatedUserId = updatedUserId;
+                        await _accountingContext.SaveChangesAsync();
+
+                        // Xóa mapping row, value
+                        var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
+                        foreach (var rowValue in categoryRowValues)
+                        {
+                            rowValue.IsDeleted = true;
+                            rowValue.UpdatedUserId = updatedUserId;
+                            await _accountingContext.SaveChangesAsync();
+                        }
                     }
                     await _accountingContext.SaveChangesAsync();
                     trans.Commit();
@@ -329,6 +436,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .OrderBy(f => f.Sequence)
                 .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToList();
         }
-    
+
     }
 }
