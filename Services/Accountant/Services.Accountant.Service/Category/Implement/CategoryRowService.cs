@@ -144,7 +144,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
-            var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
+            var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
             var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.FormTypeId == (int)EnumFormType.Select);
@@ -250,7 +250,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
-            var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
+            var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
 
             // Lấy thông tin value hiện tại
             var currentValues = _accountingContext.CategoryRowValue
