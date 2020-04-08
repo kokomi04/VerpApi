@@ -5,7 +5,9 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -145,7 +147,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
-            var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.ReferenceCategoryFieldId.HasValue);
+            var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.FormTypeId == (int)EnumFormType.Select);
 
             // Check field required
             var r = CheckRequired(data, requiredFields);
@@ -157,6 +159,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             // Check refer
             r = CheckRefer(data, selectFields);
+            if (!r.IsSuccess()) return r;
+
+            // Check value
+            r = CheckValue(data, categoryFields);
             if (!r.IsSuccess()) return r;
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
@@ -176,7 +182,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         int categoryValueId = 0;
                         var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        if (valueItem == null && !field.AutoIncrement)
+                        if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
                         {
                             continue;
                         }
@@ -235,6 +241,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
+
         public async Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data)
         {
             var categoryRow = await _accountingContext.CategoryRow.FirstOrDefaultAsync(c => c.CategoryRowId == categoryRowId && c.CategoryId == categoryId);
@@ -263,7 +270,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin field
             var requiredFields = updateFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = updateFields.Where(f => !f.AutoIncrement && f.IsUnique);
-            var selectFields = updateFields.Where(f => !f.AutoIncrement && f.ReferenceCategoryFieldId.HasValue);
+            var selectFields = updateFields.Where(f => !f.AutoIncrement && f.FormTypeId == (int)EnumFormType.Select);
 
             // Check field required
             var r = CheckRequired(data, requiredFields);
@@ -277,6 +284,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             r = CheckRefer(data, selectFields);
             if (!r.IsSuccess()) return r;
 
+            // Check value
+            r = CheckValue(data, categoryFields);
+            if (!r.IsSuccess()) return r;
+
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
             {
                 try
@@ -285,7 +296,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     foreach (var field in updateFields)
                     {
                         var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        if (valueItem == null || field.AutoIncrement)
+                        if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) || field.AutoIncrement)
                         {
                             continue;
                         }
@@ -393,10 +404,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             v.CategoryValueId,
                             rv.CategoryFieldId,
-                            v.Value
+                            v.Value,
+                            v.IsDefault
                         })
                         .Any(v => v.CategoryValueId == valueItem.CategoryValueId
-                        && v.CategoryFieldId == field.ReferenceCategoryFieldId
+                        && (field.ReferenceCategoryFieldId.HasValue? v.CategoryFieldId == field.ReferenceCategoryFieldId.Value : v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
                         && v.Value == valueItem.Value);
                     if (!isExisted)
                     {
@@ -439,5 +451,33 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return GeneralCode.Success;
         }
 
+        private Enum CheckValue(CategoryRowInputModel data, IEnumerable<CategoryField> categoryFields)
+        {
+            foreach (var field in categoryFields)
+            {
+                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                if (field.FormTypeId == (int)EnumFormType.Select || field.AutoIncrement)
+                {
+                    continue;
+                }
+
+                if (field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
+                {
+                    return CategoryErrorCode.CategoryValueInValid;
+                }
+
+                if (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
+                {
+                    return CategoryErrorCode.CategoryValueInValid;
+                }
+
+                if (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.RegularExpression))
+                {
+                    return CategoryErrorCode.CategoryValueInValid;
+                }
+            }
+
+            return GeneralCode.Success;
+        }
     }
 }
