@@ -136,14 +136,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryFieldNotDefaultValue;
             }
 
-            if (categoryField.DataSize > 0 && data.Value.Length > categoryField.DataSize)
+            var r = CheckValue(data, categoryField);
+            if (!r.IsSuccess())
             {
-                return CategoryErrorCode.CategoryValueInValid;
-            }
-
-            if (!string.IsNullOrEmpty(categoryField.DataType.RegularExpression) && !Regex.IsMatch(data.Value, categoryField.DataType.RegularExpression))
-            {
-                return CategoryErrorCode.CategoryValueInValid;
+                return r;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
@@ -191,14 +187,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
 
-            if (categoryField.DataSize > 0 && data.Value.Length > categoryField.DataSize)
+            var r = CheckValue(data, categoryField);
+            if (!r.IsSuccess())
             {
-                return CategoryErrorCode.CategoryValueInValid;
-            }
-
-            if (!string.IsNullOrEmpty(categoryField.DataType.RegularExpression) && !Regex.IsMatch(data.Value, categoryField.DataType.RegularExpression))
-            {
-                return CategoryErrorCode.CategoryValueInValid;
+                return r;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())

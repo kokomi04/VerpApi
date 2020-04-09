@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -477,19 +478,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     continue;
                 }
 
-                if (field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
+                var r = CheckValue(valueItem, field);
+                if (!r.IsSuccess())
                 {
-                    return CategoryErrorCode.CategoryValueInValid;
-                }
-
-                if (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
-                {
-                    return CategoryErrorCode.CategoryValueInValid;
-                }
-
-                if (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.RegularExpression))
-                {
-                    return CategoryErrorCode.CategoryValueInValid;
+                    return r;
                 }
             }
 

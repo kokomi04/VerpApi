@@ -4,8 +4,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -34,6 +38,36 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             return ids.ToArray();
+        }
+
+        protected private Enum CheckValue(CategoryValueModel valueItem, CategoryField field)
+        {
+            if (field.DataTypeId == (int)EnumDataType.Date
+                && !DateTime.TryParseExact(valueItem.Value,
+                DateFormats.YYYY_MM_DD,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out _))
+            {
+                return CategoryErrorCode.CategoryValueInValid;
+            }
+
+            if (field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
+            {
+                return CategoryErrorCode.CategoryValueInValid;
+            }
+
+            if (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
+            {
+                return CategoryErrorCode.CategoryValueInValid;
+            }
+
+            if (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.RegularExpression))
+            {
+                return CategoryErrorCode.CategoryValueInValid;
+            }
+
+            return GeneralCode.Success;
         }
     }
 }
