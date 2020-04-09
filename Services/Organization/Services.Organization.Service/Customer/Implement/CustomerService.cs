@@ -66,6 +66,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         Description = data.Description,
                         IsActived = data.IsActived,
                         IsDeleted = false,
+                        LegalRepresentative = data.LegalRepresentative,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         CustomerStatusId = (int)data.CustomerStatusId
@@ -165,7 +166,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 PhoneNumber = customerInfo.PhoneNumber,
                 Website = customerInfo.Website,
                 Email = customerInfo.Email,
-
+                LegalRepresentative = customerInfo.LegalRepresentative,
                 Description = customerInfo.Description,
                 IsActived = customerInfo.IsActived,
                 CustomerStatusId = (EnumCustomerStatus)customerInfo.CustomerStatusId,
@@ -292,7 +293,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
                     var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
-
+                    customerInfo.LegalRepresentative = data.LegalRepresentative;
                     customerInfo.CustomerCode = data.CustomerCode;
                     customerInfo.CustomerName = data.CustomerName;
                     customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
