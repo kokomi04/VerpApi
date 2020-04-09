@@ -366,7 +366,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var categoryRowValue = _accountingContext.CategoryRowValue
                       .Where(rv => rv.CategoryFieldId == field.CategoryFieldId && rv.CategoryRowId == categoryRowId)
                       .FirstOrDefault();
-                    if (!field.ReferenceCategoryFieldId.HasValue)
+                    if (field.FormTypeId != (int)EnumFormType.Select)
                     {
                         // Delete value
                         var value = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == categoryRowValue.CategoryValueId);
