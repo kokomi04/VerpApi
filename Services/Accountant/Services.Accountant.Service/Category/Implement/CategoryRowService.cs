@@ -187,7 +187,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             continue;
                         }
 
-                        if (!field.ReferenceCategoryFieldId.HasValue)
+                        if (field.FormTypeId != (int)EnumFormType.Select)
                         {
                             string value = string.Empty;
                             if (field.AutoIncrement)
@@ -299,7 +299,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             continue;
                         }
-                        if (!field.ReferenceCategoryFieldId.HasValue)
+                        if (field.FormTypeId != (int)EnumFormType.Select)
                         {
                             string value = valueItem.Value;
                             // Sửa value cũ
