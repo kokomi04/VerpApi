@@ -112,7 +112,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectCustomGenCodeMapping = m,
                     CustomGenCodeId = c
                 })
-                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId && q.ObjectCustomGenCodeMapping.ObjectId == objectId && q.CustomGenCodeId.IsActived && !q.CustomGenCodeId.IsDeleted)
+                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId 
+                && q.ObjectCustomGenCodeMapping.ObjectId == objectId 
+                && q.CustomGenCodeId.IsActived 
+                && !q.CustomGenCodeId.IsDeleted)
                 .Select(q => q.CustomGenCodeId)
                 .FirstOrDefaultAsync();
             CustomGenCodeOutputModel info = null;
