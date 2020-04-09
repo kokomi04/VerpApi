@@ -144,6 +144,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return r;
                         }
 
+                        foreach (var changedInventoryId in r.Data)
+                        {
+                            await ReCalculateRemainingAfterUpdate(changedInventoryId);
+                        }
 
                         trans.Commit();
 
@@ -162,7 +166,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
 
@@ -186,8 +190,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products);
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
-            var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
-            if (!updateStatus.IsSuccess()) return updateStatus;
+            var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
+            if (!updateResult.Code.IsSuccess()) return updateResult.Code;
 
             var issuedDate = req.Inventory.DateUtc.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
@@ -243,7 +247,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            if (!updateResult.Data.Contains(inventoryId))
+            {
+                updateResult.Data.Add(inventoryId);
+            }
+
+            return updateResult.Data;
         }
 
         private async Task<Enum> ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)
@@ -424,8 +433,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        private async Task<Enum> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
         {
+            HashSet<long> changesInventories = new HashSet<long>();
+
             foreach (var p in products)
             {
                 var detail = details.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
@@ -650,6 +661,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         throw new Exception("Invalid negative inventory detail data");
                     }
+
+                    if (!changesInventories.Contains(inventoryDetail.InventoryId))
+                    {
+                        changesInventories.Add(inventoryDetail.InventoryId);
+                    }
                 }
 
                 if (stockProduct.PrimaryQuantityRemaining < 0 || stockProduct.ProductUnitConversionRemaining < 0)
@@ -658,7 +674,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
-            return GeneralCode.Success;
+            return changesInventories;
         }
 
         public class InventoryInputUpdateGetAffectedModel

@@ -30,6 +30,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public int? SortOrder { get; set; }
+        public decimal? PrimaryQuantityRemaning { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

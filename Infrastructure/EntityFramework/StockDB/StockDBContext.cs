@@ -17,7 +17,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
+        public virtual DbSet<InventoryChange> InventoryChange { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
+        public virtual DbSet<InventoryDetailChange> InventoryDetailChange { get; set; }
         public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
@@ -93,6 +95,14 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_Inventory_Stock");
             });
 
+            modelBuilder.Entity<InventoryChange>(entity =>
+            {
+                entity.HasKey(e => e.InventoryId)
+                    .HasName("PK_InventoryTracking");
+
+                entity.Property(e => e.InventoryId).ValueGeneratedNever();
+            });
+
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
                 entity.Property(e => e.OrderCode)
@@ -107,6 +117,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.PrimaryQuantityRemaning).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
@@ -146,6 +158,16 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.InventoryDetailToPackage)
                     .HasForeignKey(d => d.ToPackageId)
                     .HasConstraintName("FK_InventoryDetail_ToPackage");
+            });
+
+            modelBuilder.Entity<InventoryDetailChange>(entity =>
+            {
+                entity.HasKey(e => e.InventoryDetailId)
+                    .HasName("PK_InventoryDetailQuantityTracking");
+
+                entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
+
+                entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
             });
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
