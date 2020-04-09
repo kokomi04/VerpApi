@@ -123,7 +123,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = sourceCategoryField.DataSize;
             }
 
-            if (data.DataTypeId == (int)EnumFormType.Generate)
+            if (data.FormTypeId == (int)EnumFormType.Generate)
             {
                 data.DataTypeId = (int)EnumDataType.Text;
                 data.DataSize = 0;
@@ -188,7 +188,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = sourceCategoryField.DataSize;
             }
 
-            if(data.DataTypeId == (int)EnumFormType.Generate)
+            if(data.FormTypeId == (int)EnumFormType.Generate)
             {
                 data.DataTypeId = (int)EnumDataType.Text;
                 data.DataSize = 0;
