@@ -303,7 +303,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                     }
 
-
+                   
 
                     if (obj.NewPrimaryQuantity.SubDecimal(obj.OldPrimaryQuantity) == 0)
                     {
@@ -315,6 +315,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
                     }
 
+                    if (obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
+                    {
+                        obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
+                    }
 
 
                     if ((obj.NewProductUnitConversionQuantity != 0 || obj.NewPrimaryQuantity != 0)
