@@ -252,12 +252,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
 
-            if (category.IsModule != data.IsModule)
+            if (category.IsModule != data.IsModule && category.ParentId.HasValue)
             {
-                if (category.ParentId.HasValue)
-                {
-                    return CategoryErrorCode.IsSubCategory;
-                }
+                return CategoryErrorCode.IsSubCategory;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())

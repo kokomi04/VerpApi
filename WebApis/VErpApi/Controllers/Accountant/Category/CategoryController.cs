@@ -12,6 +12,7 @@ using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Accountant.Service.Category;
 using VErp.Services.Accountant.Model.Category;
 using System.Collections.Generic;
+using VErp.Commons.Library;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -23,13 +24,15 @@ namespace VErpApi.Controllers.Accountant
         private readonly ICategoryFieldService _categoryFieldService;
         private readonly ICategoryRowService _categoryRowService;
         private readonly ICategoryValueService _categoryValueService;
-
+        private readonly IFileService _fileService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
             , ICategoryRowService categoryRowService
             , ICategoryValueService categoryValueService
+            , IFileService fileService
             )
         {
+            _fileService = fileService;
             _categoryService = categoryService;
             _categoryFieldService = categoryFieldService;
             _categoryRowService = categoryRowService;
@@ -123,7 +126,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues")]
         public async Task<PageData<CategoryValueModel>> GetDefaultCategoryValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryValueService.GetDefaultCategoryValues( categoryId, categoryFieldId, keyword,page, size);
+            return await _categoryValueService.GetDefaultCategoryValues(categoryId, categoryFieldId, keyword, page, size);
         }
 
         [HttpGet]
@@ -178,6 +181,31 @@ namespace VErpApi.Controllers.Accountant
             var updatedUserId = UserId;
             return await _categoryRowService.AddCategoryRow(updatedUserId, categoryId, data);
         }
+
+        [HttpPost]
+        [Route("{categoryId}/categoryrows/file")]
+        public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow([FromRoute] int categoryId, [FromBody] IFormFile file)
+        {
+            var updatedUserId = UserId;
+            await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, string.Empty, file).ConfigureAwait(false);
+            return await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
+
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/categoryrows/file")]
+        public async Task<IActionResult> GetImportTemplateCategoryRow([FromRoute] int categoryId)
+        {
+            var r = await _categoryRowService.GetImportTemplateCategoryRow(categoryId);
+
+            if (!r.IsSuccessCode())
+            {
+                return new JsonResult(r);
+            }
+            return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "template.xlsx");
+
+        }
+
 
         [HttpPut]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]

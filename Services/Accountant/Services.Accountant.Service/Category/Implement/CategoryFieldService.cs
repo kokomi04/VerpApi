@@ -100,16 +100,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryNotFound;
             }
 
-            var existedCategoryField = await _accountingContext.CategoryField
-                .FirstOrDefaultAsync(f => f.CategoryId == data.CategoryId && f.Name == data.Name || f.Title == data.Title);
-            if (existedCategoryField != null)
+            if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.Name == data.Name))
             {
-                if (string.Compare(existedCategoryField.Name, data.Name, StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
-                }
-
-                return CategoryErrorCode.CategoryFieldTitleAlreadyExisted;
+                return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
             }
 
             if (data.ReferenceCategoryFieldId.HasValue)
@@ -162,21 +155,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            if (categoryField.Name != data.Name || categoryField.Title != data.Title)
+            if (categoryField.Name != data.Name && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.Name == data.Name))
             {
-                var existedCategoryField = await _accountingContext.CategoryField
-                    .FirstOrDefaultAsync(f => f.CategoryFieldId != categoryFieldId && (f.Name == data.Name || f.Title == data.Title));
-                if (existedCategoryField != null)
-                {
-                    if (string.Compare(existedCategoryField.Name, data.Name, StringComparison.OrdinalIgnoreCase) == 0)
-                    {
-                        return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
-                    }
-
-                    return CategoryErrorCode.CategoryFieldTitleAlreadyExisted;
-                }
+                return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
             }
-
             if (data.ReferenceCategoryFieldId.HasValue && data.ReferenceCategoryFieldId != categoryField.ReferenceCategoryFieldId)
             {
                 var sourceCategoryField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId);
@@ -188,7 +170,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = sourceCategoryField.DataSize;
             }
 
-            if(data.FormTypeId == (int)EnumFormType.Generate)
+            if (data.FormTypeId == (int)EnumFormType.Generate)
             {
                 data.DataTypeId = (int)EnumDataType.Text;
                 data.DataSize = 0;
@@ -209,7 +191,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.IsUnique = data.IsUnique;
                     categoryField.IsHidden = data.IsHidden;
                     categoryField.IsShowList = data.IsShowList;
-                    categoryField.FormatDate = data.FormatDate;
                     categoryField.RegularExpression = data.RegularExpression;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.UpdatedUserId = updatedUserId;

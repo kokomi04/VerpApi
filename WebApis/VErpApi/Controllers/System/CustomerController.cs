@@ -59,7 +59,7 @@ namespace VErpApi.Controllers.System
         /// </summary>
         /// <param name="customerIds"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("GetByIds")]
         [VErpAction(EnumAction.View)]
         public async Task<ServiceResult<IList<CustomerListOutput>>> GetListByIds([FromBody] IList<int> customerIds)
