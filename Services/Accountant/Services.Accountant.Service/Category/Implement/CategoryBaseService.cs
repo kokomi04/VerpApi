@@ -42,16 +42,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         protected private Enum CheckValue(CategoryValueModel valueItem, CategoryField field)
         {
-            if (field.DataTypeId == (int)EnumDataType.Date
-                && !DateTime.TryParseExact(valueItem.Value,
-                DateFormats.YYYY_MM_DD,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out _))
-            {
-                return CategoryErrorCode.CategoryValueInValid;
-            }
-
             if (field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
             {
                 return CategoryErrorCode.CategoryValueInValid;
