@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return InventoryChange.OldDate.Value < InventoryInfo.Date ? EnumInventoryDateChangeType.Increase : EnumInventoryDateChangeType.Decrease;
             }
         }
-        
+
     }
 
 
@@ -70,26 +71,68 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 .FirstOrDefaultAsync();
 
             //2. Lấy dữ liệu cũ
-            var oldData = await context.StockDbContext.InventoryDetailChange
+            var oldInventoryDetails = await context.StockDbContext.InventoryDetailChange
                 .Where(t => t.InventoryId == context.InventoryId)
                 .ToListAsync();
 
             //3. Lấy dữ liệu mới
-            var newData = await context.StockDbContext.InventoryDetail
+            var newInventoryDetails = await context.StockDbContext.InventoryDetail
                 .IgnoreQueryFilters()
                 .Where(t => t.InventoryId == context.InventoryId)
                 .ToListAsync();
 
+            //4. Ensure dữ liệu cũ
+            if (inventoryChange == null)
+            {
+                inventoryChange = new InventoryChange()
+                {
+                    InventoryId = context.InventoryId,
+                    IsSync = false,
+                    LastSyncTime = DateTime.UtcNow,
+                    OldDate = null
+                };
+
+                await context.StockDbContext.InventoryChange.AddAsync(inventoryChange);
+            }
+
+
+            var oldDataDic = oldInventoryDetails.ToDictionary(d => d.InventoryDetailId, d => d);
+            var newOldDatas = new List<InventoryDetailChange>();
+            foreach (var inventoryDetail in newInventoryDetails)
+            {
+                if (!oldDataDic.ContainsKey(inventoryDetail.InventoryDetailId))
+                {
+                    newOldDatas.Add(new InventoryDetailChange()
+                    {
+                        InventoryDetailId = inventoryDetail.InventoryDetailId,
+                        InventoryId = context.InventoryId,
+                        StockId = context.StockId,
+                        OldPrimaryQuantity = 0,
+                        IsDeleted = false,
+                        ProductId = inventoryDetail.ProductId
+                    });
+                }
+            }
+
+            if (newOldDatas.Count > 0)
+            {
+                await context.StockDbContext.InventoryDetailChange.AddRangeAsync(newOldDatas);
+                oldInventoryDetails.AddRange(newOldDatas);
+            }
+            await context.StockDbContext.SaveChangesAsync();
+
+
+            //5. Assign to context
             context.InventoryChange = inventoryChange;
-            context.InventoryDetailChanges = oldData;
-            context.InventoryDetails = newData.ToDictionary(d => d.InventoryDetailId, d => d);
+            context.InventoryDetailChanges = oldInventoryDetails;
+            context.InventoryDetails = newInventoryDetails.ToDictionary(d => d.InventoryDetailId, d => d);
 
             var productChanges = new Dictionary<int, ProductChangeInfo>();
-            foreach (var oldDetailGroup in oldData.GroupBy(d => d.ProductId))
+            foreach (var oldDetailGroup in oldInventoryDetails.GroupBy(d => d.ProductId))
             {
                 var totalOldPrimaryQuantity = oldDetailGroup.Sum(d => d.OldPrimaryQuantity);
 
-                var totalNewPrimaryQuantity = newData.Where(d => d.ProductId == oldDetailGroup.Key).Sum(d => d.PrimaryQuantity);
+                var totalNewPrimaryQuantity = newInventoryDetails.Where(d => d.ProductId == oldDetailGroup.Key).Sum(d => d.PrimaryQuantity);
 
                 var isChange = totalOldPrimaryQuantity != totalNewPrimaryQuantity;
 

@@ -137,28 +137,10 @@ FROM
                 throw new Exception("inventoryInfo not found!");
             }
 
-            //1. Lấy thông tin cũ
-            var inventoryOld = await _stockDbContext.InventoryChange
-                .Where(iv => iv.InventoryId == inventoryId)
-                .FirstOrDefaultAsync();
-
-            //2. Lấy dữ liệu cũ
-            var oldData = await _stockDbContext.InventoryDetailChange
-                .Where(t => t.InventoryId == inventoryId)
-                .ToListAsync();
-
-            //3. Lấy dữ liệu mới
-            var newData = (await _stockDbContext.InventoryDetail
-                .IgnoreQueryFilters()
-                .Where(t => t.InventoryId == inventoryId)
-                .ToListAsync()
-                ).ToDictionary(d => d.InventoryDetailId, d => d);
-
-
             var ctx = await new InventoryTrackingUpdateContextBuilder()
-                .StockDbContext(_stockDbContext)
-                .InventoryInfo(inventoryInfo)
-                .BuildAsync();
+               .StockDbContext(_stockDbContext)
+               .InventoryInfo(inventoryInfo)
+               .BuildAsync();
 
             switch ((EnumInventoryType)inventoryInfo.InventoryTypeId)
             {
