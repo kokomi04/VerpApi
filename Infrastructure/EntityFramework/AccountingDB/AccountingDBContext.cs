@@ -49,7 +49,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
          
             modelBuilder.Entity<CategoryRowValue>(entity =>
             {
-                entity.HasKey(v => new { v.CategoryRowId, v.CategoryFieldId, v.CategoryValueId });
+                entity.HasKey(v => new { v.CategoryRowId, v.CategoryFieldId });
             });
 
             modelBuilder.Entity<CategoryField>(entity =>

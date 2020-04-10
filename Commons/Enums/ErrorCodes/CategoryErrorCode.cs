@@ -24,43 +24,41 @@ namespace VErp.Commons.Enums.StandardEnum
         ParentCategoryAlreadyExisted = 7,
         [Description("Tên trường đã tồn tại")]
         CategoryFieldNameAlreadyExisted = 8,
-        [Description("Tiêu đề trường đã tồn tại")]
-        CategoryFieldTitleAlreadyExisted = 9,
         [Description("Trường tham chiếu không tồn tại")]
-        SourceCategoryFieldNotFound = 10,
+        SourceCategoryFieldNotFound = 9,
         [Description("Đang có trường dữ liệu tham chiếu tới")]
-        DestCategoryFieldAlreadyExisted = 11,
+        DestCategoryFieldAlreadyExisted = 10,
         [Description("Trường dữ liệu không tồn tại")]
-        CategoryFieldNotFound = 12,
+        CategoryFieldNotFound = 11,
         [Description("Kiểu dữ liệu không tồn tại")]
-        DataTypeNotFound = 13,
+        DataTypeNotFound = 12,
         [Description("Kiểu nhập liệu không tồn tại")]
-        FormTypeNotFound = 14,
+        FormTypeNotFound = 13,
         [Description("Danh mục không được phép thay đổi")]
-        CategoryReadOnly = 15,
+        CategoryReadOnly = 14,
         [Description("Không được phép để trống trường thông tin bắt buộc")]
-        RequiredFieldIsEmpty = 16,
+        RequiredFieldIsEmpty = 15,
         [Description("Trường thông tin unique có giá trị đã tồn tại")]
-        UniqueValueAlreadyExisted = 17,
+        UniqueValueAlreadyExisted = 16,
         [Description("Thông tin được chọn không tồn tại")]
-        ReferValueNotFound = 18,
+        ReferValueNotFound = 17,
         [Description("Dòng thông tin không tồn tại")]
-        CategoryRowNotFound = 19,
+        CategoryRowNotFound = 18,
         [Description("Danh mục con không thể là module")]
-        IsSubCategory = 20,
+        IsSubCategory = 19,
         [Description("Mã nhóm dữ liệu đã tồn tại")]
-        SubCategoryCodeAlreadyExisted = 21,
+        SubCategoryCodeAlreadyExisted = 20,
         [Description("Tên nhóm dữ liệu đã tồn tại")]
-        SubCategoryTitleAlreadyExisted = 22,
+        SubCategoryTitleAlreadyExisted = 21,
         [Description("Không thể tham chiếu từ chính trường dữ liệu")]
-        ReferenceFromItSelf = 23,
+        ReferenceFromItSelf = 22,
         [Description("Giá trị không tồn tại")]
-        CategoryValueNotFound = 24,
+        CategoryValueNotFound = 23,
         [Description("Trường dữ liệu không cần giá trị mặc định")]
-        CategoryFieldNotDefaultValue = 25,
+        CategoryFieldNotDefaultValue = 24,
         [Description("Giá trị không hợp lệ")]
-        CategoryValueInValid = 26,
+        CategoryValueInValid = 25,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
-        CategoryRowAlreadyExisted = 27,
+        CategoryRowAlreadyExisted = 26,
     }
 }
