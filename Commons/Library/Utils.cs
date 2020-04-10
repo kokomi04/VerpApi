@@ -171,7 +171,7 @@ namespace VErp.Commons.Library
             if (a < 0 && b > 0 || a > 0 && b < 0)
             {
                 var c = a + b;
-                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
                 return c;
             }
             return a + b;
@@ -182,7 +182,7 @@ namespace VErp.Commons.Library
             if (a > 0 && b > 0 || a < 0 && b < 0)
             {
                 var c = a - b;
-                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
                 return c;
             }
             return a - b;
@@ -190,7 +190,7 @@ namespace VErp.Commons.Library
 
         public static decimal RelativeTo(this decimal value, decimal relValue)
         {
-            if (Math.Abs(value) < Numbers.MINIMUM_JS_NUMBER) return 0;
+            if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
             if (value.SubDecimal(relValue) == 0) return relValue;
             return value;
         }
