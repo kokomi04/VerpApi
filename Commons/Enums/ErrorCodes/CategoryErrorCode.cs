@@ -14,11 +14,11 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryCodeAlreadyExisted = 2,
         [Description("Tên danh mục đã tồn tại")]
         CategoryTitleAlreadyExisted = 3,
-        [Description("Không tìm thấy danh mục con")]
+        [Description("Không tìm thấy nhóm dữ liệu")]
         SubCategoryNotFound = 4,
-        [Description("Danh mục con đang là module")]
+        [Description("Nhóm dữ liệu đang là danh mục")]
         SubCategoryIsModule = 5,
-        [Description("Danh mục con đã trực thuộc một danh mục khác")]
+        [Description("Nhóm dữ liệu đã trực thuộc một danh mục khác")]
         SubCategoryHasParent = 6,
         [Description("Đang tồn tại danh mục cha, loại bỏ liên kết trước khi xóa")]
         ParentCategoryAlreadyExisted = 7,
@@ -44,7 +44,7 @@ namespace VErp.Commons.Enums.StandardEnum
         ReferValueNotFound = 17,
         [Description("Dòng thông tin không tồn tại")]
         CategoryRowNotFound = 18,
-        [Description("Danh mục con không thể là module")]
+        [Description("Nhóm dữ liệu đang trực thuộc danh mục")]
         IsSubCategory = 19,
         [Description("Mã nhóm dữ liệu đã tồn tại")]
         SubCategoryCodeAlreadyExisted = 20,
@@ -60,5 +60,7 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryValueInValid = 25,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
         CategoryRowAlreadyExisted = 26,
+        [Description("Không phải là danh mục")]
+        CategoryIsNotModule = 27
     }
 }
