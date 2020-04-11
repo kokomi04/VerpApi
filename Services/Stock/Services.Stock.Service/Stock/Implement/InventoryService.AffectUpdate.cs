@@ -586,6 +586,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                             var outputDetail = new CensoredOutputInventoryDetailUpdate()
                                             {
+                                                InventoryId = childInventoryDetail.InventoryId,
                                                 InventoryDetailId = childInventoryDetail.InventoryDetailId,
                                                 Date = inventory.Date,
                                                 ProductId = childInventoryDetail.ProductId,
@@ -684,7 +685,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var output in validateOutputDetails)
             {
-                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
+                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
 
                 if (!validate.IsSuccessCode())
                 {
@@ -704,6 +705,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private class CensoredOutputInventoryDetailUpdate
         {
+            public long InventoryId { get; set; }
             public long InventoryDetailId { get; set; }
             public DateTime Date { get; set; }
             public int ProductId { get; set; }
