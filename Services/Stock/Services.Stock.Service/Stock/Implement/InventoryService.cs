@@ -1064,7 +1064,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             });
                         foreach (var product in groupByProducts)
                         {
-                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
+                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
 
                             if (!validate.IsSuccessCode())
                             {
@@ -1846,7 +1846,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
+        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
         {
             var sums = await (
                 from id in _stockDbContext.InventoryDetail
@@ -1855,6 +1855,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 && id.ProductId == productId
                 && id.ProductUnitConversionId == productUnitConversionId
                 && iv.Date <= endDate
+                && iv.IsApproved
+                && iv.InventoryId != currentInventoryId
                 select new
                 {
                     iv.InventoryTypeId,
@@ -1878,7 +1880,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var total = sums.TotalSecondary;
                 var output = outSecondary;
-                
+
                 if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER)
                 {
                     total = sums.TotalPrimary;
