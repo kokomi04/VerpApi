@@ -71,7 +71,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public string[][] ReadFile(int sheetAt = 0, int startRow = 0)
+        public string[][] ReadFile(int collumnLength, int sheetAt = 0, int startRow = 0, int startCollumn = 0)
         {
             List<string[]> data = new List<string[]>();
             ISheet sheet = hssfwb.GetSheetAt(sheetAt);
@@ -84,10 +84,9 @@ namespace VErp.Commons.Library
                     break;
                 }
                 List<string> info = new List<string>();
-                int collumIdx = 0;
-                ICell cell;
-                while ((cell = row.GetCell(collumIdx)) != null)
+                for (int collumnIdx = 0; collumnIdx < collumnLength; collumnIdx++)
                 {
+                    ICell cell = row.GetCell(collumnIdx + startCollumn);
                     if (cell != null)
                     {
                         info.Add(GetCellValue(cell));
@@ -96,7 +95,6 @@ namespace VErp.Commons.Library
                     {
                         info.Add(string.Empty);
                     }
-                    collumIdx++;
                 }
                 data.Add(info.ToArray());
                 rowIdx++;

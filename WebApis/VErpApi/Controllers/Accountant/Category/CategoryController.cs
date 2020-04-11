@@ -184,11 +184,12 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpPost]
         [Route("{categoryId}/categoryrows/file")]
-        public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow([FromRoute] int categoryId, [FromBody] IFormFile file)
+        public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
         {
             var updatedUserId = UserId;
-            await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, string.Empty, file).ConfigureAwait(false);
-            return await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
+            var r = await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
+            await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(false);
+            return r;
 
         }
 

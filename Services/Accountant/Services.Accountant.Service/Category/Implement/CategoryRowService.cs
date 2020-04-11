@@ -513,15 +513,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             var reader = new ExcelReader(stream);
 
-            string[][] data = reader.ReadFile(0, 1);
             CategoryRowImportResultModel result = new CategoryRowImportResultModel();
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
                 .Where(f => categoryIds.Contains(f.CategoryId))
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
-                .AsEnumerable();
+                .ToList();
 
+            string[][] data = reader.ReadFile(categoryFields.Count, 0, 1, 0);
             string[] fieldNames = data[0];
             for (int rowIndx = 1; rowIndx < data.Length; rowIndx++)
             {
@@ -571,19 +571,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     rowInput.Values.Add(new CategoryValueModel
                     {
                         CategoryFieldId = field.CategoryFieldId,
-                        CategoryValueId = 0,
+                        CategoryValueId = categoryValueId,
                         Value = row[fieldIndx]
                     });
-
-                    var r = await AddCategoryRow(updatedUserId, categoryId, rowInput);
-                    if (r.IsSuccessCode())
-                    {
-                        result.Success.Add(rowIndx);
-                    }
-                    else
-                    {
-                        result.Error.Add(rowIndx, r.Message);
-                    }
+                }
+                var r = await AddCategoryRow(updatedUserId, categoryId, rowInput);
+                if (r.IsSuccessCode())
+                {
+                    result.Success.Add(rowIndx);
+                }
+                else
+                {
+                    result.Error.Add(rowIndx, r.Message);
                 }
             }
             return result;
@@ -608,8 +607,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
                 .AsEnumerable();
             List<(string, byte[])[]> dataInRows = new List<(string, byte[])[]>();
-            List<(string, byte[] )> titles = new List<(string, byte[])>();
-            List<(string, byte[] )> names = new List<(string, byte[])>();
+            List<(string, byte[])> titles = new List<(string, byte[])>();
+            List<(string, byte[])> names = new List<(string, byte[])>();
             byte[] titleRgb = new byte[3] { 60, 120, 216 };
             byte[] nameRgb = new byte[3] { 147, 196, 125 };
             foreach (var field in categoryFields)
