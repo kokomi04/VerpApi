@@ -23,15 +23,6 @@ namespace VErp.Commons.Library
             file.Close();
         }
 
-        ~ExcelReader()
-        {
-            if (hssfwb != null)
-            {
-                hssfwb.Dispose();
-
-            }
-        }
-
         private string GetCellValue(ICell cell)
         {
             var dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);

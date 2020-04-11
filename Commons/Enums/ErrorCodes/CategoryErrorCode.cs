@@ -61,6 +61,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
         CategoryRowAlreadyExisted = 26,
         [Description("Không phải là danh mục")]
-        CategoryIsNotModule = 27
+        CategoryIsNotModule = 27,
+        [Description("File không hợp lệ")]
+        FormatFileInvalid = 28
     }
 }

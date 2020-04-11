@@ -188,7 +188,10 @@ namespace VErpApi.Controllers.Accountant
         {
             var updatedUserId = UserId;
             var r = await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
-            await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(false);
+            if (r.IsSuccessCode())
+            {
+                await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(false);
+            }
             return r;
 
         }

@@ -498,95 +498,101 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream)
         {
-            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-            if (category == null)
+            try
             {
-                return CategoryErrorCode.CategoryNotFound;
-            }
-            if (category.IsReadonly)
-            {
-                return CategoryErrorCode.CategoryReadOnly;
-            }
-            if (!category.IsModule)
-            {
-                return CategoryErrorCode.CategoryIsNotModule;
-            }
-            var reader = new ExcelReader(stream);
-
-            CategoryRowImportResultModel result = new CategoryRowImportResultModel();
-            // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryId);
-            var categoryFields = _accountingContext.CategoryField
-                .Where(f => categoryIds.Contains(f.CategoryId))
-                .Where(f => !f.IsHidden && !f.AutoIncrement)
-                .ToList();
-
-            string[][] data = reader.ReadFile(categoryFields.Count, 0, 1, 0);
-            string[] fieldNames = data[0];
-            for (int rowIndx = 1; rowIndx < data.Length; rowIndx++)
-            {
-                string[] row = data[rowIndx];
-                CategoryRowInputModel rowInput = new CategoryRowInputModel();
-                for (int fieldIndx = 0; fieldIndx < fieldNames.Length; fieldIndx++)
+                var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+                if (category == null)
                 {
-                    string fieldName = fieldNames[fieldIndx];
-                    var field = categoryFields.FirstOrDefault(f => f.Name == fieldName);
-                    if (field == null) continue;
+                    return CategoryErrorCode.CategoryNotFound;
+                }
+                if (category.IsReadonly)
+                {
+                    return CategoryErrorCode.CategoryReadOnly;
+                }
+                if (!category.IsModule)
+                {
+                    return CategoryErrorCode.CategoryIsNotModule;
+                }
+                var reader = new ExcelReader(stream);
 
-                    int categoryValueId = 0;
-                    if (field.FormTypeId == (int)EnumFormType.Select)
+                CategoryRowImportResultModel result = new CategoryRowImportResultModel();
+                // Lấy thông tin field
+                var categoryIds = GetAllCategoryIds(categoryId);
+                var categoryFields = _accountingContext.CategoryField
+                    .Where(f => categoryIds.Contains(f.CategoryId))
+                    .Where(f => !f.IsHidden && !f.AutoIncrement)
+                    .ToList();
+
+                string[][] data = reader.ReadFile(categoryFields.Count, 0, 1, 0);
+                string[] fieldNames = data[0];
+                for (int rowIndx = 1; rowIndx < data.Length; rowIndx++)
+                {
+                    string[] row = data[rowIndx];
+                    CategoryRowInputModel rowInput = new CategoryRowInputModel();
+                    for (int fieldIndx = 0; fieldIndx < fieldNames.Length; fieldIndx++)
                     {
-                        IQueryable<CategoryValueModel> query;
-                        if (field.ReferenceCategoryFieldId.HasValue)
+                        string fieldName = fieldNames[fieldIndx];
+                        var field = categoryFields.FirstOrDefault(f => f.Name == fieldName);
+                        if (field == null) continue;
+
+                        int categoryValueId = 0;
+                        if (field.FormTypeId == (int)EnumFormType.Select)
                         {
-                            query = _accountingContext.CategoryValue
-                                .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
-                                {
-                                    v.CategoryValueId,
-                                    rv.CategoryFieldId,
-                                    v.Value
-                                })
-                                .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                                .Select(v => new CategoryValueModel
-                                {
-                                    CategoryFieldId = v.CategoryFieldId,
-                                    CategoryValueId = v.CategoryValueId,
-                                    Value = v.Value
-                                });
+                            IQueryable<CategoryValueModel> query;
+                            if (field.ReferenceCategoryFieldId.HasValue)
+                            {
+                                query = _accountingContext.CategoryValue
+                                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                                    {
+                                        v.CategoryValueId,
+                                        rv.CategoryFieldId,
+                                        v.Value
+                                    })
+                                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
+                                    .Select(v => new CategoryValueModel
+                                    {
+                                        CategoryFieldId = v.CategoryFieldId,
+                                        CategoryValueId = v.CategoryValueId,
+                                        Value = v.Value
+                                    });
+                            }
+                            else
+                            {
+                                query = _accountingContext.CategoryValue
+                                    .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
+                                    .Select(v => new CategoryValueModel
+                                    {
+                                        CategoryFieldId = v.CategoryFieldId,
+                                        CategoryValueId = v.CategoryValueId,
+                                        Value = v.Value
+                                    });
+                            }
+                            categoryValueId = query.Where(v => v.Value == row[fieldIndx]).Select(v => v.CategoryValueId).FirstOrDefault();
                         }
-                        else
+
+                        rowInput.Values.Add(new CategoryValueModel
                         {
-                            query = _accountingContext.CategoryValue
-                                .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                                .Select(v => new CategoryValueModel
-                                {
-                                    CategoryFieldId = v.CategoryFieldId,
-                                    CategoryValueId = v.CategoryValueId,
-                                    Value = v.Value
-                                });
-                        }
-                        categoryValueId = query.Where(v => v.Value == row[fieldIndx]).Select(v => v.CategoryValueId).FirstOrDefault();
+                            CategoryFieldId = field.CategoryFieldId,
+                            CategoryValueId = categoryValueId,
+                            Value = row[fieldIndx]
+                        });
                     }
-
-                    rowInput.Values.Add(new CategoryValueModel
+                    var r = await AddCategoryRow(updatedUserId, categoryId, rowInput);
+                    if (r.IsSuccessCode())
                     {
-                        CategoryFieldId = field.CategoryFieldId,
-                        CategoryValueId = categoryValueId,
-                        Value = row[fieldIndx]
-                    });
+                        result.Success.Add(rowIndx);
+                    }
+                    else
+                    {
+                        result.Error.Add(rowIndx, r.Message);
+                    }
                 }
-                var r = await AddCategoryRow(updatedUserId, categoryId, rowInput);
-                if (r.IsSuccessCode())
-                {
-                    result.Success.Add(rowIndx);
-                }
-                else
-                {
-                    result.Error.Add(rowIndx, r.Message);
-                }
+                return result;
             }
-            return result;
-
+            catch (Exception ex)
+            {
+                return CategoryErrorCode.FormatFileInvalid;
+            }
         }
 
         public async Task<ServiceResult<MemoryStream>> GetImportTemplateCategoryRow(int categoryId)

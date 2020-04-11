@@ -21,11 +21,6 @@ namespace VErp.Commons.Library
             hssfwb = new XSSFWorkbook();
         }
 
-        ~ExcelWriter()
-        {
-            hssfwb.Dispose();
-        }
-
         public void WriteToSheet(List<(string, byte[])[]> dataInRows, string sheetName, int startRow = 0)
         {
             ISheet sheet = hssfwb.CreateSheet(sheetName);
