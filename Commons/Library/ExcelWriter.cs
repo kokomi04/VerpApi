@@ -21,7 +21,7 @@ namespace VErp.Commons.Library
             hssfwb = new XSSFWorkbook();
         }
 
-        public void WriteToSheet(List<(string, byte[])[]> dataInRows, string sheetName, int startRow = 0)
+        public void WriteToSheet(List<(string, byte[])[]> dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
         {
             ISheet sheet = hssfwb.CreateSheet(sheetName);
 
@@ -30,7 +30,7 @@ namespace VErp.Commons.Library
             {
                 int curRow = startRow + addedRow;
                 IRow newRow = sheet.CreateRow(curRow);
-                int curCell = 0;
+                int addCollumn = 0;
                 foreach ((string Value, byte[] Style) in row)
                 {
                     if (Style != null)
@@ -38,12 +38,13 @@ namespace VErp.Commons.Library
                         XSSFCellStyle cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
                         cellStyle.SetFillForegroundColor(new XSSFColor(Style));
                         cellStyle.FillPattern = FillPattern.SolidForeground;
-                        ICell cell = newRow.CreateCell(curCell);
+                        int curCollumn = addCollumn + startCollumn;
+                        ICell cell = newRow.CreateCell(curCollumn);
                         cell.SetCellValue(Value);
 
                         cell.CellStyle = cellStyle;
                     }
-                    curCell++;
+                    addCollumn++;
                 }
                 addedRow++;
             }
