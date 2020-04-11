@@ -178,68 +178,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
-                    // Thêm dòng
-                    var categoryRow = new CategoryRow
-                    {
-                        CategoryId = categoryId
-                    };
-                    await _accountingContext.CategoryRow.AddAsync(categoryRow);
-                    await _accountingContext.SaveChangesAsync();
-
-                    // Duyệt danh sách field
-                    foreach (var field in categoryFields)
-                    {
-                        int categoryValueId = 0;
-                        var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
-                        {
-                            continue;
-                        }
-
-                        if (field.FormTypeId != (int)EnumFormType.Select)
-                        {
-                            string value = string.Empty;
-                            if (field.AutoIncrement)
-                            {
-                                // Lấy ra value lớn nhất
-                                string max = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.Value);
-                                value = (int.Parse(max ?? "0") + 1).ToString();
-                            }
-                            else
-                            {
-                                value = valueItem.Value;
-                            }
-                            // Thêm value
-                            CategoryValue categoryValue = new CategoryValue
-                            {
-                                CategoryFieldId = field.CategoryFieldId,
-                                Value = value,
-                                UpdatedUserId = updatedUserId
-                            };
-                            await _accountingContext.CategoryValue.AddAsync(categoryValue);
-                            await _accountingContext.SaveChangesAsync();
-                            categoryValueId = categoryValue.CategoryValueId;
-                        }
-                        else
-                        {
-                            categoryValueId = valueItem.CategoryValueId;
-                        }
-
-                        // Thêm mapping
-                        var categoryRowValue = new CategoryRowValue
-                        {
-                            CategoryFieldId = field.CategoryFieldId,
-                            CategoryRowId = categoryRow.CategoryRowId,
-                            CategoryValueId = categoryValueId,
-                            UpdatedUserId = updatedUserId
-                        };
-                        await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
-                        await _accountingContext.SaveChangesAsync();
-                    }
-
+                    int categoryRowId = await InsertCategoryRowAsync(updatedUserId, categoryId, categoryFields, data);
                     trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryRow.CategoryRowId, $"Thêm dòng cho danh mục {category.Title}", data.JsonSerialize());
-                    return categoryRow.CategoryRowId;
+                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryRowId, $"Thêm dòng cho danh mục {category.Title}", data.JsonSerialize());
+                    return categoryRowId;
                 }
                 catch (Exception ex)
                 {
@@ -248,6 +190,68 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     return GeneralCode.InternalError;
                 }
             }
+        }
+
+        private async Task<int> InsertCategoryRowAsync(int updatedUserId, int categoryId, IEnumerable<CategoryField> categoryFields, CategoryRowInputModel data)
+        { // Thêm dòng
+            var categoryRow = new CategoryRow
+            {
+                CategoryId = categoryId
+            };
+            await _accountingContext.CategoryRow.AddAsync(categoryRow);
+            await _accountingContext.SaveChangesAsync();
+
+            // Duyệt danh sách field
+            foreach (var field in categoryFields)
+            {
+                int categoryValueId = 0;
+                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
+                {
+                    continue;
+                }
+
+                if (field.FormTypeId != (int)EnumFormType.Select)
+                {
+                    string value = string.Empty;
+                    if (field.AutoIncrement)
+                    {
+                        // Lấy ra value lớn nhất
+                        string max = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.Value);
+                        value = (int.Parse(max ?? "0") + 1).ToString();
+                    }
+                    else
+                    {
+                        value = valueItem.Value;
+                    }
+                    // Thêm value
+                    CategoryValue categoryValue = new CategoryValue
+                    {
+                        CategoryFieldId = field.CategoryFieldId,
+                        Value = value,
+                        UpdatedUserId = updatedUserId
+                    };
+                    await _accountingContext.CategoryValue.AddAsync(categoryValue);
+                    await _accountingContext.SaveChangesAsync();
+                    categoryValueId = categoryValue.CategoryValueId;
+                }
+                else
+                {
+                    categoryValueId = valueItem.CategoryValueId;
+                }
+
+                // Thêm mapping
+                var categoryRowValue = new CategoryRowValue
+                {
+                    CategoryFieldId = field.CategoryFieldId,
+                    CategoryRowId = categoryRow.CategoryRowId,
+                    CategoryValueId = categoryValueId,
+                    UpdatedUserId = updatedUserId
+                };
+                await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
+                await _accountingContext.SaveChangesAsync();
+            }
+            return categoryRow.CategoryId;
         }
 
         public async Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data)
@@ -496,10 +500,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream)
+        public async Task<ServiceResult> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream)
         {
             try
             {
+                string errFormat = "Dòng {0} : {1}";
                 var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
                 if (category == null)
                 {
@@ -515,15 +520,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
                 var reader = new ExcelReader(stream);
 
-                CategoryRowImportResultModel result = new CategoryRowImportResultModel();
                 // Lấy thông tin field
                 var categoryIds = GetAllCategoryIds(categoryId);
                 var categoryFields = _accountingContext.CategoryField
                     .Where(f => categoryIds.Contains(f.CategoryId))
-                    .Where(f => !f.IsHidden && !f.AutoIncrement)
                     .ToList();
 
-                string[][] data = reader.ReadFile(categoryFields.Count, 0, 1, 0);
+                List<CategoryRowInputModel> rowInputs = new List<CategoryRowInputModel>();
+
+                string[][] data = reader.ReadFile(categoryFields.Where(f => !f.IsHidden && !f.AutoIncrement).Count(), 0, 1, 0);
                 string[] fieldNames = data[0];
                 for (int rowIndx = 1; rowIndx < data.Length; rowIndx++)
                 {
@@ -568,6 +573,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                     });
                             }
                             categoryValueId = query.Where(v => v.Value == row[fieldIndx]).Select(v => v.CategoryValueId).FirstOrDefault();
+                            if (categoryValueId <= 0)
+                            {
+                                return (CategoryErrorCode.ReferValueNotFound, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.ReferValueNotFound.GetEnumDescription()));
+                            }
                         }
 
                         rowInput.Values.Add(new CategoryValueModel
@@ -577,17 +586,45 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             Value = row[fieldIndx]
                         });
                     }
-                    var r = await AddCategoryRow(updatedUserId, categoryId, rowInput);
-                    if (r.IsSuccessCode())
+
+                    var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
+                    var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
+                    var selectFields = categoryFields.Where(f => !f.AutoIncrement && f.FormTypeId == (int)EnumFormType.Select);
+
+                    // Check field required
+                    var r = CheckRequired(rowInput, requiredFields);
+                    if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
+
+                    // Check unique
+                    r = CheckUnique(rowInput, uniqueFields);
+                    if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
+
+                    // Check value
+                    r = CheckValue(rowInput, categoryFields);
+                    if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
+
+                    rowInputs.Add(rowInput);
+                }
+
+                using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+                {
+                    try
                     {
-                        result.Success.Add(rowIndx);
+                        foreach(var rowInput in rowInputs)
+                        {
+                            int categoryRowId = await InsertCategoryRowAsync(updatedUserId, categoryId, categoryFields, rowInput);
+                        }
+                        trans.Commit();
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        result.Error.Add(rowIndx, r.Message);
+                        trans.Rollback();
+                        _logger.LogError(ex, "Import");
+                        return GeneralCode.InternalError;
                     }
                 }
-                return result;
+
+                return GeneralCode.Success;
             }
             catch (Exception ex)
             {
