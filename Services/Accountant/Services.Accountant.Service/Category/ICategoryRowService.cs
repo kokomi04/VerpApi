@@ -20,7 +20,7 @@ namespace VErp.Services.Accountant.Service.Category
 
         Task<Enum> DeleteCategoryRow(int updatedUserId, int categoryId, int categoryRowId);
 
-        Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream);
+        Task<ServiceResult> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream);
 
         Task<ServiceResult<MemoryStream>> GetImportTemplateCategoryRow(int categoryId);
     }

@@ -24,15 +24,4 @@ namespace VErp.Services.Accountant.Model.Category
         public ICollection<CategoryValueModel> Values { get; set; }
     }
 
-    public class CategoryRowImportResultModel
-    {
-        public CategoryRowImportResultModel()
-        {
-            Success = new List<int>();
-            Error = new Dictionary<int, string>();
-        }
-        public ICollection<int> Success { get; set; }
-        public IDictionary<int, string> Error { get; set; }
-    }
-
 }

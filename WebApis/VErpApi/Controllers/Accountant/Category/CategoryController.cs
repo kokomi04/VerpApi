@@ -13,6 +13,7 @@ using VErp.Services.Accountant.Service.Category;
 using VErp.Services.Accountant.Model.Category;
 using System.Collections.Generic;
 using VErp.Commons.Library;
+using System;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -184,7 +185,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpPost]
         [Route("{categoryId}/categoryrows/file")]
-        public async Task<ServiceResult<CategoryRowImportResultModel>> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
+        public async Task<ServiceResult> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
         {
             var updatedUserId = UserId;
             var r = await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
