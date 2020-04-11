@@ -523,6 +523,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 // Lấy thông tin field
                 var categoryIds = GetAllCategoryIds(categoryId);
                 var categoryFields = _accountingContext.CategoryField
+                    .Include(f => f.DataType)
                     .Where(f => categoryIds.Contains(f.CategoryId))
                     .ToList();
 
@@ -664,6 +665,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             var writer = new ExcelWriter();
             writer.WriteToSheet(dataInRows, "Data");
+
             MemoryStream stream = await writer.WriteToStream();
             return stream;
         }
