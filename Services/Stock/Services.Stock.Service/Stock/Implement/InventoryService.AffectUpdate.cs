@@ -264,9 +264,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
-                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0)
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0 || p.NewPrimaryQuantity == p.OldPrimaryQuantity)
                 {
                     p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
+                }
+
+                if (p.NewProductUnitConversionQuantity == p.OldProductUnitConversionQuantity)
+                {
+                    p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
                 foreach (var obj in p.AffectObjects)
@@ -310,11 +315,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
                     }
 
-                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0)
+                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0|| obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
                     {
                         obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
                     }
 
+                    if (obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
+                    {
+                        obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
+                    }
 
 
                     if ((obj.NewProductUnitConversionQuantity != 0 || obj.NewPrimaryQuantity != 0)

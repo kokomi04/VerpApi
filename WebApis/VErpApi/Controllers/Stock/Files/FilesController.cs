@@ -82,7 +82,7 @@ namespace VErpApi.Controllers.Stock.Files
                 default:
                     return null;
             }
-            return await _fileService.Upload(objectTypeId, fileType, string.Empty, file).ConfigureAwait(false);
+            return await _fileService.Upload(objectTypeId, fileType, string.Empty, file).ConfigureAwait(true);
         }
 
     }

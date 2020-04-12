@@ -32,7 +32,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService : IInventoryService
     {
-        const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_JS_NUMBER;
+        const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
         private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockDbContext;
