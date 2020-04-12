@@ -28,7 +28,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             get
             {
                 if (!InventoryChange.OldDate.HasValue) return EnumInventoryDateChangeType.New;
-                return InventoryChange.OldDate.Value < InventoryInfo.Date ? EnumInventoryDateChangeType.Increase : EnumInventoryDateChangeType.Decrease;
+                return InventoryInfo.Date >= InventoryChange.OldDate.Value ? EnumInventoryDateChangeType.Increase : EnumInventoryDateChangeType.Decrease;
             }
         }
 
@@ -72,13 +72,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             //2. Lấy dữ liệu cũ
             var oldInventoryDetails = await context.StockDbContext.InventoryDetailChange
-                .Where(t => t.InventoryId == context.InventoryId)
+                .Where(t => t.InventoryId == context.InventoryId && !t.IsDeleted)
                 .ToListAsync();
 
             //3. Lấy dữ liệu mới
             var newInventoryDetails = await context.StockDbContext.InventoryDetail
-                .IgnoreQueryFilters()
-                .Where(t => t.InventoryId == context.InventoryId)
+                .Where(t => t.InventoryId == context.InventoryId && !t.IsDeleted)
                 .ToListAsync();
 
             //4. Ensure dữ liệu cũ

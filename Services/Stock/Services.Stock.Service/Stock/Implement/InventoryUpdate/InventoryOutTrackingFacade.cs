@@ -82,7 +82,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                 //Step3: Trừ dồn số lượng từ thời điểm của đơn đến hiện tại
-                await InventoryOutputUpdateToNow(oldDetailGroup.Key, -productChange.DeltaChange);
+                await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange);
             }
         }
 
@@ -97,35 +97,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await InventoryOutputBetweenAdd(oldDetailGroup.Key, -productChange.TotalNewPrimaryQuantity);
 
             //Step3: Trừ dồn số lượng oldDate => Now bằng số tăng lên (hoặc giảm đi)
-            await InventoryOutputUpdateToNow(oldDetailGroup.Key, -productChange.DeltaChange);
+            await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange);
         }
 
         protected override async Task<decimal> GetBeforeBalance(int productId)
         {
-            var beforePrimaryQuantityRemaning = await (
+            var primaryQuantityRemaningSameTimeBefore = await (
               from d in _context.StockDbContext.InventoryDetail
               join iv in _context.StockDbContext.Inventory on d.InventoryId equals iv.InventoryId
               where iv.IsApproved
               && iv.StockId == _context.StockId
               && d.ProductId == productId
 
-              && (iv.Date < _context.InventoryInfo.Date//Phiếu trước thời điểm đó
-                  || iv.Date == _context.InventoryInfo.Date &&(iv.InventoryTypeId == (int)EnumInventoryType.Input || iv.InventoryTypeId == (int)EnumInventoryType.Output && iv.InventoryId < _context.InventoryId)//Hoặc phiếu nhập cùng thời điểm hoặc phiếu xuất vào trước
+              && iv.Date == _context.InventoryInfo.Date
+              && (iv.InventoryTypeId == (int)EnumInventoryType.Input || iv.InventoryTypeId == (int)EnumInventoryType.Output && iv.InventoryId < _context.InventoryId)//Hoặc phiếu nhập cùng thời điểm hoặc phiếu xuất vào trước
 
-                 )
 
               orderby iv.Date descending, iv.InventoryTypeId descending, iv.InventoryId descending, d.InventoryDetailId descending
               select d.PrimaryQuantityRemaning
                              ).FirstOrDefaultAsync();
 
-            decimal primaryQuantityRemaning = 0;
+            if (primaryQuantityRemaningSameTimeBefore > 0) return primaryQuantityRemaningSameTimeBefore.Value;
 
-            if (beforePrimaryQuantityRemaning.HasValue)
-            {
-                primaryQuantityRemaning = beforePrimaryQuantityRemaning.Value;
-            }
-
-            return primaryQuantityRemaning;
+            return await GetBeforeDateBalance(productId);
         }
 
 

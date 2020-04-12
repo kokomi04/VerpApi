@@ -51,4 +51,11 @@ namespace VErp.Infrastructure.ServiceCore.Model
         }
 
     }
+    public static class ServiceResultExtensions
+    {
+        public static bool IsSuccessCode(this ServiceResult result)
+        {
+            return result.Code.IsSuccess();
+        }
+    }
 }

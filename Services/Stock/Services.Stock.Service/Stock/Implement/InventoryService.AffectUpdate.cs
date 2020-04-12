@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
@@ -273,7 +272,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
-                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity)==0)
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0)
                 {
                     p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
                 }
@@ -643,7 +642,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageInfo.PrimaryQuantityRemaining < 0 || packageInfo.ProductUnitConversionRemaining < 0)
                     {
-                        throw new Exception("Invalid negative package data");
+                        throw new Exception("Invalid negative package data " + packageInfo.PackageId);
                     }
                 }
 
@@ -651,7 +650,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageRef.PrimaryQuantity < 0 || packageRef.ProductUnitConversionQuantity < 0)
                     {
-                        throw new Exception("Invalid negative package ref data");
+                        throw new Exception("Invalid negative package ref data packageId: " + packageRef.PackageId + " ref: " + packageRef.RefPackageId);
                     }
                 }
 

@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.1" />
     <PackageReference Include="Moq" Version="4.13.1" />
     <PackageReference Include="xunit" Version="2.4.0" />
@@ -22,6 +23,7 @@
     <ProjectReference Include="..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
+    <ProjectReference Include="..\..\WebApis\VErpApi\VErpApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

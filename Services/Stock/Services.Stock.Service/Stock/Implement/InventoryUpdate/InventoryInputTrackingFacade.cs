@@ -102,33 +102,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         protected override async Task<decimal> GetBeforeBalance(int productId)
         {
-            var beforePrimaryQuantityRemaning = await (
-              from d in _context.StockDbContext.InventoryDetail
-              join iv in _context.StockDbContext.Inventory on d.InventoryId equals iv.InventoryId
-              where iv.IsApproved
-              && iv.StockId == _context.StockId
-              && d.ProductId == productId
+           
+            var primaryQuantityRemaningSameTimeBefore = await (
+             from d in _context.StockDbContext.InventoryDetail
+             join iv in _context.StockDbContext.Inventory on d.InventoryId equals iv.InventoryId
+             where iv.IsApproved
+             && iv.StockId == _context.StockId
+             && d.ProductId == productId
+             && iv.Date == _context.InventoryInfo.Date 
+             && iv.InventoryTypeId == (int)EnumInventoryType.Input 
+             && iv.InventoryId < _context.InventoryId//Cùng thời điểm nhưng là phiếu nhập và vào trước
 
-              && (iv.Date < _context.InventoryInfo.Date//Phiếu trước thời điểm đó
-                  || iv.Date == _context.InventoryInfo.Date && iv.InventoryTypeId == (int)EnumInventoryType.Input && iv.InventoryId < _context.InventoryId//Hoặc cùng thời điểm nhưng là phiếu nhập và vào trước
+             orderby iv.Date descending, iv.InventoryId descending, d.InventoryDetailId descending
+             select d.PrimaryQuantityRemaning
+            ).FirstOrDefaultAsync();
 
-                 )
 
-              orderby iv.Date descending, iv.InventoryId descending, d.InventoryDetailId descending
-              select d.PrimaryQuantityRemaning
-                             ).FirstOrDefaultAsync();
+            if (primaryQuantityRemaningSameTimeBefore > 0) return primaryQuantityRemaningSameTimeBefore.Value;
 
-            decimal primaryQuantityRemaning = 0;
-
-            if (beforePrimaryQuantityRemaning.HasValue)
-            {
-                primaryQuantityRemaning = beforePrimaryQuantityRemaning.Value;
-            }
-
-            return primaryQuantityRemaning;
+            return await GetBeforeDateBalance(productId);
         }
 
-      
+
 
         private async Task InventoryInputBetweenAdd(int productId, decimal primaryQuantity)
         {

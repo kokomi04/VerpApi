@@ -95,18 +95,44 @@ FROM
                 new SqlParameter("@AddPrimaryQuantity", SqlDbType.Decimal) { Value = addPrimaryQuantity },
                 new SqlParameter("@StockId", SqlDbType.Int) { Value = _context.StockId },
                 new SqlParameter("@ProductId", SqlDbType.Int) { Value = productId },
-                new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = _context.InventoryChange.OldDate },
+                new SqlParameter("@OldDate", SqlDbType.DateTime2) { IsNullable = true, Value = _context.InventoryChange.OldDate.HasValue ? (object)_context.InventoryChange.OldDate.Value : (object)DBNull.Value },
                 new SqlParameter("@NewDate", SqlDbType.DateTime2) { Value = _context.InventoryInfo.Date },
                 new SqlParameter("@FromDate", SqlDbType.DateTime2) { Value = fromDate },
                 new SqlParameter("@ToDate", SqlDbType.DateTime2) { Value = toDate },
-                new SqlParameter("@InputInventoryTypeId", SqlDbType.DateTime2) { Value = (int)EnumInventoryType.Input },
-                new SqlParameter("@OutputInventoryTypeId", SqlDbType.DateTime2) { Value = (int)EnumInventoryType.Output },
+                new SqlParameter("@InputInventoryTypeId", SqlDbType.Int) { Value = (int)EnumInventoryType.Input },
+                new SqlParameter("@OutputInventoryTypeId", SqlDbType.Int) { Value = (int)EnumInventoryType.Output },
                 new SqlParameter("@InventoryId", SqlDbType.BigInt) { Value = _context.InventoryId }
                 );
 #pragma warning restore EF1000 // Possible SQL injection vulnerability.
         }
 
         public abstract Task Execute();
+
+        protected async Task<decimal> GetBeforeDateBalance(int productId)
+        {
+            
+            var beforePrimaryQuantityRemaning = await (
+             from d in _context.StockDbContext.InventoryDetail
+             join iv in _context.StockDbContext.Inventory on d.InventoryId equals iv.InventoryId
+             where iv.IsApproved
+             && iv.StockId == _context.StockId
+             && d.ProductId == productId
+
+             && iv.Date < _context.InventoryInfo.Date//Phiếu trước thời điểm đó
+
+             orderby iv.Date descending, iv.InventoryTypeId descending, iv.InventoryId descending, d.InventoryDetailId descending
+             select d.PrimaryQuantityRemaning
+            ).FirstOrDefaultAsync();
+
+            decimal primaryQuantityRemaning = 0;
+
+            if (beforePrimaryQuantityRemaning.HasValue)
+            {
+                primaryQuantityRemaning = beforePrimaryQuantityRemaning.Value;
+            }
+
+            return primaryQuantityRemaning;
+        }
 
         /// <summary>
         /// Sort cho phép cùng thời điểm có thể lẫn lộn phiếu nhập/xuất, ưu tiên nhập trước, xuất sau để đảm bảo xuất được
@@ -129,7 +155,7 @@ FROM
         {
             var inventoryInfo = await _stockDbContext.Inventory
                 .IgnoreQueryFilters()
-                .Where(iv => iv.IsApproved)
+                .Where(iv => iv.IsApproved && iv.InventoryId == inventoryId)
                 .FirstOrDefaultAsync();
 
             if (inventoryInfo == null)

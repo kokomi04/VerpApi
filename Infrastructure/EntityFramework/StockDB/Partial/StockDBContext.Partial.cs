@@ -1,19 +1,21 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.Extensions.Logging;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public class StockDBRestrictionContext : StockDBContext
+    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache
     {
         //ICurrentContextService _currentContext;
         public List<int> StockIds { get; set; }
+
+        public bool FilterStock { get; private set; }
+
         public StockDBRestrictionContext(DbContextOptions<StockDBRestrictionContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
@@ -21,7 +23,10 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             // _currentContext = currentContext;
             StockIds = currentContext.StockIds?.ToList();
+            FilterStock = StockIds != null;
         }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.ReplaceService<IModelCacheKeyFactory, DynamicModelCacheKeyFactory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,11 +46,14 @@ namespace VErp.Infrastructure.EF.StockDB
                     filterBuilder.AddFilter("IsDeleted", isDeleted);
                 }
 
-                var isStockIdProp = entityType.FindProperty("StockId");
-                if (isStockIdProp != null)
+                if (FilterStock)
                 {
-                    var stockIds = Expression.PropertyOrField(ctxConstant, "StockIds");
-                    filterBuilder.AddFilterListContains<int>("StockId", stockIds);
+                    var isStockIdProp = entityType.FindProperty("StockId");
+                    if (isStockIdProp != null)
+                    {
+                        var stockIds = Expression.PropertyOrField(ctxConstant, "StockIds");
+                        filterBuilder.AddFilterListContains<int>("StockId", stockIds);
+                    }
                 }
 
                 entityType.QueryFilter = filterBuilder.Build();
