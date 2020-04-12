@@ -8,6 +8,7 @@ namespace VErp.WebApis.VErpApi
 {
     public class VErpApiAssembly
     {
+        //test build
         public static Assembly Assembly => typeof(VErpApiAssembly).Assembly;
     }
 }

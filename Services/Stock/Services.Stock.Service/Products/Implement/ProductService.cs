@@ -15,6 +15,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using static VErp.Services.Stock.Model.Product.ProductModel;
 
@@ -52,6 +53,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<ServiceResult<int>> AddProduct(ProductModel req)
         {
             req.ProductCode = (req.ProductCode ?? "").Trim();
+            Enum validate;
+            if (!(validate = ValidateProduct(req)).IsSuccess())
+            {
+                return validate;
+            }
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
             if (productExisted != null)
@@ -178,7 +184,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    
+
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", req.JsonSerialize());
 
                     productId = productInfo.ProductId;
@@ -258,6 +264,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<Enum> UpdateProduct(int productId, ProductModel req)
         {
+            Enum validate;
+            if (!(validate = ValidateProduct(req)).IsSuccess())
+            {
+                return validate;
+            }
+
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
@@ -310,7 +322,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                     var stockValidations = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
 
-                   
+
 
                     //Update
 
@@ -402,8 +414,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     trans.Commit();
 
                     var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
-                  
-                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
+
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
                 }
                 catch (Exception ex)
                 {
@@ -442,7 +454,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-           
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -461,7 +473,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                   await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
 
                     return GeneralCode.Success;
                 }
@@ -564,6 +576,106 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
             return (pageData, total);
+        }
+
+        public async Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds)
+        {
+            if (productIds == null || productIds.Count == 0) return new List<ProductListOutput>();
+
+            var query = (
+                from p in _stockContext.Product
+                join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId
+                join pt in _stockContext.ProductType on p.ProductTypeId equals pt.ProductTypeId into pts
+                from pt in pts.DefaultIfEmpty()
+                join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
+                from pc in pcs.DefaultIfEmpty()
+                where productIds.Contains(p.ProductId)
+                select new
+                {
+                    p.ProductId,
+                    p.ProductCode,
+                    p.ProductName,
+                    p.MainImageFileId,
+                    p.ProductTypeId,
+                    ProductTypeName = pt == null ? null : pt.ProductTypeName,
+                    p.ProductCateId,
+                    ProductCateName = pc == null ? null : pc.ProductCateName,
+                    p.Barcode,
+                    pe.Specification,
+                    pe.Description,
+                    p.UnitId,
+                    p.EstimatePrice
+                });
+
+            var lstData = await query.ToListAsync();
+
+            var unitIds = lstData.Select(p => p.UnitId).ToList();
+            var unitInfos = await _unitService.GetListByIds(unitIds);
+
+            var stockProductData = _stockContext.StockProduct.AsNoTracking().Where(q => productIds.Contains(q.ProductId)).ToList();
+
+
+            var data = new List<ProductListOutput>();
+            foreach (var item in lstData)
+            {
+                var product = new ProductListOutput()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    Barcode = item.Barcode,
+                    MainImageFileId = item.MainImageFileId,
+                    ProductCateId = item.ProductCateId,
+                    ProductCateName = item.ProductCateName,
+                    ProductTypeId = item.ProductTypeId,
+                    ProductTypeName = item.ProductTypeName,
+                    Specification = item.Specification,
+                    UnitId = item.UnitId,
+                    EstimatePrice = item.EstimatePrice,
+                    StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
+                    {
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                    }).ToList()
+                };
+
+                var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
+
+                product.UnitName = unitInfo?.UnitName;
+
+                data.Add(product);
+            }
+
+
+            return data;
+        }
+        private Enum ValidateProduct(ProductModel req)
+        {
+            if (req.StockInfo.UnitConversions?.Count > 0)
+            {
+                foreach (var unitConversion in req.StockInfo.UnitConversions)
+                {
+                    try
+                    {
+                        var eval = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
+                        if (!(eval > 0))
+                        {
+                            return ProductErrorCode.InvalidUnitConversionExpression;
+                        }
+                    }
+                    catch (Exception)
+                    {
+
+                        return ProductErrorCode.InvalidUnitConversionExpression;
+                    }
+
+                }
+            }
+            return GeneralCode.Success;
         }
     }
 }

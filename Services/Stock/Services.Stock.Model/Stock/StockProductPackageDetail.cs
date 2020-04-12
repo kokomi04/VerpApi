@@ -9,8 +9,8 @@ namespace VErp.Services.Stock.Model.Stock
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
         public string LocationName { get; set; }
-        public long Date { get; set; }
-        public long ExpriredDate { get; set; }
+        public long? Date { get; set; }
+        public long? ExpriredDate { get; set; }
         public int PrimaryUnitId { get; set; }
         public decimal PrimaryQuantity { get; set; }       
         public int? ProductUnitConversionId { get; set; }

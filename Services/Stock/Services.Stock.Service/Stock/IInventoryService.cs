@@ -7,7 +7,7 @@ using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 
-namespace VErp.Services.Stock.Service.Stock    
+namespace VErp.Services.Stock.Service.Stock
 {
     /// <summary>
     /// I - Nhap xuat kho
@@ -22,10 +22,12 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="type">Loại typeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>
         /// <param name="beginTime"></param>
         /// <param name="endTime"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0,long endTime = 0, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
@@ -130,7 +132,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);                      
+        Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
 
         Task<ServiceResult<IList<CensoredInventoryInputProducts>>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
         Task<ServiceResult> ApprovedInputDataUpdate(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);

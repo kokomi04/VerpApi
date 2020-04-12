@@ -10,21 +10,15 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         [Description("Tên danh mục không được bỏ trống")]
         EmptyProductCateName = 1,
-
         [Description("Danh mục cha không tồn tại")]
         ParentProductCateNotfound = 2,
-
         [Description("Danh mục không tồn tại")]
         ProductCateNotfound = 3,
-
-        [Description("Để xóa danh mục cha, vui lòng xóa hoặc di chuyển danh mục con")]
+        [Description("Để xóa danh mục cha, vui lòng xóa hoặc di chuyển nhóm dữ liệu trực thuộc")]
         CanNotDeletedParentProductCate = 4,
-
         [Description("Tên danh mục đã tồn tại, vui lòng chọn tên khác")]
         ProductCateNameAlreadyExisted = 5,
-
         [Description("Không thể xóa danh mục đang được sử dụng")]
         ProductCateInUsed = 6,
-        
     }
 }

@@ -4,28 +4,26 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class MasterDBContext
+    public partial class PurchaseOrderDBContext
     {
-        //protected override void OnModelCreating(ModelBuilder modelBuilder)
-        //{
-        //    OnModelCreated(modelBuilder);
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
 
-        //    foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        //    {
+                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
 
-        //        var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
+                var isDeletedProp = entityType.FindProperty("IsDeleted");
+                if (isDeletedProp != null)
+                {
+                    var isDeleted = Expression.Constant(false);
+                    filterBuilder.AddFilter("IsDeleted", isDeleted);
+                }
 
-        //        var isDeletedProp = entityType.FindProperty("IsDeleted");
-        //        if (isDeletedProp != null)
-        //        {
-        //            var isDeleted = Expression.Constant(false);
-        //            filterBuilder.AddFilter("IsDeleted", isDeleted);
-        //        }
+                entityType.SetQueryFilter(filterBuilder.Build());
+            }
 
-        //        entityType.QueryFilter = filterBuilder.Build();
-        //    }
-
-        //}
+        }
     }
 
 

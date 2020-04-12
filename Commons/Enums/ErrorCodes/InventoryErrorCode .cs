@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums.StandardEnum
     /// <summary>
     /// 
     /// </summary>
+    [ErrorCodePrefix("INV")]
     public enum InventoryErrorCode
     {
         [Description("Không tìm thấy phiếu xuất/nhập kho")]
@@ -26,13 +27,10 @@ namespace VErp.Commons.Enums.StandardEnum
         NotEnoughQuantity = 7,
         [Description("Tính năng này chưa được hỗ trợ")]
         NotSupportedYet = 8,
-
         [Description("Bạn cần cập nhật dữ liệu hợp lệ cho kiện/phiếu xuất (đầu ra <= đầu vào)")]
         InOuputAffectObjectsInvalid = 9,
-
         [Description("Không thể thay đổi kho ở phiếu nhập/xuất")]
         CanNotChangeStock = 10,
-
         [Description("Phiếu chưa được duyệt")]
         InventoryNotApprovedYet = 11,
     }

@@ -2,12 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>VErp.Services.PurchaseOrder.Model</RootNamespace>
+    <AssemblyName>VErp.Services.PurchaseOrder.Model</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
-    <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
   </ItemGroup>
 
 </Project>

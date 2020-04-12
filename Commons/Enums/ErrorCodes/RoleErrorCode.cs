@@ -18,7 +18,6 @@ namespace VErp.Commons.Enums.StandardEnum
         LoopbackParentRole = 5,
         [Description("Nhóm cha không tồn tại")]
         ParentRoleNotFound = 6,
-
         [Description("Đang tồn tại nhóm con")]
         ExistedChildrenRoles = 7,
     }

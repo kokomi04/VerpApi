@@ -8,6 +8,9 @@ namespace VErp.Infrastructure.AppSettings.Model
     {
         public string MasterDatabase { get; set; }
         public string StockDatabase { get; set; }
+        public string PurchaseOrderDatabase { get; set; }
         public string IdentityDatabase { get; set; }
+        public string OrganizationDatabase { get; set; }
+        public string AccountingDatabase { get; set; }
     }
 }

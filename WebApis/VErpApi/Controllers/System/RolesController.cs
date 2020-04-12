@@ -29,7 +29,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<RoleOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<RoleOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _roleService.GetList(keyword, page, size);
         }
@@ -40,7 +40,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddRole([FromBody] RoleInput role)
+        public async Task<ServiceResult<int>> AddRole([FromBody] RoleInput role)
         {
             return await _roleService.AddRole(role);
         }
@@ -52,7 +52,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{roleId}")]
-        public async Task<ApiResponse<RoleOutput>> GetRoleInfo([FromRoute] int roleId)
+        public async Task<ServiceResult<RoleOutput>> GetRoleInfo([FromRoute] int roleId)
         {
             return await _roleService.GetRoleInfo(roleId);
         }
@@ -65,7 +65,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{roleId}")]
-        public async Task<ApiResponse> UpdateRole([FromRoute] int roleId, [FromBody] RoleInput role)
+        public async Task<ServiceResult> UpdateRole([FromRoute] int roleId, [FromBody] RoleInput role)
         {
             return await _roleService.UpdateRole(roleId, role);
         }
@@ -77,7 +77,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{roleId}")]
-        public async Task<ApiResponse> DeleteRole([FromRoute] int roleId)
+        public async Task<ServiceResult> DeleteRole([FromRoute] int roleId)
         {
             return await _roleService.DeleteRole(roleId);
         }
@@ -89,7 +89,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{roleId}/Permissions")]
-        public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermissions([FromRoute] int roleId)
+        public async Task<ServiceResult<IList<RolePermissionModel>>> GetPermissions([FromRoute] int roleId)
         {
             return (await _roleService.GetRolePermission(roleId)).ToList();
         }
@@ -102,7 +102,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{roleId}/Permissions")]
-        public async Task<ApiResponse> UpdatePermissions([FromRoute] int roleId, [FromBody] IList<RolePermissionModel> permissions)
+        public async Task<ServiceResult> UpdatePermissions([FromRoute] int roleId, [FromBody] IList<RolePermissionModel> permissions)
         {
             return await _roleService.UpdateRolePermission(roleId, permissions);
         }
@@ -114,7 +114,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("Stocks")]
-        public async Task<ApiResponse<IList<StockPemissionOutput>>> Stocks()
+        public async Task<ServiceResult<IList<StockPemissionOutput>>> Stocks()
         {
             return (await _roleService.GetStockPermission()).ToList();
         }
@@ -125,7 +125,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("Stocks")]
-        public async Task<ApiResponse> Stocks(IList<StockPemissionOutput> req)
+        public async Task<ServiceResult> Stocks(IList<StockPemissionOutput> req)
         {
             return await _roleService.UpdateStockPermission(req);
         }

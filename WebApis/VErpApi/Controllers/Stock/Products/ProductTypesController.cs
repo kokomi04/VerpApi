@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ProductTypeOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<ProductTypeOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _productTypeService.GetList(keyword, page, size);
         }
@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddProductType([FromBody] ProductTypeInput type)
+        public async Task<ServiceResult<int>> AddProductType([FromBody] ProductTypeInput type)
         {
             return await _productTypeService.AddProductType(type);
         }
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("{productTypeId}")]
-        public async Task<ApiResponse<ProductTypeOutput>> GetProductTypeInfo([FromRoute] int productTypeId)
+        public async Task<ServiceResult<ProductTypeOutput>> GetProductTypeInfo([FromRoute] int productTypeId)
         {
             return await _productTypeService.GetInfoProductType(productTypeId);
         }
@@ -61,7 +61,7 @@ namespace VErpApi.Controllers.Stock.Products
        /// <returns></returns>
         [HttpPut]
         [Route("{productTypeId}")]
-        public async Task<ApiResponse> UpdateProductType([FromRoute] int productTypeId, [FromBody] ProductTypeInput type)
+        public async Task<ServiceResult> UpdateProductType([FromRoute] int productTypeId, [FromBody] ProductTypeInput type)
         {
             return await _productTypeService.UpdateProductType(productTypeId, type);
         }
@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("{productTypeId}")]
-        public async Task<ApiResponse> DeleteProductType([FromRoute] int productTypeId)
+        public async Task<ServiceResult> DeleteProductType([FromRoute] int productTypeId)
         {
             return await _productTypeService.DeleteProductType(productTypeId);
         }       

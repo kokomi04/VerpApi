@@ -20,6 +20,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -45,7 +46,6 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            
             if (!context.HttpContext.User.Identity.IsAuthenticated)
             {
                 await next();
@@ -71,9 +71,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (moduleIds.Count == 0)
             {
-                var json = new ApiResponse
+                var json = new ServiceResult
                 {
-                    Code = GeneralCode.X_ModuleMissing.GetErrorCodeString(),
+                    Code = GeneralCode.X_ModuleMissing,
                     Message = GeneralCode.X_ModuleMissing.GetEnumDescription()
                 };
 
@@ -93,9 +93,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (apiInfo == null)
             {
-                var json = new ApiResponse
+                var json = new ServiceResult
                 {
-                    Code = GeneralCode.Forbidden.GetErrorCodeString(),
+                    Code = GeneralCode.Forbidden,
                     Message = "api endpoint not found"
                 };
                 context.Result = new JsonResult(json);
@@ -107,9 +107,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (apiModuleMapped == null)
             {
-                var json = new ApiResponse
+                var json = new ServiceResult
                 {
-                    Code = GeneralCode.Forbidden.GetErrorCodeString(),
+                    Code = GeneralCode.Forbidden,
                     Message = "api endpoint is not mapped to module"
                 };
                 context.Result = new JsonResult(json);
@@ -126,15 +126,17 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 roleIds.AddRange(roleInfo.ChildrenRoleIds);
             }
 
-
-            var permission = (
+            var lstPermission = (
                 from p in _masterContext.RolePermission
                 where p.ModuleId == moduleId
                 && roleIds.Contains(p.RoleId)
                 select p.Permission
                 )
-                .ToList()
-                .Aggregate((p1, p2) => p1 | p2);
+                .ToList();
+
+            var permission = 0;
+            if (lstPermission.Count > 0)
+                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
 
             if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
@@ -143,9 +145,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
 
 
-            var data = new ApiResponse
+            var data = new ServiceResult
             {
-                Code = GeneralCode.Forbidden.GetErrorCodeString(),
+                Code = GeneralCode.Forbidden,
                 Message = GeneralCode.Forbidden.GetEnumDescription()
             };
 

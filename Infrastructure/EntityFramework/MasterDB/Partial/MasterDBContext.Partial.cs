@@ -6,10 +6,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class MasterDBContext
     {
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
         {
-            OnModelCreated(modelBuilder);
-
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
 
@@ -22,11 +20,9 @@ namespace VErp.Infrastructure.EF.MasterDB
                     filterBuilder.AddFilter("IsDeleted", isDeleted);
                 }
 
-                entityType.QueryFilter = filterBuilder.Build();
+                entityType.SetQueryFilter(filterBuilder.Build());
             }
 
         }
     }
-
-
 }

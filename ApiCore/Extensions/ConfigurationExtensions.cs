@@ -7,8 +7,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.IdentityDB;
+using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Infrastructure.ApiCore.Extensions
@@ -30,6 +32,31 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+        public static void ConfigPurchaseOrderContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<PurchaseOrderDBContext>((option) =>
+            {
+                option.UseLazyLoadingProxies(false);
+                option.UseSqlServer(appSetting.DatabaseConnections.PurchaseOrderDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+        public static void ConfigOrganizationContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<OrganizationDBContext>((option) =>
+            {
+                option.UseLazyLoadingProxies(false);
+                option.UseSqlServer(appSetting.DatabaseConnections.OrganizationDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+
+        public static void ConfigAccountingContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<AccountingDBContext>((option) =>
+            {
+                option.UseLazyLoadingProxies(false);
+                option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
             }, ServiceLifetime.Scoped);
         }
 

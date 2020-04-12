@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
@@ -51,9 +54,22 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+        }
+
+        /// <summary>
+        /// Lấy danh sách sản phẩm theo ids
+        /// </summary>
+        /// <param name="productIds"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumAction.View)]
+        public async Task<ServiceResult<IList<ProductListOutput>>> GetByIds([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetListByIds(productIds)).ToList();
         }
 
         /// <summary>
@@ -63,7 +79,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> AddProduct([FromBody] ProductModel product)
+        public async Task<ServiceResult<int>> AddProduct([FromBody] ProductModel product)
         {
             return await _productService.AddProduct(product);
         }
@@ -75,7 +91,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("{productId}")]
-        public async Task<ApiResponse<ProductModel>> GetProduct([FromRoute] int productId)
+        public async Task<ServiceResult<ProductModel>> GetProduct([FromRoute] int productId)
         {
             return await _productService.ProductInfo(productId);
         }
@@ -88,7 +104,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPut]
         [Route("{productId}")]
-        public async Task<ApiResponse> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
+        public async Task<ServiceResult> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
             return await _productService.UpdateProduct(productId, product);
         }
@@ -100,7 +116,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("{productId}")]
-        public async Task<ApiResponse> Delete([FromRoute] int productId)
+        public async Task<ServiceResult> Delete([FromRoute] int productId)
         {
             return await _productService.DeleteProduct(productId);
         }
@@ -113,7 +129,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ApiResponse<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<ServiceResult<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
         }
@@ -125,7 +141,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateProductCode")]
-        public async Task<ApiResponse<string>> GenerateProductCode([FromQuery] int? productTypeId)
+        public async Task<ServiceResult<string>> GenerateProductCode([FromQuery] int? productTypeId)
         {
             var typeCode = "";
             if (productTypeId.HasValue)

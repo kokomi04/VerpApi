@@ -1,17 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>VErp.Services.Master.Model</RootNamespace>
     <AssemblyName>VErp.Services.Master.Model</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Activity\" />
+    <ProjectReference Include="..\..\Organization\Services.Organization.Model\Services.Organization.Model.csproj" />
   </ItemGroup>
 
 </Project>

@@ -43,7 +43,7 @@ namespace SynTool
 
             var contextPath = projectFolder + "\\" + context + ".cs";
 
-            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\"  Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f";
+            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\"  Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj";
             Console.WriteLine("\n\n" + cmd + "\n\n");
             Console.WriteLine(Bash(cmd));
 
@@ -53,11 +53,12 @@ namespace SynTool
             }
 
             var text = System.IO.File.ReadAllText(contextPath);
-            text = text.Replace("protected override void OnModelCreating", "protected void OnModelCreated");
+            //text = text.Replace("protected override void OnModelCreating", "protected void OnModelCreated");
             //text.Replace("OnModelCreating", "OnModelCreated");
 
-            var reg = new Regex("(?<fName>protected override void OnConfiguring[^}]*})");
+            var reg = new Regex("(?<fName>protected override void OnConfiguring[^\\}]*})", RegexOptions.Multiline);
             text = text.Replace(reg.Match(text).Groups["fName"].Value, "protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {");
+
             System.IO.File.WriteAllText(contextPath, text);
 
         }

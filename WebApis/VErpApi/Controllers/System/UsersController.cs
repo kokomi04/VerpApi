@@ -5,12 +5,14 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Users;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.System
 {
@@ -20,12 +22,15 @@ namespace VErpApi.Controllers.System
     {
         private readonly IUserService _userService;
         private readonly IObjectGenCodeService _objectGenCodeService;
+        private readonly IFileService _fileService;
         public UsersController(IUserService userService
             , IObjectGenCodeService objectGenCodeService
+            , IFileService fileService
             )
         {
             _userService = userService;
             _objectGenCodeService = objectGenCodeService;
+            _fileService = fileService;
         }
 
         /// <summary>
@@ -38,9 +43,9 @@ namespace VErpApi.Controllers.System
         /// </returns>
         [HttpGet]
         [Route("")]
-        public async Task<ApiResponse<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size);
+            return await _userService.GetList(keyword, page, size).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -50,9 +55,10 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ApiResponse<int>> Post([FromBody] UserInfoInput req)
+        public async Task<ServiceResult<int>> Post([FromBody] UserInfoInput req)
         {
-            return await _userService.CreateUser(req);
+            int updatedUserId = UserId;
+            return await _userService.CreateUser(req, updatedUserId).ConfigureAwait(false);
         }
 
 
@@ -63,9 +69,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{userId}")]
-        public async Task<ApiResponse<UserInfoOutput>> UserInfo([FromRoute] int userId)
+        public async Task<ServiceResult<UserInfoOutput>> UserInfo([FromRoute] int userId)
         {
-            return await _userService.GetInfo(userId);
+            return await _userService.GetInfo(userId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -76,9 +82,10 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{userId}")]
-        public async Task<ApiResponse> Update([FromRoute] int userId, [FromBody] UserInfoInput req)
+        public async Task<ServiceResult> Update([FromRoute] int userId, [FromBody] UserInfoInput req)
         {
-            return await _userService.UpdateUser(userId, req);
+            int updatedUserId = UserId;
+            return await _userService.UpdateUser(userId, req, updatedUserId).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -88,9 +95,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{userId}")]
-        public async Task<ApiResponse> DeleteUser([FromRoute] int userId)
+        public async Task<ServiceResult> DeleteUser([FromRoute] int userId)
         {
-            return await _userService.DeleteUser(userId);
+            return await _userService.DeleteUser(userId).ConfigureAwait(false);
         }
 
 
@@ -104,9 +111,21 @@ namespace VErpApi.Controllers.System
         /// <returns>Danh sách người dùng</returns>
         [HttpGet]
         [Route("GetListByModuleId")]
-        public async Task<ApiResponse<PageData<UserInfoOutput>>> GetListByModuleId([FromQuery] int moduleId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<UserInfoOutput>>> GetListByModuleId([FromQuery] int moduleId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size);
+            return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Upload avatar
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("avatar")]
+        public async Task<ServiceResult<long>> Avatar([FromForm] IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -115,9 +134,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateUserCode")]
-        public async Task<ApiResponse<string>> GenerateUserCode()
+        public async Task<ServiceResult<string>> GenerateUserCode()
         {
-            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee);
+            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee).ConfigureAwait(false);
         }
     }
 }

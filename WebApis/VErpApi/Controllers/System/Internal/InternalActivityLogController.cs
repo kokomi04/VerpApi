@@ -23,10 +23,10 @@ namespace VErpApi.Controllers.System.Internal
 
         [Route("Log")]
         [HttpPost]
-        public Task<ApiResponse> Log([FromBody] ActivityInput req)
+        public Task<ServiceResult> Log([FromBody] ActivityInput req)
         {
             _activityService.CreateActivityAsync(req);
-            return Task.FromResult((ApiResponse)GeneralCode.Success);
+            return Task.FromResult((ServiceResult)GeneralCode.Success);
         }
     }
 }

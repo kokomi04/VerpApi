@@ -13,8 +13,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public int RoleId { get; set; }
-        public int? ParentRoleId { get; set; }
-        public string RootPath { get; set; }
         public string RoleName { get; set; }
         public string Description { get; set; }
         public int RoleStatusId { get; set; }
@@ -22,6 +20,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsEditable { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int? ParentRoleId { get; set; }
+        public string RootPath { get; set; }
         public bool IsModulePermissionInherit { get; set; }
         public bool IsDataPermissionInheritOnStock { get; set; }
         public string ChildrenRoleIds { get; set; }

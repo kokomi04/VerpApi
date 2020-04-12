@@ -13,6 +13,7 @@ namespace VErp.Services.Master.Model.Users
         public string Phone { get; set; }
         public string Address { get; set; }
         public EnumGender? GenderId { get; set; }
+        public long? AvatarFileId { get; set; }
     }
     public class UserInfoInput : EmployeeBase
     {
@@ -20,6 +21,8 @@ namespace VErp.Services.Master.Model.Users
         public string Password { get; set; }
         public EnumUserStatus UserStatusId { get; set; }
         public int? RoleId { get; set; }
+
+        public int DepartmentId { get; set; }
     }
 
     public class UserChangepasswordInput

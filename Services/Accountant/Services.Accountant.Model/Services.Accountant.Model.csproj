@@ -1,9 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>VErp.Services.Accountant.Model</RootNamespace>
     <AssemblyName>VErp.Services.Accountant.Model</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
+  </ItemGroup>
 
 </Project>

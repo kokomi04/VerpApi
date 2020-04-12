@@ -7,12 +7,10 @@ namespace VErp.Infrastructure.EF.MasterDB
     {
         public Gender()
         {
-            Employee = new HashSet<Employee>();
         }
 
         public int GenderId { get; set; }
         public string GenderName { get; set; }
 
-        public virtual ICollection<Employee> Employee { get; set; }
     }
 }

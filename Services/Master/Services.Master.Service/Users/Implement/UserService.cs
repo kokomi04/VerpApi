@@ -11,41 +11,49 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
+using VErp.Services.Organization.Model.Department;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {
     public class UserService : IUserService
     {
         private readonly MasterDBContext _masterContext;
+        private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IAsyncRunnerService _asyncRunnerService;
 
         public UserService(MasterDBContext masterContext
+            , OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<UserService> logger
             , IRoleService roleService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
+            , IAsyncRunnerService asyncRunnerService
             )
         {
+            _organizationContext = organizationContext;
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _roleService = roleService;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<ServiceResult<int>> CreateUser(UserInfoInput req)
+        public async Task<ServiceResult<int>> CreateUser(UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(-1, req);
             if (!validate.IsSuccess())
@@ -64,12 +72,19 @@ namespace VErp.Services.Master.Service.Users.Implement
                         return user.Code;
                     }
                     var r = await CreateEmployee(user.Data, req);
-
                     if (!r.IsSuccess())
                     {
                         trans.Rollback();
                         return r;
                     }
+                    // Gắn phòng ban cho nhân sự
+                    var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId, updatedUserId);
+                    if (!r2.IsSuccess())
+                    {
+                        trans.Rollback();
+                        return r2;
+                    }
+
                     trans.Commit();
 
                     var info = await GetUserFullInfo(user.Data);
@@ -77,6 +92,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
 
                     _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+
+                    if (req.AvatarFileId.HasValue)
+                    {
+                        _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, user.Data));
+                    }
 
                     return user.Data;
                 }
@@ -86,44 +106,111 @@ namespace VErp.Services.Master.Service.Users.Implement
                     _logger.LogError(ex, "CreateUser");
                     return GeneralCode.InternalError;
                 }
-
             }
+        }
+
+        private async Task<Enum> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
+        {
+            var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
+            if (department == null)
+            {
+                return DepartmentErrorCode.DepartmentNotFound;
+            }
+            if (!department.IsActived)
+            {
+                return DepartmentErrorCode.DepartmentInActived;
+            }
+            var EmployeeDepartmentMapping = _organizationContext.EmployeeDepartmentMapping
+                .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
+            var current = EmployeeDepartmentMapping
+           .Where(d => d.ExpirationDate >= DateTime.UtcNow.Date && d.EffectiveDate <= DateTime.UtcNow.Date)
+           .FirstOrDefault();
+
+            if (current == null)
+            {
+                // kiểm tra xem có bản ghi trong tương lai
+                var future = EmployeeDepartmentMapping.Where(d => d.EffectiveDate > DateTime.UtcNow.Date).OrderBy(d => d.EffectiveDate).FirstOrDefault();
+                DateTime expirationDate = future?.EffectiveDate.AddDays(-1) ?? DateTime.MaxValue.Date;
+
+                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
+                {
+                    DepartmentId = departmentId,
+                    UserId = userId,
+                    EffectiveDate = DateTime.UtcNow.Date,
+                    ExpirationDate = expirationDate,
+                    UpdatedUserId = updatedUserId,
+                    CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                current.ExpirationDate = DateTime.UtcNow.AddDays(-1).Date;
+                current.UpdatedTime = DateTime.UtcNow;
+                current.UpdatedUserId = updatedUserId;
+
+                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
+                {
+                    DepartmentId = departmentId,
+                    UserId = userId,
+                    EffectiveDate = DateTime.UtcNow.Date,
+                    ExpirationDate = current.ExpirationDate,
+                    UpdatedUserId = updatedUserId,
+                    CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow
+                });
+            }
+            await _masterContext.SaveChangesAsync();
+            return GeneralCode.Success;
         }
 
         public async Task<ServiceResult<UserInfoOutput>> GetInfo(int userId)
         {
-            var user = await (
-                 from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
-                 where u.UserId == userId
-                 select new UserInfoOutput
-                 {
-                     UserId = u.UserId,
-                     UserName = u.UserName,
-                     UserStatusId = (EnumUserStatus)u.UserStatusId,
-                     RoleId = u.RoleId,
-                     EmployeeCode = em.EmployeeCode,
-                     FullName = em.FullName,
-                     Address = em.Address,
-                     Email = em.Email,
-                     GenderId = (EnumGender?)em.GenderId,
-                     Phone = em.Phone
-                 }
-             )
-             .FirstOrDefaultAsync();
-
-            if (user == null)
+            var ur = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
+            var em = await _organizationContext.Employee.FirstOrDefaultAsync(e => e.UserId == userId);
+            if (ur == null || em == null)
             {
                 return UserErrorCode.UserNotFound;
             }
+            var user = new UserInfoOutput
+            {
+                UserId = ur.UserId,
+                UserName = ur.UserName,
+                UserStatusId = (EnumUserStatus)ur.UserStatusId,
+                RoleId = ur.RoleId,
+                EmployeeCode = em.EmployeeCode,
+                FullName = em.FullName,
+                Address = em.Address,
+                Email = em.Email,
+                GenderId = (EnumGender?)em.GenderId,
+                Phone = em.Phone,
+                AvatarFileId = em.AvatarFileId
+            };
 
+            // Thêm thông tin phòng ban cho nhân viên
+            DateTime currentDate = DateTime.UtcNow.Date;
+            var department = _organizationContext.EmployeeDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
+                .Join(_organizationContext.Department, m => m.DepartmentId, d => d.DepartmentId, (m, d) => d)
+                .Select(d => new DepartmentModel()
+                {
+                    DepartmentId = d.DepartmentId,
+                    DepartmentCode = d.DepartmentCode,
+                    DepartmentName = d.DepartmentName,
+                    Description = d.Description,
+                    IsActived = d.IsActived,
+                    ParentId = d.ParentId,
+                    ParentName = d.Parent != null ? d.Parent.DepartmentName : null
+                })
+                .FirstOrDefault();
+            user.Department = department;
             return user;
         }
 
         public async Task<Enum> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
-          
+            long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
+
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -145,7 +232,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize());
 
-                    return GeneralCode.Success;
+
                 }
                 catch (Exception ex)
                 {
@@ -155,47 +242,54 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
+
+            if (oldAvatarFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
+            }
+
+            return GeneralCode.Success;
         }
 
         public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-
-            var query = (
-                 from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
-                 select new UserInfoOutput
-                 {
-                     UserId = u.UserId,
-                     UserName = u.UserName,
-                     UserStatusId = (EnumUserStatus)u.UserStatusId,
-                     RoleId = u.RoleId,
-                     EmployeeCode = em.EmployeeCode,
-                     FullName = em.FullName,
-                     Address = em.Address,
-                     Email = em.Email,
-                     GenderId = (EnumGender?)em.GenderId,
-                     Phone = em.Phone
-                 }
-             );
+            IQueryable<Employee> employees = _organizationContext.Employee;
+            IQueryable<User> users = _masterContext.User;
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = from u in query
-                        where u.UserName.Contains(keyword)
-                        || u.FullName.Contains(keyword)
-                        || u.EmployeeCode.Contains(keyword)
-                        || u.Email.Contains(keyword)
-                        select u;
+                var userIds = employees.Where(em => em.FullName.Contains(keyword)
+                    || em.EmployeeCode.Contains(keyword)
+                    || em.Email.Contains(keyword)).Select(em => em.UserId).AsEnumerable();
+
+                users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
             }
 
-            var lst = await query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToListAsync();
-            var total = await query.CountAsync();
+            var query = users.AsEnumerable().Join(employees.AsEnumerable(), u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+            {
+                UserId = u.UserId,
+                UserName = u.UserName,
+                UserStatusId = (EnumUserStatus)u.UserStatusId,
+                RoleId = u.RoleId,
+                EmployeeCode = em.EmployeeCode,
+                FullName = em.FullName,
+                Address = em.Address,
+                Email = em.Email,
+                GenderId = (EnumGender?)em.GenderId,
+                Phone = em.Phone
+            });
+
+            var total = query.Count();
+
+            var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
+
+            
 
             return (lst, total);
         }
 
-        public async Task<Enum> UpdateUser(int userId, UserInfoInput req)
+        public async Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(userId, req);
             if (!validate.IsSuccess())
@@ -205,6 +299,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var userInfo = await GetUserFullInfo(userId);
 
+            long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
@@ -215,20 +310,36 @@ namespace VErp.Services.Master.Service.Users.Implement
                         trans.Rollback();
                         return r1;
                     }
-                    var r2 = await UpdateEmployee(userId, req);
 
+                    var r2 = await UpdateEmployee(userId, req);
                     if (!r2.IsSuccess())
                     {
                         trans.Rollback();
                         return r2;
                     }
+
+                    // Lấy thông tin bộ phận hiện tại
+                    DateTime currentDate = DateTime.UtcNow.Date;
+                    var departmentId = _organizationContext.EmployeeDepartmentMapping
+                        .Where(m => m.UserId == userId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
+                        .Select(d => d.DepartmentId).FirstOrDefault();
+                    // Nếu khác update lại thông tin
+                    if (departmentId != req.DepartmentId)
+                    {
+                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
+                        if (!r3.IsSuccess())
+                        {
+                            trans.Rollback();
+                            return r3;
+                        }
+                    }
+
                     trans.Commit();
 
                     var newUserInfo = await GetUserFullInfo(userId);
 
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", req.JsonSerialize());
 
-                    return GeneralCode.Success;
                 }
                 catch (Exception ex)
                 {
@@ -238,6 +349,17 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
 
             }
+
+            if (req.AvatarFileId.HasValue && oldAvatarFileId != req.AvatarFileId)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, userId));
+                if (oldAvatarFileId.HasValue)
+                {
+                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
+                }
+            }
+
+            return GeneralCode.Success;
         }
 
         public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
@@ -268,7 +390,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         }
 
         public async Task<IList<RolePermissionModel>> GetMePermission()
-        {           
+        {
             return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds);
         }
 
@@ -298,25 +420,27 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     keyword = (keyword ?? "").Trim();
 
-                    var query = (
-                         from u in _masterContext.User
-                         join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
-                         join em in _masterContext.Employee on u.UserId equals em.UserId
-                         where rp.ModuleId == moduleId
-                         select new UserInfoOutput
-                         {
-                             UserId = u.UserId,
-                             UserName = u.UserName,
-                             UserStatusId = (EnumUserStatus)u.UserStatusId,
-                             RoleId = u.RoleId,
-                             EmployeeCode = em.EmployeeCode,
-                             FullName = em.FullName,
-                             Address = em.Address,
-                             Email = em.Email,
-                             GenderId = (EnumGender?)em.GenderId,
-                             Phone = em.Phone
-                         }
-                     );
+                    var users = (from u in _masterContext.User
+                                 join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
+                                 where rp.ModuleId == moduleId
+                                 select u).AsEnumerable();
+                    var userIds = users.Select(u => u.UserId);
+                    var employees = _organizationContext.Employee.Where(em => userIds.Contains(em.UserId)).AsEnumerable();
+
+
+                    var query = users.AsEnumerable().Join(employees.AsEnumerable(), u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        UserStatusId = (EnumUserStatus)u.UserStatusId,
+                        RoleId = u.RoleId,
+                        EmployeeCode = em.EmployeeCode,
+                        FullName = em.FullName,
+                        Address = em.Address,
+                        Email = em.Email,
+                        GenderId = (EnumGender?)em.GenderId,
+                        Phone = em.Phone
+                    });
 
                     if (!string.IsNullOrWhiteSpace(keyword))
                     {
@@ -327,10 +451,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
-
-                    var userList = await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
-                    var totalRecords = await query.CountAsync();
-
+                    var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+                    var totalRecords = query.Count();
                     result.List = userList;
                     result.Total = totalRecords;
                 }
@@ -346,7 +468,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         #region private
         private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
         {
-            var findByCode = await _masterContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
+            var findByCode = await _organizationContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
             if (findByCode)
             {
                 return UserErrorCode.EmployeeCodeAlreadyExisted;
@@ -387,10 +509,11 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             };
 
-            await _masterContext.User.AddAsync(user);
+            _masterContext.User.Add(user);
 
             await _masterContext.SaveChangesAsync();
 
+            var a = _masterContext.User.ToList();
             return user.UserId;
         }
 
@@ -404,12 +527,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Address = req.Address,
                 GenderId = (int?)req.GenderId,
                 Phone = req.Phone,
-                UserId = userId
+                UserId = userId,
+                AvatarFileId = req.AvatarFileId
             };
 
-            await _masterContext.Employee.AddAsync(employee);
+            await _organizationContext.Employee.AddAsync(employee);
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
@@ -441,7 +565,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<Enum> UpdateEmployee(int userId, UserInfoInput req)
         {
 
-            var employee = await _masterContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
+            var employee = await _organizationContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
             if (employee == null)
             {
                 return UserErrorCode.UserNotFound;
@@ -453,8 +577,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.Address = req.Address;
             employee.GenderId = (int?)req.GenderId;
             employee.Phone = req.Phone;
+            employee.AvatarFileId = req.AvatarFileId;
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
@@ -477,7 +602,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<Enum> DeleteEmployee(int userId)
         {
 
-            var employee = await _masterContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
+            var employee = await _organizationContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
             if (employee == null)
             {
                 return UserErrorCode.UserNotFound;
@@ -485,7 +610,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             employee.IsDeleted = true;
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
@@ -494,15 +619,15 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var user = await (
                  from u in _masterContext.User
-                 join em in _masterContext.Employee on u.UserId equals em.UserId
                  where u.UserId == userId
                  select new UserFullDbInfo
                  {
                      User = u,
-                     Employee = em
                  }
              )
              .FirstOrDefaultAsync();
+
+            user.Employee = _organizationContext.Employee.FirstOrDefault(e => e.UserId == userId);
 
             return user;
         }

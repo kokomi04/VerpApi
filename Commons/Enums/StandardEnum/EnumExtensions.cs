@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net;
 using System.Reflection;
 using System.Text;
 
@@ -28,8 +29,8 @@ namespace VErp.Commons.Enums.StandardEnum
             {
                 prefix = ((ErrorCodePrefixAttribute)attrs[0]).Prefix;
             }
-            
-            if(string.IsNullOrWhiteSpace(prefix) && fallbackToName)
+
+            if (string.IsNullOrWhiteSpace(prefix) && fallbackToName)
             {
                 prefix = type.Name;
             }
@@ -51,6 +52,5 @@ namespace VErp.Commons.Enums.StandardEnum
                 return value.ToString();
             }
         }
-
     }
 }

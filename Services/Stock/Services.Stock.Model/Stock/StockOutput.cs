@@ -20,8 +20,6 @@ namespace VErp.Services.Stock.Model.Stock
 
     public class StockOutput : SimpleStockInfo
     {
-
-
         /// <summary>
         /// Mô tả
         /// </summary>
@@ -46,5 +44,10 @@ namespace VErp.Services.Stock.Model.Stock
         /// Trạng thái
         /// </summary>
         public int? Status { get; set; }
+
+        /// <summary>
+        /// Id mã tự sinh 
+        /// </summary>
+        public int? ObjectGenCodeId { get; set; }
     }
 }

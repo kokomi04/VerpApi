@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using VErp.Commons.Constants;
@@ -119,6 +121,12 @@ namespace VErp.Commons.Library
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
+        public static long? GetUnix(this DateTime? dateTime)
+        {
+            if (!dateTime.HasValue) return null;
+            return (long)dateTime.Value.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+        }
+
         public static DateTime UnixToDateTime(this long unixTime)
         {
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
@@ -155,6 +163,33 @@ namespace VErp.Commons.Library
             return $"{((int)objectTypeId)}_{objectId}";
         }
 
+        public static Expression<Func<T, object>> ToMemberOf<T>(this string name)
+        {
+            var parameter = Expression.Parameter(typeof(T), "x");
+            var propertyOrField = Expression.PropertyOrField(parameter, name);
+            var unaryExpression = Expression.MakeUnary(ExpressionType.Convert, propertyOrField, typeof(object));
+
+            return Expression.Lambda<Func<T, object>>(unaryExpression, parameter);
+        }
+
+        public static IQueryable<T> SortByFieldName<T>(this IQueryable<T> query, string filedName, bool asc)
+        {
+            var type = typeof(T);
+
+            PropertyInfo propertyInfo = null;
+            foreach (var p in type.GetProperties())
+            {
+                if (p.Name.Equals(filedName, StringComparison.OrdinalIgnoreCase))
+                {
+                    propertyInfo = p;
+                    break;
+                }
+            }
+            if (propertyInfo == null) return query;
+
+            var ex = propertyInfo.Name.ToMemberOf<T>();
+            return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
+        }
         public static string Format(this decimal number, int decimalplace = 16)
         {
             var format = new StringBuilder();

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -38,17 +39,18 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             try
             {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";                
-
+                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
                 var body = new ActivityInput
                 {
                     UserId = _currentContext.UserId,
                     ActionId = _currentContext.Action,
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
+                    MessageTypeId = EnumMessageType.ActivityLog,
                     Message = message,
                     Data = jsonData
                 }.JsonSerialize();
+              
 
                 var request = new HttpRequestMessage
                 {

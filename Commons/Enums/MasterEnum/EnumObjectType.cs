@@ -53,9 +53,44 @@ namespace VErp.Commons.Enums.MasterEnum
         /// </summary>
         ProductBom = 18,
 
+        /// <summary>
+        /// Yêu cầu VT HH
+        /// </summary>
         PurchasingRequest = 19,
 
-        PurchasingRequestDetail = 20
+        PurchasingRequestDetail = 20,
 
+        /// <summary>
+        /// Đề nghị mua VT HH
+        /// </summary>
+        PurchasingSuggest = 21,
+
+        PurchasingSuggestDetail = 22,
+
+        PoAssignment = 23,
+        PoAssignmentDetail = 24,
+
+        /// <summary>
+        /// PO - Đơn đặt hàng
+        /// </summary>
+        PurchaseOrder = 25,
+        PurchaseOrderDetail = 26,
+
+        /// <summary>
+        /// Cấu hình mã tự sinh tùy chọn
+        /// </summary>
+        CustomGenCodeConfig = 27,
+        /// <summary>
+        /// 
+        /// </summary>
+        BusinessInfo = 28,
+        /// <summary>
+        /// 
+        /// </summary>
+        Department = 29,
+        InventoryInput = 30,
+        InventoryOutput = 31,
+        Category = 32,
+        AccountingAccount = 33
     }
 }

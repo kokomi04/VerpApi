@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -21,6 +22,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     public class StockService : IStockService
     {
         private readonly MasterDBContext _masterDBContext;
+        private readonly OrganizationDBContext _organizationDBContext;
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -29,6 +31,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public StockService(
             MasterDBContext masterDBContext,
+            OrganizationDBContext organizationDBContext,
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<StockService> logger
@@ -36,6 +39,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityLogService activityLogService
             )
         {
+            _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
@@ -122,7 +126,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 try
                 {
                     //Getdata
-                    var stockInfo = await _stockContext.Stock.FirstOrDefaultAsync(p => p.StockId == stockId);
+                    var stockInfo = await _stockContext.Stock.IgnoreQueryFilters().Where(q => !q.IsDeleted).FirstOrDefaultAsync(p => p.StockId == stockId);
                     if (stockInfo == null)
                     {
                         return StockErrorCode.StockNotFound;
@@ -252,7 +256,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockKeeperName = item.StockKeeperName,
                     Type = item.Type,
                     Status = item.Status
-
                 };
                 pagedData.Add(stockInfo);
             }
@@ -530,14 +533,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
                 where pk.StockId == stockId && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
-                select new StockProductPackageDetail()
+                select new
                 {
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
                     LocationId = pk.LocationId,
                     LocationName = l == null ? null : l.Name,
-                    Date = pk.Date != null ? ((DateTime)pk.Date).GetUnix() : 0,
-                    ExpriredDate = pk.ExpiryTime != null ? ((DateTime)pk.ExpiryTime).GetUnix() : 0,
+                    Date = pk.Date,
+                    ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
@@ -545,7 +548,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                    RefObjectId = null,
                     RefObjectCode = ""
                 }
                 );
@@ -567,7 +569,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
-            return (lstData, total);
+            var data = lstData.Select(pk => new StockProductPackageDetail()
+            {
+                PackageId = pk.PackageId,
+                PackageCode = pk.PackageCode,
+                LocationId = pk.LocationId,
+                LocationName = pk.LocationName,
+                Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
+                ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                PrimaryUnitId = pk.PrimaryUnitId,
+                PrimaryQuantity = pk.PrimaryQuantity,
+                SecondaryUnitId = pk.SecondaryUnitId,
+                ProductUnitConversionId = pk.ProductUnitConversionId,
+                ProductUnitConversionName = pk.ProductUnitConversionName,
+                ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
+                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+                RefObjectId = null,
+                RefObjectCode = ""
+            })
+            .ToList();
+
+            return (data, total);
         }
 
         public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
@@ -595,22 +617,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from c in cs.DefaultIfEmpty()
                 where pk.StockId == stockId && pk.LocationId == locationId && pk.PrimaryQuantityRemaining > 0
                 orderby pk.Date descending
-                select new LocationProductPackageOuput()
+                select new
                 {
                     ProductId = p.ProductId,
                     ProductCode = p.ProductCode,
                     ProductName = p.ProductName,
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
-                    Date = pk.Date != null ? ((DateTime)pk.Date).GetUnix() : 0,
-                    ExpriredDate = pk.ExpiryTime != null ? ((DateTime)pk.ExpiryTime).GetUnix() : 0,
+                    Date = pk.Date,
+                    ExpriredDate = pk.ExpiryTime,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
-                    RefObjectId = null,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = ""
                 }
@@ -618,10 +639,170 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var total = await query.CountAsync();
 
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
-            return (lstData, total);
+
+            var data = lstData.Select(pk => new LocationProductPackageOuput()
+            {
+                ProductId = pk.ProductId,
+                ProductCode = pk.ProductCode,
+                ProductName = pk.ProductName,
+                PackageId = pk.PackageId,
+                PackageCode = pk.PackageCode,
+                Date = pk.Date.HasValue? pk.Date.Value.GetUnix() : (long?)0,
+                ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                PrimaryUnitId = pk.PrimaryUnitId,
+                PrimaryQuantity = pk.PrimaryQuantity,
+                SecondaryUnitId = pk.SecondaryUnitId,
+                ProductUnitConversionId = pk.ProductUnitConversionId,
+                ProductUnitConversionName = pk.ProductUnitConversionName,
+                ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
+                RefObjectId = null,
+                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+                RefObjectCode = ""
+
+            }).ToList();
+
+            return (data, total);
         }
 
-        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long beginTime, long endTime, int page, int size)
+
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
+        {
+            var productQuery = _stockContext.Product.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                productQuery = from p in productQuery
+                               where p.ProductName.Contains(keyword)
+                               || p.ProductCode.Contains(keyword)
+                               select p;
+            }
+
+            if (productTypeIds != null && productTypeIds.Count > 0)
+            {
+                var productTypes = await _stockContext.ProductType.ToListAsync();
+
+                var types = new List<int?>();
+                foreach (var productTypeId in productTypeIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productTypeId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        types.Add(parentId);
+                        var children = productTypes.Where(p => p.ParentProductTypeId == parentId);
+                        foreach (var t in children)
+                        {
+                            st.Push(t.ProductTypeId);
+                        }
+                    }
+                }
+                productQuery = from p in productQuery
+                               where types.Contains(p.ProductTypeId)
+                               select p;
+            }
+
+            if (productCateIds != null && productCateIds.Count > 0)
+            {
+                var productCates = await _stockContext.ProductCate.ToListAsync();
+
+                var cates = new List<int>();
+                foreach (var productCateId in productCateIds)
+                {
+                    var st = new Stack<int>();
+                    st.Push(productCateId);
+                    while (st.Count > 0)
+                    {
+                        var parentId = st.Pop();
+                        cates.Add(parentId);
+                        var children = productCates.Where(p => p.ParentProductCateId == parentId);
+                        foreach (var t in children)
+                        {
+                            st.Push(t.ProductCateId);
+                        }
+                    }
+                }
+                productQuery = from p in productQuery
+                               where cates.Contains(p.ProductCateId)
+                               select p;
+            }
+
+            var stockProductQuery = _stockContext.StockProduct.AsQueryable();
+
+            if (stockIds != null && stockIds.Count > 0)
+            {
+                stockProductQuery = stockProductQuery.Where(q => stockIds.Contains(q.StockId));
+            }
+            var productStockInfoQuery = _stockContext.ProductStockInfo.AsQueryable();
+            var productExtraInfoQuery = _stockContext.ProductExtraInfo.AsQueryable();
+
+            var productInfoQuery = from p in productQuery
+                                   join ps in productStockInfoQuery on p.ProductId equals ps.ProductId
+                                   join pe in productExtraInfoQuery on p.ProductId equals pe.ProductId into pse
+                                   from pe in pse.DefaultIfEmpty()
+                                   select new
+                                   {
+                                       p.ProductId,
+                                       p.ProductCode,
+                                       p.ProductName,
+                                       Specifications = pe != null ? pe.Specification : string.Empty,
+                                       p.UnitId,
+                                       p.ProductTypeId,
+                                       p.ProductCateId,
+                                       ps.AmountWarningMin,
+                                       ps.AmountWarningMax,
+                                   };
+
+            var total = productInfoQuery.Count();
+            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
+
+            var productIdList = productInfoPaged.Select(q => q.ProductId).ToList();
+            var primaryUnitIdList = productInfoPaged.Select(q => q.UnitId).ToList();
+
+            var primaryUnitDataList = await _masterDBContext.Unit.Where(q => primaryUnitIdList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
+
+            var stockProductDataList = (from sp in stockProductQuery
+                                        join s in _stockContext.Stock.AsQueryable() on sp.StockId equals s.StockId
+                                        select new
+                                        {
+                                            s.StockName,
+                                            sp.StockId,
+                                            sp.ProductId,
+                                            sp.PrimaryQuantityRemaining,
+                                            sp.ProductUnitConversionId,
+                                            sp.ProductUnitConversionRemaining
+                                        }).ToList();
+
+            var result = new List<StockProductQuantityWarning>(total);
+
+            foreach (var pi in productInfoPaged)
+            {
+                var spList = stockProductDataList.Where(q => q.ProductId == pi.ProductId).Select(q => new StockProductQuantity
+                {
+                    StockId = q.StockId,
+                    StockName = q.StockName,
+                    PrimaryQuantityRemaining = q.PrimaryQuantityRemaining
+                }).ToList();
+
+                var item = new StockProductQuantityWarning
+                {
+                    ProductId = pi.ProductId,
+                    ProductCode = pi.ProductCode,
+                    ProductName = pi.ProductName,
+                    Specifications = pi.Specifications,
+                    PrimaryUnitId = pi.UnitId,
+                    PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
+                    AmountWarningMin = pi.AmountWarningMin ?? 0,
+                    AmountWarningMax = pi.AmountWarningMax ?? 0
+                };
+                item.StockProductQuantityList = spList;
+                item.TotalPrimaryQuantityRemaining = spList.Count > 0 ? item.StockProductQuantityList.Sum(q => q.PrimaryQuantityRemaining) : 0;
+                result.Add(item);
+            }
+            return (result, total);
+        }
+
+        public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long beginTime, long endTime, string sortBy, bool asc, int page, int size)
         {
             DateTime fromDate = DateTime.MinValue;
             DateTime toDate = DateTime.UtcNow;
@@ -699,20 +880,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventories = inventories.Where(iv => stockIds.Contains(iv.StockId));
             }
 
-            var befores = await (
+            var beforeProductQuery = (
                from iv in inventories
                join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                join p in productQuery on d.ProductId equals p.ProductId
                where iv.IsApproved && iv.Date < fromDate
                group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
+               where g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity) > 0
                select new
                {
-                   g.Key.ProductId,
-                   Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                   BeforeProductId = (int?)g.Key.ProductId,
+                   BeforeTotal = (decimal?)g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                }
-               ).ToListAsync();
+               );
 
-            var afters = await (
+            var afterProductQuery = (
                 from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
@@ -720,49 +902,61 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                 select new
                 {
-                    g.Key.ProductId,
-                    TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : 0),
-                    TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.PrimaryQuantity : 0),
-                    Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                    AfterProductId = (int?)g.Key.ProductId,
+                    AfterTotalInput = (decimal?)g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : 0),
+                    AfterTotalOutput = (decimal?)g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.PrimaryQuantity : 0),
+                    AfterTotal = (decimal?)g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                 }
-                ).ToListAsync();
+                );
 
-            var productIds = befores.Select(b => b.ProductId).Distinct().ToHashSet();
+            var beforeIds = beforeProductQuery.Select(q => q.BeforeProductId);
+            var afterIds = afterProductQuery.Select(q => q.AfterProductId);
 
-            foreach (var a in afters)
-            {
-                productIds.Add(a.ProductId);
-            }
-
-            var total = productIds.Count;
-            var productPaged = productIds.Skip((page - 1) * size).Take(size);
-
-            var productInfos = await _stockContext.Product.Where(p => productPaged.Contains(p.ProductId)).ToListAsync();
-
-            var unitIds = productInfos.Select(p => p.UnitId).ToList();
-
-            var unitInfos = await _masterDBContext.Unit.Where(p => unitIds.Contains(p.UnitId)).Select(q => new { q.UnitId, q.UnitName }).ToListAsync();
-
-            var data = (
-                from p in productInfos
-                join u in unitInfos on p.UnitId equals u.UnitId
-                join b in befores on p.ProductId equals b.ProductId into bp
+            var report = (
+                from p in _stockContext.Product.Where(p => beforeIds.Contains(p.ProductId) || afterIds.Contains(p.ProductId))
+                join c in _stockContext.ProductUnitConversion.Where(c => c.IsDefault) on p.ProductId equals c.ProductId into cs
+                from c in cs.DefaultIfEmpty()
+                join b in beforeProductQuery on p.ProductId equals b.BeforeProductId into bp
                 from b in bp.DefaultIfEmpty()
-                join a in afters on p.ProductId equals a.ProductId into ap
+                join a in afterProductQuery on p.ProductId equals a.AfterProductId into ap
                 from a in ap.DefaultIfEmpty()
-                select new StockSumaryReportOutput
+                select new
                 {
                     ProductId = p.ProductId,
                     ProductCode = p.ProductCode,
                     ProductName = p.ProductName,
-                    UnitId = u.UnitId,
-                    UnitName = u.UnitName,
-                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
-                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
-                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
-                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
-                }).ToList();
+                    UnitId = p.UnitId,
+                    UnitName = c.ProductUnitConversionName,
+                    PrimaryQualtityBefore = b == null ? 0 : b.BeforeTotal ?? 0,
+                    PrimaryQualtityInput = a == null ? 0 : a.AfterTotalInput ?? 0,
+                    PrimaryQualtityOutput = a == null ? 0 : a.AfterTotalOutput ?? 0,
+                    PrimaryQualtityAfter = (b == null ? 0 : b.BeforeTotal ?? 0) + (a == null ? 0 : a.AfterTotal ?? 0)
+                });
 
+            var total = report.Count();
+
+            report = report.SortByFieldName(sortBy, asc);
+
+            var pagedData = report.OrderBy(p => p.ProductId).Skip((page - 1) * size).Take(size).ToList();
+
+            var data = new List<StockSumaryReportOutput>();
+            foreach (var item in pagedData)
+            {
+                data.Add(new StockSumaryReportOutput()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    UnitId = item.UnitId,
+                    UnitName = item.UnitName,
+                    PrimaryQualtityBefore = item.PrimaryQualtityBefore,
+                    PrimaryQualtityInput = item.PrimaryQualtityInput,
+                    PrimaryQualtityOutput = item.PrimaryQualtityOutput,
+                    PrimaryQualtityAfter = item.PrimaryQualtityAfter
+                });
+
+
+            }
             return (data, total);
         }
 
@@ -920,7 +1114,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return resultData;
         }
-
 
         public async Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, long bTime, long eTime)
         {
@@ -1108,7 +1301,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
+        public async Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
             try
             {
@@ -1131,6 +1324,57 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                    || p.ProductCode.Contains(keyword)
                                    select p;
                 }
+                if (productTypeIds != null && productTypeIds.Count > 0)
+                {
+                    var productTypes = await _stockContext.ProductType.ToListAsync();
+
+                    var types = new List<int?>();
+                    foreach (var productTypeId in productTypeIds)
+                    {
+                        var st = new Stack<int>();
+                        st.Push(productTypeId);
+                        while (st.Count > 0)
+                        {
+                            var parentId = st.Pop();
+                            types.Add(parentId);
+                            var children = productTypes.Where(p => p.ParentProductTypeId == parentId);
+                            foreach (var t in children)
+                            {
+                                st.Push(t.ProductTypeId);
+                            }
+                        }
+
+                    }
+                    productQuery = from p in productQuery
+                                   where types.Contains(p.ProductTypeId)
+                                   select p;
+                }
+
+                if (productCateIds != null && productCateIds.Count > 0)
+                {
+                    var productCates = await _stockContext.ProductCate.ToListAsync();
+
+                    var cates = new List<int>();
+                    foreach (var productCateId in productCateIds)
+                    {
+                        var st = new Stack<int>();
+                        st.Push(productCateId);
+                        while (st.Count > 0)
+                        {
+                            var parentId = st.Pop();
+                            cates.Add(parentId);
+                            var children = productCates.Where(p => p.ParentProductCateId == parentId);
+                            foreach (var t in children)
+                            {
+                                st.Push(t.ProductCateId);
+                            }
+                        }
+                    }
+                    productQuery = from p in productQuery
+                                   where cates.Contains(p.ProductCateId)
+                                   select p;
+                }
+
                 var inventoryQuery = _stockContext.Inventory.AsQueryable();
 
                 if (stockIds != null && stockIds.Count > 0)
@@ -1250,7 +1494,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     packageQuery = packageQuery.Where(q => stockIds.Contains(q.StockId));
                 }
-                var packageInfoData = (from pkg in packageQuery
+
+                var packageList = packageQuery.ToList();
+                var packageInfoData = (from pkg in packageList
                                        join p in productInfos on pkg.ProductId equals p.ProductId
                                        //join id in _stockContext.InventoryDetail on p.ProductId equals id.InventoryId
                                        //join i in inventoryQuery.Where(q => (q.Date > fromDate && q.Date <= toDate) && q.IsApproved) on id.InventoryId equals i.InventoryId
@@ -1366,6 +1612,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (endTime > 0)
                 {
                     eTime = endTime.UnixToDateTime();
+                    eTime = eTime.AddDays(1);
                 }
 
                 eTime = eTime.AddDays(1).Date;
@@ -1375,8 +1622,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     inventoryQuery = inventoryQuery.Where(iv => stockIds.Contains(iv.StockId));
                 }
-
-                eTime = eTime.AddDays(1);
                 if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
                 {
                     inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date < eTime);
@@ -1398,7 +1643,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var inventoryIds = inventoryDataList.Select(q => q.InventoryId).ToList();
                 var customerIds = inventoryDataList.Select(q => q.CustomerId).ToList();
 
-                var customerDataList = await _masterDBContext.Customer.Where(q => customerIds.Contains(q.CustomerId)).Select(q => new { q.CustomerId, q.CustomerCode, q.CustomerName }).ToListAsync();
+                var customerDataList = await _organizationDBContext.Customer.Where(q => customerIds.Contains(q.CustomerId)).Select(q => new { q.CustomerId, q.CustomerCode, q.CustomerName }).ToListAsync();
                 var inventoryDetailsData = _stockContext.InventoryDetail.AsNoTracking().Where(q => inventoryIds.Contains(q.InventoryId)).ToList();
                 var productIds = inventoryDetailsData.Select(q => q.ProductId).ToList();
 

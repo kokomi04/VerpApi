@@ -13,6 +13,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users;
@@ -37,7 +38,7 @@ namespace VErpApi.Controllers.System
 
         [Route("info")]
         [HttpGet]
-        public async Task<ApiResponse<UserInfoOutput>> GetInfo()
+        public async Task<ServiceResult<UserInfoOutput>> GetInfo()
         {
             return await _userService.GetInfo(UserId);
         }
@@ -45,7 +46,7 @@ namespace VErpApi.Controllers.System
         [Route("censor")]
         [HttpPost]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ApiResponse<User>> TestAction()
+        public async Task<ServiceResult<User>> TestAction()
         {
             await Task.CompletedTask;
             throw new NotImplementedException("Test http post as censor!");
@@ -53,7 +54,7 @@ namespace VErpApi.Controllers.System
 
         [Route("logout")]
         [HttpPost]
-        public async Task<ApiResponse> Logout()
+        public async Task<ServiceResult> Logout()
         {
             var asa = await _persistedGrant.GetAllGrantsAsync(Sub);
 
@@ -68,7 +69,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [Route("permissions")]
         [HttpGet]
-        public async Task<ApiResponse<IList<RolePermissionModel>>> GetPermission()
+        public async Task<ServiceResult<IList<RolePermissionModel>>> GetPermission()
         {
             return (await _userService.GetMePermission()).ToList();
         }
@@ -81,7 +82,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [Route("changePassword")]
         [HttpPut]
-        public async Task<ApiResponse> ChangePassword([FromBody] UserChangepasswordInput req)
+        public async Task<ServiceResult> ChangePassword([FromBody] UserChangepasswordInput req)
         {
             return await _userService.ChangeUserPassword(UserId, req);
         }

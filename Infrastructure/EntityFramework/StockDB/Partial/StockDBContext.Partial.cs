@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             var ctxConstant = Expression.Constant(this);
 
-            OnModelCreated(modelBuilder);
+            base.OnModelCreating(modelBuilder);
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     filterBuilder.AddFilterListContains<int>("StockId", stockIds);
                 }
 
-                entityType.QueryFilter = filterBuilder.Build();
+                entityType.SetQueryFilter(filterBuilder.Build());
             }
 
         }

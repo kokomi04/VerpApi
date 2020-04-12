@@ -1,4 +1,5 @@
-﻿using IdentityServer4.EntityFramework.Stores;
+﻿using AutoMapper;
+using IdentityServer4.EntityFramework.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Services.Accountant.Service;
+using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
 using VErp.Infrastructure.ApiCore;
@@ -14,6 +16,7 @@ using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service;
+using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
@@ -62,6 +65,7 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureBussinessService(services);
 
+            services.AddAutoMapper(typeof(Startup));
             return BuildService(services);
         }
         private void ConfigureBussinessService(IServiceCollection services)
@@ -69,10 +73,12 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
-            services.AddScopedServices(StockServiceAssembly.Assembly);            
+            services.AddScopedServices(StockServiceAssembly.Assembly);
+            services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
+            services.AddScopedServices(OrganizationServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {            
             ConfigureBase(app, env, loggerFactory, true);
             
