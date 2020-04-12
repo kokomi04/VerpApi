@@ -38,7 +38,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             try
             {
-                return false;
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";                
 
                 var body = new ActivityInput
