@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "MasterTests": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DEBUG_ENVIRONMENT": "UNIT_TEST"
+      }
+    }
+  }
+}

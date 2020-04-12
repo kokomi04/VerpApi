@@ -18,15 +18,21 @@ namespace VErp.Infrastructure.AppSettings
         public static AppConfigSetting Config(string environmentName = null, bool excludeSensitiveConfig = false, string basePath = null)
         {
             var exeFolder = basePath ?? Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase) ?? string.Empty;
+            if (EnviromentConfig.IsUnitTest)
+            {
+                exeFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            }
+
             exeFolder = exeFolder
                 .Replace(@"file:\", "")
                 .Replace(@"file:", "")
                 .TrimStart('/');
 
-            var modeName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var modeName = EnviromentConfig.EnviromentName;
+
             var builder = new ConfigurationBuilder()
                     .SetBasePath(exeFolder)
-                    .AddJsonFile($"AppSetting.json", false, true)
+                    .AddJsonFile($"AppSetting.json", true, true)
                     .AddJsonFile($"AppSetting.{environmentName ?? modeName}.json", false, true)
                     .AddJsonFile($"AppService.json", false, true);
 

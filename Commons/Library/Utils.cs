@@ -108,7 +108,16 @@ namespace VErp.Commons.Library
         };
         public static string JsonSerialize(this object obj)
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+            try
+            {
+                return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            
         }
 
         public static T JsonDeserialize<T>(this string obj)
