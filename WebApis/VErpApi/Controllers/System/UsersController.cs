@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size).ConfigureAwait(false);
+            return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.System
         public async Task<ServiceResult<int>> Post([FromBody] UserInfoInput req)
         {
             int updatedUserId = UserId;
-            return await _userService.CreateUser(req, updatedUserId).ConfigureAwait(false);
+            return await _userService.CreateUser(req, updatedUserId).ConfigureAwait(true);
         }
 
 
@@ -71,7 +71,7 @@ namespace VErpApi.Controllers.System
         [Route("{userId}")]
         public async Task<ServiceResult<UserInfoOutput>> UserInfo([FromRoute] int userId)
         {
-            return await _userService.GetInfo(userId).ConfigureAwait(false);
+            return await _userService.GetInfo(userId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace VErpApi.Controllers.System
         public async Task<ServiceResult> Update([FromRoute] int userId, [FromBody] UserInfoInput req)
         {
             int updatedUserId = UserId;
-            return await _userService.UpdateUser(userId, req, updatedUserId).ConfigureAwait(false);
+            return await _userService.UpdateUser(userId, req, updatedUserId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace VErpApi.Controllers.System
         [Route("{userId}")]
         public async Task<ServiceResult> DeleteUser([FromRoute] int userId)
         {
-            return await _userService.DeleteUser(userId).ConfigureAwait(false);
+            return await _userService.DeleteUser(userId).ConfigureAwait(true);
         }
 
 
@@ -113,7 +113,7 @@ namespace VErpApi.Controllers.System
         [Route("GetListByModuleId")]
         public async Task<ServiceResult<PageData<UserInfoOutput>>> GetListByModuleId([FromQuery] int moduleId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size).ConfigureAwait(false);
+            return await _userService.GetListByModuleId(UserId, moduleId, keyword, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace VErpApi.Controllers.System
         [Route("avatar")]
         public async Task<ServiceResult<long>> Avatar([FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(false);
+            return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace VErpApi.Controllers.System
         [Route("GenerateUserCode")]
         public async Task<ServiceResult<string>> GenerateUserCode()
         {
-            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee).ConfigureAwait(false);
+            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee).ConfigureAwait(true);
         }
     }
 }
