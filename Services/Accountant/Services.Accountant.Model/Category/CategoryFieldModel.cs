@@ -31,6 +31,7 @@ namespace VErp.Services.Accountant.Model.Category
 
     public class CategoryFieldOutputModel: CategoryFieldModel
     {
+        public int? ReferenceCategoryId { get; set; }
     }
     
     public class CategoryFieldOutputFullModel : CategoryFieldOutputModel

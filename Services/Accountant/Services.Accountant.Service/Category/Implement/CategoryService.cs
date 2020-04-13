@@ -426,12 +426,22 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         private ICollection<CategoryFieldOutputModel> GetFields(int categoryId)
         {
-            return _accountingContext.CategoryField
+            var query = _accountingContext.CategoryField
+                .Include(f => f.SourceCategoryField)
                 .Where(f => f.CategoryId == categoryId)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .OrderBy(f => f.Sequence)
-                .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToList();
+                .OrderBy(f => f.Sequence);
+            List<CategoryFieldOutputModel> result = new List<CategoryFieldOutputModel>();
+            foreach (var field in query)
+            {
+                var fieldModel = _mapper.Map<CategoryFieldOutputModel>(field);
+                fieldModel.ReferenceCategoryId = field.SourceCategoryField?.CategoryId ?? null;
+
+                result.Add(fieldModel);
+            }
+
+            return result;
         }
 
     }
