@@ -283,13 +283,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
+                            bool isSuccess = false;
+                            decimal pucQuantity = 0;
+
                             if (obj.OldPrimaryQuantity != 0)
                             {
-                                obj.NewProductUnitConversionQuantity = obj.NewPrimaryQuantity * obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity;
+                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
+
                             }
                             else
                             {
-                                obj.NewProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                            }
+
+                            if (isSuccess)
+                            {
+                                obj.NewProductUnitConversionQuantity = pucQuantity;
+                            }
+                            else
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                             }
 
                             if (!(obj.NewProductUnitConversionQuantity > 0) && obj.NewPrimaryQuantity > 0)
@@ -315,7 +328,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
                     }
 
-                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0|| obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
+                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0 || obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
                     {
                         obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
                     }
@@ -343,7 +356,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 {
                                     //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
-                                    c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
+                                    //c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
+
+                                    bool isSuccess = false;
+                                    decimal pucQuantity = 0;
+
+
+                                    if (c.OldTransferPrimaryQuantity != 0)
+                                    {
+                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
+
+                                    }
+                                    else
+                                    {
+                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                    }
+
+
+                                    if (isSuccess)
+                                    {
+                                        c.NewTransferProductUnitConversionQuantity = pucQuantity;
+                                    }
+                                    else
+                                    {
+                                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                                    }
+
 
                                     if (!(c.NewTransferProductUnitConversionQuantity > 0) && c.NewTransferPrimaryQuantity > 0)
                                     {

@@ -146,16 +146,80 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static decimal GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression, decimal inputData)
         {
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
-            return Eval(expression);
+            var value = Eval(expression);
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
         }
 
-        public static decimal GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression)
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
+        {
+            var value = productUnitConversionQuantity / factorExpression;
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+        }
+
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression, decimal inputData)
         {
             var expression = $"({primaryQuantity})*({factorExpression})";
-            return Eval(expression);
+            var value = Eval(expression);
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+
+        }
+
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, decimal factorExpression, decimal inputData)
+        {
+            var value = primaryQuantity * factorExpression;
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+
         }
 
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
