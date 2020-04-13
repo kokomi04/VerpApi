@@ -580,6 +580,22 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             }
                         }
 
+                        if (field.DataTypeId == (int)EnumDataType.Boolean)
+                        {
+                            bool value;
+                           
+                            bool isBoolean = int.TryParse(row[fieldIndx], out int intValue)? (value = intValue == 1 || intValue == 0): bool.TryParse(row[fieldIndx], out value);
+
+                            if (isBoolean)
+                            {
+                                row[fieldIndx] = value.ToString().ToLower();
+                            }
+                            else
+                            {
+                                return (CategoryErrorCode.CategoryValueInValid, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.CategoryValueInValid.GetEnumDescription()));
+                            }
+                        }
+
                         rowInput.Values.Add(new CategoryValueModel
                         {
                             CategoryFieldId = field.CategoryFieldId,
@@ -611,7 +627,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     try
                     {
-                        foreach(var rowInput in rowInputs)
+                        foreach (var rowInput in rowInputs)
                         {
                             int categoryRowId = await InsertCategoryRowAsync(updatedUserId, categoryId, categoryFields, rowInput);
                         }

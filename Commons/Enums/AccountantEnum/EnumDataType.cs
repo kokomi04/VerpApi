@@ -8,6 +8,9 @@ namespace VErp.Commons.Enums.AccountantEnum
     {
         Text = 1,
         Number = 2,
-        Date = 3
+        Date = 3,
+        PhoneNumber = 4,
+        Email = 5,
+        Boolean = 6
     }
 }
