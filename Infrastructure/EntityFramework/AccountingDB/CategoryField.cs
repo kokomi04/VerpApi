@@ -26,6 +26,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsHidden { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsShowList { get; set; }
+        //public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
 
         public virtual DataType DataType { get; set; }
