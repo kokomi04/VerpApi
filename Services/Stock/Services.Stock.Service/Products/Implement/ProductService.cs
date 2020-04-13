@@ -661,7 +661,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     try
                     {
-                        var eval = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
+                        var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
                         if (!(eval > 0))
                         {
                             return ProductErrorCode.InvalidUnitConversionExpression;

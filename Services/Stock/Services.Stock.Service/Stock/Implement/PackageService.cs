@@ -118,7 +118,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 decimal qualtityInPrimaryUnit = package.PrimaryQuantity;
                 if (unitConversionInfo.IsFreeStyle == false)
                 {
-                    qualtityInPrimaryUnit = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, unitConversionInfo.FactorExpression);
+                    //qualtityInPrimaryUnit = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, unitConversionInfo.FactorExpression);
+
+                    var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity);
+                    if (isSuccess)
+                    {
+                        qualtityInPrimaryUnit = priQuantity;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Wrong priQuantity input data: PrimaryQuantity={package.PrimaryQuantity}, FactorExpression={packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={package.ProductUnitConversionQuantity}, evalData={priQuantity}");
+                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                    }
+
                     if (!(qualtityInPrimaryUnit > 0))
                     {
                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;

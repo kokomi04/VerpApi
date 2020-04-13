@@ -155,6 +155,12 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static decimal EvalPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
+        {
+            var expression = $"({productUnitConversionQuantity})/({factorExpression})";
+            return Eval(expression);
+        }
+
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression, decimal inputData)
         {
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
