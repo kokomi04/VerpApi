@@ -167,7 +167,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (!r.IsSuccess()) return r;
 
             // Check refer
-            r = CheckRefer(data, selectFields);
+            r = CheckRefer(ref data, selectFields);
             if (!r.IsSuccess()) return r;
 
             // Check value
@@ -293,7 +293,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (!r.IsSuccess()) return r;
 
             // Check refer
-            r = CheckRefer(data, selectFields);
+            r = CheckRefer(ref data, selectFields);
             if (!r.IsSuccess()) return r;
 
             // Check value
@@ -409,7 +409,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        private Enum CheckRefer(CategoryRowInputModel data, IEnumerable<CategoryField> selectFields)
+        private Enum CheckRefer(ref CategoryRowInputModel data, IEnumerable<CategoryField> selectFields)
         {
             // Check refer
             foreach (var field in selectFields)
@@ -417,29 +417,42 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
-                    bool isExisted = true;
 
+                    IQueryable<CategoryValueModel> query;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
-                        isExisted = _accountingContext.CategoryValue
+                        query = _accountingContext.CategoryValue
                             .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
                             {
                                 v.CategoryValueId,
                                 rv.CategoryFieldId,
                                 v.Value
                             })
-                            .Any(v => v.CategoryValueId == valueItem.CategoryValueId
-                            && v.CategoryFieldId == field.ReferenceCategoryFieldId.Value
-                            && v.Value == valueItem.Value);
+                            .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
+                            .Select(v => new CategoryValueModel
+                            {
+                                CategoryFieldId = v.CategoryFieldId,
+                                CategoryValueId = v.CategoryValueId,
+                                Value = v.Value
+                            });
                     }
                     else
                     {
-                        isExisted = _accountingContext.CategoryValue
-                            .Any(v => v.CategoryFieldId == field.CategoryFieldId
-                            && v.CategoryValueId == valueItem.CategoryValueId
-                            && v.IsDefault);
+                        query = _accountingContext.CategoryValue
+                            .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
+                            .Select(v => new CategoryValueModel
+                            {
+                                CategoryFieldId = v.CategoryFieldId,
+                                CategoryValueId = v.CategoryValueId,
+                                Value = v.Value
+                            });
                     }
-                    if (!isExisted)
+                    int referValueId = query.Where(v => v.Value == valueItem.Value).Select(v => v.CategoryValueId).FirstOrDefault();
+
+                    valueItem.CategoryValueId = referValueId;
+
+
+                    if (referValueId <= 0)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
                     }
@@ -485,7 +498,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in categoryFields)
             {
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (field.FormTypeId == (int)EnumFormType.Select || field.AutoIncrement)
+                if (field.FormTypeId == (int)EnumFormType.Select || field.AutoIncrement || valueItem == null || string.IsNullOrEmpty(valueItem.Value))
                 {
                     continue;
                 }
@@ -541,50 +554,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         var field = categoryFields.FirstOrDefault(f => f.Name == fieldName);
                         if (field == null) continue;
 
-                        int categoryValueId = 0;
-                        if (field.FormTypeId == (int)EnumFormType.Select)
-                        {
-                            IQueryable<CategoryValueModel> query;
-                            if (field.ReferenceCategoryFieldId.HasValue)
-                            {
-                                query = _accountingContext.CategoryValue
-                                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
-                                    {
-                                        v.CategoryValueId,
-                                        rv.CategoryFieldId,
-                                        v.Value
-                                    })
-                                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                                    .Select(v => new CategoryValueModel
-                                    {
-                                        CategoryFieldId = v.CategoryFieldId,
-                                        CategoryValueId = v.CategoryValueId,
-                                        Value = v.Value
-                                    });
-                            }
-                            else
-                            {
-                                query = _accountingContext.CategoryValue
-                                    .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                                    .Select(v => new CategoryValueModel
-                                    {
-                                        CategoryFieldId = v.CategoryFieldId,
-                                        CategoryValueId = v.CategoryValueId,
-                                        Value = v.Value
-                                    });
-                            }
-                            categoryValueId = query.Where(v => v.Value == row[fieldIndx]).Select(v => v.CategoryValueId).FirstOrDefault();
-                            if (categoryValueId <= 0)
-                            {
-                                return (CategoryErrorCode.ReferValueNotFound, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.ReferValueNotFound.GetEnumDescription()));
-                            }
-                        }
-
                         if (field.DataTypeId == (int)EnumDataType.Boolean)
                         {
                             bool value;
-                           
-                            bool isBoolean = int.TryParse(row[fieldIndx], out int intValue)? (value = intValue == 1 || intValue == 0): bool.TryParse(row[fieldIndx], out value);
+
+                            bool isBoolean = int.TryParse(row[fieldIndx], out int intValue) ? (value = intValue == 1 || intValue == 0) : bool.TryParse(row[fieldIndx], out value);
 
                             if (isBoolean)
                             {
@@ -599,7 +573,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         rowInput.Values.Add(new CategoryValueModel
                         {
                             CategoryFieldId = field.CategoryFieldId,
-                            CategoryValueId = categoryValueId,
+                            CategoryValueId = 0,
                             Value = row[fieldIndx]
                         });
                     }
@@ -614,6 +588,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                     // Check unique
                     r = CheckUnique(rowInput, uniqueFields);
+                    if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
+
+                    // Check refer
+                    r = CheckRefer(ref rowInput, categoryFields);
                     if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
 
                     // Check value
