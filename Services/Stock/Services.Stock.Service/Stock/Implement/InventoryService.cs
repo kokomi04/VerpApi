@@ -14,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -32,7 +33,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public partial class InventoryService : IInventoryService
     {
-        const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_JS_NUMBER;
+        const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
         private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockDbContext;
@@ -675,6 +676,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return rollbackResult;
                         }
 
+
                         var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
 
                         if (!processInventoryOut.Code.IsSuccess())
@@ -720,6 +722,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
 
                         await _stockDbContext.SaveChangesAsync();
+
                         trans.Commit();
 
                         var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
@@ -728,6 +731,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     catch (Exception ex)
                     {
                         trans.Rollback();
+                        _stockDbContext.RollbackEntities();
                         _logger.LogError(ex, "UpdateInventoryOutput");
                         return GeneralCode.InternalError;
                     }
@@ -850,8 +854,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.UpdatedByUserId = currentUserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                         await _stockDbContext.SaveChangesAsync();
+
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
+
                         trans.Commit();
 
                         return GeneralCode.Success;
@@ -859,6 +865,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     catch (Exception ex)
                     {
                         trans.Rollback();
+                        _stockDbContext.RollbackEntities();
+
                         _logger.LogError(ex, "DeleteInventoryOutput");
                         return GeneralCode.InternalError;
                     }
@@ -922,10 +930,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return r;
                         }
 
+                        await ReCalculateRemainingAfterUpdate(inventoryId);
+
                         trans.Commit();
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
 
                         return GeneralCode.Success;
                     }
@@ -943,7 +953,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails)
         {
             var inputTransfer = new List<InventoryDetailToPackage>();
-            foreach (var item in inventoryDetails)
+            foreach (var item in inventoryDetails.OrderBy(d => d.InventoryDetailId))
             {
                 await UpdateStockProduct(stockId, item);
 
@@ -995,12 +1005,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ToPackageId = item.ToPackageId.Value,
                     IsDeleted = false
                 });
+
             }
 
             await _stockDbContext.InventoryDetailToPackage.AddRangeAsync(inputTransfer);
             await _stockDbContext.SaveChangesAsync();
 
             return GeneralCode.Success;
+        }
+
+
+        /// <summary>
+        /// Tính toán lại vết khi update phiếu nhập/xuất
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        private async Task ReCalculateRemainingAfterUpdate(long inventoryId)
+        {
+            var inventoryTrackingFacade = await InventoryTrackingFacadeFactory.Create(_stockDbContext, inventoryId);
+            await inventoryTrackingFacade.Execute();
+
         }
 
         /// <summary>
@@ -1064,7 +1087,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             });
                         foreach (var product in groupByProducts)
                         {
-                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
+                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
 
                             if (!validate.IsSuccessCode())
                             {
@@ -1127,11 +1150,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                             ValidateStockProduct(stockProduct);
                         }
+
                         await _stockDbContext.SaveChangesAsync();
+
+                        await ReCalculateRemainingAfterUpdate(inventoryId);
+
                         trans.Commit();
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, inventoryObj.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
 
                         return GeneralCode.Success;
                     }
@@ -1360,7 +1387,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.EstimatePrice
                 })
                 .Distinct();
-                
+
             var total = query.Count();
 
             var pagedData = query.OrderBy(q => q.ProductCode).Skip((page - 1) * size).Take(size).ToList();
@@ -1457,7 +1484,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (productUnitConversionInfo.IsFreeStyle ?? false == false)
                     {
                         // primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                        details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                        //details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression);
+
+                        var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression, details.ProductUnitConversionQuantity);
+                        if (isSuccess)
+                        {
+                            details.ProductUnitConversionQuantity = pucQuantity;
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={productUnitConversionInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
+                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        }
                     }
 
                     if (!isApproved && details.ProductUnitConversionQuantity <= 0)
@@ -1549,83 +1587,116 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var primaryQualtity = details.PrimaryQuantity;
 
-                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
+
+                var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                if (productUnitConversionInfo == null)
                 {
-                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                    if (productUnitConversionInfo == null)
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error ProductUnitConversionNotFound. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}");
+                    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                }
+
+                if (productUnitConversionInfo.ProductId != details.ProductId)
+                {
+                    return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
+                }
+
+                if (fromPackageInfo.PrimaryQuantityRemaining == 0 || fromPackageInfo.ProductUnitConversionRemaining == 0)
+                {
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , packageId: {fromPackageInfo.PackageId} PrimaryQuantityRemaining: {fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
+                    return InventoryErrorCode.NotEnoughQuantity;
+                }
+
+                //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
+                //{
+                if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                {
+                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, details.ProductUnitConversionQuantity);
+                    if (isSuccess)
                     {
-                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error ProductUnitConversionNotFound. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}");
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                        details.ProductUnitConversionQuantity = pucQuantity;
                     }
-
-                    if (productUnitConversionInfo.ProductId != details.ProductId)
+                    else
                     {
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
-                    }
-
-                    //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
-                    //{
-                    //    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
-                    //    {
-                    //        details.ProductUnitConversionQuantity = primaryQualtity * fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining;
-                    //    }
-                    //    //Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
-
-                    //    if (!(details.ProductUnitConversionQuantity > 0))
-                    //    {
-                    //        _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
-                    //        return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
-                    //    }
-                    //    //return GeneralCode.InvalidParams;
-                    //}
-
-
-                    //if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
-                    //{
-                    //    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
-                    //    {
-                    //        primaryQualtity = details.ProductUnitConversionQuantity * fromPackageInfo.PrimaryQuantityRemaining / fromPackageInfo.ProductUnitConversionRemaining;
-                    //    }
-
-                    //    //primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
-                    //    if (!(primaryQualtity > 0))
-                    //    {
-                    //        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                    //    }
-                    //}
-
-
-                    //if (Math.Abs(details.ProductUnitConversionQuantity - fromPackageInfo.ProductUnitConversionRemaining) <= MINIMUM_JS_NUMBER)
-                    //{
-                    //    primaryQualtity = fromPackageInfo.PrimaryQuantityRemaining;
-                    //}
-
-                    //if (Math.Abs(primaryQualtity - fromPackageInfo.PrimaryQuantityRemaining) <= MINIMUM_JS_NUMBER)
-                    //{
-                    //    details.ProductUnitConversionQuantity = fromPackageInfo.ProductUnitConversionRemaining;
-                    //}
-
-                    // Check số lượng sản phẩm theo đơn vị chính nếu <= 0 báo lỗi
-                    if (primaryQualtity <= 0)
-                    {
-                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
-                        return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
-                    }
-                    // Tính số lượng sản phẩm theo đơn vị chuyển đổi từ đơn vị chính
-                    var secondaryQualtity = (primaryQualtity * fromPackageInfo.ProductUnitConversionRemaining) / fromPackageInfo.PrimaryQuantityRemaining;
-                    // Check số lượng sản phẩm theo đơn vị chuyển đổi có khớp không
-                    if (secondaryQualtity != details.ProductUnitConversionQuantity)
-                    {
+                        _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                         return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     }
-
-                    // Check số lượng sản phẩm tồn có đủ hay không
-                    if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
-                    {
-                        _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
-                        return InventoryErrorCode.NotEnoughQuantity;
-                    }
                 }
+                //Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
+
+                if (!(details.ProductUnitConversionQuantity > 0))
+                {
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
+                    return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
+                }
+                //return GeneralCode.InvalidParams;
+                //}
+
+
+                //if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
+                //{
+                //    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                //    {
+                //        //   primaryQualtity = details.ProductUnitConversionQuantity * fromPackageInfo.PrimaryQuantityRemaining / fromPackageInfo.ProductUnitConversionRemaining;
+                //        var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, primaryQualtity);
+                //        if (isSuccess)
+                //        {
+                //            primaryQualtity = priQuantity;
+                //        }
+                //        else
+                //        {
+                //            _logger.LogWarning($"Wrong priQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={priQuantity}");
+                //            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                //        }
+
+                //    }
+
+
+                //    if (!(primaryQualtity > 0))
+                //    {
+                //        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                //    }
+                //}
+
+
+                if (Math.Abs(details.ProductUnitConversionQuantity - fromPackageInfo.ProductUnitConversionRemaining) <= MINIMUM_JS_NUMBER)
+                {
+                    details.ProductUnitConversionQuantity = fromPackageInfo.ProductUnitConversionRemaining;
+                }
+
+                if (Math.Abs(primaryQualtity - fromPackageInfo.PrimaryQuantityRemaining) <= MINIMUM_JS_NUMBER)
+                {
+                    primaryQualtity = fromPackageInfo.PrimaryQuantityRemaining;
+
+                }
+
+                if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
+                {
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
+                    return InventoryErrorCode.NotEnoughQuantity;
+                }
+
+                //// Check số lượng sản phẩm theo đơn vị chính nếu <= 0 báo lỗi
+                //if (primaryQualtity <= 0)
+                //{
+                //    _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
+                //    return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
+                //}
+                //// Tính số lượng sản phẩm theo đơn vị chuyển đổi từ đơn vị chính
+                //var secondaryQualtity = (primaryQualtity * fromPackageInfo.ProductUnitConversionRemaining) / fromPackageInfo.PrimaryQuantityRemaining;
+                //// Check số lượng sản phẩm theo đơn vị chuyển đổi có khớp không
+                //if (secondaryQualtity != details.ProductUnitConversionQuantity)
+                //{
+                //    return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                //}
+
+                //// Check số lượng sản phẩm tồn có đủ hay không
+                //if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
+                //{
+                //    _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
+                //    return InventoryErrorCode.NotEnoughQuantity;
+                //}
+
+
                 inventoryDetailList.Add(new InventoryDetail
                 {
                     InventoryId = inventory.InventoryId,
@@ -1804,11 +1875,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<Enum> RollbackInventoryOutput(Inventory inventory)
         {
-            var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToList();
+            var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToListAsync();
 
             var fromPackageIds = inventoryDetails.Select(d => d.FromPackageId).ToList();
 
-            var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
+            var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
 
             foreach (var detail in inventoryDetails)
             {
@@ -1843,10 +1914,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.IsDeleted = true;
                 detail.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
+
+            await _stockDbContext.SaveChangesAsync();
+
+            if (inventory.IsApproved)
+            {
+                await ReCalculateRemainingAfterUpdate(inventory.InventoryId);
+            }
+
             return GeneralCode.Success;
         }
 
-        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
+        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
         {
             var sums = await (
                 from id in _stockDbContext.InventoryDetail
@@ -1855,6 +1934,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 && id.ProductId == productId
                 && id.ProductUnitConversionId == productUnitConversionId
                 && iv.Date <= endDate
+                && iv.IsApproved
+                && iv.InventoryId != currentInventoryId
                 select new
                 {
                     iv.InventoryTypeId,
@@ -1878,7 +1959,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var total = sums.TotalSecondary;
                 var output = outSecondary;
-                
+
                 if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER)
                 {
                     total = sums.TotalPrimary;

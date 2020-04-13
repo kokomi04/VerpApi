@@ -108,7 +108,16 @@ namespace VErp.Commons.Library
         };
         public static string JsonSerialize(this object obj)
         {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+            try
+            {
+                return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            
         }
 
         public static T JsonDeserialize<T>(this string obj)
@@ -146,16 +155,86 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static decimal GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
+        public static decimal EvalPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
         {
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
 
-        public static decimal GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression)
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression, decimal inputData)
+        {
+            var expression = $"({productUnitConversionQuantity})/({factorExpression})";
+            var value = Eval(expression);
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+        }
+
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
+        {
+            var value = productUnitConversionQuantity / factorExpression;
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+        }
+
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression, decimal inputData)
         {
             var expression = $"({primaryQuantity})*({factorExpression})";
-            return Eval(expression);
+            var value = Eval(expression);
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+
+        }
+
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, decimal factorExpression, decimal inputData)
+        {
+            var value = primaryQuantity * factorExpression;
+            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, inputData);
+            }
+
+            if (inputData == 0)
+            {
+                return (true, value);
+            }
+            else
+            {
+                return (false, value);
+            }
+
         }
 
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
@@ -206,7 +285,7 @@ namespace VErp.Commons.Library
             if (a < 0 && b > 0 || a > 0 && b < 0)
             {
                 var c = a + b;
-                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
                 return c;
             }
             return a + b;
@@ -217,7 +296,7 @@ namespace VErp.Commons.Library
             if (a > 0 && b > 0 || a < 0 && b < 0)
             {
                 var c = a - b;
-                if (Math.Abs(c) < Numbers.MINIMUM_JS_NUMBER) return 0;
+                if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
                 return c;
             }
             return a - b;
@@ -225,7 +304,7 @@ namespace VErp.Commons.Library
 
         public static decimal RelativeTo(this decimal value, decimal relValue)
         {
-            if (Math.Abs(value) < Numbers.MINIMUM_JS_NUMBER) return 0;
+            if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
             if (value.SubDecimal(relValue) == 0) return relValue;
             return value;
         }

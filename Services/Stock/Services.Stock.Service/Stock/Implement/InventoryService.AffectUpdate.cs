@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
@@ -144,6 +143,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return r;
                         }
 
+                        foreach (var changedInventoryId in r.Data)
+                        {
+                            await ReCalculateRemainingAfterUpdate(changedInventoryId);
+                        }
 
                         trans.Commit();
 
@@ -162,7 +165,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
 
@@ -186,8 +189,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products);
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
-            var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
-            if (!updateStatus.IsSuccessCode()) return updateStatus;
+            var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
+            if (!updateResult.Code.IsSuccess()) return updateResult.Code;
 
             var issuedDate = req.Inventory.Date.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
@@ -243,7 +246,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            if (!updateResult.Data.Contains(inventoryId))
+            {
+                updateResult.Data.Add(inventoryId);
+            }
+
+            return updateResult.Data;
         }
 
         private async Task<Enum> ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)
@@ -264,9 +272,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
-                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0)
+                if (p.NewProductUnitConversionQuantity.SubDecimal(p.OldProductUnitConversionQuantity) == 0 || p.NewPrimaryQuantity == p.OldPrimaryQuantity)
                 {
                     p.NewProductUnitConversionQuantity = p.OldProductUnitConversionQuantity;
+                }
+
+                if (p.NewProductUnitConversionQuantity == p.OldProductUnitConversionQuantity)
+                {
+                    p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
                 foreach (var obj in p.AffectObjects)
@@ -278,13 +291,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
+                            bool isSuccess = false;
+                            decimal pucQuantity = 0;
+
                             if (obj.OldPrimaryQuantity != 0)
                             {
-                                obj.NewProductUnitConversionQuantity = obj.NewPrimaryQuantity * obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity;
+                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
+
                             }
                             else
                             {
-                                obj.NewProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression);
+                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                            }
+
+                            if (isSuccess)
+                            {
+                                obj.NewProductUnitConversionQuantity = pucQuantity;
+                            }
+                            else
+                            {
+                                return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                             }
 
                             if (!(obj.NewProductUnitConversionQuantity > 0) && obj.NewPrimaryQuantity > 0)
@@ -310,11 +336,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         obj.NewPrimaryQuantity = obj.OldPrimaryQuantity;
                     }
 
-                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0)
+                    if (obj.NewProductUnitConversionQuantity.SubDecimal(obj.OldProductUnitConversionQuantity) == 0 || obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
                     {
                         obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
                     }
 
+                    if (obj.NewPrimaryQuantity == obj.OldPrimaryQuantity)
+                    {
+                        obj.NewProductUnitConversionQuantity = obj.OldProductUnitConversionQuantity;
+                    }
 
 
                     if ((obj.NewProductUnitConversionQuantity != 0 || obj.NewPrimaryQuantity != 0)
@@ -334,7 +364,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 {
                                     //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
-                                    c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
+                                    //c.NewTransferProductUnitConversionQuantity = c.NewTransferPrimaryQuantity * c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity;
+
+                                    bool isSuccess = false;
+                                    decimal pucQuantity = 0;
+
+
+                                    if (c.OldTransferPrimaryQuantity != 0)
+                                    {
+                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
+
+                                    }
+                                    else
+                                    {
+                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                    }
+
+
+                                    if (isSuccess)
+                                    {
+                                        c.NewTransferProductUnitConversionQuantity = pucQuantity;
+                                    }
+                                    else
+                                    {
+                                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                                    }
+
 
                                     if (!(c.NewTransferProductUnitConversionQuantity > 0) && c.NewTransferPrimaryQuantity > 0)
                                     {
@@ -424,10 +479,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
         {
+            HashSet<long> changesInventories = new HashSet<long>();
 
             var validateOutputDetails = new Dictionary<long, CensoredOutputInventoryDetailUpdate>();
+
 
             foreach (var p in products)
             {
@@ -586,6 +643,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                             var outputDetail = new CensoredOutputInventoryDetailUpdate()
                                             {
+                                                InventoryId = childInventoryDetail.InventoryId,
                                                 InventoryDetailId = childInventoryDetail.InventoryDetailId,
                                                 Date = inventory.Date,
                                                 ProductId = childInventoryDetail.ProductId,
@@ -655,7 +713,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageInfo.PrimaryQuantityRemaining < 0 || packageInfo.ProductUnitConversionRemaining < 0)
                     {
-                        throw new Exception("Invalid negative package data");
+                        throw new Exception("Invalid negative package data " + packageInfo.PackageId);
                     }
                 }
 
@@ -663,7 +721,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageRef.PrimaryQuantity < 0 || packageRef.ProductUnitConversionQuantity < 0)
                     {
-                        throw new Exception("Invalid negative package ref data");
+                        throw new Exception("Invalid negative package ref data packageId: " + packageRef.PackageId + " ref: " + packageRef.RefPackageId);
                     }
                 }
 
@@ -672,6 +730,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (inventoryDetail.PrimaryQuantity < 0 || inventoryDetail.ProductUnitConversionQuantity < 0)
                     {
                         throw new Exception("Invalid negative inventory detail data");
+                    }
+
+                    if (!changesInventories.Contains(inventoryDetail.InventoryId))
+                    {
+                        changesInventories.Add(inventoryDetail.InventoryId);
                     }
                 }
 
@@ -684,14 +747,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var output in validateOutputDetails)
             {
-                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
+                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
 
                 if (!validate.IsSuccessCode())
                 {
-                    return validate;
+                    return validate.Code;
                 }
             }
-            return GeneralCode.Success;
+            return changesInventories;
         }
 
         public class InventoryInputUpdateGetAffectedModel
@@ -704,6 +767,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private class CensoredOutputInventoryDetailUpdate
         {
+            public long InventoryId { get; set; }
             public long InventoryDetailId { get; set; }
             public DateTime Date { get; set; }
             public int ProductId { get; set; }

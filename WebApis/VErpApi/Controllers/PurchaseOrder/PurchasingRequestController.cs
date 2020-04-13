@@ -145,14 +145,15 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Cập nhật trạng thái mua hàng cho đơn yêu cầu vật tư
         /// </summary>
         /// <param name="purchasingRequestId"></param>
-        /// <param name="poProcessStatusId"></param>
+        /// <param name="poProcessStatusModel"></param>
         /// <returns></returns>
 
         [HttpPut]
         [Route("{purchasingRequestId}/UpdatePoProcessStatus")]
-        public async Task<ServiceResult> UpdatePoProcessStatus([FromRoute] long purchasingRequestId, [FromBody] EnumPoProcessStatus poProcessStatusId)
+        public async Task<ServiceResult> UpdatePoProcessStatus([FromRoute] long purchasingRequestId, [FromBody] UpdatePoProcessStatusModel poProcessStatusModel)
         {
-            return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusId);
+            if (poProcessStatusModel == null) return GeneralCode.InvalidParams;
+            return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusModel.PoProcessStatusId).ConfigureAwait(true);
         }
     }
 }

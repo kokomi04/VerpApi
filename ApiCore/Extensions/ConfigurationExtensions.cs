@@ -21,7 +21,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<MasterDBContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.MasterDatabase);
             }, contextScope);
         }
@@ -30,7 +29,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<StockDBContext, StockDBRestrictionContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
             }, ServiceLifetime.Scoped);
         }
@@ -38,7 +36,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<PurchaseOrderDBContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.PurchaseOrderDatabase);
             }, ServiceLifetime.Scoped);
         }
@@ -46,7 +43,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<OrganizationDBContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);
         }
@@ -55,7 +51,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<AccountingDBContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
             }, ServiceLifetime.Scoped);
         }
