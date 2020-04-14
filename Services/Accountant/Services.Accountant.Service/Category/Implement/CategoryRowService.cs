@@ -67,8 +67,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 rowIds = query.Where(v => v.Value.Contains(keyword)).GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
             }
-
-            rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+            else
+            {
+                rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+            }
             var total = await rowIds.CountAsync();
             if (size > 0)
             {
