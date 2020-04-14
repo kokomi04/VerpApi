@@ -75,6 +75,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.SourceCategoryField)
+                .Include(f => f.SourceCategoryTitleField)
                 .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
@@ -193,6 +194,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.IsShowList = data.IsShowList;
                     categoryField.RegularExpression = data.RegularExpression;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
+                    categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
                     categoryField.UpdatedUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 

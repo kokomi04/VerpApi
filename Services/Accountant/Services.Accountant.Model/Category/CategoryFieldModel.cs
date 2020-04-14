@@ -6,6 +6,7 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public int CategoryFieldId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
+        public int? ReferenceCategoryTitleFieldId { get; set; }
         public int CategoryId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
@@ -40,6 +41,7 @@ namespace VErp.Services.Accountant.Model.Category
         public DataTypeModel DataType { get; set; }
         public FormTypeModel FormType { get; set; }
         public CategoryFieldOutputFullModel SourceCategoryField { get; set; }
+        public CategoryFieldOutputFullModel SourceCategoryTitleField { get; set; }
         public CategoryModel SourceCategory { get; set; }
     }
 }

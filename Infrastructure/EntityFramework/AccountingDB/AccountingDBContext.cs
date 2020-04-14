@@ -46,7 +46,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_Category_Relation");
             });
 
-         
+
             modelBuilder.Entity<CategoryRowValue>(entity =>
             {
                 entity.HasKey(v => new { v.CategoryRowId, v.CategoryFieldId });
@@ -70,6 +70,11 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(f => f.DestCategoryFields)
                 .HasForeignKey(c => c.ReferenceCategoryFieldId)
                 .HasConstraintName("FK_CategoryField_Relation");
+                entity.HasOne(f => f.SourceCategoryTitleField)
+                .WithMany(f => f.DestCategoryTitleFields)
+                .HasForeignKey(c => c.ReferenceCategoryTitleFieldId)
+                .HasConstraintName("FK_CategoryTitleField_Relation");
+
             });
 
             OnModelCreatingPartial(modelBuilder);
