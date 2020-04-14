@@ -31,6 +31,8 @@ namespace VErp.Services.Organization.Model.Customer
         [MaxLength(128, ErrorMessage = "Tên người đại diện quá dài")]
         public string LegalRepresentative { get; set; }
         public int? DebtDays { get; set; }
+        [MaxLength(64, ErrorMessage = "Số CMND quá dài")]
+        public string Identify { get; set; }
 
         public EnumCustomerStatus CustomerStatusId { get; set; }
 
