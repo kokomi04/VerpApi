@@ -9,10 +9,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public CategoryField()
         {
             DestCategoryFields = new HashSet<CategoryField>();
+            DestCategoryTitleFields = new HashSet<CategoryField>();
         }
 
         public int CategoryFieldId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
+        public int? ReferenceCategoryTitleFieldId { get; set; }
         public int CategoryId { get; set; }
         public string Name { get; set; }
         public string Title { get; set; }
@@ -34,6 +36,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual Category Category { get; set; }
         
         public virtual ICollection<CategoryField> DestCategoryFields { get; set; }
+        public virtual ICollection<CategoryField> DestCategoryTitleFields { get; set; }
         public virtual CategoryField SourceCategoryField { get; set; }
+        public virtual CategoryField SourceCategoryTitleField { get; set; }
     }
 }

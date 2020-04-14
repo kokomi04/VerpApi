@@ -42,7 +42,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
-        public async Task<ServiceResult<PageData<CategoryValueModel>>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryReferenceValueModel>>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, page, size);
         }
@@ -163,9 +163,9 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryRowService.GetCategoryRows(categoryId, page, size);
+            return await _categoryRowService.GetCategoryRows(categoryId, keyword, page, size);
         }
 
         [HttpGet]

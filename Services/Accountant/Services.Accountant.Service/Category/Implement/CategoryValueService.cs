@@ -39,38 +39,67 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         }
 
 
-        public async Task<PageData<CategoryValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
+        public async Task<PageData<CategoryReferenceValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
         {
             var field = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
-            IQueryable<CategoryValueModel> query;
+            IQueryable<CategoryReferenceValueModel> query;
             if (field.ReferenceCategoryFieldId.HasValue)
             {
-                query = _accountingContext.CategoryValue
+                var tempQuery = _accountingContext.CategoryValue
                     .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
                     {
+                        rv.CategoryRowId,
                         v.CategoryValueId,
                         rv.CategoryFieldId,
                         v.Value
                     })
-                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                    .Select(v => new CategoryValueModel { 
+                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+
+                if (field.ReferenceCategoryTitleFieldId.HasValue)
+                {
+                    query = tempQuery
+                        .Join(_accountingContext.CategoryRowValue.Where(rv => rv.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value)
+                        , v => v.CategoryRowId
+                        , rv => rv.CategoryRowId
+                        , (v, rv) => new
+                        {
+                            v.CategoryFieldId,
+                            v.CategoryValueId,
+                            v.Value,
+                            TitleId = rv.CategoryValueId
+                        })
+                        .Join(_accountingContext.CategoryValue, v => v.TitleId, vt => vt.CategoryValueId, (v, vt) => new CategoryReferenceValueModel
+                        {
+                            CategoryFieldId = v.CategoryFieldId,
+                            CategoryValueId = v.CategoryValueId,
+                            Value = v.Value,
+                            Title = vt.Value
+                        });
+                }
+                else
+                {
+                    query = tempQuery.Select(v => new CategoryReferenceValueModel
+                    {
                         CategoryFieldId = v.CategoryFieldId,
                         CategoryValueId = v.CategoryValueId,
-                        Value = v.Value
+                        Value = v.Value,
+                        Title = v.Value
                     });
+                }
             }
             else
             {
                 query = _accountingContext.CategoryValue
                     .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                    .Select(v => new CategoryValueModel
+                    .Select(v => new CategoryReferenceValueModel
                     {
                         CategoryFieldId = v.CategoryFieldId,
                         CategoryValueId = v.CategoryValueId,
-                        Value = v.Value
+                        Value = v.Value,
+                        Title = v.Value
                     });
             }
-           
+
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(v => v.Value.Contains(keyword));
@@ -81,7 +110,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
 
-            List<CategoryValueModel> lst = query.ToList();
+            List<CategoryReferenceValueModel> lst = query.ToList();
             return (lst, total);
         }
 

@@ -43,7 +43,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, int page, int size)
+        public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, int page, int size)
         {
             var query = _accountingContext.CategoryRow
                            .Where(r => r.CategoryId == categoryId)
@@ -61,7 +61,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                rv.CategoryFieldId
                            });
 
-            var rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+            IQueryable<int> rowIds;
+            // search
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                rowIds = query.Where(v => v.Value.Contains(keyword)).GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+            }
+
+            rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
             var total = await rowIds.CountAsync();
             if (size > 0)
             {
