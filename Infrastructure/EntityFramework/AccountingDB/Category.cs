@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
             SubCategories = new HashSet<Category>();
             CategoryFields = new HashSet<CategoryField>();
+            CategoryRows = new HashSet<CategoryRow>();
         }
 
         public int CategoryId { get; set; }
@@ -22,5 +23,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual Category Parent { get; set; }
         public virtual ICollection<Category> SubCategories { get; set; }
         public virtual ICollection<CategoryField> CategoryFields { get; set; }
+        public virtual ICollection<CategoryRow> CategoryRows { get; set; }
     }
 }

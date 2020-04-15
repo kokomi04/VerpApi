@@ -46,10 +46,37 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_Category_Relation");
             });
 
+            modelBuilder.Entity<CategoryRow>(entity =>
+            {
+                entity.HasOne(r => r.Category)
+                .WithMany(c => c.CategoryRows)
+                .HasForeignKey(r => r.CategoryId)
+                .HasConstraintName("FK_CategoryRow_Category");
+            });
 
             modelBuilder.Entity<CategoryRowValue>(entity =>
             {
                 entity.HasKey(v => new { v.CategoryRowId, v.CategoryFieldId });
+                entity.HasOne(rv => rv.CategoryRow)
+                .WithMany(r => r.CategoryRowValues)
+                .HasForeignKey(rv => rv.CategoryRowId)
+                .HasConstraintName("FK_CategoryRowValue_CategoryRow");
+                entity.HasOne(rv => rv.CategoryField)
+                .WithMany(f => f.CategoryRowValues)
+                .HasForeignKey(rv => rv.CategoryFieldId)
+                .HasConstraintName("FK_CategoryRowValue_CategoryField");
+                entity.HasOne(rv => rv.CategoryValue)
+                .WithMany(v => v.CategoryRowValues)
+                .HasForeignKey(rv => rv.CategoryValueId)
+                .HasConstraintName("FK_CategoryRowValue_CategoryValue");
+            });
+
+            modelBuilder.Entity<CategoryValue>(entity =>
+            {
+                entity.HasOne(v => v.CategoryField)
+                .WithMany(f => f.CategoryValues)
+                .HasForeignKey(v => v.CategoryFieldId)
+                .HasConstraintName("FK_CategoryValue_CategoryField");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
