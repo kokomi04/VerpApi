@@ -284,7 +284,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
 
-            
+
 
             return (lst, total);
         }
@@ -464,6 +464,21 @@ namespace VErp.Services.Master.Service.Users.Implement
             return result;
         }
 
+        public async Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds)
+        {
+            var users = await _masterContext.User.Where(u => userIds.Contains(u.UserId)).Select(u => new { u.UserId, u.UserName }).ToListAsync();
+
+            var employees = await _organizationContext.Employee.Where(e => userIds.Contains(e.UserId)).Select(e => new { e.UserId, e.FullName, e.AvatarFileId }).ToListAsync();
+
+            return users.Join(employees, u => u.UserId, e => e.UserId, (u, e) => new UserBasicInfoOutput
+            {
+                UserId = u.UserId,
+                UserName = u.UserName,
+                FullName = e.FullName,
+                AvatarFileId = e.AvatarFileId
+            }).ToList();
+        }
+
 
         #region private
         private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
@@ -631,6 +646,8 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             return user;
         }
+
+
 
         private class UserFullDbInfo
         {
