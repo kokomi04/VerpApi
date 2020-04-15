@@ -14,6 +14,7 @@ using VErp.Services.Accountant.Model.Category;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using System;
+using Newtonsoft.Json;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -42,9 +43,14 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
-        public async Task<ServiceResult<PageData<CategoryReferenceValueModel>>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryReferenceValueModel>>> GetReferenceValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, page, size);
+            FilterModel[] lstFilters = null;
+            if (!string.IsNullOrEmpty(filters))
+            {
+                lstFilters = JsonConvert.DeserializeObject<FilterModel[]>(filters);
+            }
+            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, lstFilters, page, size);
         }
 
         [HttpGet]
@@ -163,9 +169,14 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryRowService.GetCategoryRows(categoryId, keyword, page, size);
+            FilterModel[] lstFilters = null;
+            if (!string.IsNullOrEmpty(filters))
+            {
+                lstFilters = JsonConvert.DeserializeObject<FilterModel[]>(filters);
+            }
+            return await _categoryRowService.GetCategoryRows(categoryId, keyword, lstFilters,  page, size);
         }
 
         [HttpGet]
@@ -240,6 +251,13 @@ namespace VErpApi.Controllers.Accountant
         public async Task<ServiceResult<PageData<FormTypeModel>>> GetFormTypes([FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetFormTypes(page, size);
+        }
+
+        [HttpGet]
+        [Route("operators")]
+        public async Task<ServiceResult<PageData<OperatorModel>>> GetOperators([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetOperators(page, size);
         }
     }
 }
