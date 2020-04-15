@@ -213,7 +213,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         { // Thêm dòng
             var categoryRow = new CategoryRow
             {
-                CategoryId = categoryId
+                CategoryId = categoryId,
+                UpdatedByUserId = updatedUserId,
+                CreatedByUserId = updatedUserId
             };
             await _accountingContext.CategoryRow.AddAsync(categoryRow);
             await _accountingContext.SaveChangesAsync();
@@ -246,7 +248,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         CategoryFieldId = field.CategoryFieldId,
                         Value = value,
-                        UpdatedUserId = updatedUserId
+                        UpdatedByUserId = updatedUserId,
+                        CreatedByUserId = updatedUserId
                     };
                     await _accountingContext.CategoryValue.AddAsync(categoryValue);
                     await _accountingContext.SaveChangesAsync();
@@ -263,7 +266,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     CategoryFieldId = field.CategoryFieldId,
                     CategoryRowId = categoryRow.CategoryRowId,
                     CategoryValueId = categoryValueId,
-                    UpdatedUserId = updatedUserId
+                    UpdatedByUserId = updatedUserId,
+                    CreatedByUserId = updatedUserId
                 };
                 await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
                 await _accountingContext.SaveChangesAsync();
@@ -338,14 +342,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 // Xóa value cũ
                                 var currentValue = _accountingContext.CategoryValue.First(v => v.CategoryValueId == oldValue.CategoryFieldId);
                                 currentValue.IsDeleted = true;
-                                currentValue.UpdatedUserId = updatedUserId;
+                                currentValue.UpdatedByUserId = updatedUserId;
                                 await _accountingContext.SaveChangesAsync();
 
                             }
                             // Xóa mapping
                             var currentRowValue = _accountingContext.CategoryRowValue.First(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
                             currentRowValue.IsDeleted = true;
-                            currentRowValue.UpdatedUserId = updatedUserId;
+                            currentRowValue.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
                         }
                         else if (oldValue == null) // Nếu giá trị cũ là null, tạo mới, map lại
@@ -356,7 +360,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 {
                                     CategoryFieldId = field.CategoryFieldId,
                                     Value = valueItem.Value,
-                                    UpdatedUserId = updatedUserId
+                                    UpdatedByUserId = updatedUserId,
+                                    CreatedByUserId = updatedUserId
                                 };
 
                                 _accountingContext.CategoryValue.Add(newValue);
@@ -366,7 +371,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                     CategoryFieldId = field.CategoryFieldId,
                                     CategoryRowId = categoryRowId,
                                     CategoryValueId = newValue.CategoryValueId,
-                                    UpdatedUserId = updatedUserId
+                                    UpdatedByUserId = updatedUserId,
+                                    CreatedByUserId = updatedUserId
                                 });
                                 await _accountingContext.SaveChangesAsync();
                             }
@@ -377,7 +383,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                     CategoryFieldId = field.CategoryFieldId,
                                     CategoryRowId = categoryRowId,
                                     CategoryValueId = valueItem.CategoryValueId,
-                                    UpdatedUserId = updatedUserId
+                                    UpdatedByUserId = updatedUserId,
+                                    CreatedByUserId = updatedUserId
                                 });
                                 await _accountingContext.SaveChangesAsync();
                             }
@@ -387,7 +394,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             // Sửa value cũ
                             var currentValue = _accountingContext.CategoryValue.First(v => v.CategoryValueId == oldValue.CategoryFieldId);
                             currentValue.Value = valueItem.Value;
-                            currentValue.UpdatedUserId = updatedUserId;
+                            currentValue.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
                         }
                         else
@@ -395,7 +402,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             // Sửa mapping giá trị mới
                             var currentRowValue = _accountingContext.CategoryRowValue.First(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
                             currentRowValue.CategoryValueId = valueItem.CategoryValueId;
-                            currentRowValue.UpdatedUserId = updatedUserId;
+                            currentRowValue.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
                         }
                     }
@@ -442,7 +449,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 // Delete row
                 categoryRow.IsDeleted = true;
-                categoryRow.UpdatedUserId = updatedUserId;
+                categoryRow.UpdatedByUserId = updatedUserId;
                 foreach (var field in categoryFields)
                 {
                     var categoryRowValue = _accountingContext.CategoryRowValue
@@ -459,11 +466,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         // Delete value
                         var value = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == categoryRowValue.CategoryValueId);
                         value.IsDeleted = true;
-                        value.UpdatedUserId = updatedUserId;
+                        value.UpdatedByUserId = updatedUserId;
                     }
                     // Delete row-field-value
                     categoryRowValue.IsDeleted = true;
-                    categoryRowValue.UpdatedUserId = updatedUserId;
+                    categoryRowValue.UpdatedByUserId = updatedUserId;
                 }
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
@@ -620,7 +627,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     for (int fieldIndx = 0; fieldIndx < fieldNames.Length; fieldIndx++)
                     {
                         string fieldName = fieldNames[fieldIndx];
-                        var field = categoryFields.FirstOrDefault(f => f.Name == fieldName);
+                        var field = categoryFields.FirstOrDefault(f => f.CategoryFieldName == fieldName);
                         if (field == null) continue;
 
                         if (field.DataTypeId == (int)EnumDataType.Boolean)
@@ -721,7 +728,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in categoryFields)
             {
                 titles.Add((field.Title, titleRgb));
-                names.Add((field.Name, nameRgb));
+                names.Add((field.CategoryFieldName, nameRgb));
             }
             dataInRows.Add(titles.ToArray());
             dataInRows.Add(names.ToArray());

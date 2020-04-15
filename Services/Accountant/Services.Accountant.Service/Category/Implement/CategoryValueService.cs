@@ -187,7 +187,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         CategoryFieldId = categoryFieldId,
                         Value = data.Value,
                         IsDefault = true,
-                        UpdatedUserId = updatedUserId
+                        UpdatedByUserId = updatedUserId,
+                        CreatedByUserId = updatedUserId
                     };
 
                     await _accountingContext.CategoryValue.AddAsync(categoryValue);
@@ -233,7 +234,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 try
                 {
                     categoryValue.Value = data.Value;
-                    categoryValue.UpdatedUserId = updatedUserId;
+                    categoryValue.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, categoryValue.CategoryValueId, $"Cập nhật giá trị {categoryValue.Value}", data.JsonSerialize());
@@ -266,7 +267,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 // Delete row
                 categoryValue.IsDeleted = true;
-                categoryValue.UpdatedUserId = updatedUserId;
+                categoryValue.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryValueId, $"Xóa giá trị {categoryValueId}", categoryValue.JsonSerialize());

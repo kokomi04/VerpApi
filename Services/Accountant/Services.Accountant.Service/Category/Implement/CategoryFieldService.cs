@@ -54,16 +54,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             query = query.Where(c => categoryIds.Contains(c.CategoryId));
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(f => f.Name.Contains(keyword) || f.Title.Contains(keyword));
+                query = query.Where(f => f.CategoryFieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
-            query = query.OrderBy(c => c.Sequence);
+            query = query.OrderBy(c => c.SortOrder);
             var total = await query.CountAsync();
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<CategoryFieldOutputModel> lst = await query
-                .OrderBy(f => f.Sequence)
+                .OrderBy(f => f.SortOrder)
                 .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToListAsync();
 
             return (lst, total);
@@ -101,7 +101,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryNotFound;
             }
 
-            if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.Name == data.Name))
+            if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.CategoryFieldName == data.CategoryFieldName))
             {
                 return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
             }
@@ -128,7 +128,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 var categoryField = _mapper.Map<CategoryField>(data);
                 categoryField.CategoryId = categoryId;
-                categoryField.UpdatedUserId = updatedUserId;
+                categoryField.CreatedByUserId = updatedUserId;
+                categoryField.UpdatedByUserId = updatedUserId;
 
                 await _accountingContext.CategoryField.AddAsync(categoryField);
                 await _accountingContext.SaveChangesAsync();
@@ -156,7 +157,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            if (categoryField.Name != data.Name && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.Name == data.Name))
+            if (categoryField.CategoryFieldName != data.CategoryFieldName && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.CategoryFieldName == data.CategoryFieldName))
             {
                 return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
             }
@@ -181,9 +182,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
-                    categoryField.Name = data.Name;
+                    categoryField.CategoryFieldName = data.CategoryFieldName;
                     categoryField.Title = data.Title;
-                    categoryField.Sequence = data.Sequence;
+                    categoryField.SortOrder = data.SortOrder;
                     categoryField.DataSize = data.DataSize;
                     categoryField.DataTypeId = data.DataTypeId;
                     categoryField.FormTypeId = data.FormTypeId;
@@ -196,7 +197,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.Filters = data.Filters;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
-                    categoryField.UpdatedUserId = updatedUserId;
+                    categoryField.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
                     trans.Commit();
@@ -235,18 +236,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 foreach (var value in values)
                 {
                     value.IsDeleted = true;
-                    value.UpdatedUserId = updatedUserId;
+                    value.UpdatedByUserId = updatedUserId;
                 }
                 // Delete row-field-value
                 var rowFieldValues = _accountingContext.CategoryRowValue.Where(rfv => rfv.CategoryFieldId == categoryFieldId);
                 foreach (var rowFieldValue in rowFieldValues)
                 {
                     rowFieldValue.IsDeleted = true;
-                    rowFieldValue.UpdatedUserId = updatedUserId;
+                    rowFieldValue.UpdatedByUserId = updatedUserId;
                 }
                 // Delete field
                 categoryField.IsDeleted = true;
-                categoryField.UpdatedUserId = updatedUserId;
+                categoryField.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường thư mục {categoryField.Title}", categoryField.JsonSerialize());

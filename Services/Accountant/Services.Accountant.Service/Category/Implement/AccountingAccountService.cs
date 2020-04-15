@@ -112,7 +112,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 try
                 {
                     AccountingAccount accountingAccount = _mapper.Map<AccountingAccount>(data);
-                    accountingAccount.UpdatedUserId = updatedUserId;
+                    accountingAccount.UpdatedByUserId = updatedUserId;
 
                     await _accountingContext.AccountingAccount.AddAsync(accountingAccount);
                     await _accountingContext.SaveChangesAsync();
@@ -184,7 +184,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     accountingAccount.IsCorp = data.IsCorp;
                     accountingAccount.Currency = data.Currency;
                     accountingAccount.Description = data.Description;
-                    accountingAccount.UpdatedUserId = updatedUserId;
+                    accountingAccount.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                    
                     trans.Commit();
@@ -217,7 +217,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 try
                 {
                     accountingAccount.IsDeleted = true;
-                    accountingAccount.UpdatedUserId = updatedUserId;
+                    accountingAccount.UpdatedByUserId = updatedUserId;
 
                     var deleteFields = _accountingContext.AccountingAccount.Where(a => a.AccountingAccountId == accountingAccountId);
                     foreach (var item in deleteFields)

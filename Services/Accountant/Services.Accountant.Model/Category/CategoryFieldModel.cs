@@ -13,8 +13,8 @@ namespace VErp.Services.Accountant.Model.Category
         public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
-        public string Name { get; set; }
-        public int Sequence { get; set; }
+        public string CategoryFieldName { get; set; }
+        public int SortOrder { get; set; }
         public int DataTypeId { get; set; }
         public int DataSize { get; set; }
         public int FormTypeId { get; set; }
