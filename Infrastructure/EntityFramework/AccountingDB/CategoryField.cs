@@ -16,9 +16,9 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
         public int CategoryId { get; set; }
-        public string Name { get; set; }
+        public string CategoryFieldName { get; set; }
         public string Title { get; set; }
-        public int Sequence { get; set; }
+        public int SortOrder { get; set; }
         public int DataTypeId { get; set; }
         public int DataSize { get; set; }
         public int FormTypeId { get; set; }

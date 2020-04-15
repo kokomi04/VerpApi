@@ -18,7 +18,7 @@ namespace VErp.Services.Accountant.Model.Category
         public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã danh mục")]
         [MaxLength(45, ErrorMessage = "Mã danh mục quá dài")]
-        public string Code { get; set; }
+        public string CategoryCode { get; set; }
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
         public ICollection<T> SubCategories { get; set; }

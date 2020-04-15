@@ -5,8 +5,9 @@ namespace VErp.Infrastructure.EF.AccountingDB
 {
     public partial class BaseEntity
     {
-        public int UpdatedUserId { get; set; }
-        public DateTime CreatedTime { get; set; }
-        public DateTime UpdatedTime { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
     }
 }

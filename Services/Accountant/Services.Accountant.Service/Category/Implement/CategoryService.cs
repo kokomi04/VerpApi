@@ -60,7 +60,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(c => c.Code.Contains(keyword) || c.Title.Contains(keyword));
+                query = query.Where(c => c.CategoryCode.Contains(keyword) || c.Title.Contains(keyword));
             }
             if (isModule.HasValue)
             {
@@ -91,10 +91,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<ServiceResult<int>> AddCategory(int updatedUserId, CategoryModel data)
         {
             var existedCategory = await _accountingContext.Category
-                .FirstOrDefaultAsync(c => c.Code == data.Code || c.Title == data.Title);
+                .FirstOrDefaultAsync(c => c.CategoryCode == data.CategoryCode || c.Title == data.Title);
             if (existedCategory != null)
             {
-                if (string.Compare(existedCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     return CategoryErrorCode.CategoryCodeAlreadyExisted;
                 }
@@ -128,10 +128,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
             {
                 var existedsubCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                    .FirstOrDefaultAsync(c => c.CategoryCode == item.CategoryCode || c.Title == item.Title);
                 if (existedsubCategory != null)
                 {
-                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedsubCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.CategoryCodeAlreadyExisted;
                     }
@@ -153,20 +153,22 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     CategoryEntity category = _mapper.Map<CategoryEntity>(data);
                     category.IsModule = true;
-                    category.UpdatedUserId = updatedUserId;
-
+                    category.UpdatedByUserId = updatedUserId;
+                    category.CreatedByUserId = updatedUserId;
                     await _accountingContext.Category.AddAsync(category);
                     await _accountingContext.SaveChangesAsync();
                     foreach (var selectSubCategory in selectSubCategories)
                     {
                         selectSubCategory.ParentId = category.CategoryId;
-                        selectSubCategory.UpdatedUserId = updatedUserId;
+                        selectSubCategory.UpdatedByUserId = updatedUserId;
+                        selectSubCategory.CreatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var newSubCategory in newSubCategories)
                     {
                         newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedUserId = updatedUserId;
+                        newSubCategory.UpdatedByUserId = updatedUserId;
+                        newSubCategory.CreatedByUserId = updatedUserId;
                         await _accountingContext.Category.AddAsync(newSubCategory);
                     }
                     await _accountingContext.SaveChangesAsync();
@@ -190,13 +192,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-            if (category.Code != data.Code || category.Title != data.Title)
+            if (category.CategoryCode != data.CategoryCode || category.Title != data.Title)
             {
                 var existedCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.Code == data.Code || c.Title == data.Title));
+                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.CategoryCode == data.CategoryCode || c.Title == data.Title));
                 if (existedCategory != null)
                 {
-                    if (string.Compare(existedCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.CategoryCodeAlreadyExisted;
                     }
@@ -234,10 +236,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
             {
                 var existedsubCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                    .FirstOrDefaultAsync(c => c.CategoryCode == item.CategoryCode || c.Title == item.Title);
                 if (existedsubCategory != null)
                 {
-                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedsubCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.SubCategoryCodeAlreadyExisted;
                     }
@@ -262,29 +264,30 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
-                    category.Code = data.Code;
+                    category.CategoryCode = data.CategoryCode;
                     category.Title = data.Title;
                     category.IsModule = data.IsModule;
                     category.IsReadonly = data.IsReadonly;
-                    category.UpdatedUserId = updatedUserId;
+                    category.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                     foreach (var item in deleteSubCategories)
                     {
                         var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
                         subCategory.ParentId = null;
-                        subCategory.UpdatedUserId = updatedUserId;
+                        subCategory.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var item in selectSubCategories)
                     {
                         item.ParentId = category.CategoryId;
-                        item.UpdatedUserId = updatedUserId;
+                        item.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var newSubCategory in newSubCategories)
                     {
                         newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedUserId = updatedUserId;
+                        newSubCategory.UpdatedByUserId = updatedUserId;
+                        newSubCategory.CreatedByUserId = updatedUserId;
                         await _accountingContext.Category.AddAsync(newSubCategory);
                     }
                     await _accountingContext.SaveChangesAsync();
@@ -322,7 +325,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == id);
                         category.IsDeleted = true;
-                        category.UpdatedUserId = updatedUserId;
+                        category.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                         var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
                         foreach (var field in deleteFields)
@@ -334,7 +337,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
                             }
                             field.IsDeleted = true;
-                            field.UpdatedUserId = updatedUserId;
+                            field.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
 
                             // Xóa value
@@ -342,7 +345,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             foreach (var value in categoryValues)
                             {
                                 value.IsDeleted = true;
-                                value.UpdatedUserId = updatedUserId;
+                                value.UpdatedByUserId = updatedUserId;
                                 await _accountingContext.SaveChangesAsync();
                             }
                         }
@@ -352,7 +355,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     foreach (var row in categoryRows)
                     {
                         row.IsDeleted = true;
-                        row.UpdatedUserId = updatedUserId;
+                        row.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
 
                         // Xóa mapping row, value
@@ -360,7 +363,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         foreach (var rowValue in categoryRowValues)
                         {
                             rowValue.IsDeleted = true;
-                            rowValue.UpdatedUserId = updatedUserId;
+                            rowValue.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
                         }
                     }
@@ -432,7 +435,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .Where(f => f.CategoryId == categoryId)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .OrderBy(f => f.Sequence);
+                .OrderBy(f => f.SortOrder);
             List<CategoryFieldOutputModel> result = new List<CategoryFieldOutputModel>();
             foreach (var field in query)
             {
