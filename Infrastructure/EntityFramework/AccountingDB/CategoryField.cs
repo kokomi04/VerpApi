@@ -30,11 +30,11 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsShowList { get; set; }
         //public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
-
+        public string Filters { get; set; }
         public virtual DataType DataType { get; set; }
         public virtual FormType FormType { get; set; }
         public virtual Category Category { get; set; }
-        
+
         public virtual ICollection<CategoryField> DestCategoryFields { get; set; }
         public virtual ICollection<CategoryField> DestCategoryTitleFields { get; set; }
         public virtual CategoryField SourceCategoryField { get; set; }

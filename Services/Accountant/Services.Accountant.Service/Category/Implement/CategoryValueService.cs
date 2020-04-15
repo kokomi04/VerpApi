@@ -39,21 +39,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         }
 
 
-        public async Task<PageData<CategoryReferenceValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
+        public async Task<PageData<CategoryReferenceValueModel>> GetReferenceValues(int categoryId, int categoryFieldId, string keyword, FilterModel[] filters, int page, int size)
         {
             var field = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
             IQueryable<CategoryReferenceValueModel> query;
             if (field.ReferenceCategoryFieldId.HasValue)
             {
                 var tempQuery = _accountingContext.CategoryValue
-                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new CategoryRowValueModel
                     {
-                        rv.CategoryRowId,
-                        v.CategoryValueId,
-                        rv.CategoryFieldId,
-                        v.Value
+                        CategoryRowId = rv.CategoryRowId,
+                        CategoryValueId = v.CategoryValueId,
+                        CategoryFieldId = rv.CategoryFieldId,
+                        Value = v.Value
                     })
                     .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+
+                if (filters != null && filters.Length > 0)
+                {
+                    var rowIds = FillterProcess(tempQuery, filters);
+                    tempQuery = tempQuery.Where(v => rowIds.Contains(v.CategoryRowId));
+                }
 
                 if (field.ReferenceCategoryTitleFieldId.HasValue)
                 {

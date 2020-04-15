@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -444,5 +445,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return result;
         }
 
+        public async Task<PageData<OperatorModel>> GetOperators(int page, int size)
+        {
+            List<OperatorModel> operators = new List<OperatorModel>();
+            foreach (EnumOperator ope in (EnumOperator[])EnumOperator.GetValues(typeof(EnumOperator)))
+            {
+                operators.Add(new OperatorModel
+                {
+                    Value = (int)ope,
+                    Title = ope.GetEnumDescription()
+                });
+            }
+            int total = operators.Count;
+            if (size > 0)
+            {
+                operators = operators.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (operators, total);
+        }
     }
 }

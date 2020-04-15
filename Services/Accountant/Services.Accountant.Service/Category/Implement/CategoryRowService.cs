@@ -43,9 +43,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, int page, int size)
+        public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
-            var query = _accountingContext.CategoryRow
+            IQueryable<CategoryRowValueModel> query = _accountingContext.CategoryRow
                            .Where(r => r.CategoryId == categoryId)
                            .Join(_accountingContext.CategoryRowValue, r => r.CategoryRowId, rv => rv.CategoryRowId, (r, rv) => new
                            {
@@ -53,24 +53,32 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                rv.CategoryValueId,
                                rv.CategoryFieldId
                            })
-                           .Join(_accountingContext.CategoryValue, rv => rv.CategoryValueId, v => v.CategoryValueId, (rv, v) => new
+                           .Join(_accountingContext.CategoryValue, rv => rv.CategoryValueId, v => v.CategoryValueId, (rv, v) => new CategoryRowValueModel
                            {
-                               rv.CategoryRowId,
-                               v.Value,
-                               v.CategoryValueId,
-                               rv.CategoryFieldId
+                               CategoryRowId = rv.CategoryRowId,
+                               Value = v.Value,
+                               CategoryValueId = v.CategoryValueId,
+                               CategoryFieldId = rv.CategoryFieldId
                            });
 
             IQueryable<int> rowIds;
-            // search
-            if (!string.IsNullOrEmpty(keyword))
+
+            if (filters != null && filters.Length > 0)
             {
-                rowIds = query.Where(v => v.Value.Contains(keyword)).GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+                rowIds = FillterProcess(query, filters);
             }
             else
             {
                 rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
             }
+
+            // search
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                IQueryable<int> searchIds = query.Where(v => v.Value.Contains(keyword)).GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+                rowIds = rowIds.Join(searchIds, r => r, s => s, (r, s) => r);
+            }
+
             var total = await rowIds.CountAsync();
             if (size > 0)
             {

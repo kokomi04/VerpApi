@@ -193,6 +193,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.IsHidden = data.IsHidden;
                     categoryField.IsShowList = data.IsShowList;
                     categoryField.RegularExpression = data.RegularExpression;
+                    categoryField.Filters = data.Filters;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
                     categoryField.UpdatedUserId = updatedUserId;

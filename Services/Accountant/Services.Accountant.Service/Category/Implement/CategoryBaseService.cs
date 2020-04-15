@@ -40,6 +40,44 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return ids.ToArray();
         }
 
+        protected IQueryable<int> FillterProcess(IQueryable<CategoryRowValueModel> query, FilterModel[] filters)
+        {
+            IQueryable<int> rowIds = null;
+
+            foreach (var filter in filters)
+            {
+                IQueryable<int> filterIds = null;
+                switch (filter.Operator)
+                {
+                    case EnumOperator.Equal:
+                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Value).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        break;
+                    case EnumOperator.NotEqual:
+                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Value).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        break;
+                    case EnumOperator.Contains:
+                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Value)).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        break;
+                    case EnumOperator.InList:
+                        string[] values = filter.Value.Split(',');
+                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value)).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        break;
+                    default:
+                        break;
+                }
+
+                if (rowIds == null)
+                {
+                    rowIds = filterIds;
+                }
+                else if (filter != null)
+                {
+                    rowIds = rowIds.Join(filterIds, r => r, f => f, (r, f) => r);
+                }
+            }
+
+            return rowIds;
+        }
         protected private Enum CheckValue(CategoryValueModel valueItem, CategoryField field)
         {
             if (field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
