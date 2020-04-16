@@ -12,6 +12,6 @@ namespace VErp.Services.Accountant.Model.Input
         public long LastestInputValueRowVersionId { get; set; }
         public int InputAreaId { get; set; }
 
-       // public InputValueRowVersionModel LastestInputValueRowVersion { get; set; }
+        public InputValueRowVersionModel LastestInputValueRowVersion { get; set; }
     }
 }
