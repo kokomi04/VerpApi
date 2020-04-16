@@ -18,7 +18,7 @@ using VErp.Services.Accountant.Service.Input;
 
 namespace VErpApi.Controllers.Accountant
 {
-    [Route("api/inputs")]
+    [Route("api/inputtypes")]
 
     public class InputController : VErpBaseController
     {
