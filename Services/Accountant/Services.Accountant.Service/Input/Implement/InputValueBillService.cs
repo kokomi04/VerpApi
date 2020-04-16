@@ -111,5 +111,58 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return output;
         }
 
+        public async Task<ServiceResult<int>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data)
+        {
+            // Validate
+            var inputType = _accountingContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
+            if (inputType == null)
+            {
+                return InputErrorCode.InputTypeNotFound;
+            }
+          
+            // Lấy thông tin field
+            var inputAreaFields = _accountingContext.InputAreaField
+                .Include(f => f.DataType)
+                .Where(f => f.InputTypeId == inputTypeId).AsEnumerable();
+          
+            // Check field required
+           
+
+            // Check unique
+        
+
+            // Check refer
+          
+
+            // Check value
+          
+
+            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Insert bill
+
+
+
+                    // Insert row
+
+                    // Insert row version
+
+                    // Insert row version number
+
+                    trans.Commit();
+                    //await _activityLogService.CreateLog(EnumObjectType.InputType, categoryRowId, $"Thêm chứng từ cho loại chứng từ {inputType.Title}", data.JsonSerialize());
+                    return 1;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Create");
+                    return GeneralCode.InternalError;
+                }
+            }
+        }
+
     }
 }
