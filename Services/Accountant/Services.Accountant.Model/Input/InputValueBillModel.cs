@@ -5,16 +5,16 @@ using System.ComponentModel.DataAnnotations;
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public class InputValueBillModel
+    public class InputValueBillInputModel
     {
-        public InputValueBillModel()
+        public InputValueBillInputModel()
         {
             Values = new HashSet<InputValueRowModel>();
         }
         public ICollection<InputValueRowModel> Values { get; set; }
     }
 
-    public class InputValueBillOutputModel : InputValueBillModel
+    public class InputValueBillOutputModel : InputValueBillInputModel
     {
         public long InputValueBillId { get; set; }
     }

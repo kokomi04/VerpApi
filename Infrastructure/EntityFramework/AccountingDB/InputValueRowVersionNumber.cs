@@ -31,5 +31,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public long Field18 { get; set; }
         public long Field19 { get; set; }
         public long Field20 { get; set; }
+
+        public virtual InputValueRowVersion InputValueRowVersion { get; set; }
     }
 }
