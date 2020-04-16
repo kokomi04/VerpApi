@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public abstract class InputTypeModel
+    public class InputTypeModel
     {
         public InputTypeModel()
         {
