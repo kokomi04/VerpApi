@@ -145,6 +145,11 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_InputAreaField_CategoryTitleField");
             });
 
+            modelBuilder.Entity<InputValueRowVersionNumber>(entity =>
+            {
+                entity.HasKey(r => r.InputValueRowVersionId);
+            });
+
             OnModelCreatingPartial(modelBuilder);
         }
 
