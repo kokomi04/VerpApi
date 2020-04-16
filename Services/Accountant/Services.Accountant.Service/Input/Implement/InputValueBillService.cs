@@ -48,7 +48,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var query = _accountingContext.InputValueBill
                 .Include(b => b.InputValueRows)
                 .ThenInclude(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
-                .ThenInclude(rv => rv.InputValueRowVersionNumbers)
                 .Where(b => b.InputTypeId == inputTypeId);
 
             // search
@@ -99,7 +98,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var inputValueBill = await _accountingContext.InputValueBill
                 .Include(b => b.InputValueRows)
                 .ThenInclude(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
-                .ThenInclude(rv => rv.InputValueRowVersionNumbers)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId && i.InputValueBillId == inputValueBillId);
             if (inputValueBill == null)
             {

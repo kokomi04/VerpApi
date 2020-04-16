@@ -20,7 +20,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
         public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
-        public virtual DbSet<InputValueRowVersionNumber> InputValueRowVersionNumber { get; set; }
 
         public AccountingDBContext()
         {
@@ -145,11 +144,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_InputAreaField_CategoryTitleField");
             });
 
-            modelBuilder.Entity<InputValueRowVersionNumber>(entity =>
-            {
-                entity.HasKey(r => r.InputValueRowVersionId);
-            });
-
             modelBuilder.Entity<InputValueRow>(entity =>
             {
                 entity.HasOne(r => r.InputValueBill)
@@ -166,13 +160,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_InputValueRowVersion_InputValueRow");
             });
 
-            modelBuilder.Entity<InputValueRowVersionNumber>(entity =>
-            {
-                entity.HasOne(rvn => rvn.InputValueRowVersion)
-                .WithMany(rv => rv.InputValueRowVersionNumbers)
-                .HasForeignKey(rvn => rvn.InputValueRowVersionId)
-                .HasConstraintName("FK_InputValueRowVersionNumber_InputValueRowVersion");
-            });
 
             OnModelCreatingPartial(modelBuilder);
         }
