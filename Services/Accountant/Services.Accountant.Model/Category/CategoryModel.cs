@@ -32,7 +32,7 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public CategoryFullModel()
         {
-            CategoryFields = new LinkedList<CategoryFieldOutputModel>();
+            CategoryFields = new List<CategoryFieldOutputModel>();
         }
 
         public ICollection<CategoryFieldOutputModel> CategoryFields { get; set; }

@@ -18,7 +18,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string CategoryCode { get; set; }
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
-        public bool IsDeleted { get; set; }
 
         public virtual Category Parent { get; set; }
         public virtual ICollection<Category> SubCategories { get; set; }

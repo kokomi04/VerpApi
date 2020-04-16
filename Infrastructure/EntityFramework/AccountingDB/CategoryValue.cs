@@ -13,7 +13,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int CategoryValueId { get; set; }
         public int CategoryFieldId { get; set; }
         public string Value { get; set; }
-        public bool IsDeleted { get; set; }
         public bool IsDefault { get; set; }
 
         public virtual ICollection<CategoryRowValue> CategoryRowValues { get; set; }

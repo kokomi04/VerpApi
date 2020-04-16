@@ -51,11 +51,21 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             foreach (var entityEntry in entries)
             {
-                ((BaseEntity)entityEntry.Entity).UpdatedDatetimeUtc = DateTime.UtcNow;
-
                 if (entityEntry.State == EntityState.Added)
                 {
                     ((BaseEntity)entityEntry.Entity).CreatedDatetimeUtc = DateTime.UtcNow;
+                    ((BaseEntity)entityEntry.Entity).UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
+                else
+                {
+                    if (((BaseEntity)entityEntry.Entity).IsDeleted)
+                    {
+                        ((BaseEntity)entityEntry.Entity).DeletedDatetimeUtc = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        ((BaseEntity)entityEntry.Entity).UpdatedDatetimeUtc = DateTime.UtcNow;
+                    }
                 }
             }
         }

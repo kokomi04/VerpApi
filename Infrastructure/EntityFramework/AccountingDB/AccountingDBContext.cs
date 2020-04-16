@@ -14,6 +14,14 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryValue> CategoryValue { get; set; }
         public virtual DbSet<CategoryRowValue> CategoryRowValue { get; set; }
+        public virtual DbSet<InputType> InputType { get; set; }
+        public virtual DbSet<InputArea> InputArea { get; set; }
+        public virtual DbSet<InputAreaField> InputAreaField { get; set; }
+        public virtual DbSet<InputValueBill> InputValueBill { get; set; }
+        public virtual DbSet<InputValueRow> InputValueRow { get; set; }
+        public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
+        public virtual DbSet<InputValueRowVersionNumber> InputValueRowVersionNumber { get; set; }
+
         public AccountingDBContext()
         {
         }
@@ -82,9 +90,9 @@ namespace VErp.Infrastructure.EF.AccountingDB
             modelBuilder.Entity<CategoryField>(entity =>
             {
                 entity.HasOne(f => f.Category)
-               .WithMany(c => c.CategoryFields)
-               .HasForeignKey(c => c.CategoryId)
-               .HasConstraintName("FK_CategoryField_Category");
+                .WithMany(c => c.CategoryFields)
+                .HasForeignKey(c => c.CategoryId)
+                .HasConstraintName("FK_CategoryField_Category");
                 entity.HasOne(f => f.DataType)
                 .WithMany(d => d.CategoryFields)
                 .HasForeignKey(f => f.DataTypeId)
@@ -102,6 +110,31 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasForeignKey(c => c.ReferenceCategoryTitleFieldId)
                 .HasConstraintName("FK_CategoryTitleField_Relation");
 
+            });
+
+            modelBuilder.Entity<InputArea>(entity =>
+            {
+                entity.HasOne(a => a.InputType)
+                .WithMany(t => t.InputAreas)
+                .HasForeignKey(a => a.InputTypeId)
+                .HasConstraintName("FK_InputArea_InputType");
+            });
+
+            modelBuilder.Entity<InputAreaField>(entity =>
+            {
+                entity.HasKey(f => new { f.InputAreaId, f.FieldIndex });
+                entity.HasOne(f => f.InputArea)
+                .WithMany(f => f.InputAreaFields)
+                .HasForeignKey(f => f.InputAreaId)
+                .HasConstraintName("FK_InputAreaField_InputArea");
+                entity.HasOne(f => f.DataType)
+                .WithMany(d => d.InputAreaFields)
+                .HasForeignKey(f => f.DataTypeId)
+                .HasConstraintName("FK_InputAreaField_DataType");
+                entity.HasOne(f => f.FormType)
+                .WithMany(f => f.InputAreaFields)
+                .HasForeignKey(f => f.FormTypeId)
+                .HasConstraintName("FK_InputAreaField_FormType");
             });
 
             OnModelCreatingPartial(modelBuilder);

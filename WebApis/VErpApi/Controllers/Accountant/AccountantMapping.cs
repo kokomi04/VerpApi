@@ -2,6 +2,7 @@
 using AutoMapper;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Services.Accountant.Model.Category;
+using VErp.Services.Accountant.Model.Input;
 using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErpApi.Controllers.Accountant
@@ -22,6 +23,17 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<CategoryField, CategoryFieldOutputFullModel>();
             CreateMap<CategoryFieldInputModel, CategoryField>();
             CreateMap<CategoryValueModel, CategoryValue>().ReverseMap();
+
+
+            CreateMap<InputType, InputTypeModel>();
+            CreateMap<InputTypeModel, InputType>();
+            CreateMap<InputType, InputTypeFullModel>();
+            CreateMap<InputArea, InputAreaOutputModel>();
+            CreateMap<InputAreaInputModel, InputArea>();
+            CreateMap<InputAreaField, InputAreaFieldOutputModel>();
+            CreateMap<InputAreaField, InputAreaFieldOutputFullModel>();
+            CreateMap<InputAreaFieldInputModel, InputAreaField>();
+
         }
     }
 }
