@@ -199,14 +199,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             inputValueRowVersion.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
 
-                            // Xóa row version number
-                            List<InputValueRowVersionNumber> inputValueRowVersionNumbers = _accountingContext.InputValueRowVersionNumber.Where(rvn => rvn.InputValueRowVersionId == inputValueRowVersion.InputValueRowVersionId).ToList();
-                            foreach (InputValueRowVersionNumber inputValueRowVersionNumber in inputValueRowVersionNumbers)
-                            {
-                                inputValueRowVersionNumber.IsDeleted = true;
-                                inputValueRowVersionNumber.UpdatedByUserId = updatedUserId;
-                                await _accountingContext.SaveChangesAsync();
-                            }
+                            //// Xóa row version number
+                            //List<InputValueRowVersionNumber> inputValueRowVersionNumbers = _accountingContext.InputValueRowVersionNumber.Where(rvn => rvn.InputValueRowVersionId == inputValueRowVersion.InputValueRowVersionId).ToList();
+                            //foreach (InputValueRowVersionNumber inputValueRowVersionNumber in inputValueRowVersionNumbers)
+                            //{
+                            //    inputValueRowVersionNumber.IsDeleted = true;
+                            //    inputValueRowVersionNumber.UpdatedByUserId = updatedUserId;
+                            //    await _accountingContext.SaveChangesAsync();
+                            //}
                         }
                     }
 

@@ -40,10 +40,7 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<InputValueRow, InputValueRowModel>();
             CreateMap<InputValueRowModel, InputValueRow>().ForMember(r => r.InputValueRowVersions, act => act.Ignore());
 
-            CreateMap<InputValueRowVersion, InputValueRowVersionModel>();
-            CreateMap<InputValueRowVersionModel, InputValueRowVersion>().ForMember(rv => rv.InputValueRowVersionNumbers, act => act.Ignore());
-
-            CreateMap<InputValueRowVersionNumber, InputValueRowVersionNumberModel>().ReverseMap();
+            CreateMap<InputValueRowVersion, InputValueRowVersionModel>().ReverseMap();
 
         }
     }
