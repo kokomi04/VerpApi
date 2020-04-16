@@ -142,10 +142,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 try
                 {
                     // Insert bill
-
-
+                    var inputValueBill = _mapper.Map<InputValueBill>(data);
+                    inputValueBill.UpdatedByUserId = updatedUserId;
+                    inputValueBill.CreatedByUserId = updatedUserId;
+                    await _accountingContext.InputValueBill.AddAsync(inputValueBill);
+                    await _accountingContext.SaveChangesAsync();
 
                     // Insert row
+
 
                     // Insert row version
 

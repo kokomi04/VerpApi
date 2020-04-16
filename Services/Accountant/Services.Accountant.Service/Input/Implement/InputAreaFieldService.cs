@@ -89,7 +89,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputTypeNotFound;
             }
 
-            if (!_accountingContext.InputAreaField.Any(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId))
+            if (!_accountingContext.InputArea.Any(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId))
             {
                 return InputErrorCode.InputAreaNotFound;
             }
