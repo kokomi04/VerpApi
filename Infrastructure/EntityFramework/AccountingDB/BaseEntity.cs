@@ -10,6 +10,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-        public DateTime DeletedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
     }
 }
