@@ -22,7 +22,8 @@ namespace VErp.Commons.Enums.StandardEnum
         InputAreaTitleAlreadyExisted = 6,
         [Description("Tên trường đã tồn tại")]
         InputAreaFieldNameAlreadyExisted = 7,
-       
+        [Description("Chứng từ không tồn tại")]
+        InputValueBillNotFound = 8,
         [Description("Trường tham chiếu không tồn tại")]
         SourceCategoryFieldNotFound = 9,
     
@@ -32,7 +33,7 @@ namespace VErp.Commons.Enums.StandardEnum
         DataTypeNotFound = 12,
         [Description("Kiểu nhập liệu không tồn tại")]
         FormTypeNotFound = 13,
-        [Description("chứng từ không được phép thay đổi")]
+        [Description("Chứng từ không được phép thay đổi")]
         InputReadOnly = 14,
         [Description("Không được phép để trống trường thông tin bắt buộc")]
         RequiredFieldIsEmpty = 15,

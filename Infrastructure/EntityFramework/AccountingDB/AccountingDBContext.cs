@@ -150,6 +150,30 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 entity.HasKey(r => r.InputValueRowVersionId);
             });
 
+            modelBuilder.Entity<InputValueRow>(entity =>
+            {
+                entity.HasOne(r => r.InputValueBill)
+                .WithMany(b => b.InputValueRows)
+                .HasForeignKey(r => r.InputValueBillId)
+                .HasConstraintName("FK_InputValueRow_InputValueBill");
+            });
+
+            modelBuilder.Entity<InputValueRowVersion>(entity =>
+            {
+                entity.HasOne(rv => rv.InputValueRow)
+                .WithMany(r => r.InputValueRowVersions)
+                .HasForeignKey(rv => rv.InputValueRowId)
+                .HasConstraintName("FK_InputValueRowVersion_InputValueRow");
+            });
+
+            modelBuilder.Entity<InputValueRowVersionNumber>(entity =>
+            {
+                entity.HasOne(rvn => rvn.InputValueRowVersion)
+                .WithMany(rv => rv.InputValueRowVersionNumbers)
+                .HasForeignKey(rvn => rvn.InputValueRowVersionId)
+                .HasConstraintName("FK_InputValueRowVersionNumber_InputValueRowVersion");
+            });
+
             OnModelCreatingPartial(modelBuilder);
         }
 

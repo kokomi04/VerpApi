@@ -7,10 +7,13 @@ namespace VErp.Infrastructure.EF.AccountingDB
     {
         public InputValueBill()
         {
+            InputValueRows = new HashSet<InputValueRow>();
         }
 
         public long InputValueBillId { get; set; }
         public int InputTypeId { get; set; }
+
+        public virtual ICollection<InputValueRow> InputValueRows { get; set; }
 
     }
 }

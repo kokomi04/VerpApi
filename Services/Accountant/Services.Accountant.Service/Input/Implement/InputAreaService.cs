@@ -54,7 +54,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _accountingContext.InputArea.AsQueryable();
+            var query = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -81,7 +81,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<int>> AddInputArea(int updatedUserId, int inputTypeId, InputAreaInputModel data)
         {
             var existedInput = await _accountingContext.InputArea
-                .FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId || a.InputAreaCode == data.InputAreaCode || a.Title == data.Title);
+                .FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && (a.InputAreaCode == data.InputAreaCode || a.Title == data.Title));
             if (existedInput != null)
             {
                 if (string.Compare(existedInput.InputAreaCode, data.InputAreaCode, StringComparison.OrdinalIgnoreCase) == 0)
@@ -126,7 +126,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (inputArea.InputAreaCode != data.InputAreaCode || inputArea.Title != data.Title)
             {
                 var existedInput = await _accountingContext.InputArea
-                    .FirstOrDefaultAsync(a => a.InputAreaId != inputAreaId && (a.InputAreaCode == data.InputAreaCode || a.Title == data.Title));
+                    .FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId != inputAreaId && (a.InputAreaCode == data.InputAreaCode || a.Title == data.Title));
                 if (existedInput != null)
                 {
                     if (string.Compare(existedInput.InputAreaCode, data.InputAreaCode, StringComparison.OrdinalIgnoreCase) == 0)
@@ -144,6 +144,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 {
                     inputArea.InputAreaCode = data.InputAreaCode;
                     inputArea.Title = data.Title;
+                    inputArea.IsMultiRow = data.IsMultiRow;
+
                     inputArea.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 

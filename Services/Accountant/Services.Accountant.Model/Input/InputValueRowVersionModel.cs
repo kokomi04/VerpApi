@@ -7,6 +7,10 @@ namespace VErp.Services.Accountant.Model.Input
 {
     public class InputValueRowVersionModel
     {
+        public InputValueRowVersionModel()
+        {
+            InputValueRowVersionNumbers = new HashSet<InputValueRowVersionNumberModel>();
+        }
         public long InputValueRowVersionId { get; set; }
         public long InputValueRowId { get; set; }
         public string Field0 { get; set; }
@@ -31,6 +35,6 @@ namespace VErp.Services.Accountant.Model.Input
         public string Field19 { get; set; }
         public string Field20 { get; set; }
 
-        public InputValueRowVersionNumberModel InputValueRowVersionNumber { get; set; }
+        public ICollection<InputValueRowVersionNumberModel> InputValueRowVersionNumbers { get; set; }
     }
 }
