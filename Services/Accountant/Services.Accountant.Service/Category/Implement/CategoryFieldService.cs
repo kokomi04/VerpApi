@@ -103,7 +103,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.CategoryFieldName == data.CategoryFieldName))
             {
-                return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
+                return CategoryErrorCode.CategoryFieldNotFound;
             }
 
             if (data.ReferenceCategoryFieldId.HasValue)
@@ -250,7 +250,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 categoryField.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường thư mục {categoryField.Title}", categoryField.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)

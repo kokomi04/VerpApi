@@ -23,7 +23,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsCorp { get; set; }
         public string Currency { get; set; }
         public string Description { get; set; }
-        public bool IsDeleted { get; set; }
 
         public virtual ICollection<AccountingAccount> SubAccountingAccount { get; set; }
         public virtual AccountingAccount ParentAccountingAccount { get; set; }

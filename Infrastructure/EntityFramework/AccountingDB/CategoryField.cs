@@ -12,6 +12,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
             DestCategoryTitleFields = new HashSet<CategoryField>();
             CategoryRowValues = new HashSet<CategoryRowValue>();
             CategoryValues = new HashSet<CategoryValue>();
+            InputAreaFields = new HashSet<InputAreaField>();
+            InputAreaTitleFields = new HashSet<InputAreaField>();
         }
 
         public int CategoryFieldId { get; set; }
@@ -28,7 +30,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
-        public bool IsDeleted { get; set; }
         public bool IsShowList { get; set; }
         //public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
@@ -43,5 +44,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual ICollection<CategoryValue> CategoryValues { get; set; }
         public virtual CategoryField SourceCategoryField { get; set; }
         public virtual CategoryField SourceCategoryTitleField { get; set; }
+
+        public virtual ICollection<InputAreaField> InputAreaFields { get; set; }
+        public virtual ICollection<InputAreaField> InputAreaTitleFields { get; set; }
     }
 }

@@ -14,13 +14,8 @@ namespace VErp.Services.Accountant.Model.Category
         public ICollection<CategoryValueModel> Values { get; set; }
     }
 
-    public class CategoryRowOutputModel
+    public class CategoryRowOutputModel : CategoryRowInputModel
     {
-        public CategoryRowOutputModel()
-        {
-            Values = new List<CategoryValueModel>();
-        }
         public int CategoryRowId { get; set; }
-        public ICollection<CategoryValueModel> Values { get; set; }
     }
 }
