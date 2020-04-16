@@ -135,6 +135,14 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(f => f.InputAreaFields)
                 .HasForeignKey(f => f.FormTypeId)
                 .HasConstraintName("FK_InputAreaField_FormType");
+                entity.HasOne(f => f.SourceCategoryField)
+                .WithMany(f => f.InputAreaFields)
+                .HasForeignKey(c => c.ReferenceCategoryFieldId)
+                .HasConstraintName("FK_InputAreaField_CategoryField");
+                entity.HasOne(f => f.SourceCategoryTitleField)
+                .WithMany(f => f.InputAreaTitleFields)
+                .HasForeignKey(c => c.ReferenceCategoryTitleFieldId)
+                .HasConstraintName("FK_InputAreaField_CategoryTitleField");
             });
 
             OnModelCreatingPartial(modelBuilder);
