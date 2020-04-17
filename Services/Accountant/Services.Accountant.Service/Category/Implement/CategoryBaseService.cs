@@ -51,24 +51,24 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     case EnumOperator.Equal:
                         filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Value)
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Values[0])
                             .GroupBy(v => v.CategoryRowId)
                             .Select(g => g.Key);
                         break;
                     case EnumOperator.NotEqual:
                         filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Value)
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Values[0])
                             .GroupBy(v => v.CategoryRowId)
                             .Select(g => g.Key);
                         break;
                     case EnumOperator.Contains:
                         filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Value))
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Values[0]))
                             .GroupBy(v => v.CategoryRowId)
                             .Select(g => g.Key);
                         break;
                     case EnumOperator.InList:
-                        string[] values = filter.Value.Split(',');
+                        string[] values = filter.Values[0].Split(',');
                         filterIds = query
                             .Where(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value))
                             .GroupBy(v => v.CategoryRowId)
