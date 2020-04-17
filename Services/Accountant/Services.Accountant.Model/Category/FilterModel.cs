@@ -10,7 +10,7 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public int CategoryFieldId { get; set; }
         public EnumOperator Operator { get; set; }
-        public string Value { get; set; }
+        public string[] Values { get; set; }
 
     }
 }
