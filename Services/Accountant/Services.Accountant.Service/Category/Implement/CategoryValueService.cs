@@ -45,53 +45,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             IQueryable<CategoryReferenceValueModel> query;
             if (field.ReferenceCategoryFieldId.HasValue)
             {
-                var tempQuery = _accountingContext.CategoryValue
-                    .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new CategoryRowValueModel
-                    {
-                        CategoryRowId = rv.CategoryRowId,
-                        CategoryValueId = v.CategoryValueId,
-                        CategoryFieldId = rv.CategoryFieldId,
-                        Value = v.Value
-                    })
-                    .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
 
-                if (filters != null)
+                IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
+                    .Where(r => r.CategoryId == referField.CategoryId)
+                    .Include(r => r.CategoryRowValues)
+                    .ThenInclude(rv => rv.CategoryValue);
+
+                if (!string.IsNullOrEmpty(field.Filters))
                 {
-                    var rowIds = FillterProcess(tempQuery, filters);
-                    tempQuery = tempQuery.Where(v => rowIds.Contains(v.CategoryRowId));
+                    FillterProcess(ref tempQuery, filters);
                 }
 
-                if (field.ReferenceCategoryTitleFieldId.HasValue)
-                {
-                    query = tempQuery
-                        .Join(_accountingContext.CategoryRowValue.Where(rv => rv.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value)
-                        , v => v.CategoryRowId
-                        , rv => rv.CategoryRowId
-                        , (v, rv) => new
-                        {
-                            v.CategoryFieldId,
-                            v.CategoryValueId,
-                            v.Value,
-                            TitleId = rv.CategoryValueId
-                        })
-                        .Join(_accountingContext.CategoryValue, v => v.TitleId, vt => vt.CategoryValueId, (v, vt) => new CategoryReferenceValueModel
-                        {
-                            CategoryFieldId = v.CategoryFieldId,
-                            CategoryValueId = v.CategoryValueId,
-                            Value = v.Value,
-                            Title = vt.Value
-                        });
-                }
-                else
-                {
-                    query = tempQuery.Select(v => new CategoryReferenceValueModel
-                    {
-                        CategoryFieldId = v.CategoryFieldId,
-                        CategoryValueId = v.CategoryValueId,
-                        Value = v.Value,
-                        Title = v.Value
-                    });
-                }
+                query = tempQuery
+                  .Select(r => new CategoryReferenceValueModel
+                  {
+                      CategoryFieldId = field.ReferenceCategoryFieldId.Value,
+                      CategoryValueId = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValueId,
+                      Value = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValue.Value,
+                      Title = field.ReferenceCategoryTitleFieldId.HasValue 
+                      ? r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value).CategoryValue.Value 
+                      : r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValue.Value
+                  });
             }
             else
             {
