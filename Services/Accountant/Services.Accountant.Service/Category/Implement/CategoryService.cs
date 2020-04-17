@@ -268,6 +268,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     category.Title = data.Title;
                     category.IsModule = data.IsModule;
                     category.IsReadonly = data.IsReadonly;
+                    category.IsTreeView = data.IsTreeView;
                     category.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                     foreach (var item in deleteSubCategories)

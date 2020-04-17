@@ -335,22 +335,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             continue;
                         }
-                        else if (valueItem == null)  // Xóa giá trị cũ
+                        else if (valueItem == null || string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
                         {
                             if (field.FormTypeId != (int)EnumFormType.Select && field.FormTypeId != (int)EnumFormType.SearchTable)
                             {
                                 // Xóa value cũ
-                                var currentValue = _accountingContext.CategoryValue.First(v => v.CategoryValueId == oldValue.CategoryFieldId);
-                                currentValue.IsDeleted = true;
-                                currentValue.UpdatedByUserId = updatedUserId;
-                                await _accountingContext.SaveChangesAsync();
-
+                                var currentValue = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == oldValue.CategoryFieldId);
+                                if(currentValue != null)
+                                {
+                                    currentValue.IsDeleted = true;
+                                    currentValue.UpdatedByUserId = updatedUserId;
+                                    await _accountingContext.SaveChangesAsync();
+                                }    
                             }
                             // Xóa mapping
-                            var currentRowValue = _accountingContext.CategoryRowValue.First(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
-                            currentRowValue.IsDeleted = true;
-                            currentRowValue.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
+                            var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
+                            if(currentRowValue != null)
+                            {
+                                currentRowValue.IsDeleted = true;
+                                currentRowValue.UpdatedByUserId = updatedUserId;
+                                await _accountingContext.SaveChangesAsync();
+                            }
                         }
                         else if (oldValue == null) // Nếu giá trị cũ là null, tạo mới, map lại
                         {
@@ -392,7 +397,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         else if (field.FormTypeId != (int)EnumFormType.Select && field.FormTypeId != (int)EnumFormType.SearchTable)
                         {
                             // Sửa value cũ
-                            var currentValue = _accountingContext.CategoryValue.First(v => v.CategoryValueId == oldValue.CategoryFieldId);
+                            var currentValue = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == oldValue.CategoryFieldId);
                             if (currentValue == null)
                             {
                                 currentValue = new CategoryValue
@@ -405,6 +410,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                                 _accountingContext.CategoryValue.Add(currentValue);
                                 await _accountingContext.SaveChangesAsync();
+
+                                // Sửa mapping giá trị mới
+                                var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
+                                if (currentRowValue == null)
+                                {
+                                    _accountingContext.CategoryRowValue.Add(new CategoryRowValue
+                                    {
+                                        CategoryFieldId = field.CategoryFieldId,
+                                        CategoryRowId = categoryRowId,
+                                        CategoryValueId = currentValue.CategoryValueId,
+                                        UpdatedByUserId = updatedUserId,
+                                        CreatedByUserId = updatedUserId
+                                    });
+                                    await _accountingContext.SaveChangesAsync();
+                                }
+                                else
+                                {
+                                    currentRowValue.CategoryValueId = currentValue.CategoryValueId;
+                                    currentRowValue.UpdatedByUserId = updatedUserId;
+                                    await _accountingContext.SaveChangesAsync();
+                                }
                             }
                             else
                             {
@@ -683,7 +709,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
 
                     // Check refer
-                    r = CheckRefer(ref rowInput, categoryFields);
+                    r = CheckRefer(ref rowInput, selectFields);
                     if (!r.IsSuccess()) return (r, string.Format(errFormat, rowIndx + 1, r.GetEnumDescription()));
 
                     // Check value
