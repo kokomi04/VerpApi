@@ -468,5 +468,24 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (operators, total);
         }
+        public async Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size)
+        {
+            List<LogicOperatorModel> operators = new List<LogicOperatorModel>();
+            foreach (EnumLogicOperator ope in (EnumLogicOperator[])EnumLogicOperator.GetValues(typeof(EnumLogicOperator)))
+            {
+                operators.Add(new OperatorModel
+                {
+                    Value = (int)ope,
+                    Title = ope.GetEnumDescription()
+                }); ;
+            }
+            int total = operators.Count;
+            if (size > 0)
+            {
+                operators = operators.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (operators, total);
+        }
+
     }
 }

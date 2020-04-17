@@ -55,7 +55,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     })
                     .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
 
-                if (filters != null && filters.Length > 0)
+                if (filters != null)
                 {
                     var rowIds = FillterProcess(tempQuery, filters);
                     tempQuery = tempQuery.Where(v => rowIds.Contains(v.CategoryRowId));

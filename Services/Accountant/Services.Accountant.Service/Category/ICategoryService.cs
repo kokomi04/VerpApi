@@ -17,5 +17,7 @@ namespace VErp.Services.Accountant.Service.Category
         Task<PageData<DataTypeModel>> GetDataTypes(int page, int size);
         Task<PageData<FormTypeModel>> GetFormTypes(int page, int size);
         Task<PageData<OperatorModel>> GetOperators(int page, int size);
+
+        Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size);
     }
 }
