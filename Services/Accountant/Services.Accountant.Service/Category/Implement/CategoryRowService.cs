@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
@@ -341,16 +342,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             {
                                 // Xóa value cũ
                                 var currentValue = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == oldValue.CategoryFieldId);
-                                if(currentValue != null)
+                                if (currentValue != null)
                                 {
                                     currentValue.IsDeleted = true;
                                     currentValue.UpdatedByUserId = updatedUserId;
                                     await _accountingContext.SaveChangesAsync();
-                                }    
+                                }
                             }
                             // Xóa mapping
                             var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
-                            if(currentRowValue != null)
+                            if (currentRowValue != null)
                             {
                                 currentRowValue.IsDeleted = true;
                                 currentRowValue.UpdatedByUserId = updatedUserId;
@@ -535,24 +536,32 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
-
                     IQueryable<CategoryValueModel> query;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
-                        query = _accountingContext.CategoryValue
-                            .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new
+                       var tempQuery = _accountingContext.CategoryValue
+                            .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new CategoryRowValueModel
                             {
-                                v.CategoryValueId,
-                                rv.CategoryFieldId,
-                                v.Value
-                            })
-                            .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                            .Select(v => new CategoryValueModel
-                            {
-                                CategoryFieldId = v.CategoryFieldId,
                                 CategoryValueId = v.CategoryValueId,
+                                CategoryFieldId = rv.CategoryFieldId,
+                                CategoryRowId = rv.CategoryRowId,
                                 Value = v.Value
-                            });
+                            })
+                            .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+
+                        if (!string.IsNullOrEmpty(field.Filters))
+                        {
+                            FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
+                            IQueryable<int> rowIds = FillterProcess(tempQuery, filters);
+                            tempQuery = tempQuery.Where(v => rowIds.Contains(v.CategoryRowId));
+                        }
+
+                        query = tempQuery.Select(v => new CategoryValueModel
+                        {
+                            CategoryFieldId = v.CategoryFieldId,
+                            CategoryValueId = v.CategoryValueId,
+                            Value = v.Value
+                        });
                     }
                     else
                     {

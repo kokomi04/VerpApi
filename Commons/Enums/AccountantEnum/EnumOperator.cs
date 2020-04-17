@@ -7,13 +7,20 @@ namespace VErp.Commons.Enums.AccountantEnum
 {
     public enum EnumOperator
     {
+        [ParamNumber(1)]
         [Description("Equal")]
         Equal = 1,
+        [ParamNumber(1)]
         [Description("Is Not Equal")]
         NotEqual = 2,
+        [ParamNumber(1)]
         [Description("Contains")]
         Contains = 3,
+        [ParamNumber(1)]
         [Description("In List")]
-        InList = 4
+        InList = 4,
+        [ParamNumber(0)]
+        [Description("IsLeafNode")]
+        IsLeafNode = 5,
     }
 }

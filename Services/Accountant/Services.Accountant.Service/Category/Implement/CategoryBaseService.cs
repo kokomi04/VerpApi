@@ -50,17 +50,37 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 switch (filter.Operator)
                 {
                     case EnumOperator.Equal:
-                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Value).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        filterIds = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Value)
+                            .GroupBy(v => v.CategoryRowId)
+                            .Select(g => g.Key);
                         break;
                     case EnumOperator.NotEqual:
-                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Value).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        filterIds = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Value)
+                            .GroupBy(v => v.CategoryRowId)
+                            .Select(g => g.Key);
                         break;
                     case EnumOperator.Contains:
-                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Value)).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        filterIds = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Value))
+                            .GroupBy(v => v.CategoryRowId)
+                            .Select(g => g.Key);
                         break;
                     case EnumOperator.InList:
                         string[] values = filter.Value.Split(',');
-                        filterIds = query.Where(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value)).GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                        filterIds = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value))
+                            .GroupBy(v => v.CategoryRowId)
+                            .Select(g => g.Key);
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        List<string> nodeValues = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId)
+                            .Select(v => v.Value).ToList();
+                        filterIds = query
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && nodeValues.Any(n => n != v.Value && n.Contains(v.Value)))
+                            .GroupBy(v => v.CategoryRowId).Select(g => g.Key);
                         break;
                     default:
                         break;
