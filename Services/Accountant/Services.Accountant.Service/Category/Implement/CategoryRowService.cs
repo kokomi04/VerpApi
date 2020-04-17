@@ -393,9 +393,25 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             // Sửa value cũ
                             var currentValue = _accountingContext.CategoryValue.First(v => v.CategoryValueId == oldValue.CategoryFieldId);
-                            currentValue.Value = valueItem.Value;
-                            currentValue.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
+                            if (currentValue == null)
+                            {
+                                currentValue = new CategoryValue
+                                {
+                                    CategoryFieldId = field.CategoryFieldId,
+                                    Value = valueItem.Value,
+                                    UpdatedByUserId = updatedUserId,
+                                    CreatedByUserId = updatedUserId
+                                };
+
+                                _accountingContext.CategoryValue.Add(currentValue);
+                                await _accountingContext.SaveChangesAsync();
+                            }
+                            else
+                            {
+                                currentValue.Value = valueItem.Value;
+                                currentValue.UpdatedByUserId = updatedUserId;
+                                await _accountingContext.SaveChangesAsync();
+                            }
                         }
                         else
                         {
