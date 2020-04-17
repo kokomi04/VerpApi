@@ -193,6 +193,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     categoryField.IsUnique = data.IsUnique;
                     categoryField.IsHidden = data.IsHidden;
                     categoryField.IsShowList = data.IsShowList;
+                    categoryField.IsShowSearchTable = data.IsShowSearchTable;
+                    categoryField.IsTreeViewKey = data.IsTreeViewKey;
                     categoryField.RegularExpression = data.RegularExpression;
                     categoryField.Filters = data.Filters;
                     categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
