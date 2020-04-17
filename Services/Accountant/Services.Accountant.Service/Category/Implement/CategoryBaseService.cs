@@ -78,9 +78,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         List<string> nodeValues = query
                             .Where(v => v.CategoryFieldId == filter.CategoryFieldId)
                             .Select(v => v.Value).ToList();
+                        List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
                         filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && nodeValues.Any(n => n != v.Value && n.Contains(v.Value)))
-                            .GroupBy(v => v.CategoryRowId).Select(g => g.Key);
+                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && isLeafValues.Contains(v.Value))
+                            .GroupBy(v => v.CategoryRowId)
+                            .Select(g => g.Key).AsQueryable();
                         break;
                     default:
                         break;

@@ -16,7 +16,7 @@ namespace VErp.Commons.Enums.AccountantEnum
         [ParamNumber(1)]
         [Description("Contains")]
         Contains = 3,
-        [ParamNumber(1)]
+        [ParamNumber(3)]
         [Description("In List")]
         InList = 4,
         [ParamNumber(0)]
