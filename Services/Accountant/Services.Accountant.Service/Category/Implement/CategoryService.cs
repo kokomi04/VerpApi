@@ -457,8 +457,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 operators.Add(new OperatorModel
                 {
                     Value = (int)ope,
-                    Title = ope.GetEnumDescription()
-                });
+                    Title = ope.GetEnumDescription(),
+                    ParamNumber = ope.GetParamNumber()
+                }); ;
             }
             int total = operators.Count;
             if (size > 0)
