@@ -16,11 +16,26 @@ namespace VErp.Commons.Enums.AccountantEnum
         [ParamNumber(1)]
         [Description("Contains")]
         Contains = 3,
-        [ParamNumber(3)]
+        [ParamNumber(1)]
         [Description("In List")]
         InList = 4,
         [ParamNumber(0)]
         [Description("IsLeafNode")]
         IsLeafNode = 5,
+        [ParamNumber(1)]
+        [Description("StartsWith")]
+        StartsWith = 6,
+        [ParamNumber(1)]
+        [Description("EndsWith")]
+        EndsWith = 7
+    }
+
+    public enum EnumLogicOperator
+    {
+        [Description("AND")]
+        And = 1,
+        [Description("OR")]
+        Or = 2
+
     }
 }

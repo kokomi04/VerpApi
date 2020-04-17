@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -24,6 +25,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
     public abstract class CategoryBaseService
     {
         protected readonly AccountingDBContext _accountingContext;
+
         public CategoryBaseService(AccountingDBContext accountingContext)
         {
             _accountingContext = accountingContext;
@@ -42,60 +44,67 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         protected IQueryable<int> FillterProcess(IQueryable<CategoryRowValueModel> query, FilterModel[] filters)
         {
-            IQueryable<int> rowIds = null;
-
-            foreach (var filter in filters)
+            Expression<Func<CategoryRowValueModel, bool>> predicate = PredicateBuilder.False<CategoryRowValueModel>();
+            EnumLogicOperator? logicOperator = EnumLogicOperator.Or;
+            foreach (FilterModel filter in filters)
             {
-                IQueryable<int> filterIds = null;
+                if (logicOperator != EnumLogicOperator.Or)
+                {
+                    query = query.Where(predicate);
+                    if (!logicOperator.HasValue)
+                    {
+                        break;
+                    }
+                    predicate = PredicateBuilder.False<CategoryRowValueModel>();
+                }
+
+                logicOperator = filter.LogicOperator;
+
                 switch (filter.Operator)
                 {
                     case EnumOperator.Equal:
-                        filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Values[0])
-                            .GroupBy(v => v.CategoryRowId)
-                            .Select(g => g.Key);
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Values[0]);
                         break;
                     case EnumOperator.NotEqual:
-                        filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Values[0])
-                            .GroupBy(v => v.CategoryRowId)
-                            .Select(g => g.Key);
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Values[0]);
                         break;
                     case EnumOperator.Contains:
-                        filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Values[0]))
-                            .GroupBy(v => v.CategoryRowId)
-                            .Select(g => g.Key);
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Values[0]));
                         break;
                     case EnumOperator.InList:
                         string[] values = filter.Values[0].Split(',');
-                        filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value))
-                            .GroupBy(v => v.CategoryRowId)
-                            .Select(g => g.Key);
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value));
                         break;
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
                             .Where(v => v.CategoryFieldId == filter.CategoryFieldId)
                             .Select(v => v.Value).ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        filterIds = query
-                            .Where(v => v.CategoryFieldId == filter.CategoryFieldId && isLeafValues.Contains(v.Value))
-                            .GroupBy(v => v.CategoryRowId)
-                            .Select(g => g.Key).AsQueryable();
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && isLeafValues.Contains(v.Value));
+                        break;
+                    case EnumOperator.StartsWith:
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.StartsWith(filter.Values[0]));
+                        break;
+                    case EnumOperator.EndsWith:
+                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.EndsWith(filter.Values[0]));
                         break;
                     default:
                         break;
                 }
+            }
 
-                if (rowIds == null)
-                {
-                    rowIds = filterIds;
-                }
-                else if (filter != null)
-                {
-                    rowIds = rowIds.Join(filterIds, r => r, f => f, (r, f) => r);
-                }
+            IQueryable<int> rowIds = query
+                        .Where(predicate)
+                        .GroupBy(v => v.CategoryRowId)
+                        .Select(g => g.Key);
+
+            try
+            {
+                var a = rowIds.ToList();
+            }
+            catch (Exception ex)
+            {
+                var b = ex;
             }
 
             return rowIds;

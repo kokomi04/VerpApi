@@ -45,12 +45,12 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
         public async Task<ServiceResult<PageData<CategoryReferenceValueModel>>> GetReferenceValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            FilterModel[] lstFilters = null;
+            FilterModel[] filterModels = null;
             if (!string.IsNullOrEmpty(filters))
             {
-                lstFilters = JsonConvert.DeserializeObject<FilterModel[]>(filters);
+                filterModels = JsonConvert.DeserializeObject<FilterModel[]>(filters);
             }
-            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, lstFilters, page, size);
+            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, filterModels, page, size);
         }
 
         [HttpGet]
@@ -258,6 +258,13 @@ namespace VErpApi.Controllers.Accountant
         public async Task<ServiceResult<PageData<OperatorModel>>> GetOperators([FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetOperators(page, size);
+        }
+
+        [HttpGet]
+        [Route("logicoperators")]
+        public async Task<ServiceResult<PageData<LogicOperatorModel>>> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetLogicOperators(page, size);
         }
     }
 }

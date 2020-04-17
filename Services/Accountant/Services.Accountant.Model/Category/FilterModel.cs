@@ -12,5 +12,6 @@ namespace VErp.Services.Accountant.Model.Category
         public EnumOperator Operator { get; set; }
         public string[] Values { get; set; }
 
+        public EnumLogicOperator? LogicOperator { get; set; }
     }
 }
