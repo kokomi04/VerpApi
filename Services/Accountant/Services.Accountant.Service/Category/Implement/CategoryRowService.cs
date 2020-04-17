@@ -46,66 +46,43 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
-            IQueryable<CategoryRowValueModel> query = _accountingContext.CategoryRow
+            IQueryable<CategoryRow> query = _accountingContext.CategoryRow
                            .Where(r => r.CategoryId == categoryId)
-                           .Join(_accountingContext.CategoryRowValue, r => r.CategoryRowId, rv => rv.CategoryRowId, (r, rv) => new
-                           {
-                               r.CategoryRowId,
-                               rv.CategoryValueId,
-                               rv.CategoryFieldId
-                           })
-                           .Join(_accountingContext.CategoryValue, rv => rv.CategoryValueId, v => v.CategoryValueId, (rv, v) => new CategoryRowValueModel
-                           {
-                               CategoryRowId = rv.CategoryRowId,
-                               Value = v.Value,
-                               CategoryValueId = v.CategoryValueId,
-                               CategoryFieldId = rv.CategoryFieldId
-                           });
-
-            IQueryable<int> rowIds;
-
+                           .Include(r => r.CategoryRowValues)
+                           .ThenInclude(rv => rv.CategoryValue);
             if (filters != null && filters.Length > 0)
             {
-                rowIds = FillterProcess(query, filters);
-            }
-            else
-            {
-                rowIds = query.GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
+                FillterProcess(ref query, filters);
             }
 
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
-                IQueryable<int> searchIds = query.Where(v => v.Value.Contains(keyword)).GroupBy(rvf => rvf.CategoryRowId).Select(g => g.Key);
-                rowIds = rowIds.Join(searchIds, r => r, s => s, (r, s) => r);
+                query = query.Where(r => r.CategoryRowValues.Any(rv => rv.CategoryValue.Value.Contains(keyword)));
             }
 
-            var total = await rowIds.CountAsync();
+            var total = await query.CountAsync();
             if (size > 0)
             {
-                rowIds = rowIds.Skip((page - 1) * size).Take(size);
+                query = query.Skip((page - 1) * size).Take(size);
             }
 
-            var data = query.Where(rvf => rowIds.Contains(rvf.CategoryRowId))
-                .AsEnumerable()
-                .GroupBy(rvf => rvf.CategoryRowId);
-
             List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
-            foreach (var item in data)
+            foreach (var item in query)
             {
                 CategoryRowOutputModel output = new CategoryRowOutputModel
                 {
-                    CategoryRowId = item.Key
+                    CategoryRowId = item.CategoryRowId
                 };
 
                 ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in item)
+                foreach (var cell in item.CategoryRowValues)
                 {
                     row.Add(new CategoryValueModel
                     {
                         CategoryFieldId = cell.CategoryFieldId,
                         CategoryValueId = cell.CategoryValueId,
-                        Value = cell.Value
+                        Value = cell.CategoryValue.Value
                     });
                 }
                 output.Values = row;
@@ -537,48 +514,35 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (valueItem != null)
                 {
                     IQueryable<CategoryValueModel> query;
+                    int referValueId = 0;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
-                       var tempQuery = _accountingContext.CategoryValue
-                            .Join(_accountingContext.CategoryRowValue, v => v.CategoryValueId, rv => rv.CategoryValueId, (v, rv) => new CategoryRowValueModel
-                            {
-                                CategoryValueId = v.CategoryValueId,
-                                CategoryFieldId = rv.CategoryFieldId,
-                                CategoryRowId = rv.CategoryRowId,
-                                Value = v.Value
-                            })
-                            .Where(v => v.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+                        CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+
+                        IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
+                            .Where(r => r.CategoryId == referField.CategoryId)
+                            .Include(r => r.CategoryRowValues)
+                            .ThenInclude(rv => rv.CategoryValue);
 
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
                             FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
-                            IQueryable<int> rowIds = FillterProcess(tempQuery, filters);
-                            tempQuery = tempQuery.Where(v => rowIds.Contains(v.CategoryRowId));
+                            FillterProcess(ref tempQuery, filters);
                         }
-
-                        query = tempQuery.Select(v => new CategoryValueModel
-                        {
-                            CategoryFieldId = v.CategoryFieldId,
-                            CategoryValueId = v.CategoryValueId,
-                            Value = v.Value
-                        });
+                        referValueId = tempQuery
+                            .Select(r => r.CategoryRowValues
+                            .FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && rv.CategoryValue.Value == valueItem.Value)
+                            .CategoryValue
+                            .CategoryValueId).FirstOrDefault();
                     }
                     else
                     {
-                        query = _accountingContext.CategoryValue
+                        referValueId = _accountingContext.CategoryValue
                             .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                            .Select(v => new CategoryValueModel
-                            {
-                                CategoryFieldId = v.CategoryFieldId,
-                                CategoryValueId = v.CategoryValueId,
-                                Value = v.Value
-                            });
+                            .Where(v => v.Value == valueItem.Value)
+                            .Select(v => v.CategoryValueId).FirstOrDefault();
                     }
-                    int referValueId = query.Where(v => v.Value == valueItem.Value).Select(v => v.CategoryValueId).FirstOrDefault();
-
                     valueItem.CategoryValueId = referValueId;
-
-
                     if (referValueId <= 0)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
