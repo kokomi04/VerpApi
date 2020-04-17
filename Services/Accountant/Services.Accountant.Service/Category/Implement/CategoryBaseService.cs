@@ -25,7 +25,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
     public abstract class CategoryBaseService
     {
         protected readonly AccountingDBContext _accountingContext;
-
+        private delegate Expression<Func<CategoryRowValueModel, bool>> LogicOperator(Expression<Func<CategoryRowValueModel, bool>> expr);
         public CategoryBaseService(AccountingDBContext accountingContext)
         {
             _accountingContext = accountingContext;
@@ -46,16 +46,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             Expression<Func<CategoryRowValueModel, bool>> predicate = PredicateBuilder.False<CategoryRowValueModel>();
             EnumLogicOperator? logicOperator = EnumLogicOperator.Or;
+
             foreach (FilterModel filter in filters)
             {
-                if (logicOperator != EnumLogicOperator.Or)
+                LogicOperator logic;
+                if (logicOperator == EnumLogicOperator.Or)
                 {
-                    query = query.Where(predicate);
-                    if (!logicOperator.HasValue)
-                    {
-                        break;
-                    }
-                    predicate = PredicateBuilder.False<CategoryRowValueModel>();
+                    logic = predicate.Or<CategoryRowValueModel>;
+                }
+                else
+                {
+                    logic = predicate.And<CategoryRowValueModel>;
                 }
 
                 logicOperator = filter.LogicOperator;
@@ -63,33 +64,37 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 switch (filter.Operator)
                 {
                     case EnumOperator.Equal:
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Values[0]);
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value == filter.Values[0]);
                         break;
                     case EnumOperator.NotEqual:
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Values[0]);
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value != filter.Values[0]);
                         break;
                     case EnumOperator.Contains:
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Values[0]));
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.Contains(filter.Values[0]));
                         break;
                     case EnumOperator.InList:
                         string[] values = filter.Values[0].Split(',');
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value));
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && values.Contains(v.Value));
                         break;
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
                             .Where(v => v.CategoryFieldId == filter.CategoryFieldId)
                             .Select(v => v.Value).ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && isLeafValues.Contains(v.Value));
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && isLeafValues.Contains(v.Value));
                         break;
                     case EnumOperator.StartsWith:
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.StartsWith(filter.Values[0]));
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.StartsWith(filter.Values[0]));
                         break;
                     case EnumOperator.EndsWith:
-                        predicate = predicate.Or(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.EndsWith(filter.Values[0]));
+                        predicate = logic(v => v.CategoryFieldId == filter.CategoryFieldId && v.Value.EndsWith(filter.Values[0]));
                         break;
                     default:
                         break;
+                }
+                if (!logicOperator.HasValue)
+                {
+                    break;
                 }
             }
 
@@ -97,15 +102,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .Where(predicate)
                         .GroupBy(v => v.CategoryRowId)
                         .Select(g => g.Key);
-
-            try
-            {
-                var a = rowIds.ToList();
-            }
-            catch (Exception ex)
-            {
-                var b = ex;
-            }
 
             return rowIds;
         }

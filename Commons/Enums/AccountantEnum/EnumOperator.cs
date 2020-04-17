@@ -23,10 +23,10 @@ namespace VErp.Commons.Enums.AccountantEnum
         [Description("IsLeafNode")]
         IsLeafNode = 5,
         [ParamNumber(1)]
-        [Description("StartsWith")]
+        [Description("StartWith")]
         StartsWith = 6,
         [ParamNumber(1)]
-        [Description("EndsWith")]
+        [Description("EndWith")]
         EndsWith = 7
     }
 
