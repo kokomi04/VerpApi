@@ -23,9 +23,11 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsShowList { get; set; }
-        //public bool IsShowSearchTable { get; set; }
+        public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
+
+        public bool IsTreeViewKey { get; set; }
     }
 
     public class CategoryFieldInputModel : CategoryFieldModel
