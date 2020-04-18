@@ -309,7 +309,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                         var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
-                        if (field.AutoIncrement)
+                        if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
                         {
                             continue;
                         }
