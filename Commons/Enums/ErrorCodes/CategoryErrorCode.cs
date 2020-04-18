@@ -63,6 +63,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không phải là danh mục")]
         CategoryIsNotModule = 27,
         [Description("File không hợp lệ")]
-        FormatFileInvalid = 28
+        FormatFileInvalid = 28,
+        [Description("Hai kiểu nhập liệu không thể chuyển qua lại")]
+        FormTypeNotSwitch = 29
     }
 }
