@@ -151,7 +151,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
-            var selectFields = categoryFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.Select || f.FormTypeId == (int)EnumFormType.SearchTable));
+            var selectFields = categoryFields.Where(f => !f.AutoIncrement && ((EnumFormType)f.FormTypeId).IsRef());
 
             // Check field required
             var r = CheckRequired(data, requiredFields);
@@ -281,7 +281,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin field
             var requiredFields = updateFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = updateFields.Where(f => !f.AutoIncrement && f.IsUnique);
-            var selectFields = updateFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.Select || f.FormTypeId == (int)EnumFormType.SearchTable));
+            var selectFields = updateFields.Where(f => !f.AutoIncrement && ((EnumFormType)f.FormTypeId).IsRef());
 
             // Check field required
             var r = CheckRequired(data, requiredFields);
@@ -375,7 +375,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         else if (field.FormTypeId != (int)EnumFormType.Select && field.FormTypeId != (int)EnumFormType.SearchTable)
                         {
                             // Sửa value cũ
-                            var currentValue = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == oldValue.CategoryFieldId);
+                            var currentValue = _accountingContext.CategoryValue.FirstOrDefault(v => v.CategoryValueId == oldValue.CategoryValueId);
                             if (currentValue == null)
                             {
                                 currentValue = new CategoryValue
@@ -589,7 +589,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in categoryFields)
             {
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (field.FormTypeId == (int)EnumFormType.Select || field.FormTypeId == (int)EnumFormType.SearchTable || field.AutoIncrement || valueItem == null || string.IsNullOrEmpty(valueItem.Value))
+                if (((EnumFormType)field.FormTypeId).IsRef() || field.AutoIncrement || valueItem == null || string.IsNullOrEmpty(valueItem.Value))
                 {
                     continue;
                 }
@@ -671,7 +671,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                     var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
                     var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
-                    var selectFields = categoryFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.Select || f.FormTypeId == (int)EnumFormType.SearchTable));
+                    var selectFields = categoryFields.Where(f => !f.AutoIncrement && ((EnumFormType)f.FormTypeId).IsRef());
 
                     // Check field required
                     var r = CheckRequired(rowInput, requiredFields);

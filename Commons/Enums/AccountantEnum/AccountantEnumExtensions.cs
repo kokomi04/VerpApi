@@ -24,5 +24,21 @@ namespace VErp.Commons.Enums.AccountantEnum
                 return 0;
             }
         }
+
+        public static bool IsRef(this Enum value)
+        {
+            try
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi == null)
+                    return false;
+                var attributes = (IsRefAttribute[])fi.GetCustomAttributes(typeof(IsRefAttribute), false);
+                return (attributes.Length > 0) ? attributes[0].IsReference : false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }
