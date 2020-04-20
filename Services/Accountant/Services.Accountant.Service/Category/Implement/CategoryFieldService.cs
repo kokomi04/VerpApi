@@ -238,13 +238,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                // Delete value
-                var values = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == categoryFieldId);
-                foreach (var value in values)
-                {
-                    value.IsDeleted = true;
-                    value.UpdatedByUserId = updatedUserId;
-                }
                 // Delete row-field-value
                 var rowFieldValues = _accountingContext.CategoryRowValue.Where(rfv => rfv.CategoryFieldId == categoryFieldId);
                 foreach (var rowFieldValue in rowFieldValues)

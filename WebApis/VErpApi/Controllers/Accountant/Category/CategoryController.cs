@@ -130,44 +130,6 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues")]
-        public async Task<PageData<CategoryValueModel>> GetDefaultCategoryValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _categoryValueService.GetDefaultCategoryValues(categoryId, categoryFieldId, keyword, page, size);
-        }
-
-        [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult<CategoryValueModel>> GetDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId)
-        {
-            return await _categoryValueService.GetDefaultCategoryValue(categoryId, categoryFieldId, categoryValueId);
-        }
-
-        [HttpPost]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues")]
-        public async Task<ServiceResult<int>> AddDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromBody] CategoryValueModel data)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.AddDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, data);
-        }
-
-        [HttpPut]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult> UpdateDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId, [FromBody] CategoryValueModel data)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.UpdateDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, categoryValueId, data);
-        }
-
-        [HttpDelete]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult> DeleteDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.DeleteDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, categoryValueId);
-        }
-
-        [HttpGet]
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {

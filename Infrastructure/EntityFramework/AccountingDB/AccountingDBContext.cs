@@ -12,7 +12,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<DataType> DataType { get; set; }
         public virtual DbSet<FormType> FormType { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
-        public virtual DbSet<CategoryValue> CategoryValue { get; set; }
+
+        //public virtual DbSet<CategoryValue> CategoryValue { get; set; }
         public virtual DbSet<CategoryRowValue> CategoryRowValue { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -63,7 +64,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<CategoryRowValue>(entity =>
             {
-                entity.HasKey(v => new { v.CategoryRowId, v.CategoryFieldId });
                 entity.HasOne(rv => rv.CategoryRow)
                 .WithMany(r => r.CategoryRowValues)
                 .HasForeignKey(rv => rv.CategoryRowId)
@@ -72,19 +72,19 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(f => f.CategoryRowValues)
                 .HasForeignKey(rv => rv.CategoryFieldId)
                 .HasConstraintName("FK_CategoryRowValue_CategoryField");
-                entity.HasOne(rv => rv.CategoryValue)
-                .WithMany(v => v.CategoryRowValues)
-                .HasForeignKey(rv => rv.CategoryValueId)
-                .HasConstraintName("FK_CategoryRowValue_CategoryValue");
+                entity.HasOne(rv => rv.SourceCategoryRowValue)
+                .WithMany(v => v.DestCategoryRowValue)
+                .HasForeignKey(rv => rv.ReferenceCategoryRowValueId)
+                .HasConstraintName("FK_CategoryRowValue_Relation");
             });
 
-            modelBuilder.Entity<CategoryValue>(entity =>
-            {
-                entity.HasOne(v => v.CategoryField)
-                .WithMany(f => f.CategoryValues)
-                .HasForeignKey(v => v.CategoryFieldId)
-                .HasConstraintName("FK_CategoryValue_CategoryField");
-            });
+            //modelBuilder.Entity<CategoryValue>(entity =>
+            //{
+            //    entity.HasOne(v => v.CategoryField)
+            //    .WithMany(f => f.CategoryValues)
+            //    .HasForeignKey(v => v.CategoryFieldId)
+            //    .HasConstraintName("FK_CategoryValue_CategoryField");
+            //});
 
             modelBuilder.Entity<CategoryField>(entity =>
             {

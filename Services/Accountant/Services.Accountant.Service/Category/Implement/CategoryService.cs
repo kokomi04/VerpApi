@@ -340,15 +340,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             field.IsDeleted = true;
                             field.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
-
-                            // Xóa value
-                            var categoryValues = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId);
-                            foreach (var value in categoryValues)
-                            {
-                                value.IsDeleted = true;
-                                value.UpdatedByUserId = updatedUserId;
-                                await _accountingContext.SaveChangesAsync();
-                            }
                         }
                     }
                     // Xóa row

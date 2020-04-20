@@ -43,6 +43,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             var field = await _accountingContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
             IQueryable<CategoryReferenceValueModel> query;
+            List<CategoryReferenceValueModel> lst = new List<CategoryReferenceValueModel>();
+            int total = 0;
             if (field.ReferenceCategoryFieldId.HasValue)
             {
                 CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
@@ -50,7 +52,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
                     .Where(r => r.CategoryId == referField.CategoryId)
                     .Include(r => r.CategoryRowValues)
-                    .ThenInclude(rv => rv.CategoryValue);
+                    .ThenInclude(rv => rv.SourceCategoryRowValue)
+                    .Include(r => r.CategoryRowValues)
+                    .ThenInclude(rv => rv.CategoryField);
 
                 if (!string.IsNullOrEmpty(field.Filters))
                 {
@@ -61,200 +65,25 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                   .Select(r => new CategoryReferenceValueModel
                   {
                       CategoryFieldId = field.ReferenceCategoryFieldId.Value,
-                      CategoryValueId = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValueId,
-                      Value = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValue.Value,
-                      Title = field.ReferenceCategoryTitleFieldId.HasValue 
-                      ? r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value).CategoryValue.Value 
-                      : r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryValue.Value
+                      CategoryValueId = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).CategoryRowValueId,
+                      Value = r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).Value,
+                      Title = field.ReferenceCategoryTitleFieldId.HasValue
+                      ? r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value).Value
+                      : r.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value).Value
                   });
-            }
-            else
-            {
-                query = _accountingContext.CategoryValue
-                    .Where(v => v.CategoryFieldId == field.CategoryFieldId && v.IsDefault)
-                    .Select(v => new CategoryReferenceValueModel
-                    {
-                        CategoryFieldId = v.CategoryFieldId,
-                        CategoryValueId = v.CategoryValueId,
-                        Value = v.Value,
-                        Title = v.Value
-                    });
-            }
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(v => v.Value.Contains(keyword));
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(v => v.Value.Contains(keyword));
+                }
+                total = await query.CountAsync();
+                if (size > 0)
+                {
+                    query = query.Skip((page - 1) * size).Take(size);
+                }
+                lst = query.ToList();
             }
-            int total = await query.CountAsync();
-            if (size > 0)
-            {
-                query = query.Skip((page - 1) * size).Take(size);
-            }
-
-            List<CategoryReferenceValueModel> lst = query.ToList();
             return (lst, total);
         }
-
-        public async Task<PageData<CategoryValueModel>> GetDefaultCategoryValues(int categoryId, int categoryFieldId, string keyword, int page, int size)
-        {
-            var query = _accountingContext.CategoryValue
-                        .Where(v => v.CategoryFieldId == categoryFieldId && v.IsDefault);
-
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(v => v.Value.Contains(keyword));
-            }
-            int total = await query.CountAsync();
-            if (size > 0)
-            {
-                query = query.Skip((page - 1) * size).Take(size);
-            }
-
-            List<CategoryValueModel> lst = query.Select(v => _mapper.Map<CategoryValueModel>(v)).ToList();
-            return (lst, total);
-        }
-
-        public async Task<ServiceResult<CategoryValueModel>> GetDefaultCategoryValue(int categoryId, int categoryFieldId, int categoryValueId)
-        {
-            // Check row 
-            var categoryValue = await _accountingContext.CategoryValue.FirstOrDefaultAsync(v => v.CategoryFieldId == categoryFieldId && v.CategoryValueId == categoryValueId && v.IsDefault);
-            if (categoryValue == null)
-            {
-                return CategoryErrorCode.CategoryValueNotFound;
-            }
-
-            var values = _accountingContext.CategoryValue
-                           .Where(v => v.CategoryValueId == categoryValueId)
-                           .FirstOrDefault();
-
-            return _mapper.Map<CategoryValueModel>(values);
-        }
-
-        public async Task<ServiceResult<int>> AddDefaultCategoryValue(int updatedUserId, int categoryId, int categoryFieldId, CategoryValueModel data)
-        {
-            // Validate
-            var categoryField = _accountingContext.CategoryField
-                .Include(f => f.DataType)
-                .FirstOrDefault(f => f.CategoryId == categoryId && f.CategoryFieldId == categoryFieldId);
-            if (categoryField == null)
-            {
-                return CategoryErrorCode.CategoryFieldNotFound;
-            }
-
-            if (categoryField.FormTypeId != (int)EnumFormType.Select || categoryField.ReferenceCategoryFieldId.HasValue)
-            {
-                return CategoryErrorCode.CategoryFieldNotDefaultValue;
-            }
-
-            var r = CheckValue(data, categoryField);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    // Thêm value
-                    CategoryValue categoryValue = new CategoryValue
-                    {
-                        CategoryFieldId = categoryFieldId,
-                        Value = data.Value,
-                        IsDefault = true,
-                        UpdatedByUserId = updatedUserId,
-                        CreatedByUserId = updatedUserId
-                    };
-
-                    await _accountingContext.CategoryValue.AddAsync(categoryValue);
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryValue.CategoryValueId, $"Thêm giá trị {categoryValue.Value}", categoryValue.JsonSerialize());
-                    return categoryValue.CategoryValueId;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Create");
-                    return GeneralCode.InternalError;
-                }
-            }
-        }
-
-        public async Task<Enum> UpdateDefaultCategoryValue(int updatedUserId, int categoryId, int categoryFieldId, int categoryValueId, CategoryValueModel data)
-        {
-
-            var categoryValue = await _accountingContext.CategoryValue.FirstOrDefaultAsync(v => v.CategoryValueId == categoryValueId && v.CategoryFieldId == categoryFieldId);
-            if (categoryValue == null)
-            {
-                return CategoryErrorCode.CategoryValueNotFound;
-            }
-
-            var categoryField = _accountingContext.CategoryField
-                .Include(f => f.DataType)
-                .FirstOrDefault(f => f.CategoryId == categoryId && f.CategoryFieldId == categoryFieldId);
-            if (categoryField == null)
-            {
-                return CategoryErrorCode.CategoryFieldNotFound;
-            }
-
-            var r = CheckValue(data, categoryField);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    categoryValue.Value = data.Value;
-                    categoryValue.UpdatedByUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryValue.CategoryValueId, $"Cập nhật giá trị {categoryValue.Value}", data.JsonSerialize());
-                    return GeneralCode.Success;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
-                }
-            }
-        }
-
-        public async Task<Enum> DeleteDefaultCategoryValue(int updatedUserId, int categoryId, int categoryFieldId, int categoryValueId)
-        {
-            var categoryValue = await _accountingContext.CategoryValue.FirstOrDefaultAsync(v => v.CategoryValueId == categoryValueId && v.CategoryFieldId == categoryFieldId);
-            if (categoryValue == null)
-            {
-                return CategoryErrorCode.CategoryValueNotFound;
-            }
-            // Check reference
-            if (_accountingContext.CategoryRowValue.Any(rv => rv.CategoryFieldId == categoryFieldId && rv.CategoryValueId == categoryValueId))
-            {
-                return CategoryErrorCode.CategoryRowAlreadyExisted;
-            }
-
-            using var trans = await _accountingContext.Database.BeginTransactionAsync();
-            try
-            {
-                // Delete row
-                categoryValue.IsDeleted = true;
-                categoryValue.UpdatedByUserId = updatedUserId;
-                await _accountingContext.SaveChangesAsync();
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryValueId, $"Xóa giá trị {categoryValueId}", categoryValue.JsonSerialize());
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
-            }
-        }
-
     }
 }
