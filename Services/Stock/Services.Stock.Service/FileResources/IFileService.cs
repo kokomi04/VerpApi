@@ -16,6 +16,8 @@ namespace VErp.Services.Stock.Service.FileResources
     public interface IFileService
     {
         Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
+        Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file);
+
         Task<Enum> DeleteFile(long fileId);
         Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
 
