@@ -130,6 +130,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 inputAreaField.CreatedByUserId = updatedUserId;
                 inputAreaField.UpdatedByUserId = updatedUserId;
 
+                int fieldIndex = GetFieldIndex(inputAreaId);
+                if (fieldIndex < 0)
+                {
+                    trans.Rollback();
+                    return InputErrorCode.InputAreaFieldOverLoad;
+                }
+                inputAreaField.FieldIndex = fieldIndex;
                 await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                 await _accountingContext.SaveChangesAsync();
 
@@ -145,14 +152,34 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> UpdateInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int fieldIndex, InputAreaFieldInputModel data)
+        private int GetFieldIndex(int inputAreaId)
         {
-            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.FieldIndex == fieldIndex && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
+            int index = -1;
+            var arrIndex = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).Select(f => f.InputAreaFieldId).ToList();
+            for (int indx = 0; indx <= 20; indx++)
+            {
+                if (arrIndex.Contains(indx))
+                {
+                    indx++;
+                }
+                else
+                {
+                    index = indx;
+                    break;
+                }
+            }
+
+            return index;
+        }
+
+        public async Task<Enum> UpdateInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data)
+        {
+            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
             if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
             }
-            if (inputAreaField.FieldName != data.FieldName && _accountingContext.InputAreaField.Any(f => f.FieldIndex != fieldIndex && f.InputAreaId != inputAreaId && f.FieldName == data.FieldName))
+            if (inputAreaField.FieldName != data.FieldName && _accountingContext.InputAreaField.Any(f => f.InputAreaFieldId != inputAreaFieldId && f.InputAreaId != inputAreaId && f.FieldName == data.FieldName))
             {
                 return InputErrorCode.InputAreaFieldNameAlreadyExisted;
             }
@@ -178,7 +205,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 try
                 {
                     inputAreaField.InputAreaId = data.InputAreaId;
-                    inputAreaField.FieldIndex = data.FieldIndex;
                     inputAreaField.InputTypeId = data.InputTypeId;
                     inputAreaField.FieldName = data.FieldName;
                     inputAreaField.Title = data.Title;
@@ -212,9 +238,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> DeleteInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int fieldIndex)
+        public async Task<Enum> DeleteInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId)
         {
-            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.FieldIndex == fieldIndex && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
+            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
             if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;

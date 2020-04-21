@@ -657,7 +657,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<ServiceResult<MemoryStream>> GetImportTemplateCategoryRow(int categoryId)
+        public async Task<ServiceResult<MemoryStream>> GetImportTemplateCategory(int categoryId)
         {
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -693,5 +693,58 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             MemoryStream stream = await writer.WriteToStream();
             return stream;
         }
+
+        public async Task<ServiceResult<MemoryStream>> ExportCategory(int categoryId)
+        {
+            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                return CategoryErrorCode.CategoryNotFound;
+            }
+            if (category.IsReadonly)
+            {
+                return CategoryErrorCode.CategoryReadOnly;
+            }
+            // Lấy thông tin field
+            var categoryIds = GetAllCategoryIds(categoryId);
+            var categoryFields = _accountingContext.CategoryField
+                .Where(f => categoryIds.Contains(f.CategoryId))
+                .Where(f => !f.IsHidden && !f.AutoIncrement)
+                .AsEnumerable();
+            // Lấy thông tin row
+            var categoryRows = _accountingContext.CategoryRow
+                .Where(r => r.CategoryId == categoryId)
+                .Include(r => r.CategoryRowValues)
+                .ThenInclude(rv => rv.SourceCategoryRowValue);
+
+            List<(string, byte[])[]> dataInRows = new List<(string, byte[])[]>();
+            List<(string, byte[])> dataInRow = new List<(string, byte[])>();
+            byte[] titleRgb = new byte[3] { 60, 120, 216 };
+            foreach (var field in categoryFields)
+            {
+                dataInRow.Add((field.Title, titleRgb));
+            }
+            dataInRows.Add(dataInRow.ToArray());
+            foreach(var row in categoryRows)
+            {
+                dataInRow.Clear();
+                foreach (var field in categoryFields)
+                {
+                    bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
+                    var categoryValueRow = row.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
+                    string value = isRef ? categoryValueRow?.SourceCategoryRowValue?.Value??string.Empty : categoryValueRow?.Value??string.Empty;
+                    dataInRow.Add((value, null));
+                }
+                dataInRows.Add(dataInRow.ToArray());
+            }
+
+            var writer = new ExcelWriter();
+            writer.WriteToSheet(dataInRows, "Data");
+            MemoryStream stream = await writer.WriteToStream();
+            return stream;
+        }
+
+
+
     }
 }

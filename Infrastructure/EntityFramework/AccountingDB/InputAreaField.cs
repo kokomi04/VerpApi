@@ -8,7 +8,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public InputAreaField()
         {
         }
-
+        public int InputAreaFieldId { get; set; }
         public int InputAreaId { get; set; }
         public int FieldIndex { get; set; }
         public int InputTypeId { get; set; }
