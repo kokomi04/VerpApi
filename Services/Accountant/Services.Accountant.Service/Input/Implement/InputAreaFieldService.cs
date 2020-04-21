@@ -141,8 +141,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.FieldIndex, $"Thêm trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
-                return inputAreaField.FieldIndex;
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Thêm trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
+                return inputAreaField.InputAreaFieldId;
             }
             catch (Exception ex)
             {
