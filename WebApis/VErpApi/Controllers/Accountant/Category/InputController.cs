@@ -138,19 +138,19 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpPut]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{fieldIndex}")]
-        public async Task<ServiceResult> UpdateInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int fieldIndex, [FromBody] InputAreaFieldInputModel inputAreaField)
+        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaFieldId}")]
+        public async Task<ServiceResult> UpdateInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaFieldId, [FromBody] InputAreaFieldInputModel inputAreaField)
         {
             var updatedUserId = UserId;
-            return await _inputAreaFieldService.UpdateInputAreaField(updatedUserId, inputTypeId, inputAreaId, fieldIndex, inputAreaField);
+            return await _inputAreaFieldService.UpdateInputAreaField(updatedUserId, inputTypeId, inputAreaId, inputAreaFieldId, inputAreaField);
         }
 
         [HttpDelete]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{fieldIndex}")]
-        public async Task<ServiceResult> DeleteInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int fieldIndex)
+        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaFieldId}")]
+        public async Task<ServiceResult> DeleteInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaFieldId)
         {
             var updatedUserId = UserId;
-            return await _inputAreaFieldService.DeleteInputAreaField(updatedUserId, inputTypeId, inputAreaId, fieldIndex);
+            return await _inputAreaFieldService.DeleteInputAreaField(updatedUserId, inputTypeId, inputAreaId, inputAreaFieldId);
         }
     }
 }

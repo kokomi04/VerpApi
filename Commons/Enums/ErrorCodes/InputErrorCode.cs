@@ -26,7 +26,8 @@ namespace VErp.Commons.Enums.StandardEnum
         InputValueBillNotFound = 8,
         [Description("Trường tham chiếu không tồn tại")]
         SourceCategoryFieldNotFound = 9,
-    
+        [Description("Không còn trường dữ liệu trống")]
+        InputAreaFieldOverLoad = 10,
         [Description("Trường dữ liệu không tồn tại")]
         InputAreaFieldNotFound = 11,
         [Description("Kiểu dữ liệu không tồn tại")]

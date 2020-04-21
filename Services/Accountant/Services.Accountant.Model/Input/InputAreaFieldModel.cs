@@ -35,6 +35,7 @@ namespace VErp.Services.Accountant.Model.Input
 
     public class InputAreaFieldOutputModel : InputAreaFieldModel
     {
+        public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
     }
     

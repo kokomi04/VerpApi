@@ -21,6 +21,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
         public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
+        public virtual DbSet<InputValueRowVersionNumber> InputValueRowVersionNumber { get; set; }
+
 
         public AccountingDBContext()
         {
@@ -78,14 +80,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_CategoryRowValue_Relation");
             });
 
-            //modelBuilder.Entity<CategoryValue>(entity =>
-            //{
-            //    entity.HasOne(v => v.CategoryField)
-            //    .WithMany(f => f.CategoryValues)
-            //    .HasForeignKey(v => v.CategoryFieldId)
-            //    .HasConstraintName("FK_CategoryValue_CategoryField");
-            //});
-
             modelBuilder.Entity<CategoryField>(entity =>
             {
                 entity.HasOne(f => f.Category)
@@ -121,7 +115,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputAreaField>(entity =>
             {
-                entity.HasKey(f => new { f.InputAreaId, f.FieldIndex });
                 entity.HasOne(f => f.InputArea)
                 .WithMany(f => f.InputAreaFields)
                 .HasForeignKey(f => f.InputAreaId)
@@ -160,6 +153,14 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasConstraintName("FK_InputValueRowVersion_InputValueRow");
             });
 
+            modelBuilder.Entity<InputValueRowVersionNumber>(entity =>
+            {
+                entity.HasKey(rvn => rvn.InputValueRowVersionId);
+                entity.HasOne(rvn => rvn.InputValueRowVersion)
+                .WithMany(rv => rv.InputValueRowVersionNumbers)
+                .HasForeignKey(rnv => rnv.InputValueRowVersionId)
+                .HasConstraintName("FK_CategoryValue_CategoryField");
+            });
 
             OnModelCreatingPartial(modelBuilder);
         }

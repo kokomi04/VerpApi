@@ -171,16 +171,30 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("{categoryId}/categoryrows/file")]
-        public async Task<IActionResult> GetImportTemplateCategoryRow([FromRoute] int categoryId)
+        [Route("{categoryId}/categoryrows/templatefile")]
+        public async Task<IActionResult> GetImportTemplateCategory([FromRoute] int categoryId)
         {
-            var r = await _categoryRowService.GetImportTemplateCategoryRow(categoryId);
+            var r = await _categoryRowService.GetImportTemplateCategory(categoryId);
 
             if (!r.IsSuccessCode())
             {
                 return new JsonResult(r);
             }
             return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "template.xlsx");
+
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/categoryrows/datafile")]
+        public async Task<IActionResult> ExportCategoryRow([FromRoute] int categoryId)
+        {
+            var r = await _categoryRowService.ExportCategory(categoryId);
+
+            if (!r.IsSuccessCode())
+            {
+                return new JsonResult(r);
+            }
+            return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "category.xlsx");
 
         }
 

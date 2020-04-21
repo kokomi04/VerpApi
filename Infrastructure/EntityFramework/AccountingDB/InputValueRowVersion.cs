@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
     {
         public InputValueRowVersion()
         {
+            InputValueRowVersionNumbers = new HashSet<InputValueRowVersionNumber>();
         }
 
         public long InputValueRowVersionId { get; set; }
@@ -35,6 +36,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         public virtual InputValueRow InputValueRow { get; set; }
 
-
+        public virtual ICollection<InputValueRowVersionNumber> InputValueRowVersionNumbers { get; set; }
     }
 }

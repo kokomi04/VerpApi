@@ -11,7 +11,7 @@ namespace VErp.Services.Accountant.Service.Input
         Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int fieldIndex);
         Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size);
         Task<ServiceResult<int>> AddInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, InputAreaFieldInputModel data);
-        Task<Enum> UpdateInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int fieldIndex, InputAreaFieldInputModel data);
-        Task<Enum> DeleteInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int fieldIndex);
+        Task<Enum> UpdateInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data);
+        Task<Enum> DeleteInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId);
     }
 }
