@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
     {
         public CategoryValue()
         {
-            CategoryRowValues = new HashSet<CategoryRowValue>();
+            //CategoryRowValues = new HashSet<CategoryRowValue>();
         }
 
         public int CategoryValueId { get; set; }
@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string Value { get; set; }
         public bool IsDefault { get; set; }
 
-        public virtual ICollection<CategoryRowValue> CategoryRowValues { get; set; }
+        //public virtual ICollection<CategoryRowValue> CategoryRowValues { get; set; }
 
         public virtual CategoryField CategoryField { get; set; }
     }
