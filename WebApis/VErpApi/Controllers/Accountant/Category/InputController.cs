@@ -117,7 +117,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields")]
-        public async Task<ServiceResult<PageData<InputAreaFieldOutputModel>>> GetInputAreaFields([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<InputAreaFieldOutputFullModel>>> GetInputAreaFields([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputAreaFieldService.GetInputAreaFields(inputTypeId, inputAreaId, keyword, page, size);
         }

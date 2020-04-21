@@ -39,10 +39,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<InputAreaFieldOutputModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size)
+        public async Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _accountingContext.InputAreaField.Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
+            var query = _accountingContext.InputAreaField
+                .Include(f => f.DataType)
+                .Include(f => f.FormType)
+                .Include(f => f.SourceCategoryField)
+                .Include(f => f.SourceCategoryTitleField)
+                .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
@@ -53,8 +58,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaFieldOutputModel> lst = await query.Select(f => _mapper.Map<InputAreaFieldOutputModel>(f)).ToListAsync();
-
+            List<InputAreaFieldOutputFullModel> lst = await query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToListAsync();
+            foreach (InputAreaFieldOutputFullModel item in lst)
+            {
+                if (item.SourceCategoryField != null)
+                {
+                    CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
+                    item.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                }
+            }
             return (lst, total);
         }
 
