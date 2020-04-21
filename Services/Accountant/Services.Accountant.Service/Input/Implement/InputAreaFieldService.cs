@@ -70,14 +70,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int fieldIndex)
+        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaField)
         {
             var InputAreaField = await _accountingContext.InputAreaField
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.SourceCategoryField)
                 .Include(f => f.SourceCategoryTitleField)
-                .FirstOrDefaultAsync(f => f.FieldIndex == fieldIndex && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
+                .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaField && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (InputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
