@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.Stock.Files
         [Route("{fileId}/GetFileUrl")]
         public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
         {
-            return await _fileService.GetFileUrl(fileId, thumb);
+            return await _fileService.GetFileUrl(fileId, thumb).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.Stock.Files
         [VErpAction(EnumAction.View)]
         public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] GetThumbnailsInput req)
         {
-            return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize);
+            return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize).ConfigureAwait(true);
         }
 
 
@@ -65,24 +65,8 @@ namespace VErpApi.Controllers.Stock.Files
         [Route("{objectTypeId}/upload")]
         public async Task<ServiceResult<long>> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
         {
-            var fileType = EnumFileType.Image;
 
-            switch (objectTypeId)
-            {
-                case EnumObjectType.UserAndEmployee:
-                case EnumObjectType.BusinessInfo:
-                    fileType = EnumFileType.Image;
-                    break;
-
-                case EnumObjectType.PurchasingSuggest:
-                case EnumObjectType.PurchaseOrder:
-                    fileType = EnumFileType.Document;
-                    break;
-
-                default:
-                    return null;
-            }
-            return await _fileService.Upload(objectTypeId, fileType, string.Empty, file).ConfigureAwait(true);
+            return await _fileService.Upload(objectTypeId, string.Empty, file).ConfigureAwait(true);
         }
 
     }
