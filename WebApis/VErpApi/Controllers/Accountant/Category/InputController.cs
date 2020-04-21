@@ -123,10 +123,10 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{fieldIndex}")]
-        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int fieldIndex)
+        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaField}")]
+        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaField)
         {
-            return await _inputAreaFieldService.GetInputAreaField(inputTypeId, inputAreaId, fieldIndex);
+            return await _inputAreaFieldService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField);
         }
 
         [HttpPost]
