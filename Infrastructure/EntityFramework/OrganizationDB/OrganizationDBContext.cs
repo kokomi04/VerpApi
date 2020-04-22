@@ -151,8 +151,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
 			modelBuilder.Entity<Subsidiary>(entity =>
             {
-                entity.Property(e => e.SubsidiaryId).ValueGeneratedNever();
-
                 entity.Property(e => e.Address).HasMaxLength(128);
 
                 entity.Property(e => e.Description).HasMaxLength(512);
