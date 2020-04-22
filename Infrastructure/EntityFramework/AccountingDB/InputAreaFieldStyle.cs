@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class InputAreaFieldStyle : BaseEntity
+    public partial class InputAreaFieldStyle 
     {
         public InputAreaFieldStyle()
         {
