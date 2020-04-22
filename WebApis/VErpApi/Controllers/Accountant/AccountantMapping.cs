@@ -31,9 +31,10 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<InputArea, InputAreaOutputModel>();
             CreateMap<InputAreaInputModel, InputArea>();
             CreateMap<InputAreaField, InputAreaFieldOutputFullModel>();
+            CreateMap<InputAreaFieldInputModel, InputAreaField>();
+
             CreateMap<InputAreaFieldStyle, InputAreaFieldStyleOutputModel>();
             CreateMap<InputAreaFieldStyleInputModel, InputAreaFieldStyle>();
-            CreateMap<InputAreaFieldInputModel, InputAreaField>();
 
             CreateMap<InputValueBill, InputValueBillOutputModel>();
             CreateMap<InputValueBillInputModel, InputValueBill>().ForMember(b => b.InputValueRows, act => act.Ignore());
