@@ -3,7 +3,7 @@ using VErp.Services.Accountant.Model.Category;
 
 namespace VErp.Services.Accountant.Model.Input
 {
-    public abstract class InputAreaFieldStyleModel
+    public class InputAreaFieldStyleInputModel 
     {
         public int Width { get; set; }
         public int Height { get; set; }
@@ -16,14 +16,9 @@ namespace VErp.Services.Accountant.Model.Input
         public string OnChange { get; set; }
         public bool AutoFocus { get; set; }
         public int Column { get; set; }
-
     }
 
-    public class InputAreaFieldStyleInputModel : InputAreaFieldStyleModel
-    {
-    }
-
-    public class InputAreaFieldStyleOutputModel : InputAreaFieldStyleModel
+    public class InputAreaFieldStyleOutputModel : InputAreaFieldStyleInputModel
     {
         public int InputAreaFieldId { get; set; }
     }
