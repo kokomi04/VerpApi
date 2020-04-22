@@ -54,7 +54,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (!string.IsNullOrEmpty(keyword))
             {
 
-                query = query.Where(b => b.InputValueRows.Any(r => r.InputValueRowVersions.Any(rv => rv.Field0.Contains(keyword) 
+                query = query.Where(b => b.InputValueRows.Any(r => r.InputValueRowVersions.Any(rv => rv.Field0.Contains(keyword)
                 || rv.Field1.Contains(keyword)
                 || rv.Field2.Contains(keyword)
                 || rv.Field3.Contains(keyword)
@@ -77,7 +77,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 || rv.Field19.Contains(keyword)
                 || rv.Field20.Contains(keyword)
                 )));
-                
+
             }
 
             var total = await query.CountAsync();
@@ -88,11 +88,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var lst = query.Select(b => _mapper.Map<InputValueBillOutputModel>(b)).ToList();
 
-            
+
             return (lst, total);
         }
 
-        public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, int inputValueBillId)
+        public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
             // Check exist
             var inputValueBill = await _accountingContext.InputValueBill
@@ -109,7 +109,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return output;
         }
 
-        public async Task<ServiceResult<int>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data)
+        public async Task<ServiceResult<long>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data)
         {
             // Validate
             var inputType = _accountingContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
@@ -117,23 +117,23 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 return InputErrorCode.InputTypeNotFound;
             }
-          
+
             // Lấy thông tin field
             var inputAreaFields = _accountingContext.InputAreaField
                 .Include(f => f.DataType)
                 .Where(f => f.InputTypeId == inputTypeId).AsEnumerable();
-          
+
             // Check field required
-           
+
 
             // Check unique
-        
+
 
             // Check refer
-          
+
 
             // Check value
-          
+
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
             {
@@ -147,15 +147,57 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     await _accountingContext.SaveChangesAsync();
 
                     // Insert row
+                    foreach (var rowModel in data.InputValueRows)
+                    {
 
+                        var inputValueRow = _mapper.Map<InputValueRow>(rowModel);
+                        inputValueRow.UpdatedByUserId = updatedUserId;
+                        inputValueRow.CreatedByUserId = updatedUserId;
+                        inputValueRow.InputValueBillId = inputValueBill.InputValueBillId;
+                        await _accountingContext.InputValueRow.AddAsync(inputValueRow);
+                        await _accountingContext.SaveChangesAsync();
 
-                    // Insert row version
+                        long lastedRowVersionId = 0;
+                        // Insert row version
+                        foreach (var rowVersion in rowModel.InputValueRowVersions)
+                        {
+                            var inputValueRowVersion = _mapper.Map<InputValueRowVersion>(rowVersion);
+                            inputValueRowVersion.UpdatedByUserId = updatedUserId;
+                            inputValueRowVersion.CreatedByUserId = updatedUserId;
+                            inputValueRowVersion.InputValueRowId = inputValueRow.InputValueRowId;
+                            await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
+                            await _accountingContext.SaveChangesAsync();
+                            lastedRowVersionId = inputValueRowVersion.InputValueRowVersionId;
 
-                    // Insert row version number
+                            // Insert row version number
+                            var inputValueRowVersionNumber = new InputValueRowVersionNumber
+                            {
+                                InputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId
+                            };
+                            for (int fieldIndx = 0; fieldIndx < Numbers.INPUT_TYPE_FIELD_NUMBER; fieldIndx++)
+                            {
+                                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndx);
+                                long valueInNumber = 0;
+                                typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
+                            }
+                            await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
+                            await _accountingContext.SaveChangesAsync();
+                        }
+
+                        if (lastedRowVersionId == 0)
+                        {
+                            trans.Rollback();
+                            return InputErrorCode.InputValueRowVersionEmpty;
+                        }
+
+                        // Update lasted version
+                        inputValueRow.LastestInputValueRowVersionId = lastedRowVersionId;
+                        await _accountingContext.SaveChangesAsync();
+                    }
 
                     trans.Commit();
-                    //await _activityLogService.CreateLog(EnumObjectType.InputType, categoryRowId, $"Thêm chứng từ cho loại chứng từ {inputType.Title}", data.JsonSerialize());
-                    return 1;
+                    await _activityLogService.CreateLog(EnumObjectType.InputType, inputValueBill.InputValueBillId, $"Thêm chứng từ cho loại chứng từ {inputType.Title}", data.JsonSerialize());
+                    return inputValueBill.InputValueBillId;
                 }
                 catch (Exception ex)
                 {
@@ -165,6 +207,5 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
             }
         }
-
     }
 }

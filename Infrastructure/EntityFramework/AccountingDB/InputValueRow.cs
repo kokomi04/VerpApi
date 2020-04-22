@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int InputAreaId { get; set; }
 
         public virtual InputValueBill InputValueBill { get; set; }
+        public virtual InputArea InputArea { get; set; }
         public virtual ICollection<InputValueRowVersion> InputValueRowVersions { get; set; }
     }
 }

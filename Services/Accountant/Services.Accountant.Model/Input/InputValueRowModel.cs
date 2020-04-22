@@ -5,17 +5,34 @@ using System.ComponentModel.DataAnnotations;
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public class InputValueRowModel
+    public abstract class InputValueRowModel
     {
         public InputValueRowModel()
         {
-            InputValueRowVersions = new HashSet<InputValueRowVersionModel>();
+        }
+        public int InputAreaId { get; set; }
+    }
+
+    public class InputValueRowInputModel: InputValueRowModel
+    {
+        public InputValueRowInputModel()
+        {
+            InputValueRowVersions = new HashSet<InputValueRowVersionInputModel>();
+        }
+
+        public ICollection<InputValueRowVersionInputModel> InputValueRowVersions { get; set; }
+    }
+
+    public class InputValueRowOutputModel : InputValueRowModel
+    {
+        public InputValueRowOutputModel()
+        {
+            InputValueRowVersions = new HashSet<InputValueRowVersionOutputModel>();
         }
         public long InputValueRowId { get; set; }
         public long InputValueBillId { get; set; }
         public long LastestInputValueRowVersionId { get; set; }
-        public int InputAreaId { get; set; }
-
-        public ICollection<InputValueRowVersionModel> InputValueRowVersions { get; set; }
+        public ICollection<InputValueRowVersionOutputModel> InputValueRowVersions { get; set; }
     }
+
 }

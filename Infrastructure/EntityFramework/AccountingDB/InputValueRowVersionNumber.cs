@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class InputValueRowVersionNumber : BaseEntity
+    public partial class InputValueRowVersionNumber
     {
         public InputValueRowVersionNumber()
         {

@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public InputArea()
         {
             InputAreaFields = new HashSet<InputAreaField>();
+            InputValueRows = new HashSet<InputValueRow>();
         }
 
         public int InputAreaId { get; set; }
@@ -17,7 +18,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsMultiRow { get; set; }
 
         public virtual InputType InputType { get; set; }
-
+        public virtual ICollection<InputValueRow> InputValueRows { get; set; }
         public virtual ICollection<InputAreaField> InputAreaFields { get; set; }
     }
 }

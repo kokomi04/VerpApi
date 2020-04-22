@@ -25,10 +25,12 @@ namespace VErpApi.Controllers.Accountant
         private readonly IInputTypeService _inputTypeService;
         private readonly IInputAreaService _inputAreaService;
         private readonly IInputAreaFieldService _inputAreaFieldService;
+        private readonly IInputValueBillService _inputValueBillService;
         private readonly IFileService _fileService;
         public InputController(IInputTypeService inputTypeService
             , IInputAreaService inputAreaService
             , IInputAreaFieldService inputAreaFieldService
+            , IInputValueBillService inputValueBillService
             , IFileService fileService
             )
         {
@@ -36,6 +38,7 @@ namespace VErpApi.Controllers.Accountant
             _inputTypeService = inputTypeService;
             _inputAreaService = inputAreaService;
             _inputAreaFieldService = inputAreaFieldService;
+            _inputValueBillService = inputValueBillService;
         }
 
 
@@ -152,5 +155,29 @@ namespace VErpApi.Controllers.Accountant
             var updatedUserId = UserId;
             return await _inputAreaFieldService.DeleteInputAreaField(updatedUserId, inputTypeId, inputAreaId, inputAreaFieldId);
         }
+
+        [HttpGet]
+        [Route("{inputTypeId}/inputvaluebills")]
+        public async Task<ServiceResult<PageData<InputValueBillOutputModel>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, page, size);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
+        public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
+        {
+            return await _inputValueBillService.GetInputValueBill(inputTypeId, inputValueBillId);
+        }
+
+        [HttpPost]
+        [Route("{inputTypeId}/inputvaluebills")]
+        public async Task<ServiceResult<long>> AddInputValueBill([FromRoute] int inputTypeId, [FromBody] InputValueBillInputModel data)
+        {
+            var updatedUserId = UserId;
+            return await _inputValueBillService.AddInputValueBill(updatedUserId, inputTypeId, data);
+        }
+
+
     }
 }

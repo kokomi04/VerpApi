@@ -153,7 +153,21 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(b => b.InputValueRows)
                 .HasForeignKey(r => r.InputValueBillId)
                 .HasConstraintName("FK_InputValueRow_InputValueBill");
+                entity.HasOne(r => r.InputArea)
+                .WithMany(a => a.InputValueRows)
+                .HasForeignKey(r => r.InputAreaId)
+                .HasConstraintName("FK_InputValueRow_InputArea");
             });
+
+            modelBuilder.Entity<InputValueBill>(entity =>
+            {
+                entity.HasOne(b => b.InputType)
+               .WithMany(i => i.InputValueBills)
+               .HasForeignKey(b => b.InputTypeId)
+               .HasConstraintName("FK_InputValueBill_InputType");
+
+            });
+
 
             modelBuilder.Entity<InputValueRowVersion>(entity =>
             {

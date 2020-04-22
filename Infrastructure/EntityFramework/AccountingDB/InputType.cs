@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public InputType()
         {
             InputAreas = new HashSet<InputArea>();
+            InputValueBills = new HashSet<InputValueBill>();
         }
 
         public int InputTypeId { get; set; }
@@ -15,6 +16,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string InputTypeCode { get; set; }
 
         public virtual ICollection<InputArea> InputAreas { get; set; }
+        public virtual ICollection<InputValueBill> InputValueBills { get; set; }
 
     }
 }
