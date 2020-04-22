@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public InputAreaField()
         {
         }
+
         public int InputAreaFieldId { get; set; }
         public int InputAreaId { get; set; }
         public int FieldIndex { get; set; }
@@ -34,5 +35,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         public virtual CategoryField SourceCategoryField { get; set; }
         public virtual CategoryField SourceCategoryTitleField { get; set; }
+
+        public virtual InputAreaFieldStyle InputAreaFieldStyle { get; set; }
     }
 }

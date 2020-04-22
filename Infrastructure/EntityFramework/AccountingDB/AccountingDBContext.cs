@@ -13,11 +13,11 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<FormType> FormType { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
 
-        //public virtual DbSet<CategoryValue> CategoryValue { get; set; }
         public virtual DbSet<CategoryRowValue> CategoryRowValue { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
+        public virtual DbSet<InputAreaFieldStyle> InputAreaFieldStyle { get; set; }
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
         public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
@@ -54,6 +54,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(c => c.SubCategories)
                 .HasForeignKey(c => c.ParentId)
                 .HasConstraintName("FK_Category_Relation");
+                entity.HasIndex(c => c.ParentId).HasName("IDX_Category_Relation_FK");
             });
 
             modelBuilder.Entity<CategoryRow>(entity =>
@@ -62,6 +63,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(c => c.CategoryRows)
                 .HasForeignKey(r => r.CategoryId)
                 .HasConstraintName("FK_CategoryRow_Category");
+                entity.HasIndex(r => r.CategoryId).HasName("IDX_CategoryRow_Category_FK");
             });
 
             modelBuilder.Entity<CategoryRowValue>(entity =>
@@ -78,6 +80,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(v => v.DestCategoryRowValue)
                 .HasForeignKey(rv => rv.ReferenceCategoryRowValueId)
                 .HasConstraintName("FK_CategoryRowValue_Relation");
+                entity.HasIndex(rv => rv.CategoryRowId).HasName("IDX_CategoryRowValue_CategoryRow_FK");
+                entity.HasIndex(rv => rv.CategoryFieldId).HasName("IDX_CategoryRowValue_CategoryField_FK");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
@@ -102,6 +106,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(f => f.DestCategoryTitleFields)
                 .HasForeignKey(c => c.ReferenceCategoryTitleFieldId)
                 .HasConstraintName("FK_CategoryTitleField_Relation");
+
+                entity.HasIndex(f => f.CategoryId).HasName("IDX_CategoryField_Category_FK");
+                entity.HasIndex(f => f.DataTypeId).HasName("IDX_CategoryField_DataType_FK");
+                entity.HasIndex(f => f.FormTypeId).HasName("IDX_CategoryField_FormType_FK");
+                entity.HasIndex(f => f.ReferenceCategoryFieldId).HasName("IDX_CategoryField_Relation_FK");
+                entity.HasIndex(f => f.ReferenceCategoryTitleFieldId).HasName("IDX_CategoryTitleField_Relation_FK");
 
             });
 
@@ -157,11 +167,19 @@ namespace VErp.Infrastructure.EF.AccountingDB
             {
                 entity.HasKey(rvn => rvn.InputValueRowVersionId);
                 entity.HasOne(rvn => rvn.InputValueRowVersion)
-                .WithMany(rv => rv.InputValueRowVersionNumbers)
-                .HasForeignKey(rnv => rnv.InputValueRowVersionId)
-                .HasConstraintName("FK_CategoryValue_CategoryField");
+                .WithOne(rv => rv.InputValueRowVersionNumber)
+                .HasForeignKey<InputValueRowVersionNumber>(rvn => rvn.InputValueRowVersionId)
+                .HasConstraintName("FK_InputValueRowVersionNumber_InputValueRowVersion");
             });
 
+            modelBuilder.Entity<InputAreaFieldStyle>(entity =>
+            {
+                entity.HasKey(fs => fs.InputAreaFieldId);
+                entity.HasOne(fs => fs.InputAreaField)
+                .WithOne(f => f.InputAreaFieldStyle)
+                .HasForeignKey<InputAreaFieldStyle>(fs => fs.InputAreaFieldId)
+                .HasConstraintName("FK_InputAreaFieldStyle_InputAreaField");
+            });
             OnModelCreatingPartial(modelBuilder);
         }
 
