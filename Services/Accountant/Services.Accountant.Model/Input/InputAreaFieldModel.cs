@@ -27,20 +27,17 @@ namespace VErp.Services.Accountant.Model.Input
         public string DefaultValue { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
+        public InputAreaFieldStyleModel InputAreaFieldStyle { get; set; }
     }
 
     public class InputAreaFieldInputModel : InputAreaFieldModel
     {
     }
 
-    public class InputAreaFieldOutputModel : InputAreaFieldModel
+    public class InputAreaFieldOutputFullModel : InputAreaFieldModel
     {
         public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
-    }
-    
-    public class InputAreaFieldOutputFullModel : InputAreaFieldOutputModel
-    {
         public DataTypeModel DataType { get; set; }
         public FormTypeModel FormType { get; set; }
         public CategoryFieldOutputFullModel SourceCategoryField { get; set; }

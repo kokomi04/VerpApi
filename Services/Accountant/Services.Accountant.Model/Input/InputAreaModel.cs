@@ -27,10 +27,10 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public InputAreaOutputModel()
         {
-            InputAreaFields = new List<InputAreaFieldOutputModel>();
+            InputAreaFields = new List<InputAreaFieldOutputFullModel>();
         }
 
-        public ICollection<InputAreaFieldOutputModel> InputAreaFields { get; set; }
+        public ICollection<InputAreaFieldOutputFullModel> InputAreaFields { get; set; }
     }
     
 }

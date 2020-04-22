@@ -30,8 +30,9 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<InputType, InputTypeFullModel>();
             CreateMap<InputArea, InputAreaOutputModel>();
             CreateMap<InputAreaInputModel, InputArea>();
-            CreateMap<InputAreaField, InputAreaFieldOutputModel>();
             CreateMap<InputAreaField, InputAreaFieldOutputFullModel>();
+            CreateMap<InputAreaFieldStyle, InputAreaFieldStyleOutputModel>();
+            CreateMap<InputAreaFieldStyleInputModel, InputAreaFieldStyle>();
             CreateMap<InputAreaFieldInputModel, InputAreaField>();
 
             CreateMap<InputValueBill, InputValueBillOutputModel>();

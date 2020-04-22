@@ -43,6 +43,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
+                .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.SourceCategoryField)
@@ -73,6 +74,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaField)
         {
             var InputAreaField = await _accountingContext.InputAreaField
+                .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.SourceCategoryField)
@@ -140,6 +142,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                 await _accountingContext.SaveChangesAsync();
 
+                // Add style
+                InputAreaFieldStyle inputAreaFieldStyle = _mapper.Map<InputAreaFieldStyle>(data.InputAreaFieldStyle);
+                inputAreaFieldStyle.InputAreaFieldId = inputAreaField.InputAreaFieldId;
+
+                await _accountingContext.InputAreaFieldStyle.AddAsync(inputAreaFieldStyle);
+                await _accountingContext.SaveChangesAsync();
+
+
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Thêm trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
                 return inputAreaField.InputAreaFieldId;
@@ -204,6 +214,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 try
                 {
+                    // update field
                     inputAreaField.InputAreaId = data.InputAreaId;
                     inputAreaField.InputTypeId = data.InputTypeId;
                     inputAreaField.FieldName = data.FieldName;
@@ -223,6 +234,21 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     inputAreaField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     inputAreaField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
                     inputAreaField.UpdatedByUserId = updatedUserId;
+                    await _accountingContext.SaveChangesAsync();
+
+                    // update style
+                    var inputAreaFieldStyle = _accountingContext.InputAreaFieldStyle.First(fs => fs.InputAreaFieldId == inputAreaFieldId);
+                    inputAreaFieldStyle.Width = data.InputAreaFieldStyle.Width;
+                    inputAreaFieldStyle.Height = data.InputAreaFieldStyle.Height;
+                    inputAreaFieldStyle.TitleStyleJson = data.InputAreaFieldStyle.TitleStyleJson;
+                    inputAreaFieldStyle.InputStyleJson = data.InputAreaFieldStyle.InputStyleJson;
+                    inputAreaFieldStyle.OnFocus = data.InputAreaFieldStyle.OnFocus;
+                    inputAreaFieldStyle.OnKeydown = data.InputAreaFieldStyle.OnKeydown;
+                    inputAreaFieldStyle.OnKeypress = data.InputAreaFieldStyle.OnKeypress;
+                    inputAreaFieldStyle.OnBlur = data.InputAreaFieldStyle.OnBlur;
+                    inputAreaFieldStyle.OnChange = data.InputAreaFieldStyle.OnChange;
+                    inputAreaFieldStyle.AutoFocus = data.InputAreaFieldStyle.AutoFocus;
+                    inputAreaFieldStyle.Column = data.InputAreaFieldStyle.Column;
                     await _accountingContext.SaveChangesAsync();
 
                     trans.Commit();
