@@ -5,13 +5,12 @@ using System.ComponentModel.DataAnnotations;
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public class InputValueRowVersionModel
+    public class InputValueRowVersionInputModel
     {
-        public InputValueRowVersionModel()
+        public InputValueRowVersionInputModel()
         {
         }
-        public long InputValueRowVersionId { get; set; }
-        public long InputValueRowId { get; set; }
+
         public string Field0 { get; set; }
         public string Field1 { get; set; }
         public string Field2 { get; set; }
@@ -34,4 +33,14 @@ namespace VErp.Services.Accountant.Model.Input
         public string Field19 { get; set; }
         public string Field20 { get; set; }
     }
+
+    public class InputValueRowVersionOutputModel: InputValueRowVersionInputModel
+    {
+        public InputValueRowVersionOutputModel()
+        {
+        }
+        public long InputValueRowVersionId { get; set; }
+        public long InputValueRowId { get; set; }
+    }
+
 }

@@ -13,9 +13,9 @@ namespace VErp.Services.Accountant.Service.Input
     {
         Task<PageData<InputValueBillOutputModel>> GetInputValueBills(int inputTypeId, string keyword, int page, int size);
 
-        Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, int inputValueBillId);
+        Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId);
 
-        Task<ServiceResult<int>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data);
+        Task<ServiceResult<long>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data);
 
         //Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, int inputValueBillId, InputValueBillInputModel data);
 

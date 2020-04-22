@@ -157,7 +157,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         private int GetFieldIndex(int inputAreaId)
         {
             int index = -1;
-            var arrIndex = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).Select(f => f.InputAreaFieldId).ToList();
+            var arrIndex = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).Select(f => f.FieldIndex).ToList();
             for (int indx = 0; indx <= 20; indx++)
             {
                 if (arrIndex.Contains(indx))
