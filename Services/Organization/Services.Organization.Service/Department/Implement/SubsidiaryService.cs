@@ -30,6 +30,7 @@ namespace Services.Organization.Service.Department.Implement
         private readonly IConfigurationProvider cfg = new MapperConfiguration(c =>
             {
                 c.CreateMap<Subsidiary, SubsidiaryOutput>();
+                c.CreateMap<Subsidiary, SubsidiaryModel>();
             });
 
         public SubsidiaryService(OrganizationDBContext organizationContext
