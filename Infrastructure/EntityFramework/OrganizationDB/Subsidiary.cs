@@ -20,11 +20,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string Email { get; set; }
         public string Fax { get; set; }
         public string Description { get; set; }
-        public bool IsDeleted { get; set; }
-        public int UpdatedByUserId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual Subsidiary ParentSubsidiary { get; set; }
