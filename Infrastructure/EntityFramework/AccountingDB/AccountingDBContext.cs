@@ -180,6 +180,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .HasForeignKey<InputAreaFieldStyle>(fs => fs.InputAreaFieldId)
                 .HasConstraintName("FK_InputAreaFieldStyle_InputAreaField");
             });
+
             OnModelCreatingPartial(modelBuilder);
         }
 

@@ -142,14 +142,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                 await _accountingContext.SaveChangesAsync();
 
-                // Add style
-                InputAreaFieldStyle inputAreaFieldStyle = _mapper.Map<InputAreaFieldStyle>(data.InputAreaFieldStyle);
-                inputAreaFieldStyle.InputAreaFieldId = inputAreaField.InputAreaFieldId;
-
-                await _accountingContext.InputAreaFieldStyle.AddAsync(inputAreaFieldStyle);
-                await _accountingContext.SaveChangesAsync();
-
-
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Thêm trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
                 return inputAreaField.InputAreaFieldId;
