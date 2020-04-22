@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
+		public virtual DbSet<Subsidiary> Subsidiary { get; set; }
 
         public OrganizationDBContext()
         {
@@ -148,6 +149,32 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                  .HasConstraintName("FK_EmployeeDepartment_Department");
             });
 
+			modelBuilder.Entity<Subsidiary>(entity =>
+            {
+                entity.Property(e => e.SubsidiaryId).ValueGeneratedNever();
+
+                entity.Property(e => e.Address).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.Fax).HasMaxLength(128);
+
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+
+                entity.Property(e => e.SubsidiaryCode).HasMaxLength(128);
+
+                entity.Property(e => e.SubsidiaryName).HasMaxLength(128);
+
+                entity.Property(e => e.TaxIdNo).HasMaxLength(64);
+
+                entity.HasOne(d => d.ParentSubsidiary)
+                    .WithMany(p => p.InverseParentSubsidiary)
+                    .HasForeignKey(d => d.ParentSubsidiaryId)
+                    .HasConstraintName("FK_Subsidiary_Subsidiary");
+            });
+			
             OnModelCreatingPartial(modelBuilder);
         }
 

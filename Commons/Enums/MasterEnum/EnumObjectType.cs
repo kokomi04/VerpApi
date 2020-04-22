@@ -92,6 +92,8 @@ namespace VErp.Commons.Enums.MasterEnum
         InventoryOutput = 31,
         Category = 32,
         AccountingAccount = 33,
-        InputType = 34
+        InputType = 34,
+
+        Subsidiary = 41
     }
 }
