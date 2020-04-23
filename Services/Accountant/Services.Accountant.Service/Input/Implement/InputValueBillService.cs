@@ -123,11 +123,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.DataType)
                 .Where(f => f.InputTypeId == inputTypeId).AsEnumerable();
 
-            // Check field required
+            var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
+            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsRef());
 
+
+            // Check field required
+            var r = CheckRequired(data, requiredFields);
+            if (!r.IsSuccess()) return r;
 
             // Check unique
-
+            r = CheckUnique(data, uniqueFields);
+            if (!r.IsSuccess()) return r;
 
             // Check refer
 
@@ -206,6 +213,70 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     return GeneralCode.InternalError;
                 }
             }
+        }
+
+        private Enum CheckRequired(InputValueBillInputModel data, IEnumerable<InputAreaField> requiredFields)
+        {
+            if (requiredFields.Count() > 0)
+            {
+                foreach (var field in requiredFields)
+                {
+                    string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
+
+                    var valueRows = data.InputValueRows.Where(r => r.InputAreaId == field.InputAreaId).ToList();
+                    if (valueRows.Count == 0)
+                    {
+                        return InputErrorCode.RequiredFieldIsEmpty;
+                    }
+
+                    foreach (var valueRow in valueRows)
+                    {
+                        if (valueRow.InputValueRowVersions.Count == 0 || valueRow.InputValueRowVersions.Any(rv => string.IsNullOrEmpty((string)rv.GetType().GetProperty(fieldName).GetValue(rv))))
+                        {
+                            return InputErrorCode.RequiredFieldIsEmpty;
+                        }
+                    }
+                }
+            }
+            return GeneralCode.Success;
+        }
+
+        private Enum CheckUnique(InputValueBillInputModel data, IEnumerable<InputAreaField> uniqueFields, int? categoryBillId = null)
+        {
+            // Check unique
+            if (uniqueFields.Count() > 0)
+            {
+                foreach (var field in uniqueFields)
+                {
+                    string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
+                    var valueRows = data.InputValueRows.Where(rv => rv.InputAreaId == field.InputAreaId).ToList();
+                    if (valueRows.Count > 0)
+                    {
+                        foreach (var valueRow in valueRows)
+                        {
+                            if (valueRow.InputValueRowVersions.Count > 0)
+                            {
+                                foreach (var valueRowVersion in valueRow.InputValueRowVersions)
+                                {
+                                    string value = (string)valueRowVersion.GetType().GetProperty(fieldName).GetValue(valueRowVersion);
+
+                                    bool isExisted = _accountingContext.InputValueRow
+                                        .Where(r => r.InputAreaId == field.InputAreaId)
+                                        .Include(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
+                                        .Any(r => r.InputValueRowVersions.Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value));
+
+                                    if (isExisted)
+                                    {
+                                        return InputErrorCode.UniqueValueAlreadyExisted;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+            return GeneralCode.Success;
         }
     }
 }

@@ -145,7 +145,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     inputArea.InputAreaCode = data.InputAreaCode;
                     inputArea.Title = data.Title;
                     inputArea.IsMultiRow = data.IsMultiRow;
-
+                    inputArea.Columns = data.Columns;
                     inputArea.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
