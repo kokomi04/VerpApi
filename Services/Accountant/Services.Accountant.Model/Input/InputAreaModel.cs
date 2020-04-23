@@ -17,6 +17,8 @@ namespace VErp.Services.Accountant.Model.Input
         [MaxLength(45, ErrorMessage = "Vùng dữ liệu quá dài")]
         public string InputAreaCode { get; set; }
         public bool IsMultiRow { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập số lượng cột hiển thị")]
+        public int Columns { get; set; }
     }
 
     public class InputAreaInputModel : InputAreaModel
