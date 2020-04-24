@@ -234,7 +234,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         value = valueItem.Value;
-                        valueInNumber = Utils.ConvertValueToNumber(value, (EnumDataType)field.DataTypeId);
+                        valueInNumber = value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                     }
                     // Thêm value
                     categoryRowValue.Value = value;
@@ -355,7 +355,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             {
                                 // Thêm value
                                 categoryRowValue.Value = valueItem.Value;
-                                categoryRowValue.ValueInNumber = Utils.ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
+                                categoryRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                             }
                             _accountingContext.CategoryRowValue.Add(categoryRowValue);
                             await _accountingContext.SaveChangesAsync();
@@ -379,7 +379,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             currentRowValue.ReferenceCategoryRowValueId = null;
                             string value = string.Empty;
                             currentRowValue.Value = valueItem.Value;
-                            currentRowValue.ValueInNumber = Utils.ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
+                            currentRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                             await _accountingContext.SaveChangesAsync();
 
                         }
@@ -599,7 +599,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 return (CategoryErrorCode.CategoryValueInValid, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.CategoryValueInValid.GetEnumDescription()));
                             }
                         }
-
+                        else if (field.DataTypeId == (int)EnumDataType.Date)
+                        {
+                            if (DateTime.TryParse(row[fieldIndx], out DateTime value))
+                            {
+                                row[fieldIndx] = value.GetUnix().ToString();
+                            }
+                            else
+                            {
+                                return (CategoryErrorCode.CategoryValueInValid, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.CategoryValueInValid.GetEnumDescription()));
+                            }
+                        }
                         rowInput.Values.Add(new CategoryValueModel
                         {
                             CategoryFieldId = field.CategoryFieldId,
@@ -725,14 +735,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 dataInRow.Add((field.Title, titleRgb));
             }
             dataInRows.Add(dataInRow.ToArray());
-            foreach(var row in categoryRows)
+            foreach (var row in categoryRows)
             {
                 dataInRow.Clear();
                 foreach (var field in categoryFields)
                 {
                     bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
                     var categoryValueRow = row.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
-                    string value = isRef ? categoryValueRow?.SourceCategoryRowValue?.Value??string.Empty : categoryValueRow?.Value??string.Empty;
+                    string value = isRef ? categoryValueRow?.SourceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
+                    value = value.ConvertValueToData((EnumDataType) field.DataTypeId);
                     dataInRow.Add((value, null));
                 }
                 dataInRows.Add(dataInRow.ToArray());
