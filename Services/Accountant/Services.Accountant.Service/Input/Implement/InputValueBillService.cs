@@ -167,7 +167,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 string value = (string)typeof(InputValueRowVersion).GetProperty(fieldName).GetValue(inputValueRowVersion);
                                 if (field != null && !string.IsNullOrEmpty(value))
                                 {
-                                    valueInNumber = Utils.ConvertValueToNumber(value, (EnumDataType)field.DataTypeId);
+                                    valueInNumber = value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                                 }
                                 typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
                             }

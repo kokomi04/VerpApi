@@ -310,7 +310,7 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static long ConvertValueToNumber(string value, EnumDataType dataType)
+        public static long ConvertValueToNumber(this string value, EnumDataType dataType)
         {
             long valueInNumber = 0;
 
@@ -333,6 +333,32 @@ namespace VErp.Commons.Library
             }
 
             return valueInNumber;
+        }
+
+        public static string ConvertValueToData(this string value, EnumDataType dataType)
+        {
+            string data = string.Empty;
+
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    data = value.ToUpper();
+
+                    break;
+                case EnumDataType.Date:
+                    long  valueInNumber = long.Parse(value);
+                    data = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
+                    break;
+
+                case EnumDataType.Number:
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    break;
+            }
+
+            return data;
         }
     }
 }
