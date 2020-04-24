@@ -14,7 +14,9 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
+using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
@@ -50,6 +52,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputTypeNotFound;
             }
             InputTypeFullModel inputTypeFullModel = _mapper.Map<InputTypeFullModel>(inputType);
+
+            foreach (var area in inputTypeFullModel.InputAreas)
+            {
+                foreach(var field in area.InputAreaFields)
+                {
+                    if (field.SourceCategoryField != null)
+                    {
+                        CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
+                        field.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                    }
+                }    
+            }
+
             return inputTypeFullModel;
         }
 
