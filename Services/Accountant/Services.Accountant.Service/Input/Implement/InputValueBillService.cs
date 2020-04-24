@@ -45,51 +45,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<PageData<InputValueBillOutputModel>> GetInputValueBills(int inputTypeId, string keyword, int page, int size)
         {
-            var query = _accountingContext.InputValueBill
-                .Include(b => b.InputValueRows)
-                .ThenInclude(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
-                .Where(b => b.InputTypeId == inputTypeId);
+            var lst = new List<InputValueBillOutputModel>();
 
-            // search
-            if (!string.IsNullOrEmpty(keyword))
-            {
+            // TODO
 
-                query = query.Where(b => b.InputValueRows.Any(r => r.InputValueRowVersions.Any(rv => rv.Field0.Contains(keyword)
-                || rv.Field1.Contains(keyword)
-                || rv.Field2.Contains(keyword)
-                || rv.Field3.Contains(keyword)
-                || rv.Field4.Contains(keyword)
-                || rv.Field5.Contains(keyword)
-                || rv.Field6.Contains(keyword)
-                || rv.Field7.Contains(keyword)
-                || rv.Field8.Contains(keyword)
-                || rv.Field9.Contains(keyword)
-                || rv.Field10.Contains(keyword)
-                || rv.Field11.Contains(keyword)
-                || rv.Field11.Contains(keyword)
-                || rv.Field12.Contains(keyword)
-                || rv.Field13.Contains(keyword)
-                || rv.Field14.Contains(keyword)
-                || rv.Field15.Contains(keyword)
-                || rv.Field16.Contains(keyword)
-                || rv.Field17.Contains(keyword)
-                || rv.Field18.Contains(keyword)
-                || rv.Field19.Contains(keyword)
-                || rv.Field20.Contains(keyword)
-                )));
-
-            }
-
-            var total = await query.CountAsync();
-            if (size > 0)
-            {
-                query = query.Skip((page - 1) * size).Take(size);
-            }
-
-            var lst = query.Select(b => _mapper.Map<InputValueBillOutputModel>(b)).ToList();
-
-
-            return (lst, total);
+            return (lst, 0);
         }
 
         public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
@@ -97,7 +57,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Check exist
             var inputValueBill = await _accountingContext.InputValueBill
                 .Include(b => b.InputValueRows)
-                .ThenInclude(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
+                .ThenInclude(r => r.InputValueRowVersions)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId && i.InputValueBillId == inputValueBillId);
             if (inputValueBill == null)
             {
@@ -137,7 +97,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (!r.IsSuccess()) return r;
 
             // Check refer
-
+            //r = CheckRefer(ref data, selectFields);
+            //if (!r.IsSuccess()) return r;
 
             // Check value
 
@@ -172,6 +133,23 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             inputValueRowVersion.UpdatedByUserId = updatedUserId;
                             inputValueRowVersion.CreatedByUserId = updatedUserId;
                             inputValueRowVersion.InputValueRowId = inputValueRow.InputValueRowId;
+
+                            // Set value AutoIncrement
+                            var autoIncrementFields = inputAreaFields.Where(f => f.IsAutoIncrement && f.InputAreaId == rowModel.InputAreaId);
+                            foreach (var autoIncrementField in autoIncrementFields)
+                            {
+                                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, autoIncrementField.FieldIndex);
+                                long maxValue = _accountingContext.InputValueRowVersionNumber
+                                    .Include(rvn => rvn.InputValueRowVersion)
+                                    .ThenInclude(rv => rv.InputValueRow)
+                                    .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == autoIncrementField.InputAreaId)
+                                    .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
+                                    .Max(rvn => (long)rvn.GetType().GetProperty(fieldName).GetValue(rvn));
+                                maxValue += 1;
+                                string value = maxValue.ToString();
+                                inputValueRowVersion.GetType().GetProperty(fieldName).SetValue(inputValueRowVersion, value);
+                            }
+
                             await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
                             await _accountingContext.SaveChangesAsync();
                             lastedRowVersionId = inputValueRowVersion.InputValueRowVersionId;
@@ -185,6 +163,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             {
                                 string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndx);
                                 long valueInNumber = 0;
+                                var field = inputAreaFields.Where(f => f.InputAreaId == rowModel.InputAreaId && f.FieldIndex == fieldIndx).FirstOrDefault();
+                                string value = (string)typeof(InputValueRowVersion).GetProperty(fieldName).GetValue(inputValueRowVersion);
+                                if (field != null && !string.IsNullOrEmpty(value))
+                                {
+                                    valueInNumber = Utils.ConvertValueToNumber(value, (EnumDataType)field.DataTypeId);
+                                }
                                 typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
                             }
                             await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
@@ -260,10 +244,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 {
                                     string value = (string)valueRowVersion.GetType().GetProperty(fieldName).GetValue(valueRowVersion);
 
-                                    bool isExisted = _accountingContext.InputValueRow
-                                        .Where(r => r.InputAreaId == field.InputAreaId)
-                                        .Include(r => r.InputValueRowVersions.Where(rv => rv.InputValueRowVersionId == r.LastestInputValueRowVersionId))
-                                        .Any(r => r.InputValueRowVersions.Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value));
+                                    bool isExisted = _accountingContext.InputValueRowVersion
+                                        .Include(rv => rv.InputValueRow)
+                                        .Where(rv => rv.InputValueRow.InputAreaId == field.InputAreaId)
+                                        .Where(rv => rv.InputValueRowVersionId == rv.InputValueRow.LastestInputValueRowVersionId)
+                                        .Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value);
 
                                     if (isExisted)
                                     {

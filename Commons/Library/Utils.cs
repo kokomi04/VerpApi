@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library
@@ -307,6 +308,31 @@ namespace VErp.Commons.Library
             if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
             if (value.SubDecimal(relValue) == 0) return relValue;
             return value;
+        }
+
+        public static long ConvertValueToNumber(string value, EnumDataType dataType)
+        {
+            long valueInNumber = 0;
+
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    valueInNumber = bool.Parse(value) ? 1 : 0;
+
+                    break;
+                case EnumDataType.Date:
+                case EnumDataType.Number:
+                    valueInNumber = long.Parse(value);
+                    break;
+
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    break;
+            }
+
+            return valueInNumber;
         }
     }
 }

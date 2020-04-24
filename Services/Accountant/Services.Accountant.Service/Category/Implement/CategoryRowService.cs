@@ -234,7 +234,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         value = valueItem.Value;
-                        valueInNumber = ConvertValueToNumber(value, (EnumDataType)field.DataTypeId);
+                        valueInNumber = Utils.ConvertValueToNumber(value, (EnumDataType)field.DataTypeId);
                     }
                     // Thêm value
                     categoryRowValue.Value = value;
@@ -355,7 +355,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             {
                                 // Thêm value
                                 categoryRowValue.Value = valueItem.Value;
-                                categoryRowValue.ValueInNumber = ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
+                                categoryRowValue.ValueInNumber = Utils.ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
                             }
                             _accountingContext.CategoryRowValue.Add(categoryRowValue);
                             await _accountingContext.SaveChangesAsync();
@@ -379,7 +379,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             currentRowValue.ReferenceCategoryRowValueId = null;
                             string value = string.Empty;
                             currentRowValue.Value = valueItem.Value;
-                            currentRowValue.ValueInNumber = ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
+                            currentRowValue.ValueInNumber = Utils.ConvertValueToNumber(valueItem.Value, (EnumDataType)field.DataTypeId);
                             await _accountingContext.SaveChangesAsync();
 
                         }

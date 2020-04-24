@@ -42,31 +42,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return ids.ToArray();
         }
 
-        protected long ConvertValueToNumber(string value, EnumDataType dataType)
-        {
-            long valueInNumber = 0;
-
-            switch (dataType)
-            {
-                case EnumDataType.Boolean:
-                    valueInNumber = bool.Parse(value) ? 1 : 0;
-
-                    break;
-                case EnumDataType.Date:
-                case EnumDataType.Number:
-                    valueInNumber = long.Parse(value);
-                    break;
-
-                case EnumDataType.Text:
-                case EnumDataType.PhoneNumber:
-                case EnumDataType.Email:
-                default:
-                    break;
-            }
-
-            return valueInNumber;
-        }
-
         protected void FillterProcess(ref IQueryable<CategoryRow> query, FilterModel[] filters)
         {
             Expression<Func<CategoryRow, bool>> predicate = PredicateBuilder.False<CategoryRow>();
