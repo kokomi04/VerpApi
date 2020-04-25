@@ -45,6 +45,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var inputType = await _accountingContext.InputType
                 .Include(t => t.InputAreas)
                 .ThenInclude(a => a.InputAreaFields)
+                .ThenInclude(f => f.SourceCategoryField)
+                .Include(t => t.InputAreas)
+                .ThenInclude(a => a.InputAreaFields)
+                .ThenInclude(f => f.SourceCategoryTitleField)
+                .Include(t => t.InputAreas)
+                .ThenInclude(a => a.InputAreaFields)
                 .ThenInclude(f => f.InputAreaFieldStyle)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)

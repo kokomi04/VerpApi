@@ -17,10 +17,9 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public InputValueRowInputModel()
         {
-            InputValueRowVersions = new HashSet<InputValueRowVersionInputModel>();
         }
 
-        public ICollection<InputValueRowVersionInputModel> InputValueRowVersions { get; set; }
+        public InputValueRowVersionInputModel InputValueRowVersion { get; set; }
     }
 
     public class InputValueRowOutputModel : InputValueRowModel

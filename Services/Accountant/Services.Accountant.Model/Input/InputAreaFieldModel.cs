@@ -23,7 +23,7 @@ namespace VErp.Services.Accountant.Model.Input
         public bool IsRequire { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
-        public string RegularExpresion { get; set; }
+        public string RegularExpression { get; set; }
         public string DefaultValue { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }

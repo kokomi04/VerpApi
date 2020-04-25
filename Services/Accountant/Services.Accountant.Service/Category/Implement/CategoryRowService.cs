@@ -464,13 +464,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
-                    IQueryable<CategoryValueModel> query;
                     int referValueId = 0;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
-                        IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
+                        IQueryable<CategoryRow> query = _accountingContext.CategoryRow
                             .Where(r => r.CategoryId == referField.CategoryId)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.SourceCategoryRowValue)
@@ -480,10 +479,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
                             FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
-                            FillterProcess(ref tempQuery, filters);
+                            FillterProcess(ref query, filters);
                         }
 
-                        referValueId = tempQuery
+                        referValueId = query
                             .Select(r => r.CategoryRowValues
                             .FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)).CategoryRowValueId)
                             .FirstOrDefault();
