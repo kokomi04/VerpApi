@@ -160,11 +160,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var arrIndex = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).Select(f => f.FieldIndex).ToList();
             for (int indx = 0; indx <= 20; indx++)
             {
-                if (arrIndex.Contains(indx))
-                {
-                    indx++;
-                }
-                else
+                if (!arrIndex.Contains(indx))
                 {
                     index = indx;
                     break;
