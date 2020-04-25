@@ -216,7 +216,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     inputAreaField.IsRequire = data.IsRequire;
                     inputAreaField.IsUnique = data.IsUnique;
                     inputAreaField.IsHidden = data.IsHidden;
-                    inputAreaField.RegularExpresion = data.RegularExpresion;
+                    inputAreaField.RegularExpression = data.RegularExpression;
                     inputAreaField.DefaultValue = data.DefaultValue;
                     inputAreaField.IsDeleted = false;
                     inputAreaField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;

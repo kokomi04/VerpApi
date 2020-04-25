@@ -20,6 +20,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
@@ -97,11 +98,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (!r.IsSuccess()) return r;
 
             // Check refer
-            //r = CheckRefer(ref data, selectFields);
-            //if (!r.IsSuccess()) return r;
+            r = CheckRefer(data, selectFields);
+            if (!r.IsSuccess()) return r;
 
             // Check value
-
+            r = CheckValue(data, inputAreaFields);
+            if (!r.IsSuccess()) return r;
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
             {
@@ -125,64 +127,53 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         await _accountingContext.InputValueRow.AddAsync(inputValueRow);
                         await _accountingContext.SaveChangesAsync();
 
-                        long lastedRowVersionId = 0;
                         // Insert row version
-                        foreach (var rowVersion in rowModel.InputValueRowVersions)
+                        var inputValueRowVersion = _mapper.Map<InputValueRowVersion>(rowModel.InputValueRowVersion);
+                        inputValueRowVersion.UpdatedByUserId = updatedUserId;
+                        inputValueRowVersion.CreatedByUserId = updatedUserId;
+                        inputValueRowVersion.InputValueRowId = inputValueRow.InputValueRowId;
+
+                        // Set value AutoIncrement
+                        var autoIncrementFields = inputAreaFields.Where(f => f.IsAutoIncrement && f.InputAreaId == rowModel.InputAreaId);
+                        foreach (var autoIncrementField in autoIncrementFields)
                         {
-                            var inputValueRowVersion = _mapper.Map<InputValueRowVersion>(rowVersion);
-                            inputValueRowVersion.UpdatedByUserId = updatedUserId;
-                            inputValueRowVersion.CreatedByUserId = updatedUserId;
-                            inputValueRowVersion.InputValueRowId = inputValueRow.InputValueRowId;
-
-                            // Set value AutoIncrement
-                            var autoIncrementFields = inputAreaFields.Where(f => f.IsAutoIncrement && f.InputAreaId == rowModel.InputAreaId);
-                            foreach (var autoIncrementField in autoIncrementFields)
-                            {
-                                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, autoIncrementField.FieldIndex);
-                                long maxValue = _accountingContext.InputValueRowVersionNumber
-                                    .Include(rvn => rvn.InputValueRowVersion)
-                                    .ThenInclude(rv => rv.InputValueRow)
-                                    .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == autoIncrementField.InputAreaId)
-                                    .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
-                                    .Max(rvn => (long)rvn.GetType().GetProperty(fieldName).GetValue(rvn));
-                                maxValue += 1;
-                                string value = maxValue.ToString();
-                                inputValueRowVersion.GetType().GetProperty(fieldName).SetValue(inputValueRowVersion, value);
-                            }
-
-                            await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
-                            await _accountingContext.SaveChangesAsync();
-                            lastedRowVersionId = inputValueRowVersion.InputValueRowVersionId;
-
-                            // Insert row version number
-                            var inputValueRowVersionNumber = new InputValueRowVersionNumber
-                            {
-                                InputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId
-                            };
-                            for (int fieldIndx = 0; fieldIndx < Numbers.INPUT_TYPE_FIELD_NUMBER; fieldIndx++)
-                            {
-                                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndx);
-                                long valueInNumber = 0;
-                                var field = inputAreaFields.Where(f => f.InputAreaId == rowModel.InputAreaId && f.FieldIndex == fieldIndx).FirstOrDefault();
-                                string value = (string)typeof(InputValueRowVersion).GetProperty(fieldName).GetValue(inputValueRowVersion);
-                                if (field != null && !string.IsNullOrEmpty(value))
-                                {
-                                    valueInNumber = value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
-                                }
-                                typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
-                            }
-                            await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
-                            await _accountingContext.SaveChangesAsync();
+                            string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, autoIncrementField.FieldIndex);
+                            long maxValue = _accountingContext.InputValueRowVersionNumber
+                                .Include(rvn => rvn.InputValueRowVersion)
+                                .ThenInclude(rv => rv.InputValueRow)
+                                .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == autoIncrementField.InputAreaId)
+                                .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
+                                .Max(rvn => (long)rvn.GetType().GetProperty(fieldName).GetValue(rvn));
+                            maxValue += 1;
+                            string value = maxValue.ToString();
+                            inputValueRowVersion.GetType().GetProperty(fieldName).SetValue(inputValueRowVersion, value);
                         }
 
-                        if (lastedRowVersionId == 0)
+                        await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
+                        await _accountingContext.SaveChangesAsync();
+
+                        // Insert row version number
+                        var inputValueRowVersionNumber = new InputValueRowVersionNumber
                         {
-                            trans.Rollback();
-                            return InputErrorCode.InputValueRowVersionEmpty;
+                            InputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId
+                        };
+                        for (int fieldIndx = 0; fieldIndx < Numbers.INPUT_TYPE_FIELD_NUMBER; fieldIndx++)
+                        {
+                            string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndx);
+                            long valueInNumber = 0;
+                            var field = inputAreaFields.Where(f => f.InputAreaId == rowModel.InputAreaId && f.FieldIndex == fieldIndx).FirstOrDefault();
+                            string value = (string)typeof(InputValueRowVersion).GetProperty(fieldName).GetValue(inputValueRowVersion);
+                            if (field != null && !string.IsNullOrEmpty(value))
+                            {
+                                valueInNumber = value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
+                            }
+                            typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
                         }
+                        await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
+                        await _accountingContext.SaveChangesAsync();
 
                         // Update lasted version
-                        inputValueRow.LastestInputValueRowVersionId = lastedRowVersionId;
+                        inputValueRow.LastestInputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId;
                         await _accountingContext.SaveChangesAsync();
                     }
 
@@ -215,7 +206,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     foreach (var valueRow in valueRows)
                     {
-                        if (valueRow.InputValueRowVersions.Count == 0 || valueRow.InputValueRowVersions.Any(rv => string.IsNullOrEmpty((string)rv.GetType().GetProperty(fieldName).GetValue(rv))))
+                        if (string.IsNullOrEmpty((string)valueRow.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(valueRow.InputValueRowVersion)))
                         {
                             return InputErrorCode.RequiredFieldIsEmpty;
                         }
@@ -225,7 +216,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return GeneralCode.Success;
         }
 
-        private Enum CheckUnique(InputValueBillInputModel data, IEnumerable<InputAreaField> uniqueFields, int? categoryBillId = null)
+        private Enum CheckUnique(InputValueBillInputModel data, IEnumerable<InputAreaField> uniqueFields, int? inputValueBillId = null)
         {
             // Check unique
             if (uniqueFields.Count() > 0)
@@ -233,34 +224,115 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var field in uniqueFields)
                 {
                     string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
-                    var valueRows = data.InputValueRows.Where(rv => rv.InputAreaId == field.InputAreaId).ToList();
-                    if (valueRows.Count > 0)
+                    var values = data.InputValueRows
+                        .Where(rv => rv.InputAreaId == field.InputAreaId)
+                        .Select(r => (string)r.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(r.InputValueRowVersion))
+                        .ToList();
+
+                    // Check unique trong danh sách values thêm mới/sửa
+                    if (values.Count != values.Distinct().Count())
                     {
-                        foreach (var valueRow in valueRows)
-                        {
-                            if (valueRow.InputValueRowVersions.Count > 0)
-                            {
-                                foreach (var valueRowVersion in valueRow.InputValueRowVersions)
-                                {
-                                    string value = (string)valueRowVersion.GetType().GetProperty(fieldName).GetValue(valueRowVersion);
-
-                                    bool isExisted = _accountingContext.InputValueRowVersion
-                                        .Include(rv => rv.InputValueRow)
-                                        .Where(rv => rv.InputValueRow.InputAreaId == field.InputAreaId)
-                                        .Where(rv => rv.InputValueRowVersionId == rv.InputValueRow.LastestInputValueRowVersionId)
-                                        .Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value);
-
-                                    if (isExisted)
-                                    {
-                                        return InputErrorCode.UniqueValueAlreadyExisted;
-                                    }
-                                }
-                            }
-                        }
+                        return InputErrorCode.UniqueValueAlreadyExisted;
                     }
 
+                    // Checkin unique trong db
+                    foreach (var value in values)
+                    {
+                        bool isExisted = _accountingContext.InputValueRowVersion
+                            .Include(rv => rv.InputValueRow)
+                            .Where(rv => inputValueBillId.HasValue ? rv.InputValueRow.InputValueBillId != inputValueBillId : true)
+                            .Where(rv => rv.InputValueRow.InputAreaId == field.InputAreaId)
+                            .Where(rv => rv.InputValueRowVersionId == rv.InputValueRow.LastestInputValueRowVersionId)
+                            .Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value);
+
+                        if (isExisted)
+                        {
+                            return InputErrorCode.UniqueValueAlreadyExisted;
+                        }
+                    }
                 }
             }
+            return GeneralCode.Success;
+        }
+
+        private Enum CheckRefer(InputValueBillInputModel data, IEnumerable<InputAreaField> selectFields)
+        {
+            // Check refer
+            foreach (var field in selectFields)
+            {
+                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
+                var values = data.InputValueRows
+                    .Where(rv => rv.InputAreaId == field.InputAreaId)
+                    .Select(r => (string)r.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(r.InputValueRowVersion))
+                    .ToList();
+                foreach (var value in values)
+                {
+                    int referValueId = 0;
+                    if (field.ReferenceCategoryFieldId.HasValue)
+                    {
+                        CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+                        bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
+                        IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
+                            .Where(r => r.CategoryId == referField.CategoryId)
+                            .Include(r => r.CategoryRowValues)
+                            .ThenInclude(rv => rv.SourceCategoryRowValue)
+                            .Include(r => r.CategoryRowValues)
+                            .ThenInclude(rv => rv.CategoryField);
+
+                        //if (!string.IsNullOrEmpty(field.Filters))
+                        //{
+                        //    FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
+                        //    FillterProcess(ref tempQuery, filters);
+                        //}
+
+                        referValueId = tempQuery
+                            .Select(r => r.CategoryRowValues
+                            .FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)).CategoryRowValueId)
+                            .FirstOrDefault();
+                    }
+                    if (referValueId <= 0)
+                    {
+                        return InputErrorCode.ReferValueNotFound;
+                    }
+                }
+            }
+            return GeneralCode.Success;
+        }
+
+        private Enum CheckValue(InputValueBillInputModel data, IEnumerable<InputAreaField> categoryFields)
+        {
+            foreach (var field in categoryFields)
+            {
+                string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
+                var values = data.InputValueRows
+                    .Where(rv => rv.InputAreaId == field.InputAreaId)
+                    .Select(r => (string)r.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(r.InputValueRowVersion))
+                    .ToList();
+                foreach(string value in values)
+                {
+                    if (((EnumFormType)field.FormTypeId).IsRef() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+
+                    var r = CheckValue(value, field);
+                    if (!r.IsSuccess())
+                    {
+                        return r;
+                    }
+                }
+            }
+            return GeneralCode.Success;
+        }
+        protected private Enum CheckValue(string value, InputAreaField field)
+        {
+            if ((field.DataSize > 0 && value.Length > field.DataSize)
+                || !string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(value, field.DataType.RegularExpression)
+                || !string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression))
+            {
+                return InputErrorCode.InputValueInValid;
+            }
+
             return GeneralCode.Success;
         }
     }

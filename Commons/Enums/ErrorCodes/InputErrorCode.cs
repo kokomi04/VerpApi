@@ -55,8 +55,6 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không phải là chứng từ")]
         InputIsNotModule = 27,
         [Description("File không hợp lệ")]
-        FormatFileInvalid = 28,
-        [Description("Thông tin chứng từ trống")]
-        InputValueRowVersionEmpty = 29
+        FormatFileInvalid = 28
     }
 }
