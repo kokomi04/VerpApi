@@ -63,6 +63,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 .WithMany(c => c.CategoryRows)
                 .HasForeignKey(r => r.CategoryId)
                 .HasConstraintName("FK_CategoryRow_Category");
+                entity.HasOne(r => r.ParentCategoryRow)
+                .WithMany(c => c.ChildCategoryRows)
+                .HasForeignKey(r => r.ParentCategoryRowId)
+                .HasConstraintName("FK_CategoryRow_Relation");
                 entity.HasIndex(r => r.CategoryId).HasName("IDX_CategoryRow_Category_FK");
             });
 

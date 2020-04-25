@@ -86,7 +86,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsRef());
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
 
 
             // Check field required

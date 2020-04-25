@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class Category : BaseEntity
+    public partial class Category
     {
         public Category()
         {
@@ -19,6 +19,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
         public bool IsTreeView { get; set; }
+        public bool IsDeleted { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual Category Parent { get; set; }
         public virtual ICollection<Category> SubCategories { get; set; }

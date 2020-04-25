@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class InputAreaField : BaseEntity
+    public partial class InputAreaField 
     {
         public InputAreaField()
         {
@@ -28,6 +28,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string DefaultValue { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
+        public bool IsDeleted { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual DataType DataType { get; set; }

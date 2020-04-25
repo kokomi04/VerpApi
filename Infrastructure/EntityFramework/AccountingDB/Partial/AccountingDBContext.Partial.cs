@@ -45,26 +45,34 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
             var entries = ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is BaseEntity && (
-                        e.State == EntityState.Added
-                        || e.State == EntityState.Modified));
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entityEntry in entries)
             {
+                var createdDatetimeUtcProp = entityEntry.Entity.GetType().GetProperty("CreatedDatetimeUtc");
+                var updatedDatetimeUtcProp = entityEntry.Entity.GetType().GetProperty("UpdatedDatetimeUtc");
+                var deletedDatetimeUtcProp = entityEntry.Entity.GetType().GetProperty("DeletedDatetimeUtc");
+                var isDeletedProp = entityEntry.Entity.GetType().GetProperty("IsDeleted");
+                if (createdDatetimeUtcProp == null || updatedDatetimeUtcProp == null || deletedDatetimeUtcProp == null || isDeletedProp == null)
+                {
+                    continue;
+                }
+
                 if (entityEntry.State == EntityState.Added)
                 {
-                    ((BaseEntity)entityEntry.Entity).CreatedDatetimeUtc = DateTime.UtcNow;
-                    ((BaseEntity)entityEntry.Entity).UpdatedDatetimeUtc = DateTime.UtcNow;
+                    createdDatetimeUtcProp.SetValue(entityEntry.Entity, DateTime.UtcNow);
+                    updatedDatetimeUtcProp.SetValue(entityEntry.Entity, DateTime.UtcNow);
                 }
                 else
                 {
-                    if (((BaseEntity)entityEntry.Entity).IsDeleted)
+                    var delValue = isDeletedProp.GetValue(entityEntry.Entity);
+                    if (delValue is bool && (bool)delValue == true)
                     {
-                        ((BaseEntity)entityEntry.Entity).DeletedDatetimeUtc = DateTime.UtcNow;
+                        deletedDatetimeUtcProp.SetValue(entityEntry.Entity, DateTime.UtcNow);
                     }
                     else
                     {
-                        ((BaseEntity)entityEntry.Entity).UpdatedDatetimeUtc = DateTime.UtcNow;
+                        updatedDatetimeUtcProp.SetValue(entityEntry.Entity, DateTime.UtcNow);
                     }
                 }
             }
