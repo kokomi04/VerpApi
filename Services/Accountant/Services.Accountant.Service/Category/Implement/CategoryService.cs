@@ -162,7 +162,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         selectSubCategory.ParentId = category.CategoryId;
                         selectSubCategory.UpdatedByUserId = updatedUserId;
                         selectSubCategory.CreatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var newSubCategory in newSubCategories)
                     {
@@ -276,13 +275,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
                         subCategory.ParentId = null;
                         subCategory.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var item in selectSubCategories)
                     {
                         item.ParentId = category.CategoryId;
                         item.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
                     }
                     foreach (var newSubCategory in newSubCategories)
                     {
@@ -327,7 +324,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == id);
                         category.IsDeleted = true;
                         category.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
                         var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
                         foreach (var field in deleteFields)
                         {
@@ -339,16 +335,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             }
                             field.IsDeleted = true;
                             field.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
                         }
                     }
+
                     // Xóa row
                     var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
                     foreach (var row in categoryRows)
                     {
                         row.IsDeleted = true;
                         row.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
 
                         // Xóa mapping row, value
                         var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
@@ -356,9 +351,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             rowValue.IsDeleted = true;
                             rowValue.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
                         }
                     }
+
                     await _accountingContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
@@ -381,6 +376,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
+
             List<DataTypeModel> lst = new List<DataTypeModel>();
             foreach (var item in query)
             {

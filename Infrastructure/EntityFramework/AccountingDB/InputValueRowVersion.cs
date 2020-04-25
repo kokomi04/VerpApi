@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class InputValueRowVersion : BaseEntity
+    public partial class InputValueRowVersion
     {
         public InputValueRowVersion()
         {
@@ -32,6 +32,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string Field18 { get; set; }
         public string Field19 { get; set; }
         public string Field20 { get; set; }
+        public bool IsDeleted { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual InputValueRow InputValueRow { get; set; }
 

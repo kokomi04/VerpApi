@@ -11,11 +11,15 @@ namespace VErp.Services.Accountant.Model.Category
         {
             Values = new HashSet<CategoryValueModel>();
         }
+        public int? ParentCategoryRowId { get; set; }
+
         public ICollection<CategoryValueModel> Values { get; set; }
     }
 
     public class CategoryRowOutputModel : CategoryRowInputModel
     {
         public int CategoryRowId { get; set; }
+
+        public CategoryRowOutputModel ParentCategoryRow { get; set; }
     }
 }

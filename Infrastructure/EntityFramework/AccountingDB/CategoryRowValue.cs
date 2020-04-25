@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class CategoryRowValue : BaseEntity
+    public partial class CategoryRowValue
     {
         public CategoryRowValue()
         {
@@ -15,6 +15,13 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string Value { get; set; }
         public long ValueInNumber { get; set; }
         public int? ReferenceCategoryRowValueId { get; set; }
+        public bool IsDeleted { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
+
         public virtual CategoryRow CategoryRow { get; set; }
         public virtual CategoryField CategoryField { get; set; }
 

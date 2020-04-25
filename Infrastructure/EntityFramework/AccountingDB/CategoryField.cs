@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class CategoryField : BaseEntity
+    public partial class CategoryField
     {
         public CategoryField()
         {
@@ -35,6 +35,13 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsTreeViewKey { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
+        public bool IsDeleted { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
+
         public virtual DataType DataType { get; set; }
         public virtual FormType FormType { get; set; }
         public virtual Category Category { get; set; }

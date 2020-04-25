@@ -65,6 +65,9 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("File không hợp lệ")]
         FormatFileInvalid = 28,
         [Description("Hai kiểu nhập liệu không thể chuyển qua lại")]
-        FormTypeNotSwitch = 29
+        FormTypeNotSwitch = 29,
+        [Description("Dữ liệu cha không tồn tại")]
+        ParentCategoryRowNotExisted = 30
+
     }
 }
