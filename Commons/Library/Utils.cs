@@ -337,17 +337,15 @@ namespace VErp.Commons.Library
 
         public static string ConvertValueToData(this string value, EnumDataType dataType)
         {
-            string data = string.Empty;
-
             switch (dataType)
             {
                 case EnumDataType.Boolean:
-                    data = value.ToUpper();
+                    value = value.ToUpper();
 
                     break;
                 case EnumDataType.Date:
                     long  valueInNumber = long.Parse(value);
-                    data = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
+                    value = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
                     break;
 
                 case EnumDataType.Number:
@@ -358,7 +356,7 @@ namespace VErp.Commons.Library
                     break;
             }
 
-            return data;
+            return value;
         }
     }
 }
