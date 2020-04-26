@@ -17,6 +17,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
@@ -94,11 +95,13 @@ namespace VErp.Infrastructure.ApiCore
                 }
                 options.OutputFormatters.RemoveType<StringOutputFormatter>();
             })
-           .AddNewtonsoftJson(options => {
+           .AddNewtonsoftJson(options =>
+           {
                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+               options.SerializerSettings.Converters.Add(new StringEnumConverter());
            });
 
 
@@ -114,18 +117,18 @@ namespace VErp.Infrastructure.ApiCore
                 //}
 
             })
-            .AddJsonOptions(options =>
-            {
-                //options.JsonSerializerOptions
-                options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-                options.JsonSerializerOptions.IgnoreNullValues = true;
+            //.AddJsonOptions(options =>
+            //{
+            //    //options.JsonSerializerOptions
+            //    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            //    options.JsonSerializerOptions.IgnoreNullValues = true;
 
 
-                //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-                //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-                //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-            })
+            //    //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            //    //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            //    //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            //    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+            //})
            .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
            .AddControllersAsServices();
 
@@ -231,7 +234,8 @@ namespace VErp.Infrastructure.ApiCore
                         new OpenApiSecurityScheme(){ Reference = new OpenApiReference(){ Type = ReferenceType.SecurityScheme, Id="Bearer" } }, new List<string>()
                     }
                 });
-            });
+            })
+            .AddSwaggerGenNewtonsoftSupport();
         }
 
 
@@ -268,7 +272,7 @@ namespace VErp.Infrastructure.ApiCore
 
 
             app.UseForwardedHeaders();
-            
+
 
             app.UseRouting();
 

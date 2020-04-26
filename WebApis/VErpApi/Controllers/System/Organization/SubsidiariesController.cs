@@ -25,35 +25,35 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<SubsidiaryOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<SubsidiaryOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _subsidiaryService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> Create([FromBody] SubsidiaryModel data)
+        public async Task<int> Create([FromBody] SubsidiaryModel data)
         {
             return await _subsidiaryService.Create(data).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{subsidiaryId}")]
-        public async Task<ServiceResult<SubsidiaryModel>> Info([FromRoute] int subsidiaryId)
+        public async Task<SubsidiaryModel> Info([FromRoute] int subsidiaryId)
         {
             return await _subsidiaryService.GetInfo(subsidiaryId).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{subsidiaryId}")]
-        public async Task<ServiceResult> Update([FromRoute] int subsidiaryId, [FromBody] SubsidiaryModel data)
+        public async Task<bool> Update([FromRoute] int subsidiaryId, [FromBody] SubsidiaryModel data)
         {
             return await _subsidiaryService.Update(subsidiaryId, data).ConfigureAwait(true);
         }
 
         [HttpDelete]
         [Route("{subsidiaryId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int subsidiaryId)
+        public async Task<bool> Delete([FromRoute] int subsidiaryId)
         {
             return await _subsidiaryService.Delete(subsidiaryId).ConfigureAwait(true);
         }

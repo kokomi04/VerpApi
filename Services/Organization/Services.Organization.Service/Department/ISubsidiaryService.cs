@@ -11,12 +11,12 @@ namespace Services.Organization.Service.Department
     {
         Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size);
 
-        Task<ServiceResult<int>> Create(SubsidiaryModel data);
+        Task<int> Create(SubsidiaryModel data);
 
-        Task<ServiceResult> Update(int subsidiaryId, SubsidiaryModel data);
+        Task<bool> Update(int subsidiaryId, SubsidiaryModel data);
 
-        Task<ServiceResult<SubsidiaryModel>> GetInfo(int subsidiaryId);
+        Task<SubsidiaryModel> GetInfo(int subsidiaryId);
 
-        Task<ServiceResult> Delete(int subsidiaryId);
+        Task<bool> Delete(int subsidiaryId);
     }
 }
