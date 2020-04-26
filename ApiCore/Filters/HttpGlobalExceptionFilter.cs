@@ -8,6 +8,7 @@ using System.Net;
 using System.Text;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 
@@ -28,7 +29,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             _logger.LogError(context.Exception, context.Exception.Message);
 
-            if (context.Exception.GetType() == typeof(VerpException))
+            if (context.Exception is BadRequestException badRequest)
+            {
+                var json = new ServiceResult
+                {
+                    Code = badRequest.Code,
+                    Message = badRequest.Message
+                };
+
+                context.Result = new BadRequestObjectResult(json);
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            }
+            else if (context.Exception.GetType() == typeof(VerpException))
             {
                 var json = new ServiceResult
                 {

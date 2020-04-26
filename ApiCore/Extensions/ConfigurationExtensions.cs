@@ -41,7 +41,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         }
         public static void ConfigOrganizationContext(this IServiceCollection services, AppSetting appSetting)
         {
-            services.AddDbContext<OrganizationDBContext>((option) =>
+            services.AddDbContext<OrganizationDBContext, OrganizationDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(appSetting.DatabaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);

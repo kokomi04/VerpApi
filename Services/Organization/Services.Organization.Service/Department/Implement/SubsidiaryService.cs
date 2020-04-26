@@ -27,16 +27,13 @@ namespace Services.Organization.Service.Department.Implement
         private readonly ILogger<SubsidiaryService> _logger;
         private readonly ICurrentContextService _currentContext;
 
-        private readonly IConfigurationProvider cfg = new MapperConfiguration(c =>
-            {
-                c.CreateMap<Subsidiary, SubsidiaryOutput>();
-                c.CreateMap<Subsidiary, SubsidiaryModel>();
-            });
+        private readonly IMapper _mapper;
 
         public SubsidiaryService(OrganizationDBContext organizationContext
             , IActivityLogService activityLogService
             , ILogger<SubsidiaryService> logger
             , ICurrentContextService currentContext
+            , IMapper mapper
             )
         {
 
@@ -44,13 +41,14 @@ namespace Services.Organization.Service.Department.Implement
             _activityLogService = activityLogService;
             _logger = logger;
             _currentContext = currentContext;
+            _mapper = mapper;
         }
 
         public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(cfg);
+            var query = _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -65,7 +63,7 @@ namespace Services.Organization.Service.Department.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> Create(SubsidiaryModel data)
+        public async Task<int> Create(SubsidiaryModel data)
         {
             var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName);
 
@@ -73,39 +71,21 @@ namespace Services.Organization.Service.Department.Implement
             {
                 if (string.Compare(info.SubsidiaryCode, data.SubsidiaryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return SubsidiaryErrorCode.SubsidiaryCodeExisted;
+                    throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryCodeExisted);
                 }
 
-                return SubsidiaryErrorCode.SubsidiaryNameExisted;
+                throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNameExisted);
             }
             if (data.ParentSubsidiaryId.HasValue)
             {
                 var parent = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
                 if (parent == null)
                 {
-                    return SubsidiaryErrorCode.SubsidiaryNotfound;
+                    throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
                 }
             }
 
-            info = new Subsidiary()
-            {
-                ParentSubsidiaryId = data.ParentSubsidiaryId,
-                SubsidiaryCode = data.SubsidiaryCode,
-                SubsidiaryName = data.SubsidiaryName,
-                Address = data.Address,
-                TaxIdNo = data.TaxIdNo,
-                PhoneNumber = data.PhoneNumber,
-                Email = data.Email,
-                Fax = data.Fax,
-                Description = data.Description,
-                IsDeleted = false,
-                UpdatedByUserId = _currentContext.UserId,
-                CreatedByUserId = _currentContext.UserId,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow,
-                DeletedDatetimeUtc = null
-
-            };
+            info = _mapper.Map<Subsidiary>(data);
 
             await _organizationContext.Subsidiary.AddAsync(info);
             await _organizationContext.SaveChangesAsync();
@@ -115,7 +95,7 @@ namespace Services.Organization.Service.Department.Implement
         }
 
 
-        public async Task<ServiceResult> Update(int subsidiaryId, SubsidiaryModel data)
+        public async Task<bool> Update(int subsidiaryId, SubsidiaryModel data)
         {
             var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId != subsidiaryId && (d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName));
 
@@ -123,17 +103,17 @@ namespace Services.Organization.Service.Department.Implement
             {
                 if (string.Compare(info.SubsidiaryCode, data.SubsidiaryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return SubsidiaryErrorCode.SubsidiaryCodeExisted;
+                    throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryCodeExisted);
                 }
 
-                return SubsidiaryErrorCode.SubsidiaryNameExisted;
+                throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNameExisted);
             }
 
             info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
 
             if (info == null)
             {
-                return SubsidiaryErrorCode.SubsidiaryNotfound;
+                throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
             }
 
             if (data.ParentSubsidiaryId.HasValue)
@@ -141,58 +121,61 @@ namespace Services.Organization.Service.Department.Implement
                 var parent = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
                 if (parent == null)
                 {
-                    return SubsidiaryErrorCode.SubsidiaryNotfound;
+                    throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
                 }
             }
 
-            info.ParentSubsidiaryId = data.ParentSubsidiaryId;
-            info.SubsidiaryCode = data.SubsidiaryCode;
-            info.SubsidiaryName = data.SubsidiaryName;
-            info.Address = data.Address;
-            info.TaxIdNo = data.TaxIdNo;
-            info.PhoneNumber = data.PhoneNumber;
-            info.Email = data.Email;
-            info.Fax = data.Fax;
-            info.Description = data.Description;
-            info.UpdatedByUserId = _currentContext.UserId;
-            info.UpdatedDatetimeUtc = DateTime.UtcNow;
+            _mapper.Map(data, info);
+            //info.ParentSubsidiaryId = data.ParentSubsidiaryId;
+            //info.SubsidiaryCode = data.SubsidiaryCode;
+            //info.SubsidiaryName = data.SubsidiaryName;
+            //info.Address = data.Address;
+            //info.TaxIdNo = data.TaxIdNo;
+            //info.PhoneNumber = data.PhoneNumber;
+            //info.Email = data.Email;
+            //info.Fax = data.Fax;
+            //info.Description = data.Description;
+            //info.UpdatedByUserId = _currentContext.UserId;
+            //info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
             await _organizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Cập nhật cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
-            return GeneralCode.Success;
+
+            return true;
         }
 
-        public async Task<ServiceResult<SubsidiaryModel>> GetInfo(int subsidiaryId)
+        public async Task<SubsidiaryModel> GetInfo(int subsidiaryId)
         {
 
-            var info = await _organizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryModel>(cfg).FirstOrDefaultAsync();
+            var info = await _organizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
             if (info == null)
             {
-                return SubsidiaryErrorCode.SubsidiaryNotfound;
+                throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
             }
             return info;
         }
 
 
-        public async Task<ServiceResult> Delete(int subsidiaryId)
+        public async Task<bool> Delete(int subsidiaryId)
         {
             var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
 
             if (info == null)
             {
-                return SubsidiaryErrorCode.SubsidiaryNotfound;
+                throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
             }
 
             info.IsDeleted = true;
-            info.UpdatedByUserId = _currentContext.UserId;
-            info.DeletedDatetimeUtc = DateTime.UtcNow;
+            //info.UpdatedByUserId = _currentContext.UserId;
+            //info.DeletedDatetimeUtc = DateTime.UtcNow;
 
             await _organizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Xóa cty con/chi nhánh {info.SubsidiaryCode}", new { subsidiaryId }.JsonSerialize());
-            return GeneralCode.Success;
+
+            return true;
         }
 
     }
