@@ -183,40 +183,38 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
-                {
-                    categoryField.CategoryFieldName = data.CategoryFieldName;
-                    categoryField.Title = data.Title;
-                    categoryField.SortOrder = data.SortOrder;
-                    categoryField.DataSize = data.DataSize;
-                    categoryField.DataTypeId = data.DataTypeId;
-                    categoryField.FormTypeId = data.FormTypeId;
-                    categoryField.AutoIncrement = data.AutoIncrement;
-                    categoryField.IsRequired = data.IsRequired;
-                    categoryField.IsUnique = data.IsUnique;
-                    categoryField.IsHidden = data.IsHidden;
-                    categoryField.IsShowList = data.IsShowList;
-                    categoryField.IsShowSearchTable = data.IsShowSearchTable;
-                    categoryField.IsTreeViewKey = data.IsTreeViewKey;
-                    categoryField.RegularExpression = data.RegularExpression;
-                    categoryField.Filters = data.Filters;
-                    categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
-                    categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
-                    categoryField.UpdatedByUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
+                categoryField.CategoryFieldName = data.CategoryFieldName;
+                categoryField.Title = data.Title;
+                categoryField.SortOrder = data.SortOrder;
+                categoryField.DataSize = data.DataSize;
+                categoryField.DataTypeId = data.DataTypeId;
+                categoryField.FormTypeId = data.FormTypeId;
+                categoryField.AutoIncrement = data.AutoIncrement;
+                categoryField.IsRequired = data.IsRequired;
+                categoryField.IsUnique = data.IsUnique;
+                categoryField.IsHidden = data.IsHidden;
+                categoryField.IsShowList = data.IsShowList;
+                categoryField.IsShowSearchTable = data.IsShowSearchTable;
+                categoryField.IsTreeViewKey = data.IsTreeViewKey;
+                categoryField.RegularExpression = data.RegularExpression;
+                categoryField.Filters = data.Filters;
+                categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
+                categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
+                categoryField.UpdatedByUserId = updatedUserId;
+                await _accountingContext.SaveChangesAsync();
 
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
-                    return GeneralCode.Success;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
-                }
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
