@@ -218,6 +218,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     inputAreaField.IsHidden = data.IsHidden;
                     inputAreaField.RegularExpression = data.RegularExpression;
                     inputAreaField.DefaultValue = data.DefaultValue;
+                    inputAreaField.Filters = data.Filters;
                     inputAreaField.IsDeleted = false;
                     inputAreaField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                     inputAreaField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;

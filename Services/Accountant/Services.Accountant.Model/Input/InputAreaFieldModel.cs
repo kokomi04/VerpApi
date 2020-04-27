@@ -27,7 +27,8 @@ namespace VErp.Services.Accountant.Model.Input
         public string DefaultValue { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
-        
+        public string Filters { get; set; }
+
     }
 
     public class InputAreaFieldInputModel : InputAreaFieldModel

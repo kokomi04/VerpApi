@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string Filters { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual DataType DataType { get; set; }
