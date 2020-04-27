@@ -44,59 +44,62 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         protected void FillterProcess(ref IQueryable<CategoryRow> query, FilterModel[] filters)
         {
-            Expression<Func<CategoryRow, bool>> predicate = PredicateBuilder.False<CategoryRow>();
-            EnumLogicOperator? logicOperator = EnumLogicOperator.Or;
-
-            foreach (FilterModel filter in filters)
+            Expression<Func<CategoryRow, bool>> predicate = PredicateBuilder.True<CategoryRow>();
+            if (filters.Count() > 0)
             {
-                LogicOperator<CategoryRow> logic;
-                if (logicOperator == EnumLogicOperator.Or)
+                predicate = PredicateBuilder.False<CategoryRow>();
+                EnumLogicOperator? logicOperator = EnumLogicOperator.Or;
+                foreach (FilterModel filter in filters)
                 {
-                    logic = predicate.Or<CategoryRow>;
-                }
-                else
-                {
-                    logic = predicate.And<CategoryRow>;
-                }
+                    LogicOperator<CategoryRow> logic;
+                    if (logicOperator == EnumLogicOperator.Or)
+                    {
+                        logic = predicate.Or<CategoryRow>;
+                    }
+                    else
+                    {
+                        logic = predicate.And<CategoryRow>;
+                    }
 
-                logicOperator = filter.LogicOperator;
+                    logicOperator = filter.LogicOperator;
 
-                switch (filter.Operator)
-                {
-                    case EnumOperator.Equal:
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value == filter.Values[0] : rv.Value == filter.Values[0]));
-                        break;
-                    case EnumOperator.NotEqual:
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value != filter.Values[0] : rv.Value != filter.Values[0]));
-                        break;
-                    case EnumOperator.Contains:
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.Contains(filter.Values[0]) : rv.Value.Contains(filter.Values[0])));
-                        break;
-                    case EnumOperator.InList:
-                        string[] values = filter.Values[0].Split(',');
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? values.Contains(rv.SourceCategoryRowValue.Value) : values.Contains(rv.Value)));
-                        break;
-                    case EnumOperator.IsLeafNode:
-                        List<string> nodeValues = query
-                            .Select(r => r.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == filter.CategoryFieldId))
-                            .Select(rv => (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value : rv.Value)
-                            .ToList();
+                    switch (filter.Operator)
+                    {
+                        case EnumOperator.Equal:
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value == filter.Values[0] : rv.Value == filter.Values[0]));
+                            break;
+                        case EnumOperator.NotEqual:
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value != filter.Values[0] : rv.Value != filter.Values[0]));
+                            break;
+                        case EnumOperator.Contains:
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.Contains(filter.Values[0]) : rv.Value.Contains(filter.Values[0])));
+                            break;
+                        case EnumOperator.InList:
+                            string[] values = filter.Values[0].Split(',');
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? values.Contains(rv.SourceCategoryRowValue.Value) : values.Contains(rv.Value)));
+                            break;
+                        case EnumOperator.IsLeafNode:
+                            List<string> nodeValues = query
+                                .Select(r => r.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == filter.CategoryFieldId))
+                                .Select(rv => (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value : rv.Value)
+                                .ToList();
 
-                        List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? isLeafValues.Contains(rv.SourceCategoryRowValue.Value) : isLeafValues.Contains(rv.Value)));
+                            List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? isLeafValues.Contains(rv.SourceCategoryRowValue.Value) : isLeafValues.Contains(rv.Value)));
+                            break;
+                        case EnumOperator.StartsWith:
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.StartsWith(filter.Values[0]) : rv.Value.StartsWith(filter.Values[0])));
+                            break;
+                        case EnumOperator.EndsWith:
+                            predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.EndsWith(filter.Values[0]) : rv.Value.EndsWith(filter.Values[0])));
+                            break;
+                        default:
+                            break;
+                    }
+                    if (!logicOperator.HasValue)
+                    {
                         break;
-                    case EnumOperator.StartsWith:
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.StartsWith(filter.Values[0]) : rv.Value.StartsWith(filter.Values[0])));
-                        break;
-                    case EnumOperator.EndsWith:
-                        predicate = logic(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.SourceCategoryRowValue.Value.EndsWith(filter.Values[0]) : rv.Value.EndsWith(filter.Values[0])));
-                        break;
-                    default:
-                        break;
-                }
-                if (!logicOperator.HasValue)
-                {
-                    break;
+                    }
                 }
             }
             query = query.Where(predicate);
