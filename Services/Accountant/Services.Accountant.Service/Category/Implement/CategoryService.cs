@@ -167,6 +167,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         newSubCategory.CreatedByUserId = updatedUserId;
                         await _accountingContext.Category.AddAsync(newSubCategory);
                     }
+
+                    //Thêm config outside nếu là danh mục phân hệ khác
+                    if (category.IsOutSideData)
+                    {
+                        OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfigModel);
+                        config.CategoryId = category.CategoryId;
+                        await _accountingContext.OutSideDataConfig.AddAsync(config);
+                    }
+                   
                     await _accountingContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
@@ -285,6 +294,25 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     newSubCategory.CreatedByUserId = updatedUserId;
                     await _accountingContext.Category.AddAsync(newSubCategory);
                 }
+
+                //Update config outside nếu là danh mục ngoài phân hệ
+                if (category.IsOutSideData)
+                {
+                    OutSideDataConfig config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
+                    if(config == null)
+                    {
+                        config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfigModel);
+                        config.CategoryId = category.CategoryId;
+                        await _accountingContext.OutSideDataConfig.AddAsync(config);
+                    }
+                    else
+                    {
+                        config.ModuleType = data.OutSideDataConfigModel.ModuleType;
+                        config.Url = data.OutSideDataConfigModel.Url;
+                        config.Description = data.OutSideDataConfigModel.Description;
+                    }
+                }
+
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());

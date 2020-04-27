@@ -67,7 +67,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Hai kiểu nhập liệu không thể chuyển qua lại")]
         FormTypeNotSwitch = 29,
         [Description("Dữ liệu cha không tồn tại")]
-        ParentCategoryRowNotExisted = 30
-
+        ParentCategoryRowNotExisted = 30,
+        [Description("Danh mục nằm ngoài phân hệ")]
+        CategoryIsOutSideData =31,
     }
 }

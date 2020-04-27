@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -238,12 +239,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     // Checkin unique trong db
                     foreach (var value in values)
                     {
+                        var rvParam = Expression.Parameter(typeof(InputValueRowVersion), "rv");
+                        var property = Expression.Property(rvParam, fieldName);
+                        Expression expression = Expression.Equal(property, Expression.Constant(value));
+
                         bool isExisted = _accountingContext.InputValueRowVersion
                             .Include(rv => rv.InputValueRow)
                             .Where(rv => inputValueBillId.HasValue ? rv.InputValueRow.InputValueBillId != inputValueBillId : true)
                             .Where(rv => rv.InputValueRow.InputAreaId == field.InputAreaId)
                             .Where(rv => rv.InputValueRowVersionId == rv.InputValueRow.LastestInputValueRowVersionId)
-                            .Any(rv => (string)rv.GetType().GetProperty(fieldName).GetValue(rv) == value);
+                            .Any(Expression.Lambda<Func<InputValueRowVersion, bool>>(expression, rvParam));
+
+
+
 
                         if (isExisted)
                         {
