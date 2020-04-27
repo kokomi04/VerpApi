@@ -26,7 +26,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
     {
         protected readonly AccountingDBContext _accountingContext;
         private delegate Expression<Func<T, bool>> LogicOperator<T>(Expression<Func<T, bool>> expr);
-        public CategoryBaseService(AccountingDBContext accountingContext)
+        protected CategoryBaseService(AccountingDBContext accountingContext)
         {
             _accountingContext = accountingContext;
         }

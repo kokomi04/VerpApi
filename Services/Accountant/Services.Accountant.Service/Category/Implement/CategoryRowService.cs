@@ -10,7 +10,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
@@ -45,62 +48,111 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _mapper = mapper;
         }
 
-        bool IsRef(int dataTypeId)
-        {
-            return dataTypeId == 2 || dataTypeId == 4;
-        }
         public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
-            IQueryable<CategoryRow> query = _accountingContext.CategoryRow
-                           .Where(r => r.CategoryId == categoryId)
-                           .Include(r => r.ParentCategoryRow)
-                           .Include(r => r.CategoryRowValues)
-                           .ThenInclude(rv => rv.CategoryField)
-                           .Include(r => r.CategoryRowValues)
-                           .ThenInclude(rv => rv.SourceCategoryRowValue);
-            if (filters != null && filters.Length > 0)
-            {
-                FillterProcess(ref query, filters);
-            }
-            var total = 0;
 
-            // search
-            if (!string.IsNullOrEmpty(keyword))
+            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category.IsOutSideData)
             {
-                query = query.Where(r => r.CategoryRowValues
-                .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
-                ? rv.SourceCategoryRowValue.Value.Contains(keyword)
-                : rv.Value.Contains(keyword)));
+                return GetOutSideCategoryRows(categoryId, page, size);
             }
-            total = await query.CountAsync();
-
-            if (size > 0)
+            else
             {
-                query = query.Skip((page - 1) * size).Take(size);
-            }
-
-            List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
-            foreach (var item in query)
-            {
-                CategoryRowOutputModel output = new CategoryRowOutputModel
+                var total = 0;
+                List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
+                IQueryable<CategoryRow> query = _accountingContext.CategoryRow
+                            .Where(r => r.CategoryId == categoryId)
+                            .Include(r => r.ParentCategoryRow)
+                            .Include(r => r.CategoryRowValues)
+                            .ThenInclude(rv => rv.CategoryField)
+                            .Include(r => r.CategoryRowValues)
+                            .ThenInclude(rv => rv.SourceCategoryRowValue);
+                if (filters != null && filters.Length > 0)
                 {
-                    CategoryRowId = item.CategoryRowId
-                };
-
-                ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in item.CategoryRowValues)
-                {
-                    row.Add(new CategoryValueModel
-                    {
-                        CategoryFieldId = cell.CategoryFieldId,
-                        CategoryValueId = cell.CategoryRowValueId,
-                        Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
-                    });
+                    FillterProcess(ref query, filters);
                 }
-                output.Values = row;
-                lst.Add(output);
+                // search
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    query = query.Where(r => r.CategoryRowValues
+                    .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
+                    ? rv.SourceCategoryRowValue.Value.Contains(keyword)
+                    : rv.Value.Contains(keyword)));
+                }
+                total = await query.CountAsync();
+                if (size > 0)
+                {
+                    query = query.Skip((page - 1) * size).Take(size);
+                }
+                foreach (var item in query)
+                {
+                    CategoryRowOutputModel output = new CategoryRowOutputModel
+                    {
+                        CategoryRowId = item.CategoryRowId
+                    };
+
+                    ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
+                    foreach (var cell in item.CategoryRowValues)
+                    {
+                        row.Add(new CategoryValueModel
+                        {
+                            CategoryFieldId = cell.CategoryFieldId,
+                            CategoryValueId = cell.CategoryRowValueId,
+                            Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
+                        });
+                    }
+                    output.Values = row;
+                    lst.Add(output);
+                }
+                return (lst, total);
             }
+
+
+        }
+
+        private (List<CategoryRowOutputModel>, int) GetOutSideCategoryRows(int categoryId, int page, int size)
+        {
+            int total = 0;
+            List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
+            var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
+
+            if (string.IsNullOrEmpty(config?.Url))
+            {
+                (object, HttpStatusCode) result =  GetFromAPI(config.Url, 1000);
+            }
+
             return (lst, total);
+        }
+
+        public (object, HttpStatusCode) GetFromAPI(string url, int apiTimeOut)
+        {
+            HttpClient client = new HttpClient();
+            object result = null;
+            HttpStatusCode status = HttpStatusCode.OK;
+
+            var httpRequestMessage = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri(url)
+            };
+            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey??string.Empty);
+            CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
+
+            HttpResponseMessage response = client.SendAsync(httpRequestMessage, cts.Token).Result;
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                string data = response.Content.ReadAsStringAsync().Result;
+                result = JsonConvert.DeserializeObject(data);
+            }
+            else
+            {
+                status = response.StatusCode;
+            }
+            response.Dispose();
+            cts.Dispose();
+            httpRequestMessage.Dispose();
+            client.Dispose();
+            return (result, status);
         }
 
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId)
@@ -152,7 +204,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryIsNotModule;
             }
-
+            if (category.IsOutSideData)
+            {
+                return CategoryErrorCode.CategoryIsOutSideData;
+            }
             // Check parent row
             var r = CheckParentRow(data, category);
             if (!r.IsSuccess()) return r;
@@ -266,6 +321,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryRowNotFound;
             }
+
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
             var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
@@ -571,6 +627,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.CategoryIsNotModule;
                 }
+                if (category.IsOutSideData)
+                {
+                    return CategoryErrorCode.CategoryIsOutSideData;
+                }
                 var reader = new ExcelReader(stream);
 
                 // Lấy thông tin field
@@ -687,6 +747,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryReadOnly;
             }
+            if (category.IsOutSideData)
+            {
+                return CategoryErrorCode.CategoryIsOutSideData;
+            }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
@@ -723,6 +787,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (category.IsReadonly)
             {
                 return CategoryErrorCode.CategoryReadOnly;
+            }
+            if (category.IsOutSideData)
+            {
+                return CategoryErrorCode.CategoryIsOutSideData;
             }
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
