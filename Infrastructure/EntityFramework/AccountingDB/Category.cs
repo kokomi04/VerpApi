@@ -25,8 +25,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public bool IsOutSideData { get; set; }
 
         public virtual Category Parent { get; set; }
+        public virtual OutSideDataConfig OutSideDataConfig { get; set; }
         public virtual ICollection<Category> SubCategories { get; set; }
         public virtual ICollection<CategoryField> CategoryFields { get; set; }
         public virtual ICollection<CategoryRow> CategoryRows { get; set; }

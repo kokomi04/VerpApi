@@ -41,7 +41,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)
         {
-            var category = await _accountingContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+            var category = await _accountingContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
@@ -56,7 +56,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _accountingContext.Category.Include(c => c.SubCategories).AsQueryable();
+            var query = _accountingContext.Category.Include(c => c.OutSideDataConfig).Include(c => c.SubCategories).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -264,6 +264,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 category.IsModule = data.IsModule;
                 category.IsReadonly = data.IsReadonly;
                 category.IsTreeView = data.IsTreeView;
+                category.IsOutSideData = data.IsOutSideData;
                 category.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 foreach (var item in deleteSubCategories)

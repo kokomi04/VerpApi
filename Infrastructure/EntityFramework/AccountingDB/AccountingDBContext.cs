@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<DataType> DataType { get; set; }
         public virtual DbSet<FormType> FormType { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
-
+        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<CategoryRowValue> CategoryRowValue { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -117,6 +117,15 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 entity.HasIndex(f => f.ReferenceCategoryFieldId).HasName("IDX_CategoryField_Relation_FK");
                 entity.HasIndex(f => f.ReferenceCategoryTitleFieldId).HasName("IDX_CategoryTitleField_Relation_FK");
 
+            });
+
+            modelBuilder.Entity<OutSideDataConfig>(entity =>
+            {
+                entity.HasKey(cf => cf.CategoryId);
+                entity.HasOne(cf => cf.Category)
+                .WithOne(c => c.OutSideDataConfig)
+                .HasForeignKey<OutSideDataConfig>(cf => cf.CategoryId)
+                .HasConstraintName("FK_OutSideDataConfig_Category");
             });
 
             modelBuilder.Entity<InputArea>(entity =>
