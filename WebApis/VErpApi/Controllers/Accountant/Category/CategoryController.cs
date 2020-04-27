@@ -25,12 +25,10 @@ namespace VErpApi.Controllers.Accountant
         private readonly ICategoryService _categoryService;
         private readonly ICategoryFieldService _categoryFieldService;
         private readonly ICategoryRowService _categoryRowService;
-        private readonly ICategoryValueService _categoryValueService;
         private readonly IFileService _fileService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
             , ICategoryRowService categoryRowService
-            , ICategoryValueService categoryValueService
             , IFileService fileService
             )
         {
@@ -38,19 +36,6 @@ namespace VErpApi.Controllers.Accountant
             _categoryService = categoryService;
             _categoryFieldService = categoryFieldService;
             _categoryRowService = categoryRowService;
-            _categoryValueService = categoryValueService;
-        }
-
-        [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
-        public async Task<ServiceResult<PageData<CategoryReferenceValueModel>>> GetReferenceValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
-        {
-            FilterModel[] filterModels = null;
-            if (!string.IsNullOrEmpty(filters))
-            {
-                filterModels = JsonConvert.DeserializeObject<FilterModel[]>(filters);
-            }
-            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, filterModels, page, size);
         }
 
         [HttpGet]

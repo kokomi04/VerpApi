@@ -68,8 +68,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(r => r.CategoryRowValues
-                .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select 
-                ? rv.SourceCategoryRowValue.Value.Contains(keyword) 
+                .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
+                ? rv.SourceCategoryRowValue.Value.Contains(keyword)
                 : rv.Value.Contains(keyword)));
             }
             total = await query.CountAsync();
@@ -199,7 +199,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         }
 
         private async Task<int> InsertCategoryRowAsync(int updatedUserId, int categoryId, IEnumerable<CategoryField> categoryFields, CategoryRowInputModel data)
-        { // Thêm dòng
+        {
+            // Thêm dòng
             var categoryRow = new CategoryRow
             {
                 CategoryId = categoryId,
@@ -239,7 +240,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         // Lấy ra value lớn nhất
                         long max = _accountingContext.CategoryRowValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.ValueInNumber);
-                        valueInNumber = max + 1;
+                        valueInNumber = (max / Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
                         value = valueInNumber.ToString();
                     }
                     else
@@ -254,9 +255,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                 await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
                 await _accountingContext.SaveChangesAsync();
-
             }
-
             return categoryRow.CategoryId;
         }
 
@@ -345,7 +344,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             {
                                 currentRowValue.IsDeleted = true;
                                 currentRowValue.UpdatedByUserId = updatedUserId;
-                                await _accountingContext.SaveChangesAsync();
                             }
                         }
                         else if (oldValue == null) // Nếu giá trị cũ là null, tạo mới, map lại
@@ -369,7 +367,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 categoryRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                             }
                             _accountingContext.CategoryRowValue.Add(categoryRowValue);
-                            await _accountingContext.SaveChangesAsync();
                         }
                         else if (isRef)
                         {
@@ -379,8 +376,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             currentRowValue.ValueInNumber = 0;
                             currentRowValue.ReferenceCategoryRowValueId = valueItem.CategoryValueId;
                             currentRowValue.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
-
                         }
                         else
                         {
@@ -391,11 +386,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             string value = string.Empty;
                             currentRowValue.Value = valueItem.Value;
                             currentRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
-                            await _accountingContext.SaveChangesAsync();
-
                         }
                     }
-
+                    await _accountingContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Category, categoryRow.CategoryRowId, $"Cập nhật dòng dữ liệu {categoryRow.CategoryRowId}", data.JsonSerialize());
                     return GeneralCode.Success;
@@ -444,12 +437,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var categoryRowValue = _accountingContext.CategoryRowValue
                       .Where(rv => rv.CategoryFieldId == field.CategoryFieldId && rv.CategoryRowId == categoryRowId)
                       .FirstOrDefault();
-
                     if (categoryRowValue == null)
                     {
                         continue;
                     }
-
                     // Delete row-field-value
                     categoryRowValue.IsDeleted = true;
                     categoryRowValue.UpdatedByUserId = updatedUserId;
@@ -471,12 +462,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (category.IsTreeView && data.ParentCategoryRowId.HasValue)
             {
                 bool isExist = _accountingContext.CategoryRow.Any(r => r.CategoryId == category.CategoryId && r.CategoryRowId == data.ParentCategoryRowId.Value);
-
                 if (!isExist)
                 {
                     return CategoryErrorCode.ParentCategoryRowNotExisted;
                 }
-
             }
             return GeneralCode.Success;
         }
@@ -529,7 +518,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 bool isExisted = _accountingContext.CategoryRowValue
                     .Any(rv => (categoryRowId.HasValue ? rv.CategoryRowId != categoryRowId : true) && rv.CategoryFieldId == item.CategoryFieldId && rv.Value == item.Value);
-
                 if (isExisted)
                 {
                     return CategoryErrorCode.UniqueValueAlreadyExisted;
@@ -556,14 +544,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     continue;
                 }
-
                 var r = CheckValue(valueItem, field);
                 if (!r.IsSuccess())
                 {
                     return r;
                 }
             }
-
             return GeneralCode.Success;
         }
 
@@ -611,7 +597,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         if (field.DataTypeId == (int)EnumDataType.Boolean)
                         {
                             bool value;
-
                             bool isBoolean = int.TryParse(row[fieldIndx], out int intValue) ? (value = intValue == 1 || intValue == 0) : bool.TryParse(row[fieldIndx], out value);
 
                             if (isBoolean)
@@ -778,8 +763,5 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             MemoryStream stream = await writer.WriteToStream();
             return stream;
         }
-
-
-
     }
 }

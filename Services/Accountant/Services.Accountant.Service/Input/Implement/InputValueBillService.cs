@@ -144,7 +144,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == autoIncrementField.InputAreaId)
                                 .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
                                 .Max(rvn => (long)rvn.GetType().GetProperty(fieldName).GetValue(rvn));
-                            maxValue += 1;
+                            maxValue = (maxValue / Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
                             string value = maxValue.ToString();
                             inputValueRowVersion.GetType().GetProperty(fieldName).SetValue(inputValueRowVersion, value);
                         }
@@ -308,7 +308,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     .Where(rv => rv.InputAreaId == field.InputAreaId)
                     .Select(r => (string)r.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(r.InputValueRowVersion))
                     .ToList();
-                foreach(string value in values)
+                foreach (string value in values)
                 {
                     if (((EnumFormType)field.FormTypeId).IsRef() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
                     {

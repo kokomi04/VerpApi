@@ -118,7 +118,7 @@ namespace VErp.Commons.Library
 
                 throw ex;
             }
-            
+
         }
 
         public static T JsonDeserialize<T>(this string obj)
@@ -322,13 +322,14 @@ namespace VErp.Commons.Library
                     break;
                 case EnumDataType.Date:
                 case EnumDataType.Number:
-                    valueInNumber = long.Parse(value);
+                    valueInNumber = long.Parse(value) * Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR;
                     break;
 
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
+                    valueInNumber = value.GetHashCode();
                     break;
             }
 
@@ -344,7 +345,7 @@ namespace VErp.Commons.Library
 
                     break;
                 case EnumDataType.Date:
-                    long  valueInNumber = long.Parse(value);
+                    long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
                     break;
 

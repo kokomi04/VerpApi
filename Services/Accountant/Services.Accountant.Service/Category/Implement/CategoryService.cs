@@ -102,25 +102,22 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryTitleAlreadyExisted;
             }
 
-            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
-            foreach (int subId in data.SubCategories.Where(s => s.CategoryId > 0).Select(s => s.CategoryId))
+            int[] selectSubCategoryIds = data.SubCategories.Where(s => s.CategoryId > 0).Select(s => s.CategoryId).ToArray();
+            List<CategoryEntity> selectSubCategories = _accountingContext.Category.Where(c => selectSubCategoryIds.Contains(c.CategoryId)).ToList();
+            if (selectSubCategories.Count < selectSubCategoryIds.Length)
             {
-                var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
-                if (subCategory == null)
-                {
-                    return CategoryErrorCode.SubCategoryNotFound;
-                }
-                else if (subCategory.IsModule)
+                return CategoryErrorCode.SubCategoryNotFound;
+            }
+
+            foreach (CategoryEntity subCategory in selectSubCategories)
+            {
+                if (subCategory.IsModule)
                 {
                     return CategoryErrorCode.SubCategoryIsModule;
                 }
                 else if (subCategory.ParentId.HasValue)
                 {
                     return CategoryErrorCode.SubCategoryHasParent;
-                }
-                else
-                {
-                    selectSubCategories.Add(subCategory);
                 }
             }
 
@@ -207,17 +204,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             var deleteSubCategories = category.SubCategories.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
-            var newSubCategoryModels = data.SubCategories.Where(c => !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
 
-            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
-            foreach (int subId in newSubCategoryModels.Where(s => s.CategoryId > 0).Select(c => c.CategoryId))
+            int[] selectSubCategoryIds = data.SubCategories.Where(c => c.CategoryId > 0 && !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).Select(s => s.CategoryId).ToArray();
+            List<CategoryEntity> selectSubCategories = _accountingContext.Category.Where(c => selectSubCategoryIds.Contains(c.CategoryId)).ToList();
+            if (selectSubCategories.Count < selectSubCategoryIds.Length)
             {
-                var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
-                if (subCategory == null)
-                {
-                    return CategoryErrorCode.SubCategoryNotFound;
-                }
-                else if (subCategory.IsModule)
+                return CategoryErrorCode.SubCategoryNotFound;
+            }
+
+            foreach (CategoryEntity subCategory in selectSubCategories)
+            {
+                if (subCategory.IsModule)
                 {
                     return CategoryErrorCode.SubCategoryIsModule;
                 }
@@ -259,46 +256,44 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.IsSubCategory;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                category.CategoryCode = data.CategoryCode;
+                category.Title = data.Title;
+                category.IsModule = data.IsModule;
+                category.IsReadonly = data.IsReadonly;
+                category.IsTreeView = data.IsTreeView;
+                category.UpdatedByUserId = updatedUserId;
+                await _accountingContext.SaveChangesAsync();
+                foreach (var item in deleteSubCategories)
                 {
-                    category.CategoryCode = data.CategoryCode;
-                    category.Title = data.Title;
-                    category.IsModule = data.IsModule;
-                    category.IsReadonly = data.IsReadonly;
-                    category.IsTreeView = data.IsTreeView;
-                    category.UpdatedByUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
-                    foreach (var item in deleteSubCategories)
-                    {
-                        var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
-                        subCategory.ParentId = null;
-                        subCategory.UpdatedByUserId = updatedUserId;
-                    }
-                    foreach (var item in selectSubCategories)
-                    {
-                        item.ParentId = category.CategoryId;
-                        item.UpdatedByUserId = updatedUserId;
-                    }
-                    foreach (var newSubCategory in newSubCategories)
-                    {
-                        newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedByUserId = updatedUserId;
-                        newSubCategory.CreatedByUserId = updatedUserId;
-                        await _accountingContext.Category.AddAsync(newSubCategory);
-                    }
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
-                    return GeneralCode.Success;
+                    var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
+                    subCategory.ParentId = null;
+                    subCategory.UpdatedByUserId = updatedUserId;
                 }
-                catch (Exception ex)
+                foreach (var item in selectSubCategories)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
+                    item.ParentId = category.CategoryId;
+                    item.UpdatedByUserId = updatedUserId;
                 }
+                foreach (var newSubCategory in newSubCategories)
+                {
+                    newSubCategory.ParentId = category.CategoryId;
+                    newSubCategory.UpdatedByUserId = updatedUserId;
+                    newSubCategory.CreatedByUserId = updatedUserId;
+                    await _accountingContext.Category.AddAsync(newSubCategory);
+                }
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -313,58 +308,56 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.ParentCategoryAlreadyExisted;
             }
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // Xóa category, field
+                var categoryIds = GetAllCategoryIds(categoryId);
+                var deleteCategories = _accountingContext.Category.Where(c => categoryIds.Contains(c.CategoryId));
+                foreach (CategoryEntity deleteCategory in deleteCategories)
                 {
-                    // Xóa category, field
-                    var categoryIds = GetAllCategoryIds(categoryId);
-                    foreach (var id in categoryIds)
+                    deleteCategory.IsDeleted = true;
+                    deleteCategory.UpdatedByUserId = updatedUserId;
+                    var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
+                    foreach (var field in deleteFields)
                     {
-                        category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == id);
-                        category.IsDeleted = true;
-                        category.UpdatedByUserId = updatedUserId;
-                        var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
-                        foreach (var field in deleteFields)
+                        // Check có trường đang tham chiếu tới
+                        if (_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == field.CategoryFieldId))
                         {
-                            // Check có trường đang tham chiếu tới
-                            if (_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == field.CategoryFieldId))
-                            {
-                                trans.Rollback();
-                                return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
-                            }
-                            field.IsDeleted = true;
-                            field.UpdatedByUserId = updatedUserId;
+                            trans.Rollback();
+                            return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
                         }
+                        field.IsDeleted = true;
+                        field.UpdatedByUserId = updatedUserId;
                     }
-
-                    // Xóa row
-                    var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
-                    foreach (var row in categoryRows)
-                    {
-                        row.IsDeleted = true;
-                        row.UpdatedByUserId = updatedUserId;
-
-                        // Xóa mapping row, value
-                        var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
-                        foreach (var rowValue in categoryRowValues)
-                        {
-                            rowValue.IsDeleted = true;
-                            rowValue.UpdatedByUserId = updatedUserId;
-                        }
-                    }
-
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
-                    return GeneralCode.Success;
                 }
-                catch (Exception ex)
+
+                // Xóa row
+                var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
+                foreach (var row in categoryRows)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Delete");
-                    return GeneralCode.InternalError;
+                    row.IsDeleted = true;
+                    row.UpdatedByUserId = updatedUserId;
+
+                    // Xóa mapping row, value
+                    var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
+                    foreach (var rowValue in categoryRowValues)
+                    {
+                        rowValue.IsDeleted = true;
+                        rowValue.UpdatedByUserId = updatedUserId;
+                    }
                 }
+
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Delete");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -455,6 +448,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (operators, total);
         }
+
         public async Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size)
         {
             List<LogicOperatorModel> operators = new List<LogicOperatorModel>();
