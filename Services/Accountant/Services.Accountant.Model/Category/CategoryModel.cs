@@ -21,8 +21,9 @@ namespace VErp.Services.Accountant.Model.Category
         public string CategoryCode { get; set; }
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
-
+        public bool IsOutSideData { get; set; }
         public bool IsTreeView { get; set; }
+        public OutSideDataConfigModel OutSideDataConfigModel { get; set; }
         public ICollection<T> SubCategories { get; set; }
     }
 

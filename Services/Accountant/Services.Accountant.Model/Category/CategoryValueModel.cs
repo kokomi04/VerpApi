@@ -11,12 +11,4 @@ namespace VErp.Services.Accountant.Model.Category
         public int CategoryFieldId { get; set; }
         public string Value { get; set; }
     }
-
-    public class CategoryReferenceValueModel
-    {
-        public int CategoryValueId { get; set; }
-        public int CategoryFieldId { get; set; }
-        public string Value { get; set; }
-        public string Title { get; set; }
-    }
 }
