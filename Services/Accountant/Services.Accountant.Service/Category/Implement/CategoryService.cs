@@ -309,6 +309,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         config.ModuleType = data.OutSideDataConfigModel.ModuleType;
                         config.Url = data.OutSideDataConfigModel.Url;
+                        config.Key = data.OutSideDataConfigModel.Key;
                         config.Description = data.OutSideDataConfigModel.Description;
                     }
                 }
