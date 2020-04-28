@@ -51,75 +51,73 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
-
+            var total = 0;
+            List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
+            IQueryable<CategoryRow> query;
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category.IsOutSideData)
             {
-                return GetOutSideCategoryRows(categoryId, page, size);
+                query = GetOutSideCategoryRows(categoryId);
             }
             else
             {
-                var total = 0;
-                List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
-                IQueryable<CategoryRow> query = _accountingContext.CategoryRow
+                query = _accountingContext.CategoryRow
                             .Where(r => r.CategoryId == categoryId)
                             .Include(r => r.ParentCategoryRow)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.CategoryField)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.SourceCategoryRowValue);
-                if (filters != null && filters.Length > 0)
-                {
-                    FillterProcess(ref query, filters);
-                }
-                // search
-                if (!string.IsNullOrEmpty(keyword))
-                {
-                    query = query.Where(r => r.CategoryRowValues
-                    .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
-                    ? rv.SourceCategoryRowValue.Value.Contains(keyword)
-                    : rv.Value.Contains(keyword)));
-                }
-                total = await query.CountAsync();
-                if (size > 0)
-                {
-                    query = query.Skip((page - 1) * size).Take(size);
-                }
-                foreach (var item in query)
-                {
-                    CategoryRowOutputModel output = new CategoryRowOutputModel
-                    {
-                        CategoryRowId = item.CategoryRowId
-                    };
-
-                    ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                    foreach (var cell in item.CategoryRowValues)
-                    {
-                        row.Add(new CategoryValueModel
-                        {
-                            CategoryFieldId = cell.CategoryFieldId,
-                            CategoryValueId = cell.CategoryRowValueId,
-                            Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
-                        });
-                    }
-                    output.Values = row;
-                    lst.Add(output);
-                }
-                return (lst, total);
             }
 
+            if (filters != null && filters.Length > 0)
+            {
+                FillterProcess(ref query, filters);
+            }
+            // search
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(r => r.CategoryRowValues
+                .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
+                ? rv.SourceCategoryRowValue.Value.Contains(keyword)
+                : rv.Value.Contains(keyword)));
+            }
+            total = query.Count();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            foreach (var item in query)
+            {
+                CategoryRowOutputModel output = new CategoryRowOutputModel
+                {
+                    CategoryRowId = item.CategoryRowId
+                };
 
+                ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
+                foreach (var cell in item.CategoryRowValues)
+                {
+                    row.Add(new CategoryValueModel
+                    {
+                        CategoryFieldId = cell.CategoryFieldId,
+                        CategoryValueId = cell.CategoryRowValueId,
+                        Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
+                    });
+                }
+                output.Values = row;
+                lst.Add(output);
+            }
+            return (lst, total);
         }
 
-        private (List<CategoryRowOutputModel>, int) GetOutSideCategoryRows(int categoryId, int page, int size)
+        private IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId)
         {
-            int total = 0;
-            List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
+            List<CategoryRow> lst = new List<CategoryRow>();
             var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
 
             if (!string.IsNullOrEmpty(config?.Url))
             {
-                string url = $"{config.Url}?page={page}&size={size}";
+                string url = $"{config.Url}?page=1&size=9999";
                 (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000);
                 if (result.Item2 == HttpStatusCode.OK)
                 {
@@ -139,27 +137,29 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                         // Map row Id
                         int id = int.Parse(properties[config.Key]);
-                        CategoryRowOutputModel categoryRow = new CategoryRowOutputModel
+                        CategoryRow categoryRow = new CategoryRow
                         {
-                            CategoryRowId = id
+                            CategoryRowId = id,
+                            CategoryId = categoryId,
                         };
 
                         // Map value cho các field
-                        foreach(var field in fields)
+                        foreach (var field in fields)
                         {
-                            var value = new CategoryValueModel
+                            var value = new CategoryRowValue
                             {
                                 CategoryFieldId = field.CategoryFieldId,
-                                Value = properties[field.CategoryFieldName]
+                                Value = properties[field.CategoryFieldName],
+                                CategoryField = field
                             };
-                            categoryRow.Values.Add(value);
+                            categoryRow.CategoryRowValues.Add(value);
                         }
                         lst.Add(categoryRow);
                     }
                 }
             }
 
-            return (lst, total);
+            return lst.AsQueryable();
         }
 
         public (T, HttpStatusCode) GetFromAPI<T>(string url, int apiTimeOut)
