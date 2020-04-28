@@ -7,9 +7,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Services.Accountant.Service;
+using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
@@ -65,7 +67,8 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureBussinessService(services);
 
-            services.AddAutoMapper(typeof(Startup));
+            ConfigureAutoMaper(services);
+
             return BuildService(services);
         }
         private void ConfigureBussinessService(IServiceCollection services)
@@ -78,6 +81,17 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(OrganizationServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
+
+        private void ConfigureAutoMaper(IServiceCollection services)
+        {
+            //services.AddAutoMapper(typeof(Startup));
+
+            var profile = new MappingProfile();
+            profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
+
+            services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
+        }
+
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {            
             ConfigureBase(app, env, loggerFactory, true);

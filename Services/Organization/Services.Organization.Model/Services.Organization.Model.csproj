@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
+    <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
   </ItemGroup>
 
 </Project>
