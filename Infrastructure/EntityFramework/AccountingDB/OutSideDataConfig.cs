@@ -14,7 +14,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int ModuleType { get; set; }
         public string Url { get; set; }
         public string Description { get; set; }
-
+        public string Key { get; set; }
 
         public virtual Category Category { get; set; }
     }

@@ -125,6 +125,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     return _roleInfo;
                 }
+                if(UserId == 0)
+                {
+                    return null;
+                }
 
                 var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
                 var roleInfo = (
@@ -160,7 +164,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     return _stockIds;
                 }
-
+                if (UserId == 0)
+                {
+                    return null;
+                }
                 var roleInfo = RoleInfo;
 
                 var roleIds = new List<int>();

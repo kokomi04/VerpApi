@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
@@ -118,25 +119,52 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (!string.IsNullOrEmpty(config?.Url))
             {
-                (object, HttpStatusCode) result = GetFromAPI(config.Url, 100000);
-                if(result.Item2 == HttpStatusCode.OK)
+                string url = $"{config.Url}?page={page}&size={size}";
+                (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000);
+                if (result.Item2 == HttpStatusCode.OK)
                 {
                     int[] categoryIds = GetAllCategoryIds(categoryId);
                     List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
-                    CategoryRowOutputModel categoryRow = new CategoryRowOutputModel
+
+                    foreach (var item in result.Item1.List)
                     {
-                       // CategoryRowId = result.Item1.GetType().GetProperty("Id")
-                    };
+                        // Lấy thông tin row
+                        Dictionary<string, string> properties = new Dictionary<string, string>();
+                        foreach (var jprop in item.Properties())
+                        {
+                            var key = jprop.Name;
+                            var value = jprop.Value.ToString();
+                            properties.Add(key, value);
+                        }
+
+                        // Map row Id
+                        int id = int.Parse(properties[config.Key]);
+                        CategoryRowOutputModel categoryRow = new CategoryRowOutputModel
+                        {
+                            CategoryRowId = id
+                        };
+
+                        // Map value cho các field
+                        foreach(var field in fields)
+                        {
+                            var value = new CategoryValueModel
+                            {
+                                CategoryFieldId = field.CategoryFieldId,
+                                Value = properties[field.CategoryFieldName]
+                            };
+                            categoryRow.Values.Add(value);
+                        }
+                    }
                 }
             }
 
             return (lst, total);
         }
 
-        public (object, HttpStatusCode) GetFromAPI(string url, int apiTimeOut)
+        public (T, HttpStatusCode) GetFromAPI<T>(string url, int apiTimeOut)
         {
             HttpClient client = new HttpClient();
-            object result = null;
+            T result = default;
             HttpStatusCode status = HttpStatusCode.OK;
 
             var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{url}";
@@ -152,7 +180,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 string data = response.Content.ReadAsStringAsync().Result;
-                result = JsonConvert.DeserializeObject(data);
+                result = JsonConvert.DeserializeObject<T>(data);
             }
             else
             {
