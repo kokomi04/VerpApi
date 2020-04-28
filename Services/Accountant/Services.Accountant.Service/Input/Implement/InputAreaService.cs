@@ -18,7 +18,7 @@ using VErp.Services.Accountant.Model.Input;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
-    public class InputAreaService : InputBaseService, IInputAreaService
+    public class InputAreaService : AccoutantBaseService, IInputAreaService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;

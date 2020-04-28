@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
@@ -23,10 +24,11 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
+using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
-    public class InputValueBillService : InputBaseService, IInputValueBillService
+    public class InputValueBillService : AccoutantBaseService, IInputValueBillService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -250,9 +252,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             .Where(rv => rv.InputValueRowVersionId == rv.InputValueRow.LastestInputValueRowVersionId)
                             .Any(Expression.Lambda<Func<InputValueRowVersion, bool>>(expression, rvParam));
 
-
-
-
                         if (isExisted)
                         {
                             return InputErrorCode.UniqueValueAlreadyExisted;
@@ -275,30 +274,31 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     .ToList();
                 foreach (var value in values)
                 {
-                    int referValueId = 0;
+                    bool isExisted = false;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
+                        CategoryEntity referCategory = GetReferenceCategory(referField);
                         IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
-                            .Where(r => r.CategoryId == referField.CategoryId)
+                            .Where(r => r.CategoryId == referCategory.CategoryId)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.SourceCategoryRowValue)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.CategoryField);
 
-                        //if (!string.IsNullOrEmpty(field.Filters))
-                        //{
-                        //    FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
-                        //    FillterProcess(ref tempQuery, filters);
-                        //}
 
-                        referValueId = tempQuery
-                            .Select(r => r.CategoryRowValues
-                            .FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)).CategoryRowValueId)
-                            .FirstOrDefault();
+                        var a = tempQuery.ToList();
+                        if (!string.IsNullOrEmpty(field.Filters))
+                        {
+                            FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
+                            FillterProcess(ref tempQuery, filters);
+                        }
+
+                        isExisted = tempQuery
+                            .Any( r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)));
                     }
-                    if (referValueId <= 0)
+                    if (!isExisted)
                     {
                         return InputErrorCode.ReferValueNotFound;
                     }

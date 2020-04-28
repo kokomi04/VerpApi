@@ -19,7 +19,7 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryFieldService : CategoryBaseService, ICategoryFieldService
+    public class CategoryFieldService : AccoutantBaseService, ICategoryFieldService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -83,13 +83,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             CategoryFieldOutputFullModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputFullModel>(categoryField);
 
-            if (categoryFieldOutputModel.SourceCategoryField != null)
+            if (categoryField.SourceCategoryField != null)
             {
-                CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryFieldOutputModel.SourceCategoryField.CategoryId);
+                CategoryEntity sourceCategory = GetReferenceCategory(categoryField.SourceCategoryField);
                 categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
             }
-
-
             return categoryFieldOutputModel;
         }
 

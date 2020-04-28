@@ -20,7 +20,7 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
-    public class InputAreaFieldService : InputBaseService, IInputAreaFieldService
+    public class InputAreaFieldService : AccoutantBaseService, IInputAreaFieldService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -71,24 +71,24 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaField)
+        public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
         {
-            var InputAreaField = await _accountingContext.InputAreaField
+            var inputAreaField = await _accountingContext.InputAreaField
                 .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.SourceCategoryField)
                 .Include(f => f.SourceCategoryTitleField)
-                .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaField && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
-            if (InputAreaField == null)
+                .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
+            if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
             }
-            InputAreaFieldOutputFullModel inputAreaFieldOutputModel = _mapper.Map<InputAreaFieldOutputFullModel>(InputAreaField);
+            InputAreaFieldOutputFullModel inputAreaFieldOutputModel = _mapper.Map<InputAreaFieldOutputFullModel>((object)inputAreaField);
 
-            if (inputAreaFieldOutputModel.SourceCategoryField != null)
+            if (inputAreaField.SourceCategoryField != null)
             {
-                CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == inputAreaFieldOutputModel.SourceCategoryField.CategoryId);
+                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.SourceCategoryField) ;
                 inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
             }
 

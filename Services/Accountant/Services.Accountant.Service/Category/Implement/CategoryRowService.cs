@@ -29,7 +29,7 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryRowService : CategoryBaseService, ICategoryRowService
+    public class CategoryRowService : AccoutantBaseService, ICategoryRowService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -539,8 +539,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
+                        CategoryEntity referCategory = GetReferenceCategory(referField);
                         IQueryable<CategoryRow> query = _accountingContext.CategoryRow
-                            .Where(r => r.CategoryId == referField.CategoryId)
+                            .Where(r => r.CategoryId == referCategory.CategoryId)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.SourceCategoryRowValue)
                             .Include(r => r.CategoryRowValues)

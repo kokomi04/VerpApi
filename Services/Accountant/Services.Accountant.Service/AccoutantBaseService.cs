@@ -19,14 +19,15 @@ using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
+using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
-namespace VErp.Services.Accountant.Service.Category.Implement
+namespace VErp.Services.Accountant.Service
 {
-    public abstract class CategoryBaseService
+    public abstract class AccoutantBaseService
     {
         protected readonly AccountingDBContext _accountingContext;
         private delegate Expression<Func<T, bool>> LogicOperator<T>(Expression<Func<T, bool>> expr);
-        protected CategoryBaseService(AccountingDBContext accountingContext)
+        protected AccoutantBaseService(AccountingDBContext accountingContext)
         {
             _accountingContext = accountingContext;
         }
@@ -40,6 +41,21 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             return ids.ToArray();
+        }
+
+        protected CategoryEntity GetReferenceCategory(CategoryField referenceCategoryField)
+        {
+            CategoryEntity category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == referenceCategoryField.CategoryId);
+
+            while (category != null && !category.IsModule)
+            {
+                if (!category.ParentId.HasValue)
+                {
+                    break;
+                }
+                category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == category.ParentId);
+            }
+            return category;
         }
 
         protected void FillterProcess(ref IQueryable<CategoryRow> query, FilterModel[] filters)
