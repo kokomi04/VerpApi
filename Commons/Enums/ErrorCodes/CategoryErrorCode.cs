@@ -70,5 +70,7 @@ namespace VErp.Commons.Enums.StandardEnum
         ParentCategoryRowNotExisted = 30,
         [Description("Danh mục nằm ngoài phân hệ")]
         CategoryIsOutSideData =31,
+        [Description("Lấy thông tin danh mục ngoài phân hệ thất bại")]
+        CategoryIsOutSideDataError = 32,
     }
 }
