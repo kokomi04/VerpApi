@@ -154,6 +154,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             };
                             categoryRow.Values.Add(value);
                         }
+                        lst.Add(categoryRow);
                     }
                 }
             }
