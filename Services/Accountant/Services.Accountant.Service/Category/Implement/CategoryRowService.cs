@@ -116,9 +116,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
             var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
 
-            if (string.IsNullOrEmpty(config?.Url))
+            if (!string.IsNullOrEmpty(config?.Url))
             {
-                (object, HttpStatusCode) result = GetFromAPI(config.Url, 1000);
+                (object, HttpStatusCode) result = GetFromAPI(config.Url, 100000);
+                if(result.Item2 == HttpStatusCode.OK)
+                {
+                    int[] categoryIds = GetAllCategoryIds(categoryId);
+                    List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+                    CategoryRowOutputModel categoryRow = new CategoryRowOutputModel
+                    {
+                       // CategoryRowId = result.Item1.GetType().GetProperty("Id")
+                    };
+                }
             }
 
             return (lst, total);
@@ -130,12 +139,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             object result = null;
             HttpStatusCode status = HttpStatusCode.OK;
 
+            var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{url}";
             var httpRequestMessage = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri(url)
+                RequestUri = new Uri(uri)
             };
-            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey ?? string.Empty);
+            httpRequestMessage.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
             CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
 
             HttpResponseMessage response = client.SendAsync(httpRequestMessage, cts.Token).Result;
