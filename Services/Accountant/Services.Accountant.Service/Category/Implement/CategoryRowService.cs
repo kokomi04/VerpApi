@@ -29,7 +29,7 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryRowService : CategoryBaseService, ICategoryRowService
+    public class CategoryRowService : AccoutantBaseService, ICategoryRowService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -118,7 +118,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (string.IsNullOrEmpty(config?.Url))
             {
-                (object, HttpStatusCode) result =  GetFromAPI(config.Url, 1000);
+                (object, HttpStatusCode) result = GetFromAPI(config.Url, 1000);
             }
 
             return (lst, total);
@@ -135,7 +135,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 Method = HttpMethod.Get,
                 RequestUri = new Uri(url)
             };
-            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey??string.Empty);
+            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey ?? string.Empty);
             CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
 
             HttpResponseMessage response = client.SendAsync(httpRequestMessage, cts.Token).Result;
@@ -539,8 +539,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
+                        CategoryEntity referCategory = GetReferenceCategory(referField);
                         IQueryable<CategoryRow> query = _accountingContext.CategoryRow
-                            .Where(r => r.CategoryId == referField.CategoryId)
+                            .Where(r => r.CategoryId == referCategory.CategoryId)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.SourceCategoryRowValue)
                             .Include(r => r.CategoryRowValues)
@@ -605,6 +606,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return r;
                 }
+            }
+            return GeneralCode.Success;
+        }
+
+        private Enum CheckValue(CategoryValueModel valueItem, CategoryField field)
+        {
+            if ((field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
+                || (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
+                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.RegularExpression)))
+            {
+                return CategoryErrorCode.CategoryValueInValid;
             }
             return GeneralCode.Success;
         }

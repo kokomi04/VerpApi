@@ -20,7 +20,7 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
-    public class InputTypeService : InputBaseService, IInputTypeService
+    public class InputTypeService : AccoutantBaseService, IInputTypeService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
