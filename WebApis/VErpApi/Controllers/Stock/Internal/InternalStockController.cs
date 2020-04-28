@@ -25,12 +25,17 @@ namespace VErpApi.Controllers.Stock.Internal
             _stockService = stockService;
         }
 
-        [Route("stocks")]
         [HttpGet]
         public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetList(keyword, page, size);
         }
 
+        [HttpGet]
+        [Route("{stockId}")]
+        public async Task<ServiceResult<StockOutput>> GetStocks([FromRoute] int stockId)
+        {
+            return await _stockService.StockInfo(stockId);
+        }
     }
 }

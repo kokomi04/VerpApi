@@ -104,7 +104,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
                     });
                 }
-                output.Values = row;
+                output.CategoryRowValues = row;
                 lst.Add(output);
             }
             return (lst, total);
@@ -196,22 +196,33 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId)
         {
+            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            CategoryRow categoryRow = null;
+            List<CategoryRowValue> values = new List<CategoryRowValue>();
+            if (category.IsOutSideData)
+            {
+                var r = GetOutSideCategoryRow(categoryId, categoryRowId, ref categoryRow, ref values);
+                if (!r.IsSuccess())
+                {
+                    return r;
+                }
+            }
+            else
+            {
+                categoryRow = await _accountingContext.CategoryRow
+                  .Include(r => r.ParentCategoryRow)
+                  .FirstOrDefaultAsync(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId);
+                values = _accountingContext.CategoryRowValue
+                  .Where(r => r.CategoryRowId == categoryRowId)
+                  .Include(rv => rv.CategoryField)
+                  .Include(rv => rv.SourceCategoryRowValue).ToList();
+            }
             // Check row 
-            var categoryRow = await _accountingContext.CategoryRow
-                .Include(r => r.ParentCategoryRow)
-                .FirstOrDefaultAsync(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId);
             if (categoryRow == null)
             {
                 return CategoryErrorCode.CategoryRowNotFound;
             }
-
-            var values = _accountingContext.CategoryRowValue
-                .Where(r => r.CategoryRowId == categoryRowId)
-                .Include(rv => rv.CategoryField)
-                .Include(rv => rv.SourceCategoryRowValue).ToList();
-
             CategoryRowOutputModel output = _mapper.Map<CategoryRowOutputModel>(categoryRow);
-
             ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
             foreach (var value in values)
             {
@@ -222,9 +233,61 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     Value = ((EnumFormType)value.CategoryField.FormTypeId).IsRef() ? value.SourceCategoryRowValue.Value : value.Value
                 });
             }
-            output.Values = row;
+            output.CategoryRowValues = row;
 
             return output;
+        }
+
+        private Enum GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRow categoryRow, ref List<CategoryRowValue> values)
+        {
+            try
+            {
+                var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
+                if (!string.IsNullOrEmpty(config?.Url))
+                {
+                    string url = $"{config.Url}/{categoryRowId}";
+                    (JObject, HttpStatusCode) result = GetFromAPI<JObject>(url, 100000);
+                    if (result.Item2 == HttpStatusCode.OK)
+                    {
+                        int[] categoryIds = GetAllCategoryIds(categoryId);
+                        List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+
+                        // Lấy thông tin row
+                        Dictionary<string, string> properties = new Dictionary<string, string>();
+                        foreach (var jprop in result.Item1.Properties())
+                        {
+                            var key = jprop.Name;
+                            var value = jprop.Value.ToString();
+                            properties.Add(key, value);
+                        }
+
+                        // Map row
+                        categoryRow = new CategoryRow
+                        {
+                            CategoryRowId = categoryRowId,
+                            CategoryId = categoryId,
+                        };
+
+                        // Map value cho các field
+                        foreach (var field in fields)
+                        {
+                            var value = new CategoryRowValue
+                            {
+                                CategoryFieldId = field.CategoryFieldId,
+                                Value = properties[field.CategoryFieldName],
+                                CategoryField = field
+                            };
+                            values.Add(value);
+                        }
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                return CategoryErrorCode.CategoryIsOutSideDataError;
+            }
+
+            return GeneralCode.Success;
         }
 
         public async Task<ServiceResult<int>> AddCategoryRow(int updatedUserId, int categoryId, CategoryRowInputModel data)
@@ -308,7 +371,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in categoryFields)
             {
                 bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
-                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
                 {
                     continue;
@@ -377,7 +440,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (CategoryField categoryField in categoryFields)
             {
                 var currentValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
-                var updateValue = data.Values.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
+                var updateValue = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
 
                 if (currentValue != null || updateValue != null)
                 {
@@ -426,7 +489,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
                         var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                        var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
                         if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
                         {
@@ -570,7 +633,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Check refer
             foreach (var field in selectFields)
             {
-                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null)
                 {
                     int referValueId = 0;
@@ -610,7 +673,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         private Enum CheckUnique(CategoryRowInputModel data, IEnumerable<CategoryField> uniqueFields, int? categoryRowId = null)
         {
             // Check unique
-            foreach (var item in data.Values.Where(v => uniqueFields.Any(f => f.CategoryFieldId == v.CategoryFieldId)))
+            foreach (var item in data.CategoryRowValues.Where(v => uniqueFields.Any(f => f.CategoryFieldId == v.CategoryFieldId)))
             {
                 bool isExisted = _accountingContext.CategoryRowValue
                     .Any(rv => (categoryRowId.HasValue ? rv.CategoryRowId != categoryRowId : true) && rv.CategoryFieldId == item.CategoryFieldId && rv.Value == item.Value);
@@ -624,7 +687,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         private Enum CheckRequired(CategoryRowInputModel data, IEnumerable<CategoryField> requiredFields)
         {
-            if (requiredFields.Count() > 0 && requiredFields.Any(rf => !data.Values.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrWhiteSpace(v.Value))))
+            if (requiredFields.Count() > 0 && requiredFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrWhiteSpace(v.Value))))
             {
                 return CategoryErrorCode.RequiredFieldIsEmpty;
             }
@@ -635,7 +698,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             foreach (var field in categoryFields)
             {
-                var valueItem = data.Values.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
+                var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if ((field.FormTypeId == (int)EnumFormType.SearchTable || field.FormTypeId == (int)EnumFormType.Select) || field.AutoIncrement || valueItem == null || string.IsNullOrEmpty(valueItem.Value))
                 {
                     continue;
@@ -730,7 +793,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 return (CategoryErrorCode.CategoryValueInValid, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.CategoryValueInValid.GetEnumDescription()));
                             }
                         }
-                        rowInput.Values.Add(new CategoryValueModel
+                        rowInput.CategoryRowValues.Add(new CategoryValueModel
                         {
                             CategoryFieldId = field.CategoryFieldId,
                             CategoryValueId = 0,
