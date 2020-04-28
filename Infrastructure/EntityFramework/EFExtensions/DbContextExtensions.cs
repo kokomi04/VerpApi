@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -111,6 +112,70 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
 
             return null;
+        }
+
+
+        /// <summary>
+        /// DynamicSelectGenerator
+        /// Ref docs: https://stackoverflow.com/questions/42820866/dynamically-build-iqueryable-select-clause-with-fieldnames-in-net-core
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="query"></param>
+        /// <param name="fieldFroms"></param>
+        /// <returns></returns>
+        public static IQueryable<TResult> DynamicSelectGenerator<T,TResult>(this IQueryable<T> query, Dictionary<string, string> fieldFroms)
+        {
+            Dictionary<string, string> EntityFields;
+            if (fieldFroms.Count == 0)
+                // get Properties of the T
+                EntityFields = typeof(T).GetProperties().Select(propertyInfo => propertyInfo.Name).ToArray().ToDictionary(f => f, f => f);
+            else
+                EntityFields = fieldFroms;
+
+            // input parameter "o"
+            var xParameter = Expression.Parameter(typeof(T), "o");
+
+            // new statement "new Data()"
+            var xNew = Expression.New(typeof(TResult));
+
+            // create initializers
+            var bindings = EntityFields
+                .Select(o =>
+                {
+                    // property "Field1"
+                    var toField = typeof(TResult).GetProperty(o.Key);
+
+                    // original value "o.Field1"
+                    Expression xOriginal = null;
+
+                    if (!o.Value.StartsWith('['))
+                    {
+                        // property "Field1"
+                        var fromField = typeof(T).GetProperty(o.Value);
+
+                        xOriginal = Expression.Property(xParameter, fromField);
+                    }
+                    else
+                    {
+                        xOriginal = Expression.Constant(o.Value.Trim('[').Trim(']'));
+                    }
+
+                    // set value "Field1 = o.Field1"
+                    return Expression.Bind(toField, xOriginal);
+                }
+            );
+
+            // initialization "new Data { Field1 = o.Field1, Field2 = o.Field2 }"
+            var xInit = Expression.MemberInit(xNew, bindings);
+
+            // expression "o => new Data { Field1 = o.Field1, Field2 = o.Field2 }"
+            var lambda = Expression.Lambda<Func<T, TResult>>(xInit, xParameter);
+
+            // compile to Func<Data, Data>
+            //return lambda.Compile();
+
+            return query.Select(lambda);
         }
     }
 }
