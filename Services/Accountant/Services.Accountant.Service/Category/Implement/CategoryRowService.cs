@@ -118,7 +118,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (string.IsNullOrEmpty(config?.Url))
             {
-                (object, HttpStatusCode) result =  GetFromAPI(config.Url, 1000);
+                (object, HttpStatusCode) result = GetFromAPI(config.Url, 1000);
             }
 
             return (lst, total);
@@ -135,7 +135,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 Method = HttpMethod.Get,
                 RequestUri = new Uri(url)
             };
-            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey??string.Empty);
+            httpRequestMessage.Headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey ?? string.Empty);
             CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
 
             HttpResponseMessage response = client.SendAsync(httpRequestMessage, cts.Token).Result;
@@ -606,6 +606,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return r;
                 }
+            }
+            return GeneralCode.Success;
+        }
+
+        private Enum CheckValue(CategoryValueModel valueItem, CategoryField field)
+        {
+            if ((field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
+                || (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
+                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.RegularExpression)))
+            {
+                return CategoryErrorCode.CategoryValueInValid;
             }
             return GeneralCode.Success;
         }
