@@ -55,11 +55,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             else
             {
                 query = _accountingContext.CategoryRow
-                            .Where(r => r.CategoryId == categoryId)
-                            .Include(r => r.CategoryRowValues)
-                            .ThenInclude(rv => rv.CategoryField)
-                            .Include(r => r.CategoryRowValues)
-                            .ThenInclude(rv => rv.SourceCategoryRowValue);
+                    .Where(r => r.CategoryId == categoryId)
+                    .Include(r => r.CategoryRowValues)
+                    .ThenInclude(rv => rv.CategoryField)
+                    .Include(r => r.CategoryRowValues)
+                    .ThenInclude(rv => rv.SourceCategoryRowValue);
             }
 
             if (filters != null && filters.Length > 0)
@@ -77,7 +77,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             total = query.Count();
             if (size > 0)
             {
-                query = query.Skip((page - 1) * size).Take(size);
+                if (category.IsTreeView)
+                {
+                    query = query.OrderBy(r => r.ParentCategoryRowId.HasValue ? r.ParentCategoryRowId : r.CategoryRowId).Skip((page - 1) * size).Take(size);
+                }
+                else
+                {
+                    query = query.OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size);
+                }
             }
             foreach (var item in query)
             {
