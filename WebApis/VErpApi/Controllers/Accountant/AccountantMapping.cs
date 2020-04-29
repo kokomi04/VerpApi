@@ -26,6 +26,8 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<OutSideDataConfig, OutSideDataConfigModel>().ReverseMap();
             CreateMap<CategoryRow, CategoryRowOutputModel>();
             CreateMap<CategoryRowInputModel, CategoryRow>();
+            CreateMap<CategoryRowValue, CategoryValueModel>().ReverseMap();
+
 
             CreateMap<InputType, InputTypeModel>();
             CreateMap<InputTypeModel, InputType>();
