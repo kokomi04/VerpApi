@@ -513,6 +513,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     .ToList();
                 foreach (var value in values)
                 {
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
                     bool isExisted = false;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
