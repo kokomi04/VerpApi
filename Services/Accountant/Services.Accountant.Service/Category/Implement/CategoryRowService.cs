@@ -27,10 +27,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 {
     public class CategoryRowService : AccoutantBaseService, ICategoryRowService
     {
-       
+
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        
+
         public CategoryRowService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryRowService> logger
@@ -45,6 +45,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
             var total = 0;
+            List<(CategoryRow Data, int Level)> categoryRows = new List<(CategoryRow Data, int Level)>();
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
             IQueryable<CategoryRow> query;
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
@@ -79,19 +80,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 if (category.IsTreeView)
                 {
-                    query = query.OrderBy(r => r.ParentCategoryRowId.HasValue ? r.ParentCategoryRowId : r.CategoryRowId).Skip((page - 1) * size).Take(size);
+                    var temp = query.ToList();
+                    categoryRows = SortCategoryRows(temp).Skip((page - 1) * size).Take(size).ToList();
                 }
                 else
                 {
-                    query = query.OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size);
+                    foreach (var item in query.OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size))
+                    {
+                        categoryRows.Add((item, 0));
+                    }
                 }
             }
-            foreach (var item in query)
+            foreach (var (data, level) in categoryRows)
             {
-                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(item);
-
+                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(data);
+                output.CategoryRowLevel = level;
                 ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in item.CategoryRowValues)
+                foreach (var cell in data.CategoryRowValues)
                 {
                     row.Add(new CategoryValueModel
                     {
@@ -105,7 +110,36 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (lst, total);
         }
-        
+
+        private List<(CategoryRow Data, int Level)> SortCategoryRows(List<CategoryRow> categoryRows)
+        {
+            int level = 0;
+            categoryRows = categoryRows.OrderBy(r => r.CategoryRowId).ToList();
+            List<(CategoryRow Data, int Level)> nodes = new List<(CategoryRow Data, int Level)>();
+            var items = categoryRows.Where(r => !r.ParentCategoryRowId.HasValue).ToList();
+            categoryRows.RemoveAll(r => !r.ParentCategoryRowId.HasValue);
+            foreach (var item in items)
+            {
+                nodes.Add((item, level));
+                nodes.AddRange(GetChilds(ref categoryRows, item.CategoryRowId, level));
+            }
+            return nodes;
+        }
+
+        private IEnumerable<(CategoryRow Data, int Level)> GetChilds(ref List<CategoryRow> categoryRows, int categoryRowId, int level)
+        {
+            level++;
+            List<(CategoryRow Data, int Level)> nodes = new List<(CategoryRow Data, int Level)>();
+            var items = categoryRows.Where(r => r.ParentCategoryRowId == categoryRowId).ToList();
+            categoryRows.RemoveAll(r => r.ParentCategoryRowId == categoryRowId);
+            foreach (var item in items)
+            {
+                nodes.Add((item, level));
+                nodes.AddRange(GetChilds(ref categoryRows, item.CategoryRowId, level));
+            }
+            return nodes;
+        }
+
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId)
         {
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
@@ -195,7 +229,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return CategoryErrorCode.CategoryIsOutSideDataError;
             }
