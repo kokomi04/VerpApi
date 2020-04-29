@@ -32,23 +32,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 {
     public class InputValueBillService : AccoutantBaseService, IInputValueBillService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         public InputValueBillService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputValueBillService> logger
             , IActivityLogService activityLogService
-             , IMapper mapper
-            ) : base(accountingContext)
+            , IMapper mapper
+            ) : base(accountingContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
-
 
         public async Task<InputTypeListInfo> GetInputTypeListInfo(int inputTypeId)
         {
@@ -77,7 +72,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             return data;
         }
-
 
 
         public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, int orderByFieldId, bool asc, int page, int size)
@@ -392,7 +386,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == autoIncrementField.InputAreaId)
                             .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
                             .Max(lambdaExp);
-                     
+
                         maxValue = (maxValue / Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
                         string value = maxValue.ToString();
                         inputValueRowVersion.GetType().GetProperty(fieldName).SetValue(inputValueRowVersion, value);
@@ -525,23 +519,30 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
                         CategoryEntity referCategory = GetReferenceCategory(referField);
-                        IQueryable<CategoryRow> tempQuery = _accountingContext.CategoryRow
-                            .Where(r => r.CategoryId == referCategory.CategoryId)
-                            .Include(r => r.CategoryRowValues)
-                            .ThenInclude(rv => rv.SourceCategoryRowValue)
-                            .Include(r => r.CategoryRowValues)
-                            .ThenInclude(rv => rv.CategoryField);
 
+                        IQueryable<CategoryRow> query;
+                        if (referCategory.IsOutSideData)
+                        {
+                            query = GetOutSideCategoryRows(referCategory.CategoryId);
+                        }
+                        else
+                        {
+                            query = _accountingContext.CategoryRow
+                               .Where(r => r.CategoryId == referCategory.CategoryId)
+                               .Include(r => r.CategoryRowValues)
+                               .ThenInclude(rv => rv.SourceCategoryRowValue)
+                               .Include(r => r.CategoryRowValues)
+                               .ThenInclude(rv => rv.CategoryField);
+                        }
 
-                        var a = tempQuery.ToList();
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
                             FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
-                            FillterProcess(ref tempQuery, filters);
+                            FillterProcess(ref query, filters);
                         }
 
-                        isExisted = tempQuery
-                            .Any( r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)));
+                        isExisted = query
+                            .Any(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)));
                     }
                     if (!isExisted)
                     {
@@ -577,7 +578,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
             return GeneralCode.Success;
         }
-       
+
         protected private Enum CheckValue(string value, InputAreaField field)
         {
             if ((field.DataSize > 0 && value.Length > field.DataSize)

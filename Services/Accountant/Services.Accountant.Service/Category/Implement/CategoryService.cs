@@ -21,22 +21,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 {
     public class CategoryService : AccoutantBaseService, ICategoryService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
 
         public CategoryService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            ) : base(accountingContext)
+            ) : base(accountingContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)

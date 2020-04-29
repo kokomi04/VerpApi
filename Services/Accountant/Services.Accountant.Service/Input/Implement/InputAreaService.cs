@@ -20,22 +20,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 {
     public class InputAreaService : AccoutantBaseService, IInputAreaService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
 
         public InputAreaService(AccountingDBContext accountingDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputAreaService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            ) : base(accountingDBContext)
+            ) : base(accountingDBContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<ServiceResult<InputAreaOutputModel>> GetInputArea(int inputTypeId, int inputAreaId)
