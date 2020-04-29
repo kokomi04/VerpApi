@@ -599,7 +599,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in selectFields)
             {
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (valueItem != null)
+                if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
                 {
                     int referValueId = 0;
                     if (field.ReferenceCategoryFieldId.HasValue)
