@@ -517,8 +517,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
-                        bool isRef = ((EnumFormType)referField.FormTypeId).IsRef();
                         CategoryEntity referCategory = GetReferenceCategory(referField);
+                        bool isRef = ((EnumFormType)referField.FormTypeId).IsRef() && !referCategory.IsOutSideData;
 
                         IQueryable<CategoryRow> query;
                         if (referCategory.IsOutSideData)
@@ -579,7 +579,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return GeneralCode.Success;
         }
 
-        protected private Enum CheckValue(string value, InputAreaField field)
+        private Enum CheckValue(string value, InputAreaField field)
         {
             if ((field.DataSize > 0 && value.Length > field.DataSize)
                 || !string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(value, field.DataType.RegularExpression)
@@ -589,6 +589,51 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
 
             return GeneralCode.Success;
+        }
+
+        public async Task<Enum> DeleteInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId)
+        {
+            // Lấy thông tin bill
+            var inputValueBill = _accountingContext.InputValueBill.FirstOrDefault(i => i.InputTypeId == inputTypeId && i.InputValueBillId == inputValueBillId);
+            if (inputValueBill == null)
+            {
+                return InputErrorCode.InputValueBillNotFound;
+            }
+
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                // Delete bill
+                inputValueBill.IsDeleted = true;
+                inputValueBill.UpdatedByUserId = updatedUserId;
+
+                // Delete row
+                var inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputValueBillId == inputValueBillId).ToList();
+                foreach (var row in inputValueRows)
+                {
+                    row.IsDeleted = true;
+                    row.UpdatedByUserId = updatedUserId;
+
+                    // Delete row version
+                    var inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == row.InputValueRowId).ToList();
+                    foreach (var rowVersion in inputValueRowVersions)
+                    {
+                        rowVersion.IsDeleted = true;
+                        rowVersion.UpdatedByUserId = updatedUserId;
+                    }
+                }
+
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputValueBillId, $"Xóa chứng từ {inputValueBillId}", inputValueBill.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Delete");
+                return GeneralCode.InternalError;
+            }
         }
     }
 
