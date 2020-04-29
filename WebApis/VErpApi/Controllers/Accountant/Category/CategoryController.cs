@@ -116,7 +116,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
             FilterModel[] lstFilters = null;
             if (!string.IsNullOrEmpty(filters))

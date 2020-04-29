@@ -42,10 +42,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
+        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
             var total = 0;
-            List<CategoryRowOutputModel> lst = new List<CategoryRowOutputModel>();
+            List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
             IQueryable<CategoryRow> query;
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category.IsOutSideData)
@@ -56,7 +56,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = _accountingContext.CategoryRow
                             .Where(r => r.CategoryId == categoryId)
-                            .Include(r => r.ParentCategoryRow)
                             .Include(r => r.CategoryRowValues)
                             .ThenInclude(rv => rv.CategoryField)
                             .Include(r => r.CategoryRowValues)
@@ -82,10 +81,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             foreach (var item in query)
             {
-                CategoryRowOutputModel output = new CategoryRowOutputModel
-                {
-                    CategoryRowId = item.CategoryRowId
-                };
+                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(item);
 
                 ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
                 foreach (var cell in item.CategoryRowValues)
@@ -120,6 +116,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 categoryRow = await _accountingContext.CategoryRow
                   .Include(r => r.ParentCategoryRow)
+                  .ThenInclude(pr => pr.CategoryRowValues)
                   .FirstOrDefaultAsync(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId);
                 values = _accountingContext.CategoryRowValue
                   .Where(r => r.CategoryRowId == categoryRowId)
