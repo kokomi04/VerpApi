@@ -309,7 +309,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 CategoryId = categoryId,
                 UpdatedByUserId = updatedUserId,
-                CreatedByUserId = updatedUserId
+                CreatedByUserId = updatedUserId,
+                ParentCategoryRowId = data.ParentCategoryRowId
             };
             await _accountingContext.CategoryRow.AddAsync(categoryRow);
             await _accountingContext.SaveChangesAsync();
@@ -360,7 +361,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 await _accountingContext.CategoryRowValue.AddAsync(categoryRowValue);
                 await _accountingContext.SaveChangesAsync();
             }
-            return categoryRow.CategoryId;
+            return categoryRow.CategoryRowId;
         }
 
         public async Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data)
@@ -369,6 +370,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (categoryRow == null)
             {
                 return CategoryErrorCode.CategoryRowNotFound;
+            }
+
+            Enum r;
+            // Check parent row
+            if (categoryRow.ParentCategoryRowId != data.ParentCategoryRowId)
+            {
+                var category = _accountingContext.Category.First(c => c.CategoryId == categoryId);
+                r = CheckParentRow(data, category, categoryRowId);
+                if (!r.IsSuccess()) return r;
             }
 
             // Lấy thông tin field
@@ -412,7 +422,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var selectFields = updateFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
 
             // Check field required
-            var r = CheckRequired(data, requiredFields);
+            r = CheckRequired(data, requiredFields);
             if (!r.IsSuccess()) return r;
 
             // Check unique
@@ -431,6 +441,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 try
                 {
+                    // Update parent id
+                    categoryRow.ParentCategoryRowId = data.ParentCategoryRowId;
+
                     // Duyệt danh sách field
                     foreach (var field in updateFields)
                     {
@@ -563,8 +576,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        private Enum CheckParentRow(CategoryRowInputModel data, CategoryEntity category)
+        private Enum CheckParentRow(CategoryRowInputModel data, CategoryEntity category, int? categoryRowId = null)
         {
+            if (categoryRowId.HasValue && data.ParentCategoryRowId == categoryRowId)
+            {
+                return CategoryErrorCode.ParentCategoryFromItSelf;
+            }
             if (category.IsTreeView && data.ParentCategoryRowId.HasValue)
             {
                 bool isExist = _accountingContext.CategoryRow.Any(r => r.CategoryId == category.CategoryId && r.CategoryRowId == data.ParentCategoryRowId.Value);
@@ -604,9 +621,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         }
 
                         referValueId = query
-                            .Select(r => r.CategoryRowValues
-                            .FirstOrDefault(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)).CategoryRowValueId)
-                            .FirstOrDefault();
+                            .Where(r => r.CategoryRowValues.Any(
+                                rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
+                                && (isRef ? rv.SourceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)
+                            ))
+                            .FirstOrDefault()?
+                            .CategoryRowValues
+                            .Where(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
+                            .FirstOrDefault()?
+                            .CategoryRowValueId ?? 0;
                     }
                     if (referValueId <= 0)
                     {
