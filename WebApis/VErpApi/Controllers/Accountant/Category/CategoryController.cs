@@ -227,5 +227,12 @@ namespace VErpApi.Controllers.Accountant
         {
             return await _categoryService.GetLogicOperators(page, size);
         }
+
+        [HttpGet]
+        [Route("moduletypes")]
+        public async Task<ServiceResult<PageData<ModuleTypeModel>>> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetModuleTypes(page, size);
+        }
     }
 }

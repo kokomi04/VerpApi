@@ -37,7 +37,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)
         {
-            var category = await _accountingContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+            var category = await _accountingContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
@@ -167,7 +169,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     //Thêm config outside nếu là danh mục phân hệ khác
                     if (category.IsOutSideData)
                     {
-                        OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfigModel);
+                        OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
                         config.CategoryId = category.CategoryId;
                         await _accountingContext.OutSideDataConfig.AddAsync(config);
                     }
@@ -297,16 +299,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     OutSideDataConfig config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
                     if(config == null)
                     {
-                        config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfigModel);
+                        config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
                         config.CategoryId = category.CategoryId;
                         await _accountingContext.OutSideDataConfig.AddAsync(config);
                     }
                     else
                     {
-                        config.ModuleType = data.OutSideDataConfigModel.ModuleType;
-                        config.Url = data.OutSideDataConfigModel.Url;
-                        config.Key = data.OutSideDataConfigModel.Key;
-                        config.Description = data.OutSideDataConfigModel.Description;
+                        config.ModuleType = data.OutSideDataConfig.ModuleType;
+                        config.Url = data.OutSideDataConfig.Url;
+                        config.Key = data.OutSideDataConfig.Key;
+                        config.Description = data.OutSideDataConfig.Description;
                     }
                 }
 
@@ -494,5 +496,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (operators, total);
         }
 
+        public async Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size)
+        {
+            List<ModuleTypeModel> moduleTypes = new List<ModuleTypeModel>();
+            foreach (EnumModuleType type in (EnumModuleType[])EnumModuleType.GetValues(typeof(EnumModuleType)))
+            {
+                moduleTypes.Add(new ModuleTypeModel
+                {
+                    ModuleTypeValue = (int)type,
+                    ModuleTypeTitle = type.GetEnumDescription()
+                }); ;
+            }
+            int total = moduleTypes.Count;
+            if (size > 0)
+            {
+                moduleTypes = moduleTypes.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (moduleTypes, total);
+        }
     }
 }

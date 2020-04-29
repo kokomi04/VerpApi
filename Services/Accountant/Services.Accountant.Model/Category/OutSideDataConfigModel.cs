@@ -10,5 +10,6 @@ namespace VErp.Services.Accountant.Model.Category
         public string Url { get; set; }
         public string Key { get; set; }
         public string Description { get; set; }
+        public string ModuleTypeTitle { get; set; }
     }
 }

@@ -19,5 +19,6 @@ namespace VErp.Services.Accountant.Service.Category
         Task<PageData<OperatorModel>> GetOperators(int page, int size);
 
         Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size);
+        Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size);
     }
 }
