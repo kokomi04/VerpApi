@@ -22,22 +22,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 {
     public class InputTypeService : AccoutantBaseService, IInputTypeService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
 
         public InputTypeService(AccountingDBContext accountingDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputTypeService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            ) : base(accountingDBContext)
+            ) : base(accountingDBContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType(int inputTypeId)

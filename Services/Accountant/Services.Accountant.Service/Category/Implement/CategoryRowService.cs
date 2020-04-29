@@ -1,20 +1,15 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
@@ -32,21 +27,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 {
     public class CategoryRowService : AccoutantBaseService, ICategoryRowService
     {
-        private readonly AppSetting _appSetting;
+       
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
+        
         public CategoryRowService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryRowService> logger
             , IActivityLogService activityLogService
-             , IMapper mapper
-            ) : base(accountingContext)
+            , IMapper mapper
+            ) : base(accountingContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<PageData<CategoryRowOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
@@ -109,91 +102,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (lst, total);
         }
-
-        private IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId)
-        {
-            List<CategoryRow> lst = new List<CategoryRow>();
-            var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
-
-            if (!string.IsNullOrEmpty(config?.Url))
-            {
-                string url = $"{config.Url}?page=1&size=9999";
-                (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000);
-                if (result.Item2 == HttpStatusCode.OK)
-                {
-                    int[] categoryIds = GetAllCategoryIds(categoryId);
-                    List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
-
-                    foreach (var item in result.Item1.List)
-                    {
-                        // Lấy thông tin row
-                        Dictionary<string, string> properties = new Dictionary<string, string>();
-                        foreach (var jprop in item.Properties())
-                        {
-                            var key = jprop.Name;
-                            var value = jprop.Value.ToString();
-                            properties.Add(key, value);
-                        }
-
-                        // Map row Id
-                        int id = int.Parse(properties[config.Key]);
-                        CategoryRow categoryRow = new CategoryRow
-                        {
-                            CategoryRowId = id,
-                            CategoryId = categoryId,
-                        };
-
-                        // Map value cho các field
-                        foreach (var field in fields)
-                        {
-                            var value = new CategoryRowValue
-                            {
-                                CategoryFieldId = field.CategoryFieldId,
-                                Value = properties[field.CategoryFieldName],
-                                CategoryField = field
-                            };
-                            categoryRow.CategoryRowValues.Add(value);
-                        }
-                        lst.Add(categoryRow);
-                    }
-                }
-            }
-
-            return lst.AsQueryable();
-        }
-
-        public (T, HttpStatusCode) GetFromAPI<T>(string url, int apiTimeOut)
-        {
-            HttpClient client = new HttpClient();
-            T result = default;
-            HttpStatusCode status = HttpStatusCode.OK;
-
-            var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{url}";
-            var httpRequestMessage = new HttpRequestMessage
-            {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(uri)
-            };
-            httpRequestMessage.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-            CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
-
-            HttpResponseMessage response = client.SendAsync(httpRequestMessage, cts.Token).Result;
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                string data = response.Content.ReadAsStringAsync().Result;
-                result = JsonConvert.DeserializeObject<T>(data);
-            }
-            else
-            {
-                status = response.StatusCode;
-            }
-            response.Dispose();
-            cts.Dispose();
-            httpRequestMessage.Dispose();
-            client.Dispose();
-            return (result, status);
-        }
-
+        
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId)
         {
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
