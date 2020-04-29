@@ -91,12 +91,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     }
                 }
             }
-            foreach (var (data, level) in categoryRows)
+            foreach (var (Data, Level) in categoryRows)
             {
-                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(data);
-                output.CategoryRowLevel = level;
+                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(Data);
+                output.CategoryRowLevel = Level;
                 ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in data.CategoryRowValues)
+                foreach (var cell in Data.CategoryRowValues)
                 {
                     row.Add(new CategoryValueModel
                     {
@@ -562,6 +562,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return GeneralCode.InternalError;
             }
         }
+
         private Enum CheckParentRow(CategoryRowInputModel data, CategoryEntity category)
         {
             if (category.IsTreeView && data.ParentCategoryRowId.HasValue)

@@ -185,6 +185,12 @@ namespace VErpApi.Controllers.Accountant
             return await _inputValueBillService.AddInputValueBill(updatedUserId, inputTypeId, data);
         }
 
-
+        [HttpDelete]
+        [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
+        public async Task<ServiceResult> DeleteInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
+        {
+            var updatedUserId = UserId;
+            return await _inputValueBillService.DeleteInputValueBill(updatedUserId, inputTypeId, inputValueBillId);
+        }
     }
 }
