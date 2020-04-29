@@ -27,7 +27,25 @@ namespace VErp.Commons.Enums.AccountantEnum
         StartsWith = 6,
         [ParamNumber(1)]
         [Description("EndsWith")]
-        EndsWith = 7
+        EndsWith = 7,
+
+        [ParamNumber(1)]
+        [Description("Greater")]
+        Greater = 8,
+
+        [ParamNumber(1)]
+        [Description("GreaterOrEqual")]
+        GreaterOrEqual = 9,
+
+
+        [ParamNumber(1)]
+        [Description("LessThan")]
+        LessThan = 10,
+
+        [ParamNumber(1)]
+        [Description("LessThanOrEqual")]
+        LessThanOrEqual = 11,
+
     }
 
     public enum EnumLogicOperator

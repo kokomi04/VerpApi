@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -20,6 +21,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
@@ -47,6 +49,245 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             _mapper = mapper;
         }
 
+
+        public async Task<InputTypeListInfo> GetInputTypeListInfo(int inputTypeId)
+        {
+            var inputTypeInfo = await _accountingContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+
+            var data = new InputTypeListInfo()
+            {
+                Title = inputTypeInfo.Title,
+                InputTypeCode = inputTypeInfo.InputTypeCode
+            };
+
+            data.ColumnsInList = await (
+                from t in _accountingContext.InputType
+                join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
+                join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaFieldId
+                where t.InputTypeId == inputTypeId && !a.IsMultiRow
+                select new InputTypeListColumn
+                {
+                    InputAreaId = a.InputAreaId,
+                    FieldIndex = f.FieldIndex,
+                    InputAreaFieldId = f.InputAreaFieldId,
+                    FieldName = f.FieldName,
+                    FieldTitle = f.Title
+                })
+                .ToListAsync();
+
+            return data;
+        }
+
+
+
+        public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, int orderByFieldId, bool asc, int page, int size)
+        {
+            var areas = await _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId && !a.IsMultiRow).ToListAsync();
+
+            var areaIds = areas.Select(a => a.InputAreaId).ToList();
+
+            var areaFields = await _accountingContext.InputAreaField.Where(f => areaIds.Contains(f.InputAreaId)).Select(f => new { f.InputAreaFieldId, f.InputAreaId, f.FieldIndex }).ToListAsync();
+
+            var query = from b in _accountingContext.InputValueBill
+                        select new
+                        {
+                            b.InputValueBillId,
+                            OrderValue = "",
+                            OrderValueInNumber = 0L,
+                        };
+
+            foreach (var area in areas)
+            {
+
+                var fieldIndexs = areaFields.Where(f => f.InputAreaId == area.InputAreaId).Select(f => f.FieldIndex).ToList();
+                var versions = _accountingContext.InputValueRowVersion.AsQueryable();
+                var versionsInNumbers = _accountingContext.InputValueRowVersionNumber.AsQueryable();
+
+                var rParam = Expression.Parameter(typeof(InputValueRowVersion), "r");
+
+                var nParam = Expression.Parameter(typeof(InputValueRowVersionNumber), "n");
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    var expressions = new List<Expression>();
+
+                    foreach (var fieldIndex in fieldIndexs)
+                    {
+                        var methodInfo = typeof(string).GetMethod("Contains");
+                        var prop = Expression.Property(rParam, "Filed" + fieldIndex);
+
+                        expressions.Add(Expression.Call(prop, methodInfo, Expression.Constant(keyword)));
+                    }
+
+
+                    if (expressions.Count > 0)
+                    {
+                        Expression ex = Expression.Constant(true);
+
+                        foreach (var expression in expressions)
+                        {
+                            ex = Expression.OrElse(ex, expression);
+                        }
+
+                        versions = versions.Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, rParam));
+                    }
+                }
+
+
+                var rowAndExpressions = new List<Expression>();
+                var rNumberAndExpressions = new List<Expression>();
+
+                foreach (var filter in fieldFilters)
+                {
+                    var firstValue = filter.Values?.FirstOrDefault();
+                    var fieldIndex = areaFields.FirstOrDefault(f => f.InputAreaId == area.InputAreaId && f.InputAreaFieldId == filter.InputAreaFieldId)?.FieldIndex;
+                    if (fieldIndex.HasValue && !string.IsNullOrWhiteSpace(firstValue))
+                    {
+                        var rProp = Expression.Property(rParam, "Field" + fieldIndex);
+
+                        var nProp = Expression.Property(nParam, "Field" + fieldIndex);
+
+                        switch (filter.Operator)
+                        {
+                            case EnumOperator.Equal:
+                                rowAndExpressions.Add(Expression.Equal(rProp, Expression.Constant(firstValue)));
+                                break;
+
+                            case EnumOperator.NotEqual:
+                                rowAndExpressions.Add(Expression.NotEqual(rProp, Expression.Constant(firstValue)));
+                                break;
+
+                            case EnumOperator.Greater:
+                                rNumberAndExpressions.Add(Expression.NotEqual(nProp, Expression.Constant(firstValue)));
+                                break;
+
+                        }
+                    }
+                }
+
+
+
+                if (rowAndExpressions.Count > 0)
+                {
+                    Expression ex = Expression.Constant(true);
+
+                    foreach (var expression in rowAndExpressions)
+                    {
+                        ex = Expression.OrElse(ex, expression);
+                    }
+
+                    versions = versions.Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, rParam));
+                }
+
+                if (rNumberAndExpressions.Count > 0)
+                {
+                    Expression ex = Expression.Constant(true);
+
+                    foreach (var expression in rNumberAndExpressions)
+                    {
+                        ex = Expression.OrElse(ex, expression);
+                    }
+
+                    versionsInNumbers = versionsInNumbers.Where(Expression.Lambda<Func<InputValueRowVersionNumber, bool>>(ex, nParam));
+                }
+
+
+                var vMapFields = new Dictionary<string, string>();
+                vMapFields.Add("InputValueBillId", "InputValueBillId");
+                vMapFields.Add("InputValueRowVersionId", "InputValueRowVersionId");
+
+                var nMapFields = new Dictionary<string, string>();
+                nMapFields.Add("InputValueBillId", "InputValueBillId");
+                nMapFields.Add("InputValueRowVersionId", "InputValueRowVersionId");
+
+                var sortField = areaFields.FirstOrDefault(f => f.InputAreaFieldId == orderByFieldId);
+                if (sortField != null)
+                {
+                    vMapFields.Add("OrderValue", "Field" + sortField.FieldIndex);
+                    vMapFields.Add("OrderValueInNumber", "Field" + sortField.FieldIndex);
+                }
+
+
+                var sortVersion = versions.DynamicSelectGenerator<InputValueRowVersion, InputValueBillOrderValueModel>(vMapFields);
+
+                var sortVersionInNumbers = versionsInNumbers.DynamicSelectGenerator<InputValueRowVersionNumber, InputValueBillOrderValueInNumberModel>(vMapFields);
+
+                //query = from b in query
+                //        join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
+                //        join v in versions on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                //        join n in versionsInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
+                //        where r.InputAreaId == area.InputAreaId
+                //        select new
+                //        {
+                //            b.InputValueBillId,
+                //            OrderValue = ,
+                //            OrderValueInNumber = 0,
+                //        };
+
+                query = from b in query
+                        join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
+                        join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                        join n in sortVersionInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
+                        where r.InputAreaId == area.InputAreaId
+                        select new
+                        {
+                            b.InputValueBillId,
+                            OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
+                            OrderValueInNumber = b.OrderValueInNumber == 0 ? n.OrderValueInNumber : b.OrderValueInNumber,
+                        };
+
+            }
+
+            var total = await query.CountAsync();
+
+            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber) : query.OrderByDescending(b => b.OrderValueInNumber)).Skip((page - 1) * size).Take(size).ToListAsync();
+
+            var lst = new List<InputValueBillListOutput>();
+
+            var billIds = pagedData.Select(b => b.InputValueBillId).ToList();
+            var rowData = (await (
+                   from r in _accountingContext.InputValueRow
+                   join v in _accountingContext.InputValueRowVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                   where billIds.Contains(r.InputValueBillId)
+                   select new
+                   {
+                       r.InputValueBillId,
+                       r.InputAreaId,
+                       Row = v
+                   })
+                   .ToListAsync()
+                   )
+                   .GroupBy(r => r.InputValueBillId)
+                   .ToDictionary(r => r.Key, r => r);
+
+
+            var type = typeof(InputValueRowVersion);
+            IList<PropertyInfo> properties = new List<PropertyInfo>();
+            for (var i = 0; i <= 20; i++)
+            {
+                properties.Add(type.GetProperty("Field" + i));
+            }
+
+
+            foreach (var bill in pagedData)
+            {
+                var row = new InputValueBillListOutput();
+                row.InputValueBillId = bill.InputValueBillId;
+
+                rowData.TryGetValue(bill.InputValueBillId, out var data);
+
+                var areaValues = new Dictionary<int, string[]>();
+
+                row.AreaValues = data.GroupBy(d => d.InputAreaId)
+                    .ToDictionary(d => d.Key,
+                    d => properties.Select(p => p.GetValue(d.First().Row).ToString()).ToArray()
+                    );
+            }
+
+            return (lst, total);
+        }
+
+
         public async Task<PageData<InputValueBillOutputModel>> GetInputValueBills(int inputTypeId, string keyword, int page, int size)
         {
             var lst = new List<InputValueBillOutputModel>();
@@ -55,6 +296,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             return (lst, 0);
         }
+
+
 
         public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
@@ -343,5 +586,20 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             return GeneralCode.Success;
         }
+    }
+
+
+    public class InputValueBillOrderValueModel
+    {
+        public long InputValueBillId { get; set; }
+        public long InputValueRowVersionId { get; set; }
+        public string OrderValue { get; set; }
+    }
+
+    public class InputValueBillOrderValueInNumberModel
+    {
+        public long InputValueBillId { get; set; }
+        public long InputValueRowVersionId { get; set; }
+        public long OrderValueInNumber { get; set; }
     }
 }
