@@ -23,7 +23,7 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsReadonly { get; set; }
         public bool IsOutSideData { get; set; }
         public bool IsTreeView { get; set; }
-        public OutSideDataConfigModel OutSideDataConfigModel { get; set; }
+        public OutSideDataConfigModel OutSideDataConfig{ get; set; }
         public ICollection<T> SubCategories { get; set; }
     }
 

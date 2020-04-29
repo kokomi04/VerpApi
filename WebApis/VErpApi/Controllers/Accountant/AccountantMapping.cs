@@ -1,5 +1,7 @@
 ﻿using System;
 using AutoMapper;
+using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
@@ -23,7 +25,8 @@ namespace VErpApi.Controllers.Accountant
             CreateMap<CategoryField, CategoryFieldOutputFullModel>();
             CreateMap<CategoryFieldInputModel, CategoryField>();
             CreateMap<CategoryValueModel, CategoryValue>().ReverseMap();
-            CreateMap<OutSideDataConfig, OutSideDataConfigModel>().ReverseMap();
+            CreateMap<OutSideDataConfig, OutSideDataConfigModel>().ForMember(d => d.ModuleTypeTitle, opt => opt.MapFrom(s => ((EnumModuleType)s.ModuleType).GetEnumDescription()));
+            CreateMap<OutSideDataConfigModel, OutSideDataConfig>();
             CreateMap<CategoryRow, CategoryRowOutputModel>();
             CreateMap<CategoryRow, CategoryRowListOutputModel>();
             CreateMap<CategoryRowInputModel, CategoryRow>();
