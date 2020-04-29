@@ -19,6 +19,7 @@ namespace VErp.Services.Accountant.Model.Category
     public class CategoryRowListOutputModel : CategoryRowInputModel
     {
         public int CategoryRowId { get; set; }
+        public int CategoryRowLevel { get; set; }
     }
 
     public class CategoryRowOutputModel : CategoryRowListOutputModel
