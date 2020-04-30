@@ -157,6 +157,13 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
+        [Route("{inputTypeId}/listInfo")]
+        public async Task<ServiceResult<InputTypeListInfo>> GetInputValueBills([FromRoute] int inputTypeId)
+        {
+            return await _inputValueBillService.GetInputTypeListInfo(inputTypeId).ConfigureAwait(false);
+        }
+
+        [HttpGet]
         [Route("{inputTypeId}/bills")]
         public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] IList<InputValueFilterModel> fieldFilters, [FromQuery] int orderByFieldId, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
