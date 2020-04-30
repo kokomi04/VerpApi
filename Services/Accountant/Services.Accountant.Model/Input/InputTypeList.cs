@@ -19,11 +19,12 @@ namespace VErp.Services.Accountant.Model.Input
         public int FieldIndex { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
+        public bool IsMultiRow { get; set; }
     }
 
     public class InputValueBillListOutput
     {
         public long InputValueBillId { get; set; }
-        public IDictionary<int, string[]> AreaValues { get; set; }
+        public IDictionary<int, string> FieldValues { get; set; }
     }
 }
