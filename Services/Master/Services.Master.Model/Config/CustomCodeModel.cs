@@ -9,7 +9,6 @@ namespace VErp.Services.Master.Model.Config
     {
         public string CustomCode { get; set; }
         public int LastValue { get; set; }
-        public int ObjectTypeId { get; set; }
-        public int ObjectId { get; set; }
+        public int CustomGenCodeId { get; set; }
     }
 }
