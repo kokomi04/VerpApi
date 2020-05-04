@@ -67,7 +67,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     InputAreaFieldId = f.InputAreaFieldId,
                     FieldName = f.FieldName,
                     FieldTitle = f.Title,
-                    IsMultiRow = a.IsMultiRow
+                    IsMultiRow = a.IsMultiRow,
+                    DataTypeId = (EnumDataType)f.DataTypeId
                 })
                 .ToListAsync();
 
