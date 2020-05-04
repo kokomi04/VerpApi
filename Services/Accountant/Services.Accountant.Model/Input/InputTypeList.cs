@@ -20,6 +20,7 @@ namespace VErp.Services.Accountant.Model.Input
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
         public bool IsMultiRow { get; set; }
+        public EnumDataType DataTypeId { get; set; }
     }
 
     public class InputValueBillListOutput
