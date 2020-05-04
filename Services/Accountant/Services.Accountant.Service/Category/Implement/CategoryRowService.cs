@@ -81,6 +81,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (category.IsTreeView)
                 {
                     var temp = query.ToList();
+                    int[] parentIds = GetParentIds(temp);
+                    temp.AddRange(_accountingContext.CategoryRow
+                        .Include(r => r.CategoryRowValues)
+                        .ThenInclude(rv => rv.CategoryField)
+                        .Include(r => r.CategoryRowValues)
+                        .ThenInclude(rv => rv.SourceCategoryRowValue)
+                        .Where(r => parentIds.Contains(r.CategoryRowId)));
                     categoryRows = SortCategoryRows(temp).Skip((page - 1) * size).Take(size).ToList();
                 }
                 else
@@ -111,20 +118,49 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (lst, total);
         }
 
+        private int[] GetParentIds(List<CategoryRow> categoryRows)
+        {
+            List<int> result = new List<int>();
+
+            int[] parentIds = categoryRows
+                .Where(r => r.ParentCategoryRowId.HasValue && !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId))
+                .Select(r => r.ParentCategoryRowId.Value)
+                .Distinct()
+                .ToArray();
+            result.AddRange(parentIds);
+
+            while(parentIds.Length > 0)
+            {
+                parentIds = _accountingContext.CategoryRow
+                    .Where(r => parentIds.Contains(r.CategoryRowId) && r.ParentCategoryRowId.HasValue)
+                    .Select(r => r.ParentCategoryRowId.Value)
+                    .Distinct()
+                    .ToArray();
+                result.AddRange(parentIds);
+            }
+
+            return result.Distinct().ToArray();
+        }
+
         private List<(CategoryRow Data, int Level)> SortCategoryRows(List<CategoryRow> categoryRows)
         {
             int level = 0;
             categoryRows = categoryRows.OrderBy(r => r.CategoryRowId).ToList();
             List<(CategoryRow Data, int Level)> nodes = new List<(CategoryRow Data, int Level)>();
-            var items = categoryRows.Where(r => !r.ParentCategoryRowId.HasValue).ToList();
-            categoryRows.RemoveAll(r => !r.ParentCategoryRowId.HasValue);
+
+            var items = categoryRows.Where(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId)).ToList();
+            categoryRows.RemoveAll(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId));
             foreach (var item in items)
             {
                 nodes.Add((item, level));
                 nodes.AddRange(GetChilds(ref categoryRows, item.CategoryRowId, level));
             }
+
             return nodes;
         }
+
+         
+
 
         private IEnumerable<(CategoryRow Data, int Level)> GetChilds(ref List<CategoryRow> categoryRows, int categoryRowId, int level)
         {
