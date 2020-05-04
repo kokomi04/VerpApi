@@ -122,9 +122,9 @@ namespace VErpApi.Controllers.System
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("generateCode")]
-        public async Task<ServiceResult<string>> GenerateCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<ServiceResult<CustomCodeModel>> GenerateCode([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int lastValue)
         {
-            return await _customGenCodeService.GenerateCode(objectTypeId, objectId);
+            return await _customGenCodeService.GenerateCode(objectTypeId, objectId, lastValue);
         }
 
         [HttpPut]
