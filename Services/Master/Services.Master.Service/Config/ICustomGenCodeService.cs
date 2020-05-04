@@ -22,7 +22,7 @@ namespace VErp.Services.Master.Service.Config
         
         Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model);
 
-        Task<ServiceResult<CustomCodeModel>> GenerateCode(int objectTypeId, int objectId, int lastValue);
+        Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue);
 
         Task<PageData<ObjectType>> GetAllObjectType();
 

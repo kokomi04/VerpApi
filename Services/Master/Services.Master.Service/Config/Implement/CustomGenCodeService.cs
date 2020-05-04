@@ -271,22 +271,16 @@ namespace VErp.Services.Master.Service.Config.Implement
             return result;
         }
 
-        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int objectTypeId, int objectId, int lastValue)
+        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue)
         {
             CustomCodeModel result;
             try
             {
                 using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
-                    var config = _masterDbContext.ObjectCustomGenCodeMapping
-                        .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
-                        {
-                            ObjectCustomGenCodeMapping = m,
-                            CustomGenCodeId = c
-                        })
-                        .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId && q.ObjectCustomGenCodeMapping.ObjectId == objectId && q.CustomGenCodeId.IsActived && !q.CustomGenCodeId.IsDeleted)
-                        .Select(q => q.CustomGenCodeId)
-                        .FirstOrDefault();
+                    var config = _masterDbContext.CustomGenCode
+                        .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
+
                     if (config == null)
                     {
                         trans.Rollback();
@@ -326,8 +320,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     {
                         CustomCode = newCode,
                         LastValue = newId,
-                        ObjectId = objectId,
-                        ObjectTypeId = objectTypeId
+                        CustomGenCodeId = config.CustomGenCodeId,
                     };
                 }
             }

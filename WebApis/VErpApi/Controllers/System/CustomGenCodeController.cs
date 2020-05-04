@@ -117,14 +117,13 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Tạo mã code
         /// </summary>
-        /// <param name="objectTypeId">Loại đối tượng cần tạo mã code</param>
-        /// <param name="objectId">Id đối tượng cần tạo mã code</param>
+        /// <param name="customGenCodeId">Id cấu hình gen code</param>
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("generateCode")]
-        public async Task<ServiceResult<CustomCodeModel>> GenerateCode([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int lastValue)
+        public async Task<ServiceResult<CustomCodeModel>> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue)
         {
-            return await _customGenCodeService.GenerateCode(objectTypeId, objectId, lastValue);
+            return await _customGenCodeService.GenerateCode(customGenCodeId, lastValue);
         }
 
         [HttpPut]
