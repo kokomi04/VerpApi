@@ -48,5 +48,6 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<ServiceResult> PoAssignmentSendToUser(long purchasingSuggestId, long poAssignmentId);
         Task<ServiceResult> PoAssignmentUserConfirm(long poAssignmentId);
+        Task<IDictionary<long, IList<long>>> GetSuggestByRequest(IList<long> purchasingRequestIds);
     }
 }

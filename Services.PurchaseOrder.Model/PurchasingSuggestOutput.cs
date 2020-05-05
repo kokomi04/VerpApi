@@ -29,7 +29,14 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Content { get; set; }
         public int RejectCount { get; set; }
         public IList<long> FileIds { get; set; }
-        public List<PurchasingSuggestDetailModel> Details { set; get; }
+        public List<PurchasingSuggestDetailOutputModel> Details { set; get; }
+    }
+
+    public class PurchasingSuggestDetailOutputModel : PurchasingSuggestDetailInputModel
+    {
+        public long? PurchasingRequestId { get; set; }
+        public string PurchasingRequestCode { get; set; }
+        public decimal? PurchasingRequestPrimaryQuantity { get; set; }
     }
 
     public class PurchasingSuggestOutputListByProduct : PurchasingSuggestOutputList
