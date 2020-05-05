@@ -44,10 +44,9 @@ namespace VErp.Services.Stock.Service.Location.Implement
         public async Task<ServiceResult<int>> AddLocation(LocationInput req)
         {
             var checkExisted = _stockDbContext.Location.Any(q =>
-                !q.IsDeleted && q.StockId == req.StockId && string.Equals(q.Name, req.Name,
-                    StringComparison.CurrentCultureIgnoreCase));
+                q.StockId == req.StockId && q.Name == req.Name);
 
-            if(checkExisted)
+            if (checkExisted)
                 return LocationErrorCode.LocationAlreadyExisted;
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -68,7 +67,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.AddAsync(locationInfo);
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
-                   
+
                     await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", req.JsonSerialize());
 
                     return locationInfo.StockId;
@@ -94,8 +93,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
             locationInfo.IsDeleted = true;
             locationInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-          
-           
+
+
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -145,7 +144,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                         select q;
             }
 
-            query = query.OrderBy(q=>q.StockId);
+            query = query.OrderBy(q => q.StockId);
 
             var total = await query.CountAsync();
             var locationList = await query.Skip((page - 1) * size).Take(size).ToListAsync();
@@ -192,7 +191,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
         {
             req.Name = (req.Name ?? "").Trim();
 
-            var checkExistsName = await _stockDbContext.Location.AnyAsync(p => p.Name == req.Name && p.StockId != req.StockId);
+            var checkExistsName = await _stockDbContext.Location.AnyAsync(p => locationId != p.LocationId && p.Name == req.Name && p.StockId == req.StockId);
             if (checkExistsName)
             {
                 return LocationErrorCode.LocationAlreadyExisted;
@@ -208,7 +207,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     {
                         return LocationErrorCode.LocationNotFound;
                     }
-                   
+
                     //Update
 
                     locationInfo.StockId = req.StockId;
@@ -219,7 +218,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
-                   
+
                     await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", req.JsonSerialize());
 
                     return GeneralCode.Success;
@@ -231,6 +230,6 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     return GeneralCode.InternalError;
                 }
             }
-        }       
+        }
     }
 }
