@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -67,6 +68,66 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
+        public async Task<PageData<InputAreaFieldOutputFullModel>> GetAll(string keyword, int page, int size)
+        {
+            keyword = (keyword ?? "").Trim();
+            var query = _accountingContext.InputAreaField
+                .Include(f => f.InputAreaFieldStyle)
+                .Include(f => f.DataType)
+                .Include(f => f.FormType)
+                .Include(f => f.SourceCategoryField)
+                .Include(f => f.SourceCategoryTitleField)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
+            }
+
+            var groups = from field in query
+                         group field by new
+                         {
+                             field.FieldName,
+                             field.Title,
+                             field.Filters,
+                             field.ReferenceCategoryFieldId,
+                             field.ReferenceCategoryTitleFieldId,
+                             field.DataTypeId,
+                             field.FormTypeId,
+                             field.IsAutoIncrement,
+                             field.IsHidden,
+                             field.IsRequire,
+                             field.IsUnique,
+                             field.Placeholder,
+                             field.RegularExpression
+
+                         } into fieldGroup
+                         select new
+                         {
+                             fieldGroup.Key,
+                             InputAreaFieldId = fieldGroup.Max(f => f.InputAreaFieldId)
+                         };
+
+            var total = await groups.Select(g => g.Key).CountAsync();
+            var fieldIds = groups.Select(g => g.InputAreaFieldId);
+
+            if (size > 0)
+            {
+                query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
+            }
+            List<InputAreaFieldOutputFullModel> lst = query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToList();
+            foreach (InputAreaFieldOutputFullModel item in lst)
+            {
+                if (item.SourceCategoryField != null)
+                {
+                    CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
+                    item.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                }
+            }
+            return (lst, total);
+        }
+
+
         public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
         {
             var inputAreaField = await _accountingContext.InputAreaField
@@ -84,7 +145,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             if (inputAreaField.SourceCategoryField != null)
             {
-                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.SourceCategoryField) ;
+                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.SourceCategoryField);
                 inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
             }
 
