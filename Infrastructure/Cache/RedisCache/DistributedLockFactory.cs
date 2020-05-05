@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.AppSettings;
 
 namespace Verp.Cache.RedisCache
@@ -82,6 +83,11 @@ namespace Verp.Cache.RedisCache
         public static string GetLockStockResourceKey(int stockId)
         {
             return $"STOCK_LOCK_{stockId}";
+        }
+
+        public static string GetLockGenerateCodeKey(EnumObjectType objectTypeId)
+        {
+            return $"GENERATECODE_LOCK_{objectTypeId}";
         }
     }
 
