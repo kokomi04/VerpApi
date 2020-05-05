@@ -170,6 +170,69 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchasingSuggestService.UpdatePoProcessStatus(purchasingSuggestId, poProcessStatusModel.PoProcessStatusId).ConfigureAwait(true);
         }
 
+
+        /// <summary>
+        /// Lấy tất cả danh sách phân công mua hàng
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="assigneeUserId"></param>
+        /// <param name="poAssignmentStatusId"></param>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AllUsers/Assignments")]
+        public async Task<ServiceResult<PageData<PoAssignmentOutputList>>> AllUsersAssignments([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        {
+            return await _purchasingSuggestService
+                .PoAssignmentListByUser(keyword, poAssignmentStatusId, assigneeUserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
+                .ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy danh sách phân công mua hàng theo sản phẩm
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="assigneeUserId"></param>
+        /// <param name="productIds"></param>
+        /// <param name="poAssignmentStatusId"></param>
+        /// <param name="purchasingSuggestId"></param>
+        /// <param name="fromDate"></param>
+        /// <param name="toDate"></param>
+        /// <param name="sortBy"></param>
+        /// <param name="asc"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AllUsers/AssignmentsByProduct")]
+        public async Task<ServiceResult<PageData<PoAssignmentOutputListByProduct>>> AllUsersAssignmentsByProduct([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        {
+            return await _purchasingSuggestService
+                .PoAssignmentListByProduct(keyword, productIds, poAssignmentStatusId, assigneeUserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
+                .ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy thông tin phân công mua hàng theo user đang đăng nhập
+        /// </summary>
+        /// <param name="poAssignmentId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AllUsers/Assignments/{poAssignmentId}")]
+        public async Task<ServiceResult<PoAssignmentOutput>> AllUsersAssignmentInfo([FromRoute] long poAssignmentId)
+        {
+            return await _purchasingSuggestService
+                .PoAssignmentInfo(poAssignmentId, null)
+                .ConfigureAwait(true);
+        }
+
+
         /// <summary>
         /// Lấy danh sách phân công mua hàng được giao của user đang login
         /// </summary>
