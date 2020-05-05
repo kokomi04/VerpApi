@@ -13,8 +13,8 @@ namespace Verp.Cache.RedisCache
 {
     public static class DistributedLockFactory
     {
-        static readonly TimeSpan DefaultExpiryTime = TimeSpan.FromSeconds(30);
-        static readonly TimeSpan DefaultWaitTime = TimeSpan.FromSeconds(10);
+        static readonly TimeSpan DefaultExpiryTime = TimeSpan.FromSeconds(120);
+        static readonly TimeSpan DefaultWaitTime = TimeSpan.FromSeconds(60);
         static readonly TimeSpan DefaultRetryTime = TimeSpan.FromMilliseconds(300);
 
         private static List<RedLockEndPoint> _redlockEndpoint = null;
@@ -43,26 +43,27 @@ namespace Verp.Cache.RedisCache
             }
             return _redlockEndpoint;
         }
-       
+
         private class RedLockFactoryInstance
         {
             public static readonly RedLockFactory RedisLockFactory = RedLockFactory.Create(GetRedLockEndpoints());
-
         }
+
         public static async Task<IRedLock> GetLockAsync(string resource,
            TimeSpan? expiryTime = null, TimeSpan? waitTime = null, TimeSpan? retryTime = null)
         {
             try
             {
+                waitTime = waitTime ?? DefaultWaitTime;
+                expiryTime = expiryTime ?? DefaultExpiryTime;
+                retryTime = retryTime ?? DefaultRetryTime;
+
                 var redLockEndpoints = GetRedLockEndpoints();
                 if (redLockEndpoints == null)
                 {
-                    return MemLockLock.CreateLockAsync(resource);
+                    return await MemLockLock.CreateLockAsync(resource, expiryTime.Value, waitTime.Value, retryTime.Value);
                 }
 
-                expiryTime = expiryTime ?? DefaultExpiryTime;
-                waitTime = waitTime ?? DefaultWaitTime;
-                retryTime = retryTime ?? DefaultRetryTime;
                 var @lock = await RedLockFactoryInstance.RedisLockFactory.CreateLockAsync(resource, expiryTime.Value, waitTime.Value, retryTime.Value);
                 if (!@lock.IsAcquired)
                 {
@@ -93,26 +94,41 @@ namespace Verp.Cache.RedisCache
 
     public class MemLockLock : IRedLock
     {
-        private static readonly HashSet<string> _resources = new HashSet<string>();
+        private static readonly IDictionary<string, DateTime> _resources = new Dictionary<string, DateTime>();
         private static readonly object _objLock = new object();
         private string _resource;
         private Guid _lockId;
         public MemLockLock(string resource)
         {
-            _resources.Add(resource);
+            _resources.Add(resource, DateTime.UtcNow);
             _resource = resource;
             _lockId = Guid.NewGuid();
         }
-        public static IRedLock CreateLockAsync(string resource)
+
+        public static async Task<IRedLock> CreateLockAsync(string resource, TimeSpan expiryTime, TimeSpan waitTime, TimeSpan retryTime)
         {
-            lock (_objLock)
+            for (var i = 0; i < waitTime.TotalMilliseconds; i += (int)retryTime.TotalMilliseconds)
             {
-                if (_resources.Contains(resource))
+                lock (_objLock)
                 {
-                    throw new DistributedLockExeption(resource);
+                    if (!_resources.ContainsKey(resource))
+                    {
+                        return new MemLockLock(resource);
+                    }
+                    else
+                    {
+                        if (DateTime.UtcNow.Subtract(_resources[resource]) > expiryTime)
+                        {
+                            _resources.Remove(resource);
+                            return new MemLockLock(resource);
+                        }
+                    }
                 }
-                return new MemLockLock(resource);
+
+                await Task.Delay((int)retryTime.TotalMilliseconds);
             }
+
+            throw new DistributedLockExeption(resource);
         }
 
         public string Resource => _resource;
