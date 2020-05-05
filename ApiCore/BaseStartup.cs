@@ -101,7 +101,7 @@ namespace VErp.Infrastructure.ApiCore
                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-               options.SerializerSettings.Converters.Add(new StringEnumConverter());
+               //options.SerializerSettings.Converters.Add(new StringEnumConverter());
            });
 
 
