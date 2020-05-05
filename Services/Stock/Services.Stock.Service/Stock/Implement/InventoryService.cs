@@ -1949,7 +1949,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                    }).FirstAsync();
 
 
-            if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER || sums.TotalSecondary - outSecondary < MINIMUM_JS_NUMBER)
+            if (sums.TotalPrimary.SubDecimal(outPrimary) < 0 || sums.TotalSecondary.SubDecimal(outSecondary) < 0)
             {
                 var productCode = await _stockDbContext
                                     .Product
