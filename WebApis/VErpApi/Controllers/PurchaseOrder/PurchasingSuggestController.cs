@@ -85,11 +85,12 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <summary>
         /// Kiểm tra các yêu cầu đã được tạo những đề nghị nào
         /// </summary>
-        /// <param name="purchasingRequestIds">Id request: [purcharsingRequestId1, purcharsingRequestId2]</param>
-        /// <returns>Danh sách suggest của các request: { purcharsingRequestId1: [purcharsingSuggestId1, purcharsingSuggestId2, ...], purcharsingRequestId2: [purcharsingSuggestId1, purcharsingSuggestId3,...] }</returns>
+        /// <param name="purchasingRequestIds">Danh sách request Ids: [purcharsingRequestId1, purcharsingRequestId2]</param>
+        /// <returns></returns>
+        /// <response code="200">Danh sách suggest của các request: { purcharsingRequestId1: [{purcharsingSuggestId: 1, purcharsingSuggestCode: "SC1"}, {purcharsingSuggestId: 2, purcharsingSuggestCode: "SC2"}, ...], ...] }</response>
         [HttpGet]
-        [Route("GetSuggestByRequest")]
-        public async Task<IDictionary<long, IList<long>>> GetSuggestByRequest([FromQuery] IList<long> purchasingRequestIds)
+        [Route("GetSuggestByRequest")]        
+        public async Task<IDictionary<long, IList<PurchasingSuggestBasic>>> GetSuggestByRequest([FromQuery] IList<long> purchasingRequestIds)
         {
             return await _purchasingSuggestService.GetSuggestByRequest(purchasingRequestIds).ConfigureAwait(true);
         }

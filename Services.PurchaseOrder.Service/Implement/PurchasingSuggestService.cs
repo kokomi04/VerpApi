@@ -1235,22 +1235,30 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<IDictionary<long, IList<long>>> GetSuggestByRequest(IList<long> purchasingRequestIds)
+        public async Task<IDictionary<long, IList<PurchasingSuggestBasic>>> GetSuggestByRequest(IList<long> purchasingRequestIds)
         {
             var suggestDetail = await (
-                from s in _purchaseOrderDBContext.PurchasingSuggestDetail
-                join r in _purchaseOrderDBContext.PurchasingRequestDetail on s.PurchasingRequestDetailId equals r.PurchasingRequestDetailId
+                from s in _purchaseOrderDBContext.PurchasingSuggest
+                join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals sd.PurchasingSuggestId
+                join r in _purchaseOrderDBContext.PurchasingRequestDetail on sd.PurchasingRequestDetailId equals r.PurchasingRequestDetailId
                 where purchasingRequestIds.Contains(r.PurchasingRequestId)
                 select new
                 {
                     r.PurchasingRequestId,
-                    s.PurchasingSuggestId
+                    s.PurchasingSuggestId,
+                    s.PurchasingSuggestCode
                 }).ToListAsync();
 
             return purchasingRequestIds.Distinct()
                 .ToDictionary(
                 r => r,
-                r => (IList<long>)suggestDetail.Where(d => d.PurchasingRequestId == r).Select(d => d.PurchasingSuggestId).Distinct().ToList()
+                r => (IList<PurchasingSuggestBasic>)suggestDetail.Where(d => d.PurchasingRequestId == r).Select(d => new PurchasingSuggestBasic
+                    {
+                        PurchasingSuggestId = d.PurchasingSuggestId,
+                        PurchasingSuggestCode = d.PurchasingSuggestCode
+                    })
+                    .Distinct()
+                    .ToList()
                 );
         }
 
