@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("/fields")]
+        [Route("fields")]
         public async Task<ServiceResult<PageData<InputAreaFieldOutputFullModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputAreaFieldService.GetAll(keyword, page, size);
