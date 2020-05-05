@@ -49,6 +49,13 @@ namespace VErpApi.Controllers.Accountant
             return await _inputTypeService.GetInputTypes(keyword, page, size);
         }
 
+        [HttpGet]
+        [Route("/fields")]
+        public async Task<ServiceResult<PageData<InputAreaFieldOutputFullModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inputAreaFieldService.GetAll(keyword, page, size);
+        }
+
         [HttpPost]
         [Route("")]
         public async Task<ServiceResult<int>> AddInputType([FromBody] InputTypeModel category)
