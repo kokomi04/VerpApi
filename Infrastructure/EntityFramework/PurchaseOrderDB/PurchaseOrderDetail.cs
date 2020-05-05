@@ -22,5 +22,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
         public virtual PurchaseOrder PurchaseOrder { get; set; }
+        public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
     }
 }

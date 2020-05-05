@@ -81,6 +81,19 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchasingSuggestService.GetInfo(purchasingSuggestId).ConfigureAwait(true);
         }
 
+
+        /// <summary>
+        /// Kiểm tra các yêu cầu đã được tạo những đề nghị nào
+        /// </summary>
+        /// <param name="purchasingRequestIds">Id request: [purcharsingRequestId1, purcharsingRequestId2]</param>
+        /// <returns>Danh sách suggest của các request: { purcharsingRequestId1: [purcharsingSuggestId1, purcharsingSuggestId2, ...], purcharsingRequestId2: [purcharsingSuggestId1, purcharsingSuggestId3,...] }</returns>
+        [HttpGet]
+        [Route("GetSuggestByRequest")]
+        public async Task<IDictionary<long, IList<long>>> GetSuggestByRequest([FromQuery] IList<long> purchasingRequestIds)
+        {
+            return await _purchasingSuggestService.GetSuggestByRequest(purchasingRequestIds).ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Thêm mới phiếu đề nghị mua hàng
         /// </summary>

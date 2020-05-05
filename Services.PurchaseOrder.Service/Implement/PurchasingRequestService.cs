@@ -266,6 +266,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
+
+        public async Task<IList<PurchasingRequestDetailInfo>> PurchasingRequestDetailInfo(IList<long> purchasingRequestDetailIds)
+        {
+            if (purchasingRequestDetailIds == null || purchasingRequestDetailIds.Count == 0)
+                return new List<PurchasingRequestDetailInfo>();
+
+            return await (
+                from d in _purchaseOrderDBContext.PurchasingRequestDetail
+                join r in _purchaseOrderDBContext.PurchasingRequest on d.PurchasingRequestId equals r.PurchasingRequestId
+                where purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId)
+                select new PurchasingRequestDetailInfo
+                {
+                    PurchasingRequestId = r.PurchasingRequestId,
+                    PurchasingRequestCode = r.PurchasingRequestCode,
+                    PurchasingRequestDetailId = d.PurchasingRequestDetailId,
+                    PrimaryQuantity = d.PrimaryQuantity
+                })
+            .ToListAsync();
+        }
+
         public async Task<ServiceResult<long>> Create(PurchasingRequestInput model)
         {
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
