@@ -6,10 +6,14 @@ using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
-    public class PurchasingSuggestOutputList
+    public class PurchasingSuggestBasic
     {
         public long PurchasingSuggestId { get; set; }
         public string PurchasingSuggestCode { get; set; }
+    }
+
+    public class PurchasingSuggestOutputList: PurchasingSuggestBasic
+    {
         public string OrderCode { get; set; }
         public EnumPurchasingSuggestStatus PurchasingSuggestStatusId { get; set; }
         public bool? IsApproved { get; set; }
