@@ -33,6 +33,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
         private readonly IObjectGenCodeService _objectGenCodeService;
+        private readonly IPurchasingRequestService _purchasingRequestService;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -42,6 +43,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
             , IObjectGenCodeService objectGenCodeService
+            , IPurchasingRequestService purchasingRequestService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -51,6 +53,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
             _objectGenCodeService = objectGenCodeService;
+            _purchasingRequestService = purchasingRequestService;
         }
 
 
@@ -66,6 +69,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .ToListAsync();
 
             var files = await _purchaseOrderDBContext.PurchasingSuggestFile.AsNoTracking().Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+            var requestDetailIds = details.Select(d => d.PurchasingRequestDetailId).Where(d => d.HasValue).Select(d => d.Value).ToList();
+
+            var requestDetailInfos = (await _purchasingRequestService.PurchasingRequestDetailInfo(requestDetailIds)).ToDictionary(d => d.PurchasingRequestDetailId, d => d);
 
             return new PurchasingSuggestOutput()
             {
@@ -86,18 +93,27 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 RejectCount = info.RejectCount,
                 Content = info.Content,
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d => new PurchasingSuggestDetailModel()
+                Details = details.Select(d =>
                 {
-                    PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
-                    ProductId = d.ProductId,
-                    PrimaryQuantity = d.PrimaryQuantity,
+                    requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                    return new PurchasingSuggestDetailOutputModel()
+                    {
+                        PurchasingRequestDetailId = requestDetailInfo?.PurchasingRequestDetailId,
+                        PurchasingRequestId = requestDetailInfo?.PurchasingRequestId,
+                        PurchasingRequestCode = requestDetailInfo?.PurchasingRequestCode,
+                        PurchasingRequestPrimaryQuantity = requestDetailInfo?.PrimaryQuantity,
 
-                    CustomerId = d.CustomerId,
-                    PurchasingRequestIds = d.PurchasingRequestIds.JsonDeserialize<long[]>(),
-                    PrimaryUnitPrice = d.PrimaryUnitPrice,
-                    TaxInPercent = d.TaxInPercent,
-                    TaxInMoney = d.TaxInMoney
-                }).ToList()
+                        PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                        ProductId = d.ProductId,
+                        PrimaryQuantity = d.PrimaryQuantity,
+
+                        CustomerId = d.CustomerId,
+                        PrimaryUnitPrice = d.PrimaryUnitPrice,
+                        TaxInPercent = d.TaxInPercent,
+                        TaxInMoney = d.TaxInMoney
+                    };
+                }
+                ).ToList()
             };
 
         }
@@ -276,7 +292,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (result, total);
 
         }
-        
+
         public async Task<ServiceResult<long>> Create(PurchasingSuggestInput model)
         {
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
@@ -372,7 +388,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
                             detail.TaxInPercent = item.TaxInPercent;
                             detail.TaxInMoney = item.TaxInMoney;
-                            detail.PurchasingRequestIds = item.PurchasingRequestIds.JsonSerialize();
+                            detail.PurchasingRequestDetailId = item.PurchasingRequestDetailId;
                             break;
                         }
                     }
@@ -757,7 +773,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         select q;
             }
 
-            if(productIds!=null&& productIds.Count > 0)
+            if (productIds != null && productIds.Count > 0)
             {
                 query = from q in query
                         where productIds.Contains(q.ProductId)
@@ -1219,8 +1235,35 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
+        public async Task<IDictionary<long, IList<PurchasingSuggestBasic>>> GetSuggestByRequest(IList<long> purchasingRequestIds)
+        {
+            var suggestDetail = await (
+                from s in _purchaseOrderDBContext.PurchasingSuggest
+                join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals sd.PurchasingSuggestId
+                join r in _purchaseOrderDBContext.PurchasingRequestDetail on sd.PurchasingRequestDetailId equals r.PurchasingRequestDetailId
+                where purchasingRequestIds.Contains(r.PurchasingRequestId)
+                select new
+                {
+                    r.PurchasingRequestId,
+                    s.PurchasingSuggestId,
+                    s.PurchasingSuggestCode
+                }).ToListAsync();
 
-        private PurchasingSuggestDetail PurchasingSuggestDetailObjectToEntity(long purchasingSuggestId, PurchasingSuggestDetailModel d)
+            return purchasingRequestIds.Distinct()
+                .ToDictionary(
+                r => r,
+                r => (IList<PurchasingSuggestBasic>)suggestDetail.Where(d => d.PurchasingRequestId == r).Select(d => new PurchasingSuggestBasic
+                    {
+                        PurchasingSuggestId = d.PurchasingSuggestId,
+                        PurchasingSuggestCode = d.PurchasingSuggestCode
+                    })
+                    .Distinct()
+                    .ToList()
+                );
+        }
+
+
+        private PurchasingSuggestDetail PurchasingSuggestDetailObjectToEntity(long purchasingSuggestId, PurchasingSuggestDetailInputModel d)
         {
             return new PurchasingSuggestDetail
             {
@@ -1235,7 +1278,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PrimaryUnitPrice = d.PrimaryUnitPrice,
                 TaxInPercent = d.TaxInPercent,
                 TaxInMoney = d.TaxInMoney,
-                PurchasingRequestIds = d.PurchasingRequestIds.JsonSerialize()
+                PurchasingRequestDetailId = d.PurchasingRequestDetailId
             };
         }
 
@@ -1374,6 +1417,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
             return true;
         }
+
 
     }
 }

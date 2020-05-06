@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using Verp.Cache.RedisCache;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -230,51 +231,56 @@ namespace VErp.Services.Master.Service.Config.Implement
                     return GeneralCode.InvalidParams;
                 }
 
-                using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
+                using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
                 {
-                    try
+                    using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                     {
-                        var config = _masterDbContext.ObjectGenCode.FirstOrDefault(q => q.ObjectTypeId == (int)objectType && q.IsActived && !q.IsDeleted);
-                        if (config == null)
+                        try
+                        {
+                            var config = _masterDbContext.ObjectGenCode.FirstOrDefault(q => q.ObjectTypeId == (int)objectType && q.IsActived && !q.IsDeleted);
+                            if (config == null)
+                            {
+                                trans.Rollback();
+                                return ObjectGenCodeErrorCode.ConfigNotFound;
+                            }
+                            string newCode = string.Empty;
+                            var newId = 0;
+                            var maxId = (int)Math.Pow(10, config.CodeLength);
+                            var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
+
+                            if (config.LastValue < 1)
+                            {
+                                newId = 1;
+                                var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                                newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                            }
+                            else
+                            {
+                                newId = config.LastValue + 1;
+                                var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                                newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                            }
+
+                            if (!(newId < maxId))
+                            {
+                                config.CodeLength += 1;
+                                config.ResetDate = DateTime.Now;
+                            }
+                            config.LastValue = newId;
+                            config.LastCode = newCode;
+
+                            _masterDbContext.SaveChanges();
+                            trans.Commit();
+
+                            result.Data = newCode;
+                            result.Code = GeneralCode.Success;
+                        }
+                        catch (Exception ex)
                         {
                             trans.Rollback();
-                            return ObjectGenCodeErrorCode.ConfigNotFound;
+                            _logger.LogError(ex, "GenerateCode");
+                            return GeneralCode.InternalError;
                         }
-                        string newCode = string.Empty;
-                        var newId = 0;
-                        var maxId = (int)Math.Pow(10, config.CodeLength);
-                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
-                        if (config.LastValue < 1)
-                        {
-                            newId = 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-                        else
-                        {
-                            newId = config.LastValue + 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-                        if (!(newId < maxId))
-                        {
-                            config.CodeLength += 1;
-                            config.ResetDate = DateTime.Now;
-                        }
-                        config.LastValue = newId;
-                        config.LastCode = newCode;
-
-                        _masterDbContext.SaveChanges();
-                        trans.Commit();
-
-                        result.Data = newCode;
-                        result.Code = GeneralCode.Success;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.Rollback();
-                        _logger.LogError(ex, "GenerateCode");
-                        return GeneralCode.InternalError;
                     }
                 }
             }

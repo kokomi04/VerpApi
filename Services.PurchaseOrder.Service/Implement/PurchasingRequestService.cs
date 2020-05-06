@@ -88,6 +88,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestDetailId = d.PurchasingRequestDetailId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description
                 }).ToList()
             };
 
@@ -192,7 +193,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.CensorDatetimeUtc,
                             d.PurchasingRequestDetailId,
                             d.ProductId,
-                            d.PrimaryQuantity
+                            d.PrimaryQuantity,
+                            d.Description
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -258,12 +260,33 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     PurchasingRequestDetailId = info.PurchasingRequestDetailId,
                     ProductId = info.ProductId,
-                    PrimaryQuantity = info.PrimaryQuantity
+                    PrimaryQuantity = info.PrimaryQuantity,
+                    Description = info.Description
                 });
             }
 
             return (result, total);
 
+        }
+
+
+        public async Task<IList<PurchasingRequestDetailInfo>> PurchasingRequestDetailInfo(IList<long> purchasingRequestDetailIds)
+        {
+            if (purchasingRequestDetailIds == null || purchasingRequestDetailIds.Count == 0)
+                return new List<PurchasingRequestDetailInfo>();
+
+            return await (
+                from d in _purchaseOrderDBContext.PurchasingRequestDetail
+                join r in _purchaseOrderDBContext.PurchasingRequest on d.PurchasingRequestId equals r.PurchasingRequestId
+                where purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId)
+                select new PurchasingRequestDetailInfo
+                {
+                    PurchasingRequestId = r.PurchasingRequestId,
+                    PurchasingRequestCode = r.PurchasingRequestCode,
+                    PurchasingRequestDetailId = d.PurchasingRequestDetailId,
+                    PrimaryQuantity = d.PrimaryQuantity
+                })
+            .ToListAsync();
         }
 
         public async Task<ServiceResult<long>> Create(PurchasingRequestInput model)
@@ -303,6 +326,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequest.PurchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
@@ -358,6 +382,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
