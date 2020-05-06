@@ -94,6 +94,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);

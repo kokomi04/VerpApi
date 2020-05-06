@@ -37,6 +37,12 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
     {
+        public string PaymentInfo { get; set; }
+
+        public long? DeliveryDate { get; set; }
+        public int? DeliveryUserId { get; set; }
+        public int? DeliveryCustomerId { get; set; }
+
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
     }
 

@@ -16,6 +16,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long? PurchasingSuggestId { get; set; }
         public int CustomerId { get; set; }
         public DateTime? Date { get; set; }
+        public string PaymentInfo { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public int? DeliveryUserId { get; set; }
+        public int? DeliveryCustomerId { get; set; }
         public string DeliveryDestination { get; set; }
         public string Content { get; set; }
         public string AdditionNote { get; set; }
