@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using AutoMapper;
+using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
 {
@@ -30,11 +33,11 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsTreeViewKey { get; set; }
     }
 
-    public class CategoryFieldInputModel : CategoryFieldModel
+    public class CategoryFieldInputModel : CategoryFieldModel, IMapFrom<CategoryField>
     {
     }
 
-    public class CategoryFieldOutputModel: CategoryFieldModel
+    public class CategoryFieldOutputModel: CategoryFieldModel, IMapFrom<CategoryField>
     {
         public int? ReferenceCategoryId { get; set; }
     }
@@ -46,5 +49,14 @@ namespace VErp.Services.Accountant.Model.Category
         public CategoryFieldOutputFullModel SourceCategoryField { get; set; }
         public CategoryFieldOutputFullModel SourceCategoryTitleField { get; set; }
         public CategoryModel SourceCategory { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<CategoryField, CategoryFieldOutputFullModel>()
+                .ForMember(dest => dest.SourceCategory, opt => opt.MapFrom(src => src.Category))
+                .ForMember(dest => dest.SourceCategoryField, opt => opt.MapFrom(src => src.ReferenceCategoryField))
+                .ForMember(dest => dest.SourceCategoryTitleField, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField));
+
+        }
     }
 }

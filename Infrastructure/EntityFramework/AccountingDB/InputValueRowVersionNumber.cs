@@ -5,10 +5,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 {
     public partial class InputValueRowVersionNumber
     {
-        public InputValueRowVersionNumber()
-        {
-        }
-
         public long InputValueRowVersionId { get; set; }
         public long Field0 { get; set; }
         public long Field1 { get; set; }
@@ -33,7 +29,5 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public long Field20 { get; set; }
 
         public virtual InputValueRowVersion InputValueRowVersion { get; set; }
-
-
     }
 }

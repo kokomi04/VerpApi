@@ -7,9 +7,9 @@ namespace VErp.Infrastructure.EF.AccountingDB
     {
         public Category()
         {
-            SubCategories = new HashSet<Category>();
-            CategoryFields = new HashSet<CategoryField>();
-            CategoryRows = new HashSet<CategoryRow>();
+            CategoryField = new HashSet<CategoryField>();
+            CategoryRow = new HashSet<CategoryRow>();
+            InverseParent = new HashSet<Category>();
         }
 
         public int CategoryId { get; set; }
@@ -21,16 +21,16 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsTreeView { get; set; }
         public bool IsDeleted { get; set; }
         public int UpdatedByUserId { get; set; }
-        public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsOutSideData { get; set; }
 
         public virtual Category Parent { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
-        public virtual ICollection<Category> SubCategories { get; set; }
-        public virtual ICollection<CategoryField> CategoryFields { get; set; }
-        public virtual ICollection<CategoryRow> CategoryRows { get; set; }
+        public virtual ICollection<CategoryField> CategoryField { get; set; }
+        public virtual ICollection<CategoryRow> CategoryRow { get; set; }
+        public virtual ICollection<Category> InverseParent { get; set; }
     }
 }

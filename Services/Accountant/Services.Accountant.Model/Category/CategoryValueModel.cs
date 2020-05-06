@@ -1,11 +1,9 @@
-﻿
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
-
 {
-    public class CategoryValueModel
+    public class CategoryValueModel : IMapFrom<CategoryRowValue>
     {
         public int CategoryValueId { get; set; }
         public int CategoryFieldId { get; set; }

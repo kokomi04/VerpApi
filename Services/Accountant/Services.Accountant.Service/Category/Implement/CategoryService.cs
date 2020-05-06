@@ -54,7 +54,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _accountingContext.Category.Include(c => c.OutSideDataConfig).Include(c => c.SubCategories).AsQueryable();
+            var query = _accountingContext.Category.Include(c => c.OutSideDataConfig).Include(c => c.InverseParent).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -190,7 +190,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data)
         {
-            var category = await _accountingContext.Category.Include(c => c.SubCategories).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+            var category = await _accountingContext.Category.Include(c => c.InverseParent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
@@ -210,9 +210,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
 
-            var deleteSubCategories = category.SubCategories.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
+            var deleteSubCategories = category.InverseParent.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
 
-            int[] selectSubCategoryIds = data.SubCategories.Where(c => c.CategoryId > 0 && !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).Select(s => s.CategoryId).ToArray();
+            int[] selectSubCategoryIds = data.SubCategories.Where(c => c.CategoryId > 0 && !category.InverseParent.Any(s => s.CategoryId == c.CategoryId)).Select(s => s.CategoryId).ToArray();
             List<CategoryEntity> selectSubCategories = _accountingContext.Category.Where(c => selectSubCategoryIds.Contains(c.CategoryId)).ToList();
             if (selectSubCategories.Count < selectSubCategoryIds.Length)
             {
@@ -440,7 +440,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         private ICollection<CategoryFieldOutputModel> GetFields(int categoryId)
         {
             var query = _accountingContext.CategoryField
-                .Include(f => f.SourceCategoryField)
+                .Include(f => f.ReferenceCategoryField)
                 .Where(f => f.CategoryId == categoryId)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
@@ -449,7 +449,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in query)
             {
                 var fieldModel = _mapper.Map<CategoryFieldOutputModel>(field);
-                fieldModel.ReferenceCategoryId = field.SourceCategoryField?.CategoryId ?? null;
+                fieldModel.ReferenceCategoryId = field.ReferenceCategoryField?.CategoryId ?? null;
 
                 result.Add(fieldModel);
             }

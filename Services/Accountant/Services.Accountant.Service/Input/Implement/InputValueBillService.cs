@@ -348,8 +348,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             // Check exist
             var inputValueBill = await _accountingContext.InputValueBill
-                .Include(b => b.InputValueRows)
-                .ThenInclude(r => r.InputValueRowVersions)
+                .Include(b => b.InputValueRow)
+                .ThenInclude(r => r.InputValueRowVersion)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId && i.InputValueBillId == inputValueBillId);
             if (inputValueBill == null)
             {
@@ -584,9 +584,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         {
                             query = _accountingContext.CategoryRow
                                .Where(r => r.CategoryId == referCategory.CategoryId)
-                               .Include(r => r.CategoryRowValues)
-                               .ThenInclude(rv => rv.SourceCategoryRowValue)
-                               .Include(r => r.CategoryRowValues)
+                               .Include(r => r.CategoryRowValue)
+                               .ThenInclude(rv => rv.ReferenceCategoryRowValue)
+                               .Include(r => r.CategoryRowValue)
                                .ThenInclude(rv => rv.CategoryField);
                         }
 
@@ -597,7 +597,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         }
 
                         isExisted = query
-                            .Any(r => r.CategoryRowValues.Any(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.SourceCategoryRowValue.Value == value : rv.Value == value)));
+                            .Any(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value && (isRef ? rv.ReferenceCategoryRowValue.Value == value : rv.Value == value)));
                     }
                     if (!isExisted)
                     {

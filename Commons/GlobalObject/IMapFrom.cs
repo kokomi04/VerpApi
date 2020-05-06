@@ -12,6 +12,7 @@ namespace VErp.Commons.GlobalObject
         void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
     }
 
+ 
     public class MappingProfile: Profile
     {
 

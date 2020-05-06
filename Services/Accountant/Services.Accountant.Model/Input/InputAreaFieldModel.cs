@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using AutoMapper;
+using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Services.Accountant.Model.Category;
 
 namespace VErp.Services.Accountant.Model.Input
@@ -31,12 +34,12 @@ namespace VErp.Services.Accountant.Model.Input
 
     }
 
-    public class InputAreaFieldInputModel : InputAreaFieldModel
+    public class InputAreaFieldInputModel : InputAreaFieldModel, IMapFrom<InputAreaField>
     {
         public InputAreaFieldStyleInputModel InputAreaFieldStyle { get; set; }
     }
 
-    public class InputAreaFieldOutputFullModel : InputAreaFieldModel
+    public class InputAreaFieldOutputFullModel : InputAreaFieldModel, IMapFrom<InputAreaField>
     {
         public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
@@ -46,5 +49,11 @@ namespace VErp.Services.Accountant.Model.Input
         public CategoryFieldOutputFullModel SourceCategoryTitleField { get; set; }
         public CategoryModel SourceCategory { get; set; }
         public InputAreaFieldStyleOutputModel InputAreaFieldStyle { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<InputAreaField, InputAreaFieldOutputFullModel>()
+                .ForMember(dest => dest.SourceCategoryField, opt => opt.MapFrom(src => src.ReferenceCategoryField))
+                .ForMember(dest => dest.SourceCategoryTitleField, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField));
+        }
     }
 }

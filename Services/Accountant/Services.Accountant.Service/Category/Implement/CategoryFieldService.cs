@@ -70,8 +70,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryField = await _accountingContext.CategoryField
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .Include(f => f.SourceCategoryField)
-                .Include(f => f.SourceCategoryTitleField)
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
@@ -79,9 +79,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             CategoryFieldOutputFullModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputFullModel>(categoryField);
 
-            if (categoryField.SourceCategoryField != null)
+            if (categoryField.ReferenceCategoryField != null)
             {
-                CategoryEntity sourceCategory = GetReferenceCategory(categoryField.SourceCategoryField);
+                CategoryEntity sourceCategory = GetReferenceCategory(categoryField.ReferenceCategoryField);
                 categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
             }
             return categoryFieldOutputModel;

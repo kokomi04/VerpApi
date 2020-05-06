@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Services.Accountant.Model;
 using Services.Accountant.Service;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
@@ -88,7 +89,7 @@ namespace VErp.WebApis.VErpApi
 
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
-
+            profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }
 

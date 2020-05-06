@@ -43,8 +43,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .Include(f => f.SourceCategoryField)
-                .Include(f => f.SourceCategoryTitleField)
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -75,8 +75,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .Include(f => f.SourceCategoryField)
-                .Include(f => f.SourceCategoryTitleField)
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -134,8 +134,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .Include(f => f.SourceCategoryField)
-                .Include(f => f.SourceCategoryTitleField)
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (inputAreaField == null)
             {
@@ -143,9 +143,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
             InputAreaFieldOutputFullModel inputAreaFieldOutputModel = _mapper.Map<InputAreaFieldOutputFullModel>((object)inputAreaField);
 
-            if (inputAreaField.SourceCategoryField != null)
+            if (inputAreaField.ReferenceCategoryField != null)
             {
-                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.SourceCategoryField);
+                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.ReferenceCategoryField);
                 inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
             }
 
