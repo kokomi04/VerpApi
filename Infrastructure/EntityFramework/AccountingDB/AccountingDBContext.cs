@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
         }
 
+        public virtual DbSet<AccountingAccount> AccountingAccount { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryRow> CategoryRow { get; set; }
@@ -39,6 +40,44 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AccountingAccount>(entity =>
+            {
+                entity.Property(e => e.AccountNameEn).HasMaxLength(128);
+
+                entity.Property(e => e.AccountNameVi).HasMaxLength(128);
+
+                entity.Property(e => e.AccountNumber)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Currency)
+                    .IsRequired()
+                    .HasMaxLength(32)
+                    .HasComment("ngoại tệ");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.IsBranch).HasComment("TGHT tỷ giá hạch toán");
+
+                entity.Property(e => e.IsCorp).HasComment("Tổng công ty");
+
+                entity.Property(e => e.IsForeignCurrency).HasComment("Ngoại tệ");
+
+                entity.Property(e => e.IsLiability).HasComment("Công nợ");
+
+                entity.Property(e => e.IsStock).HasComment("Kho");
+
+                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
+
+                entity.HasOne(d => d.ParentAccountingAccount)
+                    .WithMany(p => p.InverseParentAccountingAccount)
+                    .HasForeignKey(d => d.ParentAccountingAccountId)
+                    .HasConstraintName("FK_AccountingAccount_Relation");
+            });
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasIndex(e => e.ParentId)
@@ -352,6 +391,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputTypeView>(entity =>
             {
+                entity.Property(e => e.InputTypeViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
                 entity.HasOne(d => d.InputType)
                     .WithMany(p => p.InputTypeView)
                     .HasForeignKey(d => d.InputTypeId)
