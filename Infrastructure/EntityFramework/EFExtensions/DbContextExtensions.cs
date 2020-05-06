@@ -52,6 +52,24 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
+        public static void AddFilterBase(this ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+
+                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
+
+                var isDeletedProp = entityType.FindProperty("IsDeleted");
+                if (isDeletedProp != null)
+                {
+                    var isDeleted = Expression.Constant(false);
+                    filterBuilder.AddFilter("IsDeleted", isDeleted);
+                }
+
+                entityType.SetQueryFilter(filterBuilder.Build());
+            }
+        }
+
 
         public static void SetHistoryBaseValue(this DbContext context, ICurrentContextService currentContext)
         {
@@ -124,7 +142,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         /// <param name="query"></param>
         /// <param name="fieldFroms"></param>
         /// <returns></returns>
-        public static IQueryable<TResult> DynamicSelectGenerator<T,TResult>(this IQueryable<T> query, Dictionary<string, string> fieldFroms)
+        public static IQueryable<TResult> DynamicSelectGenerator<T, TResult>(this IQueryable<T> query, Dictionary<string, string> fieldFroms)
         {
             Dictionary<string, string> EntityFields;
             if (fieldFroms.Count == 0)

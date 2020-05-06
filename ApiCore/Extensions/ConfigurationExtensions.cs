@@ -49,7 +49,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
         public static void ConfigAccountingContext(this IServiceCollection services, AppSetting appSetting)
         {
-            services.AddDbContext<AccountingDBContext>((option) =>
+            services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
             }, ServiceLifetime.Scoped);

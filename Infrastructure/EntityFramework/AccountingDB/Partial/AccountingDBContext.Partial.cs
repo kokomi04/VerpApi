@@ -1,25 +1,25 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
-namespace VErp.Infrastructure.EF.OrganizationDB
+namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class OrganizationDBRestrictionContext: OrganizationDBContext
+    public partial class AccountingDBRestrictionContext : AccountingDBContext
     {
         private readonly ICurrentContextService _currentContext;
 
-        public OrganizationDBRestrictionContext(DbContextOptions<OrganizationDBRestrictionContext> options
+        public AccountingDBRestrictionContext(DbContextOptions<AccountingDBRestrictionContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
-            : base(options.ChangeOptionsType<OrganizationDBContext>(loggerFactory))
+            : base(options.ChangeOptionsType<AccountingDBContext>(loggerFactory))
         {
             _currentContext = currentContext;
         }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,9 +36,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             this.SetHistoryBaseValue(_currentContext);
-            return await base.SaveChangesAsync(true, cancellationToken);
+            return await base.SaveChangesAsync();
         }
     }
-
-
 }
