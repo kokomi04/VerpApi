@@ -88,6 +88,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestDetailId = d.PurchasingRequestDetailId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description
                 }).ToList()
             };
 
@@ -192,7 +193,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.CensorDatetimeUtc,
                             d.PurchasingRequestDetailId,
                             d.ProductId,
-                            d.PrimaryQuantity
+                            d.PrimaryQuantity,
+                            d.Description
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -258,7 +260,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     PurchasingRequestDetailId = info.PurchasingRequestDetailId,
                     ProductId = info.ProductId,
-                    PrimaryQuantity = info.PrimaryQuantity
+                    PrimaryQuantity = info.PrimaryQuantity,
+                    Description = info.Description
                 });
             }
 
@@ -323,6 +326,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequest.PurchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
@@ -378,6 +382,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
