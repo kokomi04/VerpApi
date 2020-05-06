@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -47,7 +48,17 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     if (statusCode == HttpStatusCode.OK)
                     {
                         var data = objectValue.GetType().GetProperty("Data")?.GetValue(objectValue) ?? true;
-                        (context.Result as ObjectResult).Value = data;
+                        if(data is MemoryStream)
+                        {
+                            context.Result = new FileStreamResult(data as MemoryStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            {
+                                FileDownloadName = "data.xlsx"
+                            };
+                        }
+                        else
+                        {
+                            (context.Result as ObjectResult).Value = data;
+                        }
                     }
                     else
                     {

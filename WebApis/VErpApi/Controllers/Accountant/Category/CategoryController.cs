@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using VErp.Commons.Library;
 using System;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -123,7 +124,7 @@ namespace VErpApi.Controllers.Accountant
             {
                 lstFilters = JsonConvert.DeserializeObject<FilterModel[]>(filters);
             }
-            return await _categoryRowService.GetCategoryRows(categoryId, keyword, lstFilters,  page, size);
+            return await _categoryRowService.GetCategoryRows(categoryId, keyword, lstFilters, page, size);
         }
 
         [HttpGet]
@@ -157,30 +158,18 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryrows/templatefile")]
-        public async Task<IActionResult> GetImportTemplateCategory([FromRoute] int categoryId)
+        public async Task<ServiceResult<MemoryStream>> GetImportTemplateCategory([FromRoute] int categoryId)
         {
             var r = await _categoryRowService.GetImportTemplateCategory(categoryId);
-
-            if (!r.IsSuccessCode())
-            {
-                return new JsonResult(r);
-            }
-            return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "template.xlsx");
-
+            return r;
         }
 
         [HttpGet]
         [Route("{categoryId}/categoryrows/datafile")]
-        public async Task<IActionResult> ExportCategoryRow([FromRoute] int categoryId)
+        public async Task<ServiceResult<MemoryStream>> ExportCategoryRow([FromRoute] int categoryId)
         {
             var r = await _categoryRowService.ExportCategory(categoryId);
-
-            if (!r.IsSuccessCode())
-            {
-                return new JsonResult(r);
-            }
-            return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "category.xlsx");
-
+            return r;
         }
 
 
