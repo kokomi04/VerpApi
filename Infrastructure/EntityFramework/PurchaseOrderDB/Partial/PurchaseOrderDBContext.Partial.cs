@@ -9,9 +9,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
         {
             modelBuilder.AddFilterBase();
-
         }
     }
-
-
 }
