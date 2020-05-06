@@ -1,15 +1,16 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -40,15 +41,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType(int inputTypeId)
         {
             var inputType = await _accountingContext.InputType
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(f => f.ReferenceCategoryField)
-                .ThenInclude(rf => rf.Category)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(f => f.ReferenceCategoryTitleField)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
+                .Include(t => t.InputAreas)
+                .ThenInclude(a => a.InputAreaFields)
+                .ThenInclude(f => f.SourceCategoryField)
+                .Include(t => t.InputAreas)
+                .ThenInclude(a => a.InputAreaFields)
+                .ThenInclude(f => f.SourceCategoryTitleField)
+                .Include(t => t.InputAreas)
+                .ThenInclude(a => a.InputAreaFields)
                 .ThenInclude(f => f.InputAreaFieldStyle)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
@@ -57,17 +57,17 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
             InputTypeFullModel inputTypeFullModel = _mapper.Map<InputTypeFullModel>(inputType);
 
-            //foreach (var area in inputTypeFullModel.InputAreas)
-            //{
-            //    foreach(var field in area.InputAreaFields)
-            //    {
-            //        if (field.SourceCategoryField != null)
-            //        {
-            //            CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
-            //            field.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-            //        }
-            //    }    
-            //}
+            foreach (var area in inputTypeFullModel.InputAreas)
+            {
+                foreach (var field in area.InputAreaFields)
+                {
+                    if (field.SourceCategoryField != null)
+                    {
+                        CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
+                        field.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                    }
+                }
+            }
 
             return inputTypeFullModel;
         }
@@ -257,6 +257,97 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 _logger.LogError(ex, "Delete");
                 return GeneralCode.InternalError;
             }
+        }
+
+        public async Task<int> InputTypeViewCreate(InputTypeViewModel model)
+        {
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                var inputTypeView = _mapper.Map<InputTypeView>(model);
+
+                await _accountingContext.InputTypeView.AddAsync(inputTypeView);
+
+                await _accountingContext.SaveChangesAsync();
+
+                await InputTypeViewFieldAddRange(inputTypeView.InputTypeViewId, model.Fields);
+
+                await _accountingContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                return inputTypeView.InputTypeViewId;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "InputTypeViewCreate");
+                throw ex;
+            }
+        }
+
+        public async Task<Enum> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model)
+        {
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                var info = await _accountingContext.InputTypeView.FirstOrDefaultAsync(v => v.InputTypeViewId == inputTypeViewId);
+
+                if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "View không tồn tại");
+
+                _mapper.Map(model, info);
+
+                var oldFields = await _accountingContext.InputTypeViewField.Where(f => f.InputTypeViewId == inputTypeViewId).ToListAsync();
+
+                _accountingContext.InputTypeViewField.RemoveRange(oldFields);
+
+                await InputTypeViewFieldAddRange(inputTypeViewId, model.Fields);
+
+                await _accountingContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "InputTypeViewUpdate");
+                throw ex;
+            }
+        }
+
+        public async Task<Enum> InputTypeViewDelete(int inputTypeViewId)
+        {
+            var info = await _accountingContext.InputTypeView.FirstOrDefaultAsync(v => v.InputTypeViewId == inputTypeViewId);
+
+            if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "View không tồn tại");
+
+            info.IsDeleted = true;
+            info.DeletedDatetimeUtc = DateTime.UtcNow;
+
+            await _accountingContext.SaveChangesAsync();
+
+            return GeneralCode.Success;
+
+        }
+
+        public async Task<IList<InputTypeViewModel>> InputTypeViewList(int inputTypeId)
+        {
+            return await _accountingContext.InputTypeView.Where(v => v.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModel>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+
+        private async Task InputTypeViewFieldAddRange(int inputTypeViewId, IList<InputTypeViewFieldModel> fieldModels)
+        {
+            var fields = fieldModels.Select(f => _mapper.Map<InputTypeViewField>(f)).ToList();
+            foreach (var f in fields)
+            {
+                f.InputTypeViewId = inputTypeViewId;
+            }
+
+            await _accountingContext.InputTypeViewField.AddRangeAsync(fields);
+
         }
 
     }

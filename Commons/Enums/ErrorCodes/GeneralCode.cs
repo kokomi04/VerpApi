@@ -27,6 +27,9 @@ namespace VErp.Commons.Enums.StandardEnum
         NotYetSupported = 6,
 
         [Description("Đang có tranh chấp tài nguyên bởi xử lý khác, vui lòng thử lại sau ít phút")]
-        DistributedLockExeption = 7
+        DistributedLockExeption = 7,
+
+        [Description("Item không tồn tại")]
+        ItemNotFound = 8,
     }
 }
