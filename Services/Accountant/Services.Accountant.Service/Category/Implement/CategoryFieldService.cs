@@ -166,10 +166,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = sourceCategoryField.DataSize;
             }
 
-            if(((EnumFormType)categoryField.FormTypeId).IsRef() ^ ((EnumFormType)data.FormTypeId).IsRef())
-            {
-                return CategoryErrorCode.FormTypeNotSwitch;
-            }
+            //if(((EnumFormType)categoryField.FormTypeId).IsRef() ^ ((EnumFormType)data.FormTypeId).IsRef())
+            //{
+            //    return CategoryErrorCode.FormTypeNotSwitch;
+            //}
 
             if (data.FormTypeId == (int)EnumFormType.Generate)
             {

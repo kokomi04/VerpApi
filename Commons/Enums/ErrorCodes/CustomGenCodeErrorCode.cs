@@ -11,5 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
     {
         [Description("Không tìm thấy cấu hình sinh mã")]
         CustomConfigNotFound = 1,
+        [Description("Chưa thiết định cấu hình sinh mã")]
+        CustomConfigNotExisted = 2,
     }
 }

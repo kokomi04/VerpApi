@@ -118,25 +118,27 @@ namespace VErp.Services.Master.Service.Config.Implement
                 && !q.CustomGenCodeId.IsDeleted)
                 .Select(q => q.CustomGenCodeId)
                 .FirstOrDefaultAsync();
-            CustomGenCodeOutputModel info = null;
-            if (obj != null)
+
+            if (obj == null)
             {
-                info = new CustomGenCodeOutputModel()
-                {
-                    CustomGenCodeId = obj.CustomGenCodeId,
-                    CustomGenCodeName = obj.CustomGenCodeName,
-                    Description = obj.Description,
-                    CodeLength = obj.CodeLength,
-                    Prefix = obj.Prefix,
-                    Suffix = obj.Suffix,
-                    Seperator = obj.Seperator,
-                    LastCode = obj.LastCode,
-                    IsActived = obj.IsActived,
-                    UpdatedUserId = obj.UpdatedUserId,
-                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
-                };
+                return CustomGenCodeErrorCode.CustomConfigNotExisted;
             }
+
+            CustomGenCodeOutputModel info = new CustomGenCodeOutputModel()
+            {
+                CustomGenCodeId = obj.CustomGenCodeId,
+                CustomGenCodeName = obj.CustomGenCodeName,
+                Description = obj.Description,
+                CodeLength = obj.CodeLength,
+                Prefix = obj.Prefix,
+                Suffix = obj.Suffix,
+                Seperator = obj.Seperator,
+                LastCode = obj.LastCode,
+                IsActived = obj.IsActived,
+                UpdatedUserId = obj.UpdatedUserId,
+                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+            };
             return info;
         }
 
