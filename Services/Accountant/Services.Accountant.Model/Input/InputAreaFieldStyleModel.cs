@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Services.Accountant.Model.Category;
 
 namespace VErp.Services.Accountant.Model.Input
 {
-    public class InputAreaFieldStyleInputModel 
+    public class InputAreaFieldStyleInputModel : IMapFrom<InputAreaFieldStyle>
     {
         public int Width { get; set; }
         public int Height { get; set; }

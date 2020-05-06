@@ -1,11 +1,14 @@
 ﻿
+using AutoMapper;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public class InputTypeModel
+    public class InputTypeModel: IMapFrom<InputType>
     {
         public InputTypeModel()
         {
@@ -26,7 +29,12 @@ namespace VErp.Services.Accountant.Model.Input
         {
             InputAreas = new List<InputAreaOutputModel>();
         }
-
         public ICollection<InputAreaOutputModel> InputAreas { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<InputType, InputTypeFullModel>()
+                .ForMember(dest => dest.InputAreas, opt => opt.MapFrom(src => src.InputArea));
+
+        }
     }
 }

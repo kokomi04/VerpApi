@@ -57,10 +57,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = _accountingContext.CategoryRow
                     .Where(r => r.CategoryId == categoryId)
-                    .Include(r => r.CategoryRowValues)
+                    .Include(r => r.CategoryRowValue)
                     .ThenInclude(rv => rv.CategoryField)
-                    .Include(r => r.CategoryRowValues)
-                    .ThenInclude(rv => rv.SourceCategoryRowValue);
+                    .Include(r => r.CategoryRowValue)
+                    .ThenInclude(rv => rv.ReferenceCategoryRowValue);
             }
 
             if (filters != null && filters.Length > 0)
@@ -70,9 +70,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(r => r.CategoryRowValues
+                query = query.Where(r => r.CategoryRowValue
                 .Any(rv => rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select
-                ? rv.SourceCategoryRowValue.Value.Contains(keyword)
+                ? rv.ReferenceCategoryRowValue.Value.Contains(keyword)
                 : rv.Value.Contains(keyword)));
             }
             total = query.Count();
@@ -83,10 +83,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var temp = query.ToList();
                     int[] parentIds = GetParentIds(temp);
                     temp.AddRange(_accountingContext.CategoryRow
-                        .Include(r => r.CategoryRowValues)
+                        .Include(r => r.CategoryRowValue)
                         .ThenInclude(rv => rv.CategoryField)
-                        .Include(r => r.CategoryRowValues)
-                        .ThenInclude(rv => rv.SourceCategoryRowValue)
+                        .Include(r => r.CategoryRowValue)
+                        .ThenInclude(rv => rv.ReferenceCategoryRowValue)
                         .Where(r => parentIds.Contains(r.CategoryRowId)));
                     categoryRows = SortCategoryRows(temp).Skip((page - 1) * size).Take(size).ToList();
                 }
@@ -103,13 +103,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(Data);
                 output.CategoryRowLevel = Level;
                 ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in Data.CategoryRowValues)
+                foreach (var cell in Data.CategoryRowValue)
                 {
                     row.Add(new CategoryValueModel
                     {
                         CategoryFieldId = cell.CategoryFieldId,
                         CategoryValueId = cell.CategoryRowValueId,
-                        Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.SourceCategoryRowValue.Value : cell.Value
+                        Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() ? cell.ReferenceCategoryRowValue.Value : cell.Value
                     });
                 }
                 output.CategoryRowValues = row;
@@ -193,12 +193,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 categoryRow = await _accountingContext.CategoryRow
                   .Include(r => r.ParentCategoryRow)
-                  .ThenInclude(pr => pr.CategoryRowValues)
+                  .ThenInclude(pr => pr.CategoryRowValue)
                   .FirstOrDefaultAsync(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId);
                 values = _accountingContext.CategoryRowValue
                   .Where(r => r.CategoryRowId == categoryRowId)
                   .Include(rv => rv.CategoryField)
-                  .Include(rv => rv.SourceCategoryRowValue).ToList();
+                  .Include(rv => rv.ReferenceCategoryRowValue).ToList();
             }
             // Check row 
             if (categoryRow == null)
@@ -213,7 +213,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     CategoryFieldId = value.CategoryFieldId,
                     CategoryValueId = value.CategoryRowValueId,
-                    Value = ((EnumFormType)value.CategoryField.FormTypeId).IsRef() ? value.SourceCategoryRowValue.Value : value.Value
+                    Value = ((EnumFormType)value.CategoryField.FormTypeId).IsRef() ? value.ReferenceCategoryRowValue.Value : value.Value
                 });
             }
             output.CategoryRowValues = row;
@@ -425,7 +425,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var currentValues = _accountingContext.CategoryRowValue
                 .Where(rv => rv.CategoryRowId == categoryRowId)
                 .Include(rv => rv.CategoryField)
-                .Include(rv => rv.SourceCategoryRowValue)
+                .Include(rv => rv.ReferenceCategoryRowValue)
                 .ToList();
 
             // Lấy các trường thay đổi
@@ -444,7 +444,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         bool isRef = ((EnumFormType)categoryField.FormTypeId).IsRef();
-                        if (isRef ? currentValue.SourceCategoryRowValue.Value != updateValue.Value : currentValue.Value != updateValue.Value)
+                        if (isRef ? currentValue.ReferenceCategoryRowValue.Value != updateValue.Value : currentValue.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
                         }
@@ -645,9 +645,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         CategoryEntity referCategory = GetReferenceCategory(referField);
                         IQueryable<CategoryRow> query = _accountingContext.CategoryRow
                             .Where(r => r.CategoryId == referCategory.CategoryId)
-                            .Include(r => r.CategoryRowValues)
-                            .ThenInclude(rv => rv.SourceCategoryRowValue)
-                            .Include(r => r.CategoryRowValues)
+                            .Include(r => r.CategoryRowValue)
+                            .ThenInclude(rv => rv.ReferenceCategoryRowValue)
+                            .Include(r => r.CategoryRowValue)
                             .ThenInclude(rv => rv.CategoryField);
 
                         if (!string.IsNullOrEmpty(field.Filters))
@@ -657,12 +657,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         }
 
                         referValueId = query
-                            .Where(r => r.CategoryRowValues.Any(
+                            .Where(r => r.CategoryRowValue.Any(
                                 rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
-                                && (isRef ? rv.SourceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)
+                                && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)
                             ))
                             .FirstOrDefault()?
-                            .CategoryRowValues
+                            .CategoryRowValue
                             .Where(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
                             .FirstOrDefault()?
                             .CategoryRowValueId ?? 0;
@@ -922,8 +922,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin row
             var categoryRows = _accountingContext.CategoryRow
                 .Where(r => r.CategoryId == categoryId)
-                .Include(r => r.CategoryRowValues)
-                .ThenInclude(rv => rv.SourceCategoryRowValue);
+                .Include(r => r.CategoryRowValue)
+                .ThenInclude(rv => rv.ReferenceCategoryRowValue);
 
             List<(string, byte[])[]> dataInRows = new List<(string, byte[])[]>();
             List<(string, byte[])> dataInRow = new List<(string, byte[])>();
@@ -939,8 +939,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 foreach (var field in categoryFields)
                 {
                     bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
-                    var categoryValueRow = row.CategoryRowValues.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
-                    string value = isRef ? categoryValueRow?.SourceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
+                    var categoryValueRow = row.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
+                    string value = isRef ? categoryValueRow?.ReferenceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
                     value = value.ConvertValueToData((EnumDataType)field.DataTypeId);
                     dataInRow.Add((value, null));
                 }

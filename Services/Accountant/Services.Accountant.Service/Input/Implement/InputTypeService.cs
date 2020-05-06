@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
@@ -39,14 +40,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType(int inputTypeId)
         {
             var inputType = await _accountingContext.InputType
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
-                .ThenInclude(f => f.SourceCategoryField)
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
-                .ThenInclude(f => f.SourceCategoryTitleField)
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
+                .ThenInclude(f => f.ReferenceCategoryField)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
+                .ThenInclude(f => f.ReferenceCategoryTitleField)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.InputAreaFieldStyle)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)

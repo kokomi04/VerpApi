@@ -1,11 +1,10 @@
-﻿
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Input
 
 {
-    public class InputValueRowVersionInputModel
+    public class InputValueRowVersionInputModel : IMapFrom<InputValueRowVersion>
     {
         public InputValueRowVersionInputModel()
         {
