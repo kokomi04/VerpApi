@@ -39,6 +39,14 @@ namespace VErp.Services.Accountant.Model.Category
         }
     }
 
+    public class CategoryReferenceModel : IMapFrom<CategoryEntity>
+    {
+        public int CategoryId { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
+        [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]
+        public string Title { get; set; }
+    }
+
     public class CategoryFullModel : CategoryBase<CategoryFullModel>, IMapFrom<CategoryEntity>
     {
         public CategoryFullModel()

@@ -82,7 +82,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (categoryField.ReferenceCategoryField != null)
             {
                 CategoryEntity sourceCategory = GetReferenceCategory(categoryField.ReferenceCategoryField);
-                categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
             }
             return categoryFieldOutputModel;
         }

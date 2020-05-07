@@ -62,7 +62,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 if (item.SourceCategoryField != null)
                 {
                     CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
-                    item.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                    item.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
                 }
             }
             return (lst, total);
@@ -121,7 +121,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 if (item.SourceCategoryField != null)
                 {
                     CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
-                    item.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                    item.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
                 }
             }
             return (lst, total);
@@ -146,7 +146,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (inputAreaField.ReferenceCategoryField != null)
             {
                 CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.ReferenceCategoryField);
-                inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
             }
 
             return inputAreaFieldOutputModel;
