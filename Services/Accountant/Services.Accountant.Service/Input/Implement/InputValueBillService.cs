@@ -485,7 +485,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputValueRowVersionNumber;
         }
 
-        public async Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, int inputValueBillId, InputValueBillInputModel data)
+        public async Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId, InputValueBillInputModel data)
         {
             // Lấy thông tin bill hiện tại
             var currentBill = _accountingContext.InputValueBill
@@ -524,12 +524,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     futureRows.Remove(futureRow);
                 }
             }
+            // Get list area id is changed (delete/edit/add)
+            int[] changedAreaIds = checkRows.Select(r => r.Item1.InputAreaId).Concat(curRows.Select(cr => cr.InputAreaId)).Distinct().ToArray();
 
             // Lấy thông tin field
             var inputAreaFields = _accountingContext.InputAreaField
                 .Include(f => f.DataType)
                 .Where(f => f.InputTypeId == inputTypeId)
-                .Where(f => checkRows.Any(r => r.Item1.InputAreaId == f.InputAreaId))
+                .Where(f => changedAreaIds.Contains(f.InputAreaId))
                 .AsEnumerable();
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
@@ -557,6 +559,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 // Delete row
                 foreach (var deleteRow in curRows)
                 {
+                    // Xóa rowValueVersion
+                    foreach(var deleteRowVersion in deleteRow.InputValueRowVersion)
+                    {
+                        deleteRowVersion.IsDeleted = true;
+                    }
                     deleteRow.IsDeleted = true;
                 }
 
@@ -623,6 +630,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
                 var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
+                if(changeRows.Count() == 0)
+                {
+                    return InputErrorCode.RequiredFieldIsEmpty;
+                }
                 foreach (var row in changeRows)
                 {
                     if (string.IsNullOrEmpty((string)row.Item1.InputValueRowVersion.GetType().GetProperty(fieldName).GetValue(row.Item1.InputValueRowVersion)))

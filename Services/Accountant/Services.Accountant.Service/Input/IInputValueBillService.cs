@@ -19,7 +19,7 @@ namespace VErp.Services.Accountant.Service.Input
 
         Task<ServiceResult<long>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueBillInputModel data);
 
-        Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, int inputValueBillId, InputValueBillInputModel data);
+        Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId, InputValueBillInputModel data);
 
         Task<Enum> DeleteInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId);
        
