@@ -36,19 +36,20 @@ namespace VErp.Services.Accountant.Model.Input
 
     public class InputAreaFieldInputModel : InputAreaFieldModel, IMapFrom<InputAreaField>
     {
-        public InputAreaFieldStyleInputModel InputAreaFieldStyle { get; set; }
+        public InputAreaFieldStyleModel InputAreaFieldStyle { get; set; }
     }
+
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldModel, IMapFrom<InputAreaField>
     {
         public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
-        public DataTypeModel DataType { get; set; }
-        public FormTypeModel FormType { get; set; }
-        public CategoryFieldOutputFullModel SourceCategoryField { get; set; }
-        public CategoryFieldOutputFullModel SourceCategoryTitleField { get; set; }
-        public CategoryModel SourceCategory { get; set; }
-        public InputAreaFieldStyleOutputModel InputAreaFieldStyle { get; set; }
+        //public DataTypeModel DataType { get; set; }
+       // public FormTypeModel FormType { get; set; }
+        public CategoryFieldReferenceModel SourceCategoryField { get; set; }
+        public CategoryFieldReferenceModel SourceCategoryTitleField { get; set; }
+        public CategoryReferenceModel SourceCategory { get; set; }
+        public InputAreaFieldStyleModel InputAreaFieldStyle { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputAreaField, InputAreaFieldOutputFullModel>()

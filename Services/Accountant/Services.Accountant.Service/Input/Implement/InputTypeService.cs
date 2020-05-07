@@ -63,7 +63,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (field.SourceCategoryField != null)
                     {
                         CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
-                        field.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                        field.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
                     }
                 }    
             }

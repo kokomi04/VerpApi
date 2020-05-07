@@ -41,14 +41,23 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public int? ReferenceCategoryId { get; set; }
     }
-    
+
+    public class CategoryFieldReferenceModel : IMapFrom<CategoryField>
+    {
+        public int CategoryId { get; set; }
+        public int CategoryFieldId { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
+        [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
+        public string Title { get; set; }
+    }
+
     public class CategoryFieldOutputFullModel : CategoryFieldOutputModel
     {
-        public DataTypeModel DataType { get; set; }
-        public FormTypeModel FormType { get; set; }
-        public CategoryFieldOutputFullModel SourceCategoryField { get; set; }
-        public CategoryFieldOutputFullModel SourceCategoryTitleField { get; set; }
-        public CategoryModel SourceCategory { get; set; }
+        //public DataTypeModel DataType { get; set; }
+        //public FormTypeModel FormType { get; set; }
+        public CategoryFieldReferenceModel SourceCategoryField { get; set; }
+        public CategoryFieldReferenceModel SourceCategoryTitleField { get; set; }
+        public CategoryReferenceModel SourceCategory { get; set; }
 
         public void Mapping(Profile profile)
         {
