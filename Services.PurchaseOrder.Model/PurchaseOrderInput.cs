@@ -14,6 +14,14 @@ namespace VErp.Services.PurchaseOrder.Model
         public long Date { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã PO")]
         public string PurchaseOrderCode { get; set; }
+
+        [MaxLength(512)]
+        public string PaymentInfo { get; set; }
+
+        public long? DeliveryDate { get; set; }
+        public int? DeliveryUserId { get; set; }
+        public  int? DeliveryCustomerId { get; set; }
+
         public DeliveryDestinationModel DeliveryDestination { get; set; }
         public string Content { get; set; }
         public string AdditionNote { get; set; }

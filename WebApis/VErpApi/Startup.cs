@@ -12,6 +12,7 @@ using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -27,20 +28,25 @@ namespace VErp.WebApis.VErpApi
 {
     public class Startup : BaseStartup
     {
+        private X509Certificate2 cert;
+
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
 
         }
 
+        
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             ConfigureStandardServices(services, true);           
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
+            cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
+
             services
                 .AddIdentityServer()
-                .AddSigningCredential(Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword))
+                .AddSigningCredential(cert)
                 .AddConfigurationStore((option) =>
                 {
                     option.ConfigureDbContext = (builder) =>
