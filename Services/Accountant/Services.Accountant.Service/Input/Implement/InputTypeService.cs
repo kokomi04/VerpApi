@@ -350,5 +350,22 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         }
 
+
+        public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId)
+        {
+            var inputTypeInfo = await _accountingContext.InputType.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+
+            inputTypeInfo.Areas = await _accountingContext.InputArea.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var fields = await _accountingContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+
+            foreach (var item in inputTypeInfo.Areas)
+            {
+                item.Fields = fields.Where(f => f.InputAreaId == item.InputAreaId).ToList();
+            }
+
+            return inputTypeInfo;
+        }
+
     }
 }

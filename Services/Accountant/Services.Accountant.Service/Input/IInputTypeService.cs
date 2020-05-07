@@ -19,5 +19,7 @@ namespace VErp.Services.Accountant.Service.Input
         Task<Enum> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model);
         Task<Enum> InputTypeViewDelete(int inputTypeViewId);
         Task<IList<InputTypeViewModel>> InputTypeViewList(int inputTypeId);
+
+        Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId);
     }
 }

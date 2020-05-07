@@ -101,6 +101,13 @@ namespace VErpApi.Controllers.Accountant
             return await _inputAreaService.GetInputArea(inputTypeId, inputAreaId);
         }
 
+        [HttpGet]
+        [Route("{inputTypeId}/basicInfo")]
+        public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo([FromRoute] int inputTypeId)
+        {
+            return await _inputTypeService.GetInputTypeBasicInfo(inputTypeId);
+        }
+
         [HttpPost]
         [Route("{inputTypeId}/inputareas")]
         public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
