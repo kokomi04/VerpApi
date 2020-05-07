@@ -642,6 +642,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
                 {
                     bool isOutSide = false;
+                    bool isExisted = false;
                     int referValueId = 0;
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
@@ -670,18 +671,26 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             FillterProcess(ref query, filters);
                         }
 
-                        referValueId = query
+                        isExisted = query.Any(r => r.CategoryRowValue.Any(
+                                rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
+                                && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)));
+
+                        if(isExisted && !isOutSide)
+                        {
+                            referValueId = query
                             .Where(r => r.CategoryRowValue.Any(
                                 rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
                                 && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)
                             ))
-                            .FirstOrDefault()?
+                            .First()
                             .CategoryRowValue
                             .Where(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                            .FirstOrDefault()?
-                            .CategoryRowValueId ?? 0;
+                            .First()
+                            .CategoryRowValueId;
+                        }
+                        
                     }
-                    if (referValueId <= 0)
+                    if (!isExisted)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
                     }
@@ -954,7 +963,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
                     var categoryValueRow = row.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
-                    string value = isRef ? categoryValueRow?.ReferenceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
+                    string value = string.Empty;
+                    if(categoryValueRow != null)
+                    {
+                        value = isRef && categoryValueRow.ReferenceCategoryRowValueId.HasValue ? categoryValueRow.ReferenceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
+                    }
                     value = value.ConvertValueToData((EnumDataType)field.DataTypeId);
                     dataInRow.Add((value, null));
                 }

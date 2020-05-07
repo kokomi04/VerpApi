@@ -14,6 +14,7 @@ namespace VErp.Services.Accountant.Model.Input
         {
         }
         public int InputAreaId { get; set; }
+        public long InputValueRowId { get; set; }
     }
 
     public class InputValueRowInputModel: InputValueRowModel, IMapFrom<InputValueRow>
@@ -35,7 +36,6 @@ namespace VErp.Services.Accountant.Model.Input
         {
             InputValueRowVersions = new HashSet<InputValueRowVersionOutputModel>();
         }
-        public long InputValueRowId { get; set; }
         public long InputValueBillId { get; set; }
         public long LastestInputValueRowVersionId { get; set; }
         public ICollection<InputValueRowVersionOutputModel> InputValueRowVersions { get; set; }

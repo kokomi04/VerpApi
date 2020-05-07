@@ -178,13 +178,6 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputvaluebills")]
-        public async Task<ServiceResult<PageData<InputValueBillOutputModel>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, page, size);
-        }
-
-        [HttpGet]
         [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
         public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
         {
@@ -197,6 +190,14 @@ namespace VErpApi.Controllers.Accountant
         {
             var updatedUserId = UserId;
             return await _inputValueBillService.AddInputValueBill(updatedUserId, inputTypeId, data);
+        }
+
+        [HttpPut]
+        [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
+        public async Task<ServiceResult<long>> UpdateInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId, [FromBody] InputValueBillInputModel data)
+        {
+            var updatedUserId = UserId;
+            return await _inputValueBillService.UpdateInputValueBill(updatedUserId, inputTypeId, inputValueBillId, data);
         }
 
         [HttpDelete]
