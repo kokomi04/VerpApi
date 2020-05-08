@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
             CategoryField = new HashSet<CategoryField>();
             InputAreaField = new HashSet<InputAreaField>();
+            InputTypeViewField = new HashSet<InputTypeViewField>();
         }
 
         public int DataTypeId { get; set; }
@@ -25,5 +26,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         public virtual ICollection<CategoryField> CategoryField { get; set; }
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
+        public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
     }
 }

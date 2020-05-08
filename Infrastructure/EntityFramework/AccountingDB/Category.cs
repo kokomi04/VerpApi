@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
             CategoryField = new HashSet<CategoryField>();
             CategoryRow = new HashSet<CategoryRow>();
+            InputTypeViewField = new HashSet<InputTypeViewField>();
             InverseParent = new HashSet<Category>();
         }
 
@@ -31,6 +32,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }
         public virtual ICollection<CategoryRow> CategoryRow { get; set; }
+        public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual ICollection<Category> InverseParent { get; set; }
     }
 }

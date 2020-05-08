@@ -41,14 +41,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType(int inputTypeId)
         {
             var inputType = await _accountingContext.InputType
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
-                .ThenInclude(f => f.SourceCategoryField)
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
-                .ThenInclude(f => f.SourceCategoryTitleField)
-                .Include(t => t.InputAreas)
-                .ThenInclude(a => a.InputAreaFields)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
+                .ThenInclude(f => f.ReferenceCategoryField)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
+                .ThenInclude(f => f.ReferenceCategoryTitleField)
+                .Include(t => t.InputArea)
+                .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.InputAreaFieldStyle)
                 .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
@@ -57,17 +57,17 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
             InputTypeFullModel inputTypeFullModel = _mapper.Map<InputTypeFullModel>(inputType);
 
-            foreach (var area in inputTypeFullModel.InputAreas)
-            {
-                foreach (var field in area.InputAreaFields)
-                {
-                    if (field.SourceCategoryField != null)
-                    {
-                        CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
-                        field.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
-                    }
-                }
-            }
+            //foreach (var area in inputTypeFullModel.InputAreas)
+            //{
+            //    foreach (var field in area.InputAreaFields)
+            //    {
+            //        if (field.SourceCategoryField != null)
+            //        {
+            //            CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
+            //            field.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+            //        }
+            //    }
+            //}
 
             return inputTypeFullModel;
         }
