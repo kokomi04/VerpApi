@@ -396,7 +396,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.SaveChangesAsync();
 
                 // Insert rows
-                await InsertRows(data.InputValueRows, inputValueBill.InputValueBillId, inputAreaFields);
+                await InsertRows(data.InputValueRows.ToList(), inputValueBill.InputValueBillId, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputValueBill.InputValueBillId, $"Thêm chứng từ cho loại chứng từ {inputType.Title}", data.JsonSerialize());
@@ -560,7 +560,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var deleteRow in curRows)
                 {
                     // Xóa rowValueVersion
-                    foreach(var deleteRowVersion in deleteRow.InputValueRowVersion)
+                    foreach (var deleteRowVersion in deleteRow.InputValueRowVersion)
                     {
                         deleteRowVersion.IsDeleted = true;
                     }
@@ -571,7 +571,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await InsertRows(futureRows, inputValueBillId, inputAreaFields);
 
                 // Update row
-                foreach(var (future, current) in updateRows)
+                foreach (var (future, current) in updateRows)
                 {
                     // Insert row version
                     var inputValueRowVersion = CreateRowVersion(future.InputAreaId, future.InputValueRowId, future.InputValueRowVersion, inputAreaFields);
@@ -630,7 +630,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 string fieldName = string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
                 var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
-                if(changeRows.Count() == 0)
+                if (changeRows.Count() == 0)
                 {
                     return InputErrorCode.RequiredFieldIsEmpty;
                 }
@@ -645,8 +645,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return GeneralCode.Success;
         }
 
-        private Enum CheckUnique(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = default)
+        private Enum CheckUnique(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = null)
         {
+            if (deleteInputValueRowId is null)
+            {
+                deleteInputValueRowId = new long[0];
+            }
             // Check unique
             foreach (var field in uniqueFields)
             {

@@ -65,7 +65,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountingContext.CategoryField
                 .Include(f => f.DataType)
@@ -77,13 +77,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            CategoryFieldOutputFullModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputFullModel>(categoryField);
-
-            if (categoryField.ReferenceCategoryField != null)
-            {
-                CategoryEntity sourceCategory = GetReferenceCategory(categoryField.ReferenceCategoryField);
-                categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-            }
+            CategoryFieldOutputModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputModel>(categoryField);
             return categoryFieldOutputModel;
         }
 
@@ -165,11 +159,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
             }
-
-            //if(((EnumFormType)categoryField.FormTypeId).IsRef() ^ ((EnumFormType)data.FormTypeId).IsRef())
-            //{
-            //    return CategoryErrorCode.FormTypeNotSwitch;
-            //}
 
             if (data.FormTypeId == (int)EnumFormType.Generate)
             {

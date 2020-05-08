@@ -32,13 +32,13 @@ namespace VErp.Services.Accountant.Model.Input
         public string Field20 { get; set; }
     }
 
-    public class InputValueRowVersionOutputModel: InputValueRowVersionInputModel
-    {
-        public InputValueRowVersionOutputModel()
-        {
-        }
-        public long InputValueRowVersionId { get; set; }
-        public long InputValueRowId { get; set; }
-    }
+    //public class InputValueRowVersionOutputModel: InputValueRowVersionInputModel
+    //{
+    //    public InputValueRowVersionOutputModel()
+    //    {
+    //    }
+    //    public long InputValueRowVersionId { get; set; }
+    //    public long InputValueRowId { get; set; }
+    //}
 
 }
