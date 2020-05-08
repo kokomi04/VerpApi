@@ -6,19 +6,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Services.Accountant.Model;
 using Services.Accountant.Service;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountant.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
@@ -28,25 +27,20 @@ namespace VErp.WebApis.VErpApi
 {
     public class Startup : BaseStartup
     {
-        private X509Certificate2 cert;
-
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
 
         }
 
-        
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             ConfigureStandardServices(services, true);           
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
-            cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
-
             services
                 .AddIdentityServer()
-                .AddSigningCredential(cert)
+                .AddSigningCredential(Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword))
                 .AddConfigurationStore((option) =>
                 {
                     option.ConfigureDbContext = (builder) =>
@@ -96,6 +90,7 @@ namespace VErp.WebApis.VErpApi
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }
 

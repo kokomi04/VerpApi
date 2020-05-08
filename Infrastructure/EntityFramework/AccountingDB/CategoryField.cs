@@ -10,6 +10,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
             CategoryRowValue = new HashSet<CategoryRowValue>();
             InputAreaFieldReferenceCategoryField = new HashSet<InputAreaField>();
             InputAreaFieldReferenceCategoryTitleField = new HashSet<InputAreaField>();
+            InputTypeViewFieldReferenceCategoryField = new HashSet<InputTypeViewField>();
+            InputTypeViewFieldReferenceCategoryTitleField = new HashSet<InputTypeViewField>();
             InverseReferenceCategoryField = new HashSet<CategoryField>();
             InverseReferenceCategoryTitleField = new HashSet<CategoryField>();
         }
@@ -48,6 +50,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual ICollection<CategoryRowValue> CategoryRowValue { get; set; }
         public virtual ICollection<InputAreaField> InputAreaFieldReferenceCategoryField { get; set; }
         public virtual ICollection<InputAreaField> InputAreaFieldReferenceCategoryTitleField { get; set; }
+        public virtual ICollection<InputTypeViewField> InputTypeViewFieldReferenceCategoryField { get; set; }
+        public virtual ICollection<InputTypeViewField> InputTypeViewFieldReferenceCategoryTitleField { get; set; }
         public virtual ICollection<CategoryField> InverseReferenceCategoryField { get; set; }
         public virtual ICollection<CategoryField> InverseReferenceCategoryTitleField { get; set; }
     }

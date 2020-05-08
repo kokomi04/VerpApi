@@ -101,6 +101,44 @@ namespace VErpApi.Controllers.Accountant
             return await _inputAreaService.GetInputArea(inputTypeId, inputAreaId);
         }
 
+        [HttpGet]
+        [Route("{inputTypeId}/basicInfo")]
+        public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo([FromRoute] int inputTypeId)
+        {
+            return await _inputTypeService.GetInputTypeBasicInfo(inputTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        public async Task<InputTypeViewModel> GetInputTypeBasicInfo([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
+        {
+            return await _inputTypeService.GetInputTypeViewInfo(inputTypeId, inputTypeViewId).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("{inputTypeId}/views")]
+        public async Task<int> InputTypeViewCreate([FromRoute] int inputTypeId, [FromBody] InputTypeViewModel model)
+        {
+            return await _inputTypeService.InputTypeViewCreate(inputTypeId, model).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId, [FromBody] InputTypeViewModel model)
+        {
+            var r = await _inputTypeService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
+            return r.IsSuccess();
+        }
+
+        [HttpDelete]
+        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
+        {
+            var r = await _inputTypeService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
+            return r.IsSuccess();
+        }
+
+
         [HttpPost]
         [Route("{inputTypeId}/inputareas")]
         public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)

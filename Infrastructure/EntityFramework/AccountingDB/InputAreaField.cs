@@ -5,11 +5,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 {
     public partial class InputAreaField
     {
-        public InputAreaField()
-        {
-            InputTypeViewField = new HashSet<InputTypeViewField>();
-        }
-
         public int InputAreaFieldId { get; set; }
         public int InputAreaId { get; set; }
         public int FieldIndex { get; set; }
@@ -45,6 +40,5 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual CategoryField ReferenceCategoryField { get; set; }
         public virtual CategoryField ReferenceCategoryTitleField { get; set; }
         public virtual InputAreaFieldStyle InputAreaFieldStyle { get; set; }
-        public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
     }
 }

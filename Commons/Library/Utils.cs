@@ -123,6 +123,7 @@ namespace VErp.Commons.Library
 
         public static T JsonDeserialize<T>(this string obj)
         {
+            if (string.IsNullOrWhiteSpace(obj)) return default(T);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
         }
 
