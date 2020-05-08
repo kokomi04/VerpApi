@@ -14,8 +14,8 @@ namespace VErp.Services.Accountant.Model.Category
         {
             SubCategories = new List<T>();
         }
-        public int? ParentId { get; set; }
         public int CategoryId { get; set; }
+        public int? ParentId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
         [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]
         public string Title { get; set; }
@@ -37,14 +37,6 @@ namespace VErp.Services.Accountant.Model.Category
             profile.CreateMap<CategoryEntity, CategoryModel>();
             profile.CreateMap<CategoryModel, CategoryEntity>().ForMember(c => c.InverseParent, act => act.Ignore());
         }
-    }
-
-    public class CategoryReferenceModel : IMapFrom<CategoryEntity>
-    {
-        public int CategoryId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
-        [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]
-        public string Title { get; set; }
     }
 
     public class CategoryFullModel : CategoryBase<CategoryFullModel>, IMapFrom<CategoryEntity>

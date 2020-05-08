@@ -6,11 +6,8 @@ using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Input
 {
-    public abstract class InputAreaModel
+    public class InputAreaInputModel : IMapFrom<InputArea>
     {
-        public InputAreaModel()
-        {
-        }
         public int InputAreaId { get; set; }
         public int InputTypeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên vùng dữ liệu")]
@@ -24,19 +21,13 @@ namespace VErp.Services.Accountant.Model.Input
         public int Columns { get; set; }
     }
 
-    public class InputAreaInputModel : InputAreaModel, IMapFrom<InputArea>
-    {
-    }
-
-    public class InputAreaOutputModel : InputAreaModel, IMapFrom<InputArea>
+    public class InputAreaOutputModel : InputAreaInputModel
     {
         public InputAreaOutputModel()
         {
             InputAreaFields = new List<InputAreaFieldOutputFullModel>();
         }
-
         public ICollection<InputAreaFieldOutputFullModel> InputAreaFields { get; set; }
-
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputArea, InputAreaOutputModel>()

@@ -44,7 +44,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
-                .Include(f => f.ReferenceCategoryTitleField)
                 .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -57,14 +56,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = await query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToListAsync();
-            foreach (InputAreaFieldOutputFullModel item in lst)
-            {
-                if (item.SourceCategoryField != null)
-                {
-                    CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
-                    item.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-                }
-            }
             return (lst, total);
         }
 
@@ -76,7 +67,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
-                .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -116,14 +106,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToList();
-            foreach (InputAreaFieldOutputFullModel item in lst)
-            {
-                if (item.SourceCategoryField != null)
-                {
-                    CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.SourceCategoryField.CategoryId);
-                    item.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-                }
-            }
             return (lst, total);
         }
 
@@ -135,20 +117,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
-                .Include(f => f.ReferenceCategoryTitleField)
                 .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
             }
             InputAreaFieldOutputFullModel inputAreaFieldOutputModel = _mapper.Map<InputAreaFieldOutputFullModel>((object)inputAreaField);
-
-            if (inputAreaField.ReferenceCategoryField != null)
-            {
-                CategoryEntity sourceCategory = GetReferenceCategory(inputAreaField.ReferenceCategoryField);
-                inputAreaFieldOutputModel.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-            }
-
             return inputAreaFieldOutputModel;
         }
 

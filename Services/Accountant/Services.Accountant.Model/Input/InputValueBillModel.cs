@@ -6,20 +6,19 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Input
-
 {
-    public abstract class InputValueBillModel
+    public abstract class InputValueBillModel<T> where T : InputValueRowInputModel
     {
+        public InputValueBillModel()
+        {
+            InputValueRows = new HashSet<T>();
+        }
         public int InputTypeId { get; set; }
+        public ICollection<T> InputValueRows { get; set; }
     }
 
-    public class InputValueBillInputModel: InputValueBillModel, IMapFrom<InputValueBill>
+    public class InputValueBillInputModel : InputValueBillModel<InputValueRowInputModel>, IMapFrom<InputValueBill>
     {
-        public InputValueBillInputModel()
-        {
-            InputValueRows = new HashSet<InputValueRowInputModel>();
-        }
-        public ICollection<InputValueRowInputModel> InputValueRows { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputValueBillInputModel, InputValueBill>()
@@ -27,14 +26,10 @@ namespace VErp.Services.Accountant.Model.Input
         }
     }
 
-    public class InputValueBillOutputModel : InputValueBillModel, IMapFrom<InputValueBill>
+    public class InputValueBillOutputModel : InputValueBillModel<InputValueRowOutputModel>, IMapFrom<InputValueBill>
     {
         public long InputValueBillId { get; set; }
-        public InputValueBillOutputModel()
-        {
-            InputValueRows = new HashSet<InputValueRowOutputModel>();
-        }
-        public ICollection<InputValueRowOutputModel> InputValueRows { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputValueBill, InputValueBillOutputModel>()

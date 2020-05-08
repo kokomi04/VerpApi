@@ -5,18 +5,17 @@ using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
 {
-    public abstract class CategoryFieldModel
+    public class CategoryFieldInputModel : IMapFrom<CategoryField>
     {
-        public int CategoryFieldId { get; set; }
+        public int CategoryId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
-        public int CategoryId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
-        [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
-        public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
         public string CategoryFieldName { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
+        [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
+        public string Title { get; set; }
         public int SortOrder { get; set; }
         public int DataTypeId { get; set; }
         public int DataSize { get; set; }
@@ -29,43 +28,19 @@ namespace VErp.Services.Accountant.Model.Category
         public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
-
         public bool IsTreeViewKey { get; set; }
     }
 
-    public class CategoryFieldInputModel : CategoryFieldModel, IMapFrom<CategoryField>
-    {
-    }
 
-    public class CategoryFieldOutputModel: CategoryFieldModel, IMapFrom<CategoryField>
+    public class CategoryFieldOutputModel : CategoryFieldInputModel
     {
-        public int? ReferenceCategoryId { get; set; }
-    }
-
-    public class CategoryFieldReferenceModel : IMapFrom<CategoryField>
-    {
-        public int CategoryId { get; set; }
         public int CategoryFieldId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
-        [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
-        public string Title { get; set; }
-    }
-
-    public class CategoryFieldOutputFullModel : CategoryFieldOutputModel
-    {
-        //public DataTypeModel DataType { get; set; }
-        //public FormTypeModel FormType { get; set; }
-        public CategoryFieldReferenceModel SourceCategoryField { get; set; }
-        public CategoryFieldReferenceModel SourceCategoryTitleField { get; set; }
-        public CategoryReferenceModel SourceCategory { get; set; }
+        public int? ReferenceCategoryId { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<CategoryField, CategoryFieldOutputFullModel>()
-                .ForMember(dest => dest.SourceCategory, opt => opt.MapFrom(src => src.Category))
-                .ForMember(dest => dest.SourceCategoryField, opt => opt.MapFrom(src => src.ReferenceCategoryField))
-                .ForMember(dest => dest.SourceCategoryTitleField, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField));
-
+            profile.CreateMap<CategoryField, CategoryFieldOutputModel>()
+                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId));
         }
     }
 }

@@ -86,7 +86,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
             return await _categoryFieldService.GetCategoryField(categoryId, categoryFieldId);
         }

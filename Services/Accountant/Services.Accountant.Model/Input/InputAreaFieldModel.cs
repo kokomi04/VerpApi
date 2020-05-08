@@ -6,7 +6,7 @@ using VErp.Services.Accountant.Model.Category;
 
 namespace VErp.Services.Accountant.Model.Input
 {
-    public abstract class InputAreaFieldModel
+    public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
     {
         public int InputAreaId { get; set; }
         public int FieldIndex { get; set; }
@@ -31,30 +31,19 @@ namespace VErp.Services.Accountant.Model.Input
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
         public string Filters { get; set; }
-
-    }
-
-    public class InputAreaFieldInputModel : InputAreaFieldModel, IMapFrom<InputAreaField>
-    {
         public InputAreaFieldStyleModel InputAreaFieldStyle { get; set; }
     }
 
 
-    public class InputAreaFieldOutputFullModel : InputAreaFieldModel, IMapFrom<InputAreaField>
+    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
     {
         public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
-        //public DataTypeModel DataType { get; set; }
-       // public FormTypeModel FormType { get; set; }
-        public CategoryFieldReferenceModel SourceCategoryField { get; set; }
-        public CategoryFieldReferenceModel SourceCategoryTitleField { get; set; }
-        public CategoryReferenceModel SourceCategory { get; set; }
-        public InputAreaFieldStyleModel InputAreaFieldStyle { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputAreaField, InputAreaFieldOutputFullModel>()
-                .ForMember(dest => dest.SourceCategoryField, opt => opt.MapFrom(src => src.ReferenceCategoryField))
-                .ForMember(dest => dest.SourceCategoryTitleField, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField));
+                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId));
         }
     }
 }

@@ -43,6 +43,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(t => t.InputArea)
                 .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.ReferenceCategoryField)
+                .ThenInclude(rf => rf.Category)
                 .Include(t => t.InputArea)
                 .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.ReferenceCategoryTitleField)
@@ -56,17 +57,17 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
             InputTypeFullModel inputTypeFullModel = _mapper.Map<InputTypeFullModel>(inputType);
 
-            foreach (var area in inputTypeFullModel.InputAreas)
-            {
-                foreach(var field in area.InputAreaFields)
-                {
-                    if (field.SourceCategoryField != null)
-                    {
-                        CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
-                        field.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-                    }
-                }    
-            }
+            //foreach (var area in inputTypeFullModel.InputAreas)
+            //{
+            //    foreach(var field in area.InputAreaFields)
+            //    {
+            //        if (field.SourceCategoryField != null)
+            //        {
+            //            CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
+            //            field.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
+            //        }
+            //    }    
+            //}
 
             return inputTypeFullModel;
         }
