@@ -404,21 +404,48 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputTypeViewField>(entity =>
             {
-                entity.HasKey(e => new { e.InputTypeViewId, e.InputAreaFieldId });
-
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
-                entity.HasOne(d => d.InputAreaField)
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.SelectFilters).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.DataType)
                     .WithMany(p => p.InputTypeViewField)
-                    .HasForeignKey(d => d.InputAreaFieldId)
+                    .HasForeignKey(d => d.DataTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputTypeViewField_InputAreaField");
+                    .HasConstraintName("FK_InputTypeViewField_DataType");
+
+                entity.HasOne(d => d.FormType)
+                    .WithMany(p => p.InputTypeViewField)
+                    .HasForeignKey(d => d.FormTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InputTypeViewField_FormType");
 
                 entity.HasOne(d => d.InputTypeView)
                     .WithMany(p => p.InputTypeViewField)
                     .HasForeignKey(d => d.InputTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
+
+                entity.HasOne(d => d.ReferenceCategoryField)
+                    .WithMany(p => p.InputTypeViewFieldReferenceCategoryField)
+                    .HasForeignKey(d => d.ReferenceCategoryFieldId)
+                    .HasConstraintName("FK_InputTypeViewField_CategoryField");
+
+                entity.HasOne(d => d.ReferenceCategory)
+                    .WithMany(p => p.InputTypeViewField)
+                    .HasForeignKey(d => d.ReferenceCategoryId)
+                    .HasConstraintName("FK_InputTypeViewField_Category");
+
+                entity.HasOne(d => d.ReferenceCategoryTitleField)
+                    .WithMany(p => p.InputTypeViewFieldReferenceCategoryTitleField)
+                    .HasForeignKey(d => d.ReferenceCategoryTitleFieldId)
+                    .HasConstraintName("FK_InputTypeViewField_CategoryField1");
             });
 
             modelBuilder.Entity<InputValueBill>(entity =>

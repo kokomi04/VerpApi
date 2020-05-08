@@ -1,6 +1,9 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
 
-namespace Services.Accountant.Model
+namespace VErp.Services.Accountant.Model
 {
     public static class AccountantModelAssembly
     {
