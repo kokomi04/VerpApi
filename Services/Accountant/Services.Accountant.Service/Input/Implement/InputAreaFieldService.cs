@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -55,7 +56,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaFieldOutputFullModel> lst = await query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToListAsync();
+            List<InputAreaFieldOutputFullModel> lst = await query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToListAsync();
             return (lst, total);
         }
 
@@ -105,7 +106,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaFieldOutputFullModel> lst = query.Select(f => _mapper.Map<InputAreaFieldOutputFullModel>(f)).ToList();
+            List<InputAreaFieldOutputFullModel> lst = query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
@@ -113,17 +114,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
         {
             var inputAreaField = await _accountingContext.InputAreaField
+                .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
                 .Include(f => f.InputAreaFieldStyle)
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
-                .FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
+                .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
             if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
             }
-            InputAreaFieldOutputFullModel inputAreaFieldOutputModel = _mapper.Map<InputAreaFieldOutputFullModel>((object)inputAreaField);
-            return inputAreaFieldOutputModel;
+            return inputAreaField;
         }
 
         public async Task<ServiceResult<int>> AddInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, InputAreaFieldInputModel data)

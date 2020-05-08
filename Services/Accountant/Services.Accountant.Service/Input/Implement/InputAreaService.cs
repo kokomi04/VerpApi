@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -37,40 +38,31 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputAreaOutputModel>> GetInputArea(int inputTypeId, int inputAreaId)
         {
             var inputArea = await _accountingContext.InputArea
-                .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId && i.InputAreaId == inputAreaId);
+                .Where(i => i.InputTypeId == inputTypeId && i.InputAreaId == inputAreaId)
+                .ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
             if (inputArea == null)
             {
                 return InputErrorCode.InputTypeNotFound;
             }
-            InputAreaOutputModel inputAreaOuputModel = _mapper.Map<InputAreaOutputModel>(inputArea);
-            return inputAreaOuputModel;
+            return inputArea;
         }
 
         public async Task<PageData<InputAreaOutputModel>> GetInputAreas(int inputTypeId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-
             var query = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).AsQueryable();
-
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(a => a.InputAreaCode.Contains(keyword) || a.Title.Contains(keyword));
             }
-
             query = query.OrderBy(c => c.Title);
             var total = await query.CountAsync();
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaOutputModel> lst = new List<InputAreaOutputModel>();
-
-            foreach (var item in query)
-            {
-                InputAreaOutputModel inputAreaModel = _mapper.Map<InputAreaOutputModel>(item);
-                lst.Add(inputAreaModel);
-            }
-
+            List<InputAreaOutputModel> lst = query.ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
@@ -194,15 +186,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             inputValueRowVersion.IsDeleted = true;
                             inputValueRowVersion.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
-
-                            //// Xóa row version number
-                            //List<InputValueRowVersionNumber> inputValueRowVersionNumbers = _accountingContext.InputValueRowVersionNumber.Where(rvn => rvn.InputValueRowVersionId == inputValueRowVersion.InputValueRowVersionId).ToList();
-                            //foreach (InputValueRowVersionNumber inputValueRowVersionNumber in inputValueRowVersionNumbers)
-                            //{
-                            //    inputValueRowVersionNumber.IsDeleted = true;
-                            //    inputValueRowVersionNumber.UpdatedByUserId = updatedUserId;
-                            //    await _accountingContext.SaveChangesAsync();
-                            //}
                         }
                     }
 
