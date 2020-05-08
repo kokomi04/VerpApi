@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -45,7 +46,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
         {
             var total = 0;
-            List<(CategoryRow Data, int Level)> categoryRows = new List<(CategoryRow Data, int Level)>();
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
             IQueryable<CategoryRow> query;
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
@@ -80,45 +80,31 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 if (category.IsTreeView)
                 {
-                    var temp = query.ToList();
-                    int[] parentIds = GetParentIds(temp);
-                    temp.AddRange(_accountingContext.CategoryRow
+                    lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider).ToList();
+                    int[] parentIds = GetParentIds(lst);
+
+
+                    lst.AddRange(_accountingContext.CategoryRow
                         .Include(r => r.CategoryRowValue)
                         .ThenInclude(rv => rv.CategoryField)
                         .Include(r => r.CategoryRowValue)
                         .ThenInclude(rv => rv.ReferenceCategoryRowValue)
+                        .ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
                         .Where(r => parentIds.Contains(r.CategoryRowId)));
-                    categoryRows = SortCategoryRows(temp).Skip((page - 1) * size).Take(size).ToList();
+
+                    lst = SortCategoryRows(lst).Skip((page - 1) * size).Take(size).ToList();
                 }
                 else
                 {
-                    foreach (var item in query.OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size))
-                    {
-                        categoryRows.Add((item, 0));
-                    }
+                    lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
+                         .OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size)
+                         .ToList();
                 }
-            }
-            foreach (var (Data, Level) in categoryRows)
-            {
-                CategoryRowListOutputModel output = _mapper.Map<CategoryRowListOutputModel>(Data);
-                output.CategoryRowLevel = Level;
-                ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-                foreach (var cell in Data.CategoryRowValue)
-                {
-                    row.Add(new CategoryValueModel
-                    {
-                        CategoryFieldId = cell.CategoryFieldId,
-                        CategoryValueId = cell.CategoryRowValueId,
-                        Value = ((EnumFormType)cell.CategoryField.FormTypeId).IsRef() && cell.ReferenceCategoryRowValueId.HasValue ? cell.ReferenceCategoryRowValue.Value : cell.Value
-                    });
-                }
-                output.CategoryRowValues = row;
-                lst.Add(output);
             }
             return (lst, total);
         }
 
-        private int[] GetParentIds(List<CategoryRow> categoryRows)
+        private int[] GetParentIds(List<CategoryRowListOutputModel> categoryRows)
         {
             List<int> result = new List<int>();
 
@@ -142,32 +128,35 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return result.Distinct().ToArray();
         }
 
-        private List<(CategoryRow Data, int Level)> SortCategoryRows(List<CategoryRow> categoryRows)
+        private List<CategoryRowListOutputModel> SortCategoryRows(List<CategoryRowListOutputModel> categoryRows)
         {
             int level = 0;
             categoryRows = categoryRows.OrderBy(r => r.CategoryRowId).ToList();
-            List<(CategoryRow Data, int Level)> nodes = new List<(CategoryRow Data, int Level)>();
+            List<CategoryRowListOutputModel> nodes = new List<CategoryRowListOutputModel>();
 
             var items = categoryRows.Where(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId)).ToList();
             categoryRows.RemoveAll(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId));
+
             foreach (var item in items)
             {
-                nodes.Add((item, level));
+                item.CategoryRowLevel = level;
+                nodes.Add(item);
                 nodes.AddRange(GetChilds(ref categoryRows, item.CategoryRowId, level));
             }
 
             return nodes;
         }
 
-        private IEnumerable<(CategoryRow Data, int Level)> GetChilds(ref List<CategoryRow> categoryRows, int categoryRowId, int level)
+        private IEnumerable<CategoryRowListOutputModel> GetChilds(ref List<CategoryRowListOutputModel> categoryRows, int categoryRowId, int level)
         {
             level++;
-            List<(CategoryRow Data, int Level)> nodes = new List<(CategoryRow Data, int Level)>();
+            List<CategoryRowListOutputModel> nodes = new List<CategoryRowListOutputModel>();
             var items = categoryRows.Where(r => r.ParentCategoryRowId == categoryRowId).ToList();
             categoryRows.RemoveAll(r => r.ParentCategoryRowId == categoryRowId);
             foreach (var item in items)
             {
-                nodes.Add((item, level));
+                item.CategoryRowLevel = level;
+                nodes.Add(item);
                 nodes.AddRange(GetChilds(ref categoryRows, item.CategoryRowId, level));
             }
             return nodes;
@@ -176,11 +165,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId)
         {
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-            CategoryRow categoryRow = null;
-            List<CategoryRowValue> values = new List<CategoryRowValue>();
+            CategoryRowOutputModel categoryRow = null;
             if (category.IsOutSideData)
             {
-                var r = GetOutSideCategoryRow(categoryId, categoryRowId, ref categoryRow, ref values);
+                var r = GetOutSideCategoryRow(categoryId, categoryRowId, ref categoryRow);
                 if (!r.IsSuccess())
                 {
                     return r;
@@ -189,36 +177,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             else
             {
                 categoryRow = await _accountingContext.CategoryRow
-                  .Include(r => r.ParentCategoryRow)
-                  .ThenInclude(pr => pr.CategoryRowValue)
-                  .FirstOrDefaultAsync(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId);
-                values = _accountingContext.CategoryRowValue
-                  .Where(r => r.CategoryRowId == categoryRowId)
-                  .Include(rv => rv.CategoryField)
-                  .Include(rv => rv.ReferenceCategoryRowValue).ToList();
+                    .Where(r => r.CategoryId == categoryId && r.CategoryRowId == categoryRowId)
+                    .Include(r => r.ParentCategoryRow)
+                    .ThenInclude(pr => pr.CategoryRowValue)
+                    .ThenInclude(rv => rv.CategoryField)
+                    .Include(r => r.ParentCategoryRow)
+                    .ThenInclude(pr => pr.CategoryRowValue)
+                    .ThenInclude(rv => rv.ReferenceCategoryRowValue)
+                    .ProjectTo<CategoryRowOutputModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefaultAsync();
+
             }
             // Check row 
             if (categoryRow == null)
             {
                 return CategoryErrorCode.CategoryRowNotFound;
             }
-            CategoryRowOutputModel output = _mapper.Map<CategoryRowOutputModel>(categoryRow);
-            ICollection<CategoryValueModel> row = new List<CategoryValueModel>();
-            foreach (var value in values)
-            {
-                row.Add(new CategoryValueModel
-                {
-                    CategoryFieldId = value.CategoryFieldId,
-                    CategoryValueId = value.CategoryRowValueId,
-                    Value = ((EnumFormType)value.CategoryField.FormTypeId).IsRef() && value.ReferenceCategoryRowValueId.HasValue ? value.ReferenceCategoryRowValue.Value : value.Value
-                });
-            }
-            output.CategoryRowValues = row;
 
-            return output;
+            return categoryRow;
         }
 
-        private Enum GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRow categoryRow, ref List<CategoryRowValue> values)
+        private Enum GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRowOutputModel categoryRow)
         {
             try
             {
@@ -242,22 +221,20 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         }
 
                         // Map row
-                        categoryRow = new CategoryRow
+                        categoryRow = new CategoryRowOutputModel
                         {
-                            CategoryRowId = categoryRowId,
-                            CategoryId = categoryId,
+                            CategoryRowId = categoryRowId
                         };
 
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            var value = new CategoryRowValue
+                            var value = new CategoryValueModel
                             {
                                 CategoryFieldId = field.CategoryFieldId,
-                                Value = properties[field.CategoryFieldName],
-                                CategoryField = field
+                                Value = properties[field.CategoryFieldName]
                             };
-                            values.Add(value);
+                            categoryRow.CategoryRowValues.Add(value);
                         }
                     }
                 }
@@ -675,7 +652,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
                                 && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)));
 
-                        if(isExisted && !isOutSide)
+                        if (isExisted && !isOutSide)
                         {
                             referValueId = query
                             .Where(r => r.CategoryRowValue.Any(
@@ -688,7 +665,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             .First()
                             .CategoryRowValueId;
                         }
-                        
+
                     }
                     if (!isExisted)
                     {
@@ -964,7 +941,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
                     var categoryValueRow = row.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
                     string value = string.Empty;
-                    if(categoryValueRow != null)
+                    if (categoryValueRow != null)
                     {
                         value = isRef && categoryValueRow.ReferenceCategoryRowValueId.HasValue ? categoryValueRow.ReferenceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
                     }

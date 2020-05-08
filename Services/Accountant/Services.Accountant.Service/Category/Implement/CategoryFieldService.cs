@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -60,7 +61,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             List<CategoryFieldOutputModel> lst = await query
                 .OrderBy(f => f.SortOrder)
-                .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToListAsync();
+                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
             return (lst, total);
         }
@@ -72,13 +74,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
                 .Include(f => f.ReferenceCategoryTitleField)
+                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            CategoryFieldOutputModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputModel>(categoryField);
-            return categoryFieldOutputModel;
+            return categoryField;
         }
 
         public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data)

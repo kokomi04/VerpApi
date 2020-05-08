@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -40,6 +41,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType(int inputTypeId)
         {
             var inputType = await _accountingContext.InputType
+                .Where(i => i.InputTypeId == inputTypeId)
                 .Include(t => t.InputArea)
                 .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.ReferenceCategoryField)
@@ -50,26 +52,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(t => t.InputArea)
                 .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.InputAreaFieldStyle)
-                .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
+                .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
             if (inputType == null)
             {
                 return InputErrorCode.InputTypeNotFound;
             }
-            InputTypeFullModel inputTypeFullModel = _mapper.Map<InputTypeFullModel>(inputType);
-
-            //foreach (var area in inputTypeFullModel.InputAreas)
-            //{
-            //    foreach(var field in area.InputAreaFields)
-            //    {
-            //        if (field.SourceCategoryField != null)
-            //        {
-            //            CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == field.SourceCategoryField.CategoryId);
-            //            field.SourceCategory = _mapper.Map<CategoryReferenceModel>(sourceCategory);
-            //        }
-            //    }    
-            //}
-
-            return inputTypeFullModel;
+            return inputType;
         }
 
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
@@ -89,14 +78,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputTypeModel> lst = new List<InputTypeModel>();
-
-            foreach (var item in query)
-            {
-                InputTypeModel inputModel = _mapper.Map<InputTypeModel>(item);
-                lst.Add(inputModel);
-            }
-
+            List<InputTypeModel> lst = query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
@@ -230,15 +212,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             inputValueRowVersion.IsDeleted = true;
                             inputValueRowVersion.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
-
-                            //// Xóa row version number
-                            //List<InputValueRowVersionNumber> inputValueRowVersionNumbers = _accountingContext.InputValueRowVersionNumber.Where(rvn => rvn.InputValueRowVersionId == inputValueRowVersion.InputValueRowVersionId).ToList();
-                            //foreach (InputValueRowVersionNumber inputValueRowVersionNumber in inputValueRowVersionNumbers)
-                            //{
-                            //    inputValueRowVersionNumber.IsDeleted = true;
-                            //    inputValueRowVersionNumber.UpdatedByUserId = updatedUserId;
-                            //    await _accountingContext.SaveChangesAsync();
-                            //}
                         }
                     }
                 }

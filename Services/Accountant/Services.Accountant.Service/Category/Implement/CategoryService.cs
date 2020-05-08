@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -39,15 +40,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             var category = await _accountingContext.Category
                 .Include(c => c.OutSideDataConfig)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-            CategoryFullModel categoryFullModel = _mapper.Map<CategoryFullModel>(category);
-            categoryFullModel.SubCategories = GetSubCategories(category.CategoryId);
-            categoryFullModel.CategoryFields = GetFields(category.CategoryId);
-            return categoryFullModel;
+            category.SubCategories = GetSubCategories(category.CategoryId);
+            category.CategoryFields = GetFields(category.CategoryId);
+            return category;
         }
 
         public async Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, bool? hasParent, int page, int size)
@@ -75,13 +76,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryModel> lst = new List<CategoryModel>();
-
-            foreach (var item in query)
-            {
-                CategoryModel categoryModel = _mapper.Map<CategoryModel>(item);
-                lst.Add(categoryModel);
-            }
+            List<CategoryModel> lst = query.ProjectTo<CategoryModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
@@ -397,13 +392,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-
-            List<DataTypeModel> lst = new List<DataTypeModel>();
-            foreach (var item in query)
-            {
-                DataTypeModel dataTypeModel = _mapper.Map<DataTypeModel>(item);
-                lst.Add(dataTypeModel);
-            }
+            List<DataTypeModel> lst = query.ProjectTo<DataTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
         public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)
@@ -414,25 +403,20 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<FormTypeModel> lst = new List<FormTypeModel>();
-            foreach (var item in query)
-            {
-                FormTypeModel formTypeModel = _mapper.Map<FormTypeModel>(item);
-                lst.Add(formTypeModel);
-            }
+            List<FormTypeModel> lst = query.ProjectTo<FormTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
         private ICollection<CategoryFullModel> GetSubCategories(int categoryId)
         {
-            List<CategoryFullModel> result = new List<CategoryFullModel>();
-            var query = _accountingContext.Category.Where(r => r.ParentId == categoryId).ToList();
-            foreach (var item in query)
+            List<CategoryFullModel> result = _accountingContext.Category
+                .Where(r => r.ParentId == categoryId)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .ToList();
+            foreach (var item in result)
             {
-                CategoryFullModel category = _mapper.Map<CategoryFullModel>(item);
-                category.SubCategories = GetSubCategories(item.CategoryId);
-                category.CategoryFields = GetFields(item.CategoryId);
-                result.Add(category);
+                item.SubCategories = GetSubCategories(item.CategoryId);
+                item.CategoryFields = GetFields(item.CategoryId);
             }
             return result;
         }
@@ -442,18 +426,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var query = _accountingContext.CategoryField
                 .Include(f => f.ReferenceCategoryField)
                 .Where(f => f.CategoryId == categoryId)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .OrderBy(f => f.SortOrder);
-            List<CategoryFieldOutputModel> result = new List<CategoryFieldOutputModel>();
-            foreach (var field in query)
-            {
-                var fieldModel = _mapper.Map<CategoryFieldOutputModel>(field);
-                fieldModel.ReferenceCategoryId = field.ReferenceCategoryField?.CategoryId ?? null;
-
-                result.Add(fieldModel);
-            }
-
+            List<CategoryFieldOutputModel> result = query.ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider).ToList();
             return result;
         }
 

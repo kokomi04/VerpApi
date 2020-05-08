@@ -19,7 +19,9 @@ namespace VErp.Services.Accountant.Model.Category
         public void Mapping(Profile profile)
         {
             profile.CreateMap(GetType(), typeof(CategoryRow))
-                .ForMember(nameof(CategoryRow.CategoryRowValue), opt => opt.MapFrom(nameof(CategoryRowValues))).ReverseMap();
+                .ForMember(nameof(CategoryRow.CategoryRowValue), opt => opt.MapFrom(nameof(CategoryRowValues)));
+            profile.CreateMap(typeof(CategoryRow), GetType())
+                .ForMember(nameof(CategoryRowValues), opt => opt.MapFrom(nameof(CategoryRow.CategoryRowValue)));
         }
     }
 
