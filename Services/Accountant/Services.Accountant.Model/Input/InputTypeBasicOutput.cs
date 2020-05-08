@@ -13,11 +13,13 @@ namespace VErp.Services.Accountant.Model.Input
         public string Title { get; set; }
         public string InputTypeCode { get; set; }
         public IList<InputAreaBasicOutput> Areas { get; set; }
+        public IList<InputTypeViewModelList> Views { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap(typeof(InputType), GetType())
-                .ForMember(nameof(Areas), m => m.Ignore());
+            profile.CreateMap<InputType, InputTypeBasicOutput>()
+                .ForMember(d => d.Areas, m => m.Ignore())
+                .ForMember(d => d.Views, m => m.Ignore());
         }
     }
 
@@ -30,8 +32,8 @@ namespace VErp.Services.Accountant.Model.Input
         public IList<InputAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap(typeof(InputArea), GetType())
-                .ForMember(nameof(Fields), m => m.Ignore());
+            profile.CreateMap<InputArea, InputAreaBasicOutput>()
+                .ForMember(d => d.Fields, m => m.Ignore());
         }
     }
 
@@ -46,5 +48,9 @@ namespace VErp.Services.Accountant.Model.Input
         public EnumDataType DataTypeId { get; set; }
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
+
+        public void Mapping(Profile profile) => profile.CreateMap<InputAreaField, InputAreaFieldBasicOutput>()
+            .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
+            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId));
     }
 }

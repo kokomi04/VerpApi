@@ -15,11 +15,13 @@ namespace VErp.Services.Accountant.Service.Input
         Task<Enum> DeleteInputType(int updatedUserId, int inputTypeId);
 
 
-        Task<int> InputTypeViewCreate(InputTypeViewModel model);
+        Task<int> InputTypeViewCreate(int inputTypeId, InputTypeViewModel model);
         Task<Enum> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model);
         Task<Enum> InputTypeViewDelete(int inputTypeViewId);
-        Task<IList<InputTypeViewModel>> InputTypeViewList(int inputTypeId);
+        Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId);
 
         Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId);
+
+        Task<InputTypeViewModel> GetInputTypeViewInfo(int inputTypeId, int inputTypeViewId);
     }
 }

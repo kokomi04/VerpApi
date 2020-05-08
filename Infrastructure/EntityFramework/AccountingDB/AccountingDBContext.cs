@@ -131,33 +131,33 @@ namespace VErp.Infrastructure.EF.AccountingDB
             });
 
 
-            modelBuilder.Entity<InputTypeView>(entity =>
-            {
-                entity.HasOne(d => d.InputType)
-                    .WithMany(p => p.InputTypeView)
-                    .HasForeignKey(d => d.InputTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputTypeView_InputType");
-            });
+            //modelBuilder.Entity<InputTypeView>(entity =>
+            //{
+            //    entity.HasOne(d => d.InputType)
+            //        .WithMany(p => p.InputTypeView)
+            //        .HasForeignKey(d => d.InputTypeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InputTypeView_InputType");
+            //});
 
-            modelBuilder.Entity<InputTypeViewField>(entity =>
-            {
-                entity.HasKey(e => new { e.InputTypeViewId, e.InputAreaFieldId });
+            //modelBuilder.Entity<InputTypeViewField>(entity =>
+            //{
+            //    entity.HasKey(e => new { e.InputTypeViewId, e.InputAreaFieldId });
 
-                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+            //    entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
-                entity.HasOne(d => d.InputAreaField)
-                    .WithMany(p => p.InputTypeViewField)
-                    .HasForeignKey(d => d.InputAreaFieldId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputTypeViewField_InputAreaField");
+            //    entity.HasOne(d => d.InputAreaField)
+            //        .WithMany(p => p.InputTypeViewField)
+            //        .HasForeignKey(d => d.InputAreaFieldId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InputTypeViewField_InputAreaField");
 
-                entity.HasOne(d => d.InputTypeView)
-                    .WithMany(p => p.InputTypeViewField)
-                    .HasForeignKey(d => d.InputTypeViewId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputTypeViewField_InputTypeView");
-            });
+            //    entity.HasOne(d => d.InputTypeView)
+            //        .WithMany(p => p.InputTypeViewField)
+            //        .HasForeignKey(d => d.InputTypeViewId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InputTypeViewField_InputTypeView");
+            //});
 
             modelBuilder.Entity<InputArea>(entity =>
             {

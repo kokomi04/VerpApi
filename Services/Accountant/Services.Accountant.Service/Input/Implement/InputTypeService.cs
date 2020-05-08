@@ -259,24 +259,73 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<int> InputTypeViewCreate(InputTypeViewModel model)
+      
+
+       
+        public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)
+        {
+            return await _accountingContext.InputTypeView.Where(v => v.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+
+        public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId)
+        {
+            var inputTypeInfo = await _accountingContext.InputType.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+
+            inputTypeInfo.Areas = await _accountingContext.InputArea.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var fields = await _accountingContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var views= await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+
+            foreach (var item in inputTypeInfo.Areas)
+            {
+                item.Fields = fields.Where(f => f.InputAreaId == item.InputAreaId).ToList();
+            }
+
+            inputTypeInfo.Views = views;
+
+            return inputTypeInfo;
+        }
+
+        public async Task<InputTypeViewModel> GetInputTypeViewInfo(int inputTypeId, int inputTypeViewId)
+        {
+            var info = await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId && t.InputTypeViewId == inputTypeViewId).ProjectTo<InputTypeViewModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+
+            if (info == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình trong hệ thống");
+            }
+
+            var fields = await _accountingContext.InputTypeViewField.AsNoTracking()
+                .Where(t => t.InputTypeViewId == inputTypeViewId)
+                .ProjectTo<InputTypeViewFieldModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            info.Fields = fields;
+
+            return info;
+        }
+
+        public async Task<int> InputTypeViewCreate(int inputTypeId, InputTypeViewModel model)
         {
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                var inputTypeView = _mapper.Map<InputTypeView>(model);
+                var info = _mapper.Map<InputTypeView>(model);
 
-                await _accountingContext.InputTypeView.AddAsync(inputTypeView);
+                info.InputTypeId = inputTypeId;
 
+                await _accountingContext.InputTypeView.AddAsync(info);
                 await _accountingContext.SaveChangesAsync();
 
-                await InputTypeViewFieldAddRange(inputTypeView.InputTypeViewId, model.Fields);
+                await InputTypeViewFieldAddRange(info.InputTypeViewId, model.Fields);
 
                 await _accountingContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
 
-                return inputTypeView.InputTypeViewId;
+                return info.InputTypeViewId;
             }
             catch (Exception ex)
             {
@@ -284,7 +333,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 _logger.LogError(ex, "InputTypeViewCreate");
                 throw ex;
             }
+
         }
+
 
         public async Task<Enum> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model)
         {
@@ -332,15 +383,38 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         }
 
-        public async Task<IList<InputTypeViewModel>> InputTypeViewList(int inputTypeId)
-        {
-            return await _accountingContext.InputTypeView.Where(v => v.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModel>(_mapper.ConfigurationProvider).ToListAsync();
-        }
-
-
         private async Task InputTypeViewFieldAddRange(int inputTypeViewId, IList<InputTypeViewFieldModel> fieldModels)
         {
+            var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
+            categoryFieldIds.Union(fieldModels.Where(f => f.ReferenceCategoryTitleFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList());
+
+            if (categoryFieldIds.Count > 0)
+            {
+
+                var categoryFields = (await _accountingContext.CategoryField
+                    .Where(f => categoryFieldIds.Contains(f.CategoryFieldId))
+                    .Select(f => new { f.CategoryFieldId, f.CategoryId })
+                    .AsNoTracking()
+                    .ToListAsync())
+                    .ToDictionary(f => f.CategoryFieldId, f => f);
+
+                foreach (var f in fieldModels)
+                {
+                    if (f.ReferenceCategoryFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryFieldId.Value, out var cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Trường dữ liệu của danh mục không thuộc danh mục");
+                    }
+
+                    if (f.ReferenceCategoryTitleFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryTitleFieldId.Value, out cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Trường hiển thị của danh mục không thuộc danh mục");
+                    }
+                }
+
+            }
+
             var fields = fieldModels.Select(f => _mapper.Map<InputTypeViewField>(f)).ToList();
+
             foreach (var f in fields)
             {
                 f.InputTypeViewId = inputTypeViewId;
@@ -350,22 +424,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         }
 
-
-        public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId)
-        {
-            var inputTypeInfo = await _accountingContext.InputType.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
-
-            inputTypeInfo.Areas = await _accountingContext.InputArea.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
-
-            var fields = await _accountingContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
-
-            foreach (var item in inputTypeInfo.Areas)
-            {
-                item.Fields = fields.Where(f => f.InputAreaId == item.InputAreaId).ToList();
-            }
-
-            return inputTypeInfo;
-        }
-
+      
     }
 }
