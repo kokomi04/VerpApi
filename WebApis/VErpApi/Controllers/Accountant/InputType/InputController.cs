@@ -15,6 +15,7 @@ using VErp.Commons.Library;
 using System;
 using Newtonsoft.Json;
 using VErp.Services.Accountant.Service.Input;
+using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -205,14 +206,22 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/listInfo")]
         public async Task<ServiceResult<InputTypeListInfo>> GetInputValueBills([FromRoute] int inputTypeId)
         {
-            return await _inputValueBillService.GetInputTypeListInfo(inputTypeId).ConfigureAwait(false);
+            return await _inputValueBillService.GetInputTypeListInfo(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/bills")]
         public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] IList<InputValueFilterModel> fieldFilters, [FromQuery] int orderByFieldId, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, fieldFilters, orderByFieldId, asc, page, size).ConfigureAwait(false);
+            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, fieldFilters, orderByFieldId, asc, page, size).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("{inputTypeId}/bills")]
+        public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputTypeBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
+        {
+            return await _inputValueBillService.GetInputValueBills(inputTypeId, request.Keyword, request.FieldFilters, request.OrderByFieldId, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]
