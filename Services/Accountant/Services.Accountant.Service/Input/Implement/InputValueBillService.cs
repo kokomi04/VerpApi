@@ -124,7 +124,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                         foreach (var expression in expressions)
                         {
-                            ex = Expression.Or(ex, expression);
+                            ex = Expression.OrElse(ex, expression);
                         }
 
                         versions = versions.Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, rParam));
@@ -206,7 +206,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     foreach (var expression in rowAndExpressions)
                     {
-                        ex = Expression.And(ex, expression);
+                        ex = Expression.AndAlso(ex, expression);
                     }
 
                     versions = versions.Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, rParam));
@@ -218,7 +218,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     foreach (var expression in rNumberAndExpressions)
                     {
-                        ex = Expression.And(ex, expression);
+                        ex = Expression.AndAlso(ex, expression);
                     }
 
                     versionsInNumbers = versionsInNumbers.Where(Expression.Lambda<Func<InputValueRowVersionNumber, bool>>(ex, nParam));
