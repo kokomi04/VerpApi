@@ -9,6 +9,7 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public string Title { get; set; }
         public string InputTypeCode { get; set; }
+        public IList<InputTypeViewModelList> Views { get; set; }
         public IList<InputTypeListColumn> ColumnsInList { get; set; }
     }
 
