@@ -189,6 +189,14 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryRowService.DeleteCategoryRow(updatedUserId, categoryId, categoryRowId);
         }
 
+        [HttpPost]
+        [Route("categoryvalues/maptitle")]
+        public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle([FromBody] MapTitleInputModel[] categoryValues)
+        {
+            return await _categoryRowService.MapTitle(categoryValues);
+        }
+
+
         [HttpGet]
         [Route("datatypes")]
         public async Task<ServiceResult<PageData<DataTypeModel>>> GetDataTypes([FromQuery] int page, [FromQuery] int size)

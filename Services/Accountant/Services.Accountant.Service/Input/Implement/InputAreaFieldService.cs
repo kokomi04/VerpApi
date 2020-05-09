@@ -57,6 +57,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = await query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToListAsync();
+            foreach (var field in lst)
+            {
+                if (field.ReferenceCategoryId.HasValue)
+                {
+                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                }
+            }
             return (lst, total);
         }
 
@@ -107,6 +114,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToList();
+            foreach (var field in lst)
+            {
+                if (field.ReferenceCategoryId.HasValue)
+                {
+                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                }
+            }
             return (lst, total);
         }
 
@@ -124,6 +138,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             if (inputAreaField == null)
             {
                 return InputErrorCode.InputAreaFieldNotFound;
+            }
+
+            if (inputAreaField.ReferenceCategoryId.HasValue)
+            {
+                inputAreaField.ReferenceCategoryId = GetReferenceCategory(inputAreaField.ReferenceCategoryId.Value).CategoryId;
             }
             return inputAreaField;
         }
