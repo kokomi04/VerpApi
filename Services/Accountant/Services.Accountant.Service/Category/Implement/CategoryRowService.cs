@@ -197,6 +197,52 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return categoryRow;
         }
 
+        public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues)
+        {
+            List<MapTitleOutputModel> lst = new List<MapTitleOutputModel>();
+            var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId, v.CategoryFieldTitleId });
+            foreach (var group in groups)
+            {
+                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
+                CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
+                CategoryEntity category = GetReferenceCategory(field.CategoryId);
+                bool isOutSide = category.IsOutSideData;
+                bool isFieldRef = ((EnumFormType)field.FormTypeId).IsRef() && !isOutSide;
+                bool isTitleRef = ((EnumFormType)titleField.FormTypeId).IsRef() && !isOutSide;
+                IQueryable<CategoryRow> query;
+                if (isOutSide)
+                {
+                    query = GetOutSideCategoryRows(category.CategoryId);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                       .Where(r => r.CategoryId == category.CategoryId)
+                       .Include(r => r.CategoryRowValue)
+                       .ThenInclude(rv => rv.ReferenceCategoryRowValue)
+                       .Include(r => r.CategoryRowValue)
+                       .ThenInclude(rv => rv.CategoryField);
+                }
+
+                foreach (var item in group)
+                {
+                    var title = query
+                    .Where(r => r.CategoryRowValue.Any(
+                        rv => rv.CategoryFieldId == field.CategoryFieldId
+                        && (isFieldRef ? rv.ReferenceCategoryRowValue.Value == item.Value : rv.Value == item.Value)
+                    ))
+                    .FirstOrDefault()?
+                    .CategoryRowValue
+                    .Where(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId)
+                    .Select(rv => isTitleRef ? rv.ReferenceCategoryRowValue.Value : rv.Value)
+                    .FirstOrDefault() ?? string.Empty;
+
+                    lst.Add(new MapTitleOutputModel(item, title));
+                }
+            }
+            return lst;
+        }
+
         private Enum GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRowOutputModel categoryRow)
         {
             try
@@ -624,7 +670,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
-                        CategoryEntity referCategory = GetReferenceCategory(referField);
+                        CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
                         isOutSide = referCategory.IsOutSideData;
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef() && !isOutSide;
                         IQueryable<CategoryRow> query;

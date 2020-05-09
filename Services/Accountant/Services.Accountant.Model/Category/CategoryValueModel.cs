@@ -23,4 +23,26 @@ namespace VErp.Services.Accountant.Model.Category
                     : src.Value));
         }
     }
+
+
+    public class MapTitleInputModel
+    {
+        public int CategoryFieldId { get; set; }
+        public int CategoryFieldTitleId { get; set; }
+        public string Value { get; set; }
+
+    }
+
+    public class MapTitleOutputModel : MapTitleInputModel
+    {
+        public string Title { get; set; }
+
+        public MapTitleOutputModel(MapTitleInputModel input, string title)
+        {
+            this.CategoryFieldId = input.CategoryFieldId;
+            this.CategoryFieldTitleId = input.CategoryFieldTitleId;
+            this.Value = input.Value;
+            this.Title = title;
+        }
+    }
 }

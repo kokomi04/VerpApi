@@ -54,9 +54,10 @@ namespace VErp.Services.Accountant.Service
             return ids.ToArray();
         }
 
-        protected CategoryEntity GetReferenceCategory(CategoryField referenceCategoryField)
+        protected CategoryEntity GetReferenceCategory(int categoryId)
         {
-            CategoryEntity category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == referenceCategoryField.CategoryId);
+
+            CategoryEntity category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
             while (category != null && !category.IsModule)
             {

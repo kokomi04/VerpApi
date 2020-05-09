@@ -63,7 +63,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .OrderBy(f => f.SortOrder)
                 .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
-
+            foreach (var field in lst)
+            {
+                if (field.ReferenceCategoryId.HasValue)
+                {
+                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                }
+            }
             return (lst, total);
         }
 
@@ -79,6 +85,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (categoryField == null)
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
+            }
+            if (categoryField.ReferenceCategoryId.HasValue)
+            {
+                categoryField.ReferenceCategoryId = GetReferenceCategory(categoryField.ReferenceCategoryId.Value).CategoryId;
             }
             return categoryField;
         }

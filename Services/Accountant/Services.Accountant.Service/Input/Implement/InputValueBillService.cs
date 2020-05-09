@@ -714,7 +714,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
-                        CategoryEntity referCategory = GetReferenceCategory(referField);
+                        CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
                         bool isRef = ((EnumFormType)referField.FormTypeId).IsRef() && !referCategory.IsOutSideData;
 
                         IQueryable<CategoryRow> query;
