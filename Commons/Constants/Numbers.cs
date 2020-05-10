@@ -6,6 +6,6 @@ namespace VErp.Commons.Constants
 {
     public static class Numbers
     {
-        public const decimal MINIMUM_JS_NUMBER = 0.00000000000001M;
+        public const decimal MINIMUM_JS_NUMBER = 0.000000000001M;
     }
 }
