@@ -31,5 +31,7 @@ namespace VErp.Services.Master.Service.Users
         /// <param name="pageSize">Bản ghi trên 1 trang</param>
         /// <returns></returns>
         Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId,string keyword, int pageIndex, int pageSize);
+
+        Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds);
     }
 }
