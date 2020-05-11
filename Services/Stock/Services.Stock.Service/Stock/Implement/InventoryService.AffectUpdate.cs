@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
@@ -144,6 +143,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             return r;
                         }
 
+                        foreach (var changedInventoryId in r.Data)
+                        {
+                            await ReCalculateRemainingAfterUpdate(changedInventoryId);
+                        }
 
                         trans.Commit();
 
@@ -162,7 +165,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction(int currentUserId, long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
 
@@ -186,8 +189,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var normalizeStatus = await ApprovedInputDataUpdateAction_Normalize(req, products);
             if (!normalizeStatus.IsSuccess()) return normalizeStatus;
 
-            var updateStatus = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
-            if (!updateStatus.IsSuccessCode()) return updateStatus;
+            var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
+            if (!updateResult.Code.IsSuccess()) return updateResult.Code;
 
             var issuedDate = req.Inventory.Date.UnixToDateTime();
             var billDate = req.Inventory.BillDate.UnixToDateTime();
@@ -243,7 +246,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            if (!updateResult.Data.Contains(inventoryId))
+            {
+                updateResult.Data.Add(inventoryId);
+            }
+
+            return updateResult.Data;
         }
 
         private async Task<Enum> ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)
@@ -471,10 +479,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        private async Task<ServiceResult> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
-        {
 
+        private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        {
             var validateOutputDetails = new Dictionary<long, CensoredOutputInventoryDetailUpdate>();
+
+            HashSet<long> changesInventories = new HashSet<long>();
 
             foreach (var p in products)
             {
@@ -703,7 +713,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageInfo.PrimaryQuantityRemaining < 0 || packageInfo.ProductUnitConversionRemaining < 0)
                     {
-                        throw new Exception("Invalid negative package data");
+                        throw new Exception("Invalid negative package data " + packageInfo.PackageId);
                     }
                 }
 
@@ -711,7 +721,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     if (packageRef.PrimaryQuantity < 0 || packageRef.ProductUnitConversionQuantity < 0)
                     {
-                        throw new Exception("Invalid negative package ref data");
+                        throw new Exception("Invalid negative package ref data packageId: " + packageRef.PackageId + " ref: " + packageRef.RefPackageId);
                     }
                 }
 
@@ -720,6 +730,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     if (inventoryDetail.PrimaryQuantity < 0 || inventoryDetail.ProductUnitConversionQuantity < 0)
                     {
                         throw new Exception("Invalid negative inventory detail data");
+                    }
+
+                    if (!changesInventories.Contains(inventoryDetail.InventoryId))
+                    {
+                        changesInventories.Add(inventoryDetail.InventoryId);
                     }
                 }
 
@@ -730,16 +745,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
+
             foreach (var output in validateOutputDetails)
             {
                 var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
 
                 if (!validate.IsSuccessCode())
                 {
-                    return validate;
+                    return validate.Code;
                 }
             }
-            return GeneralCode.Success;
+            
+            return changesInventories;
+
         }
 
         public class InventoryInputUpdateGetAffectedModel
