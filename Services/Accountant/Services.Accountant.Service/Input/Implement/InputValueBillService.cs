@@ -186,7 +186,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                             case EnumOperator.Contains:
                                 var methodContainInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                                rNumberAndExpressions.Add(Expression.Call(nProp, methodContainInfo, valueLambda.Body));
+                                rowAndExpressions.Add(Expression.Call(nProp, methodContainInfo, valueLambda.Body));
                                 break;
 
                             case EnumOperator.InList:
