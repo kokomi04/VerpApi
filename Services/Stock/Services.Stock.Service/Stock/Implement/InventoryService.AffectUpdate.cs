@@ -479,11 +479,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
+
         private async Task<ServiceResult<HashSet<long>>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
         {
-            HashSet<long> changesInventories = new HashSet<long>();
-
             var validateOutputDetails = new Dictionary<long, CensoredOutputInventoryDetailUpdate>();
+
+            HashSet<long> changesInventories = new HashSet<long>();
 
 
             foreach (var p in products)
@@ -754,6 +755,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return validate.Code;
                 }
             }
+
             return changesInventories;
         }
 
