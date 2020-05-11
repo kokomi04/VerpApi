@@ -284,9 +284,36 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
 
-            
+
 
             return (lst, total);
+        }
+
+
+        public async Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+                return new List<UserInfoOutput>();
+
+            var userInfos = await _masterContext.User.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
+            var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
+
+            return (from u in userInfos
+                        join e in employees on u.UserId equals e.UserId
+                        select new UserInfoOutput
+                        {
+                            UserId = u.UserId,
+                            UserName = u.UserName,
+                            UserStatusId = (EnumUserStatus)u.UserStatusId,
+                            RoleId = u.RoleId,
+                            EmployeeCode = e.EmployeeCode,
+                            FullName = e.FullName,
+                            Address = e.Address,
+                            Email = e.Email,
+                            GenderId = (EnumGender?)e.GenderId,
+                            Phone = e.Phone
+                        }).ToList();
+           
         }
 
         public async Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
