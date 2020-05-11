@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -91,7 +91,7 @@ FROM
                 toDate = tg;
             }
 
-            await _context.StockDbContext.Database.ExecuteSqlCommandAsync(sql,
+            await _context.StockDbContext.Database.ExecuteSqlRawAsync(sql,
                 new SqlParameter("@AddPrimaryQuantity", SqlDbType.Decimal) { Value = addPrimaryQuantity },
                 new SqlParameter("@StockId", SqlDbType.Int) { Value = _context.StockId },
                 new SqlParameter("@ProductId", SqlDbType.Int) { Value = productId },
