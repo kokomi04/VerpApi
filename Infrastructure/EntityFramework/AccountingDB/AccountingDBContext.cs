@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputAreaFieldStyle> InputAreaFieldStyle { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
+        public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
@@ -348,6 +349,18 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.InputTypeGroup)
+                    .WithMany(p => p.InputType)
+                    .HasForeignKey(d => d.InputTypeGroupId)
+                    .HasConstraintName("FK_InputType_InputTypeGroup");
+            });
+
+            modelBuilder.Entity<InputTypeGroup>(entity =>
+            {
+                entity.Property(e => e.InputTypeGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<InputTypeView>(entity =>

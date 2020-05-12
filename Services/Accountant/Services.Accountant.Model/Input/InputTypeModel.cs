@@ -21,6 +21,9 @@ namespace VErp.Services.Accountant.Model.Input
         [Required(ErrorMessage = "Vui lòng nhập mã chứng từ")]
         [MaxLength(45, ErrorMessage = "Mã chứng từ quá dài")]
         public string InputTypeCode { get; set; }
+
+        public int SortOrder { get; set; }
+        public int? InputTypeGroupId { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel
