@@ -14,8 +14,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
         }
 
         public int InputTypeId { get; set; }
+        public int? InputTypeGroupId { get; set; }
         public string Title { get; set; }
         public string InputTypeCode { get; set; }
+        public int SortOrder { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -23,6 +25,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
+        public virtual InputTypeGroup InputTypeGroup { get; set; }
         public virtual ICollection<InputArea> InputArea { get; set; }
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
         public virtual ICollection<InputTypeView> InputTypeView { get; set; }
