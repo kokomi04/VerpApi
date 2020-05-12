@@ -62,7 +62,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                 join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
-                where t.InputTypeId == inputTypeId// && !a.IsMultiRow
+                where t.InputTypeId == inputTypeId && !a.IsMultiRow
                 select new InputTypeListColumn
                 {
                     InputAreaId = a.InputAreaId,
@@ -74,6 +74,30 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     DataTypeId = (EnumDataType)f.DataTypeId
                 })
                 .ToListAsync();
+
+            if (data.ColumnsInList.Count == 0)
+            {
+                var firstArea = await _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).Select(a => new { a.InputAreaId }).FirstOrDefaultAsync();
+                if (firstArea != null)
+                {
+                    data.ColumnsInList = await (
+                          from t in _accountingContext.InputType
+                          join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
+                          join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
+                          where t.InputTypeId == inputTypeId && a.InputAreaId == firstArea.InputAreaId
+                          select new InputTypeListColumn
+                          {
+                              InputAreaId = a.InputAreaId,
+                              FieldIndex = f.FieldIndex,
+                              InputAreaFieldId = f.InputAreaFieldId,
+                              FieldName = f.FieldName,
+                              FieldTitle = f.Title,
+                              IsMultiRow = a.IsMultiRow,
+                              DataTypeId = (EnumDataType)f.DataTypeId
+                          })
+                          .ToListAsync();
+                }
+            }
 
             return data;
         }
@@ -292,7 +316,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var total = await query.CountAsync();
 
-            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber) : query.OrderByDescending(b => b.OrderValueInNumber)).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue) : query.OrderByDescending(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue)).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var billIds = pagedData.Select(b => b.InputValueBillId).ToList();
             var rowData = (await (

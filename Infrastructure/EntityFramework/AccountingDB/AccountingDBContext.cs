@@ -15,7 +15,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
         }
 
-        public virtual DbSet<AccountingAccount> AccountingAccount { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryRow> CategoryRow { get; set; }
@@ -40,44 +39,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<AccountingAccount>(entity =>
-            {
-                entity.Property(e => e.AccountNameEn).HasMaxLength(128);
-
-                entity.Property(e => e.AccountNameVi).HasMaxLength(128);
-
-                entity.Property(e => e.AccountNumber)
-                    .IsRequired()
-                    .HasMaxLength(64)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
-
-                entity.Property(e => e.Currency)
-                    .IsRequired()
-                    .HasMaxLength(32)
-                    .HasComment("ngoại tệ");
-
-                entity.Property(e => e.Description).HasMaxLength(512);
-
-                entity.Property(e => e.IsBranch).HasComment("TGHT tỷ giá hạch toán");
-
-                entity.Property(e => e.IsCorp).HasComment("Tổng công ty");
-
-                entity.Property(e => e.IsForeignCurrency).HasComment("Ngoại tệ");
-
-                entity.Property(e => e.IsLiability).HasComment("Công nợ");
-
-                entity.Property(e => e.IsStock).HasComment("Kho");
-
-                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
-
-                entity.HasOne(d => d.ParentAccountingAccount)
-                    .WithMany(p => p.InverseParentAccountingAccount)
-                    .HasForeignKey(d => d.ParentAccountingAccountId)
-                    .HasConstraintName("FK_AccountingAccount_Relation");
-            });
-
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.HasIndex(e => e.ParentId)
@@ -480,6 +441,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
                 entity.Property(e => e.Field10).HasMaxLength(512);
 
+                entity.Property(e => e.Field100).HasMaxLength(512);
+
                 entity.Property(e => e.Field11).HasMaxLength(512);
 
                 entity.Property(e => e.Field12).HasMaxLength(512);
@@ -502,19 +465,177 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
                 entity.Property(e => e.Field20).HasMaxLength(512);
 
+                entity.Property(e => e.Field21).HasMaxLength(512);
+
+                entity.Property(e => e.Field22).HasMaxLength(512);
+
+                entity.Property(e => e.Field23).HasMaxLength(512);
+
+                entity.Property(e => e.Field24).HasMaxLength(512);
+
+                entity.Property(e => e.Field25).HasMaxLength(512);
+
+                entity.Property(e => e.Field26).HasMaxLength(512);
+
+                entity.Property(e => e.Field27).HasMaxLength(512);
+
+                entity.Property(e => e.Field28).HasMaxLength(512);
+
+                entity.Property(e => e.Field29).HasMaxLength(512);
+
                 entity.Property(e => e.Field3).HasMaxLength(512);
+
+                entity.Property(e => e.Field30).HasMaxLength(512);
+
+                entity.Property(e => e.Field31).HasMaxLength(512);
+
+                entity.Property(e => e.Field32).HasMaxLength(512);
+
+                entity.Property(e => e.Field33).HasMaxLength(512);
+
+                entity.Property(e => e.Field34).HasMaxLength(512);
+
+                entity.Property(e => e.Field35).HasMaxLength(512);
+
+                entity.Property(e => e.Field36).HasMaxLength(512);
+
+                entity.Property(e => e.Field37).HasMaxLength(512);
+
+                entity.Property(e => e.Field38).HasMaxLength(512);
+
+                entity.Property(e => e.Field39).HasMaxLength(512);
 
                 entity.Property(e => e.Field4).HasMaxLength(512);
 
+                entity.Property(e => e.Field40).HasMaxLength(512);
+
+                entity.Property(e => e.Field41).HasMaxLength(512);
+
+                entity.Property(e => e.Field42).HasMaxLength(512);
+
+                entity.Property(e => e.Field43).HasMaxLength(512);
+
+                entity.Property(e => e.Field44).HasMaxLength(512);
+
+                entity.Property(e => e.Field45).HasMaxLength(512);
+
+                entity.Property(e => e.Field46).HasMaxLength(512);
+
+                entity.Property(e => e.Field47).HasMaxLength(512);
+
+                entity.Property(e => e.Field48).HasMaxLength(512);
+
+                entity.Property(e => e.Field49).HasMaxLength(512);
+
                 entity.Property(e => e.Field5).HasMaxLength(512);
+
+                entity.Property(e => e.Field50).HasMaxLength(512);
+
+                entity.Property(e => e.Field51).HasMaxLength(512);
+
+                entity.Property(e => e.Field52).HasMaxLength(512);
+
+                entity.Property(e => e.Field53).HasMaxLength(512);
+
+                entity.Property(e => e.Field54).HasMaxLength(512);
+
+                entity.Property(e => e.Field55).HasMaxLength(512);
+
+                entity.Property(e => e.Field56).HasMaxLength(512);
+
+                entity.Property(e => e.Field57).HasMaxLength(512);
+
+                entity.Property(e => e.Field58).HasMaxLength(512);
+
+                entity.Property(e => e.Field59).HasMaxLength(512);
 
                 entity.Property(e => e.Field6).HasMaxLength(512);
 
+                entity.Property(e => e.Field60).HasMaxLength(512);
+
+                entity.Property(e => e.Field61).HasMaxLength(512);
+
+                entity.Property(e => e.Field62).HasMaxLength(512);
+
+                entity.Property(e => e.Field63).HasMaxLength(512);
+
+                entity.Property(e => e.Field64).HasMaxLength(512);
+
+                entity.Property(e => e.Field65).HasMaxLength(512);
+
+                entity.Property(e => e.Field66).HasMaxLength(512);
+
+                entity.Property(e => e.Field67).HasMaxLength(512);
+
+                entity.Property(e => e.Field68).HasMaxLength(512);
+
+                entity.Property(e => e.Field69).HasMaxLength(512);
+
                 entity.Property(e => e.Field7).HasMaxLength(512);
+
+                entity.Property(e => e.Field70).HasMaxLength(512);
+
+                entity.Property(e => e.Field71).HasMaxLength(512);
+
+                entity.Property(e => e.Field72).HasMaxLength(512);
+
+                entity.Property(e => e.Field73).HasMaxLength(512);
+
+                entity.Property(e => e.Field74).HasMaxLength(512);
+
+                entity.Property(e => e.Field75).HasMaxLength(512);
+
+                entity.Property(e => e.Field76).HasMaxLength(512);
+
+                entity.Property(e => e.Field77).HasMaxLength(512);
+
+                entity.Property(e => e.Field78).HasMaxLength(512);
+
+                entity.Property(e => e.Field79).HasMaxLength(512);
 
                 entity.Property(e => e.Field8).HasMaxLength(512);
 
+                entity.Property(e => e.Field80).HasMaxLength(512);
+
+                entity.Property(e => e.Field81).HasMaxLength(512);
+
+                entity.Property(e => e.Field82).HasMaxLength(512);
+
+                entity.Property(e => e.Field83).HasMaxLength(512);
+
+                entity.Property(e => e.Field84).HasMaxLength(512);
+
+                entity.Property(e => e.Field85).HasMaxLength(512);
+
+                entity.Property(e => e.Field86).HasMaxLength(512);
+
+                entity.Property(e => e.Field87).HasMaxLength(512);
+
+                entity.Property(e => e.Field88).HasMaxLength(512);
+
+                entity.Property(e => e.Field89).HasMaxLength(512);
+
                 entity.Property(e => e.Field9).HasMaxLength(512);
+
+                entity.Property(e => e.Field90).HasMaxLength(512);
+
+                entity.Property(e => e.Field91).HasMaxLength(512);
+
+                entity.Property(e => e.Field92).HasMaxLength(512);
+
+                entity.Property(e => e.Field93).HasMaxLength(512);
+
+                entity.Property(e => e.Field94).HasMaxLength(512);
+
+                entity.Property(e => e.Field95).HasMaxLength(512);
+
+                entity.Property(e => e.Field96).HasMaxLength(512);
+
+                entity.Property(e => e.Field97).HasMaxLength(512);
+
+                entity.Property(e => e.Field98).HasMaxLength(512);
+
+                entity.Property(e => e.Field99).HasMaxLength(512);
 
                 entity.HasOne(d => d.InputValueRow)
                     .WithMany(p => p.InputValueRowVersion)
