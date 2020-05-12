@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using System;
 using Newtonsoft.Json;
 using System.IO;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -119,12 +120,8 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            FilterModel[] lstFilters = null;
-            if (!string.IsNullOrEmpty(filters))
-            {
-                lstFilters = JsonConvert.DeserializeObject<FilterModel[]>(filters);
-            }
-            return await _categoryRowService.GetCategoryRows(categoryId, keyword, lstFilters, page, size);
+            var filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+            return await _categoryRowService.GetCategoryRows(categoryId, keyword, filterClause, page, size);
         }
 
         [HttpGet]
@@ -153,7 +150,6 @@ namespace VErpApi.Controllers.Accountant
                 await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(true);
             }
             return r;
-
         }
 
         [HttpGet]

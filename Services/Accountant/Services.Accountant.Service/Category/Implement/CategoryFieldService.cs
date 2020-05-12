@@ -123,6 +123,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
+            if (!((EnumFormType)data.FormTypeId).IsRef())
+            {
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
+            }
+
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
@@ -176,6 +182,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 data.DataTypeId = (int)EnumDataType.Text;
                 data.DataSize = 0;
+            }
+
+            if (!((EnumFormType)data.FormTypeId).IsRef())
+            {
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
             }
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();

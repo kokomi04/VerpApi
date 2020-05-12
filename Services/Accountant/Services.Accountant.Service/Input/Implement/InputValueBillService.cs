@@ -734,7 +734,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
-                            FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
+                            Clause filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
                             FillterProcess(ref query, filters);
                         }
 

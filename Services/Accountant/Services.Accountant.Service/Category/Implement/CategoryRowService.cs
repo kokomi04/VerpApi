@@ -43,7 +43,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, FilterModel[] filters, int page, int size)
+        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, Clause filters, int page, int size)
         {
             var total = 0;
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
@@ -63,7 +63,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     .ThenInclude(rv => rv.ReferenceCategoryRowValue);
             }
 
-            if (filters != null && filters.Length > 0)
+            if (filters != null)
             {
                 FillterProcess(ref query, filters);
             }
@@ -690,8 +690,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
-                            FilterModel[] filters = JsonConvert.DeserializeObject<FilterModel[]>(field.Filters);
-                            FillterProcess(ref query, filters);
+                            Clause filter = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                            FillterProcess(ref query, filter);
                         }
 
                         isExisted = query.Any(r => r.CategoryRowValue.Any(
