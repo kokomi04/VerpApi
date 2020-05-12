@@ -77,7 +77,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputTypeModel> lst = query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).ToList();
+            var lst = await query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
             return (lst, total);
         }
 
@@ -423,7 +423,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<IList<InputTypeGroupList>> InputTypeGroupList()
         {
-            return await _accountingContext.InputTypeGroup.ProjectTo<InputTypeGroupList>(_mapper.ConfigurationProvider).ToListAsync();
+            return await _accountingContext.InputTypeGroup.ProjectTo<InputTypeGroupList>(_mapper.ConfigurationProvider).OrderBy(g => g.SortOrder).ToListAsync();
         }
 
         #endregion
