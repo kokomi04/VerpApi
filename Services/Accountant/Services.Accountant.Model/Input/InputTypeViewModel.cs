@@ -50,7 +50,6 @@ namespace VErp.Services.Accountant.Model.Input
         public string RegularExpression { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<InputTypeViewField, InputTypeViewFieldModel>()
-            .ForMember(m => m.ReferenceCategoryId, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
             .ForMember(m => m.SelectFilters, m => m.MapFrom(s => s.SelectFilters.JsonDeserialize<IList<InputTypeViewFieldSelectFilter>>()))

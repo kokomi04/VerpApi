@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -55,6 +56,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 InputTypeCode = inputTypeInfo.InputTypeCode
             };
 
+            data.Views = await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+
             data.ColumnsInList = await (
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
@@ -94,7 +97,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             foreach (var area in areas)
             {
-                var fieldIndexs = area.Value.Select(f => f.FieldIndex).ToList();
+                var fieldIndexs = area.Value.Select(f => f.FieldIndex).Distinct().ToList();
                 var versions = _accountingContext.InputValueRowVersion.AsQueryable();
                 var versionsInNumbers = _accountingContext.InputValueRowVersionNumber.AsQueryable();
 
@@ -105,19 +108,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
                     var expressions = new List<Expression>();
+                    Expression<Func<string>> keywordLambda = () => keyword;
 
                     foreach (var fieldIndex in fieldIndexs)
                     {
-                        var methodInfo = typeof(string).GetMethod("Contains");
-                        var prop = Expression.Property(rParam, "Filed" + fieldIndex);
+                        var methodInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+                        var prop = Expression.Property(rParam, GetFieldName(fieldIndex));
 
-                        expressions.Add(Expression.Call(prop, methodInfo, Expression.Constant(keyword)));
+                        expressions.Add(Expression.Call(prop, methodInfo, keywordLambda.Body));
                     }
-
 
                     if (expressions.Count > 0)
                     {
-                        Expression ex = Expression.Constant(true);
+                        Expression ex = Expression.Constant(false);
 
                         foreach (var expression in expressions)
                         {
@@ -135,25 +138,60 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var filter in fieldFilters)
                 {
                     var firstValue = filter.Values?.FirstOrDefault();
+
+                    Expression<Func<string>> valueLambda = () => firstValue;
+
+                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * 100000;
+
+                    var lstValues = new List<string>();
+
+                    if (filter.Values != null && filter.Values.Count() > 0)
+                    {
+                        lstValues = filter.Values.ToList();
+                    }
+                    Expression<Func<List<string>>> lstValueLambda = () => lstValues;
+
                     var fieldIndex = area.Value.FirstOrDefault(f => f.InputAreaFieldId == filter.InputAreaFieldId)?.FieldIndex;
                     if (fieldIndex.HasValue && !string.IsNullOrWhiteSpace(firstValue))
                     {
-                        var rProp = Expression.Property(rParam, "Field" + fieldIndex);
+                        var rProp = Expression.Property(rParam, GetFieldName(fieldIndex.Value));
 
-                        var nProp = Expression.Property(nParam, "Field" + fieldIndex);
+                        var nProp = Expression.Property(nParam, GetFieldName(fieldIndex.Value));
 
                         switch (filter.Operator)
                         {
                             case EnumOperator.Equal:
-                                rowAndExpressions.Add(Expression.Equal(rProp, Expression.Constant(firstValue)));
+                                rowAndExpressions.Add(Expression.Equal(rProp, valueLambda.Body));
                                 break;
 
                             case EnumOperator.NotEqual:
-                                rowAndExpressions.Add(Expression.NotEqual(rProp, Expression.Constant(firstValue)));
+                                rowAndExpressions.Add(Expression.NotEqual(rProp, valueLambda.Body));
                                 break;
 
                             case EnumOperator.Greater:
-                                rNumberAndExpressions.Add(Expression.NotEqual(nProp, Expression.Constant(firstValue)));
+                                rNumberAndExpressions.Add(Expression.GreaterThan(nProp, valueLambdaNumber.Body));
+                                break;
+
+                            case EnumOperator.GreaterOrEqual:
+                                rNumberAndExpressions.Add(Expression.GreaterThanOrEqual(nProp, valueLambdaNumber.Body));
+                                break;
+
+                            case EnumOperator.LessThan:
+                                rNumberAndExpressions.Add(Expression.LessThan(nProp, valueLambdaNumber.Body));
+                                break;
+
+                            case EnumOperator.LessThanOrEqual:
+                                rNumberAndExpressions.Add(Expression.LessThanOrEqual(nProp, valueLambdaNumber.Body));
+                                break;
+
+                            case EnumOperator.Contains:
+                                var methodContainInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+                                rowAndExpressions.Add(Expression.Call(nProp, methodContainInfo, valueLambda.Body));
+                                break;
+
+                            case EnumOperator.InList:
+                                var methodInList = typeof(List<string>).GetMethod("Contains", new[] { typeof(string) });
+                                rNumberAndExpressions.Add(Expression.Call(lstValueLambda.Body, methodInList, nProp));
                                 break;
 
                         }
@@ -168,7 +206,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     foreach (var expression in rowAndExpressions)
                     {
-                        ex = Expression.OrElse(ex, expression);
+                        ex = Expression.AndAlso(ex, expression);
                     }
 
                     versions = versions.Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, rParam));
@@ -180,7 +218,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     foreach (var expression in rNumberAndExpressions)
                     {
-                        ex = Expression.OrElse(ex, expression);
+                        ex = Expression.AndAlso(ex, expression);
                     }
 
                     versionsInNumbers = versionsInNumbers.Where(Expression.Lambda<Func<InputValueRowVersionNumber, bool>>(ex, nParam));
@@ -198,8 +236,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     var nMapFields = new Dictionary<string, string>();
                     nMapFields.Add("InputValueRowVersionId", "InputValueRowVersionId");
 
-                    vMapFields.Add("OrderValue", "Field" + sortField.FieldIndex);
-                    nMapFields.Add("OrderValueInNumber", "Field" + sortField.FieldIndex);
+                    vMapFields.Add("OrderValue", GetFieldName(sortField.FieldIndex));
+                    nMapFields.Add("OrderValueInNumber", GetFieldName(sortField.FieldIndex));
 
                     var sortVersion = versions.DynamicSelectGenerator<InputValueRowVersion, InputValueBillOrderValueModel>(vMapFields);
 
@@ -278,7 +316,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             for (var i = 0; i <= 20; i++)
             {
-                properties.Add(i, type.GetProperty("Field" + i));
+                properties.Add(i, type.GetProperty(GetFieldName(i)));
             }
 
 
@@ -833,6 +871,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
+
+
+        private string GetFieldName(int fieldIndex)
+        {
+            return string.Format(StringFormats.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndex);
+        }
+
     }
 
 

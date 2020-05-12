@@ -48,6 +48,19 @@ namespace VErpApi.Controllers.System
             return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
+
+        /// <summary>
+        /// Lấy danh sách users theo ids
+        /// </summary>
+        /// <param name="userIds"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetListByUserIds")]
+        public async Task<IList<UserInfoOutput>> GetListByUserIds([FromBody] IList<int> userIds)
+        {
+            return await _userService.GetListByUserIds(userIds).ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Thêm mới user
         /// </summary>
