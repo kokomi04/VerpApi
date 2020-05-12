@@ -62,7 +62,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaOutputModel> lst = query.ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider).ToList();
+            var lst = await query.ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider).OrderBy(a=>a.SortOrder).ToListAsync();
             return (lst, total);
         }
 
@@ -134,6 +134,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     inputArea.Title = data.Title;
                     inputArea.IsMultiRow = data.IsMultiRow;
                     inputArea.Columns = data.Columns;
+                    inputArea.SortOrder = data.SortOrder;
                     inputArea.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
