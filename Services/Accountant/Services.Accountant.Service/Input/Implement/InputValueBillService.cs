@@ -278,7 +278,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 select new
                                 {
                                     b.InputValueBillId,
-                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
+                                    v.OrderValue,
                                     b.OrderValueInNumber
                                 };
                     }
@@ -294,8 +294,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 select new
                                 {
                                     b.InputValueBillId,
-                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
-                                    OrderValueInNumber = b.OrderValueInNumber == 0 ? n.OrderValueInNumber : b.OrderValueInNumber,
+                                    v.OrderValue,
+                                    n.OrderValueInNumber
                                 };
                     }
 
@@ -338,7 +338,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var total = await query.CountAsync();
 
-            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue) : query.OrderByDescending(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue)).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue) : query.OrderByDescending(b => b.OrderValueInNumber).ThenByDescending(b => b.OrderValue)).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var billIds = pagedData.Select(b => b.InputValueBillId).ToList();
             var rowData = (await (
