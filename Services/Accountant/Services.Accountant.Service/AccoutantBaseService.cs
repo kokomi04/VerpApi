@@ -94,7 +94,7 @@ namespace VErp.Services.Accountant.Service
                 var fieldProp = Expression.Property(rvParam, field);
                 var formTypeProp = Expression.Property(fieldProp, formType);
 
-                Expression refExp = Expression.AndAlso(Expression.Equal(formTypeProp, Expression.Constant((int)EnumFormType.SearchTable)),
+                Expression refExp = Expression.OrElse(Expression.Equal(formTypeProp, Expression.Constant((int)EnumFormType.SearchTable)),
                     Expression.Equal(formTypeProp, Expression.Constant((int)EnumFormType.Select)));
 
                 // Check value
@@ -132,8 +132,8 @@ namespace VErp.Services.Accountant.Service
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
                             .Select(r => r.CategoryRowValue.FirstOrDefault(v => v.CategoryFieldId == clause.Key))
-                            .Select(rv => ((EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.SearchTable 
-                            || (EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.Select) 
+                            .Select(rv => ((EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.SearchTable
+                            || (EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.Select)
                             ? rv.ReferenceCategoryRowValue.Value : rv.Value)
                             .ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
@@ -163,7 +163,7 @@ namespace VErp.Services.Accountant.Service
             }
             return expression;
         }
-        
+
         private Expression MergeExpression(Expression leftExp, Expression rightExp, EnumLogicOperator? logicOperator)
         {
             Expression expression = leftExp;
@@ -186,7 +186,7 @@ namespace VErp.Services.Accountant.Service
 
         public Expression FilterClauseProcess(ParameterExpression rvParam, Clause clause, IQueryable<CategoryRow> query)
         {
-            Expression exp = Expression.Constant(false);
+            Expression exp = Expression.Constant(true);
             if (clause != null)
             {
                 if (clause is SingleClause)
@@ -194,12 +194,44 @@ namespace VErp.Services.Accountant.Service
                     var singleClause = clause as SingleClause;
                     exp = BuildExpression(rvParam, singleClause, query);
                 }
-                else if (clause is FilterClause)
+                else if (clause is DoubleClause)
                 {
-                    var filterClause = clause as FilterClause;
+                    var filterClause = clause as DoubleClause;
                     var leftExp = FilterClauseProcess(rvParam, filterClause.LeftClause, query);
                     var rightExp = FilterClauseProcess(rvParam, filterClause.RightClause, query);
                     exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    List<Expression> expressions = new List<Expression>();
+                    Expression oldEx = Expression.Constant(true);
+                    EnumLogicOperator? logicOperator = EnumLogicOperator.And;
+                    foreach (var item in arrClause.Clauses)
+                    {
+                        if(!logicOperator.HasValue)
+                        {
+                            break;
+                        }
+                        if (logicOperator == EnumLogicOperator.Or)
+                        {
+                            expressions.Add(oldEx);
+                            oldEx = FilterClauseProcess(rvParam, item.Clause, query);
+                        }
+                        else if (logicOperator == EnumLogicOperator.And)
+                        {
+
+                            oldEx = Expression.AndAlso(oldEx, FilterClauseProcess(rvParam, item.Clause, query));
+                        }
+                        logicOperator = item.LogicOperator;
+                    }
+                    expressions.Add(oldEx);
+                    exp = Expression.Constant(false);
+                    foreach (var ex in expressions)
+                    {
+                        exp = Expression.OrElse(exp, ex);
+                    }
+                    return exp;
                 }
             }
             return exp;
