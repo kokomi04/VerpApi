@@ -19,6 +19,7 @@ namespace VErp.Services.Accountant.Model.Input
         public bool IsMultiRow { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập số lượng cột hiển thị")]
         public int Columns { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class InputAreaOutputModel : InputAreaInputModel

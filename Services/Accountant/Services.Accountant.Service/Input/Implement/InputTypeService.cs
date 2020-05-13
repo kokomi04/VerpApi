@@ -77,7 +77,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputTypeModel> lst = query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).ToList();
+            var lst = await query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
             return (lst, total);
         }
 
@@ -144,6 +144,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 inputType.InputTypeCode = data.InputTypeCode;
                 inputType.Title = data.Title;
                 inputType.UpdatedByUserId = updatedUserId;
+                inputType.SortOrder = data.SortOrder;
+                inputType.InputTypeGroupId = data.InputTypeGroupId;
+
                 await _accountingContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -231,9 +234,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-      
 
-       
+
+
         public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)
         {
             return await _accountingContext.InputTypeView.Where(v => v.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
@@ -248,7 +251,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var fields = await _accountingContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
 
-            var views= await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+            var views = await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
 
             foreach (var item in inputTypeInfo.Areas)
             {
@@ -284,6 +287,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
+                var inputTypeInfo = await _accountingContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+                if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
                 var info = _mapper.Map<InputTypeView>(model);
 
                 info.InputTypeId = inputTypeId;
@@ -296,6 +302,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Tạo bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}", model.JsonSerialize());
 
                 return info.InputTypeViewId;
             }
@@ -314,9 +322,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
+
                 var info = await _accountingContext.InputTypeView.FirstOrDefaultAsync(v => v.InputTypeViewId == inputTypeViewId);
 
                 if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "View không tồn tại");
+
+                var inputTypeInfo = await _accountingContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == info.InputTypeId);
+                if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
 
                 _mapper.Map(model, info);
 
@@ -329,6 +342,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Cập nhật bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}", model.JsonSerialize());
 
                 return GeneralCode.Success;
             }
@@ -349,12 +364,69 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             info.IsDeleted = true;
             info.DeletedDatetimeUtc = DateTime.UtcNow;
 
+
+            var inputTypeInfo = await _accountingContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == info.InputTypeId);
+            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+
             await _accountingContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Xóa bộ lọc {info.InputTypeViewName} chứng từ  {inputTypeInfo.Title}", new { inputTypeViewId }.JsonSerialize());
 
             return GeneralCode.Success;
 
         }
 
+
+
+        #region InputTypeGroup
+        public async Task<int> InputTypeGroupCreate(InputTypeGroupModel model)
+        {
+            var info = _mapper.Map<InputTypeGroup>(model);
+            await _accountingContext.InputTypeGroup.AddAsync(info);
+            await _accountingContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Thêm nhóm chứng từ {info.InputTypeGroupName}", model.JsonSerialize());
+
+            return info.InputTypeGroupId;
+        }
+
+        public async Task<bool> InputTypeGroupUpdate(int inputTypeGroupId, InputTypeGroupModel model)
+        {
+            var info = await _accountingContext.InputTypeGroup.FirstOrDefaultAsync(g => g.InputTypeGroupId == inputTypeGroupId);
+
+            if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Nhóm chứng từ không tồn tại");
+
+            _mapper.Map(model, info);
+
+            await _accountingContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Cập nhật nhóm chứng từ {info.InputTypeGroupName}", model.JsonSerialize());
+
+            return true;
+        }
+
+        public async Task<bool> InputTypeGroupDelete(int inputTypeGroupId)
+        {
+            var info = await _accountingContext.InputTypeGroup.FirstOrDefaultAsync(g => g.InputTypeGroupId == inputTypeGroupId);
+
+            if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Nhóm chứng từ không tồn tại");
+
+            info.IsDeleted = true;
+
+            await _accountingContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Xóa nhóm chứng từ {info.InputTypeGroupName}", new { inputTypeGroupId }.JsonSerialize());
+
+            return true;
+        }
+
+        public async Task<IList<InputTypeGroupList>> InputTypeGroupList()
+        {
+            return await _accountingContext.InputTypeGroup.ProjectTo<InputTypeGroupList>(_mapper.ConfigurationProvider).OrderBy(g => g.SortOrder).ToListAsync();
+        }
+
+        #endregion
         private async Task InputTypeViewFieldAddRange(int inputTypeViewId, IList<InputTypeViewFieldModel> fieldModels)
         {
             var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
@@ -396,6 +468,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         }
 
-      
+
     }
 }

@@ -23,5 +23,13 @@ namespace VErp.Services.Accountant.Service.Input
         Task<InputTypeBasicOutput> GetInputTypeBasicInfo(int inputTypeId);
 
         Task<InputTypeViewModel> GetInputTypeViewInfo(int inputTypeId, int inputTypeViewId);
+
+        Task<int> InputTypeGroupCreate(InputTypeGroupModel model);
+
+        Task<bool> InputTypeGroupUpdate(int inputTypeGroupId, InputTypeGroupModel model);
+
+        Task<bool> InputTypeGroupDelete(int inputTypeGroupId);
+
+        Task<IList<InputTypeGroupList>> InputTypeGroupList();
     }
 }

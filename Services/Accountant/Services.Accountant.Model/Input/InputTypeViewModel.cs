@@ -15,6 +15,7 @@ namespace VErp.Services.Accountant.Model.Input
         public string InputTypeViewName { get; set; }
         public bool IsDefault { get; set; }
         public int Columns { get; set; }
+        public int InputTypeGroupId { get; set; }
     }
 
     public class InputTypeViewModel : InputTypeViewModelList

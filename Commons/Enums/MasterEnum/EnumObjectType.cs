@@ -94,6 +94,9 @@ namespace VErp.Commons.Enums.MasterEnum
         AccountingAccount = 33,
         InputType = 34,
 
+        InputTypeGroup = 35,
+        InputTypeView = 36,
+
         Subsidiary = 41
     }
 }
