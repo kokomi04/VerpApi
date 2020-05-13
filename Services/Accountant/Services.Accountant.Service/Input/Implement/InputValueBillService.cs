@@ -274,12 +274,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         query = from b in query
                                 join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
                                 join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                                join n in versionsInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId//where clause
                                 where r.InputAreaId == area.Key
                                 select new
                                 {
                                     b.InputValueBillId,
                                     v.OrderValue,
-                                    b.OrderValueInNumber
+                                    b.OrderValueInNumber//keep 0
                                 };
                     }
                     else
@@ -295,7 +296,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 {
                                     b.InputValueBillId,
                                     v.OrderValue,
-                                    n.OrderValueInNumber
+                                    n.OrderValueInNumber//Get number
                                 };
                     }
 
