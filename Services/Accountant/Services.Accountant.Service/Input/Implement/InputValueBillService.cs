@@ -35,6 +35,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
     {
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+
+        private readonly static EnumDataType[] TextDataTypes = new[] { EnumDataType.Email, EnumDataType.PhoneNumber, EnumDataType.Text };
+
         public InputValueBillService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputValueBillService> logger
@@ -265,19 +268,38 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     var sortVersion = versions.DynamicSelectGenerator<InputValueRowVersion, InputValueBillOrderValueModel>(vMapFields);
 
-                    var sortVersionInNumbers = versionsInNumbers.DynamicSelectGenerator<InputValueRowVersionNumber, InputValueBillOrderValueInNumberModel>(nMapFields);
 
-                    query = from b in query
-                            join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
-                            join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
-                            join n in sortVersionInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
-                            where r.InputAreaId == area.Key
-                            select new
-                            {
-                                b.InputValueBillId,
-                                OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
-                                OrderValueInNumber = b.OrderValueInNumber == 0 ? n.OrderValueInNumber : b.OrderValueInNumber,
-                            };
+                    if (TextDataTypes.Contains(sortField.DataTypeId))
+                    {
+                        query = from b in query
+                                join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
+                                join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                                where r.InputAreaId == area.Key
+                                select new
+                                {
+                                    b.InputValueBillId,
+                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
+                                    b.OrderValueInNumber
+                                };
+                    }
+                    else
+                    {
+                        var sortVersionInNumbers = versionsInNumbers.DynamicSelectGenerator<InputValueRowVersionNumber, InputValueBillOrderValueInNumberModel>(nMapFields);
+
+                        query = from b in query
+                                join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
+                                join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                                join n in sortVersionInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
+                                where r.InputAreaId == area.Key
+                                select new
+                                {
+                                    b.InputValueBillId,
+                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
+                                    OrderValueInNumber = b.OrderValueInNumber == 0 ? n.OrderValueInNumber : b.OrderValueInNumber,
+                                };
+                    }
+
+
                 }
                 else
                 {
