@@ -449,7 +449,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && selectFormType.Contains((EnumFormType)f.FormTypeId));
 
             List<Tuple<InputValueRowInputModel, int[]>> checkRows = data.InputValueRows.Select(r => new Tuple<InputValueRowInputModel, int[]>(r, null)).ToList();
 
@@ -619,7 +619,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .AsEnumerable();
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && selectFormType.Contains((EnumFormType)f.FormTypeId));
 
             // Check field required
             Enum r = CheckRequired(checkRows, requiredFields);
@@ -799,7 +799,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
-                        bool isRef = ((EnumFormType)referField.FormTypeId).IsRef() && !referCategory.IsOutSideData;
+                        bool isRef = (selectFormType.Contains((EnumFormType)referField.FormTypeId)) && !referCategory.IsOutSideData;
 
                         IQueryable<CategoryRow> query;
                         if (referCategory.IsOutSideData)
@@ -846,7 +846,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     .ToList();
                 foreach (string value in values)
                 {
-                    if (((EnumFormType)field.FormTypeId).IsRef() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+                    if ((selectFormType.Contains((EnumFormType)field.FormTypeId)) || field.IsAutoIncrement || string.IsNullOrEmpty(value))
                     {
                         continue;
                     }

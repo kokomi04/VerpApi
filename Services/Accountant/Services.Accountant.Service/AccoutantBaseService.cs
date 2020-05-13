@@ -36,6 +36,8 @@ namespace VErp.Services.Accountant.Service
         protected readonly IMapper _mapper;
         protected readonly AccountingDBContext _accountingContext;
         private delegate Expression<Func<T, bool>> LogicOperator<T>(Expression<Func<T, bool>> expr);
+        protected readonly List<EnumFormType> selectFormType = new List<EnumFormType>(){ EnumFormType.Select, EnumFormType.SearchTable };
+
         protected AccoutantBaseService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , IMapper mapper)
@@ -94,62 +96,59 @@ namespace VErp.Services.Accountant.Service
                 var fieldProp = Expression.Property(rvParam, field);
                 var formTypeProp = Expression.Property(fieldProp, formType);
 
-                Expression refExp = Expression.OrElse(Expression.Equal(formTypeProp, Expression.Constant((int)EnumFormType.SearchTable)),
-                    Expression.Equal(formTypeProp, Expression.Constant((int)EnumFormType.Select)));
+                MethodInfo method = typeof(List<EnumFormType>).GetMethod(nameof(List<EnumFormType>.Contains));
+                Expression refExp = Expression.Call(Expression.Constant(selectFormType), method, formTypeProp);
 
                 // Check value
                 Expression valueExp;
                 Expression referValueExp;
-                var value = Expression.Constant(clause.Values[0]);
 
                 var valueProp = Expression.Property(rvParam, nameof(CategoryRowValue.Value));
                 var refer = typeof(CategoryRowValue).GetProperty(nameof(CategoryRowValue.ReferenceCategoryRowValue));
                 var valueRefer = refer.PropertyType.GetProperty(nameof(CategoryRowValue.Value));
                 var referProp = Expression.Property(rvParam, refer);
                 var valueReferProp = Expression.Property(referProp, valueRefer);
-                MethodInfo method;
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        valueExp = Expression.Equal(valueProp, value);
-                        referValueExp = Expression.Equal(valueReferProp, value);
+                        valueExp = Expression.Equal(valueProp, Expression.Constant(clause.Values[0]));
+                        referValueExp = Expression.Equal(valueReferProp, Expression.Constant(clause.Values[0]));
                         break;
                     case EnumOperator.NotEqual:
-                        valueExp = Expression.NotEqual(valueProp, value);
-                        referValueExp = Expression.NotEqual(valueReferProp, value);
+                        valueExp = Expression.NotEqual(valueProp, Expression.Constant(clause.Values[0]));
+                        referValueExp = Expression.NotEqual(valueReferProp, Expression.Constant(clause.Values[0]));
                         break;
                     case EnumOperator.Contains:
-                        method = typeof(string).GetMethod(nameof(string.Contains));
-                        valueExp = Expression.Call(valueProp, method, value);
-                        referValueExp = Expression.Call(valueReferProp, method, value);
+                        method = typeof(string).GetMethod(nameof(string.Contains), new Type[] { typeof(string)});
+                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
+                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
                         break;
                     case EnumOperator.InList:
                         List<string> values = clause.Values[0].Split(',').ToList();
-                        method = typeof(string[]).GetMethod(nameof(List<string>.Contains));
+                        method = typeof(List<string>).GetMethod(nameof(List<string>.Contains));
                         valueExp = Expression.Call(Expression.Constant(values), method, valueProp);
                         referValueExp = Expression.Call(Expression.Constant(values), method, valueReferProp);
                         break;
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
                             .Select(r => r.CategoryRowValue.FirstOrDefault(v => v.CategoryFieldId == clause.Key))
-                            .Select(rv => ((EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.SearchTable
-                            || (EnumFormType)rv.CategoryField.FormTypeId == EnumFormType.Select)
+                            .Select(rv => selectFormType.Contains((EnumFormType)rv.CategoryField.FormTypeId)
                             ? rv.ReferenceCategoryRowValue.Value : rv.Value)
                             .ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        method = typeof(string[]).GetMethod(nameof(List<string>.Contains));
+                        method = typeof(List<string>).GetMethod(nameof(List<string>.Contains));
                         valueExp = Expression.Call(Expression.Constant(isLeafValues), method, valueProp);
                         referValueExp = Expression.Call(Expression.Constant(isLeafValues), method, valueReferProp);
                         break;
                     case EnumOperator.StartsWith:
-                        method = typeof(string).GetMethod(nameof(string.StartsWith));
-                        valueExp = Expression.Call(valueProp, method, value);
-                        referValueExp = Expression.Call(valueReferProp, method, value);
+                        method = typeof(string).GetMethod(nameof(string.StartsWith), new Type[] { typeof(string) });
+                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
+                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
                         break;
                     case EnumOperator.EndsWith:
-                        method = typeof(string).GetMethod(nameof(string.EndsWith));
-                        valueExp = Expression.Call(valueProp, method, value);
-                        referValueExp = Expression.Call(valueReferProp, method, value);
+                        method = typeof(string).GetMethod(nameof(string.EndsWith), new Type[] { typeof(string) });
+                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
+                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
                         break;
                     default:
                         valueExp = Expression.Constant(true);

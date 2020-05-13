@@ -123,7 +123,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
-            if (!((EnumFormType)data.FormTypeId).IsRef())
+            if (!selectFormType.Contains((EnumFormType)data.FormTypeId))
             {
                 data.ReferenceCategoryFieldId = null;
                 data.ReferenceCategoryTitleFieldId = null;
@@ -184,7 +184,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
-            if (!((EnumFormType)data.FormTypeId).IsRef())
+            if (!selectFormType.Contains((EnumFormType)data.FormTypeId))
             {
                 data.ReferenceCategoryFieldId = null;
                 data.ReferenceCategoryTitleFieldId = null;

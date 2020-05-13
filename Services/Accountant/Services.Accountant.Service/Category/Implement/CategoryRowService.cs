@@ -207,8 +207,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
                 CategoryEntity category = GetReferenceCategory(field.CategoryId);
                 bool isOutSide = category.IsOutSideData;
-                bool isFieldRef = ((EnumFormType)field.FormTypeId).IsRef() && !isOutSide;
-                bool isTitleRef = ((EnumFormType)titleField.FormTypeId).IsRef() && !isOutSide;
+                bool isFieldRef = selectFormType.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
+                bool isTitleRef = selectFormType.Contains((EnumFormType)titleField.FormTypeId) && !isOutSide;
                 IQueryable<CategoryRow> query;
                 if (isOutSide)
                 {
@@ -224,21 +224,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                        .ThenInclude(rv => rv.CategoryField);
                 }
 
-                foreach (var item in group)
-                {
-                    var title = query
-                    .Where(r => r.CategoryRowValue.Any(
-                        rv => rv.CategoryFieldId == field.CategoryFieldId
-                        && (isFieldRef ? rv.ReferenceCategoryRowValue.Value == item.Value : rv.Value == item.Value)
-                    ))
-                    .FirstOrDefault()?
-                    .CategoryRowValue
-                    .Where(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId)
-                    .Select(rv => isTitleRef ? rv.ReferenceCategoryRowValue.Value : rv.Value)
-                    .FirstOrDefault() ?? string.Empty;
+                var values = group.Select(g => g.Value);
+                var titles = query
+                   .Where(r => r.CategoryRowValue.Any(
+                       rv => rv.CategoryFieldId == group.Key.CategoryFieldId
+                       && (isFieldRef ? values.Contains(rv.ReferenceCategoryRowValue.Value) : values.Contains(rv.Value))
+                   ))
+                   .Select(r => new
+                   {
+                       Value = isFieldRef
+                       ? r.CategoryRowValue.First(rv => rv.CategoryFieldId == group.Key.CategoryFieldId)
+                       : r.CategoryRowValue.First(rv => rv.CategoryFieldId == group.Key.CategoryFieldId).ReferenceCategoryRowValue,
+                       Title = isTitleRef ? r.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId)
+                       : r.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId).ReferenceCategoryRowValue
+                   }).ToList();
 
-                    lst.Add(new MapTitleOutputModel(item, title));
-                }
+                lst = titles.Select(t => new MapTitleOutputModel
+                {
+                    CategoryFieldId = group.Key.CategoryFieldId,
+                    CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
+                    Value = t.Value.Value,
+                    Title = t.Title?.Value ?? string.Empty
+                }).ToList();
             }
             return lst;
         }
@@ -374,7 +381,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Duyệt danh sách field
             foreach (var field in categoryFields)
             {
-                bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
+                bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
                 {
@@ -469,7 +476,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     }
                     else
                     {
-                        bool isRef = ((EnumFormType)categoryField.FormTypeId).IsRef();
+                        bool isRef = selectFormType.Contains((EnumFormType)categoryField.FormTypeId);
                         if (isRef ? currentValue.ReferenceCategoryRowValue.Value != updateValue.Value : currentValue.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
@@ -509,7 +516,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     // Duyệt danh sách field
                     foreach (var field in updateFields)
                     {
-                        bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
+                        bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
                         var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                         var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
@@ -672,7 +679,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
                         isOutSide = referCategory.IsOutSideData;
-                        bool isRef = ((EnumFormType)referField.FormTypeId).IsRef() && !isOutSide;
+                        bool isRef = selectFormType.Contains((EnumFormType)referField.FormTypeId) && !isOutSide;
                         IQueryable<CategoryRow> query;
                         if (isOutSide)
                         {
@@ -984,7 +991,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 dataInRow.Clear();
                 foreach (var field in categoryFields)
                 {
-                    bool isRef = ((EnumFormType)field.FormTypeId).IsRef();
+                    bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
                     var categoryValueRow = row.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
                     string value = string.Empty;
                     if (categoryValueRow != null)

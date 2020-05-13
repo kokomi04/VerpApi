@@ -37,12 +37,5 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public string Title { get; set; }
 
-        public MapTitleOutputModel(MapTitleInputModel input, string title)
-        {
-            this.CategoryFieldId = input.CategoryFieldId;
-            this.CategoryFieldTitleId = input.CategoryFieldTitleId;
-            this.Value = input.Value;
-            this.Title = title;
-        }
     }
 }
