@@ -90,6 +90,11 @@ namespace Verp.Cache.RedisCache
         {
             return $"GENERATECODE_LOCK_{objectTypeId}";
         }
+
+        public static string GetLockPoSuggest(long purchasingOrderSugguestId)
+        {
+            return $"PO_SUGGUEST_LOCK_{purchasingOrderSugguestId}";
+        }
     }
 
     public class MemLockLock : IRedLock
