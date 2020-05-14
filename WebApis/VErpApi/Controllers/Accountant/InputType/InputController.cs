@@ -16,6 +16,7 @@ using System;
 using Newtonsoft.Json;
 using VErp.Services.Accountant.Service.Input;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -211,9 +212,9 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{inputTypeId}/bills")]
-        public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] IList<InputValueFilterModel> fieldFilters, [FromQuery] int orderByFieldId, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputValueBills([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] IList<InputValueFilterModel> fieldFilters, [FromQuery] string orderBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, fieldFilters, orderByFieldId, asc, page, size).ConfigureAwait(true);
+            return await _inputValueBillService.GetInputValueBills(inputTypeId, keyword, fieldFilters, orderBy, asc, page, size).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -221,7 +222,9 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/bills")]
         public async Task<ServiceResult<PageData<InputValueBillListOutput>>> GetInputTypeBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
         {
-            return await _inputValueBillService.GetInputValueBills(inputTypeId, request.Keyword, request.FieldFilters, request.OrderByFieldId, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _inputValueBillService.GetInputValueBills(inputTypeId, request.Keyword, request.FieldFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]

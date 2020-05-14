@@ -13,7 +13,7 @@ namespace VErp.Services.Accountant.Service.Input
     {
         Task<InputTypeListInfo> GetInputTypeListInfo(int inputTypeId);
 
-        Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, int orderByFieldId, bool asc, int page, int size);
+        Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId);
 
