@@ -64,8 +64,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             data.ColumnsInList = await (
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
-                join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
+                join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId                
                 where t.InputTypeId == inputTypeId && !a.IsMultiRow
+                orderby a.SortOrder, f.SortOrder
                 select new InputTypeListColumn
                 {
                     InputAreaId = a.InputAreaId,
@@ -88,6 +89,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                           join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                           join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
                           where t.InputTypeId == inputTypeId && a.InputAreaId == firstArea.InputAreaId
+                          orderby a.SortOrder, f.SortOrder
                           select new InputTypeListColumn
                           {
                               InputAreaId = a.InputAreaId,
@@ -168,7 +170,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     Expression<Func<string>> valueLambda = () => firstValue;
 
-                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * 100000;
+                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR;
 
                     var lstValues = new List<string>();
 
