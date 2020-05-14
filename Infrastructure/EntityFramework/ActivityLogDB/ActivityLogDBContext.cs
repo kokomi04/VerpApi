@@ -15,11 +15,28 @@ namespace ActivityLogDB
         {
         }
 
+        public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
+        public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<UserActivityLog>(entity =>
+            {
+                entity.Property(e => e.Message).HasMaxLength(512);
+
+                entity.Property(e => e.MessageTypeId).HasDefaultValueSql("((1))");
+            });
+
+            modelBuilder.Entity<UserActivityLogChange>(entity =>
+            {
+                entity.HasKey(e => e.UserActivityLogId);
+
+                entity.Property(e => e.UserActivityLogId).ValueGeneratedNever();
+            });
+
             OnModelCreatingPartial(modelBuilder);
         }
 

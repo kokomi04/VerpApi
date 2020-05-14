@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using ActivityLogDB;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -52,6 +53,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+
+        public static void ConfigActivityLogContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<ActivityLogDBContext>((option) =>
+            {
+                option.UseSqlServer(appSetting.DatabaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
         }
 

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ActivityLogDB;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,31 +13,31 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Activity;
+using VErp.Services.Master.Service.Users;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
     public class ActivityService : IActivityService
     {
-        private readonly MasterDBContext _masterContext;
-        private readonly OrganizationDBContext _organizationContext;
+        private readonly ActivityLogDBContext _activityLogContext;
+        private readonly IUserService _userService;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
-        public ActivityService(MasterDBContext masterContext
-            , OrganizationDBContext organizationContext
+        public ActivityService(ActivityLogDBContext activityLogContext
+            , IUserService userService
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
             , IAsyncRunnerService asyncRunnerService
             )
         {
-            _organizationContext = organizationContext;
-            _masterContext = masterContext;
+            _activityLogContext = activityLogContext;
+            _userService = userService;
             _appSetting = appSetting.Value;
             _logger = logger;
             _asyncRunnerService = asyncRunnerService;
@@ -49,7 +50,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public async Task<Enum> CreateActivityTask(ActivityInput input)
         {
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
                 var activity = new UserActivityLog()
                 {
@@ -62,8 +63,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     Message = input.Message
                 };
 
-                await _masterContext.UserActivityLog.AddAsync(activity);
-                await _masterContext.SaveChangesAsync();
+                await _activityLogContext.UserActivityLog.AddAsync(activity);
+                await _activityLogContext.SaveChangesAsync();
 
                 // var changeLog = Utils.GetJsonDiff(oldJsonObject, newObject);
                 if (!string.IsNullOrWhiteSpace(input.Data))
@@ -74,9 +75,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
                         ObjectChange = input.Data,//changeLog
                     };
 
-                    await _masterContext.UserActivityLogChange.AddAsync(change);
+                    await _activityLogContext.UserActivityLogChange.AddAsync(change);
                 }
-                await _masterContext.SaveChangesAsync();
+                await _activityLogContext.SaveChangesAsync();
 
                 trans.Commit();
 
@@ -97,34 +98,28 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 CreatedDatetimeUtc = DateTime.UtcNow,
             };
 
-            await _masterContext.UserActivityLog.AddAsync(activity);
-            await _masterContext.SaveChangesAsync();
+            await _activityLogContext.UserActivityLog.AddAsync(activity);
+            await _activityLogContext.SaveChangesAsync();
 
             return GeneralCode.Success;
         }
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _masterContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
+            var query = _activityLogContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
 
             var total = query.Count();
             var ualDataList = query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList();
 
-            var userIdList = ualDataList.Select(q => q.UserId).ToList();
-            var users = _masterContext.User.Where(u => userIdList.Contains(u.UserId)).AsEnumerable();
-            var employees = _organizationContext.Employee.Where(e => userIdList.Contains(e.UserId)).AsEnumerable();
-            var userDataList = users.Join(employees, u => u.UserId, e => e.UserId, (u, e) => new
-            {
-                u.UserId,
-                u.UserName,
-                e.FullName,
-                e.AvatarFileId
-            }).ToList().ToDictionary(u => u.UserId, u => u);
+            var userIds = ualDataList.Select(q => q.UserId).ToList();
+
+            var userInfos = (await _userService.GetBasicInfos(userIds))
+                 .ToDictionary(u => u.UserId, u => u);
 
             var result = new List<UserActivityLogOuputModel>(ualDataList.Count);
             foreach (var item in ualDataList)
             {
-                userDataList.TryGetValue(item.UserId, out var userInfo);
+                userInfos.TryGetValue(item.UserId, out var userInfo);
                 var actLogOutput = new UserActivityLogOuputModel
                 {
                     UserId = item.UserId,
