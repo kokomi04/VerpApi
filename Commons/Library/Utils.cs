@@ -323,7 +323,7 @@ namespace VErp.Commons.Library
                     break;
                 case EnumDataType.Date:
                 case EnumDataType.Number:
-                    valueInNumber = long.Parse(value) * Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR;
+                    valueInNumber = long.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
                     break;
 
                 case EnumDataType.Text:

@@ -6,4 +6,8 @@
     <AssemblyName>VErp.Commons.Constants</AssemblyName>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Enums\Enums.csproj" />
+  </ItemGroup>
+
 </Project>

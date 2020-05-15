@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -83,41 +84,45 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<int>> AddInputType(int updatedUserId, InputTypeModel data)
         {
-            var existedInput = await _accountingContext.InputType
-                .FirstOrDefaultAsync(i => i.InputTypeCode == data.InputTypeCode || i.Title == data.Title);
-            if (existedInput != null)
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0)))
             {
-                if (string.Compare(existedInput.InputTypeCode, data.InputTypeCode, StringComparison.OrdinalIgnoreCase) == 0)
+                var existedInput = await _accountingContext.InputType
+                .FirstOrDefaultAsync(i => i.InputTypeCode == data.InputTypeCode || i.Title == data.Title);
+                if (existedInput != null)
                 {
-                    return InputErrorCode.InputCodeAlreadyExisted;
+                    if (string.Compare(existedInput.InputTypeCode, data.InputTypeCode, StringComparison.OrdinalIgnoreCase) == 0)
+                    {
+                        return InputErrorCode.InputCodeAlreadyExisted;
+                    }
+
+                    return InputErrorCode.InputTitleAlreadyExisted;
                 }
 
-                return InputErrorCode.InputTitleAlreadyExisted;
-            }
+                using var trans = await _accountingContext.Database.BeginTransactionAsync();
+                try
+                {
+                    InputType inputType = _mapper.Map<InputType>(data);
+                    inputType.UpdatedByUserId = updatedUserId;
+                    inputType.CreatedByUserId = updatedUserId;
+                    await _accountingContext.InputType.AddAsync(inputType);
+                    await _accountingContext.SaveChangesAsync();
 
-            using var trans = await _accountingContext.Database.BeginTransactionAsync();
-            try
-            {
-                InputType inputType = _mapper.Map<InputType>(data);
-                inputType.UpdatedByUserId = updatedUserId;
-                inputType.CreatedByUserId = updatedUserId;
-                await _accountingContext.InputType.AddAsync(inputType);
-                await _accountingContext.SaveChangesAsync();
-
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
-                return inputType.InputTypeId;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
+                    trans.Commit();
+                    await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
+                    return inputType.InputTypeId;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Create");
+                    return GeneralCode.InternalError;
+                }
             }
         }
 
         public async Task<Enum> UpdateInputType(int updatedUserId, int inputTypeId, InputTypeModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputType = await _accountingContext.InputType.FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
             {

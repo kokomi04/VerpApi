@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -177,6 +178,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 data.DataSize = 0;
             }
 
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
+            {
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
+            }
+
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
@@ -248,6 +255,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 data.DataTypeId = (int)EnumDataType.Text;
                 data.DataSize = 0;
+            }
+
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
+            {
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())

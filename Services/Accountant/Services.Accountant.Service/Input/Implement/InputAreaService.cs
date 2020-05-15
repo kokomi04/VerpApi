@@ -35,11 +35,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<InputAreaOutputModel>> GetInputArea(int inputTypeId, int inputAreaId)
+        public async Task<ServiceResult<InputAreaModel>> GetInputArea(int inputTypeId, int inputAreaId)
         {
             var inputArea = await _accountingContext.InputArea
                 .Where(i => i.InputTypeId == inputTypeId && i.InputAreaId == inputAreaId)
-                .ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<InputAreaModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (inputArea == null)
             {
@@ -48,7 +48,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputArea;
         }
 
-        public async Task<PageData<InputAreaOutputModel>> GetInputAreas(int inputTypeId, string keyword, int page, int size)
+        public async Task<PageData<InputAreaModel>> GetInputAreas(int inputTypeId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).AsQueryable();
@@ -62,7 +62,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            var lst = await query.ProjectTo<InputAreaOutputModel>(_mapper.ConfigurationProvider).OrderBy(a=>a.SortOrder).ToListAsync();
+            var lst = await query.ProjectTo<InputAreaModel>(_mapper.ConfigurationProvider).OrderBy(a=>a.SortOrder).ToListAsync();
             return (lst, total);
         }
 

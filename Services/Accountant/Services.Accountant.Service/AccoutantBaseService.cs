@@ -1,16 +1,19 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,6 +37,7 @@ namespace VErp.Services.Accountant.Service
         protected readonly IMapper _mapper;
         protected readonly AccountingDBContext _accountingContext;
         private delegate Expression<Func<T, bool>> LogicOperator<T>(Expression<Func<T, bool>> expr);
+
         protected AccoutantBaseService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , IMapper mapper)
@@ -70,67 +74,128 @@ namespace VErp.Services.Accountant.Service
             return category;
         }
 
-        protected void FillterProcess(ref IQueryable<CategoryRow> query, FilterModel[] filters)
+        public IQueryable<int> FilterClauseProcess(Clause clause, IQueryable<CategoryRowValue> query)
         {
-            Expression<Func<CategoryRow, bool>> predicate = PredicateBuilder.True<CategoryRow>();
-            if (filters.Count() > 0)
+            IQueryable<int> exp = query.Select(rv => rv.CategoryRowId);
+
+            //Expression exp = Expression.Constant(true);
+            if (clause != null)
             {
-                predicate = PredicateBuilder.False<CategoryRow>();
-                EnumLogicOperator? logicOperator = EnumLogicOperator.Or;
-                foreach (FilterModel filter in filters)
+                if (clause is SingleClause)
                 {
-                    LogicOperator<CategoryRow> logic;
-                    if (logicOperator == EnumLogicOperator.Or)
+                    var singleClause = clause as SingleClause;
+                    exp = BuildExpression(singleClause, query);
+                }
+                else if (clause is DoubleClause)
+                {
+                    var filterClause = clause as DoubleClause;
+                    IQueryable<int> leftExp = FilterClauseProcess(filterClause.LeftClause, query);
+                    IQueryable<int> rightExp = FilterClauseProcess(filterClause.RightClause, query);
+                    exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    List<IQueryable<int>> expressions = new List<IQueryable<int>>();
+                    IQueryable<int> oldEx = null;
+                    EnumLogicOperator? logicOperator = EnumLogicOperator.And;
+                    foreach (var item in arrClause.Clauses)
                     {
-                        logic = predicate.Or<CategoryRow>;
+                        if (!logicOperator.HasValue)
+                        {
+                            break;
+                        }
+                        if (logicOperator == EnumLogicOperator.Or)
+                        {
+                            expressions.Add(oldEx);
+                            oldEx = FilterClauseProcess(item.Clause, query);
+                        }
+                        else if (logicOperator == EnumLogicOperator.And)
+                        {
+                            if (oldEx != null)
+                            {
+                                oldEx = oldEx.Join(FilterClauseProcess(item.Clause, query), l => l, r => r, (l, r) => l);
+                            }
+                            else
+                            {
+                                oldEx = FilterClauseProcess(item.Clause, query);
+                            }
+                        }
+                        logicOperator = item.LogicOperator;
                     }
-                    else
+                    expressions.Add(oldEx);
+                    exp = new List<int>().AsQueryable();
+                    foreach (var ex in expressions)
                     {
-                        logic = predicate.And<CategoryRow>;
+                        exp = exp.Union(ex);
                     }
-
-                    logicOperator = filter.LogicOperator;
-
-                    switch (filter.Operator)
-                    {
-                        case EnumOperator.Equal:
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value == filter.Values[0] : rv.Value == filter.Values[0]));
-                            break;
-                        case EnumOperator.NotEqual:
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value != filter.Values[0] : rv.Value != filter.Values[0]));
-                            break;
-                        case EnumOperator.Contains:
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value.Contains(filter.Values[0]) : rv.Value.Contains(filter.Values[0])));
-                            break;
-                        case EnumOperator.InList:
-                            string[] values = filter.Values[0].Split(',');
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? values.Contains(rv.ReferenceCategoryRowValue.Value) : values.Contains(rv.Value)));
-                            break;
-                        case EnumOperator.IsLeafNode:
-                            List<string> nodeValues = query
-                                .Select(r => r.CategoryRowValue.FirstOrDefault(v => v.CategoryFieldId == filter.CategoryFieldId))
-                                .Select(rv => (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value : rv.Value)
-                                .ToList();
-
-                            List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? isLeafValues.Contains(rv.ReferenceCategoryRowValue.Value) : isLeafValues.Contains(rv.Value)));
-                            break;
-                        case EnumOperator.StartsWith:
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value.StartsWith(filter.Values[0]) : rv.Value.StartsWith(filter.Values[0])));
-                            break;
-                        case EnumOperator.EndsWith:
-                            predicate = logic(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == filter.CategoryFieldId && (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) ? rv.ReferenceCategoryRowValue.Value.EndsWith(filter.Values[0]) : rv.Value.EndsWith(filter.Values[0])));
-                            break;
-                        default:
-                            break;
-                    }
-                    if (!logicOperator.HasValue)
-                    {
-                        break;
-                    }
+                    return exp;
                 }
             }
-            query = query.Where(predicate);
+            return exp;
+        }
+
+        private IQueryable<int> BuildExpression(SingleClause clause, IQueryable<CategoryRowValue> query)
+        {
+            IQueryable<int> expression = query.Select(rv => rv.CategoryRowId);
+            if (clause != null)
+            {
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value == clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.NotEqual:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value != clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.Contains:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.Contains(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.InList:
+                        List<string> values = clause.Values[0].Split(',').ToList();
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && values.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        List<string> nodeValues = query
+                            .Where(rv => rv.CategoryFieldId == clause.Key)
+                            .Select(rv => rv.Value)
+                            .ToList();
+                        List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && isLeafValues.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.StartsWith:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.StartsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.EndsWith:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.EndsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    default:
+                        expression = new List<int>().AsQueryable();
+                        break;
+                }
+            }
+            return expression;
+
+        }
+
+        private IQueryable<int> MergeExpression(IQueryable<int> leftExp, IQueryable<int> rightExp, EnumLogicOperator? logicOperator)
+        {
+            IQueryable<int> expression = leftExp;
+            if (logicOperator.HasValue)
+            {
+                switch (logicOperator.Value)
+                {
+                    case EnumLogicOperator.And:
+                        expression = leftExp.Join(rightExp, l => l, r => r, (r, l) => r);
+                        break;
+                    case EnumLogicOperator.Or:
+                        expression = leftExp.Union(rightExp);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return expression;
         }
 
         protected IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId)
@@ -171,9 +236,9 @@ namespace VErp.Services.Accountant.Service
                         {
                             var value = new CategoryRowValue
                             {
+                                CategoryRowId = id,
                                 CategoryFieldId = field.CategoryFieldId,
                                 Value = properties[field.CategoryFieldName],
-                                CategoryField = field
                             };
                             categoryRow.CategoryRowValue.Add(value);
                         }

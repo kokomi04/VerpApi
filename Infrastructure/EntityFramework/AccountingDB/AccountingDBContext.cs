@@ -192,11 +192,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasForeignKey(d => d.CategoryRowId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CategoryRowValue_CategoryRow");
-
-                entity.HasOne(d => d.ReferenceCategoryRowValue)
-                    .WithMany(p => p.InverseReferenceCategoryRowValue)
-                    .HasForeignKey(d => d.ReferenceCategoryRowValueId)
-                    .HasConstraintName("FK_CategoryRowValue_Relation");
             });
 
             modelBuilder.Entity<DataType>(entity =>

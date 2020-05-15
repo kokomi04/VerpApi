@@ -81,6 +81,11 @@ namespace Verp.Cache.RedisCache
             }
         }
 
+        public static string GetLockInputTypeKey(int inputTypeId)
+        {
+            return $"INPUTTYPE_LOCK_{inputTypeId}";
+        }
+
         public static string GetLockStockResourceKey(int stockId)
         {
             return $"STOCK_LOCK_{stockId}";
