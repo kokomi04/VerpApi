@@ -90,14 +90,14 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas")]
-        public async Task<ServiceResult<PageData<InputAreaOutputModel>>> GetInputAreas([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<InputAreaModel>>> GetInputAreas([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputAreaService.GetInputAreas(inputTypeId, keyword, page, size);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
-        public async Task<ServiceResult<InputAreaOutputModel>> GetInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
+        public async Task<ServiceResult<InputAreaModel>> GetInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
             return await _inputAreaService.GetInputArea(inputTypeId, inputAreaId);
         }
@@ -226,14 +226,14 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
-        public async Task<ServiceResult<InputValueBillOutputModel>> GetInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
+        public async Task<ServiceResult<InputValueOuputModel>> GetInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
         {
             return await _inputValueBillService.GetInputValueBill(inputTypeId, inputValueBillId);
         }
 
         [HttpPost]
         [Route("{inputTypeId}/inputvaluebills")]
-        public async Task<ServiceResult<long>> AddInputValueBill([FromRoute] int inputTypeId, [FromBody] InputValueBillInputModel data)
+        public async Task<ServiceResult<long>> AddInputValueBill([FromRoute] int inputTypeId, [FromBody] InputValueInputModel data)
         {
             var updatedUserId = UserId;
             return await _inputValueBillService.AddInputValueBill(updatedUserId, inputTypeId, data);
@@ -241,7 +241,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpPut]
         [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
-        public async Task<ServiceResult<long>> UpdateInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId, [FromBody] InputValueBillInputModel data)
+        public async Task<ServiceResult<long>> UpdateInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId, [FromBody] InputValueInputModel data)
         {
             var updatedUserId = UserId;
             return await _inputValueBillService.UpdateInputValueBill(updatedUserId, inputTypeId, inputValueBillId, data);

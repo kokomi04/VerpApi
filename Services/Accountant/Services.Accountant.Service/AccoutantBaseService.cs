@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -36,7 +37,6 @@ namespace VErp.Services.Accountant.Service
         protected readonly IMapper _mapper;
         protected readonly AccountingDBContext _accountingContext;
         private delegate Expression<Func<T, bool>> LogicOperator<T>(Expression<Func<T, bool>> expr);
-        protected readonly List<EnumFormType> selectFormType = new List<EnumFormType>(){ EnumFormType.Select, EnumFormType.SearchTable };
 
         protected AccoutantBaseService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
@@ -74,166 +74,128 @@ namespace VErp.Services.Accountant.Service
             return category;
         }
 
-        protected void FillterProcess(ref IQueryable<CategoryRow> query, Clause filters)
+        public IQueryable<int> FilterClauseProcess(Clause clause, IQueryable<CategoryRowValue> query)
         {
-            var rvParam = Expression.Parameter(typeof(CategoryRowValue), "rv");
-            Expression filterExp = FilterClauseProcess(rvParam, filters, query);
-            query = query.Where(r => r.CategoryRowValue.AsQueryable().Any(Expression.Lambda<Func<CategoryRowValue, bool>>(filterExp, rvParam)));
-        }
+            IQueryable<int> exp = query.Select(rv => rv.CategoryRowId);
 
-        private Expression BuildExpression(ParameterExpression rvParam, SingleClause clause, IQueryable<CategoryRow> query)
-        {
-            Expression expression = null;
-            if (clause != null)
-            {
-                var fieldIdProp = Expression.Property(rvParam, nameof(CategoryRowValue.CategoryFieldId));
-
-                // Check categoryFieldId
-                Expression fieldExp = Expression.Equal(fieldIdProp, Expression.Constant(clause.Key));
-                // Check reference
-                var field = typeof(CategoryRowValue).GetProperty(nameof(CategoryRowValue.CategoryField));
-                var formType = field.PropertyType.GetProperty(nameof(CategoryField.FormTypeId));
-                var fieldProp = Expression.Property(rvParam, field);
-                var formTypeProp = Expression.Property(fieldProp, formType);
-
-                MethodInfo method = typeof(List<EnumFormType>).GetMethod(nameof(List<EnumFormType>.Contains));
-                Expression refExp = Expression.Call(Expression.Constant(selectFormType), method, formTypeProp);
-
-                // Check value
-                Expression valueExp;
-                Expression referValueExp;
-
-                var valueProp = Expression.Property(rvParam, nameof(CategoryRowValue.Value));
-                var refer = typeof(CategoryRowValue).GetProperty(nameof(CategoryRowValue.ReferenceCategoryRowValue));
-                var valueRefer = refer.PropertyType.GetProperty(nameof(CategoryRowValue.Value));
-                var referProp = Expression.Property(rvParam, refer);
-                var valueReferProp = Expression.Property(referProp, valueRefer);
-                switch (clause.Operator)
-                {
-                    case EnumOperator.Equal:
-                        valueExp = Expression.Equal(valueProp, Expression.Constant(clause.Values[0]));
-                        referValueExp = Expression.Equal(valueReferProp, Expression.Constant(clause.Values[0]));
-                        break;
-                    case EnumOperator.NotEqual:
-                        valueExp = Expression.NotEqual(valueProp, Expression.Constant(clause.Values[0]));
-                        referValueExp = Expression.NotEqual(valueReferProp, Expression.Constant(clause.Values[0]));
-                        break;
-                    case EnumOperator.Contains:
-                        method = typeof(string).GetMethod(nameof(string.Contains), new Type[] { typeof(string)});
-                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
-                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
-                        break;
-                    case EnumOperator.InList:
-                        List<string> values = clause.Values[0].Split(',').ToList();
-                        method = typeof(List<string>).GetMethod(nameof(List<string>.Contains));
-                        valueExp = Expression.Call(Expression.Constant(values), method, valueProp);
-                        referValueExp = Expression.Call(Expression.Constant(values), method, valueReferProp);
-                        break;
-                    case EnumOperator.IsLeafNode:
-                        List<string> nodeValues = query
-                            .Select(r => r.CategoryRowValue.FirstOrDefault(v => v.CategoryFieldId == clause.Key))
-                            .Select(rv => selectFormType.Contains((EnumFormType)rv.CategoryField.FormTypeId)
-                            ? rv.ReferenceCategoryRowValue.Value : rv.Value)
-                            .ToList();
-                        List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        method = typeof(List<string>).GetMethod(nameof(List<string>.Contains));
-                        valueExp = Expression.Call(Expression.Constant(isLeafValues), method, valueProp);
-                        referValueExp = Expression.Call(Expression.Constant(isLeafValues), method, valueReferProp);
-                        break;
-                    case EnumOperator.StartsWith:
-                        method = typeof(string).GetMethod(nameof(string.StartsWith), new Type[] { typeof(string) });
-                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
-                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
-                        break;
-                    case EnumOperator.EndsWith:
-                        method = typeof(string).GetMethod(nameof(string.EndsWith), new Type[] { typeof(string) });
-                        valueExp = Expression.Call(valueProp, method, Expression.Constant(clause.Values[0]));
-                        referValueExp = Expression.Call(valueReferProp, method, Expression.Constant(clause.Values[0]));
-                        break;
-                    default:
-                        valueExp = Expression.Constant(true);
-                        referValueExp = Expression.Constant(true);
-                        break;
-                }
-
-                Expression isReferExp = Expression.AndAlso(refExp, referValueExp);
-                Expression isNotReferExp = Expression.AndAlso(Expression.Not(refExp), valueExp);
-                expression = Expression.AndAlso(fieldExp, Expression.OrElse(isReferExp, isNotReferExp));
-            }
-            return expression;
-        }
-
-        private Expression MergeExpression(Expression leftExp, Expression rightExp, EnumLogicOperator? logicOperator)
-        {
-            Expression expression = leftExp;
-            if (logicOperator.HasValue)
-            {
-                switch (logicOperator.Value)
-                {
-                    case EnumLogicOperator.And:
-                        expression = Expression.AndAlso(leftExp, rightExp);
-                        break;
-                    case EnumLogicOperator.Or:
-                        expression = Expression.OrElse(leftExp, rightExp);
-                        break;
-                    default:
-                        break;
-                }
-            }
-            return expression;
-        }
-
-        public Expression FilterClauseProcess(ParameterExpression rvParam, Clause clause, IQueryable<CategoryRow> query)
-        {
-            Expression exp = Expression.Constant(true);
+            //Expression exp = Expression.Constant(true);
             if (clause != null)
             {
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
-                    exp = BuildExpression(rvParam, singleClause, query);
+                    exp = BuildExpression(singleClause, query);
                 }
                 else if (clause is DoubleClause)
                 {
                     var filterClause = clause as DoubleClause;
-                    var leftExp = FilterClauseProcess(rvParam, filterClause.LeftClause, query);
-                    var rightExp = FilterClauseProcess(rvParam, filterClause.RightClause, query);
+                    IQueryable<int> leftExp = FilterClauseProcess(filterClause.LeftClause, query);
+                    IQueryable<int> rightExp = FilterClauseProcess(filterClause.RightClause, query);
                     exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
                 }
                 else if (clause is ArrayClause)
                 {
                     var arrClause = clause as ArrayClause;
-                    List<Expression> expressions = new List<Expression>();
-                    Expression oldEx = Expression.Constant(true);
+                    List<IQueryable<int>> expressions = new List<IQueryable<int>>();
+                    IQueryable<int> oldEx = null;
                     EnumLogicOperator? logicOperator = EnumLogicOperator.And;
                     foreach (var item in arrClause.Clauses)
                     {
-                        if(!logicOperator.HasValue)
+                        if (!logicOperator.HasValue)
                         {
                             break;
                         }
                         if (logicOperator == EnumLogicOperator.Or)
                         {
                             expressions.Add(oldEx);
-                            oldEx = FilterClauseProcess(rvParam, item.Clause, query);
+                            oldEx = FilterClauseProcess(item.Clause, query);
                         }
                         else if (logicOperator == EnumLogicOperator.And)
                         {
-
-                            oldEx = Expression.AndAlso(oldEx, FilterClauseProcess(rvParam, item.Clause, query));
+                            if (oldEx != null)
+                            {
+                                oldEx = oldEx.Join(FilterClauseProcess(item.Clause, query), l => l, r => r, (l, r) => l);
+                            }
+                            else
+                            {
+                                oldEx = FilterClauseProcess(item.Clause, query);
+                            }
                         }
                         logicOperator = item.LogicOperator;
                     }
                     expressions.Add(oldEx);
-                    exp = Expression.Constant(false);
+                    exp = new List<int>().AsQueryable();
                     foreach (var ex in expressions)
                     {
-                        exp = Expression.OrElse(exp, ex);
+                        exp = exp.Union(ex);
                     }
                     return exp;
                 }
             }
             return exp;
+        }
+
+        private IQueryable<int> BuildExpression(SingleClause clause, IQueryable<CategoryRowValue> query)
+        {
+            IQueryable<int> expression = query.Select(rv => rv.CategoryRowId);
+            if (clause != null)
+            {
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value == clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.NotEqual:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value != clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.Contains:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.Contains(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.InList:
+                        List<string> values = clause.Values[0].Split(',').ToList();
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && values.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        List<string> nodeValues = query
+                            .Where(rv => rv.CategoryFieldId == clause.Key)
+                            .Select(rv => rv.Value)
+                            .ToList();
+                        List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && isLeafValues.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.StartsWith:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.StartsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    case EnumOperator.EndsWith:
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.EndsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        break;
+                    default:
+                        expression = new List<int>().AsQueryable();
+                        break;
+                }
+            }
+            return expression;
+
+        }
+
+        private IQueryable<int> MergeExpression(IQueryable<int> leftExp, IQueryable<int> rightExp, EnumLogicOperator? logicOperator)
+        {
+            IQueryable<int> expression = leftExp;
+            if (logicOperator.HasValue)
+            {
+                switch (logicOperator.Value)
+                {
+                    case EnumLogicOperator.And:
+                        expression = leftExp.Join(rightExp, l => l, r => r, (r, l) => r);
+                        break;
+                    case EnumLogicOperator.Or:
+                        expression = leftExp.Union(rightExp);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return expression;
         }
 
         protected IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId)
@@ -274,9 +236,9 @@ namespace VErp.Services.Accountant.Service
                         {
                             var value = new CategoryRowValue
                             {
+                                CategoryRowId = id,
                                 CategoryFieldId = field.CategoryFieldId,
                                 Value = properties[field.CategoryFieldName],
-                                CategoryField = field
                             };
                             categoryRow.CategoryRowValue.Add(value);
                         }

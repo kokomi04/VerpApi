@@ -30,14 +30,13 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public InputTypeFullModel()
         {
-            InputAreas = new List<InputAreaOutputModel>();
+            InputAreas = new List<InputAreaModel>();
         }
-        public ICollection<InputAreaOutputModel> InputAreas { get; set; }
+        public ICollection<InputAreaModel> InputAreas { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputType, InputTypeFullModel>()
                 .ForMember(dest => dest.InputAreas, opt => opt.MapFrom(src => src.InputArea));
-
         }
     }
 }

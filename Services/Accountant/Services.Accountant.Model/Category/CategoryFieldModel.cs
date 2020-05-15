@@ -29,6 +29,7 @@ namespace VErp.Services.Accountant.Model.Category
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
         public bool IsTreeViewKey { get; set; }
+        public bool IsIdentity { get; set; }
     }
 
 

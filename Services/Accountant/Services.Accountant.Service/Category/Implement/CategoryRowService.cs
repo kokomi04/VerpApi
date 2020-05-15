@@ -9,7 +9,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -47,34 +50,41 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             var total = 0;
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
-            IQueryable<CategoryRow> query;
+
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+
+            IQueryable<CategoryRow> query;
+            IQueryable<CategoryRowValue> filterQuery;
+
             if (category.IsOutSideData)
             {
                 query = GetOutSideCategoryRows(categoryId);
+                filterQuery = query.SelectMany(r => r.CategoryRowValue);
             }
             else
             {
                 query = _accountingContext.CategoryRow
                     .Where(r => r.CategoryId == categoryId)
-                    .Include(r => r.CategoryRowValue)
-                    .ThenInclude(rv => rv.CategoryField)
-                    .Include(r => r.CategoryRowValue)
-                    .ThenInclude(rv => rv.ReferenceCategoryRowValue);
+                    .Include(r => r.CategoryRowValue);
+                filterQuery = from rowValue in _accountingContext.CategoryRowValue
+                              join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
+                              where row.CategoryId == categoryId
+                              select rowValue;
             }
 
             if (filters != null)
             {
-                FillterProcess(ref query, filters);
+                List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
+                query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
             }
+
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(r => r.CategoryRowValue
-                .Any(rv => (rv.CategoryField.FormTypeId == (int)EnumFormType.SearchTable || rv.CategoryField.FormTypeId == (int)EnumFormType.Select) && rv.ReferenceCategoryRowValueId.HasValue
-                ? rv.ReferenceCategoryRowValue.Value.Contains(keyword)
-                : rv.Value.Contains(keyword)));
+                .Any(rv => rv.Value.Contains(keyword)));
             }
+
             total = query.Count();
             if (size > 0)
             {
@@ -86,9 +96,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                     lst.AddRange(_accountingContext.CategoryRow
                         .Include(r => r.CategoryRowValue)
-                        .ThenInclude(rv => rv.CategoryField)
-                        .Include(r => r.CategoryRowValue)
-                        .ThenInclude(rv => rv.ReferenceCategoryRowValue)
                         .ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
                         .Where(r => parentIds.Contains(r.CategoryRowId)));
 
@@ -182,8 +189,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     .ThenInclude(pr => pr.CategoryRowValue)
                     .ThenInclude(rv => rv.CategoryField)
                     .Include(r => r.ParentCategoryRow)
-                    .ThenInclude(pr => pr.CategoryRowValue)
-                    .ThenInclude(rv => rv.ReferenceCategoryRowValue)
                     .ProjectTo<CategoryRowOutputModel>(_mapper.ConfigurationProvider)
                     .FirstOrDefaultAsync();
 
@@ -203,49 +208,34 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId, v.CategoryFieldTitleId });
             foreach (var group in groups)
             {
-                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
-                CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
+                int fieldViewId = group.Key.CategoryFieldTitleId ?? group.Key.CategoryFieldId;
+                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == fieldViewId);
                 CategoryEntity category = GetReferenceCategory(field.CategoryId);
                 bool isOutSide = category.IsOutSideData;
-                bool isFieldRef = selectFormType.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
-                bool isTitleRef = selectFormType.Contains((EnumFormType)titleField.FormTypeId) && !isOutSide;
-                IQueryable<CategoryRow> query;
+                bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
+                IQueryable<CategoryRowValue> query;
                 if (isOutSide)
                 {
-                    query = GetOutSideCategoryRows(category.CategoryId);
+                    query = GetOutSideCategoryRows(category.CategoryId).SelectMany(r => r.CategoryRowValue);
                 }
                 else
                 {
-                    query = _accountingContext.CategoryRow
-                       .Where(r => r.CategoryId == category.CategoryId)
-                       .Include(r => r.CategoryRowValue)
-                       .ThenInclude(rv => rv.ReferenceCategoryRowValue)
-                       .Include(r => r.CategoryRowValue)
-                       .ThenInclude(rv => rv.CategoryField);
+                    query = from rowValue in _accountingContext.CategoryRowValue
+                            join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
+                            where row.CategoryId == category.CategoryId && rowValue.CategoryFieldId == fieldViewId
+                            select rowValue;
                 }
 
-                var values = group.Select(g => g.Value);
-                var titles = query
-                   .Where(r => r.CategoryRowValue.Any(
-                       rv => rv.CategoryFieldId == group.Key.CategoryFieldId
-                       && (isFieldRef ? values.Contains(rv.ReferenceCategoryRowValue.Value) : values.Contains(rv.Value))
-                   ))
-                   .Select(r => new
+                int[] rowIds = group.Select(g => g.Value).ToArray();
+                lst = query
+                   .Where(rv => rowIds.Contains(rv.CategoryRowId))
+                   .Select(rv => new MapTitleOutputModel
                    {
-                       Value = isFieldRef
-                       ? r.CategoryRowValue.First(rv => rv.CategoryFieldId == group.Key.CategoryFieldId)
-                       : r.CategoryRowValue.First(rv => rv.CategoryFieldId == group.Key.CategoryFieldId).ReferenceCategoryRowValue,
-                       Title = isTitleRef ? r.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId)
-                       : r.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == group.Key.CategoryFieldTitleId).ReferenceCategoryRowValue
+                       CategoryFieldId = group.Key.CategoryFieldId,
+                       CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
+                       Value = rv.CategoryRowId,
+                       Title = rv.Value
                    }).ToList();
-
-                lst = titles.Select(t => new MapTitleOutputModel
-                {
-                    CategoryFieldId = group.Key.CategoryFieldId,
-                    CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
-                    Value = t.Value.Value,
-                    Title = t.Title?.Value ?? string.Empty
-                }).ToList();
             }
             return lst;
         }
@@ -381,7 +371,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Duyệt danh sách field
             foreach (var field in categoryFields)
             {
-                bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
+                bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
                 {
@@ -396,15 +386,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     ValueInNumber = 0
                 };
 
-                if (isRef && valueItem.CategoryValueId > 0)
-                {
-                    categoryRowValue.ReferenceCategoryRowValueId = valueItem.CategoryValueId;
-                }
-                else if (isRef)
+                if (isRef)
                 {
                     // Thêm value
-                    categoryRowValue.Value = valueItem.Value;
-                    categoryRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
+                    categoryRowValue.ValueInNumber = valueItem.CategoryRowId;
+                    categoryRowValue.Value = valueItem.CategoryRowId.ToString();
                 }
                 else
                 {
@@ -414,7 +400,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         // Lấy ra value lớn nhất
                         long max = _accountingContext.CategoryRowValue.Where(v => v.CategoryFieldId == field.CategoryFieldId).Max(v => v.ValueInNumber);
-                        valueInNumber = (max / Numbers.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
+                        valueInNumber = (max / AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
                         value = valueInNumber.ToString();
                     }
                     else
@@ -458,14 +444,21 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var currentValues = _accountingContext.CategoryRowValue
                 .Where(rv => rv.CategoryRowId == categoryRowId)
                 .Include(rv => rv.CategoryField)
-                .Include(rv => rv.ReferenceCategoryRowValue)
+                .Join(_accountingContext.CategoryRowValue,
+                l => new { categoryRowId = (int)l.ValueInNumber, categoryFieldId = l.CategoryField.ReferenceCategoryTitleFieldId.Value },
+                r => new { categoryRowId = r.CategoryRowId, categoryFieldId = r.CategoryFieldId },
+                (l, r) => new
+                {
+                    Data = l,
+                    ReferData = r
+                })
                 .ToList();
 
             // Lấy các trường thay đổi
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                var currentValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
+                var currentValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == categoryField.CategoryFieldId);
                 var updateValue = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
 
                 if (currentValue != null || updateValue != null)
@@ -476,8 +469,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     }
                     else
                     {
-                        bool isRef = selectFormType.Contains((EnumFormType)categoryField.FormTypeId);
-                        if (isRef ? currentValue.ReferenceCategoryRowValue.Value != updateValue.Value : currentValue.Value != updateValue.Value)
+                        bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)categoryField.FormTypeId);
+                        if (isRef ? currentValue.ReferData.Value != updateValue.Value : currentValue.Data.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
                         }
@@ -494,99 +487,91 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             r = CheckRequired(data, requiredFields);
             if (!r.IsSuccess()) return r;
 
-            // Check unique
-            r = CheckUnique(data, uniqueFields, categoryRowId);
-            if (!r.IsSuccess()) return r;
-
             // Check refer
             r = CheckRefer(ref data, selectFields);
+            if (!r.IsSuccess()) return r;
+
+            // Check unique
+            r = CheckUnique(data, uniqueFields, categoryRowId);
             if (!r.IsSuccess()) return r;
 
             // Check value
             r = CheckValue(data, categoryFields);
             if (!r.IsSuccess()) return r;
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // Update parent id
+                categoryRow.ParentCategoryRowId = data.ParentCategoryRowId;
+
+                // Duyệt danh sách field
+                foreach (var field in updateFields)
                 {
-                    // Update parent id
-                    categoryRow.ParentCategoryRowId = data.ParentCategoryRowId;
+                    bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
+                    var oldValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == field.CategoryFieldId);
+                    var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
-                    // Duyệt danh sách field
-                    foreach (var field in updateFields)
+                    if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
                     {
-                        bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
-                        var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                        var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-
-                        if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
+                        continue;
+                    }
+                    else if (valueItem == null || string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
+                    {
+                        var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
+                        if (currentRowValue != null)
                         {
-                            continue;
-                        }
-                        else if (valueItem == null || string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
-                        {
-                            var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
-                            if (currentRowValue != null)
-                            {
-                                currentRowValue.IsDeleted = true;
-                                currentRowValue.UpdatedByUserId = updatedUserId;
-                            }
-                        }
-                        else if (oldValue == null) // Nếu giá trị cũ là null, tạo mới, map lại
-                        {
-                            CategoryRowValue categoryRowValue = new CategoryRowValue
-                            {
-                                CategoryFieldId = field.CategoryFieldId,
-                                CategoryRowId = categoryRowId,
-                                UpdatedByUserId = updatedUserId,
-                                CreatedByUserId = updatedUserId,
-                                ValueInNumber = 0
-                            };
-                            if (isRef && valueItem.CategoryValueId > 0)
-                            {
-                                categoryRowValue.ReferenceCategoryRowValueId = valueItem.CategoryValueId;
-                            }
-                            else
-                            {
-                                // Thêm value
-                                categoryRowValue.Value = valueItem.Value;
-                                categoryRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
-                            }
-                            _accountingContext.CategoryRowValue.Add(categoryRowValue);
-                        }
-                        else //nếu có giá trị cũ
-                        {
-                            var currentRowValue = _accountingContext.CategoryRowValue.First(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
-                            if (isRef && valueItem.CategoryValueId > 0) // và là loại ref và là nội bộ phân hệ
-                            {
-                                // Sửa mapping giá trị mới
-                                currentRowValue.Value = null;
-                                currentRowValue.ValueInNumber = 0;
-                                currentRowValue.ReferenceCategoryRowValueId = valueItem.CategoryValueId;
-                                currentRowValue.UpdatedByUserId = updatedUserId;
-                            }
-                            else // sửa sang value mới
-                            {
-                                currentRowValue.UpdatedByUserId = updatedUserId;
-                                currentRowValue.ReferenceCategoryRowValueId = null;
-                                string value = string.Empty;
-                                currentRowValue.Value = valueItem.Value;
-                                currentRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
-                            }
+                            currentRowValue.IsDeleted = true;
+                            currentRowValue.UpdatedByUserId = updatedUserId;
                         }
                     }
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryRow.CategoryRowId, $"Cập nhật dòng dữ liệu {categoryRow.CategoryRowId}", data.JsonSerialize());
-                    return GeneralCode.Success;
+                    else if (oldValue == null) // Nếu giá trị cũ là null, tạo mới, map lại
+                    {
+                        CategoryRowValue categoryRowValue = new CategoryRowValue
+                        {
+                            CategoryFieldId = field.CategoryFieldId,
+                            CategoryRowId = categoryRowId,
+                            UpdatedByUserId = updatedUserId,
+                            CreatedByUserId = updatedUserId,
+                            ValueInNumber = 0
+                        };
+                        if (isRef && valueItem.CategoryRowId > 0)
+                        {
+                            // Thêm value
+                            categoryRowValue.ValueInNumber = valueItem.CategoryRowId;
+                            categoryRowValue.Value = valueItem.CategoryRowId.ToString();
+                        }
+                        _accountingContext.CategoryRowValue.Add(categoryRowValue);
+                    }
+                    else //nếu có giá trị cũ
+                    {
+                        var currentRowValue = _accountingContext.CategoryRowValue.First(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
+                        if (isRef && valueItem.CategoryRowId > 0) // và là loại ref và là nội bộ phân hệ
+                        {
+                            // Sửa mapping giá trị mới
+                            currentRowValue.Value = null;
+                            currentRowValue.ValueInNumber = valueItem.CategoryRowId;
+                            currentRowValue.UpdatedByUserId = updatedUserId;
+                        }
+                        else // sửa sang value mới
+                        {
+                            currentRowValue.UpdatedByUserId = updatedUserId;
+                            string value = string.Empty;
+                            currentRowValue.Value = valueItem.Value;
+                            currentRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
+                        }
+                    }
                 }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
-                }
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryRow.CategoryRowId, $"Cập nhật dòng dữ liệu {categoryRow.CategoryRowId}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -607,9 +592,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (_accountingContext.CategoryField.Any(c => c.ReferenceCategoryFieldId == field.CategoryFieldId))
                 {
                     int valueId = _accountingContext.CategoryRowValue
-                        .Where(rv => rv.CategoryFieldId == field.CategoryFieldId && rv.CategoryRowId == categoryRowId)
-                        .Select(rv => rv.CategoryRowValueId).FirstOrDefault();
-                    bool isRefer = valueId > 0 && _accountingContext.CategoryRowValue.Any(rv => rv.ReferenceCategoryRowValueId == valueId && rv.CategoryRowId != categoryRowId);
+                        .FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId && rv.CategoryRowId == categoryRowId)
+                        .CategoryRowId;
+                    bool isRefer = valueId > 0 && _accountingContext.CategoryRowValue
+                        .Include(rv => rv.CategoryField)
+                        .Any(rv => AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)rv.CategoryField.FormTypeId) && (int)rv.ValueInNumber == valueId && rv.CategoryRowId != categoryRowId);
                     if (isRefer) return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
                 }
             }
@@ -671,60 +658,66 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                 if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
                 {
-                    bool isOutSide = false;
                     bool isExisted = false;
-                    int referValueId = 0;
+                    int referRowId = 0;
+
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
-                        CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
+                        int referenceFieldId = field.ReferenceCategoryTitleFieldId ?? field.ReferenceCategoryFieldId.Value;
+
+                        CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == referenceFieldId);
                         CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
-                        isOutSide = referCategory.IsOutSideData;
-                        bool isRef = selectFormType.Contains((EnumFormType)referField.FormTypeId) && !isOutSide;
-                        IQueryable<CategoryRow> query;
+                        bool isOutSide = referCategory.IsOutSideData;
+                        bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)referField.FormTypeId) && !isOutSide;
+
+                        IQueryable<CategoryRowValue> query;
+                        IQueryable<CategoryRowValue> filterQuery;
                         if (isOutSide)
                         {
-                            query = GetOutSideCategoryRows(referCategory.CategoryId);
+                            IQueryable<CategoryRow> categoryRows = GetOutSideCategoryRows(referCategory.CategoryId);
+
+                            filterQuery = categoryRows.SelectMany(r => r.CategoryRowValue);
+                            query = filterQuery.Where(rv => rv.CategoryFieldId == referenceFieldId);
                         }
                         else
                         {
-                            query = _accountingContext.CategoryRow
-                               .Where(r => r.CategoryId == referCategory.CategoryId)
-                               .Include(r => r.CategoryRowValue)
-                               .ThenInclude(rv => rv.ReferenceCategoryRowValue)
-                               .Include(r => r.CategoryRowValue)
-                               .ThenInclude(rv => rv.CategoryField);
+                            query = from rowValue in _accountingContext.CategoryRowValue
+                                    join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
+                                    where row.CategoryId == referCategory.CategoryId && rowValue.CategoryFieldId == referenceFieldId
+                                    select rowValue;
+
+                            filterQuery = from rowValue in _accountingContext.CategoryRowValue
+                                          join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
+                                          where row.CategoryId == referCategory.CategoryId
+                                          select rowValue;
                         }
 
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
-                            Clause filter = JsonConvert.DeserializeObject<Clause>(field.Filters);
-                            FillterProcess(ref query, filter);
+                            Clause filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                            List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
+                            query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
                         }
 
-                        isExisted = query.Any(r => r.CategoryRowValue.Any(
-                                rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
-                                && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)));
-
-                        if (isExisted && !isOutSide)
+                        if (valueItem.CategoryRowId > 0)
                         {
-                            referValueId = query
-                            .Where(r => r.CategoryRowValue.Any(
-                                rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value
-                                && (isRef ? rv.ReferenceCategoryRowValue.Value == valueItem.Value : rv.Value == valueItem.Value)
-                            ))
-                            .First()
-                            .CategoryRowValue
-                            .Where(rv => rv.CategoryFieldId == field.ReferenceCategoryFieldId.Value)
-                            .First()
-                            .CategoryRowValueId;
+                            isExisted = query.Any(r => r.CategoryRowId == valueItem.CategoryRowId);
                         }
+                        else
+                        {
+                            isExisted = query.Any(rv => rv.Value == valueItem.TitleValue);
 
+                            if (isExisted)
+                            {
+                                referRowId = query.First(rv => rv.Value == valueItem.TitleValue).CategoryRowId;
+                            }
+                        }
                     }
                     if (!isExisted)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
                     }
-                    valueItem.CategoryValueId = isOutSide ? 0 : referValueId;
+                    valueItem.CategoryRowId = referRowId;
                 }
             }
             return GeneralCode.Success;
@@ -733,15 +726,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         private Enum CheckUnique(CategoryRowInputModel data, IEnumerable<CategoryField> uniqueFields, int? categoryRowId = null)
         {
             // Check unique
-            foreach (var item in data.CategoryRowValues.Where(v => uniqueFields.Any(f => f.CategoryFieldId == v.CategoryFieldId)))
+            var uniqueValue = uniqueFields.Join(data.CategoryRowValues, f => f.CategoryFieldId, v => v.CategoryFieldId, (f, v) => new
             {
-                bool isExisted = _accountingContext.CategoryRowValue
-                    .Any(rv => (categoryRowId.HasValue ? rv.CategoryRowId != categoryRowId : true) && rv.CategoryFieldId == item.CategoryFieldId && rv.Value == item.Value);
-                if (isExisted)
-                {
-                    return CategoryErrorCode.UniqueValueAlreadyExisted;
-                }
+                IsRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId),
+                f.CategoryFieldId,
+                v.Value,
+                v.CategoryRowId
+            });
+
+            bool isExisted = (from rowValue in _accountingContext.CategoryRowValue
+                              where !categoryRowId.HasValue || rowValue.CategoryRowId != categoryRowId
+                              join uniq in uniqueValue on rowValue.CategoryFieldId equals uniq.CategoryFieldId
+                              where (uniq.IsRefer && rowValue.CategoryRowId == uniq.CategoryRowId) || (!uniq.IsRefer && rowValue.Value == uniq.Value)
+                              select new
+                              {
+                                  rowValue.CategoryRowValueId
+                              }).FirstOrDefault() != null;
+            if (isExisted)
+            {
+                return CategoryErrorCode.UniqueValueAlreadyExisted;
             }
+
             return GeneralCode.Success;
         }
 
@@ -853,12 +858,20 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 return (CategoryErrorCode.CategoryValueInValid, string.Format(errFormat, rowIndx + 1, CategoryErrorCode.CategoryValueInValid.GetEnumDescription()));
                             }
                         }
-                        rowInput.CategoryRowValues.Add(new CategoryValueModel
+
+                        CategoryValueInputModel rowValue = new CategoryValueInputModel
                         {
                             CategoryFieldId = field.CategoryFieldId,
-                            CategoryValueId = 0,
-                            Value = row[fieldIndx]
-                        });
+                        };
+                        if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId))
+                        {
+                            rowValue.TitleValue = row[fieldIndx];
+                        }
+                        else
+                        {
+                            rowValue.Value = row[fieldIndx];
+                        }
+                        rowInput.CategoryRowValues.Add(rowValue);
                     }
 
                     var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
@@ -975,8 +988,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin row
             var categoryRows = _accountingContext.CategoryRow
                 .Where(r => r.CategoryId == categoryId)
-                .Include(r => r.CategoryRowValue)
-                .ThenInclude(rv => rv.ReferenceCategoryRowValue);
+                .Include(r => r.CategoryRowValue);
 
             List<(string, byte[])[]> dataInRows = new List<(string, byte[])[]>();
             List<(string, byte[])> dataInRow = new List<(string, byte[])>();
@@ -991,12 +1003,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 dataInRow.Clear();
                 foreach (var field in categoryFields)
                 {
-                    bool isRef = selectFormType.Contains((EnumFormType)field.FormTypeId);
+                    bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                     var categoryValueRow = row.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == field.CategoryFieldId);
                     string value = string.Empty;
                     if (categoryValueRow != null)
                     {
-                        value = isRef && categoryValueRow.ReferenceCategoryRowValueId.HasValue ? categoryValueRow.ReferenceCategoryRowValue?.Value ?? string.Empty : categoryValueRow?.Value ?? string.Empty;
+                        value = categoryValueRow?.Value ?? string.Empty;
                     }
                     value = value.ConvertValueToData((EnumDataType)field.DataTypeId);
                     dataInRow.Add((value, null));

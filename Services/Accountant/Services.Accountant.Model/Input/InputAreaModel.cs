@@ -22,17 +22,21 @@ namespace VErp.Services.Accountant.Model.Input
         public int SortOrder { get; set; }
     }
 
-    public class InputAreaOutputModel : InputAreaInputModel
+    public class InputAreaModel : InputAreaInputModel
     {
-        public InputAreaOutputModel()
+        public InputAreaModel()
         {
             InputAreaFields = new List<InputAreaFieldOutputFullModel>();
         }
         public ICollection<InputAreaFieldOutputFullModel> InputAreaFields { get; set; }
+
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputArea, InputAreaOutputModel>()
+            profile.CreateMap<InputArea, InputAreaModel>()
                 .ForMember(dest => dest.InputAreaFields, opt => opt.MapFrom(src => src.InputAreaField));
         }
     }
+
+
+
 }
