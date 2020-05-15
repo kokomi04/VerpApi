@@ -21,6 +21,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.Master.Service.Config;
+using Verp.Cache.RedisCache;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -295,199 +296,208 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult<long>> Create(PurchasingSuggestInput model)
         {
-            model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
-            if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(0)))
             {
-                var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
-            }
-
-
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
-            {
-
-                var purchasingSuggest = new PurchasingSuggest()
+                model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
+                if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
                 {
-                    PurchasingSuggestCode = model.PurchasingSuggestCode,
-                    OrderCode = model.OrderCode,
-                    Content = model.Content,
-                    RejectCount = 0,
-                    PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff,
-                    IsApproved = null,
-                    PoProcessStatusId = null,
-                    IsDeleted = false,
-                    CreatedByUserId = _currentContext.UserId,
-                    UpdatedByUserId = _currentContext.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
-                };
-
-                await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d));
-
-                if (model.FileIds?.Count > 0)
-                {
-                    await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(model.FileIds.Select(f => new PurchasingSuggestFile()
-                    {
-                        FileId = f,
-                        PurchasingSuggestId = purchasingSuggest.PurchasingSuggestId
-                    }));
+                    var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode);
+                    if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
                 }
 
-                await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(purchasingSuggestDetailList);
-                await _purchaseOrderDBContext.SaveChangesAsync();
 
-                trans.Commit();
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+                {
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
+                    var purchasingSuggest = new PurchasingSuggest()
+                    {
+                        PurchasingSuggestCode = model.PurchasingSuggestCode,
+                        OrderCode = model.OrderCode,
+                        Content = model.Content,
+                        RejectCount = 0,
+                        PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff,
+                        IsApproved = null,
+                        PoProcessStatusId = null,
+                        IsDeleted = false,
+                        CreatedByUserId = _currentContext.UserId,
+                        UpdatedByUserId = _currentContext.UserId,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    };
 
-                return purchasingSuggest.PurchasingSuggestId;
+                    await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d));
+
+                    if (model.FileIds?.Count > 0)
+                    {
+                        await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(model.FileIds.Select(f => new PurchasingSuggestFile()
+                        {
+                            FileId = f,
+                            PurchasingSuggestId = purchasingSuggest.PurchasingSuggestId
+                        }));
+                    }
+
+                    await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(purchasingSuggestDetailList);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
+
+                    return purchasingSuggest.PurchasingSuggestId;
+                }
             }
         }
 
         public async Task<Enum> Update(long purchasingSuggestId, PurchasingSuggestInput model)
         {
-            model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
-            if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
-                var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
-            }
-
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
-            {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
-
-                info.PurchasingSuggestCode = model.PurchasingSuggestCode;
-                info.OrderCode = model.OrderCode;
-                info.Content = model.Content;
-                info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff;
-                info.IsApproved = null;
-                info.UpdatedByUserId = _currentContext.UserId;
-                info.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-                var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
-
-                var newDetails = new List<PurchasingSuggestDetail>();
-
-                foreach (var item in model.Details)
+                model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
+                if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
                 {
-                    var found = false;
-                    foreach (var detail in details)
+                    var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
+                    if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
+                }
+
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+                {
+                    var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
+                    if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+
+                    info.PurchasingSuggestCode = model.PurchasingSuggestCode;
+                    info.OrderCode = model.OrderCode;
+                    info.Content = model.Content;
+                    info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff;
+                    info.IsApproved = null;
+                    info.UpdatedByUserId = _currentContext.UserId;
+                    info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+                    var newDetails = new List<PurchasingSuggestDetail>();
+
+                    foreach (var item in model.Details)
                     {
-                        if (item.PurchasingSuggestDetailId == detail.PurchasingSuggestDetailId)
+                        var found = false;
+                        foreach (var detail in details)
                         {
-                            found = true;
-                            detail.ProductId = item.ProductId;
-                            detail.PrimaryQuantity = item.PrimaryQuantity;
-                            detail.UpdatedDatetimeUtc = DateTime.UtcNow;
-                            detail.CustomerId = item.CustomerId;
-                            detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
-                            detail.TaxInPercent = item.TaxInPercent;
-                            detail.TaxInMoney = item.TaxInMoney;
-                            detail.PurchasingRequestDetailId = item.PurchasingRequestDetailId;
-                            break;
+                            if (item.PurchasingSuggestDetailId == detail.PurchasingSuggestDetailId)
+                            {
+                                found = true;
+                                detail.ProductId = item.ProductId;
+                                detail.PrimaryQuantity = item.PrimaryQuantity;
+                                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+                                detail.CustomerId = item.CustomerId;
+                                detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
+                                detail.TaxInPercent = item.TaxInPercent;
+                                detail.TaxInMoney = item.TaxInMoney;
+                                detail.PurchasingRequestDetailId = item.PurchasingRequestDetailId;
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            newDetails.Add(PurchasingSuggestDetailObjectToEntity(purchasingSuggestId, item));
                         }
                     }
 
-                    if (!found)
+                    var updatedIds = model.Details.Select(d => d.PurchasingSuggestDetailId).ToList();
+
+                    var deleteDetails = details.Where(d => !updatedIds.Contains(d.PurchasingSuggestDetailId));
+
+                    if (!await ValidateInUsePurchasingSuggestDetail(deleteDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
                     {
-                        newDetails.Add(PurchasingSuggestDetailObjectToEntity(purchasingSuggestId, item));
+                        trans.Rollback();
+                        return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
                     }
-                }
 
-                var updatedIds = model.Details.Select(d => d.PurchasingSuggestDetailId).ToList();
-
-                var deleteDetails = details.Where(d => !updatedIds.Contains(d.PurchasingSuggestDetailId));
-
-                if (!await ValidateInUsePurchasingSuggestDetail(deleteDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
-                {
-                    trans.Rollback();
-                    return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
-                }
-
-                foreach (var detail in deleteDetails)
-                {
-                    detail.IsDeleted = true;
-                    detail.DeletedDatetimeUtc = DateTime.UtcNow;
-                }
-
-                var files = await _purchaseOrderDBContext.PurchasingSuggestFile.Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
-
-                var dbFileIds = files.Select(f => f.FileId).ToList();
-
-                if (model.FileIds?.Count > 0)
-                {
-                    var removeFiles = files.Where(f => !model.FileIds.Contains(f.FileId)).ToList();
-                    foreach (var f in removeFiles)
+                    foreach (var detail in deleteDetails)
                     {
-                        f.IsDeleted = true;
+                        detail.IsDeleted = true;
+                        detail.DeletedDatetimeUtc = DateTime.UtcNow;
                     }
-                    var newFileIds = model.FileIds.Where(f => !dbFileIds.Contains(f)).ToList();
-                    if (newFileIds.Count > 0)
+
+                    var files = await _purchaseOrderDBContext.PurchasingSuggestFile.Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+                    var dbFileIds = files.Select(f => f.FileId).ToList();
+
+                    if (model.FileIds?.Count > 0)
                     {
-                        await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(newFileIds.Select(f => new PurchasingSuggestFile()
+                        var removeFiles = files.Where(f => !model.FileIds.Contains(f.FileId)).ToList();
+                        foreach (var f in removeFiles)
                         {
-                            FileId = f,
-                            PurchasingSuggestId = purchasingSuggestId
-                        }));
+                            f.IsDeleted = true;
+                        }
+                        var newFileIds = model.FileIds.Where(f => !dbFileIds.Contains(f)).ToList();
+                        if (newFileIds.Count > 0)
+                        {
+                            await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(newFileIds.Select(f => new PurchasingSuggestFile()
+                            {
+                                FileId = f,
+                                PurchasingSuggestId = purchasingSuggestId
+                            }));
+                        }
                     }
-                }
-                else
-                {
-                    foreach (var f in files)
+                    else
                     {
-                        f.IsDeleted = true;
+                        foreach (var f in files)
+                        {
+                            f.IsDeleted = true;
+                        }
                     }
+
+                    await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(newDetails);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
+
+                    return GeneralCode.Success;
                 }
-
-                await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(newDetails);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
-
-                return GeneralCode.Success;
             }
         }
 
         public async Task<Enum> Delete(long purchasingSuggestId)
         {
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
-                var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
-
-
-                var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
-
-                if (!await ValidateInUsePurchasingSuggestDetail(oldDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
-                    trans.Rollback();
-                    return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
+                    var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
+                    if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+
+
+                    var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+
+                    if (!await ValidateInUsePurchasingSuggestDetail(oldDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
+                    {
+                        trans.Rollback();
+                        return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
+                    }
+
+                    info.IsDeleted = true;
+                    info.DeletedDatetimeUtc = DateTime.UtcNow;
+
+
+                    foreach (var item in oldDetails)
+                    {
+                        item.IsDeleted = true;
+                        item.DeletedDatetimeUtc = DateTime.UtcNow;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Xóa phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
+
+                    return GeneralCode.Success;
                 }
-
-                info.IsDeleted = true;
-                info.DeletedDatetimeUtc = DateTime.UtcNow;
-
-
-                foreach (var item in oldDetails)
-                {
-                    item.IsDeleted = true;
-                    item.DeletedDatetimeUtc = DateTime.UtcNow;
-                }
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Xóa phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
-
-                return GeneralCode.Success;
             }
         }
 
@@ -989,123 +999,127 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult<long>> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
         {
-
-            var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
-
-            if (!validate.IsSuccess())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
-                return validate;
-            }
+                var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
 
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
-            {
-                var poAssignment = new PoAssignment()
+                if (!validate.IsSuccess())
                 {
-                    PurchasingSuggestId = purchasingSuggestId,
-                    PoAssignmentCode = string.Empty,
-                    Date = null,
-                    Content = model.Content,
-                    AssigneeUserId = model.AssigneeUserId,
-                    PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff,
-                    IsConfirmed = null,
-                    CreatedByUserId = _currentContext.UserId,
-                    UpdatedByUserId = _currentContext.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
-                    DeletedDatetimeUtc = null
-                };
+                    return validate;
+                }
 
-                await _purchaseOrderDBContext.AddAsync(poAssignment);
-                await _purchaseOrderDBContext.SaveChangesAsync();
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+                {
+                    var poAssignment = new PoAssignment()
+                    {
+                        PurchasingSuggestId = purchasingSuggestId,
+                        PoAssignmentCode = string.Empty,
+                        Date = null,
+                        Content = model.Content,
+                        AssigneeUserId = model.AssigneeUserId,
+                        PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff,
+                        IsConfirmed = null,
+                        CreatedByUserId = _currentContext.UserId,
+                        UpdatedByUserId = _currentContext.UserId,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        IsDeleted = false,
+                        DeletedDatetimeUtc = null
+                    };
 
-                var poAssignmentDetails = model.Details.Select(d => PoAssimentDetailObjectToEntity(poAssignment.PoAssignmentId, d));
+                    await _purchaseOrderDBContext.AddAsync(poAssignment);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    var poAssignmentDetails = model.Details.Select(d => PoAssimentDetailObjectToEntity(poAssignment.PoAssignmentId, d));
 
 
-                await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(poAssignmentDetails);
-                await _purchaseOrderDBContext.SaveChangesAsync();
+                    await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(poAssignmentDetails);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
 
-                trans.Commit();
+                    trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignment.PoAssignmentId, $"Thêm phân công mua hàng {poAssignment.PoAssignmentCode}", model.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignment.PoAssignmentId, $"Thêm phân công mua hàng {poAssignment.PoAssignmentCode}", model.JsonSerialize());
 
-                return poAssignment.PoAssignmentId;
+                    return poAssignment.PoAssignmentId;
+                }
             }
         }
 
 
         public async Task<ServiceResult> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model)
         {
-
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
-                var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
-
-                if (!validate.IsSuccess())
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
-                    trans.Rollback();
-                    return validate;
-                }
+                    var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
 
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
-
-                if (assignmentInfo == null)
-                {
-                    return PurchasingSuggestErrorCode.PoAssignmentNotfound;
-                }
-
-                assignmentInfo.Date = null;
-                assignmentInfo.Content = model.Content;
-                assignmentInfo.AssigneeUserId = model.AssigneeUserId;
-                assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff;
-                assignmentInfo.IsConfirmed = null;
-                assignmentInfo.UpdatedByUserId = _currentContext.UserId;
-                assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-                var poAssignmentDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
-
-                var newDetails = new List<PoAssignmentDetail>();
-
-                foreach (var item in model.Details)
-                {
-                    var found = false;
-                    foreach (var detail in poAssignmentDetails)
+                    if (!validate.IsSuccess())
                     {
-                        if (item.PoAssignmentDetailId == detail.PoAssignmentDetailId)
+                        trans.Rollback();
+                        return validate;
+                    }
+
+                    var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
+
+                    if (assignmentInfo == null)
+                    {
+                        return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                    }
+
+                    assignmentInfo.Date = null;
+                    assignmentInfo.Content = model.Content;
+                    assignmentInfo.AssigneeUserId = model.AssigneeUserId;
+                    assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.Draff;
+                    assignmentInfo.IsConfirmed = null;
+                    assignmentInfo.UpdatedByUserId = _currentContext.UserId;
+                    assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                    var poAssignmentDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
+
+                    var newDetails = new List<PoAssignmentDetail>();
+
+                    foreach (var item in model.Details)
+                    {
+                        var found = false;
+                        foreach (var detail in poAssignmentDetails)
                         {
-                            found = true;
-                            detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId;
-                            detail.PrimaryQuantity = item.PrimaryQuantity;
-                            detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
-                            detail.TaxInPercent = item.TaxInPercent;
-                            detail.TaxInMoney = item.TaxInMoney;
-                            detail.UpdatedDatetimeUtc = DateTime.UtcNow;
-                            break;
+                            if (item.PoAssignmentDetailId == detail.PoAssignmentDetailId)
+                            {
+                                found = true;
+                                detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId;
+                                detail.PrimaryQuantity = item.PrimaryQuantity;
+                                detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
+                                detail.TaxInPercent = item.TaxInPercent;
+                                detail.TaxInMoney = item.TaxInMoney;
+                                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            newDetails.Add(PoAssimentDetailObjectToEntity(poAssignmentId, item));
                         }
                     }
 
-                    if (!found)
+                    var updatedIds = model.Details.Select(d => d.PoAssignmentDetailId).ToList();
+
+                    foreach (var detail in poAssignmentDetails.Where(d => !updatedIds.Contains(d.PoAssignmentDetailId)))
                     {
-                        newDetails.Add(PoAssimentDetailObjectToEntity(poAssignmentId, item));
+                        detail.IsDeleted = true;
+                        detail.DeletedDatetimeUtc = DateTime.UtcNow;
                     }
+
+                    await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(newDetails);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Cập nhật phân công mua hàng {assignmentInfo.PoAssignmentCode}", model.JsonSerialize());
+
+                    return GeneralCode.Success;
                 }
-
-                var updatedIds = model.Details.Select(d => d.PoAssignmentDetailId).ToList();
-
-                foreach (var detail in poAssignmentDetails.Where(d => !updatedIds.Contains(d.PoAssignmentDetailId)))
-                {
-                    detail.IsDeleted = true;
-                    detail.DeletedDatetimeUtc = DateTime.UtcNow;
-                }
-
-                await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(newDetails);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Cập nhật phân công mua hàng {assignmentInfo.PoAssignmentCode}", model.JsonSerialize());
-
-                return GeneralCode.Success;
             }
         }
 
@@ -1191,47 +1205,50 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult> PoAssignmentDelete(long purchasingSuggestId, long poAssignmentId)
         {
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
-                var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
-
-                if (assignmentInfo == null)
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
-                    return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                    var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
+
+                    if (assignmentInfo == null)
+                    {
+                        return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                    }
+
+                    if (assignmentInfo.PurchasingSuggestId != purchasingSuggestId)
+                    {
+                        return GeneralCode.InvalidParams;
+                    }
+
+                    var poAssignmentDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
+
+                    var deleteDetailIds = poAssignmentDetails.Select(d => d.PoAssignmentDetailId).ToList();
+
+                    if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
+                    {
+                        trans.Rollback();
+                        return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
+                    }
+
+                    assignmentInfo.IsDeleted = true;
+                    assignmentInfo.DeletedDatetimeUtc = DateTime.UtcNow;
+
+
+                    foreach (var detail in poAssignmentDetails)
+                    {
+                        detail.IsDeleted = true;
+                        detail.DeletedDatetimeUtc = DateTime.UtcNow;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xóa phân công mua hàng {assignmentInfo.PoAssignmentCode}", assignmentInfo.JsonSerialize());
+
+                    return GeneralCode.Success;
                 }
-
-                if (assignmentInfo.PurchasingSuggestId != purchasingSuggestId)
-                {
-                    return GeneralCode.InvalidParams;
-                }
-
-                var poAssignmentDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
-
-                var deleteDetailIds = poAssignmentDetails.Select(d => d.PoAssignmentDetailId).ToList();
-
-                if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
-                {
-                    trans.Rollback();
-                    return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
-                }
-
-                assignmentInfo.IsDeleted = true;
-                assignmentInfo.DeletedDatetimeUtc = DateTime.UtcNow;
-
-
-                foreach (var detail in poAssignmentDetails)
-                {
-                    detail.IsDeleted = true;
-                    detail.DeletedDatetimeUtc = DateTime.UtcNow;
-                }
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xóa phân công mua hàng {assignmentInfo.PoAssignmentCode}", assignmentInfo.JsonSerialize());
-
-                return GeneralCode.Success;
             }
         }
 

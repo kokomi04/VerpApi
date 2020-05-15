@@ -64,8 +64,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             data.ColumnsInList = await (
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
-                join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
+                join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId                
                 where t.InputTypeId == inputTypeId && !a.IsMultiRow
+                orderby a.SortOrder, f.SortOrder
                 select new InputTypeListColumn
                 {
                     InputAreaId = a.InputAreaId,
@@ -88,6 +89,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                           join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                           join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
                           where t.InputTypeId == inputTypeId && a.InputAreaId == firstArea.InputAreaId
+                          orderby a.SortOrder, f.SortOrder
                           select new InputTypeListColumn
                           {
                               InputAreaId = a.InputAreaId,
@@ -106,7 +108,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         }
 
 
-        public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, int orderByFieldId, bool asc, int page, int size)
+        public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderBy, bool asc, int page, int size)
         {
             var typeListInfo = await GetInputTypeListInfo(inputTypeId);
 
@@ -120,6 +122,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             b.InputValueBillId,
                             OrderValue = "",
                             OrderValueInNumber = 0L,
+                            b.CreatedDatetimeUtc
                         };
 
             foreach (var area in areas)
@@ -168,7 +171,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     Expression<Func<string>> valueLambda = () => firstValue;
 
-                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * 100000;
+                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
 
                     var lstValues = new List<string>();
 
@@ -254,7 +257,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
 
 
-                var sortField = area.Value.FirstOrDefault(f => f.InputAreaFieldId == orderByFieldId);
+                var sortField = area.Value.FirstOrDefault(f => f.FieldName == orderBy);
                 if (sortField != null)
                 {
                     var vMapFields = new Dictionary<string, string>();
@@ -274,12 +277,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         query = from b in query
                                 join r in _accountingContext.InputValueRow on b.InputValueBillId equals r.InputValueBillId
                                 join v in sortVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                                join n in versionsInNumbers on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId//where clause
                                 where r.InputAreaId == area.Key
                                 select new
                                 {
                                     b.InputValueBillId,
-                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
-                                    b.OrderValueInNumber
+                                    v.OrderValue,
+                                    b.OrderValueInNumber,//keep value is 0
+                                    b.CreatedDatetimeUtc
                                 };
                     }
                     else
@@ -294,8 +299,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 select new
                                 {
                                     b.InputValueBillId,
-                                    OrderValue = b.OrderValue == null ? v.OrderValue : b.OrderValue,
-                                    OrderValueInNumber = b.OrderValueInNumber == 0 ? n.OrderValueInNumber : b.OrderValueInNumber,
+                                    v.OrderValue,
+                                    n.OrderValueInNumber,//Get number
+                                    b.CreatedDatetimeUtc
                                 };
                     }
 
@@ -313,6 +319,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 b.InputValueBillId,
                                 b.OrderValue,
                                 b.OrderValueInNumber,
+                                b.CreatedDatetimeUtc
                             };
                 }
 
@@ -338,7 +345,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             var total = await query.CountAsync();
 
-            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue) : query.OrderByDescending(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue)).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await (asc ? query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc) : query.OrderByDescending(b => b.OrderValueInNumber).ThenByDescending(b => b.OrderValue).ThenByDescending(b => b.CreatedDatetimeUtc)).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var billIds = pagedData.Select(b => b.InputValueBillId).ToList();
             var rowData = (await (
