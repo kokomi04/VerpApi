@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -150,6 +151,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<int>> AddInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, InputAreaFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Check inputType
             if (!_accountingContext.InputType.Any(i => i.InputTypeId == inputTypeId))
             {
@@ -231,6 +233,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> UpdateInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
             if (inputAreaField == null)
             {
@@ -320,6 +323,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> DeleteInputAreaField(int updatedUserId, int inputTypeId, int inputAreaId, int inputAreaFieldId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
             if (inputAreaField == null)
             {

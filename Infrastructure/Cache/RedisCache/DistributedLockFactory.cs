@@ -80,6 +80,10 @@ namespace Verp.Cache.RedisCache
 
             }
         }
+        public static string GetLockCategoryKey(int categoryId)
+        {
+            return $"CATEGORY_LOCK_{categoryId}";
+        }
 
         public static string GetLockInputTypeKey(int inputTypeId)
         {

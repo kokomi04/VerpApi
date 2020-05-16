@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -68,6 +69,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<int>> AddInputArea(int updatedUserId, int inputTypeId, InputAreaInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var existedInput = await _accountingContext.InputArea
                 .FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && (a.InputAreaCode == data.InputAreaCode || a.Title == data.Title));
             if (existedInput != null)
@@ -106,6 +108,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> UpdateInputArea(int updatedUserId, int inputTypeId, int inputAreaId, InputAreaInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountingContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
             if (inputArea == null)
             {
@@ -153,6 +156,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> DeleteInputArea(int updatedUserId, int inputTypeId, int inputAreaId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountingContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
             if (inputArea == null)
             {

@@ -15,6 +15,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -476,6 +477,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<long>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Validate
             var inputType = _accountingContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
@@ -625,6 +627,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId, InputValueInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Lấy thông tin bill hiện tại
             var currentBill = _accountingContext.InputValueBill
                 .Where(b => b.InputValueBillId == inputValueBillId && b.InputTypeId == inputTypeId)

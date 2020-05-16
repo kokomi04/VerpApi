@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -83,6 +84,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<int>> AddCategory(int updatedUserId, CategoryModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             var existedCategory = await _accountingContext.Category
                 .FirstOrDefaultAsync(c => c.CategoryCode == data.CategoryCode || c.Title == data.Title);
             if (existedCategory != null)
@@ -185,6 +187,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountingContext.Category.Include(c => c.InverseParent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
@@ -322,6 +325,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> DeleteCategory(int updatedUserId, int categoryId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountingContext.Category.Include(c => c.Parent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
