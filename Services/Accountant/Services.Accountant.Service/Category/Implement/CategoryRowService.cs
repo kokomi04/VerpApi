@@ -375,7 +375,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if ((valueItem == null || (!isRef && string.IsNullOrEmpty(valueItem.Value)) || ( isRef && !valueItem.CategoryRowId.HasValue)) && !field.AutoIncrement)
+                if ((valueItem == null || (!isRef && string.IsNullOrEmpty(valueItem.Value)) || (isRef && !valueItem.CategoryRowId.HasValue)) && !field.AutoIncrement)
                 {
                     continue;
                 }
@@ -444,18 +444,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryFields = _accountingContext.CategoryField.Include(f => f.DataType).Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
 
             // Lấy thông tin value hiện tại
-            var currentValues = _accountingContext.CategoryRowValue
-                .Where(rv => rv.CategoryRowId == categoryRowId)
-                .Include(rv => rv.CategoryField)
-                .Join(_accountingContext.CategoryRowValue,
-                l => new { categoryRowId = (int)l.ValueInNumber, categoryFieldId = l.CategoryField.ReferenceCategoryTitleFieldId.Value },
-                r => new { categoryRowId = r.CategoryRowId, categoryFieldId = r.CategoryFieldId },
-                (l, r) => new
-                {
-                    Data = l,
-                    ReferData = r
-                })
-                .ToList();
+            var currentValues = (from rowValue in _accountingContext.CategoryRowValue
+                                 where rowValue.CategoryRowId == categoryRowId
+                                 join field in _accountingContext.CategoryField on rowValue.CategoryFieldId equals field.CategoryFieldId
+                                 join referRowValue in _accountingContext.CategoryRowValue
+                                 on new { categoryRowId = (int)rowValue.ValueInNumber, categoryFieldId = field.ReferenceCategoryTitleFieldId.Value }
+                                 equals new { categoryRowId = referRowValue.CategoryRowId, categoryFieldId = referRowValue.CategoryFieldId } into g
+                                 from subRefer in g.DefaultIfEmpty()
+                                 select new
+                                 {
+                                     Data = rowValue,
+                                     ReferData = subRefer
+                                 }).ToList();
 
             // Lấy các trường thay đổi
             List<CategoryField> updateFields = new List<CategoryField>();
@@ -473,7 +473,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)categoryField.FormTypeId);
-                        if (isRef ? currentValue.ReferData.Value != updateValue.Value : currentValue.Data.Value != updateValue.Value)
+                        if (isRef ? (currentValue.Data.Value != updateValue.CategoryRowId.ToString() 
+                            && currentValue.ReferData.Value != updateValue.TitleValue) : currentValue.Data.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
                         }
@@ -519,7 +520,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         continue;
                     }
-                    else if (valueItem == null || string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
+                    else if (valueItem == null || (!isRef && string.IsNullOrEmpty(valueItem.Value)))  // Xóa giá trị cũ
                     {
                         var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
                         if (currentRowValue != null)
@@ -552,14 +553,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         if (isRef && valueItem.CategoryRowId > 0) // và là loại ref và là nội bộ phân hệ
                         {
                             // Sửa mapping giá trị mới
-                            currentRowValue.Value = null;
+                            currentRowValue.Value = valueItem.CategoryRowId.Value.ToString();
                             currentRowValue.ValueInNumber = valueItem.CategoryRowId.Value;
-                            currentRowValue.UpdatedByUserId = updatedUserId;
                         }
                         else // sửa sang value mới
                         {
                             currentRowValue.UpdatedByUserId = updatedUserId;
-                            string value = string.Empty;
                             currentRowValue.Value = valueItem.Value;
                             currentRowValue.ValueInNumber = valueItem.Value.ConvertValueToNumber((EnumDataType)field.DataTypeId);
                         }
