@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -96,6 +97,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             // Check category
             if (!_accountingContext.Category.Any(c => c.CategoryId == categoryId))
             {
@@ -155,6 +157,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             if (categoryFieldId == data.ReferenceCategoryFieldId)
             {
                 return CategoryErrorCode.ReferenceFromItSelf;
@@ -228,6 +231,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
