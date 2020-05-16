@@ -228,7 +228,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
 
                 int[] rowIds = group.Select(g => g.Value).ToArray();
-                lst = query
+                var titles = query
                    .Where(rv => rowIds.Contains(rv.CategoryRowId))
                    .Select(rv => new MapTitleOutputModel
                    {
@@ -237,6 +237,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                        Value = rv.CategoryRowId,
                        Title = rv.Value
                    }).ToList();
+
+                lst.AddRange(titles);
             }
             return lst;
         }
