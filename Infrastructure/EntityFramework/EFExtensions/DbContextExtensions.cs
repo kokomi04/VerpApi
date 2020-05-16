@@ -170,9 +170,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     if (!o.Value.StartsWith('['))
                     {
                         // property "Field1"
-                        var fromField = typeof(T).GetProperty(o.Value);
+                        //var fromField = typeof(T).GetProperty(o.Value);
 
-                        xOriginal = Expression.Property(xParameter, fromField);
+                        //xOriginal = Expression.Property(xParameter, fromField);
+
+                        // property "Field1"
+                        var fields = o.Value.Split('.');
+
+                        xOriginal = (Expression)Expression.Property(xParameter, fields[0]);
+
+                        var obj = xOriginal;
+
+                        for (var i = 1; i < fields.Length; i++)
+                        {
+                            xOriginal = Expression.Property(obj, fields[i]);
+                        }
                     }
                     else
                     {
