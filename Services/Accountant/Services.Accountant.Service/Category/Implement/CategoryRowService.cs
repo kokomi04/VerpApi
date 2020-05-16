@@ -375,7 +375,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && !field.AutoIncrement)
+                if ((valueItem == null || (!isRef && string.IsNullOrEmpty(valueItem.Value)) || ( isRef && !valueItem.CategoryRowId.HasValue)) && !field.AutoIncrement)
                 {
                     continue;
                 }
@@ -515,7 +515,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var oldValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == field.CategoryFieldId);
                     var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
-                    if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
+                    if (field.AutoIncrement || ((valueItem == null || (!isRef && string.IsNullOrEmpty(valueItem.Value)) || (isRef && !valueItem.CategoryRowId.HasValue)) && oldValue == null))
                     {
                         continue;
                     }
@@ -660,7 +660,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in selectFields)
             {
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
+                if (valueItem != null && (!string.IsNullOrEmpty(valueItem.TitleValue) || valueItem.CategoryRowId.HasValue))
                 {
                     bool isExisted = false;
                     int referRowId = 0;
@@ -714,14 +714,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             if (isExisted)
                             {
                                 referRowId = query.First(rv => rv.Value == valueItem.TitleValue).CategoryRowId;
+
                             }
+                            valueItem.CategoryRowId = referRowId;
                         }
                     }
                     if (!isExisted)
                     {
                         return CategoryErrorCode.ReferValueNotFound;
                     }
-                    valueItem.CategoryRowId = referRowId;
+
                 }
             }
             return GeneralCode.Success;
@@ -730,7 +732,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         private Enum CheckUnique(CategoryRowInputModel data, IEnumerable<CategoryField> uniqueFields, int? categoryRowId = null)
         {
 
-           foreach(var field in uniqueFields)
+            foreach (var field in uniqueFields)
             {
                 bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
 
@@ -739,14 +741,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 bool isExisted = (from rowValue in _accountingContext.CategoryRowValue
                                   where (!categoryRowId.HasValue || rowValue.CategoryRowId != categoryRowId) && rowValue.CategoryFieldId == field.CategoryFieldId
                                   select rowValue)
-                                  .Any(r =>  (isRefer && values.Contains(r.CategoryRowId.ToString())) || (!isRefer && values.Contains(r.Value)));
+                                  .Any(r => (isRefer && values.Contains(r.CategoryRowId.ToString())) || (!isRefer && values.Contains(r.Value)));
                 if (isExisted)
                 {
                     return CategoryErrorCode.UniqueValueAlreadyExisted;
                 }
             }
 
-          
+
 
             return GeneralCode.Success;
         }
