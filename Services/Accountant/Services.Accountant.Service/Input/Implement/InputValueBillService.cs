@@ -68,7 +68,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         private async Task<IList<InputTypeListColumn>> GetInputTypeListColumn(int inputTypeId)
         {
-            var columnList = await(
+            var columnList = await (
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                 join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
@@ -90,7 +90,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 var firstArea = await _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).Select(a => new { a.InputAreaId }).FirstOrDefaultAsync();
                 if (firstArea != null)
                 {
-                    columnList = await(
+                    columnList = await (
                           from t in _accountingContext.InputType
                           join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                           join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
@@ -339,11 +339,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                             InputValueRowId = r.InputValueRowId,
                                             VersionNumber = n
                                         };
-           
+
 
                 var sortFieldName = GetFieldName(sortField.FieldIndex);
-              
-            
+
+
                 var sortVersion = versions.ProjectTo<InputValueBillOrderValueModel>(new MapperConfiguration(cfg =>
                 {
                     var map = cfg.CreateMap<InputValueRowVersionTextEntity, InputValueBillOrderValueModel>();
@@ -362,11 +362,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     var param = Expression.Parameter(typeof(InputValueRowVersionInNumberEntity), "f");
 
-                    var versionNumber = Expression.Property(param,nameof(InputValueRowVersionInNumberEntity.VersionNumber));
+                    var versionNumber = Expression.Property(param, nameof(InputValueRowVersionInNumberEntity.VersionNumber));
                     var field = Expression.Property(versionNumber, sortFieldName);
 
                     map.ForMember(nameof(InputValueBillOrderValueInNumberModel.OrderValueInNumber), m => m.MapFrom(Expression.Lambda<Func<InputValueRowVersionInNumberEntity, long>>(field, param)));
-                })); 
+                }));
                 //versionsInNumbers.DynamicSelectGenerator<InputValueRowVersionInNumberEntity, InputValueBillOrderValueInNumberModel>(nMapFields);
 
                 query = from b in query
@@ -378,7 +378,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         {
                             b.InputValueBillId,
                             OrderValue = v == null ? null : v.OrderValue,
-                           // OrderValueInNumber = 0L,
+                            // OrderValueInNumber = 0L,
                             OrderValueInNumber = n == null ? (long?)null : n.OrderValueInNumber,//Get number
                             b.CreatedDatetimeUtc
                         };
@@ -390,28 +390,36 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var total = await query.CountAsync();
 
             IQueryable<long> orderedInputValueRowIds;
-            if (TextDataTypes.Contains((EnumDataType)sortField.DataTypeId))
+
+            if (sortField != null)
             {
-                if (asc)
+                if (TextDataTypes.Contains((EnumDataType)sortField.DataTypeId))
                 {
-                    orderedInputValueRowIds = query.OrderBy(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    if (asc)
+                    {
+                        orderedInputValueRowIds = query.OrderBy(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    }
+                    else
+                    {
+                        orderedInputValueRowIds = query.OrderByDescending(b => b.OrderValue).ThenByDescending(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    }
+
                 }
                 else
                 {
-                    orderedInputValueRowIds = query.OrderByDescending(b => b.OrderValue).ThenByDescending(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    if (asc)
+                    {
+                        orderedInputValueRowIds = query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    }
+                    else
+                    {
+                        orderedInputValueRowIds = query.OrderByDescending(b => b.OrderValueInNumber).ThenByDescending(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
+                    }
                 }
-
             }
             else
             {
-                if (asc)
-                {
-                    orderedInputValueRowIds = query.OrderBy(b => b.OrderValueInNumber).ThenBy(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
-                }
-                else
-                {
-                    orderedInputValueRowIds = query.OrderByDescending(b => b.OrderValueInNumber).ThenByDescending(b => b.OrderValue).ThenBy(b => b.CreatedDatetimeUtc).Select(b => b.InputValueBillId);
-                }
+                orderedInputValueRowIds = query.Select(q => q.InputValueBillId);
             }
 
             var billIds = await orderedInputValueRowIds.Skip((page - 1) * size).Take(size).ToListAsync();
@@ -441,7 +449,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
 
 
-            var columnList = await  GetInputTypeListColumn(inputTypeId);
+            var columnList = await GetInputTypeListColumn(inputTypeId);
             var props = (
                 from c in columnList
                 join p in properties on c.FieldIndex equals p.Key
