@@ -391,7 +391,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (isRef)
                 {
                     // Thêm value
-                    categoryRowValue.ValueInNumber = valueItem.CategoryRowId;
+                    categoryRowValue.ValueInNumber = valueItem.CategoryRowId.Value;
                     categoryRowValue.Value = valueItem.CategoryRowId.ToString();
                 }
                 else
@@ -541,7 +541,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         if (isRef && valueItem.CategoryRowId > 0)
                         {
                             // Thêm value
-                            categoryRowValue.ValueInNumber = valueItem.CategoryRowId;
+                            categoryRowValue.ValueInNumber = valueItem.CategoryRowId.Value;
                             categoryRowValue.Value = valueItem.CategoryRowId.ToString();
                         }
                         _accountingContext.CategoryRowValue.Add(categoryRowValue);
@@ -553,7 +553,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             // Sửa mapping giá trị mới
                             currentRowValue.Value = null;
-                            currentRowValue.ValueInNumber = valueItem.CategoryRowId;
+                            currentRowValue.ValueInNumber = valueItem.CategoryRowId.Value;
                             currentRowValue.UpdatedByUserId = updatedUserId;
                         }
                         else // sửa sang value mới
@@ -729,34 +729,37 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         private Enum CheckUnique(CategoryRowInputModel data, IEnumerable<CategoryField> uniqueFields, int? categoryRowId = null)
         {
-            // Check unique
-            var uniqueValue = uniqueFields.Join(data.CategoryRowValues, f => f.CategoryFieldId, v => v.CategoryFieldId, (f, v) => new
-            {
-                IsRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId),
-                f.CategoryFieldId,
-                v.Value,
-                v.CategoryRowId
-            });
 
-            bool isExisted = (from rowValue in _accountingContext.CategoryRowValue
-                              where !categoryRowId.HasValue || rowValue.CategoryRowId != categoryRowId
-                              join uniq in uniqueValue on rowValue.CategoryFieldId equals uniq.CategoryFieldId
-                              where (uniq.IsRefer && rowValue.CategoryRowId == uniq.CategoryRowId) || (!uniq.IsRefer && rowValue.Value == uniq.Value)
-                              select new
-                              {
-                                  rowValue.CategoryRowValueId
-                              }).FirstOrDefault() != null;
-            if (isExisted)
+           foreach(var field in uniqueFields)
             {
-                return CategoryErrorCode.UniqueValueAlreadyExisted;
+                bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
+
+                string[] values = data.CategoryRowValues.Where(v => v.CategoryFieldId == field.CategoryFieldId).Select(v => isRefer ? v.CategoryRowId.ToString() : v.Value).ToArray();
+
+                bool isExisted = (from rowValue in _accountingContext.CategoryRowValue
+                                  where (!categoryRowId.HasValue || rowValue.CategoryRowId != categoryRowId) && rowValue.CategoryFieldId == field.CategoryFieldId
+                                  select rowValue)
+                                  .Any(r =>  (isRefer && values.Contains(r.CategoryRowId.ToString())) || (!isRefer && values.Contains(r.Value)));
+                if (isExisted)
+                {
+                    return CategoryErrorCode.UniqueValueAlreadyExisted;
+                }
             }
+
+          
 
             return GeneralCode.Success;
         }
 
         private Enum CheckRequired(CategoryRowInputModel data, IEnumerable<CategoryField> requiredFields)
         {
-            if (requiredFields.Count() > 0 && requiredFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrWhiteSpace(v.Value))))
+            var referFields = requiredFields.Where(f => AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId));
+            var inputFields = requiredFields.Where(f => !AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId));
+            if (referFields.Count() > 0 && referFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && (!string.IsNullOrEmpty(v.TitleValue) || v.CategoryRowId.HasValue))))
+            {
+                return CategoryErrorCode.RequiredFieldIsEmpty;
+            }
+            if (inputFields.Count() > 0 && inputFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrEmpty(v.Value))))
             {
                 return CategoryErrorCode.RequiredFieldIsEmpty;
             }

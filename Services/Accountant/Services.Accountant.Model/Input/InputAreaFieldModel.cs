@@ -8,6 +8,7 @@ namespace VErp.Services.Accountant.Model.Input
 {
     public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
     {
+        public int? InputAreaFieldId { get; set; }
         public int InputAreaId { get; set; }
         public int FieldIndex { get; set; }
         public int InputTypeId { get; set; }
@@ -37,7 +38,6 @@ namespace VErp.Services.Accountant.Model.Input
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
     {
-        public int InputAreaFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
 
         public void Mapping(Profile profile)
