@@ -517,7 +517,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult> Update(long purchaseOrderId, PurchaseOrderInput model)
         {
-            var validate = await ValidatePoModelInput(null, model);
+            var validate = await ValidatePoModelInput(purchaseOrderId, model);
 
             if (!validate.IsSuccess())
             {
