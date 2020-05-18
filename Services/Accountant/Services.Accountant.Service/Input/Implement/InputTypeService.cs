@@ -82,7 +82,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddInputType(int updatedUserId, InputTypeModel data)
+        public async Task<ServiceResult<int>> AddInputType(InputTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var existedInput = await _accountingContext.InputType
@@ -101,8 +101,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             try
             {
                 InputType inputType = _mapper.Map<InputType>(data);
-                inputType.UpdatedByUserId = updatedUserId;
-                inputType.CreatedByUserId = updatedUserId;
                 await _accountingContext.InputType.AddAsync(inputType);
                 await _accountingContext.SaveChangesAsync();
 
@@ -118,7 +116,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> UpdateInputType(int updatedUserId, int inputTypeId, InputTypeModel data)
+        public async Task<Enum> UpdateInputType(int inputTypeId, InputTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputType = await _accountingContext.InputType.FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
@@ -146,7 +144,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 inputType.InputTypeCode = data.InputTypeCode;
                 inputType.Title = data.Title;
-                inputType.UpdatedByUserId = updatedUserId;
                 inputType.SortOrder = data.SortOrder;
                 inputType.InputTypeGroupId = data.InputTypeGroupId;
 
@@ -164,7 +161,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> DeleteInputType(int updatedUserId, int inputTypeId)
+        public async Task<Enum> DeleteInputType(int inputTypeId)
         {
             var inputType = await _accountingContext.InputType.FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
@@ -180,7 +177,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputArea inputArea in inputAreas)
                 {
                     inputArea.IsDeleted = true;
-                    inputArea.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
                     // Xóa field
@@ -188,7 +184,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     foreach (InputAreaField inputAreaField in inputAreaFields)
                     {
                         inputAreaField.IsDeleted = true;
-                        inputAreaField.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
 
                     }
@@ -199,7 +194,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputValueBill inputValueBill in inputValueBills)
                 {
                     inputValueBill.IsDeleted = true;
-                    inputValueBill.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
                     // Xóa row
@@ -207,7 +201,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     foreach (InputValueRow inputValueRow in inputValueRows)
                     {
                         inputValueRow.IsDeleted = true;
-                        inputValueRow.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
 
                         // Xóa row version
@@ -215,14 +208,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
                         {
                             inputValueRowVersion.IsDeleted = true;
-                            inputValueRowVersion.UpdatedByUserId = updatedUserId;
                             await _accountingContext.SaveChangesAsync();
                         }
                     }
                 }
                 // Xóa type
                 inputType.IsDeleted = true;
-                inputType.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());

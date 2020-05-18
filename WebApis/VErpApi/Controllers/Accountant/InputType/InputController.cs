@@ -62,8 +62,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("")]
         public async Task<ServiceResult<int>> AddInputType([FromBody] InputTypeModel category)
         {
-            var updatedUserId = UserId;
-            return await _inputTypeService.AddInputType(updatedUserId, category);
+            return await _inputTypeService.AddInputType(category);
         }
 
         [HttpGet]
@@ -77,16 +76,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}")]
         public async Task<ServiceResult> UpdateInputType([FromRoute] int inputTypeId, [FromBody] InputTypeModel inputType)
         {
-            var updatedUserId = UserId;
-            return await _inputTypeService.UpdateInputType(updatedUserId, inputTypeId, inputType);
+            return await _inputTypeService.UpdateInputType(inputTypeId, inputType);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}")]
         public async Task<ServiceResult> DeleteInputType([FromRoute] int inputTypeId)
         {
-            var updatedUserId = UserId;
-            return await _inputTypeService.DeleteInputType(updatedUserId, inputTypeId);
+            return await _inputTypeService.DeleteInputType(inputTypeId);
         }
 
         [HttpGet]
@@ -145,24 +142,21 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/inputareas")]
         public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
         {
-            var updatedUserId = UserId;
-            return await _inputAreaService.AddInputArea(updatedUserId, inputTypeId, inputArea);
+            return await _inputAreaService.AddInputArea(inputTypeId, inputArea);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
         public async Task<ServiceResult> UpdateInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromBody] InputAreaInputModel inputArea)
         {
-            var updatedUserId = UserId;
-            return await _inputAreaService.UpdateInputArea(updatedUserId, inputTypeId, inputAreaId, inputArea);
+            return await _inputAreaService.UpdateInputArea(inputTypeId, inputAreaId, inputArea);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
         public async Task<ServiceResult> DeleteInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
-            var updatedUserId = UserId;
-            return await _inputAreaService.DeleteInputArea(updatedUserId, inputTypeId, inputAreaId);
+            return await _inputAreaService.DeleteInputArea(inputTypeId, inputAreaId);
         }
 
         [HttpGet]
@@ -242,24 +236,21 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/inputvaluebills")]
         public async Task<ServiceResult<long>> AddInputValueBill([FromRoute] int inputTypeId, [FromBody] InputValueInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _inputValueBillService.AddInputValueBill(updatedUserId, inputTypeId, data);
+            return await _inputValueBillService.AddInputValueBill(inputTypeId, data);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
         public async Task<ServiceResult<long>> UpdateInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId, [FromBody] InputValueInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _inputValueBillService.UpdateInputValueBill(updatedUserId, inputTypeId, inputValueBillId, data);
+            return await _inputValueBillService.UpdateInputValueBill(inputTypeId, inputValueBillId, data);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}/inputvaluebills/{inputValueBillId}")]
         public async Task<ServiceResult> DeleteInputValueBill([FromRoute] int inputTypeId, [FromRoute] long inputValueBillId)
         {
-            var updatedUserId = UserId;
-            return await _inputValueBillService.DeleteInputValueBill(updatedUserId, inputTypeId, inputValueBillId);
+            return await _inputValueBillService.DeleteInputValueBill(inputTypeId, inputValueBillId);
         }
     }
 }

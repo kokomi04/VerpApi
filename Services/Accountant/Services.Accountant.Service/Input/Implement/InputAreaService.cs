@@ -67,7 +67,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddInputArea(int updatedUserId, int inputTypeId, InputAreaInputModel data)
+        public async Task<ServiceResult<int>> AddInputArea(int inputTypeId, InputAreaInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var existedInput = await _accountingContext.InputArea
@@ -88,8 +88,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 {
                     InputArea inputArea = _mapper.Map<InputArea>(data);
                     inputArea.InputTypeId = inputTypeId;
-                    inputArea.UpdatedByUserId = updatedUserId;
-                    inputArea.CreatedByUserId = updatedUserId;
                     await _accountingContext.InputArea.AddAsync(inputArea);
                     await _accountingContext.SaveChangesAsync();
 
@@ -106,7 +104,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> UpdateInputArea(int updatedUserId, int inputTypeId, int inputAreaId, InputAreaInputModel data)
+        public async Task<Enum> UpdateInputArea(int inputTypeId, int inputAreaId, InputAreaInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountingContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
@@ -137,7 +135,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 inputArea.IsMultiRow = data.IsMultiRow;
                 inputArea.Columns = data.Columns;
                 inputArea.SortOrder = data.SortOrder;
-                inputArea.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -152,7 +149,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<Enum> DeleteInputArea(int updatedUserId, int inputTypeId, int inputAreaId)
+        public async Task<Enum> DeleteInputArea(int inputTypeId, int inputAreaId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountingContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
@@ -169,7 +166,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputAreaField inputAreaField in inputAreaFields)
                 {
                     inputAreaField.IsDeleted = true;
-                    inputAreaField.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
                 }
 
@@ -178,7 +174,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputValueRow inputValueRow in inputValueRows)
                 {
                     inputValueRow.IsDeleted = true;
-                    inputValueRow.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
 
                     // Xóa row version
@@ -186,14 +181,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
                     {
                         inputValueRowVersion.IsDeleted = true;
-                        inputValueRowVersion.UpdatedByUserId = updatedUserId;
                         await _accountingContext.SaveChangesAsync();
                     }
                 }
 
                 // Xóa area
                 inputArea.IsDeleted = true;
-                inputArea.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa chứng từ {inputArea.Title}", inputArea.JsonSerialize());

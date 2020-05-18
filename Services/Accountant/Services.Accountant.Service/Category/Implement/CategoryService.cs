@@ -83,7 +83,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddCategory(int updatedUserId, CategoryModel data)
+        public async Task<ServiceResult<int>> AddCategory(CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             var existedCategory = await _accountingContext.Category
@@ -145,21 +145,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 CategoryEntity category = _mapper.Map<CategoryEntity>(data);
                 category.IsModule = true;
-                category.UpdatedByUserId = updatedUserId;
-                category.CreatedByUserId = updatedUserId;
                 await _accountingContext.Category.AddAsync(category);
                 await _accountingContext.SaveChangesAsync();
                 foreach (var selectSubCategory in selectSubCategories)
                 {
                     selectSubCategory.ParentId = category.CategoryId;
-                    selectSubCategory.UpdatedByUserId = updatedUserId;
-                    selectSubCategory.CreatedByUserId = updatedUserId;
                 }
                 foreach (var newSubCategory in newSubCategories)
                 {
                     newSubCategory.ParentId = category.CategoryId;
-                    newSubCategory.UpdatedByUserId = updatedUserId;
-                    newSubCategory.CreatedByUserId = updatedUserId;
                     await _accountingContext.Category.AddAsync(newSubCategory);
                 }
 
@@ -212,7 +206,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         }
 
-        public async Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data)
+        public async Task<Enum> UpdateCategory(int categoryId, CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountingContext.Category.Include(c => c.InverseParent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
@@ -299,24 +293,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 category.IsReadonly = data.IsReadonly;
                 category.IsTreeView = data.IsTreeView;
                 category.IsOutSideData = data.IsOutSideData;
-                category.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 foreach (var item in deleteSubCategories)
                 {
                     var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
                     subCategory.ParentId = null;
-                    subCategory.UpdatedByUserId = updatedUserId;
                 }
                 foreach (var item in selectSubCategories)
                 {
                     item.ParentId = category.CategoryId;
-                    item.UpdatedByUserId = updatedUserId;
                 }
                 foreach (var newSubCategory in newSubCategories)
                 {
                     newSubCategory.ParentId = category.CategoryId;
-                    newSubCategory.UpdatedByUserId = updatedUserId;
-                    newSubCategory.CreatedByUserId = updatedUserId;
                     await _accountingContext.Category.AddAsync(newSubCategory);
                 }
 
@@ -374,7 +363,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> DeleteCategory(int updatedUserId, int categoryId)
+        public async Task<Enum> DeleteCategory(int categoryId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountingContext.Category.Include(c => c.Parent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
@@ -395,7 +384,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 foreach (CategoryEntity deleteCategory in deleteCategories)
                 {
                     deleteCategory.IsDeleted = true;
-                    deleteCategory.UpdatedByUserId = updatedUserId;
                     var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
                     foreach (var field in deleteFields)
                     {
@@ -406,7 +394,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
                         }
                         field.IsDeleted = true;
-                        field.UpdatedByUserId = updatedUserId;
                     }
                 }
 
@@ -415,14 +402,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 foreach (var row in categoryRows)
                 {
                     row.IsDeleted = true;
-                    row.UpdatedByUserId = updatedUserId;
 
                     // Xóa mapping row, value
                     var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
                     foreach (var rowValue in categoryRowValues)
                     {
                         rowValue.IsDeleted = true;
-                        rowValue.UpdatedByUserId = updatedUserId;
                     }
                 }
 
