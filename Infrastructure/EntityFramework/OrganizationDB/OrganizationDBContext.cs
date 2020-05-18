@@ -147,10 +147,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Description).HasMaxLength(128);
 
-                entity.Property(e => e.IsActived)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
-
                 entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Parent)

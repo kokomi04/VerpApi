@@ -16,7 +16,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string DepartmentName { get; set; }
         public string Description { get; set; }
         public int? ParentId { get; set; }
-        public bool? IsActived { get; set; }
+        public bool IsActived { get; set; }
         public bool IsDeleted { get; set; }
         public int UpdatedUserId { get; set; }
         public DateTime CreatedTime { get; set; }
