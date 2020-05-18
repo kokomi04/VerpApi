@@ -712,6 +712,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
 
             var inputAreaFields = _accountingContext.InputAreaField
+                .Include(f => f.DataType)
                 .Where(f => f.InputTypeId == inputTypeId).ToList();
 
 
