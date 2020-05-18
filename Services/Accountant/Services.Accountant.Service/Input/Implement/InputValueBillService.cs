@@ -845,7 +845,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             foreach (var field in requiredFields)
             {
-                bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
+                //bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                 var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
                 if (changeRows.Count() == 0)
@@ -855,9 +855,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var row in changeRows)
                 {
                     var fieldValue = row.Item1.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
-                    if (fieldValue == null
-                        || (!isRefer && string.IsNullOrEmpty(fieldValue.Value))
-                        || (isRefer && string.IsNullOrEmpty(fieldValue.TitleValue)))
+                    if (fieldValue == null || (string.IsNullOrEmpty(fieldValue.Value) && string.IsNullOrEmpty(fieldValue.TitleValue)))
                     {
                         return InputErrorCode.RequiredFieldIsEmpty;
                     }

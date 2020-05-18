@@ -86,7 +86,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var existedInput = await _accountingContext.InputType
-.FirstOrDefaultAsync(i => i.InputTypeCode == data.InputTypeCode || i.Title == data.Title);
+                .FirstOrDefaultAsync(i => i.InputTypeCode == data.InputTypeCode || i.Title == data.Title);
             if (existedInput != null)
             {
                 if (string.Compare(existedInput.InputTypeCode, data.InputTypeCode, StringComparison.OrdinalIgnoreCase) == 0)
@@ -236,8 +236,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
-
-
 
 
         public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)

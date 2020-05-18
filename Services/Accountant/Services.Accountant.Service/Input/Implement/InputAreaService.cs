@@ -129,28 +129,26 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
-                {
-                    inputArea.InputAreaCode = data.InputAreaCode;
-                    inputArea.Title = data.Title;
-                    inputArea.IsMultiRow = data.IsMultiRow;
-                    inputArea.Columns = data.Columns;
-                    inputArea.SortOrder = data.SortOrder;
-                    inputArea.UpdatedByUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
+                inputArea.InputAreaCode = data.InputAreaCode;
+                inputArea.Title = data.Title;
+                inputArea.IsMultiRow = data.IsMultiRow;
+                inputArea.Columns = data.Columns;
+                inputArea.SortOrder = data.SortOrder;
+                inputArea.UpdatedByUserId = updatedUserId;
+                await _accountingContext.SaveChangesAsync();
 
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Cập nhật vùng dữ liệu {inputArea.Title}", data.JsonSerialize());
-                    return GeneralCode.Success;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
-                }
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Cập nhật vùng dữ liệu {inputArea.Title}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -163,52 +161,50 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputAreaNotFound;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // Xóa field
+                List<InputAreaField> inputAreaFields = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).ToList();
+                foreach (InputAreaField inputAreaField in inputAreaFields)
                 {
-                    // Xóa field
-                    List<InputAreaField> inputAreaFields = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).ToList();
-                    foreach (InputAreaField inputAreaField in inputAreaFields)
-                    {
-                        inputAreaField.IsDeleted = true;
-                        inputAreaField.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-                    }
-
-                    // Xóa row
-                    List<InputValueRow> inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputAreaId == inputAreaId).ToList();
-                    foreach (InputValueRow inputValueRow in inputValueRows)
-                    {
-                        inputValueRow.IsDeleted = true;
-                        inputValueRow.UpdatedByUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-
-                        // Xóa row version
-                        List<InputValueRowVersion> inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == inputValueRow.InputValueRowId).ToList();
-                        foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
-                        {
-                            inputValueRowVersion.IsDeleted = true;
-                            inputValueRowVersion.UpdatedByUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
-                        }
-                    }
-
-                    // Xóa area
-                    inputArea.IsDeleted = true;
-                    inputArea.UpdatedByUserId = updatedUserId;
+                    inputAreaField.IsDeleted = true;
+                    inputAreaField.UpdatedByUserId = updatedUserId;
                     await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa chứng từ {inputArea.Title}", inputArea.JsonSerialize());
-                    return GeneralCode.Success;
+                }
 
-                }
-                catch (Exception ex)
+                // Xóa row
+                List<InputValueRow> inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputAreaId == inputAreaId).ToList();
+                foreach (InputValueRow inputValueRow in inputValueRows)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Delete");
-                    return GeneralCode.InternalError;
+                    inputValueRow.IsDeleted = true;
+                    inputValueRow.UpdatedByUserId = updatedUserId;
+                    await _accountingContext.SaveChangesAsync();
+
+                    // Xóa row version
+                    List<InputValueRowVersion> inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == inputValueRow.InputValueRowId).ToList();
+                    foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
+                    {
+                        inputValueRowVersion.IsDeleted = true;
+                        inputValueRowVersion.UpdatedByUserId = updatedUserId;
+                        await _accountingContext.SaveChangesAsync();
+                    }
                 }
+
+                // Xóa area
+                inputArea.IsDeleted = true;
+                inputArea.UpdatedByUserId = updatedUserId;
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa chứng từ {inputArea.Title}", inputArea.JsonSerialize());
+                return GeneralCode.Success;
+
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Delete");
+                return GeneralCode.InternalError;
             }
         }
     }
