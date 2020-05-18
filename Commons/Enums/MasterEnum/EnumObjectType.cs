@@ -97,6 +97,8 @@ namespace VErp.Commons.Enums.MasterEnum
         InputTypeGroup = 35,
         InputTypeView = 36,
 
-        Subsidiary = 41
+        Subsidiary = 41,
+
+        ObjectProcess = 42
     }
 }

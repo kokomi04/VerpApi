@@ -11,9 +11,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string AccountNumber { get; set; }
         public string SwiffCode { get; set; }
         public bool IsDeleted { get; set; }
+        public int UpdatedUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-        public int UpdatedUserId { get; set; }
+
         public virtual Customer Customer { get; set; }
     }
 }

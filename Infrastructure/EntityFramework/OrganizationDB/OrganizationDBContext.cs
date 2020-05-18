@@ -1,20 +1,11 @@
+using System;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using VErp.Infrastructure.EF.EFExtensions;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class OrganizationDBContext : DbContext
     {
-        public virtual DbSet<Customer> Customer { get; set; }
-        public virtual DbSet<CustomerContact> CustomerContact { get; set; }
-        public virtual DbSet<Employee> Employee { get; set; }
-        public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
-        public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
-        public virtual DbSet<Department> Department { get; set; }
-        public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
-		public virtual DbSet<Subsidiary> Subsidiary { get; set; }
-
         public OrganizationDBContext()
         {
         }
@@ -24,11 +15,56 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
         }
 
+        public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
+        public virtual DbSet<Customer> Customer { get; set; }
+        public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
+        public virtual DbSet<CustomerContact> CustomerContact { get; set; }
+        public virtual DbSet<Department> Department { get; set; }
+        public virtual DbSet<Employee> Employee { get; set; }
+        public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
+        public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
+        public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
+        public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
+        public virtual DbSet<Subsidiary> Subsidiary { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<BusinessInfo>(entity =>
+            {
+                entity.Property(e => e.Address)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CompanyName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Email)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.LegalRepresentative)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.PhoneNumber)
+                    .IsRequired()
+                    .HasMaxLength(32);
+
+                entity.Property(e => e.TaxIdNo)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Customer>(entity =>
             {
                 entity.Property(e => e.Address).HasMaxLength(128);
@@ -45,13 +81,38 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Email).HasMaxLength(128);
 
+                entity.Property(e => e.Identify).HasMaxLength(64);
+
+                entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
+
                 entity.Property(e => e.PhoneNumber).HasMaxLength(32);
 
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+            });
 
-                entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
+            modelBuilder.Entity<CustomerBankAccount>(entity =>
+            {
+                entity.Property(e => e.AccountNumber)
+                    .IsRequired()
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.BankName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.SwiffCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.CustomerBankAccount)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_BankAccount_Customer");
             });
 
             modelBuilder.Entity<CustomerContact>(entity =>
@@ -71,6 +132,33 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_CustomerContact_Customer");
             });
 
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.DepartmentCode)
+                    .IsRequired()
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.DepartmentName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(128);
+
+                entity.Property(e => e.IsActived)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Parent)
+                    .WithMany(p => p.InverseParent)
+                    .HasForeignKey(d => d.ParentId)
+                    .HasConstraintName("FK_Department_SelfKey");
+            });
+
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.HasKey(e => e.UserId);
@@ -88,68 +176,68 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Phone).HasMaxLength(64);
             });
 
-            modelBuilder.Entity<BusinessInfo>(entity =>
-            {
-                entity.Property(bi => bi.CompanyName).IsRequired().HasMaxLength(128);
-
-                entity.Property(bi => bi.LegalRepresentative).IsRequired().HasMaxLength(128);
-
-                entity.Property(bi => bi.Address).IsRequired().HasMaxLength(128);
-
-                entity.Property(bi => bi.TaxIdNo).IsRequired().HasMaxLength(64);
-
-                entity.Property(bi => bi.Website).HasMaxLength(128);
-
-                entity.Property(bi => bi.PhoneNumber).IsRequired().HasMaxLength(32);
-
-                entity.Property(bi => bi.Email).IsRequired().HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<CustomerBankAccount>(entity =>
-            {
-                entity.Property(ba => ba.BankName).IsRequired().HasMaxLength(128);
-
-                entity.Property(ba => ba.AccountNumber).IsRequired().HasMaxLength(32);
-
-                entity.Property(ba => ba.SwiffCode).IsRequired().HasMaxLength(64);
-
-                entity.HasOne(d => d.Customer)
-                    .WithMany(p => p.CustomerBankAccount)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_BankAccount_Customer");
-            });
-
-            modelBuilder.Entity<Department>(entity =>
-            {
-                entity.Property(d => d.DepartmentCode).IsRequired().HasMaxLength(32);
-
-                entity.Property(d => d.DepartmentName).IsRequired().HasMaxLength(128);
-
-                entity.Property(d => d.Description).HasMaxLength(128);
-
-                entity.HasOne(d => d.Parent)
-                  .WithMany(d => d.Childs)
-                  .HasForeignKey(d => d.ParentId)
-                  .OnDelete(DeleteBehavior.ClientSetNull)
-                  .HasConstraintName("FK_Department_SelfKey");
-            });
-
             modelBuilder.Entity<EmployeeDepartmentMapping>(entity =>
             {
-                entity.HasOne(m => m.Employee)
-                  .WithMany(e => e.EmployeeDepartmentMapping)
-                  .HasForeignKey(m => m.UserId)
-                  .OnDelete(DeleteBehavior.ClientSetNull)
-                  .HasConstraintName("FK_EmployeeDepartment_User");
-                entity.HasOne(m => m.Department)
-                 .WithMany(d => d.UserDepartmentMapping)
-                 .HasForeignKey(m => m.DepartmentId)
-                 .OnDelete(DeleteBehavior.ClientSetNull)
-                 .HasConstraintName("FK_EmployeeDepartment_Department");
+                entity.HasKey(e => e.UserDepartmentMappingId)
+                    .HasName("PK__UserDepa__3E005141E85C5CB7");
+
+                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
+
+                entity.Property(e => e.EffectiveDate).HasColumnType("date");
+
+                entity.Property(e => e.ExpirationDate).HasColumnType("date");
+
+                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Department)
+                    .WithMany(p => p.EmployeeDepartmentMapping)
+                    .HasForeignKey(d => d.DepartmentId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_EmployeeDepartment_Department");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.EmployeeDepartmentMapping)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_EmployeeDepartment_Employee");
             });
 
-			modelBuilder.Entity<Subsidiary>(entity =>
+            modelBuilder.Entity<ObjectProcessStep>(entity =>
+            {
+                entity.Property(e => e.ObjectProcessStepName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ObjectProcessStepDepend>(entity =>
+            {
+                entity.HasKey(e => new { e.ObjectProcessStepId, e.DependObjectProcessStepId });
+
+                entity.HasOne(d => d.DependObjectProcessStep)
+                    .WithMany(p => p.ObjectProcessStepDependDependObjectProcessStep)
+                    .HasForeignKey(d => d.DependObjectProcessStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ObjectProcessStepDepend_ObjectProcessStep1");
+
+                entity.HasOne(d => d.ObjectProcessStep)
+                    .WithMany(p => p.ObjectProcessStepDependObjectProcessStep)
+                    .HasForeignKey(d => d.ObjectProcessStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ObjectProcessStepDepend_ObjectProcessStep");
+            });
+
+            modelBuilder.Entity<ObjectProcessStepUser>(entity =>
+            {
+                entity.HasKey(e => new { e.ObjectProcessStepId, e.UserId });
+
+                entity.HasOne(d => d.ObjectProcessStep)
+                    .WithMany(p => p.ObjectProcessStepUser)
+                    .HasForeignKey(d => d.ObjectProcessStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ObjectProcessStepUser_ObjectProcessStep");
+            });
+
+            modelBuilder.Entity<Subsidiary>(entity =>
             {
                 entity.Property(e => e.Address).HasMaxLength(128);
 
@@ -172,7 +260,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.ParentSubsidiaryId)
                     .HasConstraintName("FK_Subsidiary_Subsidiary");
             });
-			
+
             OnModelCreatingPartial(modelBuilder);
         }
 
