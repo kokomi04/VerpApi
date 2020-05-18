@@ -69,7 +69,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 PurchasingRequestId = info.PurchasingRequestId,
                 PurchasingRequestCode = info.PurchasingRequestCode,
+                Date = info.Date.GetUnix(),
                 OrderCode = info.OrderCode,
+                ProductionOrderCode = info.ProductionOrderCode,
                 PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -152,7 +154,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -180,7 +184,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
+                            r.Date,
                             r.OrderCode,
+                            r.ProductionOrderCode,
                             r.PurchasingRequestCode,
                             r.Content,
                             r.PoProcessStatusId,
@@ -246,7 +252,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -306,6 +314,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestCode = model.PurchasingRequestCode,
                     OrderCode = model.OrderCode,
+                    Date = model.Date.UnixToDateTime(),
+                    ProductionOrderCode = model.ProductionOrderCode,
                     Content = model.Content,
                     RejectCount = 0,
                     PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff,
@@ -363,6 +373,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.PurchasingRequestCode = model.PurchasingRequestCode;
                 info.OrderCode = model.OrderCode;
+                info.Date = model.Date.UnixToDateTime();
+                info.ProductionOrderCode = model.ProductionOrderCode;
                 info.Content = model.Content;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
                 info.IsApproved = null;
