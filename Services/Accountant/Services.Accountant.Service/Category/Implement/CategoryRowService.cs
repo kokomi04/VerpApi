@@ -643,7 +643,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (valueItem != null && !string.IsNullOrEmpty(valueItem.TitleValue))
                 {
                     bool isExisted = false;
-                    int referRowId = 0;
 
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
@@ -672,7 +671,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
                         }
                         CategoryRow selectedItem = null;
-                        if (string.IsNullOrEmpty(valueItem.Value))
+                        if (!string.IsNullOrEmpty(valueItem.Value))
                         {
                             selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == valueItem.Value));
                         }
