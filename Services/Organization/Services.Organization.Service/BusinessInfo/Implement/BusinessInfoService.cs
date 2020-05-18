@@ -37,7 +37,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
         public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
         {
             var businessInfo = await _organizationContext.BusinessInfo.FirstOrDefaultAsync();
-            BusinessInfoModel result = null;
+            BusinessInfoModel result = new BusinessInfoModel(); ;
             if (businessInfo != null)
             {
                 result = new BusinessInfoModel

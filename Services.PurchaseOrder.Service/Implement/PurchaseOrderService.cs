@@ -327,6 +327,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     po.PurchaseOrderCode,
                     po.Date,
                     po.CustomerId,
+                    po.PaymentInfo,
+                    po.DeliveryDate,
+                    po.DeliveryUserId,
+                    po.DeliveryCustomerId,
                     po.DeliveryDestination,
                     po.Content,
                     po.AdditionNote,
@@ -374,6 +378,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchaseOrderCode = info.PurchaseOrderCode,
                 Date = info.Date.GetUnix(),
                 CustomerId = info.CustomerId,
+                PaymentInfo = info.PaymentInfo,
+
+                DeliveryDate = info.DeliveryDate?.GetUnix(),
+                DeliveryUserId = info.DeliveryUserId,
+                DeliveryCustomerId = info.DeliveryCustomerId,
+
                 DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
                 Content = info.Content,
                 AdditionNote = info.AdditionNote,
@@ -432,6 +442,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingSuggestId = poAssignmentDetails.FirstOrDefault()?.PurchasingSuggestId,
                     CustomerId = model.CustomerId,
                     Date = model.Date.UnixToDateTime(),
+                    PaymentInfo = model.PaymentInfo,
+                    DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
+                    DeliveryUserId = model.DeliveryUserId,
+                    DeliveryCustomerId = model.DeliveryCustomerId,
                     DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
                     Content = model.Content,
                     AdditionNote = model.AdditionNote,
@@ -451,6 +465,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeletedDatetimeUtc = null,
 
                 };
+
+                if (po.DeliveryDestination?.Length > 1024)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                }
 
                 await _purchaseOrderDBContext.AddAsync(po);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -498,7 +517,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult> Update(long purchaseOrderId, PurchaseOrderInput model)
         {
-            var validate = await ValidatePoModelInput(null, model);
+            var validate = await ValidatePoModelInput(purchaseOrderId, model);
 
             if (!validate.IsSuccess())
             {
@@ -531,6 +550,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.CustomerId = model.CustomerId;
                 info.Date = model.Date.UnixToDateTime();
+                info.PaymentInfo = model.PaymentInfo;
+                info.DeliveryDate = model.DeliveryDate?.UnixToDateTime();
+                info.DeliveryUserId = model.DeliveryUserId;
+                info.DeliveryCustomerId = model.DeliveryCustomerId;
+
                 info.DeliveryDestination = model.DeliveryDestination.JsonSerialize();
                 info.Content = model.Content;
                 info.AdditionNote = model.AdditionNote;
@@ -547,6 +571,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsDeleted = false;
                 info.DeletedDatetimeUtc = null;
 
+                if (info.DeliveryDestination?.Length > 1024)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                }
 
 
                 var details = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();

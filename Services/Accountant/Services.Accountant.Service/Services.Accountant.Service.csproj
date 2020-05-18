@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <LangVersion>latest</LangVersion>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>VErp.Services.Accountant.Service</RootNamespace>
     <AssemblyName>VErp.Services.Accountant.Service</AssemblyName>
@@ -11,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.Accountant.Model\Services.Accountant.Model.csproj" />

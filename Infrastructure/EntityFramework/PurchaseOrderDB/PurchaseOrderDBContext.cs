@@ -94,6 +94,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -132,6 +134,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchaseOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderDetail_PurchaseOrder");
+
+                entity.HasOne(d => d.PurchasingSuggestDetail)
+                    .WithMany(p => p.PurchaseOrderDetail)
+                    .HasForeignKey(d => d.PurchasingSuggestDetailId)
+                    .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
             });
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
@@ -152,6 +159,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             modelBuilder.Entity<PurchasingRequestDetail>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
@@ -194,6 +203,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.PurchasingRequestDetail)
+                    .WithMany(p => p.PurchasingSuggestDetail)
+                    .HasForeignKey(d => d.PurchasingRequestDetailId)
+                    .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingRequestDetail");
 
                 entity.HasOne(d => d.PurchasingSuggest)
                     .WithMany(p => p.PurchasingSuggestDetail)

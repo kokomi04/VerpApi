@@ -19,6 +19,8 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<PageData<PurchasingRequestOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
 
+        Task<IList<PurchasingRequestDetailInfo>> PurchasingRequestDetailInfo(IList<long> purchasingRequestDetailIds);
+
         Task<ServiceResult<long>> Create(PurchasingRequestInput model);
 
         Task<Enum> Update(long purchasingRequestId, PurchasingRequestInput model);              

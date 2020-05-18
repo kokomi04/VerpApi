@@ -31,11 +31,23 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
-        private static readonly Dictionary<EnumFileType, string[]> ValidFileExtensions = new Dictionary<EnumFileType, string[]>()
+
+
+        private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
         {
-            { EnumFileType.Image, new[] { ".jpg", ".jpeg", ".bmp", ".png" } },
-            { EnumFileType.Document, new[] { ".doc", ".docx", ".xls", ".xlsx" } }
+            { ".jpg", EnumFileType.Image },
+            { ".jpeg", EnumFileType.Image },
+            { ".bmp", EnumFileType.Image },
+            { ".png"  , EnumFileType.Image },
+
+            { ".doc" , EnumFileType.Document },
+            { ".docx", EnumFileType.Document },
+            { ".xls", EnumFileType.Document },
+            { ".xlsx" , EnumFileType.Document },
         };
+
+        private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
+
 
         public FileService(
             StockDBContext stockContext
@@ -85,7 +97,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             return lstData;
         }
-            
+
 
         public async Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId)
         {
@@ -139,11 +151,50 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             await _activityLogService.CreateLog(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson);
             return GeneralCode.Success;
         }
+
         public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        {
+            var ext = Path.GetExtension(file.FileName).ToLower();
+
+            if (!FileTypeExtensions.ContainsKey(fileTypeId))
+            {
+                return FileErrorCode.InvalidFileType;
+            }
+
+            if (!FileTypeExtensions[fileTypeId].Contains(ext))
+            {
+                return FileErrorCode.InvalidFileExtension;
+            }
+
+            return await Upload(objectTypeId, fileName, file);
+        }
+
+
+        public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
         {
             try
             {
-                var validate = ValidateUploadFile(fileTypeId, file);
+
+                //var fileType = EnumFileType.Image;
+
+                //switch (objectTypeId)
+                //{
+                //    case EnumObjectType.UserAndEmployee:
+                //    case EnumObjectType.BusinessInfo:
+                //        fileType = EnumFileType.Image;
+                //        break;
+
+                //    case EnumObjectType.PurchasingSuggest:
+                //    case EnumObjectType.PurchaseOrder:
+                //        fileType = EnumFileType.Document;
+                //        break;
+
+                //    default:
+                //        return null;
+                //}
+
+
+                var (validate, fileTypeId) = ValidateUploadFile(file);
                 if (!validate.IsSuccess())
                 {
                     return validate;
@@ -382,30 +433,30 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return relativeFilePath;
         }
 
-        private Enum ValidateUploadFile(EnumFileType fileTypeId, IFormFile uploadFile)
+        private (Enum, EnumFileType?) ValidateUploadFile(IFormFile uploadFile)
         {
             if (uploadFile == null || string.IsNullOrWhiteSpace(uploadFile.FileName) || uploadFile.Length == 0)
             {
-                return FileErrorCode.InvalidFile;
+                return (FileErrorCode.InvalidFile, null);
             }
             if (uploadFile.Length > _appSetting.Configuration.FileUploadMaxLength)
             {
-                return FileErrorCode.FileSizeExceededLimit;
+                return (FileErrorCode.FileSizeExceededLimit, null);
             }
 
             var ext = Path.GetExtension(uploadFile.FileName).ToLower();
 
-            if (!ValidFileExtensions.ContainsKey(fileTypeId))
+            if (!FileExtensionTypes.ContainsKey(ext))
             {
-                return FileErrorCode.InvalidFileType;
+                return (FileErrorCode.InvalidFileType, null);
             }
 
-            if (!ValidFileExtensions[fileTypeId].Contains(ext))
-            {
-                return FileErrorCode.InvalidFileExtension;
-            }
+            //if (!ValidFileExtensions.Values.Any(v => v.Contains(ext))
+            //{
+            //    return FileErrorCode.InvalidFileExtension;
+            //}
 
-            return GeneralCode.Success;
+            return (GeneralCode.Success, FileExtensionTypes[ext]);
         }
 
 

@@ -1,14 +1,38 @@
-﻿
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using AutoMapper;
+using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
-
 {
-    public class CategoryValueModel
+    public class CategoryValueModel : IMapFrom<CategoryRowValue>
     {
-        public int CategoryValueId { get; set; }
         public int CategoryFieldId { get; set; }
         public string Value { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<CategoryRowValue, CategoryValueModel>()
+                .ForMember(nameof(Value), opt => opt.MapFrom(src => src.Value ?? src.ValueInNumber.ToString()));
+        }
+
+    }
+
+    public class CategoryValueInputModel : CategoryValueModel
+    {
+        public int? CategoryRowId { get; set; }
+        public string TitleValue { get; set; }
+    }
+
+    public class MapTitleInputModel
+    {
+        public int CategoryFieldId { get; set; }
+        public int? CategoryFieldTitleId { get; set; }
+        public string Value { get; set; }
+    }
+
+    public class MapTitleOutputModel : MapTitleInputModel
+    {
+        public string Title { get; set; }
     }
 }

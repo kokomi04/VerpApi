@@ -69,7 +69,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         LegalRepresentative = data.LegalRepresentative,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
-                        CustomerStatusId = (int)data.CustomerStatusId
+                        CustomerStatusId = (int)data.CustomerStatusId,
+                        Identify = data.Identify
                     };
 
                     await _organizationContext.Customer.AddAsync(customer);
@@ -170,6 +171,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 Description = customerInfo.Description,
                 IsActived = customerInfo.IsActived,
                 CustomerStatusId = (EnumCustomerStatus)customerInfo.CustomerStatusId,
+                Identify = customerInfo.Identify,
                 Contacts = customerContacts.Select(c => new CustomerContactModel()
                 {
                     CustomerContactId = c.CustomerContactId,
@@ -207,6 +209,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                      PhoneNumber = c.PhoneNumber,
                      Website = c.Website,
                      Email = c.Email,
+                     Identify = c.Identify,
                      CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
              );
@@ -260,6 +263,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     PhoneNumber = c.PhoneNumber,
                     Website = c.Website,
                     Email = c.Email,
+                    Identify = c.Identify,
                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                 }
             ).ToListAsync();
@@ -302,6 +306,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     customerInfo.PhoneNumber = data.PhoneNumber;
                     customerInfo.Website = data.Website;
                     customerInfo.Email = data.Email;
+                    customerInfo.Identify = data.Identify;
                     customerInfo.Description = data.Description;
                     customerInfo.IsActived = data.IsActived;
                     customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;

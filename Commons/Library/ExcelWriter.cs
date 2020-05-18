@@ -33,17 +33,18 @@ namespace VErp.Commons.Library
                 int addCollumn = 0;
                 foreach ((string Value, byte[] Style) in row)
                 {
+                    int curCollumn = addCollumn + startCollumn;
+                    ICell cell = newRow.CreateCell(curCollumn);
+                    cell.SetCellValue(Value);
                     if (Style != null)
                     {
                         XSSFCellStyle cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
                         cellStyle.SetFillForegroundColor(new XSSFColor(Style));
                         cellStyle.FillPattern = FillPattern.SolidForeground;
-                        int curCollumn = addCollumn + startCollumn;
-                        ICell cell = newRow.CreateCell(curCollumn);
-                        cell.SetCellValue(Value);
-
                         cell.CellStyle = cellStyle;
                     }
+
+
                     addCollumn++;
                 }
                 addedRow++;

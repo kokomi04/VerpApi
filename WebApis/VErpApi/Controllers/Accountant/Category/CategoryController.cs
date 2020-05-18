@@ -14,6 +14,9 @@ using VErp.Services.Accountant.Model.Category;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using System;
+using Newtonsoft.Json;
+using System.IO;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -24,12 +27,10 @@ namespace VErpApi.Controllers.Accountant
         private readonly ICategoryService _categoryService;
         private readonly ICategoryFieldService _categoryFieldService;
         private readonly ICategoryRowService _categoryRowService;
-        private readonly ICategoryValueService _categoryValueService;
         private readonly IFileService _fileService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
             , ICategoryRowService categoryRowService
-            , ICategoryValueService categoryValueService
             , IFileService fileService
             )
         {
@@ -37,14 +38,6 @@ namespace VErpApi.Controllers.Accountant
             _categoryService = categoryService;
             _categoryFieldService = categoryFieldService;
             _categoryRowService = categoryRowService;
-            _categoryValueService = categoryValueService;
-        }
-
-        [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/reference")]
-        public async Task<ServiceResult<PageData<CategoryValueModel>>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _categoryValueService.GetReferenceValues(categoryId, categoryFieldId, keyword, page, size);
         }
 
         [HttpGet]
@@ -94,7 +87,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
             return await _categoryFieldService.GetCategoryField(categoryId, categoryFieldId);
         }
@@ -124,48 +117,15 @@ namespace VErpApi.Controllers.Accountant
         }
 
         [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues")]
-        public async Task<PageData<CategoryValueModel>> GetDefaultCategoryValues([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _categoryValueService.GetDefaultCategoryValues(categoryId, categoryFieldId, keyword, page, size);
-        }
-
-        [HttpGet]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult<CategoryValueModel>> GetDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId)
-        {
-            return await _categoryValueService.GetDefaultCategoryValue(categoryId, categoryFieldId, categoryValueId);
-        }
-
-        [HttpPost]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues")]
-        public async Task<ServiceResult<int>> AddDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromBody] CategoryValueModel data)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.AddDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, data);
-        }
-
-        [HttpPut]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult> UpdateDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId, [FromBody] CategoryValueModel data)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.UpdateDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, categoryValueId, data);
-        }
-
-        [HttpDelete]
-        [Route("{categoryId}/categoryfields/{categoryFieldId}/categoryvalues/{categoryValueId}")]
-        public async Task<ServiceResult> DeleteDefaultCategoryValue([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromRoute] int categoryValueId)
-        {
-            var updatedUserId = UserId;
-            return await _categoryValueService.DeleteDefaultCategoryValue(updatedUserId, categoryId, categoryFieldId, categoryValueId);
-        }
-
-        [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<CategoryRowOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryRowService.GetCategoryRows(categoryId, page, size);
+            Clause filterClause = null;
+            if (!string.IsNullOrEmpty(filters))
+            {
+                filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+            }
+            return await _categoryRowService.GetCategoryRows(categoryId, keyword, filterClause, page, size);
         }
 
         [HttpGet]
@@ -194,21 +154,22 @@ namespace VErpApi.Controllers.Accountant
                 await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(true);
             }
             return r;
-
         }
 
         [HttpGet]
-        [Route("{categoryId}/categoryrows/file")]
-        public async Task<IActionResult> GetImportTemplateCategoryRow([FromRoute] int categoryId)
+        [Route("{categoryId}/categoryrows/templatefile")]
+        public async Task<ServiceResult<MemoryStream>> GetImportTemplateCategory([FromRoute] int categoryId)
         {
-            var r = await _categoryRowService.GetImportTemplateCategoryRow(categoryId);
+            var r = await _categoryRowService.GetImportTemplateCategory(categoryId);
+            return r;
+        }
 
-            if (!r.IsSuccessCode())
-            {
-                return new JsonResult(r);
-            }
-            return File(r.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "template.xlsx");
-
+        [HttpGet]
+        [Route("{categoryId}/categoryrows/datafile")]
+        public async Task<ServiceResult<MemoryStream>> ExportCategoryRow([FromRoute] int categoryId)
+        {
+            var r = await _categoryRowService.ExportCategory(categoryId);
+            return r;
         }
 
 
@@ -228,6 +189,14 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryRowService.DeleteCategoryRow(updatedUserId, categoryId, categoryRowId);
         }
 
+        [HttpPost]
+        [Route("categoryvalues/maptitle")]
+        public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle([FromBody] MapTitleInputModel[] categoryValues)
+        {
+            return await _categoryRowService.MapTitle(categoryValues);
+        }
+
+
         [HttpGet]
         [Route("datatypes")]
         public async Task<ServiceResult<PageData<DataTypeModel>>> GetDataTypes([FromQuery] int page, [FromQuery] int size)
@@ -240,6 +209,27 @@ namespace VErpApi.Controllers.Accountant
         public async Task<ServiceResult<PageData<FormTypeModel>>> GetFormTypes([FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryService.GetFormTypes(page, size);
+        }
+
+        [HttpGet]
+        [Route("operators")]
+        public async Task<ServiceResult<PageData<OperatorModel>>> GetOperators([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetOperators(page, size);
+        }
+
+        [HttpGet]
+        [Route("logicoperators")]
+        public async Task<ServiceResult<PageData<LogicOperatorModel>>> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetLogicOperators(page, size);
+        }
+
+        [HttpGet]
+        [Route("moduletypes")]
+        public async Task<ServiceResult<PageData<ModuleTypeModel>>> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryService.GetModuleTypes(page, size);
         }
     }
 }
