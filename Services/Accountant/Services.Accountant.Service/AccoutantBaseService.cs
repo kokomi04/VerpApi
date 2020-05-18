@@ -234,12 +234,26 @@ namespace VErp.Services.Accountant.Service
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            var value = new CategoryRowValue
+                            CategoryRowValue value;
+                            if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                CategoryRowId = id,
-                                CategoryFieldId = field.CategoryFieldId,
-                                Value = properties[field.CategoryFieldName],
-                            };
+                                value = new CategoryRowValue
+                                {
+                                    CategoryRowId = id,
+                                    CategoryFieldId = field.CategoryFieldId,
+                                    Value = id.ToString()
+                                };
+                            }
+                            else
+                            {
+                                value = new CategoryRowValue
+                                {
+                                    CategoryRowId = id,
+                                    CategoryFieldId = field.CategoryFieldId,
+                                    Value = properties[field.CategoryFieldName],
+                                };
+                            }
+                           
                             categoryRow.CategoryRowValue.Add(value);
                         }
                         lst.Add(categoryRow);
