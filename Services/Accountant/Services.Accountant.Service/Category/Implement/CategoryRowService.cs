@@ -320,6 +320,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
+                .Include(f => f.DataType)
                 .Where(f => categoryIds.Contains(f.CategoryId))
                 .AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
@@ -330,14 +331,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             r = CheckRequired(data, requiredFields);
             if (!r.IsSuccess()) return r;
 
-            // Check unique
-            r = CheckUnique(data, uniqueFields);
-            if (!r.IsSuccess()) return r;
-
             // Check refer
             r = CheckRefer(ref data, selectFields);
             if (!r.IsSuccess()) return r;
 
+            // Check unique
+            r = CheckUnique(data, uniqueFields);
+            if (!r.IsSuccess()) return r;
+      
             // Check value
             r = CheckValue(data, categoryFields);
             if (!r.IsSuccess()) return r;
@@ -440,6 +441,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin field
             var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
             var categoryFields = _accountingContext.CategoryField
+                .Include(f => f.DataType)
                 .Where(f => categoryIds.Contains(f.CategoryId))
                 .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();
