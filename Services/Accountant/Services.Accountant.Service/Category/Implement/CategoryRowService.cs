@@ -788,6 +788,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var categoryFields = _accountingContext.CategoryField
                     .Include(f => f.DataType)
                     .Where(f => categoryIds.Contains(f.CategoryId))
+                    .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                     .ToList();
 
                 List<CategoryRowInputModel> rowInputs = new List<CategoryRowInputModel>();
@@ -914,6 +915,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryFields = _accountingContext.CategoryField
                 .Where(f => categoryIds.Contains(f.CategoryId))
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
+                .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();
             List<(string, byte[])[]> dataInRows = new List<(string, byte[])[]>();
             List<(string, byte[])> titles = new List<(string, byte[])>();
@@ -955,6 +957,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryFields = _accountingContext.CategoryField
                 .Where(f => categoryIds.Contains(f.CategoryId))
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
+                .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();
             // Lấy thông tin row
             var categoryRows = _accountingContext.CategoryRow
