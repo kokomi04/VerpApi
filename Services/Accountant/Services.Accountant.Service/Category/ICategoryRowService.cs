@@ -15,13 +15,13 @@ namespace VErp.Services.Accountant.Service.Category
 
         Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues);
 
-        Task<ServiceResult<int>> AddCategoryRow(int updatedUserId, int categoryId, CategoryRowInputModel data);
+        Task<ServiceResult<int>> AddCategoryRow(int categoryId, CategoryRowInputModel data);
 
-        Task<Enum> UpdateCategoryRow(int updatedUserId, int categoryId, int categoryRowId, CategoryRowInputModel data);
+        Task<Enum> UpdateCategoryRow(int categoryId, int categoryRowId, CategoryRowInputModel data);
 
-        Task<Enum> DeleteCategoryRow(int updatedUserId, int categoryId, int categoryRowId);
+        Task<Enum> DeleteCategoryRow(int categoryId, int categoryRowId);
 
-        Task<ServiceResult> ImportCategoryRow(int updatedUserId, int categoryId, Stream stream);
+        Task<ServiceResult> ImportCategoryRow(int categoryId, Stream stream);
 
         Task<ServiceResult<MemoryStream>> GetImportTemplateCategory(int categoryId);
 

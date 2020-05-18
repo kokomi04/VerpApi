@@ -171,6 +171,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
             }
+            if (categoryField.IsReadOnly)
+            {
+                return CategoryErrorCode.CategoryFieldReadOnly;
+            }
             if (data.ReferenceCategoryFieldId.HasValue && data.ReferenceCategoryFieldId != categoryField.ReferenceCategoryFieldId)
             {
                 var sourceCategoryField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId);

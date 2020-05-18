@@ -25,7 +25,6 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public int InputAreaFieldId { get; set; }
         public string Value { get; set; }
-        public int? CategoryRowId { get; set; }
         public string TitleValue { get; set; }
 
     }

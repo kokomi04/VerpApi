@@ -172,14 +172,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
 
                 // Thêm F_Identity
-                //CategoryField identityField = new CategoryField
-                //{
-                //    CategoryId = category.CategoryId,
-                //    CategoryFieldName = AccountantConstants.F_IDENTITY,
-                    
-                //}
-
-
+                if (category.IsModule)
+                {
+                   await AddIdentityFieldAsync(category.CategoryId);
+                }
+               
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
@@ -191,6 +188,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 _logger.LogError(ex, "Create");
                 return GeneralCode.InternalError;
             }
+        }
+
+        private async Task AddIdentityFieldAsync(int categoryId)
+        {
+            CategoryField identityField = new CategoryField
+            {
+                CategoryId = categoryId,
+                CategoryFieldName = AccountantConstants.F_IDENTITY,
+                Title = AccountantConstants.F_IDENTITY,
+                FormTypeId = (int)EnumFormType.Input,
+                DataTypeId = (int)EnumDataType.Number,
+                DataSize = -1,
+                IsHidden = true,
+                IsRequired = false,
+                IsUnique = false,
+                IsShowSearchTable = false,
+                IsTreeViewKey = false,
+                IsShowList = false,
+                IsReadOnly = true
+            };
+            await _accountingContext.CategoryField.AddAsync(identityField);
+
         }
 
         public async Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data)
@@ -269,6 +288,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.IsSubCategory;
             }
 
+            bool changeIsModule = category.IsModule != data.IsModule;
+
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
@@ -315,6 +336,28 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         config.Url = data.OutSideDataConfig.Url;
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
+                    }
+                }
+
+                if (changeIsModule)
+                {
+                    if (data.IsModule)
+                    {
+                        var identityField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldName == AccountantConstants.F_IDENTITY);
+                        if(identityField == null)
+                        {
+                            await AddIdentityFieldAsync(category.CategoryId);
+                        }
+                        else
+                        {
+                            identityField.IsDeleted = false;
+                            identityField.DeletedDatetimeUtc = null;
+                        }
+                    }
+                    else
+                    {
+                        var identityField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldName == AccountantConstants.F_IDENTITY);
+                        identityField.IsDeleted = true;
                     }
                 }
 

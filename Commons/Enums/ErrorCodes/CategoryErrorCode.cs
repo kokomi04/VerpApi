@@ -73,6 +73,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Lấy thông tin danh mục ngoài phân hệ thất bại")]
         CategoryIsOutSideDataError = 32,
         [Description("Dữ liệu cha không được là chính nó")]
-        ParentCategoryFromItSelf = 33
+        ParentCategoryFromItSelf = 33,
+        [Description("Trường dữ liệu không được phép thay đổi")]
+        CategoryFieldReadOnly = 44,
     }
 }

@@ -139,16 +139,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<int>> AddCategoryRow([FromRoute] int categoryId, [FromBody] CategoryRowInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.AddCategoryRow(updatedUserId, categoryId, data);
+            return await _categoryRowService.AddCategoryRow(categoryId, data);
         }
 
         [HttpPost]
         [Route("{categoryId}/categoryrows/file")]
         public async Task<ServiceResult> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
         {
-            var updatedUserId = UserId;
-            var r = await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
+            var r = await _categoryRowService.ImportCategoryRow(categoryId, file.OpenReadStream());
             if (r.IsSuccessCode())
             {
                 await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(true);
@@ -177,16 +175,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult> UpdateCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] CategoryRowInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.UpdateCategoryRow(updatedUserId, categoryId, categoryRowId, data);
+            return await _categoryRowService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.DeleteCategoryRow(updatedUserId, categoryId, categoryRowId);
+            return await _categoryRowService.DeleteCategoryRow(categoryId, categoryRowId);
         }
 
         [HttpPost]
