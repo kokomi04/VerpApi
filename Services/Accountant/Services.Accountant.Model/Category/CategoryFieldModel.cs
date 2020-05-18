@@ -30,6 +30,7 @@ namespace VErp.Services.Accountant.Model.Category
         public string Filters { get; set; }
         public bool IsTreeViewKey { get; set; }
         public bool IsIdentity { get; set; }
+        public bool IsReadOnly { get; set; }
     }
 
 

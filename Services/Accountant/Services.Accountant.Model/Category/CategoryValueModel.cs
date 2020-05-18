@@ -20,7 +20,6 @@ namespace VErp.Services.Accountant.Model.Category
 
     public class CategoryValueInputModel : CategoryValueModel
     {
-        public int? CategoryRowId { get; set; }
         public string TitleValue { get; set; }
     }
 

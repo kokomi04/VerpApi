@@ -41,6 +41,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsTreeViewKey { get; set; }
         public bool? IsShowSearchTable { get; set; }
+        public bool IsReadOnly { get; set; }
 
         public virtual Category Category { get; set; }
         public virtual DataType DataType { get; set; }
