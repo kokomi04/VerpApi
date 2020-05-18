@@ -209,33 +209,32 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId, v.CategoryFieldTitleId });
             foreach (var group in groups)
             {
-                int fieldViewId = group.Key.CategoryFieldTitleId ?? group.Key.CategoryFieldId;
-                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == fieldViewId);
+                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
+                CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
                 CategoryEntity category = GetReferenceCategory(field.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
-                IQueryable<CategoryRowValue> query;
+                IQueryable<CategoryRow> query;
                 if (isOutSide)
                 {
-                    query = GetOutSideCategoryRows(category.CategoryId).SelectMany(r => r.CategoryRowValue);
+                    query = GetOutSideCategoryRows(category.CategoryId);
                 }
                 else
                 {
-                    query = from rowValue in _accountingContext.CategoryRowValue
-                            join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
-                            where row.CategoryId == category.CategoryId && rowValue.CategoryFieldId == fieldViewId
-                            select rowValue;
+                    query = _accountingContext.CategoryRow
+                        .Where(r => r.CategoryId == category.CategoryId)
+                        .Include(r => r.CategoryRowValue);
                 }
 
-                int[] rowIds = group.Select(g => g.Value).ToArray();
+                string[] values = group.Select(g => g.Value).ToArray();
                 var titles = query
-                   .Where(rv => rowIds.Contains(rv.CategoryRowId))
-                   .Select(rv => new MapTitleOutputModel
+                   .Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)))
+                   .Select(r => new MapTitleOutputModel
                    {
                        CategoryFieldId = group.Key.CategoryFieldId,
                        CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
-                       Value = rv.CategoryRowId,
-                       Title = rv.Value
+                       Value = r.CategoryRowValue.First(rv => rv.CategoryFieldId == field.CategoryFieldId).Value,
+                       Title = r.CategoryRowValue.First(rv => rv.CategoryFieldId == titleField.CategoryFieldId).Value
                    }).ToList();
 
                 lst.AddRange(titles);
