@@ -596,7 +596,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             try
             {
                 // Insert bill
-                var inputValueBill = _mapper.Map<InputValueBill>(data);
+                var inputValueBill = new InputValueBill
+                {
+                    InputTypeId = inputTypeId
+                };
                 await _accountingContext.InputValueBill.AddAsync(inputValueBill);
                 await _accountingContext.SaveChangesAsync();
 
@@ -620,8 +623,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Insert row
             foreach (var rowModel in inputValueRows)
             {
-                var inputValueRow = _mapper.Map<InputValueRow>(rowModel);
-                inputValueRow.InputValueBillId = inputValueBillId;
+                var inputValueRow = new InputValueRow
+                {
+                    InputAreaId = rowModel.InputAreaId,
+                    InputValueBillId = inputValueBillId
+                };
                 await _accountingContext.InputValueRow.AddAsync(inputValueRow);
                 await _accountingContext.SaveChangesAsync();
 
@@ -891,11 +897,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
 
                 // Checkin unique trong db
-                var rvParam = Expression.Parameter(typeof(InputValueRowVersionNumber), "rvn");
+                var rvParam = Expression.Parameter(typeof(InputValueRowVersion), "rv");
                 var property = Expression.Property(rvParam, fieldName);
                 var methodInfo = typeof(List<string>).GetMethod("Contains");
 
-                Expression expression = Expression.Call(property, methodInfo, Expression.Constant(values));
+                Expression expression = Expression.Call(Expression.Constant(values), methodInfo, property);
                 isExisted = (from ver in _accountingContext.InputValueRowVersion
                              join row in _accountingContext.InputValueRow
                              on new { ver.InputValueRowId, inputValueRowVersionId = ver.InputValueRowVersionId }
@@ -919,14 +925,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Check refer
             foreach (var field in selectFields)
             {
-                string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
+                //string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
                 var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
                    .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
                 var fieldValues = changeRows
                        .SelectMany(r => r.Item1.Values)
                        .Where(v => v.InputAreaFieldId == field.InputAreaFieldId);
 
-                bool isExisted = false;
+                bool isExisted = true;
                 if (field.ReferenceCategoryFieldId.HasValue)
                 {
                     CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
