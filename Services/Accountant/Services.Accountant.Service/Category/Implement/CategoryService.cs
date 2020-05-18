@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -139,49 +140,56 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                category.IsModule = true;
+                category.UpdatedByUserId = updatedUserId;
+                category.CreatedByUserId = updatedUserId;
+                await _accountingContext.Category.AddAsync(category);
+                await _accountingContext.SaveChangesAsync();
+                foreach (var selectSubCategory in selectSubCategories)
                 {
-                    CategoryEntity category = _mapper.Map<CategoryEntity>(data);
-                    category.IsModule = true;
-                    category.UpdatedByUserId = updatedUserId;
-                    category.CreatedByUserId = updatedUserId;
-                    await _accountingContext.Category.AddAsync(category);
-                    await _accountingContext.SaveChangesAsync();
-                    foreach (var selectSubCategory in selectSubCategories)
-                    {
-                        selectSubCategory.ParentId = category.CategoryId;
-                        selectSubCategory.UpdatedByUserId = updatedUserId;
-                        selectSubCategory.CreatedByUserId = updatedUserId;
-                    }
-                    foreach (var newSubCategory in newSubCategories)
-                    {
-                        newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedByUserId = updatedUserId;
-                        newSubCategory.CreatedByUserId = updatedUserId;
-                        await _accountingContext.Category.AddAsync(newSubCategory);
-                    }
+                    selectSubCategory.ParentId = category.CategoryId;
+                    selectSubCategory.UpdatedByUserId = updatedUserId;
+                    selectSubCategory.CreatedByUserId = updatedUserId;
+                }
+                foreach (var newSubCategory in newSubCategories)
+                {
+                    newSubCategory.ParentId = category.CategoryId;
+                    newSubCategory.UpdatedByUserId = updatedUserId;
+                    newSubCategory.CreatedByUserId = updatedUserId;
+                    await _accountingContext.Category.AddAsync(newSubCategory);
+                }
 
-                    //Thêm config outside nếu là danh mục phân hệ khác
-                    if (category.IsOutSideData)
-                    {
-                        OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
-                        config.CategoryId = category.CategoryId;
-                        await _accountingContext.OutSideDataConfig.AddAsync(config);
-                    }
-                   
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
-                    return category.CategoryId;
-                }
-                catch (Exception ex)
+                // Thêm config outside nếu là danh mục phân hệ khác
+                if (category.IsOutSideData)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Create");
-                    return GeneralCode.InternalError;
+                    OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
+                    config.CategoryId = category.CategoryId;
+                    await _accountingContext.OutSideDataConfig.AddAsync(config);
                 }
+
+                // Thêm F_Identity
+                //CategoryField identityField = new CategoryField
+                //{
+                //    CategoryId = category.CategoryId,
+                //    CategoryFieldName = AccountantConstants.F_IDENTITY,
+                    
+                //}
+
+
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
+                return category.CategoryId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                return GeneralCode.InternalError;
             }
         }
 

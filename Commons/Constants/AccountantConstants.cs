@@ -11,5 +11,6 @@ namespace VErp.Commons.Constants
         public const int INPUT_TYPE_FIELD_NUMBER = 101;
         public const int CONVERT_VALUE_TO_NUMBER_FACTOR = 100000;
         public const string INPUT_TYPE_FIELDNAME_FORMAT = "Field{0}";
+        public const string F_IDENTITY = "F_Identity";
     }
 }
