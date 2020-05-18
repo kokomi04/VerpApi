@@ -717,16 +717,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         private Enum CheckRequired(CategoryRowInputModel data, IEnumerable<CategoryField> requiredFields)
         {
-            var referFields = requiredFields.Where(f => AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId));
-            var inputFields = requiredFields.Where(f => !AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId));
-            if (referFields.Count() > 0 && referFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && (!string.IsNullOrEmpty(v.TitleValue) || !string.IsNullOrEmpty(v.Value)))))
+            if (requiredFields.Count() > 0 && requiredFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && (!string.IsNullOrEmpty(v.TitleValue) || !string.IsNullOrEmpty(v.Value)))))
             {
                 return CategoryErrorCode.RequiredFieldIsEmpty;
             }
-            if (inputFields.Count() > 0 && inputFields.Any(rf => !data.CategoryRowValues.Any(v => v.CategoryFieldId == rf.CategoryFieldId && !string.IsNullOrEmpty(v.Value))))
-            {
-                return CategoryErrorCode.RequiredFieldIsEmpty;
-            }
+        
             return GeneralCode.Success;
         }
 

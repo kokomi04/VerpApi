@@ -57,13 +57,16 @@ namespace VErp.Services.Accountant.Model.Category
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var token = JToken.Load(reader);
-
             return ConvertToClause(token);
         }
 
         private Clause ConvertToClause(JToken token)
         {
             Clause resultClause = null;
+            if(!(token is JObject))
+            {
+                return null;
+            }
             var props = (token as JObject).Properties();
             bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
             bool isDouble = props.Any(c => c.Name.ToLower() == nameof(DoubleClause.LogicOperator).ToLower());
@@ -79,7 +82,7 @@ namespace VErp.Services.Accountant.Model.Category
                     Values = values.Values<string>().ToArray()
                 };
             }
-            else if(isDouble)
+            else if (isDouble)
             {
                 var leftClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.LeftClause).ToLower())?.Value ?? null;
                 var rightClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.RightClause).ToLower())?.Value ?? null;
@@ -94,12 +97,16 @@ namespace VErp.Services.Accountant.Model.Category
             else
             {
                 var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Clauses).ToLower())?.Value ?? null;
-                if(clauses != null)
+                if (clauses != null)
                 {
                     var arrClause = clauses.ToArray();
                     List<SameLeveClause> lstClause = new List<SameLeveClause>();
                     foreach (var item in arrClause)
                     {
+                        if (!(item is JObject))
+                        {
+                            continue;
+                        }
                         var itemProps = (item as JObject).Properties();
                         var clause = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(SameLeveClause.Clause).ToLower())?.Value ?? null;
                         var logicOperator = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(SameLeveClause.LogicOperator).ToLower())?.Value ?? null;
