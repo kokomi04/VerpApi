@@ -17,6 +17,7 @@ using System;
 using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -51,8 +52,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("")]
         public async Task<ServiceResult<int>> AddCategory([FromBody] CategoryModel category)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.AddCategory(updatedUserId, category);
+            return await _categoryService.AddCategory(category);
         }
 
         [HttpGet]
@@ -66,16 +66,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}")]
         public async Task<ServiceResult> UpdateCategory([FromRoute] int categoryId, [FromBody] CategoryModel category)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.UpdateCategory(updatedUserId, categoryId, category);
+            return await _categoryService.UpdateCategory(categoryId, category);
         }
 
         [HttpDelete]
         [Route("{categoryId}")]
         public async Task<ServiceResult> DeleteCategory([FromRoute] int categoryId)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.DeleteCategory(updatedUserId, categoryId);
+            return await _categoryService.DeleteCategory(categoryId);
         }
 
         [HttpGet]
@@ -96,27 +94,25 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields")]
         public async Task<ServiceResult<int>> AddCategoryField([FromRoute] int categoryId, [FromBody] CategoryFieldInputModel categoryField)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.AddCategoryField(updatedUserId, categoryId, categoryField);
+            return await _categoryFieldService.AddCategoryField(categoryId, categoryField);
         }
 
         [HttpPut]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult> UpdateCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromBody] CategoryFieldInputModel categoryField)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.UpdateCategoryField(updatedUserId, categoryId, categoryFieldId, categoryField);
+            return await _categoryFieldService.UpdateCategoryField(categoryId, categoryFieldId, categoryField);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult> DeleteCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.DeleteCategoryField(updatedUserId, categoryId, categoryFieldId);
+            return await _categoryFieldService.DeleteCategoryField(categoryId, categoryFieldId);
         }
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {

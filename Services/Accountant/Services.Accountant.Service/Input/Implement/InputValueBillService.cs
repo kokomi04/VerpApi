@@ -555,7 +555,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputValueOuputModel;
         }
 
-        public async Task<ServiceResult<long>> AddInputValueBill(int updatedUserId, int inputTypeId, InputValueInputModel data)
+        public async Task<ServiceResult<long>> AddInputValueBill(int inputTypeId, InputValueInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Validate
@@ -597,8 +597,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 // Insert bill
                 var inputValueBill = _mapper.Map<InputValueBill>(data);
-                inputValueBill.UpdatedByUserId = updatedUserId;
-                inputValueBill.CreatedByUserId = updatedUserId;
                 await _accountingContext.InputValueBill.AddAsync(inputValueBill);
                 await _accountingContext.SaveChangesAsync();
 
@@ -699,7 +697,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputValueRowVersionNumber;
         }
 
-        public async Task<Enum> UpdateInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId, InputValueInputModel data)
+        public async Task<Enum> UpdateInputValueBill(int inputTypeId, long inputValueBillId, InputValueInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Lấy thông tin bill hiện tại
@@ -1034,7 +1032,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<Enum> DeleteInputValueBill(int updatedUserId, int inputTypeId, long inputValueBillId)
+        public async Task<Enum> DeleteInputValueBill(int inputTypeId, long inputValueBillId)
         {
             // Lấy thông tin bill
             var inputValueBill = _accountingContext.InputValueBill.FirstOrDefault(i => i.InputTypeId == inputTypeId && i.InputValueBillId == inputValueBillId);
@@ -1048,21 +1046,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 // Delete bill
                 inputValueBill.IsDeleted = true;
-                inputValueBill.UpdatedByUserId = updatedUserId;
 
                 // Delete row
                 var inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputValueBillId == inputValueBillId).ToList();
                 foreach (var row in inputValueRows)
                 {
                     row.IsDeleted = true;
-                    row.UpdatedByUserId = updatedUserId;
 
                     // Delete row version
                     var inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == row.InputValueRowId).ToList();
                     foreach (var rowVersion in inputValueRowVersions)
                     {
                         rowVersion.IsDeleted = true;
-                        rowVersion.UpdatedByUserId = updatedUserId;
                     }
                 }
 
