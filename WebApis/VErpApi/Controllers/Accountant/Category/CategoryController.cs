@@ -111,8 +111,7 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryFieldService.DeleteCategoryField(categoryId, categoryFieldId);
         }
 
-        [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [HttpGet]
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
