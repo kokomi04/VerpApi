@@ -47,7 +47,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, ArrayClause filters, int page, int size)
+        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, Clause filters, int page, int size)
         {
             var total = 0;
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();

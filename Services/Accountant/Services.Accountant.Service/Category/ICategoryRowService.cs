@@ -9,7 +9,7 @@ namespace VErp.Services.Accountant.Service.Category
 {
     public interface ICategoryRowService
     {
-        Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, ArrayClause filters, int page, int size);
+        Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, Clause filters, int page, int size);
 
         Task<ServiceResult<CategoryRowOutputModel>> GetCategoryRow(int categoryId, int categoryRowId);
 
