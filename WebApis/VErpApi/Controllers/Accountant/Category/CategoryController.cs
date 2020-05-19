@@ -17,6 +17,7 @@ using System;
 using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -51,8 +52,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("")]
         public async Task<ServiceResult<int>> AddCategory([FromBody] CategoryModel category)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.AddCategory(updatedUserId, category);
+            return await _categoryService.AddCategory(category);
         }
 
         [HttpGet]
@@ -66,16 +66,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}")]
         public async Task<ServiceResult> UpdateCategory([FromRoute] int categoryId, [FromBody] CategoryModel category)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.UpdateCategory(updatedUserId, categoryId, category);
+            return await _categoryService.UpdateCategory(categoryId, category);
         }
 
         [HttpDelete]
         [Route("{categoryId}")]
         public async Task<ServiceResult> DeleteCategory([FromRoute] int categoryId)
         {
-            var updatedUserId = UserId;
-            return await _categoryService.DeleteCategory(updatedUserId, categoryId);
+            return await _categoryService.DeleteCategory(categoryId);
         }
 
         [HttpGet]
@@ -96,24 +94,21 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryfields")]
         public async Task<ServiceResult<int>> AddCategoryField([FromRoute] int categoryId, [FromBody] CategoryFieldInputModel categoryField)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.AddCategoryField(updatedUserId, categoryId, categoryField);
+            return await _categoryFieldService.AddCategoryField(categoryId, categoryField);
         }
 
         [HttpPut]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult> UpdateCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromBody] CategoryFieldInputModel categoryField)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.UpdateCategoryField(updatedUserId, categoryId, categoryFieldId, categoryField);
+            return await _categoryFieldService.UpdateCategoryField(categoryId, categoryFieldId, categoryField);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult> DeleteCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
-            var updatedUserId = UserId;
-            return await _categoryFieldService.DeleteCategoryField(updatedUserId, categoryId, categoryFieldId);
+            return await _categoryFieldService.DeleteCategoryField(categoryId, categoryFieldId);
         }
 
         [HttpGet]
@@ -139,16 +134,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<int>> AddCategoryRow([FromRoute] int categoryId, [FromBody] CategoryRowInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.AddCategoryRow(updatedUserId, categoryId, data);
+            return await _categoryRowService.AddCategoryRow(categoryId, data);
         }
 
         [HttpPost]
         [Route("{categoryId}/categoryrows/file")]
         public async Task<ServiceResult> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
         {
-            var updatedUserId = UserId;
-            var r = await _categoryRowService.ImportCategoryRow(updatedUserId, categoryId, file.OpenReadStream());
+            var r = await _categoryRowService.ImportCategoryRow(categoryId, file.OpenReadStream());
             if (r.IsSuccessCode())
             {
                 await _fileService.Upload(EnumObjectType.Category, EnumFileType.Document, file.FileName, file).ConfigureAwait(true);
@@ -177,16 +170,14 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult> UpdateCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] CategoryRowInputModel data)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.UpdateCategoryRow(updatedUserId, categoryId, categoryRowId, data);
+            return await _categoryRowService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
         {
-            var updatedUserId = UserId;
-            return await _categoryRowService.DeleteCategoryRow(updatedUserId, categoryId, categoryRowId);
+            return await _categoryRowService.DeleteCategoryRow(categoryId, categoryRowId);
         }
 
         [HttpPost]

@@ -10,7 +10,9 @@ namespace VErp.Services.PurchaseOrder.Model
     {
         public long PurchasingRequestId { get; set; }
         public string PurchasingRequestCode { get; set; }
+        public long Date { get; set; }
         public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
         public EnumPurchasingRequestStatus PurchasingRequestStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }

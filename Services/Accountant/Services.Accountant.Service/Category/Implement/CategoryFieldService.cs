@@ -95,7 +95,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return categoryField;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data)
+        public async Task<ServiceResult<int>> AddCategoryField(int categoryId, CategoryFieldInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             // Check category
@@ -137,8 +137,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 var categoryField = _mapper.Map<CategoryField>(data);
                 categoryField.CategoryId = categoryId;
-                categoryField.CreatedByUserId = updatedUserId;
-                categoryField.UpdatedByUserId = updatedUserId;
 
                 await _accountingContext.CategoryField.AddAsync(categoryField);
                 await _accountingContext.SaveChangesAsync();
@@ -155,7 +153,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data)
+        public async Task<Enum> UpdateCategoryField(int categoryId, int categoryFieldId, CategoryFieldInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             if (categoryFieldId == data.ReferenceCategoryFieldId)
@@ -170,6 +168,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (categoryField.CategoryFieldName != data.CategoryFieldName && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.CategoryFieldName == data.CategoryFieldName))
             {
                 return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
+            }
+            if (categoryField.IsReadOnly)
+            {
+                return CategoryErrorCode.CategoryFieldReadOnly;
             }
             if (data.ReferenceCategoryFieldId.HasValue && data.ReferenceCategoryFieldId != categoryField.ReferenceCategoryFieldId)
             {
@@ -214,7 +216,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 categoryField.Filters = data.Filters;
                 categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
                 categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
-                categoryField.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -229,7 +230,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId)
+        public async Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
@@ -253,11 +254,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 foreach (var rowFieldValue in rowFieldValues)
                 {
                     rowFieldValue.IsDeleted = true;
-                    rowFieldValue.UpdatedByUserId = updatedUserId;
                 }
                 // Delete field
                 categoryField.IsDeleted = true;
-                categoryField.UpdatedByUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());

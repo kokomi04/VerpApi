@@ -147,7 +147,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Date).HasDefaultValueSql("(getutcdate())");
+
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.PurchasingRequestCode)
                     .IsRequired()
@@ -179,7 +183,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Date).HasDefaultValueSql("(getutcdate())");
+
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.PurchasingSuggestCode)
                     .IsRequired()

@@ -22,6 +22,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.Master.Service.Config;
 using Verp.Cache.RedisCache;
+using NPOI.SS.Formula.Functions;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -79,7 +80,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 PurchasingSuggestId = info.PurchasingSuggestId,
                 PurchasingSuggestCode = info.PurchasingSuggestCode,
+                Date = info.Date.GetUnix(),
                 OrderCode = info.OrderCode,
+                ProductionOrderCode = info.ProductionOrderCode,
                 PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -166,7 +169,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingSuggestId = info.PurchasingSuggestId,
                     PurchasingSuggestCode = info.PurchasingSuggestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -193,7 +198,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             s.PurchasingSuggestId,
                             s.PurchasingSuggestStatusId,
+                            s.Date,
                             s.OrderCode,
+                            s.ProductionOrderCode,
                             s.PurchasingSuggestCode,
                             s.Content,
                             s.PoProcessStatusId,
@@ -265,7 +272,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingSuggestId = info.PurchasingSuggestId,
                     PurchasingSuggestCode = info.PurchasingSuggestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -312,7 +321,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var purchasingSuggest = new PurchasingSuggest()
                     {
                         PurchasingSuggestCode = model.PurchasingSuggestCode,
+                        Date = model.Date.UnixToDateTime(),
                         OrderCode = model.OrderCode,
+                        ProductionOrderCode = model.ProductionOrderCode,
                         Content = model.Content,
                         RejectCount = 0,
                         PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff,
@@ -368,7 +379,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                     info.PurchasingSuggestCode = model.PurchasingSuggestCode;
+                    info.Date = model.Date.UnixToDateTime();
                     info.OrderCode = model.OrderCode;
+                    info.ProductionOrderCode = model.ProductionOrderCode;
                     info.Content = model.Content;
                     info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Draff;
                     info.IsApproved = null;
@@ -628,7 +641,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     a.PoAssignmentId,
                     a.PurchasingSuggestId,
                     s.PurchasingSuggestCode,
+                    s.Date,
                     s.OrderCode,
+                    s.ProductionOrderCode,
                     a.PoAssignmentCode,
                     a.AssigneeUserId,
                     a.PoAssignmentStatusId,
@@ -693,7 +708,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PoAssignmentId = a.PoAssignmentId,
                 PurchasingSuggestId = a.PurchasingSuggestId,
                 PurchasingSuggestCode = a.PurchasingSuggestCode,
+                PurchasingSuggestDate = a.Date.GetUnix(),
                 OrderCode = a.OrderCode,
+                PurchasingSuggestProductionOrderCode = a.ProductionOrderCode,
                 PoAssignmentCode = a.PoAssignmentCode,
                 CreatedByUserId = a.CreatedByUserId,
                 AssigneeUserId = a.AssigneeUserId,
@@ -720,7 +737,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     a.PoAssignmentId,
                     a.PurchasingSuggestId,
                     s.PurchasingSuggestCode,
+                    s.Date,
                     s.OrderCode,
+                    s.ProductionOrderCode,
                     a.PoAssignmentCode,
                     a.AssigneeUserId,
                     a.PoAssignmentStatusId,
@@ -809,7 +828,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PoAssignmentId = a.PoAssignmentId,
                 PurchasingSuggestId = a.PurchasingSuggestId,
                 PurchasingSuggestCode = a.PurchasingSuggestCode,
+                PurchasingSuggestDate = a.Date.GetUnix(),
                 OrderCode = a.OrderCode,
+                PurchasingSuggestProductionOrderCode = a.ProductionOrderCode,
                 PoAssignmentCode = a.PoAssignmentCode,
                 CreatedByUserId = a.CreatedByUserId,
                 AssigneeUserId = a.AssigneeUserId,
@@ -886,7 +907,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PoAssignmentId = item.PoAssignmentId,
                     PurchasingSuggestId = item.PurchasingSuggestId,
                     PurchasingSuggestCode = suggestInfo.PurchasingSuggestCode,
+                    PurchasingSuggestDate = suggestInfo.Date.GetUnix(),
                     OrderCode = suggestInfo.OrderCode,
+                    PurchasingSuggestProductionOrderCode = suggestInfo.ProductionOrderCode,
                     PoAssignmentCode = item.PoAssignmentCode,
                     AssigneeUserId = item.AssigneeUserId,
                     IsConfirmed = item.IsConfirmed,
@@ -969,7 +992,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PoAssignmentId = assignmentInfo.PoAssignmentId,
                 PurchasingSuggestId = assignmentInfo.PurchasingSuggestId,
                 PurchasingSuggestCode = suggestInfo.PurchasingSuggestCode,
+                PurchasingSuggestDate = suggestInfo.Date.GetUnix(),
                 OrderCode = suggestInfo.OrderCode,
+                PurchasingSuggestProductionOrderCode = suggestInfo.ProductionOrderCode,
                 PoAssignmentCode = assignmentInfo.PoAssignmentCode,
                 AssigneeUserId = assignmentInfo.AssigneeUserId,
                 IsConfirmed = assignmentInfo.IsConfirmed,
