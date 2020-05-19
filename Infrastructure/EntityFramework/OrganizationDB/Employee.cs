@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
             EmployeeDepartmentMapping = new HashSet<EmployeeDepartmentMapping>();
         }
+
         public int UserId { get; set; }
         public string EmployeeCode { get; set; }
         public string FullName { get; set; }
@@ -19,7 +20,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public bool IsDeleted { get; set; }
         public long? AvatarFileId { get; set; }
 
-        //public virtual Gender Gender { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
     }
 }

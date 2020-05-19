@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
@@ -42,6 +43,7 @@ namespace VErpApi.Controllers.System
         /// <returns>
         /// </returns>
         [HttpGet]
+        [GlobalApi]
         [Route("")]
         public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
@@ -55,6 +57,7 @@ namespace VErpApi.Controllers.System
         /// <param name="userIds"></param>
         /// <returns></returns>
         [HttpPost]
+        [GlobalApi]
         [Route("GetListByUserIds")]
         public async Task<IList<UserInfoOutput>> GetListByUserIds([FromBody] IList<int> userIds)
         {
