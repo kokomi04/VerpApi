@@ -76,9 +76,8 @@ namespace VErp.Services.Accountant.Service
 
         public IQueryable<int> FilterClauseProcess(Clause clause, IQueryable<CategoryRowValue> query)
         {
-            IQueryable<int> exp = query.Select(rv => rv.CategoryRowId);
+            IQueryable<int> exp = null;
 
-            //Expression exp = Expression.Constant(true);
             if (clause != null)
             {
                 if (clause is SingleClause)
@@ -86,50 +85,28 @@ namespace VErp.Services.Accountant.Service
                     var singleClause = clause as SingleClause;
                     exp = BuildExpression(singleClause, query);
                 }
-                //else if (clause is DoubleClause)
-                //{
-                //    var filterClause = clause as DoubleClause;
-                //    IQueryable<int> leftExp = FilterClauseProcess(filterClause.LeftClause, query);
-                //    IQueryable<int> rightExp = FilterClauseProcess(filterClause.RightClause, query);
-                //    exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
-                //}
                 else if (clause is ArrayClause)
                 {
                     var arrClause = clause as ArrayClause;
-                    List<IQueryable<int>> expressions = new List<IQueryable<int>>();
-                    IQueryable<int> oldEx = null;
-                    EnumLogicOperator? logicOperator = EnumLogicOperator.And;
-                    foreach (var item in arrClause.Clauses)
+
+                    foreach (var item in arrClause.Rules)
                     {
-                        if (!logicOperator.HasValue)
+                        if (exp == null)
                         {
-                            break;
+                            exp = FilterClauseProcess(item, query);
                         }
-                        if (logicOperator == EnumLogicOperator.Or)
+                        else
                         {
-                            expressions.Add(oldEx);
-                            oldEx = FilterClauseProcess(item.Clause, query);
-                        }
-                        else if (logicOperator == EnumLogicOperator.And)
-                        {
-                            if (oldEx != null)
+                            if (arrClause.Condition == EnumLogicOperator.Or)
                             {
-                                oldEx = oldEx.Join(FilterClauseProcess(item.Clause, query), l => l, r => r, (l, r) => l);
+                                exp = exp.Union(FilterClauseProcess(item, query));
                             }
-                            else
+                            else if (arrClause.Condition == EnumLogicOperator.And)
                             {
-                                oldEx = FilterClauseProcess(item.Clause, query);
+                                exp = exp.Join(FilterClauseProcess(item, query), l => l, r => r, (l, r) => l);
                             }
                         }
-                        logicOperator = item.LogicOperator;
                     }
-                    expressions.Add(oldEx);
-                    exp = new List<int>().AsQueryable();
-                    foreach (var ex in expressions)
-                    {
-                        exp = exp.Union(ex);
-                    }
-                    return exp;
                 }
             }
             return exp;
@@ -143,31 +120,31 @@ namespace VErp.Services.Accountant.Service
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value == clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && rv.Value == (string)clause.Value).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.NotEqual:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value != clause.Values[0]).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && rv.Value != (string)clause.Value).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.Contains:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.Contains(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && rv.Value.Contains((string)clause.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.InList:
-                        List<string> values = clause.Values[0].Split(',').ToList();
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && values.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        List<string> values = ((string)clause.Value).Split(',').ToList();
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && values.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
-                            .Where(rv => rv.CategoryFieldId == clause.Key)
+                            .Where(rv => rv.CategoryFieldId == clause.Field)
                             .Select(rv => rv.Value)
                             .ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && isLeafValues.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && isLeafValues.Contains(rv.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.StartsWith:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.StartsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && rv.Value.StartsWith((string)clause.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.EndsWith:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Key && rv.Value.EndsWith(clause.Values[0])).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && rv.Value.EndsWith((string)clause.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     default:
                         expression = new List<int>().AsQueryable();
@@ -253,7 +230,7 @@ namespace VErp.Services.Accountant.Service
                                     Value = properties[field.CategoryFieldName],
                                 };
                             }
-                           
+
                             categoryRow.CategoryRowValue.Add(value);
                         }
                         lst.Add(categoryRow);
