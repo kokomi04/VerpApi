@@ -703,7 +703,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputValueRowVersionNumber;
         }
 
-        public async Task<Enum> UpdateInputValueBill(int inputTypeId, long inputValueBillId, InputValueInputModel data)
+        public async Task<ServiceResult<long>> UpdateInputValueBill(int inputTypeId, long inputValueBillId, InputValueInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Lấy thông tin bill hiện tại
@@ -814,7 +814,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, currentBill.InputValueBillId, $"Cập nhật chứng từ {currentBill.InputValueBillId}", data.JsonSerialize());
-                return GeneralCode.Success;
+                return currentBill.InputValueBillId;
             }
             catch (Exception ex)
             {
