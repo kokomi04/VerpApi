@@ -86,13 +86,13 @@ namespace VErp.Services.Accountant.Service
                     var singleClause = clause as SingleClause;
                     exp = BuildExpression(singleClause, query);
                 }
-                else if (clause is DoubleClause)
-                {
-                    var filterClause = clause as DoubleClause;
-                    IQueryable<int> leftExp = FilterClauseProcess(filterClause.LeftClause, query);
-                    IQueryable<int> rightExp = FilterClauseProcess(filterClause.RightClause, query);
-                    exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
-                }
+                //else if (clause is DoubleClause)
+                //{
+                //    var filterClause = clause as DoubleClause;
+                //    IQueryable<int> leftExp = FilterClauseProcess(filterClause.LeftClause, query);
+                //    IQueryable<int> rightExp = FilterClauseProcess(filterClause.RightClause, query);
+                //    exp = MergeExpression(leftExp, rightExp, filterClause.LogicOperator);
+                //}
                 else if (clause is ArrayClause)
                 {
                     var arrClause = clause as ArrayClause;

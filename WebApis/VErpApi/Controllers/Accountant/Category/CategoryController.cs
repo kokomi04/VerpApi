@@ -115,10 +115,10 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows")]
         public async Task<ServiceResult<PageData<CategoryRowListOutputModel>>> GetCategoryRows([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
-            Clause filterClause = null;
+            ArrayClause filterClause = null;
             if (!string.IsNullOrEmpty(filters))
             {
-                filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                filterClause = JsonConvert.DeserializeObject<ArrayClause>(filters);
             }
             return await _categoryRowService.GetCategoryRows(categoryId, keyword, filterClause, page, size);
         }

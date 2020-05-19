@@ -22,7 +22,7 @@ namespace VErp.Services.Accountant.Model.Category
         public string[] Values { get; set; }
     }
 
-    public class SameLeveClause
+    public class ItemClause
     {
         public Clause Clause { get; set; }
         public EnumLogicOperator? LogicOperator { get; set; }
@@ -30,15 +30,15 @@ namespace VErp.Services.Accountant.Model.Category
 
     public class ArrayClause : Clause
     {
-        public SameLeveClause[] Clauses { get; set; }
+        public ItemClause[] Clauses { get; set; }
     }
 
-    public class DoubleClause : Clause
-    {
-        public Clause LeftClause { get; set; }
-        public EnumLogicOperator? LogicOperator { get; set; }
-        public Clause RightClause { get; set; }
-    }
+    //public class DoubleClause : Clause
+    //{
+    //    public Clause LeftClause { get; set; }
+    //    public EnumLogicOperator? LogicOperator { get; set; }
+    //    public Clause RightClause { get; set; }
+    //}
 
 
     public class ClauseConverter : JsonConverter
@@ -69,7 +69,7 @@ namespace VErp.Services.Accountant.Model.Category
             }
             var props = (token as JObject).Properties();
             bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
-            bool isDouble = props.Any(c => c.Name.ToLower() == nameof(DoubleClause.LogicOperator).ToLower());
+            //bool isDouble = props.Any(c => c.Name.ToLower() == nameof(DoubleClause.LogicOperator).ToLower());
             if (isSingle)
             {
                 var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.Key).ToLower()).Value;
@@ -82,25 +82,25 @@ namespace VErp.Services.Accountant.Model.Category
                     Values = values.Values<string>().ToArray()
                 };
             }
-            else if (isDouble)
-            {
-                var leftClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.LeftClause).ToLower())?.Value ?? null;
-                var rightClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.RightClause).ToLower())?.Value ?? null;
-                var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.LogicOperator).ToLower())?.Value ?? null;
-                resultClause = new DoubleClause
-                {
-                    LeftClause = leftClause != null ? ConvertToClause(leftClause) : null,
-                    RightClause = rightClause != null ? ConvertToClause(rightClause) : null,
-                    LogicOperator = logicOperator != null ? (EnumLogicOperator)int.Parse(logicOperator.ToString()) : default
-                };
-            }
+            //else if (isDouble)
+            //{
+            //    var leftClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.LeftClause).ToLower())?.Value ?? null;
+            //    var rightClause = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.RightClause).ToLower())?.Value ?? null;
+            //    var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(DoubleClause.LogicOperator).ToLower())?.Value ?? null;
+            //    resultClause = new DoubleClause
+            //    {
+            //        LeftClause = leftClause != null ? ConvertToClause(leftClause) : null,
+            //        RightClause = rightClause != null ? ConvertToClause(rightClause) : null,
+            //        LogicOperator = logicOperator != null ? (EnumLogicOperator)int.Parse(logicOperator.ToString()) : default
+            //    };
+            //}
             else
             {
                 var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Clauses).ToLower())?.Value ?? null;
                 if (clauses != null)
                 {
                     var arrClause = clauses.ToArray();
-                    List<SameLeveClause> lstClause = new List<SameLeveClause>();
+                    List<ItemClause> lstClause = new List<ItemClause>();
                     foreach (var item in arrClause)
                     {
                         if (!(item is JObject))
@@ -108,10 +108,10 @@ namespace VErp.Services.Accountant.Model.Category
                             continue;
                         }
                         var itemProps = (item as JObject).Properties();
-                        var clause = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(SameLeveClause.Clause).ToLower())?.Value ?? null;
-                        var logicOperator = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(SameLeveClause.LogicOperator).ToLower())?.Value ?? null;
+                        var clause = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(ItemClause.Clause).ToLower())?.Value ?? null;
+                        var logicOperator = itemProps.FirstOrDefault(c => c.Name.ToLower() == nameof(ItemClause.LogicOperator).ToLower())?.Value ?? null;
 
-                        SameLeveClause sameLeveClause = new SameLeveClause
+                        ItemClause sameLeveClause = new ItemClause
                         {
                             Clause = clause != null ? ConvertToClause(clause) : null,
                             LogicOperator = logicOperator != null ? (EnumLogicOperator)int.Parse(logicOperator.ToString()) : default
