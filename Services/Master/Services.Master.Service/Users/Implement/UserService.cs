@@ -282,9 +282,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var total = query.Count();
 
-            var lst = query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList();
-
-
+            var lst = size > 0 ? query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList() : query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).ToList();
 
             return (lst, total);
         }
@@ -299,21 +297,21 @@ namespace VErp.Services.Master.Service.Users.Implement
             var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
             return (from u in userInfos
-                        join e in employees on u.UserId equals e.UserId
-                        select new UserInfoOutput
-                        {
-                            UserId = u.UserId,
-                            UserName = u.UserName,
-                            UserStatusId = (EnumUserStatus)u.UserStatusId,
-                            RoleId = u.RoleId,
-                            EmployeeCode = e.EmployeeCode,
-                            FullName = e.FullName,
-                            Address = e.Address,
-                            Email = e.Email,
-                            GenderId = (EnumGender?)e.GenderId,
-                            Phone = e.Phone
-                        }).ToList();
-           
+                    join e in employees on u.UserId equals e.UserId
+                    select new UserInfoOutput
+                    {
+                        UserId = u.UserId,
+                        UserName = u.UserName,
+                        UserStatusId = (EnumUserStatus)u.UserStatusId,
+                        RoleId = u.RoleId,
+                        EmployeeCode = e.EmployeeCode,
+                        FullName = e.FullName,
+                        Address = e.Address,
+                        Email = e.Email,
+                        GenderId = (EnumGender?)e.GenderId,
+                        Phone = e.Phone
+                    }).ToList();
+
         }
 
         public async Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId)

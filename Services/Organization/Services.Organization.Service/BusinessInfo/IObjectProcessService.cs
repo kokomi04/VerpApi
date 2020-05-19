@@ -7,13 +7,17 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace Services.Organization.Service.BusinessInfo
 {
-    interface IObjectProcessService
+    public interface IObjectProcessService
     {
         IList<ObjectProcessInfoModel> ObjectProcessList();
 
-        Task<IList<ObjectProcessInfoStepModel>> ObjectProcessSteps(EnumObjectProcessType objectProcessTypeId);
+        Task<IList<ObjectProcessInfoStepListModel>> ObjectProcessSteps(EnumObjectProcessType objectProcessTypeId);
 
-        Task<bool> ObjectProcessUpdate(EnumObjectProcessType objectProcessTypeId, IList<ObjectProcessInfoStepModel> data);
-        
+        Task<int> ObjectProcessStepCreate(EnumObjectProcessType objectProcessTypeId, ObjectProcessInfoStepModel model);
+
+        Task<bool> ObjectProcessStepUpdate(EnumObjectProcessType objectProcessTypeId, int objectProcessStepId, ObjectProcessInfoStepModel model);
+
+        Task<bool> ObjectProcessStepDelete(EnumObjectProcessType objectProcessTypeId, int objectProcessStepId);
+
     }
 }

@@ -13,10 +13,13 @@ namespace Services.Organization.Model.BusinessInfo
 
     public class ObjectProcessInfoStepModel
     {
-        public int ClientObjectProcessStepId { get; set; }
-        public int? ObjectProcessStepId { get; set; }
+        public int SortOrder { get; set; }
         public string ObjectProcessStepName { get; set; }
-        public IList<int> DependClientObjectProcessStepIds { get; set; }
+        public IList<int> DependObjectProcessStepIds { get; set; }
         public IList<int> UserIds { get; set; }
-    }    
+    }
+    public class ObjectProcessInfoStepListModel : ObjectProcessInfoStepModel
+    {
+        public int ObjectProcessStepId { get; set; }
+    }
 }

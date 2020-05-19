@@ -99,6 +99,6 @@ namespace VErp.Commons.Enums.MasterEnum
 
         Subsidiary = 41,
 
-        ObjectProcess = 42
+        ObjectProcessStep = 42
     }
 }

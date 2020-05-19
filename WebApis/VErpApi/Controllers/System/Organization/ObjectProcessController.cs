@@ -13,15 +13,16 @@ using Services.Organization.Model.Deparment;
 using Services.Organization.Service.BusinessInfo.Implement;
 using Services.Organization.Model.BusinessInfo;
 using System.Collections.Generic;
+using Services.Organization.Service.BusinessInfo;
 
 namespace VErpApi.Controllers.System
 {
     [Route("api/organization/objectProcess")]
     public class ObjectProcessController : VErpBaseController
     {
-        private readonly ObjectProcessService _objectProcessService;
+        private readonly IObjectProcessService _objectProcessService;
 
-        public ObjectProcessController(ObjectProcessService objectProcessService)
+        public ObjectProcessController(IObjectProcessService objectProcessService)
         {
             _objectProcessService = objectProcessService;
         }
@@ -33,18 +34,34 @@ namespace VErpApi.Controllers.System
             return _objectProcessService.ObjectProcessList();
         }
 
-        [HttpPut]
-        [Route("{objectProcessTypeId}/Steps")]
-        public async Task<bool> Update([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromBody] IList<ObjectProcessInfoStepModel> data)
-        {
-            return await _objectProcessService.ObjectProcessUpdate(objectProcessTypeId, data).ConfigureAwait(true);
-        }
-
+       
         [HttpGet]
         [Route("{objectProcessTypeId}/Steps")]
-        public async Task<IList<ObjectProcessInfoStepModel>> ObjectProcessSteps([FromRoute] EnumObjectProcessType objectProcessTypeId)
+        public async Task<IList<ObjectProcessInfoStepListModel>> ObjectProcessSteps([FromRoute] EnumObjectProcessType objectProcessTypeId)
         {
             return await _objectProcessService.ObjectProcessSteps(objectProcessTypeId).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("{objectProcessTypeId}/Steps")]
+        public async Task<int> ObjectProcessStepCreate([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromBody] ObjectProcessInfoStepModel model)
+        {
+            return await _objectProcessService.ObjectProcessStepCreate(objectProcessTypeId, model).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{objectProcessTypeId}/Steps/{objectProcessStepId}")]
+        public async Task<bool> ObjectProcessStepUpdate([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromRoute] int objectProcessStepId, [FromBody] ObjectProcessInfoStepModel model)
+        {
+            return await _objectProcessService.ObjectProcessStepUpdate(objectProcessTypeId, objectProcessStepId, model).ConfigureAwait(true);
+        }
+
+
+        [HttpDelete]
+        [Route("{objectProcessTypeId}/Steps/{objectProcessStepId}")]
+        public async Task<bool> ObjectProcessStepDelete([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromRoute] int objectProcessStepId, [FromBody] IList<ObjectProcessInfoStepListModel> model)
+        {
+            return await _objectProcessService.ObjectProcessStepDelete(objectProcessTypeId, objectProcessStepId).ConfigureAwait(true);
         }
     }
 }
