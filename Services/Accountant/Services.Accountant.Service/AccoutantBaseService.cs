@@ -209,7 +209,7 @@ namespace VErp.Services.Accountant.Service
                                 {
                                     CategoryRowId = id,
                                     CategoryFieldId = field.CategoryFieldId,
-                                    Value = properties[field.CategoryFieldName],
+                                    Value = properties[field.CategoryFieldName]??null,
                                 };
                             }
 
