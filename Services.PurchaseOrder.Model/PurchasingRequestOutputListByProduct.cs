@@ -9,5 +9,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public long PurchasingRequestDetailId { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
+        public string Description { get; set; }
     }
 }

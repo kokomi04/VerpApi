@@ -9,12 +9,12 @@ namespace VErp.Services.Accountant.Service.Category
     {
         Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull);
 
-        Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField(int categoryId, int categoryFieldId);
+        Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId);
 
-        Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data);
+        Task<ServiceResult<int>> AddCategoryField(int categoryId, CategoryFieldInputModel data);
 
-        Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data);
+        Task<Enum> UpdateCategoryField(int categoryId, int categoryFieldId, CategoryFieldInputModel data);
 
-        Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId);
+        Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId);
     }
 }

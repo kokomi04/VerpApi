@@ -63,6 +63,18 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không phải là danh mục")]
         CategoryIsNotModule = 27,
         [Description("File không hợp lệ")]
-        FormatFileInvalid = 28
+        FormatFileInvalid = 28,
+        [Description("Hai kiểu nhập liệu không thể chuyển qua lại")]
+        FormTypeNotSwitch = 29,
+        [Description("Dữ liệu cha không tồn tại")]
+        ParentCategoryRowNotExisted = 30,
+        [Description("Danh mục nằm ngoài phân hệ")]
+        CategoryIsOutSideData =31,
+        [Description("Lấy thông tin danh mục ngoài phân hệ thất bại")]
+        CategoryIsOutSideDataError = 32,
+        [Description("Dữ liệu cha không được là chính nó")]
+        ParentCategoryFromItSelf = 33,
+        [Description("Trường dữ liệu không được phép thay đổi")]
+        CategoryFieldReadOnly = 44,
     }
 }

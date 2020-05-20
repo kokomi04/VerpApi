@@ -18,6 +18,7 @@ namespace VErp.Services.Master.Service.Users
         Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<Enum> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size);
+        Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
 
         Task<IList<RolePermissionModel>> GetMePermission();
 
@@ -31,5 +32,7 @@ namespace VErp.Services.Master.Service.Users
         /// <param name="pageSize">Bản ghi trên 1 trang</param>
         /// <returns></returns>
         Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId,string keyword, int pageIndex, int pageSize);
+
+        Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds);
     }
 }

@@ -233,7 +233,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var query = from p in _stockContext.Stock
                         select p;
 
-
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query

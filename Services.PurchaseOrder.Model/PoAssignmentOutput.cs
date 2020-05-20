@@ -10,11 +10,13 @@ namespace VErp.Services.PurchaseOrder.Model
         public long PoAssignmentId { get; set; }
         public long PurchasingSuggestId { get; set; }
         public string PurchasingSuggestCode { get; set; }
+        public long PurchasingSuggestDate { get; set; }
         public string OrderCode { get; set; }
+        public string PurchasingSuggestProductionOrderCode { get; set; }
 
         public string PoAssignmentCode { get; set; }
         public int AssigneeUserId { get; set; }
-        
+
         public EnumPoAssignmentStatus PoAssignmentStatusId { get; set; }
         public bool? IsConfirmed { get; set; }
         public int CreatedByUserId { get; set; }
@@ -22,13 +24,13 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Content { get; set; }
     }
 
-    public class PoAssignmentOutput: PoAssignmentOutputList
+    public class PoAssignmentOutput : PoAssignmentOutputList
     {
-       
+
         public IList<PoAssimentDetailModel> Details { get; set; }
     }
 
-    public class PoAssignmentOutputListByProduct: PoAssignmentOutputList, IPoAssimentDetailModel
+    public class PoAssignmentOutputListByProduct : PoAssignmentOutputList, IPoAssimentDetailModel
     {
         public long? PoAssignmentDetailId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }

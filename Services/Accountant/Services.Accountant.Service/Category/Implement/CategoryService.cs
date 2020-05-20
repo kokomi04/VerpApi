@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
@@ -18,48 +22,46 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryService : CategoryBaseService, ICategoryService
+    public class CategoryService : AccoutantBaseService, ICategoryService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
 
         public CategoryService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            ) : base(accountingContext)
+            ) : base(accountingContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)
         {
-            var category = await _accountingContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+            var category = await _accountingContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-            CategoryFullModel categoryFullModel = _mapper.Map<CategoryFullModel>(category);
-            categoryFullModel.SubCategories = GetSubCategories(category.CategoryId);
-            categoryFullModel.CategoryFields = GetFields(category.CategoryId);
-            return categoryFullModel;
+            category.SubCategories = GetSubCategories(category.CategoryId);
+            category.CategoryFields = GetFields(category.CategoryId);
+            return category;
         }
 
         public async Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, bool? hasParent, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _accountingContext.Category.Include(c => c.SubCategories).AsQueryable();
+            var query = _accountingContext.Category.Include(c => c.OutSideDataConfig).Include(c => c.InverseParent).AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(c => c.Code.Contains(keyword) || c.Title.Contains(keyword));
+                query = query.Where(c => c.CategoryCode.Contains(keyword) || c.Title.Contains(keyword));
             }
             if (isModule.HasValue)
             {
@@ -76,24 +78,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryModel> lst = new List<CategoryModel>();
-
-            foreach (var item in query)
-            {
-                CategoryModel categoryModel = _mapper.Map<CategoryModel>(item);
-                lst.Add(categoryModel);
-            }
+            List<CategoryModel> lst = query.ProjectTo<CategoryModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddCategory(int updatedUserId, CategoryModel data)
+        public async Task<ServiceResult<int>> AddCategory(CategoryModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             var existedCategory = await _accountingContext.Category
-                .FirstOrDefaultAsync(c => c.Code == data.Code || c.Title == data.Title);
+                .FirstOrDefaultAsync(c => c.CategoryCode == data.CategoryCode || c.Title == data.Title);
             if (existedCategory != null)
             {
-                if (string.Compare(existedCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     return CategoryErrorCode.CategoryCodeAlreadyExisted;
                 }
@@ -101,15 +98,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryTitleAlreadyExisted;
             }
 
-            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
-            foreach (int subId in data.SubCategories.Where(s => s.CategoryId > 0).Select(s => s.CategoryId))
+            int[] selectSubCategoryIds = data.SubCategories.Where(s => s.CategoryId > 0).Select(s => s.CategoryId).ToArray();
+            List<CategoryEntity> selectSubCategories = _accountingContext.Category.Where(c => selectSubCategoryIds.Contains(c.CategoryId)).ToList();
+            if (selectSubCategories.Count < selectSubCategoryIds.Length)
             {
-                var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
-                if (subCategory == null)
-                {
-                    return CategoryErrorCode.SubCategoryNotFound;
-                }
-                else if (subCategory.IsModule)
+                return CategoryErrorCode.SubCategoryNotFound;
+            }
+
+            foreach (CategoryEntity subCategory in selectSubCategories)
+            {
+                if (subCategory.IsModule)
                 {
                     return CategoryErrorCode.SubCategoryIsModule;
                 }
@@ -117,20 +115,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.SubCategoryHasParent;
                 }
-                else
-                {
-                    selectSubCategories.Add(subCategory);
-                }
             }
 
             List<CategoryEntity> newSubCategories = new List<CategoryEntity>();
             foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
             {
                 var existedsubCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                    .FirstOrDefaultAsync(c => c.CategoryCode == item.CategoryCode || c.Title == item.Title);
                 if (existedsubCategory != null)
                 {
-                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedsubCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.CategoryCodeAlreadyExisted;
                     }
@@ -146,56 +140,87 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                category.IsModule = true;
+                await _accountingContext.Category.AddAsync(category);
+                await _accountingContext.SaveChangesAsync();
+                foreach (var selectSubCategory in selectSubCategories)
                 {
-                    CategoryEntity category = _mapper.Map<CategoryEntity>(data);
-                    category.IsModule = true;
-                    category.UpdatedUserId = updatedUserId;
+                    selectSubCategory.ParentId = category.CategoryId;
+                }
+                foreach (var newSubCategory in newSubCategories)
+                {
+                    newSubCategory.ParentId = category.CategoryId;
+                    await _accountingContext.Category.AddAsync(newSubCategory);
+                }
 
-                    await _accountingContext.Category.AddAsync(category);
-                    await _accountingContext.SaveChangesAsync();
-                    foreach (var selectSubCategory in selectSubCategories)
-                    {
-                        selectSubCategory.ParentId = category.CategoryId;
-                        selectSubCategory.UpdatedUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-                    }
-                    foreach (var newSubCategory in newSubCategories)
-                    {
-                        newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedUserId = updatedUserId;
-                        await _accountingContext.Category.AddAsync(newSubCategory);
-                    }
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
-                    return category.CategoryId;
-                }
-                catch (Exception ex)
+                // Thêm config outside nếu là danh mục phân hệ khác
+                if (category.IsOutSideData)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Create");
-                    return GeneralCode.InternalError;
+                    OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
+                    config.CategoryId = category.CategoryId;
+                    await _accountingContext.OutSideDataConfig.AddAsync(config);
                 }
+
+                // Thêm F_Identity
+                if (category.IsModule)
+                {
+                   await AddIdentityFieldAsync(category.CategoryId);
+                }
+               
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
+                return category.CategoryId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                return GeneralCode.InternalError;
             }
         }
 
-        public async Task<Enum> UpdateCategory(int updatedUserId, int categoryId, CategoryModel data)
+        private async Task AddIdentityFieldAsync(int categoryId)
         {
-            var category = await _accountingContext.Category.Include(c => c.SubCategories).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+            CategoryField identityField = new CategoryField
+            {
+                CategoryId = categoryId,
+                CategoryFieldName = AccountantConstants.F_IDENTITY,
+                Title = AccountantConstants.F_IDENTITY,
+                FormTypeId = (int)EnumFormType.Input,
+                DataTypeId = (int)EnumDataType.Number,
+                DataSize = -1,
+                IsHidden = true,
+                IsRequired = false,
+                IsUnique = false,
+                IsShowSearchTable = false,
+                IsTreeViewKey = false,
+                IsShowList = false,
+                IsReadOnly = true
+            };
+            await _accountingContext.CategoryField.AddAsync(identityField);
+
+        }
+
+        public async Task<Enum> UpdateCategory(int categoryId, CategoryModel data)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
+            var category = await _accountingContext.Category.Include(c => c.InverseParent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-            if (category.Code != data.Code || category.Title != data.Title)
+            if (category.CategoryCode != data.CategoryCode || category.Title != data.Title)
             {
                 var existedCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.Code == data.Code || c.Title == data.Title));
+                    .FirstOrDefaultAsync(c => c.CategoryId != categoryId && (c.CategoryCode == data.CategoryCode || c.Title == data.Title));
                 if (existedCategory != null)
                 {
-                    if (string.Compare(existedCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.CategoryCodeAlreadyExisted;
                     }
@@ -204,18 +229,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
 
-            var deleteSubCategories = category.SubCategories.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
-            var newSubCategoryModels = data.SubCategories.Where(c => !category.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
+            var deleteSubCategories = category.InverseParent.Where(c => !data.SubCategories.Any(s => s.CategoryId == c.CategoryId)).ToList();
 
-            List<CategoryEntity> selectSubCategories = new List<CategoryEntity>();
-            foreach (int subId in newSubCategoryModels.Where(s => s.CategoryId > 0).Select(c => c.CategoryId))
+            int[] selectSubCategoryIds = data.SubCategories.Where(c => c.CategoryId > 0 && !category.InverseParent.Any(s => s.CategoryId == c.CategoryId)).Select(s => s.CategoryId).ToArray();
+            List<CategoryEntity> selectSubCategories = _accountingContext.Category.Where(c => selectSubCategoryIds.Contains(c.CategoryId)).ToList();
+            if (selectSubCategories.Count < selectSubCategoryIds.Length)
             {
-                var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == subId);
-                if (subCategory == null)
-                {
-                    return CategoryErrorCode.SubCategoryNotFound;
-                }
-                else if (subCategory.IsModule)
+                return CategoryErrorCode.SubCategoryNotFound;
+            }
+
+            foreach (CategoryEntity subCategory in selectSubCategories)
+            {
+                if (subCategory.IsModule)
                 {
                     return CategoryErrorCode.SubCategoryIsModule;
                 }
@@ -233,10 +258,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var item in data.SubCategories.Where(s => s.CategoryId <= 0))
             {
                 var existedsubCategory = await _accountingContext.Category
-                    .FirstOrDefaultAsync(c => c.Code == item.Code || c.Title == item.Title);
+                    .FirstOrDefaultAsync(c => c.CategoryCode == item.CategoryCode || c.Title == item.Title);
                 if (existedsubCategory != null)
                 {
-                    if (string.Compare(existedsubCategory.Code, data.Code, StringComparison.OrdinalIgnoreCase) == 0)
+                    if (string.Compare(existedsubCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
                         return CategoryErrorCode.SubCategoryCodeAlreadyExisted;
                     }
@@ -257,51 +282,90 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.IsSubCategory;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            bool changeIsModule = category.IsModule != data.IsModule;
+
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                category.CategoryCode = data.CategoryCode;
+                category.Title = data.Title;
+                category.IsModule = data.IsModule;
+                category.IsReadonly = data.IsReadonly;
+                category.IsTreeView = data.IsTreeView;
+                category.IsOutSideData = data.IsOutSideData;
+                await _accountingContext.SaveChangesAsync();
+                foreach (var item in deleteSubCategories)
                 {
-                    category.Code = data.Code;
-                    category.Title = data.Title;
-                    category.IsModule = data.IsModule;
-                    category.IsReadonly = data.IsReadonly;
-                    category.UpdatedUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
-                    foreach (var item in deleteSubCategories)
-                    {
-                        var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
-                        subCategory.ParentId = null;
-                        subCategory.UpdatedUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-                    }
-                    foreach (var item in selectSubCategories)
-                    {
-                        item.ParentId = category.CategoryId;
-                        item.UpdatedUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-                    }
-                    foreach (var newSubCategory in newSubCategories)
-                    {
-                        newSubCategory.ParentId = category.CategoryId;
-                        newSubCategory.UpdatedUserId = updatedUserId;
-                        await _accountingContext.Category.AddAsync(newSubCategory);
-                    }
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
-                    return GeneralCode.Success;
+                    var subCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == item.CategoryId);
+                    subCategory.ParentId = null;
                 }
-                catch (Exception ex)
+                foreach (var item in selectSubCategories)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
+                    item.ParentId = category.CategoryId;
                 }
+                foreach (var newSubCategory in newSubCategories)
+                {
+                    newSubCategory.ParentId = category.CategoryId;
+                    await _accountingContext.Category.AddAsync(newSubCategory);
+                }
+
+                //Update config outside nếu là danh mục ngoài phân hệ
+                if (category.IsOutSideData)
+                {
+                    OutSideDataConfig config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
+                    if(config == null)
+                    {
+                        config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
+                        config.CategoryId = category.CategoryId;
+                        await _accountingContext.OutSideDataConfig.AddAsync(config);
+                    }
+                    else
+                    {
+                        config.ModuleType = data.OutSideDataConfig.ModuleType;
+                        config.Url = data.OutSideDataConfig.Url;
+                        config.Key = data.OutSideDataConfig.Key;
+                        config.Description = data.OutSideDataConfig.Description;
+                    }
+                }
+
+                if (changeIsModule)
+                {
+                    if (data.IsModule)
+                    {
+                        var identityField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldName == AccountantConstants.F_IDENTITY);
+                        if(identityField == null)
+                        {
+                            await AddIdentityFieldAsync(category.CategoryId);
+                        }
+                        else
+                        {
+                            identityField.IsDeleted = false;
+                            identityField.DeletedDatetimeUtc = null;
+                        }
+                    }
+                    else
+                    {
+                        var identityField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldName == AccountantConstants.F_IDENTITY);
+                        identityField.IsDeleted = true;
+                    }
+                }
+
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
-        public async Task<Enum> DeleteCategory(int updatedUserId, int categoryId)
+        public async Task<Enum> DeleteCategory(int categoryId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountingContext.Category.Include(c => c.Parent).FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
@@ -311,69 +375,52 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.ParentCategoryAlreadyExisted;
             }
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                // Xóa category, field
+                var categoryIds = GetAllCategoryIds(categoryId);
+                var deleteCategories = _accountingContext.Category.Where(c => categoryIds.Contains(c.CategoryId));
+                foreach (CategoryEntity deleteCategory in deleteCategories)
                 {
-                    // Xóa category, field
-                    var categoryIds = GetAllCategoryIds(categoryId);
-                    foreach (var id in categoryIds)
+                    deleteCategory.IsDeleted = true;
+                    var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
+                    foreach (var field in deleteFields)
                     {
-                        category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == id);
-                        category.IsDeleted = true;
-                        category.UpdatedUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-                        var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
-                        foreach (var field in deleteFields)
+                        // Check có trường đang tham chiếu tới
+                        if (_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == field.CategoryFieldId))
                         {
-                            // Check có trường đang tham chiếu tới
-                            if (_accountingContext.CategoryField.Any(f => f.ReferenceCategoryFieldId == field.CategoryFieldId))
-                            {
-                                trans.Rollback();
-                                return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
-                            }
-                            field.IsDeleted = true;
-                            field.UpdatedUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
-
-                            // Xóa value
-                            var categoryValues = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == field.CategoryFieldId);
-                            foreach (var value in categoryValues)
-                            {
-                                value.IsDeleted = true;
-                                value.UpdatedUserId = updatedUserId;
-                                await _accountingContext.SaveChangesAsync();
-                            }
+                            trans.Rollback();
+                            return CategoryErrorCode.DestCategoryFieldAlreadyExisted;
                         }
+                        field.IsDeleted = true;
                     }
-                    // Xóa row
-                    var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
-                    foreach (var row in categoryRows)
-                    {
-                        row.IsDeleted = true;
-                        row.UpdatedUserId = updatedUserId;
-                        await _accountingContext.SaveChangesAsync();
-
-                        // Xóa mapping row, value
-                        var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
-                        foreach (var rowValue in categoryRowValues)
-                        {
-                            rowValue.IsDeleted = true;
-                            rowValue.UpdatedUserId = updatedUserId;
-                            await _accountingContext.SaveChangesAsync();
-                        }
-                    }
-                    await _accountingContext.SaveChangesAsync();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
-                    return GeneralCode.Success;
                 }
-                catch (Exception ex)
+
+                // Xóa row
+                var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
+                foreach (var row in categoryRows)
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Delete");
-                    return GeneralCode.InternalError;
+                    row.IsDeleted = true;
+
+                    // Xóa mapping row, value
+                    var categoryRowValues = _accountingContext.CategoryRowValue.Where(rv => rv.CategoryRowId == row.CategoryRowId);
+                    foreach (var rowValue in categoryRowValues)
+                    {
+                        rowValue.IsDeleted = true;
+                    }
                 }
+
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Delete");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -385,12 +432,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<DataTypeModel> lst = new List<DataTypeModel>();
-            foreach (var item in query)
-            {
-                DataTypeModel dataTypeModel = _mapper.Map<DataTypeModel>(item);
-                lst.Add(dataTypeModel);
-            }
+            List<DataTypeModel> lst = query.ProjectTo<DataTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
         public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)
@@ -401,38 +443,90 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<FormTypeModel> lst = new List<FormTypeModel>();
-            foreach (var item in query)
-            {
-                FormTypeModel formTypeModel = _mapper.Map<FormTypeModel>(item);
-                lst.Add(formTypeModel);
-            }
+            List<FormTypeModel> lst = query.ProjectTo<FormTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
         private ICollection<CategoryFullModel> GetSubCategories(int categoryId)
         {
-            List<CategoryFullModel> result = new List<CategoryFullModel>();
-            var query = _accountingContext.Category.Where(r => r.ParentId == categoryId).ToList();
-            foreach (var item in query)
+            List<CategoryFullModel> result = _accountingContext.Category
+                .Where(r => r.ParentId == categoryId)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .ToList();
+            foreach (var item in result)
             {
-                CategoryFullModel category = _mapper.Map<CategoryFullModel>(item);
-                category.SubCategories = GetSubCategories(item.CategoryId);
-                category.CategoryFields = GetFields(item.CategoryId);
-                result.Add(category);
+                item.SubCategories = GetSubCategories(item.CategoryId);
+                item.CategoryFields = GetFields(item.CategoryId);
             }
             return result;
         }
 
         private ICollection<CategoryFieldOutputModel> GetFields(int categoryId)
         {
-            return _accountingContext.CategoryField
+            var query = _accountingContext.CategoryField
+                .Include(f => f.ReferenceCategoryField)
                 .Where(f => f.CategoryId == categoryId)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
-                .OrderBy(f => f.Sequence)
-                .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToList();
+                .OrderBy(f => f.SortOrder);
+            List<CategoryFieldOutputModel> result = query.ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider).ToList();
+            return result;
         }
 
+        public async Task<PageData<OperatorModel>> GetOperators(int page, int size)
+        {
+            List<OperatorModel> operators = new List<OperatorModel>();
+            foreach (EnumOperator ope in (EnumOperator[])EnumOperator.GetValues(typeof(EnumOperator)))
+            {
+                operators.Add(new OperatorModel
+                {
+                    Value = (int)ope,
+                    Title = ope.GetEnumDescription(),
+                    ParamNumber = ope.GetParamNumber()
+                }); ;
+            }
+            int total = operators.Count;
+            if (size > 0)
+            {
+                operators = operators.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (operators, total);
+        }
+
+        public async Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size)
+        {
+            List<LogicOperatorModel> operators = new List<LogicOperatorModel>();
+            foreach (EnumLogicOperator ope in (EnumLogicOperator[])EnumLogicOperator.GetValues(typeof(EnumLogicOperator)))
+            {
+                operators.Add(new OperatorModel
+                {
+                    Value = (int)ope,
+                    Title = ope.GetEnumDescription()
+                }); ;
+            }
+            int total = operators.Count;
+            if (size > 0)
+            {
+                operators = operators.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (operators, total);
+        }
+
+        public async Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size)
+        {
+            List<ModuleTypeModel> moduleTypes = new List<ModuleTypeModel>();
+            foreach (EnumModuleType type in (EnumModuleType[])EnumModuleType.GetValues(typeof(EnumModuleType)))
+            {
+                moduleTypes.Add(new ModuleTypeModel
+                {
+                    ModuleTypeValue = (int)type,
+                    ModuleTypeTitle = type.GetEnumDescription()
+                }); ;
+            }
+            int total = moduleTypes.Count;
+            if (size > 0)
+            {
+                moduleTypes = moduleTypes.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (moduleTypes, total);
+        }
     }
 }

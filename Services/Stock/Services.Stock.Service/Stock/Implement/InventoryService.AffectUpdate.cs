@@ -486,6 +486,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             HashSet<long> changesInventories = new HashSet<long>();
 
+
             foreach (var p in products)
             {
                 var detail = details.FirstOrDefault(d => d.InventoryDetailId == p.InventoryDetailId);
@@ -745,7 +746,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
-
             foreach (var output in validateOutputDetails)
             {
                 var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
@@ -755,9 +755,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return validate.Code;
                 }
             }
-            
-            return changesInventories;
 
+            return changesInventories;
         }
 
         public class InventoryInputUpdateGetAffectedModel

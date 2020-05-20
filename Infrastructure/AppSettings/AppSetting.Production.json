@@ -3,7 +3,8 @@
     "ConfigFileKey": "/usr/verp/config/config.Production.json",
     "SigninCert": "/usr/verp/certificate/cert.pfx",
     "FileUploadFolder": "/usr/resources/",
-    "FileUploadMaxLength": 50000000
+    "FileUploadMaxLength": 50000000,
+    "InternalCrossServiceKey": "4db1464b-0956-4327-8aba-2271f03395b9"
   },
   "Identity": {
     "Endpoint": "http://localhost:8001"

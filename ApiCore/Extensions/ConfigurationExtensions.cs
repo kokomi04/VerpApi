@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using ActivityLogDB;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -36,25 +37,30 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<PurchaseOrderDBContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.PurchaseOrderDatabase);
             }, ServiceLifetime.Scoped);
         }
         public static void ConfigOrganizationContext(this IServiceCollection services, AppSetting appSetting)
         {
-            services.AddDbContext<OrganizationDBContext>((option) =>
+            services.AddDbContext<OrganizationDBContext, OrganizationDBRestrictionContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);
         }
 
         public static void ConfigAccountingContext(this IServiceCollection services, AppSetting appSetting)
         {
-            services.AddDbContext<AccountingDBContext>((option) =>
+            services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
-                option.UseLazyLoadingProxies(false);
                 option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+
+        public static void ConfigActivityLogContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<ActivityLogDBContext>((option) =>
+            {
+                option.UseSqlServer(appSetting.DatabaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
         }
 

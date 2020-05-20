@@ -1,64 +1,42 @@
-﻿using System;
-using System.Linq;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.AccountingDB
 {
-    public partial class AccountingDBContext
+    public partial class AccountingDBRestrictionContext : AccountingDBContext
     {
-        partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
+        private readonly ICurrentContextService _currentContext;
+
+        public AccountingDBRestrictionContext(DbContextOptions<AccountingDBRestrictionContext> options
+            , ICurrentContextService currentContext
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<AccountingDBContext>(loggerFactory))
         {
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
+            _currentContext = currentContext;
+        }
 
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
 
-                var isDeletedProp = entityType.FindProperty("IsDeleted");
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter("IsDeleted", isDeleted);
-                }
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
-
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
         }
 
         public override int SaveChanges()
         {
-            SetBaseValue();
+            this.SetHistoryBaseValue(_currentContext);
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            SetBaseValue();
-            return await base.SaveChangesAsync(true, cancellationToken);
-        }
-
-        public void SetBaseValue()
-        {
-            var entries = ChangeTracker
-                .Entries()
-                .Where(e => e.Entity is BaseEntity && (
-                        e.State == EntityState.Added
-                        || e.State == EntityState.Modified));
-
-            foreach (var entityEntry in entries)
-            {
-                ((BaseEntity)entityEntry.Entity).UpdatedTime = DateTime.Now;
-
-                if (entityEntry.State == EntityState.Added)
-                {
-                    ((BaseEntity)entityEntry.Entity).CreatedTime = DateTime.Now;
-                }
-            }
+            this.SetHistoryBaseValue(_currentContext);
+            return await base.SaveChangesAsync();
         }
     }
-
 }

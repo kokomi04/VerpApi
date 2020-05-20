@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
@@ -42,10 +43,25 @@ namespace VErpApi.Controllers.System
         /// <returns>
         /// </returns>
         [HttpGet]
+        [GlobalApi]
         [Route("")]
         public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
+        }
+
+
+        /// <summary>
+        /// Lấy danh sách users theo ids
+        /// </summary>
+        /// <param name="userIds"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [GlobalApi]
+        [Route("GetListByUserIds")]
+        public async Task<IList<UserInfoOutput>> GetListByUserIds([FromBody] IList<int> userIds)
+        {
+            return await _userService.GetListByUserIds(userIds).ConfigureAwait(true);
         }
 
         /// <summary>

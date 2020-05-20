@@ -7,8 +7,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     {
         public Customer()
         {
-            CustomerContact = new HashSet<CustomerContact>();
             CustomerBankAccount = new HashSet<CustomerBankAccount>();
+            CustomerContact = new HashSet<CustomerContact>();
         }
 
         public int CustomerId { get; set; }
@@ -28,8 +28,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int CustomerStatusId { get; set; }
         public string LegalRepresentative { get; set; }
         public int? DebtDays { get; set; }
+        public string Identify { get; set; }
 
-        public virtual ICollection<CustomerContact> CustomerContact { get; set; }
         public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }
+        public virtual ICollection<CustomerContact> CustomerContact { get; set; }
     }
 }

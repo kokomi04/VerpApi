@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -19,23 +22,19 @@ using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Category.Implement
 {
-    public class CategoryFieldService : CategoryBaseService, ICategoryFieldService
+    public class CategoryFieldService : AccoutantBaseService, ICategoryFieldService
     {
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         public CategoryFieldService(AccountingDBContext accountingContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryFieldService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            ) : base(accountingContext)
+            ) : base(accountingContext, appSetting, mapper)
         {
-            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _mapper = mapper;
         }
 
         public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull)
@@ -54,55 +53,60 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             query = query.Where(c => categoryIds.Contains(c.CategoryId));
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(f => f.Name.Contains(keyword) || f.Title.Contains(keyword));
+                query = query.Where(f => f.CategoryFieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
-            query = query.OrderBy(c => c.Sequence);
+            query = query.OrderBy(c => c.SortOrder);
             var total = await query.CountAsync();
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<CategoryFieldOutputModel> lst = await query
-                .OrderBy(f => f.Sequence)
-                .Select(f => _mapper.Map<CategoryFieldOutputModel>(f)).ToListAsync();
-
+                .OrderBy(f => f.SortOrder)
+                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            foreach (var field in lst)
+            {
+                if (field.ReferenceCategoryId.HasValue)
+                {
+                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                }
+            }
             return (lst, total);
         }
 
-        public async Task<ServiceResult<CategoryFieldOutputFullModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountingContext.CategoryField
                 .Include(f => f.DataType)
                 .Include(f => f.FormType)
-                .Include(f => f.SourceCategoryField)
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
+                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            CategoryFieldOutputFullModel categoryFieldOutputModel = _mapper.Map<CategoryFieldOutputFullModel>(categoryField);
-
-            if (categoryFieldOutputModel.SourceCategoryField != null)
+            if (categoryField.ReferenceCategoryId.HasValue)
             {
-                CategoryEntity sourceCategory = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryFieldOutputModel.SourceCategoryField.CategoryId);
-                categoryFieldOutputModel.SourceCategory = _mapper.Map<CategoryModel>(sourceCategory);
+                categoryField.ReferenceCategoryId = GetReferenceCategory(categoryField.ReferenceCategoryId.Value).CategoryId;
             }
-
-
-            return categoryFieldOutputModel;
+            return categoryField;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryField(int updatedUserId, int categoryId, CategoryFieldInputModel data)
+        public async Task<ServiceResult<int>> AddCategoryField(int categoryId, CategoryFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             // Check category
             if (!_accountingContext.Category.Any(c => c.CategoryId == categoryId))
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
 
-            if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.Name == data.Name))
+            if (_accountingContext.CategoryField.Any(f => f.CategoryId == data.CategoryId && f.CategoryFieldName == data.CategoryFieldName))
             {
-                return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
+                return CategoryErrorCode.CategoryFieldNotFound;
             }
 
             if (data.ReferenceCategoryFieldId.HasValue)
@@ -122,12 +126,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
+            {
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
+            }
+
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
                 var categoryField = _mapper.Map<CategoryField>(data);
                 categoryField.CategoryId = categoryId;
-                categoryField.UpdatedUserId = updatedUserId;
 
                 await _accountingContext.CategoryField.AddAsync(categoryField);
                 await _accountingContext.SaveChangesAsync();
@@ -144,8 +153,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        public async Task<Enum> UpdateCategoryField(int updatedUserId, int categoryId, int categoryFieldId, CategoryFieldInputModel data)
+        public async Task<Enum> UpdateCategoryField(int categoryId, int categoryFieldId, CategoryFieldInputModel data)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             if (categoryFieldId == data.ReferenceCategoryFieldId)
             {
                 return CategoryErrorCode.ReferenceFromItSelf;
@@ -155,9 +165,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryFieldNotFound;
             }
-            if (categoryField.Name != data.Name && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.Name == data.Name))
+            if (categoryField.CategoryFieldName != data.CategoryFieldName && _accountingContext.CategoryField.Any(f => f.CategoryFieldId != categoryFieldId && f.CategoryFieldName == data.CategoryFieldName))
             {
                 return CategoryErrorCode.CategoryFieldNameAlreadyExisted;
+            }
+            if (categoryField.IsReadOnly)
+            {
+                return CategoryErrorCode.CategoryFieldReadOnly;
             }
             if (data.ReferenceCategoryFieldId.HasValue && data.ReferenceCategoryFieldId != categoryField.ReferenceCategoryFieldId)
             {
@@ -176,41 +190,49 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 data.DataSize = 0;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
             {
-                try
-                {
-                    categoryField.Name = data.Name;
-                    categoryField.Title = data.Title;
-                    categoryField.Sequence = data.Sequence;
-                    categoryField.DataSize = data.DataSize;
-                    categoryField.DataTypeId = data.DataTypeId;
-                    categoryField.FormTypeId = data.FormTypeId;
-                    categoryField.AutoIncrement = data.AutoIncrement;
-                    categoryField.IsRequired = data.IsRequired;
-                    categoryField.IsUnique = data.IsUnique;
-                    categoryField.IsHidden = data.IsHidden;
-                    categoryField.IsShowList = data.IsShowList;
-                    categoryField.RegularExpression = data.RegularExpression;
-                    categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
-                    categoryField.UpdatedUserId = updatedUserId;
-                    await _accountingContext.SaveChangesAsync();
+                data.ReferenceCategoryFieldId = null;
+                data.ReferenceCategoryTitleFieldId = null;
+            }
 
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
-                    return GeneralCode.Success;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
-                }
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                categoryField.CategoryFieldName = data.CategoryFieldName;
+                categoryField.Title = data.Title;
+                categoryField.SortOrder = data.SortOrder;
+                categoryField.DataSize = data.DataSize;
+                categoryField.DataTypeId = data.DataTypeId;
+                categoryField.FormTypeId = data.FormTypeId;
+                categoryField.AutoIncrement = data.AutoIncrement;
+                categoryField.IsRequired = data.IsRequired;
+                categoryField.IsUnique = data.IsUnique;
+                categoryField.IsHidden = data.IsHidden;
+                categoryField.IsShowList = data.IsShowList;
+                categoryField.IsShowSearchTable = data.IsShowSearchTable;
+                categoryField.IsTreeViewKey = data.IsTreeViewKey;
+                categoryField.RegularExpression = data.RegularExpression;
+                categoryField.Filters = data.Filters;
+                categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
+                categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
+                await _accountingContext.SaveChangesAsync();
+
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
             }
         }
 
-        public async Task<Enum> DeleteCategoryField(int updatedUserId, int categoryId, int categoryFieldId)
+        public async Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId)
         {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var categoryField = await _accountingContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
@@ -227,26 +249,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                // Delete value
-                var values = _accountingContext.CategoryValue.Where(v => v.CategoryFieldId == categoryFieldId);
-                foreach (var value in values)
-                {
-                    value.IsDeleted = true;
-                    value.UpdatedUserId = updatedUserId;
-                }
                 // Delete row-field-value
                 var rowFieldValues = _accountingContext.CategoryRowValue.Where(rfv => rfv.CategoryFieldId == categoryFieldId);
                 foreach (var rowFieldValue in rowFieldValues)
                 {
                     rowFieldValue.IsDeleted = true;
-                    rowFieldValue.UpdatedUserId = updatedUserId;
                 }
                 // Delete field
                 categoryField.IsDeleted = true;
-                categoryField.UpdatedUserId = updatedUserId;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường thư mục {categoryField.Title}", categoryField.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)

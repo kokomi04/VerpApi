@@ -8,11 +8,13 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public PurchasingSuggestDetail()
         {
             PoAssignmentDetail = new HashSet<PoAssignmentDetail>();
+            PurchaseOrderDetail = new HashSet<PurchaseOrderDetail>();
         }
 
         public long PurchasingSuggestDetailId { get; set; }
         public long PurchasingSuggestId { get; set; }
         public int CustomerId { get; set; }
+        public long? PurchasingRequestDetailId { get; set; }
         public string PurchasingRequestIds { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
@@ -24,7 +26,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
+        public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }
         public virtual ICollection<PoAssignmentDetail> PoAssignmentDetail { get; set; }
+        public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
     }
 }

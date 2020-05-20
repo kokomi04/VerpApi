@@ -69,7 +69,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 PurchasingRequestId = info.PurchasingRequestId,
                 PurchasingRequestCode = info.PurchasingRequestCode,
+                Date = info.Date.GetUnix(),
                 OrderCode = info.OrderCode,
+                ProductionOrderCode = info.ProductionOrderCode,
                 PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -88,6 +90,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestDetailId = d.PurchasingRequestDetailId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description
                 }).ToList()
             };
 
@@ -151,7 +154,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -179,7 +184,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
+                            r.Date,
                             r.OrderCode,
+                            r.ProductionOrderCode,
                             r.PurchasingRequestCode,
                             r.Content,
                             r.PoProcessStatusId,
@@ -192,7 +199,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.CensorDatetimeUtc,
                             d.PurchasingRequestDetailId,
                             d.ProductId,
-                            d.PrimaryQuantity
+                            d.PrimaryQuantity,
+                            d.Description
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -244,7 +252,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
+                    Date = info.Date.GetUnix(),
                     OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
@@ -258,12 +268,33 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     PurchasingRequestDetailId = info.PurchasingRequestDetailId,
                     ProductId = info.ProductId,
-                    PrimaryQuantity = info.PrimaryQuantity
+                    PrimaryQuantity = info.PrimaryQuantity,
+                    Description = info.Description
                 });
             }
 
             return (result, total);
 
+        }
+
+
+        public async Task<IList<PurchasingRequestDetailInfo>> PurchasingRequestDetailInfo(IList<long> purchasingRequestDetailIds)
+        {
+            if (purchasingRequestDetailIds == null || purchasingRequestDetailIds.Count == 0)
+                return new List<PurchasingRequestDetailInfo>();
+
+            return await (
+                from d in _purchaseOrderDBContext.PurchasingRequestDetail
+                join r in _purchaseOrderDBContext.PurchasingRequest on d.PurchasingRequestId equals r.PurchasingRequestId
+                where purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId)
+                select new PurchasingRequestDetailInfo
+                {
+                    PurchasingRequestId = r.PurchasingRequestId,
+                    PurchasingRequestCode = r.PurchasingRequestCode,
+                    PurchasingRequestDetailId = d.PurchasingRequestDetailId,
+                    PrimaryQuantity = d.PrimaryQuantity
+                })
+            .ToListAsync();
         }
 
         public async Task<ServiceResult<long>> Create(PurchasingRequestInput model)
@@ -283,6 +314,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestCode = model.PurchasingRequestCode,
                     OrderCode = model.OrderCode,
+                    Date = model.Date.UnixToDateTime(),
+                    ProductionOrderCode = model.ProductionOrderCode,
                     Content = model.Content,
                     RejectCount = 0,
                     PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff,
@@ -303,6 +336,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequest.PurchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
@@ -339,6 +373,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.PurchasingRequestCode = model.PurchasingRequestCode;
                 info.OrderCode = model.OrderCode;
+                info.Date = model.Date.UnixToDateTime();
+                info.ProductionOrderCode = model.ProductionOrderCode;
                 info.Content = model.Content;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
                 info.IsApproved = null;
@@ -358,6 +394,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = purchasingRequestId,
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
+                    Description = d.Description,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,

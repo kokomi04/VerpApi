@@ -1,11 +1,11 @@
 ﻿
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
 
 {
-    public class DataTypeModel
+    public class DataTypeModel: IMapFrom<DataType>
     {
         public int DataTypeId { get; set; }
         public string Title { get; set; }

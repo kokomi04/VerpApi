@@ -112,31 +112,33 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectCustomGenCodeMapping = m,
                     CustomGenCodeId = c
                 })
-                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId 
-                && q.ObjectCustomGenCodeMapping.ObjectId == objectId 
-                && q.CustomGenCodeId.IsActived 
+                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId
+                && q.ObjectCustomGenCodeMapping.ObjectId == objectId
+                && q.CustomGenCodeId.IsActived
                 && !q.CustomGenCodeId.IsDeleted)
                 .Select(q => q.CustomGenCodeId)
                 .FirstOrDefaultAsync();
-            CustomGenCodeOutputModel info = null;
-            if (obj != null)
+
+            if (obj == null)
             {
-                info = new CustomGenCodeOutputModel()
-                {
-                    CustomGenCodeId = obj.CustomGenCodeId,
-                    CustomGenCodeName = obj.CustomGenCodeName,
-                    Description = obj.Description,
-                    CodeLength = obj.CodeLength,
-                    Prefix = obj.Prefix,
-                    Suffix = obj.Suffix,
-                    Seperator = obj.Seperator,
-                    LastCode = obj.LastCode,
-                    IsActived = obj.IsActived,
-                    UpdatedUserId = obj.UpdatedUserId,
-                    CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                    UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
-                };
+                return CustomGenCodeErrorCode.CustomConfigNotExisted;
             }
+
+            CustomGenCodeOutputModel info = new CustomGenCodeOutputModel()
+            {
+                CustomGenCodeId = obj.CustomGenCodeId,
+                CustomGenCodeName = obj.CustomGenCodeName,
+                Description = obj.Description,
+                CodeLength = obj.CodeLength,
+                Prefix = obj.Prefix,
+                Suffix = obj.Suffix,
+                Seperator = obj.Seperator,
+                LastCode = obj.LastCode,
+                IsActived = obj.IsActived,
+                UpdatedUserId = obj.UpdatedUserId,
+                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+            };
             return info;
         }
 
@@ -271,72 +273,63 @@ namespace VErp.Services.Master.Service.Config.Implement
             return result;
         }
 
-        public async Task<ServiceResult<string>> GenerateCode(int objectTypeId, int objectId)
+        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue)
         {
-            var result = new ServiceResult<string>() { Data = string.Empty };
+            CustomCodeModel result;
             try
             {
                 using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
-                    try
-                    {
-                        var config = _masterDbContext.ObjectCustomGenCodeMapping
-                            .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
-                            {
-                                ObjectCustomGenCodeMapping = m,
-                                CustomGenCodeId = c
-                            })
-                            .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId && q.ObjectCustomGenCodeMapping.ObjectId == objectId && q.CustomGenCodeId.IsActived && !q.CustomGenCodeId.IsDeleted)
-                            .Select(q => q.CustomGenCodeId)
-                            .FirstOrDefault();
-                        if (config == null)
-                        {
-                            trans.Rollback();
-                            return CustomGenCodeErrorCode.CustomConfigNotFound;
-                        }
-                        string newCode = string.Empty;
-                        var newId = 0;
-                        var maxId = (int)Math.Pow(10, config.CodeLength);
-                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
-                        if (config.LastValue < 1)
-                        {
-                            newId = 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-                        else
-                        {
-                            newId = config.LastValue + 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-                        if (!(newId < maxId))
-                        {
-                            config.CodeLength += 1;
-                            config.ResetDate = DateTime.UtcNow;
-                        }
-                        config.TempValue = newId;
-                        config.TempCode = newCode;
+                    var config = _masterDbContext.CustomGenCode
+                        .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
 
-                        _masterDbContext.SaveChanges();
-                        trans.Commit();
-
-                        result.Data = newCode;
-                        result.Code = GeneralCode.Success;
-                    }
-                    catch (Exception ex)
+                    if (config == null)
                     {
                         trans.Rollback();
-                        _logger.LogError(ex, "GenerateCode");
-                        return GeneralCode.InternalError;
+                        return CustomGenCodeErrorCode.CustomConfigNotFound;
                     }
+                    string newCode = string.Empty;
+                    var newId = 0;
+                    var maxId = (int)Math.Pow(10, config.CodeLength);
+                    var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
+
+                    lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
+
+                    if (lastValue < 1)
+                    {
+                        newId = 1;
+                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                    }
+                    else
+                    {
+                        newId = lastValue + 1;
+                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                    }
+                    if (!(newId < maxId))
+                    {
+                        config.CodeLength += 1;
+                        config.ResetDate = DateTime.UtcNow;
+                    }
+                    config.TempValue = newId;
+                    config.TempCode = newCode;
+
+                    _masterDbContext.SaveChanges();
+                    trans.Commit();
+
+                    result = new CustomCodeModel
+                    {
+                        CustomCode = newCode,
+                        LastValue = newId,
+                        CustomGenCodeId = config.CustomGenCodeId,
+                    };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GenerateCode");
-                result.Message = ex.Message;
-                result.Code = GeneralCode.InternalError;
+                return GeneralCode.InternalError;
 
             }
             return result;

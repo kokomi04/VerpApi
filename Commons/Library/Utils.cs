@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library
@@ -117,11 +118,12 @@ namespace VErp.Commons.Library
 
                 throw ex;
             }
-            
+
         }
 
         public static T JsonDeserialize<T>(this string obj)
         {
+            if (string.IsNullOrWhiteSpace(obj)) return default(T);
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
         }
 
@@ -306,6 +308,56 @@ namespace VErp.Commons.Library
         {
             if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
             if (value.SubDecimal(relValue) == 0) return relValue;
+            return value;
+        }
+
+        public static long ConvertValueToNumber(this string value, EnumDataType dataType)
+        {
+            long valueInNumber = 0;
+
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    valueInNumber = bool.Parse(value) ? 1 : 0;
+
+                    break;
+                case EnumDataType.Date:
+                case EnumDataType.Number:
+                    valueInNumber = long.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
+                    break;
+
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    valueInNumber = value.GetHashCode();
+                    break;
+            }
+
+            return valueInNumber;
+        }
+
+        public static string ConvertValueToData(this string value, EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    value = value.ToUpper();
+
+                    break;
+                case EnumDataType.Date:
+                    long valueInNumber = long.Parse(value);
+                    value = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
+                    break;
+
+                case EnumDataType.Number:
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    break;
+            }
+
             return value;
         }
     }
