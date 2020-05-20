@@ -1,16 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Stock;
-using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Stock;
 
 namespace VErpApi.Controllers.Stock.Internal
