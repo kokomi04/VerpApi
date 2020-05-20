@@ -210,7 +210,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<ServiceResult<int[]>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
+        public async Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
         {
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
