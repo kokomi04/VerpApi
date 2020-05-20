@@ -343,7 +343,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     var methodInfo = typeof(string).GetMethod(nameof(string.IsNullOrEmpty), new[] { typeof(string) });
                     var prop = Expression.Property(rParam, fieldName);
 
-                    Expression expression = Expression.Call(prop, methodInfo);
+                    Expression expression = Expression.Call(methodInfo, prop);
 
 
                     isEmpty = (from row in _accountingContext.InputValueRow
