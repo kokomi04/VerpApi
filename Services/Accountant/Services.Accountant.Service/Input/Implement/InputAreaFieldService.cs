@@ -174,7 +174,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
                 updateFieldName = inputAreaField.FieldName == data.FieldName;
             }
-            if (updateFieldName && _accountingContext.InputAreaField.Any(f => (!inputAreaFieldId.HasValue || f.InputAreaFieldId != inputAreaFieldId.Value) && f.FieldName == data.FieldName))
+            if (updateFieldName && _accountingContext.InputAreaField.Any(f => (!inputAreaFieldId.HasValue || f.InputAreaFieldId != inputAreaFieldId.Value) && f.InputAreaFieldId == data.InputAreaFieldId && f.FieldName == data.FieldName))
             {
                 return InputErrorCode.InputAreaFieldNameAlreadyExisted;
             }
@@ -215,7 +215,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                List<int> updateId = new List<int>();
                 // Validate trùng name trong danh sách
                 if (fields.Select(f => new { f.InputAreaId, f.FieldName }).Distinct().Count() != fields.Count)
                 {
@@ -231,9 +230,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         return r;
                     }
 
-                    for (int indx = 0; indx < fields.Count; indx++)
+                    for (int indx = 0; indx < group.Count(); indx++)
                     {
-                        var data = fields[indx];
+                        var data = group.ElementAt(indx);
                         var inputAreaField = data.InputAreaFieldId > 0 ? _accountingContext.InputAreaField.FirstOrDefault(f => f.InputAreaFieldId == data.InputAreaFieldId) : null;
                         r = ValidateInputAreaField(data, inputAreaField, data.InputAreaFieldId);
                         if (!r.IsSuccess())
@@ -260,14 +259,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                             await _accountingContext.SaveChangesAsync();
                         }
-
-                        updateId.Add(inputAreaField.InputTypeId);
                     }
                 }
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
-                return updateId.ToArray();
+                return inputTypeId;
             }
             catch (Exception ex)
             {
