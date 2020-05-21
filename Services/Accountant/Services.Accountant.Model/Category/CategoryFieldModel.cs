@@ -7,6 +7,7 @@ namespace VErp.Services.Accountant.Model.Category
 {
     public class CategoryFieldInputModel : IMapFrom<CategoryField>
     {
+        public int CategoryAreaId { get; set; }
         public int CategoryId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
@@ -37,6 +38,7 @@ namespace VErp.Services.Accountant.Model.Category
     public class CategoryFieldOutputModel : CategoryFieldInputModel
     {
         public int CategoryFieldId { get; set; }
+
         public int? ReferenceCategoryId { get; set; }
 
         public void Mapping(Profile profile)
