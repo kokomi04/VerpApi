@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         }
 
         public virtual DbSet<Category> Category { get; set; }
+        public virtual DbSet<CategoryArea> CategoryArea { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryRow> CategoryRow { get; set; }
         public virtual DbSet<CategoryRowValue> CategoryRowValue { get; set; }
@@ -42,9 +43,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         {
             modelBuilder.Entity<Category>(entity =>
             {
-                entity.HasIndex(e => e.ParentId)
-                    .HasName("IDX_Category_Relation_FK");
-
                 entity.Property(e => e.CategoryCode)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -57,11 +55,21 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
 
-                entity.HasOne(d => d.Parent)
-                    .WithMany(p => p.InverseParent)
-                    .HasForeignKey(d => d.ParentId)
-                    .HasConstraintName("FK_Category_Relation");
+            modelBuilder.Entity<CategoryArea>(entity =>
+            {
+                entity.Property(e => e.CategoryAreaCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryArea)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryArea_Category");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
@@ -112,6 +120,12 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.CategoryArea)
+                    .WithMany(p => p.CategoryField)
+                    .HasForeignKey(d => d.CategoryAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryField_CategoryArea");
 
                 entity.HasOne(d => d.Category)
                     .WithMany(p => p.CategoryField)

@@ -47,33 +47,6 @@ namespace VErp.Services.Accountant.Service
             _mapper = mapper;
         }
 
-        protected int[] GetAllCategoryIds(int categoryId)
-        {
-            List<int> ids = new List<int> { categoryId };
-            foreach (int id in _accountingContext.Category.Where(r => r.ParentId == categoryId).Select(r => r.CategoryId))
-            {
-                ids.AddRange(GetAllCategoryIds(id));
-            }
-
-            return ids.ToArray();
-        }
-
-        protected CategoryEntity GetReferenceCategory(int categoryId)
-        {
-
-            CategoryEntity category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-
-            while (category != null && !category.IsModule)
-            {
-                if (!category.ParentId.HasValue)
-                {
-                    break;
-                }
-                category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == category.ParentId);
-            }
-            return category;
-        }
-
         public IQueryable<int> FilterClauseProcess(Clause clause, IQueryable<CategoryRowValue> query, bool not = false)
         {
             IQueryable<int> exp = null;
@@ -98,7 +71,7 @@ namespace VErp.Services.Accountant.Service
                         }
                         else
                         {
-                           
+
                             if (isOr)
                             {
                                 exp = exp.Union(FilterClauseProcess(item, query, isNot));
@@ -152,7 +125,7 @@ namespace VErp.Services.Accountant.Service
                         break;
                 }
             }
-            
+
             return expression;
 
         }
@@ -168,8 +141,7 @@ namespace VErp.Services.Accountant.Service
                 (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000);
                 if (result.Item2 == HttpStatusCode.OK)
                 {
-                    int[] categoryIds = GetAllCategoryIds(categoryId);
-                    List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+                    List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryId == f.CategoryId).ToList();
 
                     foreach (var item in result.Item1.List)
                     {
@@ -209,7 +181,7 @@ namespace VErp.Services.Accountant.Service
                                 {
                                     CategoryRowId = id,
                                     CategoryFieldId = field.CategoryFieldId,
-                                    Value = properties[field.CategoryFieldName]??null,
+                                    Value = properties[field.CategoryFieldName] ?? null,
                                 };
                             }
 

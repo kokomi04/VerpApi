@@ -211,7 +211,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
                 CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
-                CategoryEntity category = GetReferenceCategory(field.CategoryId);
+                CategoryEntity category = _accountingContext.Category.First(c => c.CategoryId == field.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
                 IQueryable<CategoryRow> query;
@@ -253,8 +253,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     (JObject, HttpStatusCode) result = GetFromAPI<JObject>(url, 100000);
                     if (result.Item2 == HttpStatusCode.OK)
                     {
-                        int[] categoryIds = GetAllCategoryIds(categoryId);
-                        List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+                        List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryId == f.CategoryId).ToList();
 
                         // Lấy thông tin row
                         Dictionary<string, string> properties = new Dictionary<string, string>();
@@ -305,10 +304,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.CategoryReadOnly;
             }
-            if (!category.IsModule)
-            {
-                return CategoryErrorCode.CategoryIsNotModule;
-            }
             if (category.IsOutSideData)
             {
                 return CategoryErrorCode.CategoryIsOutSideData;
@@ -318,10 +313,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (!r.IsSuccess()) return r;
 
             // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
                 .Include(f => f.DataType)
-                .Where(f => categoryIds.Contains(f.CategoryId))
+                .Where(f => categoryId == f.CategoryId)
                 .AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
@@ -338,7 +332,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Check unique
             r = CheckUnique(data, uniqueFields);
             if (!r.IsSuccess()) return r;
-      
+
             // Check value
             r = CheckValue(data, categoryFields);
             if (!r.IsSuccess()) return r;
@@ -439,10 +433,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
 
             // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
             var categoryFields = _accountingContext.CategoryField
                 .Include(f => f.DataType)
-                .Where(f => categoryIds.Contains(f.CategoryId))
+                .Where(f => categoryId == f.CategoryId)
                 .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();
 
@@ -521,7 +514,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         continue;
                     }
-                    else if (valueItem == null ||  string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
+                    else if (valueItem == null || string.IsNullOrEmpty(valueItem.Value))  // Xóa giá trị cũ
                     {
                         var currentRowValue = _accountingContext.CategoryRowValue.FirstOrDefault(rv => rv.CategoryRowId == categoryRowId && rv.CategoryFieldId == field.CategoryFieldId);
                         if (currentRowValue != null)
@@ -569,8 +562,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryRowNotFound;
             }
             // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryRow.CategoryId);
-            var categoryFields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).AsEnumerable();
+
+            var categoryFields = _accountingContext.CategoryField.Where(f => categoryId == f.CategoryId).AsEnumerable();
 
             // Check reference
             foreach (var field in categoryFields)
@@ -648,7 +641,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
-                        CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
+                        CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
                         bool isOutSide = referCategory.IsOutSideData;
 
                         IQueryable<CategoryRow> query;
@@ -722,7 +715,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 return CategoryErrorCode.RequiredFieldIsEmpty;
             }
-        
+
             return GeneralCode.Success;
         }
 
@@ -769,10 +762,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     return CategoryErrorCode.CategoryReadOnly;
                 }
-                if (!category.IsModule)
-                {
-                    return CategoryErrorCode.CategoryIsNotModule;
-                }
                 if (category.IsOutSideData)
                 {
                     return CategoryErrorCode.CategoryIsOutSideData;
@@ -780,10 +769,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var reader = new ExcelReader(stream);
 
                 // Lấy thông tin field
-                var categoryIds = GetAllCategoryIds(categoryId);
                 var categoryFields = _accountingContext.CategoryField
                     .Include(f => f.DataType)
-                    .Where(f => categoryIds.Contains(f.CategoryId))
+                    .Where(f => categoryId == f.CategoryId)
                     .ToList();
 
                 List<CategoryRowInputModel> rowInputs = new List<CategoryRowInputModel>();
@@ -906,9 +894,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryIsOutSideData;
             }
             // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
-                .Where(f => categoryIds.Contains(f.CategoryId))
+                .Where(f => categoryId == f.CategoryId)
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
                 .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();
@@ -948,9 +935,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 return CategoryErrorCode.CategoryIsOutSideData;
             }
             // Lấy thông tin field
-            var categoryIds = GetAllCategoryIds(categoryId);
             var categoryFields = _accountingContext.CategoryField
-                .Where(f => categoryIds.Contains(f.CategoryId))
+                .Where(f => categoryId == f.CategoryId)
                 .Where(f => !f.IsHidden && !f.AutoIncrement)
                 .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY)
                 .AsEnumerable();

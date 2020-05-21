@@ -7,14 +7,13 @@ namespace VErp.Infrastructure.EF.AccountingDB
     {
         public Category()
         {
+            CategoryArea = new HashSet<CategoryArea>();
             CategoryField = new HashSet<CategoryField>();
             CategoryRow = new HashSet<CategoryRow>();
             InputTypeViewField = new HashSet<InputTypeViewField>();
-            InverseParent = new HashSet<Category>();
         }
 
         public int CategoryId { get; set; }
-        public int? ParentId { get; set; }
         public string Title { get; set; }
         public string CategoryCode { get; set; }
         public bool IsModule { get; set; }
@@ -28,11 +27,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsOutSideData { get; set; }
 
-        public virtual Category Parent { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
+        public virtual ICollection<CategoryArea> CategoryArea { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }
         public virtual ICollection<CategoryRow> CategoryRow { get; set; }
         public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
-        public virtual ICollection<Category> InverseParent { get; set; }
     }
 }

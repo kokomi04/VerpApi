@@ -937,7 +937,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 {
                     CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                     CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
-                    CategoryEntity referCategory = GetReferenceCategory(referField.CategoryId);
+                    CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
                     bool isOutSide = referCategory.IsOutSideData;
                     bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)referField.FormTypeId) && !isOutSide;
 

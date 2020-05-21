@@ -28,10 +28,12 @@ namespace VErpApi.Controllers.Accountant
         private readonly ICategoryService _categoryService;
         private readonly ICategoryFieldService _categoryFieldService;
         private readonly ICategoryRowService _categoryRowService;
+        private readonly ICategoryAreaService _categoryAreaService;
         private readonly IFileService _fileService;
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
             , ICategoryRowService categoryRowService
+            , ICategoryAreaService categoryAreaService
             , IFileService fileService
             )
         {
@@ -39,13 +41,14 @@ namespace VErpApi.Controllers.Accountant
             _categoryService = categoryService;
             _categoryFieldService = categoryFieldService;
             _categoryRowService = categoryRowService;
+            _categoryAreaService = categoryAreaService;
         }
 
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isModule, [FromQuery] bool? hasParent, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryService.GetCategories(keyword, isModule, hasParent, page, size);
+            return await _categoryService.GetCategories(keyword, page, size);
         }
 
         [HttpPost]
@@ -76,11 +79,33 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryService.DeleteCategory(categoryId);
         }
 
+
+        [HttpPost]
+        [Route("{categoryId}/categoryareas")]
+        public async Task<ServiceResult<int>> AddInputArea([FromRoute] int categoryId, [FromBody] CategoryAreaInputModel categoryArea)
+        {
+            return await _categoryAreaService.AddCategoryArea(categoryId, categoryArea);
+        }
+
+        [HttpPut]
+        [Route("{categoryId}/categoryareas/{categoryAreaId}")]
+        public async Task<ServiceResult> UpdateInputArea([FromRoute] int categoryId, [FromRoute] int categoryAreaId, [FromBody] CategoryAreaInputModel categoryArea)
+        {
+            return await _categoryAreaService.UpdateCategoryArea(categoryId, categoryAreaId, categoryArea);
+        }
+
+        [HttpDelete]
+        [Route("{categoryId}/categoryareas/{categoryAreaId}")]
+        public async Task<ServiceResult> DeleteInputArea([FromRoute] int categoryId, [FromRoute] int categoryAreaId)
+        {
+            return await _categoryAreaService.DeleteCategoryArea(categoryId, categoryAreaId);
+        }
+
         [HttpGet]
         [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] bool? isFull)
+        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size, isFull);
+            return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size);
         }
 
         [HttpGet]

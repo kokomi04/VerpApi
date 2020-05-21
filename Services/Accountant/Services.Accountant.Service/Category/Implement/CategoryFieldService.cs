@@ -37,20 +37,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size, bool? isFull)
+        public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.CategoryField.AsQueryable();
-            int[] categoryIds;
-            if (isFull.HasValue && isFull.Value)
-            {
-                categoryIds = GetAllCategoryIds(categoryId);
-            }
-            else
-            {
-                categoryIds = new int[] { categoryId };
-            }
-            query = query.Where(c => categoryIds.Contains(c.CategoryId));
+          
+            query = query.Where(c => categoryId == c.CategoryId);
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(f => f.CategoryFieldName.Contains(keyword) || f.Title.Contains(keyword));
@@ -69,7 +61,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 if (field.ReferenceCategoryId.HasValue)
                 {
-                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId);
+                    field.ReferenceCategoryId = referField.CategoryId;
                 }
             }
             return (lst, total);
@@ -90,7 +83,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             if (categoryField.ReferenceCategoryId.HasValue)
             {
-                categoryField.ReferenceCategoryId = GetReferenceCategory(categoryField.ReferenceCategoryId.Value).CategoryId;
+                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == categoryField.ReferenceCategoryId);
+                categoryField.ReferenceCategoryId = referField.CategoryId;
             }
             return categoryField;
         }
@@ -200,6 +194,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             try
             {
                 categoryField.CategoryFieldName = data.CategoryFieldName;
+                categoryField.CategoryAreaId = data.CategoryAreaId;
                 categoryField.Title = data.Title;
                 categoryField.SortOrder = data.SortOrder;
                 categoryField.DataSize = data.DataSize;

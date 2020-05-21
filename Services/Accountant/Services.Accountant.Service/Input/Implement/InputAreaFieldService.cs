@@ -64,7 +64,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 if (field.ReferenceCategoryId.HasValue)
                 {
-                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId.Value);
+                    field.ReferenceCategoryId = referField.CategoryId;
                 }
             }
             return (lst, total);
@@ -121,7 +122,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 if (field.ReferenceCategoryId.HasValue)
                 {
-                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
+                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId.Value);
+                    field.ReferenceCategoryId = referField.CategoryId;
                 }
             }
             return (lst, total);
@@ -144,7 +146,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             if (inputAreaField.ReferenceCategoryId.HasValue)
             {
-                inputAreaField.ReferenceCategoryId = GetReferenceCategory(inputAreaField.ReferenceCategoryId.Value).CategoryId;
+                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == inputAreaField.ReferenceCategoryId.Value);
+                inputAreaField.ReferenceCategoryId = referField.CategoryId;
             }
             return inputAreaField;
         }
@@ -273,7 +276,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
-
 
         public async Task<ServiceResult<int>> AddInputAreaField(int inputTypeId, int inputAreaId, InputAreaFieldInputModel data)
         {
