@@ -157,14 +157,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     await _accountingContext.Category.AddAsync(newSubCategory);
                 }
 
-                // Thêm config outside nếu là danh mục phân hệ khác
-                if (category.IsOutSideData)
-                {
-                    OutSideDataConfig config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
-                    config.CategoryId = category.CategoryId;
-                    await _accountingContext.OutSideDataConfig.AddAsync(config);
-                }
-
                 // Thêm F_Identity
                 if (category.IsModule)
                 {
