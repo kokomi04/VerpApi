@@ -11,6 +11,7 @@ using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -44,7 +45,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .FirstOrDefaultAsync();
             if (CategoryArea == null)
             {
-                return CategoryErrorCode.SubCategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.SubCategoryNotFound);
             }
             return CategoryArea;
         }
@@ -63,7 +64,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            var lst = await query.ProjectTo<CategoryAreaModel>(_mapper.ConfigurationProvider).OrderBy(a=>a.SortOrder).ToListAsync();
+            var lst = await query.ProjectTo<CategoryAreaModel>(_mapper.ConfigurationProvider).OrderBy(a => a.SortOrder).ToListAsync();
             return (lst, total);
         }
 
@@ -76,10 +77,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 if (string.Compare(existedCategory.CategoryAreaCode, data.CategoryAreaCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.CategoryCodeAlreadyExisted);
                 }
-
-                return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                throw new BadRequestException(CategoryErrorCode.CategoryTitleAlreadyExisted);
             }
 
             using (var trans = await _accountingContext.Database.BeginTransactionAsync())
@@ -110,7 +110,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var CategoryArea = await _accountingContext.CategoryArea.FirstOrDefaultAsync(a => a.CategoryId == categoryId && a.CategoryAreaId == categoryAreaId);
             if (CategoryArea == null)
             {
-                return CategoryErrorCode.SubCategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.SubCategoryNotFound);
             }
             if (CategoryArea.CategoryAreaCode != data.CategoryAreaCode || CategoryArea.Title != data.Title)
             {
@@ -120,10 +120,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     if (string.Compare(existedCategory.CategoryAreaCode, data.CategoryAreaCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        return CategoryErrorCode.SubCategoryCodeAlreadyExisted;
+                        throw new BadRequestException(CategoryErrorCode.SubCategoryCodeAlreadyExisted);
                     }
 
-                    return CategoryErrorCode.SubCategoryTitleAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.SubCategoryTitleAlreadyExisted);
                 }
             }
 
@@ -153,7 +153,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var categoryArea = await _accountingContext.CategoryArea.FirstOrDefaultAsync(a => a.CategoryId == categoryId && a.CategoryAreaId == categoryAreaId);
             if (categoryArea == null)
             {
-                return CategoryErrorCode.SubCategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.SubCategoryNotFound);
             }
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
@@ -175,9 +175,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                     }
                 }
-
-              
-
                 // Xóa area
                 categoryArea.IsDeleted = true;
                 await _accountingContext.SaveChangesAsync();

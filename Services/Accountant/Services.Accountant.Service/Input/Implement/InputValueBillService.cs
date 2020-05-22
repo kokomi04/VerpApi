@@ -83,6 +83,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     FieldName = f.FieldName,
                     FieldTitle = f.Title,
                     IsMultiRow = a.IsMultiRow,
+                    ReferenceCategoryFieldId = f.ReferenceCategoryFieldId,
+                    ReferenceCategoryTitleFieldId = f.ReferenceCategoryTitleFieldId,
                     DataTypeId = (EnumDataType)f.DataTypeId
                 })
                 .ToListAsync();
@@ -106,6 +108,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                               FieldName = f.FieldName,
                               FieldTitle = f.Title,
                               IsMultiRow = a.IsMultiRow,
+                              ReferenceCategoryFieldId = f.ReferenceCategoryFieldId,
+                              ReferenceCategoryTitleFieldId = f.ReferenceCategoryTitleFieldId,
                               DataTypeId = (EnumDataType)f.DataTypeId
                           })
                           .ToListAsync();
@@ -114,8 +118,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             return columnList;
         }
-
-
 
         public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderBy, bool asc, int page, int size)
         {
@@ -652,7 +654,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             foreach (var field in areaFields)
             {
                 string value;
-                //bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
                 if (field.IsAutoIncrement)
                 {
@@ -761,7 +762,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             CheckUnique(checkRows, uniqueFields, curRows.Select(r => r.InputValueRowId).ToArray());
             // Check value
             CheckValue(checkRows, changeAreaFields);
-
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
