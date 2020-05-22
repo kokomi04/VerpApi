@@ -79,6 +79,19 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryService.DeleteCategory(categoryId);
         }
 
+        [HttpGet]
+        [Route("{categoryId}/categoryareas")]
+        public async Task<ServiceResult<PageData<CategoryAreaModel>>> GetInputAreas([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _categoryAreaService.GetCategoryAreas(categoryId, keyword, page, size);
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/categoryareas/{categoryAreaId}")]
+        public async Task<ServiceResult<CategoryAreaModel>> GetInputArea([FromRoute] int categoryId, [FromRoute] int categoryAreaId)
+        {
+            return await _categoryAreaService.GetCategoryArea(categoryId, categoryAreaId);
+        }
 
         [HttpPost]
         [Route("{categoryId}/categoryareas")]
