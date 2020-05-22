@@ -44,11 +44,15 @@
   
   <ItemGroup>    
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />    
+    <PackageReference Include="IdentityServer4" Version="3.1.3" />    
+    <PackageReference Include="IdentityServer4.EntityFramework" Version="3.1.3" />    
+    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="3.1.3" />    
+    <PackageReference Include="IdentityServer4.Storage" Version="3.1.3" />    
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>    
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -63,6 +67,8 @@
     <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
     <ProjectReference Include="..\..\Services\Organization\Services.Organization.Service\Services.Organization.Service.csproj" />
+    <ProjectReference Include="..\..\Services\ReportConfig\Services.ReportConfig.Model\Services.ReportConfig.Model.csproj" />
+    <ProjectReference Include="..\..\Services\ReportConfig\Services.ReportConfig.Service\Services.ReportConfig.Service.csproj" />
     <ProjectReference Include="..\..\Services\Stock\Services.Stock.Model\Services.Stock.Model.csproj" />
     <ProjectReference Include="..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
   </ItemGroup>
