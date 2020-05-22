@@ -135,6 +135,15 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryFieldService.AddCategoryField(categoryId, categoryField);
         }
 
+        [HttpPost]
+        [Route("{categoryId}/multifields")]
+        public async Task<ServiceResult> UpdateMultiField([FromRoute] int categoryId, [FromBody] List<CategoryFieldInputModel> fields)
+        {
+            return await _categoryFieldService.UpdateMultiField(categoryId, fields);
+        }
+
+
+
         [HttpPut]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult> UpdateCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId, [FromBody] CategoryFieldInputModel categoryField)
