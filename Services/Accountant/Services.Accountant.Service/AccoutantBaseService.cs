@@ -165,10 +165,10 @@ namespace VErp.Services.Accountant.Service
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            CategoryRowValue value;
+                            CategoryRowValue rowValue;
                             if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                value = new CategoryRowValue
+                                rowValue = new CategoryRowValue
                                 {
                                     CategoryRowId = id,
                                     CategoryFieldId = field.CategoryFieldId,
@@ -177,15 +177,16 @@ namespace VErp.Services.Accountant.Service
                             }
                             else
                             {
-                                value = new CategoryRowValue
+                                bool bValue = properties.TryGetValue(field.CategoryFieldName, out string value);
+                                rowValue = new CategoryRowValue
                                 {
                                     CategoryRowId = id,
                                     CategoryFieldId = field.CategoryFieldId,
-                                    Value = properties[field.CategoryFieldName] ?? null,
+                                    Value = bValue ? value : string.Empty,
                                 };
                             }
 
-                            categoryRow.CategoryRowValue.Add(value);
+                            categoryRow.CategoryRowValue.Add(rowValue);
                         }
                         lst.Add(categoryRow);
                     }
