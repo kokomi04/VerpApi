@@ -20,6 +20,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -577,20 +578,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             List<Tuple<InputValueRowInputModel, int[]>> checkRows = data.Rows.Select(r => new Tuple<InputValueRowInputModel, int[]>(r, null)).ToList();
 
             // Check field required
-            var r = CheckRequired(checkRows, requiredFields);
-            if (!r.IsSuccess()) return r;
-
+            CheckRequired(checkRows, requiredFields);
             // Check refer
-            r = CheckRefer(ref checkRows, selectFields);
-            if (!r.IsSuccess()) return r;
-
+            CheckRefer(ref checkRows, selectFields);
             // Check unique
-            r = CheckUnique(checkRows, uniqueFields);
-            if (!r.IsSuccess()) return r;
-
+            CheckUnique(checkRows, uniqueFields);
             // Check value
-            r = CheckValue(checkRows, inputAreaFields);
-            if (!r.IsSuccess()) return r;
+            CheckValue(checkRows, inputAreaFields);
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -761,20 +755,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var selectFields = changeAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId));
 
             // Check field required
-            Enum r = CheckRequired(checkRows, requiredFields);
-            if (!r.IsSuccess()) return r;
-
+            CheckRequired(checkRows, requiredFields);
             // Check refer
-            r = CheckRefer(ref checkRows, selectFields);
-            if (!r.IsSuccess()) return r;
-
+            CheckRefer(ref checkRows, selectFields);
             // Check unique
-            r = CheckUnique(checkRows, uniqueFields, curRows.Select(r => r.InputValueRowId).ToArray());
-            if (!r.IsSuccess()) return r;
-
+            CheckUnique(checkRows, uniqueFields, curRows.Select(r => r.InputValueRowId).ToArray());
             // Check value
-            r = CheckValue(checkRows, changeAreaFields);
-            if (!r.IsSuccess()) return r;
+            CheckValue(checkRows, changeAreaFields);
+
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -845,7 +833,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return changeFieldIndexes.ToArray();
         }
 
-        private Enum CheckRequired(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> requiredFields)
+        private void CheckRequired(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> requiredFields)
         {
             foreach (var field in requiredFields)
             {
@@ -854,21 +842,20 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
                 if (changeRows.Count() == 0)
                 {
-                    return InputErrorCode.RequiredFieldIsEmpty;
+                    throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
                 foreach (var row in changeRows)
                 {
                     var fieldValue = row.Item1.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
                     if (fieldValue == null || (string.IsNullOrEmpty(fieldValue.Value) && string.IsNullOrEmpty(fieldValue.TitleValue)))
                     {
-                        return InputErrorCode.RequiredFieldIsEmpty;
+                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                     }
                 }
             }
-            return GeneralCode.Success;
         }
 
-        private Enum CheckUnique(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = null)
+        private void CheckUnique(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = null)
         {
             if (deleteInputValueRowId is null)
             {
@@ -893,7 +880,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 // Check unique trong danh sách values thêm mới/sửa
                 if (values.Count != values.Distinct().Count())
                 {
-                    return InputErrorCode.UniqueValueAlreadyExisted;
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
                 }
 
                 // Checkin unique trong db
@@ -914,18 +901,16 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                 if (isExisted)
                 {
-                    return InputErrorCode.UniqueValueAlreadyExisted;
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
                 }
             }
-            return GeneralCode.Success;
         }
 
-        private Enum CheckRefer(ref List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> selectFields)
+        private void CheckRefer(ref List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> selectFields)
         {
             // Check refer
             foreach (var field in selectFields)
             {
-                //string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.FieldIndex);
                 var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
                    .Where(r => r.Item2 == null || r.Item2.Contains(field.FieldIndex));
                 var fieldValues = changeRows
@@ -963,8 +948,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     }
 
                     var values = fieldValues.Where(v => !string.IsNullOrEmpty(v.Value)).Select(v => v.Value).ToList();
-                    var inputValues = fieldValues.Where(v => string.IsNullOrEmpty(v.Value)).ToList();
-
+                    var inputValues = fieldValues.Where(v => string.IsNullOrEmpty(v.Value) && !string.IsNullOrEmpty(v.TitleValue)).ToList();
 
                     if (values.Count > 0)
                     {
@@ -990,15 +974,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     }
                     if (!isExisted)
                     {
-                        return InputErrorCode.ReferValueNotFound;
+                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
                     }
 
                 }
             }
-            return GeneralCode.Success;
         }
 
-        private Enum CheckValue(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> categoryFields)
+        private void CheckValue(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
@@ -1016,26 +999,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         continue;
                     }
 
-                    var r = CheckValue(value.Value, field);
-                    if (!r.IsSuccess())
-                    {
-                        return r;
-                    }
+                    CheckValue(value.Value, field);
                 }
             }
-            return GeneralCode.Success;
         }
 
-        private Enum CheckValue(string value, InputAreaField field)
+        private void CheckValue(string value, InputAreaField field)
         {
             if ((field.DataSize > 0 && value.Length > field.DataSize)
                 || !string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(value, field.DataType.RegularExpression)
                 || !string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression))
             {
-                return InputErrorCode.InputValueInValid;
+                throw new BadRequestException(InputErrorCode.InputValueInValid, new string[] { field.Title });
             }
-
-            return GeneralCode.Success;
         }
 
         public async Task<Enum> DeleteInputValueBill(int inputTypeId, long inputValueBillId)
