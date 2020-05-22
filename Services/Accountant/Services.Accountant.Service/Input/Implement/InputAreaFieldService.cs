@@ -60,14 +60,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = await query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToListAsync();
-            foreach (var field in lst)
-            {
-                if (field.ReferenceCategoryId.HasValue)
-                {
-                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId.Value);
-                    field.ReferenceCategoryId = referField.CategoryId;
-                }
-            }
             return (lst, total);
         }
 
@@ -118,14 +110,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToList();
-            foreach (var field in lst)
-            {
-                if (field.ReferenceCategoryId.HasValue)
-                {
-                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId.Value);
-                    field.ReferenceCategoryId = referField.CategoryId;
-                }
-            }
             return (lst, total);
         }
 
