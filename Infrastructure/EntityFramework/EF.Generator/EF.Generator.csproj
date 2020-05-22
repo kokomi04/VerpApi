@@ -19,6 +19,7 @@
     <ProjectReference Include="..\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\OrganizationDB\OrganizationDB.csproj" />
     <ProjectReference Include="..\PurchaseOrderDB\PurchaseOrderDB.csproj" />
+    <ProjectReference Include="..\ReportConfigDB\ReportConfigDB.csproj" />
     <ProjectReference Include="..\StockDB\StockDB.csproj" />
   </ItemGroup>
 

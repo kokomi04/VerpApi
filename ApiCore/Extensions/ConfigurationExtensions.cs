@@ -12,6 +12,7 @@ using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Infrastructure.ApiCore.Extensions
@@ -56,6 +57,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             }, ServiceLifetime.Scoped);
         }
 
+        public static void ConfigReportConfigDBContextContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<ReportConfigDBContext, ReportConfigDBRestrictionContext>((option) =>
+            {
+                option.UseSqlServer(appSetting.DatabaseConnections.ReportConfigDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+        
         public static void ConfigActivityLogContext(this IServiceCollection services, AppSetting appSetting)
         {
             services.AddDbContext<ActivityLogDBContext>((option) =>
