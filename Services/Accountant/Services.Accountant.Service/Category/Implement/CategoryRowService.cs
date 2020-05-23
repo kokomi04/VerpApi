@@ -144,7 +144,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             List<CategoryRowListOutputModel> nodes = new List<CategoryRowListOutputModel>();
 
             var items = categoryRows.Where(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId)).ToList();
-            categoryRows.RemoveAll(r => !r.ParentCategoryRowId.HasValue || !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId));
+            categoryRows = categoryRows.Where(r => r.ParentCategoryRowId.HasValue && categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId)).ToList();
 
             foreach (var item in items)
             {
