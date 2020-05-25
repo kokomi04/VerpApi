@@ -31,6 +31,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
     {
         private readonly MasterDBContext _masterDBContext;
         private readonly StockDBContext _stockDbContext;
+        private readonly OrganizationDBContext _organizationDBContext;
 
         private readonly IFileService _fileService;
         private readonly IInventoryService _inventoryService;
@@ -38,7 +39,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
 
-        public FileProcessDataService(MasterDBContext masterDBContext, StockDBContext stockDbContext
+        public FileProcessDataService(MasterDBContext masterDBContext
+            , StockDBContext stockDbContext
+            , OrganizationDBContext organizationDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<FileProcessDataService> logger
             , IFileService fileService
@@ -51,6 +54,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _logger = logger;
             _fileService = fileService;
             _inventoryService = inventoryService;
+            _organizationDBContext = organizationDBContext;
         }
 
         /// <summary>
@@ -386,7 +390,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         try
                         {
-                            for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                            for (int i = (sheet.FirstRowNum + 3); i <= sheet.LastRowNum; i++)
                             {
                                 var row = sheet.GetRow(i);
                                 if (row == null) continue;
@@ -456,8 +460,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 });
                             }
                             var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
-                            _masterDBContext.BulkRead<Customer>(customerDataList, readCustomerBulkConfig);
-                            _masterDBContext.BulkInsertOrUpdate<Customer>(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
+                            _organizationDBContext.BulkRead<Customer>(customerDataList, readCustomerBulkConfig);
+                            _organizationDBContext.BulkInsertOrUpdate<Customer>(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
                             return GeneralCode.Success;
                         }
                     }
