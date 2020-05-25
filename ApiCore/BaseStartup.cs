@@ -146,6 +146,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigOrganizationContext(AppSetting);
             services.ConfigAccountingContext(AppSetting);
             services.ConfigActivityLogContext(AppSetting);
+            services.ConfigReportConfigDBContextContext(AppSetting);
         }
         private void ConfigSwagger(IServiceCollection services)
         {
