@@ -237,7 +237,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 // Insert title empty when not found title
                 foreach(string value in values)
                 {
-                    if(titles.Any(t => t.Value == value))
+                    if(!titles.Any(t => t.Value == value))
                     {
                         titles.Add(new MapTitleOutputModel
                         {
