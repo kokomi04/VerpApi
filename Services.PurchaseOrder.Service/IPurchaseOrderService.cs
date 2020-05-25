@@ -30,5 +30,8 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<ServiceResult> UpdatePoProcessStatus(long purchaseOrderId, EnumPoProcessStatus poProcessStatusId);
 
+        Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderBySuggest(IList<long> purchasingSuggestIds);
+
+        Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderByAssignment(IList<long> poAssignmentIds);
     }
 }

@@ -193,5 +193,30 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .UpdatePoProcessStatus(purchaseOrderId, poProcessStatusModel.PoProcessStatusId)
                 .ConfigureAwait(true);
         }
+
+
+        /// <summary>
+        /// Lấy danh sách PO đã tạo từ suggest
+        /// </summary>
+        /// <param name="purchasingSuggestIds"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetPurchaseOrderBySuggest")]
+        public async Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderBySuggest([FromQuery] IList<long> purchasingSuggestIds)
+        {
+            return await _purchaseOrderService.GetPurchaseOrderBySuggest(purchasingSuggestIds).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy danh sách PO đã tạo từ assignment
+        /// </summary>
+        /// <param name="poAssignmentIds"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetPurchaseOrderByAssignment")]
+        public async Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderByAssignment([FromQuery] IList<long> poAssignmentIds)
+        {
+            return await _purchaseOrderService.GetPurchaseOrderByAssignment(poAssignmentIds).ConfigureAwait(true);
+        }
     }
 }
