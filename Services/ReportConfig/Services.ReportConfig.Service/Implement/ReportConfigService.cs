@@ -36,6 +36,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             _reportConfigContext = reportConfigContext;
             _activityLogService = activityLogService;
+            _mapper = mapper;
             _logger = logger;
         }
 
