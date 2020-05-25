@@ -49,7 +49,7 @@ namespace VErp.Services.Accountant.Service
 
         public IQueryable<int> FilterClauseProcess(Clause clause, IQueryable<CategoryRowValue> query, bool not = false)
         {
-            IQueryable<int> exp = null;
+            IQueryable<int> exp = query.Select(i => i.CategoryRowId);
 
             if (clause != null)
             {
