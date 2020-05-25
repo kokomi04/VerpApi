@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErpApi.Controllers.Report
 {
@@ -54,6 +55,45 @@ namespace VErpApi.Controllers.Report
                 .ReportTypeGroupDelete(reportTypeGroupId)
                 .ConfigureAwait(true);
         }
+
+        [HttpGet]
+        [Route("")]
+        public async Task<PageData<ReportTypeListModel>> GetReportTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? reportTypeGroupId = null)
+        {
+            return await _reportConfigService
+                .ReportTypes(keyword, page, size, reportTypeGroupId)
+                .ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{reportTypeId}")]
+        public async Task<ReportTypeListModel> GetReportType([FromRoute] int reportTypeId)
+        {
+            return await _reportConfigService
+                .ReportType(reportTypeId)
+                .ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("")]
+        public async Task<int> AddReportType([FromBody] ReportTypeModel data)
+        {
+            return await _reportConfigService
+                .AddReportType(data)
+                .ConfigureAwait(true);
+        }
+
+
+        [HttpPut]
+        [Route("{reportTypeId}")]
+        public async Task<int> UpdateReportType([FromRoute] int reportTypeId, [FromBody] ReportTypeModel data)
+        {
+            return await _reportConfigService
+                .UpdateReportType(reportTypeId, data)
+                .ConfigureAwait(true);
+        }
+
+
 
         [HttpGet]
         [Route("{reportTypeId}/ViewInfo")]
