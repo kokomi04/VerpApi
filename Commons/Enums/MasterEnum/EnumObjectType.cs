@@ -103,6 +103,7 @@ namespace VErp.Commons.Enums.MasterEnum
 
         ReportTypeGroup = 43,
 
-        ReportTypeView = 44
+        ReportTypeView = 44,
+        ReportType = 45
     }
 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -15,6 +16,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
@@ -222,5 +224,115 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.ReportTypeViewField.AddRangeAsync(fields);
 
         }
+
+
+        public async Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? reportTypeGroupId = null)
+        {
+            keyword = (keyword ?? "").Trim();
+
+            var query = _reportConfigContext.ReportType.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(r => r.ReportPath.Contains(keyword) || r.ReportTypeName.Contains(keyword));
+            }
+            if (reportTypeGroupId.HasValue)
+            {
+                query = query.Where(r => r.ReportTypeGroupId == reportTypeGroupId.Value);
+            }
+            query = query.OrderBy(r => r.ReportTypeName);
+            var total = await query.CountAsync();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            List<ReportTypeListModel> lst = query.ProjectTo<ReportTypeListModel>(_mapper.ConfigurationProvider).ToList();
+
+            return (lst, total);
+        }
+
+
+        public async Task<ReportTypeModel> ReportType(int reportTypeId)
+        {
+            var reportType = await _reportConfigContext.ReportType
+                .ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
+            if (reportType == null)
+            {
+                throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
+            return reportType;
+        }
+
+        public async Task<int> AddReportType(ReportTypeModel data)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(0));
+            var existedReport = await _reportConfigContext.ReportType
+                .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+            if (existedReport != null)
+            {
+                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            }
+
+            using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
+            try
+            {
+                ReportType report = _mapper.Map<ReportType>(data);
+                await _reportConfigContext.ReportType.AddAsync(report);
+                await _reportConfigContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
+                return report.ReportTypeId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                throw new BadRequestException(GeneralCode.InternalError);
+            }
+        }
+
+
+        public async Task<int> UpdateReportType(int reportTypeId, ReportTypeModel data)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(reportTypeId));
+            var report = await _reportConfigContext.ReportType
+                .Where(r => r.ReportTypeId == reportTypeId)
+                .FirstOrDefaultAsync();
+            if (report == null)
+            {
+                throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
+
+            var existedReport = await _reportConfigContext.ReportType
+              .Where(r => r.ReportTypeId != reportTypeId)
+              .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+
+            if (existedReport != null)
+            {
+                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            }
+
+            using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
+            try
+            {
+                report.ReportTypeName = data.ReportTypeName;
+                report.ReportPath = data.ReportPath;
+                report.SortOrder = data.SortOrder;
+                report.ReportTypeGroupId = data.ReportTypeGroupId;
+
+                await _reportConfigContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Cập nhật báo cáo {report.ReportTypeName}", data.JsonSerialize());
+                return report.ReportTypeId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Update");
+                throw new BadRequestException(GeneralCode.InternalError);
+            }
+        }
+
     }
 }
