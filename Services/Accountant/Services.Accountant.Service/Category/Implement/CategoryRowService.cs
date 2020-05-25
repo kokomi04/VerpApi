@@ -223,7 +223,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .Include(r => r.CategoryRowValue);
                 }
 
-                string[] values = group.Select(g => g.Value).ToArray();
+                string[] values = group.Select(g => g.Value).Distinct().ToArray();
                 var titles = query
                    .Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)))
                    .Select(r => new MapTitleOutputModel
@@ -233,6 +233,21 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                        Value = r.CategoryRowValue.First(rv => rv.CategoryFieldId == field.CategoryFieldId).Value,
                        Title = r.CategoryRowValue.First(rv => rv.CategoryFieldId == titleField.CategoryFieldId).Value
                    }).ToList();
+                
+                // Insert title empty when not found title
+                foreach(string value in values)
+                {
+                    if(titles.Any(t => t.Value == value))
+                    {
+                        titles.Add(new MapTitleOutputModel
+                        {
+                            CategoryFieldId = group.Key.CategoryFieldId,
+                            CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
+                            Value = value,
+                            Title = string.Empty
+                        });
+                    }
+                }
 
                 lst.AddRange(titles);
             }
@@ -324,25 +339,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Check value
             CheckValue(data, categoryFields);
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
             {
-                try
-                {
-                    int categoryRowId = await InsertCategoryRowAsync(categoryId, categoryFields, data);
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Category, categoryRowId, $"Thêm dòng cho danh mục {category.Title}", data.JsonSerialize());
-                    return categoryRowId;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Create");
-                    return GeneralCode.InternalError;
-                }
+                var categoryRow = await InsertCategoryRowAsync(categoryId, categoryFields, data);
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryRow.CategoryRowId, $"Thêm dòng cho danh mục {category.Title}", data.JsonSerialize());
+                return categoryRow.CategoryRowId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                return GeneralCode.InternalError;
             }
         }
 
-        private async Task<int> InsertCategoryRowAsync(int categoryId, IEnumerable<CategoryField> categoryFields, CategoryRowInputModel data)
+        private async Task<CategoryRow> InsertCategoryRowAsync(int categoryId, IEnumerable<CategoryField> categoryFields, CategoryRowInputModel data)
         {
             // Thêm dòng
             var categoryRow = new CategoryRow
@@ -398,7 +411,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             };
             await _accountingContext.CategoryRowValue.AddAsync(identityValue);
             await _accountingContext.SaveChangesAsync();
-            return categoryRow.CategoryRowId;
+            return categoryRow;
         }
 
         public async Task<Enum> UpdateCategoryRow(int categoryId, int categoryRowId, CategoryRowInputModel data)
@@ -743,20 +756,35 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     .Where(f => categoryId == f.CategoryId)
                     .ToList();
 
-                List<CategoryRowInputModel> rowInputs = new List<CategoryRowInputModel>();
+                var inputFieldCount = categoryFields
+                    .Where(f => !f.IsHidden && !f.AutoIncrement)
+                    .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY).Count();
 
-                string[][] data = reader.ReadFile(categoryFields.Where(f => !f.IsHidden && !f.AutoIncrement).Count(), 0, 1, 0);
+                List<(CategoryRowInputModel Data, string Key, string ParentKey)> rowInputs = new List<(CategoryRowInputModel Data, string Key, string ParentKey)>();
+
+                string[][] data = reader.ReadFile(inputFieldCount, 0, 1, 0);
                 string[] fieldNames = data[0];
+
+                string[][] relationshipData = reader.ReadFile(1, 0, 1, inputFieldCount);
+
+                var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
+                var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
+                var selectFields = categoryFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
+
                 for (int rowIndx = 1; rowIndx < data.Length; rowIndx++)
                 {
                     string[] row = data[rowIndx];
+                    string key = string.Empty;
                     CategoryRowInputModel rowInput = new CategoryRowInputModel();
                     for (int fieldIndx = 0; fieldIndx < fieldNames.Length; fieldIndx++)
                     {
                         string fieldName = fieldNames[fieldIndx];
                         var field = categoryFields.FirstOrDefault(f => f.CategoryFieldName == fieldName);
                         if (field == null) continue;
-
+                        if (field.IsTreeViewKey)
+                        {
+                            key = row[fieldIndx];
+                        }
                         if (field.DataTypeId == (int)EnumDataType.Boolean)
                         {
                             bool value;
@@ -798,33 +826,44 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         rowInput.CategoryRowValues.Add(rowValue);
                     }
 
-                    var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
-                    var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
-                    var selectFields = categoryFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
-
                     // Check field required
                     CheckRequired(rowInput, requiredFields);
-
                     // Check unique
                     CheckUnique(rowInput, uniqueFields);
                     // Check refer
                     CheckRefer(ref rowInput, selectFields);
-
                     // Check value
                     CheckValue(rowInput, categoryFields);
 
-                    rowInputs.Add(rowInput);
+                    rowInputs.Add((rowInput, key, relationshipData[rowIndx][0]));
                 }
 
                 using (var trans = await _accountingContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
+                        List<(CategoryRow Data, string Key, string ParentKey)> categoryRows = new List<(CategoryRow Data, string Key, string ParentKey)>();
+                        // Insert data
                         foreach (var rowInput in rowInputs)
                         {
-                            int categoryRowId = await InsertCategoryRowAsync(categoryId, categoryFields, rowInput);
+                            var categoryRow = await InsertCategoryRowAsync(categoryId, categoryFields, rowInput.Data);
+                            categoryRows.Add((categoryRow, rowInput.Key, rowInput.ParentKey));
+                        }
+                        // Insert relationship
+                        if (category.IsTreeView)
+                        {
+                            foreach(var categoryRow in categoryRows)
+                            {
+                                if (!string.IsNullOrEmpty(categoryRow.ParentKey))
+                                {
+                                    int parentId = categoryRows.Where(r => r.Key == categoryRow.ParentKey).Select(r => r.Data.CategoryRowId).FirstOrDefault();
+                                    categoryRow.Data.ParentCategoryRowId = parentId;
+                                }
+                            }
+                            _accountingContext.SaveChanges();
                         }
                         trans.Commit();
+
                     }
                     catch (Exception ex)
                     {
@@ -872,6 +911,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 titles.Add((field.Title, titleRgb));
                 names.Add((field.CategoryFieldName, nameRgb));
+            }
+            if (category.IsTreeView)
+            {
+                titles.Add(("ParentKey", titleRgb));
+                names.Add(("ParentKey", nameRgb));
             }
             dataInRows.Add(titles.ToArray());
             dataInRows.Add(names.ToArray());
