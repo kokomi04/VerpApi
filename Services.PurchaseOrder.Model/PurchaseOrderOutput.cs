@@ -5,10 +5,14 @@ using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
-    public class PurchaseOrderOutputList
+    public class PurchaseOrderOutputBasic
     {
         public long PurchaseOrderId { get; set; }
         public string PurchaseOrderCode { get; set; }
+    }
+
+    public class PurchaseOrderOutputList: PurchaseOrderOutputBasic
+    {
         public long? Date { get; set; }
         public int CustomerId { get; set; }
         public DeliveryDestinationModel DeliveryDestination { get; set; }
@@ -48,7 +52,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
     {
-       
+
         public long? PoAssignmentId { get; set; }
         public string PoAssignmentCode { get; set; }
 
@@ -70,7 +74,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
 
-      
+
     }
 
 }
