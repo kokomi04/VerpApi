@@ -45,7 +45,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public void CreateActivityAsync(ActivityInput input)
         {
-            CreateActivityTask(input).ConfigureAwait(false);
+            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
         public async Task<Enum> CreateActivityTask(ActivityInput input)
