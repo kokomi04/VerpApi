@@ -29,7 +29,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
             {
                 entity.Property(e => e.ReportPath)
                     .IsRequired()
-                    .HasMaxLength(128);
+                    .HasMaxLength(512);
 
                 entity.Property(e => e.ReportTypeName)
                     .IsRequired()
