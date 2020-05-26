@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users;
@@ -17,11 +20,12 @@ namespace VErpApi.Controllers.Stock.Internal
             _userService = userService;
         }
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromBody] Dictionary<string, List<string>> filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
+            return await _userService.GetList(keyword, page, size, filters).ConfigureAwait(true);
         }
 
         [HttpGet]

@@ -14,6 +14,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -130,7 +131,7 @@ namespace VErp.Services.Accountant.Service
 
         }
 
-        protected IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId)
+        protected IQueryable<CategoryRow> GetOutSideCategoryRows(int categoryId, object body = null)
         {
             List<CategoryRow> lst = new List<CategoryRow>();
             var config = _accountingContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == categoryId);
@@ -138,7 +139,7 @@ namespace VErp.Services.Accountant.Service
             if (!string.IsNullOrEmpty(config?.Url))
             {
                 string url = $"{config.Url}?page=1&size=9999";
-                (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000);
+                (PageData<JObject>, HttpStatusCode) result = GetFromAPI<PageData<JObject>>(url, 100000, HttpMethod.Post, body);
                 if (result.Item2 == HttpStatusCode.OK)
                 {
                     List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryId == f.CategoryId).ToList();
@@ -196,18 +197,26 @@ namespace VErp.Services.Accountant.Service
             return lst.AsQueryable();
         }
 
-        public (T, HttpStatusCode) GetFromAPI<T>(string url, int apiTimeOut)
+        public (T, HttpStatusCode) GetFromAPI<T>(string url, int apiTimeOut, HttpMethod method, object body = null)
         {
             HttpClient client = new HttpClient();
             T result = default;
             HttpStatusCode status = HttpStatusCode.OK;
 
             var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{url}";
+
             var httpRequestMessage = new HttpRequestMessage
             {
-                Method = HttpMethod.Get,
-                RequestUri = new Uri(uri)
+                Method = method,
+                RequestUri = new Uri(uri),
             };
+            httpRequestMessage.Content = new StringContent("{}", Encoding.UTF8, "application/json");
+            if (body != null)
+            {
+                var json = JsonConvert.SerializeObject(body);
+                httpRequestMessage.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            }
+
             httpRequestMessage.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
             CancellationTokenSource cts = new CancellationTokenSource(apiTimeOut);
 

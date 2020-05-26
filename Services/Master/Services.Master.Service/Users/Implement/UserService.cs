@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -251,7 +252,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<UserInfoOutput>> GetList( string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             keyword = (keyword ?? "").Trim();
             IQueryable<Employee> employees = _organizationContext.Employee;
@@ -279,6 +280,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone
             });
+
+            query = query.AsQueryable().InternalFilter(filters);
 
             var total = query.Count();
 
