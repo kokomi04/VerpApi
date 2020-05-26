@@ -177,15 +177,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputArea inputArea in inputAreas)
                 {
                     inputArea.IsDeleted = true;
-                    await _accountingContext.SaveChangesAsync();
-
                     // Xóa field
                     List<InputAreaField> inputAreaFields = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputArea.InputAreaId).ToList();
                     foreach (InputAreaField inputAreaField in inputAreaFields)
                     {
                         inputAreaField.IsDeleted = true;
-                        await _accountingContext.SaveChangesAsync();
-
                     }
                 }
 
@@ -194,21 +190,16 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (InputValueBill inputValueBill in inputValueBills)
                 {
                     inputValueBill.IsDeleted = true;
-                    await _accountingContext.SaveChangesAsync();
-
                     // Xóa row
                     List<InputValueRow> inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputValueBillId == inputValueBill.InputValueBillId).ToList();
                     foreach (InputValueRow inputValueRow in inputValueRows)
                     {
                         inputValueRow.IsDeleted = true;
-                        await _accountingContext.SaveChangesAsync();
-
                         // Xóa row version
                         List<InputValueRowVersion> inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == inputValueRow.InputValueRowId).ToList();
                         foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
                         {
                             inputValueRowVersion.IsDeleted = true;
-                            await _accountingContext.SaveChangesAsync();
                         }
                     }
                 }
@@ -218,7 +209,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
                 return GeneralCode.Success;
-
             }
             catch (Exception ex)
             {

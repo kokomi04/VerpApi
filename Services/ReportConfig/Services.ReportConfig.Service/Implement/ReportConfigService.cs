@@ -334,6 +334,45 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw new BadRequestException(GeneralCode.InternalError);
             }
         }
+        public async Task<int> DeleteReportType(int reportTypeId)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(reportTypeId));
+            var report = await _reportConfigContext.ReportType
+                .Where(r => r.ReportTypeId == reportTypeId)
+                .FirstOrDefaultAsync();
+            if (report == null)
+            {
+                throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
 
+            using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
+            try
+            {
+                report.IsDeleted = true;
+                // Xóa View
+                var reportTypeViews = _reportConfigContext.ReportTypeView.Where(v => v.ReportTypeId == reportTypeId).ToList();
+                foreach(var reportTypeView in reportTypeViews)
+                {
+                    reportTypeView.IsDeleted = true;
+                }
+                // Xóa view field
+                var viewIds = reportTypeViews.Select(v => v.ReportTypeViewId).ToList();
+                var reportTypeViewFields = _reportConfigContext.ReportTypeView.Where(f => viewIds.Contains(f.ReportTypeViewId)).ToList();
+                foreach (var reportTypeViewField in reportTypeViewFields)
+                {
+                    reportTypeViewField.IsDeleted = true;
+                }
+                await _reportConfigContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Xóa báo cáo {report.ReportTypeName}", report.JsonSerialize());
+                return report.ReportTypeId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Delete");
+                throw new BadRequestException(GeneralCode.InternalError);
+            }
+        }
     }
 }

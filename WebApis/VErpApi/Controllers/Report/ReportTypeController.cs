@@ -93,7 +93,14 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
-
+        [HttpDelete]
+        [Route("{reportTypeId}")]
+        public async Task<int> DeleteReportType([FromRoute] int reportTypeId)
+        {
+            return await _reportConfigService
+                .DeleteReportType(reportTypeId)
+                .ConfigureAwait(true);
+        }
 
         [HttpGet]
         [Route("{reportTypeId}/ViewInfo")]

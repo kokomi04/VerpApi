@@ -18,9 +18,9 @@ namespace VErpApi.Controllers.Stock.Internal
         }
 
         [HttpGet]
-        public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromQuery] string fieldName, [FromQuery] string[] values,[FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetList(keyword, page, size);
+            return await _stockService.GetList(fieldName, values, keyword, page, size);
         }
 
         [HttpGet]

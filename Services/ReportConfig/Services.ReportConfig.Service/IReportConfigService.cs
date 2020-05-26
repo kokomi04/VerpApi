@@ -27,5 +27,7 @@ namespace Verp.Services.ReportConfig.Service
         Task<int> AddReportType(ReportTypeModel data);
 
         Task<int> UpdateReportType(int reportTypeId, ReportTypeModel data);
+
+        Task<int> DeleteReportType(int reportTypeId);
     }
 }
