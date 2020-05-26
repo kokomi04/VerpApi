@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
@@ -16,7 +17,6 @@ namespace Verp.Services.ReportConfig.Model
         public string ReportTypeViewName { get; set; }
         public bool IsDefault { get; set; }
         public int Columns { get; set; }
-        public int ReportTypeGroupId { get; set; }
         public IList<ReportTypeViewFieldModel> Fields { get; set; }
 
         public void Mapping(Profile profile)
@@ -25,13 +25,15 @@ namespace Verp.Services.ReportConfig.Model
                 .ForMember(d => d.Fields, m => m.Ignore())
                 .ReverseMap()
                 .ForMember(d => d.ReportTypeViewField, m => m.Ignore())
-                .ForMember(d => d.ReportType, m => m.Ignore());
+                .ForMember(d => d.ReportType, m => m.Ignore())
+                .ForMember(d => d.ReportTypeViewId, m => m.Ignore());
         }
     }
 
     public class ReportTypeViewFieldModel : IMapFrom<ReportTypeViewField>
     {
         public int ReportTypeViewFieldId { get; set; }
+        [Required(AllowEmptyStrings = false, ErrorMessage = "Vui lòng nhập tham số báo cáo")]
         public string ParamerterName { get; set; }
         public int Column { get; set; }
         public int SortOrder { get; set; }
