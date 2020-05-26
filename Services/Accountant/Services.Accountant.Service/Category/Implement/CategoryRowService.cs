@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
@@ -208,13 +209,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             {
                 CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
                 CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
-                CategoryEntity category = _accountingContext.Category.First(c => c.CategoryId == field.CategoryId);
+                CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == field.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
                 IQueryable<CategoryRow> query;
+                List<string> values = group.Select(g => g.Value).Distinct().ToList();
                 if (isOutSide)
                 {
-                    query = GetOutSideCategoryRows(category.CategoryId);
+                    string fieldName = field.CategoryFieldName != AccountantConstants.F_IDENTITY ? field.CategoryFieldName : category.OutSideDataConfig.Key;
+                    Dictionary<string, List<string>> body = new Dictionary<string, List<string>>
+                    {
+                        {fieldName,  values}
+                    };
+                    query = GetOutSideCategoryRows(category.CategoryId, body);
                 }
                 else
                 {
@@ -223,7 +230,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .Include(r => r.CategoryRowValue);
                 }
 
-                string[] values = group.Select(g => g.Value).Distinct().ToArray();
                 var titles = query
                    .Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)))
                    .Select(r => new MapTitleOutputModel
@@ -262,7 +268,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (!string.IsNullOrEmpty(config?.Url))
                 {
                     string url = $"{config.Url}/{categoryRowId}";
-                    (JObject, HttpStatusCode) result = GetFromAPI<JObject>(url, 100000);
+                    (JObject, HttpStatusCode) result = GetFromAPI<JObject>(url, 100000, HttpMethod.Get);
                     if (result.Item2 == HttpStatusCode.OK)
                     {
                         List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryId == f.CategoryId).ToList();
@@ -734,7 +740,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             try
             {
-                string errFormat = "Dòng {0} : {1}";
                 var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
                 if (category == null)
                 {

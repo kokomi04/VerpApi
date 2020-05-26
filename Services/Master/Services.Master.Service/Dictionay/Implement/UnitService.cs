@@ -16,6 +16,7 @@ using VErp.Commons.Enums.MasterEnum;
 using Newtonsoft.Json;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.Library;
+using System.Linq.Expressions;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
@@ -71,7 +72,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
 
 
-        public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size)
+        public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -85,6 +86,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                  }
              );
 
+            query = query.InternalFilter(filters);
             if (unitStatusId.HasValue)
             {
                 query = from u in query

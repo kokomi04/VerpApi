@@ -17,7 +17,7 @@ namespace VErp.Services.Master.Service.Users
         Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId);
         Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<Enum> DeleteUser(int userId);
-        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size);
+        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
 
         Task<IList<RolePermissionModel>> GetMePermission();

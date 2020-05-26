@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Activity;
@@ -28,11 +30,12 @@ namespace VErpApi.Controllers.Stock.Internal
             _productService = productService;
         }
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromBody] Dictionary<string, List<string>> filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
-            return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+            return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size, filters);
         }
 
 
