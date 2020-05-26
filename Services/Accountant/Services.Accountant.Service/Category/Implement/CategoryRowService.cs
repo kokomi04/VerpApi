@@ -291,12 +291,25 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            var value = new CategoryValueModel
+                            CategoryValueModel rowValue;
+                            if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                CategoryFieldId = field.CategoryFieldId,
-                                Value = properties[field.CategoryFieldName]
-                            };
-                            categoryRow.CategoryRowValues.Add(value);
+                                rowValue = new CategoryValueModel
+                                {
+                                    CategoryFieldId = field.CategoryFieldId,
+                                    Value = categoryRowId.ToString()
+                                };
+                            }
+                            else
+                            {
+                                bool bValue = properties.TryGetValue(field.CategoryFieldName, out string value);
+                                rowValue = new CategoryValueModel
+                                {
+                                    CategoryFieldId = field.CategoryFieldId,
+                                    Value = bValue ? value : string.Empty,
+                                };
+                            }
+                            categoryRow.CategoryRowValues.Add(rowValue);
                         }
                     }
                 }
