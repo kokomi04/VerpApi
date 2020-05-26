@@ -47,7 +47,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (info == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình trong hệ thống");
+                return new ReportTypeViewModel()
+                {
+                    Columns = 1,
+                    Fields = new List<ReportTypeViewFieldModel>(),
+                    IsDefault = true,
+                    ReportTypeViewName = "Lọc dữ liệu"
+                };
             }
 
             var fields = await _reportConfigContext.ReportTypeViewField.AsNoTracking()

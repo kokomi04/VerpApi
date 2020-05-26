@@ -64,8 +64,6 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
 
             modelBuilder.Entity<ReportTypeViewField>(entity =>
             {
-                entity.Property(e => e.ReportTypeViewFieldId).ValueGeneratedNever();
-
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.ParamerterName)
