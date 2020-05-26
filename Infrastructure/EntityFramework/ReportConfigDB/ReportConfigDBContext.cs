@@ -27,13 +27,9 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         {
             modelBuilder.Entity<ReportType>(entity =>
             {
-                entity.Property(e => e.ReportTypeId).ValueGeneratedNever();
-
                 entity.Property(e => e.ReportPath)
                     .IsRequired()
                     .HasMaxLength(128);
-
-                entity.Property(e => e.ReportTypeGroupId).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.ReportTypeName)
                     .IsRequired()

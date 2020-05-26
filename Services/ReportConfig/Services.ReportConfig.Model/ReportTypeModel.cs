@@ -11,7 +11,7 @@ namespace Verp.Services.ReportConfig.Model
 {
     public class ReportTypeListModel : IMapFrom<ReportType>
     {
-        public int ReportTypeId { get; set; }
+        public int? ReportTypeId { get; set; }
         public int ReportTypeGroupId { get; set; }
         public string ReportTypeName { get; set; }
     }
