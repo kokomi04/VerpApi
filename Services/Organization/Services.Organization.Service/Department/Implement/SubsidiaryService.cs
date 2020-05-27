@@ -44,12 +44,12 @@ namespace Services.Organization.Service.Department.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
             var query = _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider);
-
+            query = query.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(d => d.SubsidiaryCode.Contains(keyword) || d.SubsidiaryName.Contains(keyword));
