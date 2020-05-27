@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int CategoryAreaType { get; set; }
 
         public virtual Category Category { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }
