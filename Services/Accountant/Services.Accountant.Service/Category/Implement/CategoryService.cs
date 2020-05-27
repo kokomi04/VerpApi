@@ -98,9 +98,37 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 await _accountingContext.Category.AddAsync(category);
                 await _accountingContext.SaveChangesAsync();
 
-                // Thêm F_Identity
-                await AddIdentityFieldAsync(category.CategoryId);
+                // Thêm Identity Area
+                CategoryArea identityArea = new CategoryArea
+                {
+                    CategoryId = category.CategoryId,
+                    CategoryAreaCode = AccountantConstants.IDENTITY_AREA,
+                    Title = AccountantConstants.IDENTITY_AREA_TITLE,
+                    SortOrder = 0,
+                    CategoryAreaType = (int)EnumCategoryAreaType.Identity
+                };
+                await _accountingContext.CategoryArea.AddAsync(identityArea);
+                await _accountingContext.SaveChangesAsync();
 
+                // Thêm F_Identity
+                CategoryField identityField = new CategoryField
+                {
+                    CategoryId = category.CategoryId,
+                    CategoryFieldName = AccountantConstants.F_IDENTITY,
+                    CategoryAreaId = identityArea.CategoryAreaId,
+                    Title = AccountantConstants.F_IDENTITY,
+                    FormTypeId = (int)EnumFormType.Input,
+                    DataTypeId = (int)EnumDataType.Number,
+                    DataSize = -1,
+                    IsHidden = true,
+                    IsRequired = false,
+                    IsUnique = false,
+                    IsShowSearchTable = false,
+                    IsTreeViewKey = false,
+                    IsShowList = false,
+                    IsReadOnly = true
+                };
+                await _accountingContext.CategoryField.AddAsync(identityField);
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
@@ -112,28 +140,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 _logger.LogError(ex, "Create");
                 return GeneralCode.InternalError;
             }
-        }
-
-        private async Task AddIdentityFieldAsync(int categoryId)
-        {
-            CategoryField identityField = new CategoryField
-            {
-                CategoryId = categoryId,
-                CategoryFieldName = AccountantConstants.F_IDENTITY,
-                Title = AccountantConstants.F_IDENTITY,
-                FormTypeId = (int)EnumFormType.Input,
-                DataTypeId = (int)EnumDataType.Number,
-                DataSize = -1,
-                IsHidden = true,
-                IsRequired = false,
-                IsUnique = false,
-                IsShowSearchTable = false,
-                IsTreeViewKey = false,
-                IsShowList = false,
-                IsReadOnly = true
-            };
-            await _accountingContext.CategoryField.AddAsync(identityField);
-
         }
 
         public async Task<Enum> UpdateCategory(int categoryId, CategoryModel data)

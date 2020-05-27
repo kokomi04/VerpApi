@@ -63,6 +63,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.CategoryAreaType).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.HasOne(d => d.Category)

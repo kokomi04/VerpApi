@@ -107,12 +107,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<Enum> UpdateCategoryArea(int categoryId, int categoryAreaId, CategoryAreaInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
-            var CategoryArea = await _accountingContext.CategoryArea.FirstOrDefaultAsync(a => a.CategoryId == categoryId && a.CategoryAreaId == categoryAreaId);
-            if (CategoryArea == null)
+            var categoryArea = await _accountingContext.CategoryArea.FirstOrDefaultAsync(a => a.CategoryId == categoryId && a.CategoryAreaId == categoryAreaId);
+            if (categoryArea == null)
             {
                 throw new BadRequestException(CategoryErrorCode.SubCategoryNotFound);
             }
-            if (CategoryArea.CategoryAreaCode != data.CategoryAreaCode || CategoryArea.Title != data.Title)
+            if (categoryArea.CategoryAreaCode != data.CategoryAreaCode || categoryArea.Title != data.Title)
             {
                 var existedCategory = await _accountingContext.CategoryArea
                     .FirstOrDefaultAsync(a => a.CategoryId == categoryId && a.CategoryAreaId != categoryAreaId && (a.CategoryAreaCode == data.CategoryAreaCode || a.Title == data.Title));
@@ -130,13 +130,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                CategoryArea.CategoryAreaCode = data.CategoryAreaCode;
-                CategoryArea.Title = data.Title;
-                CategoryArea.SortOrder = data.SortOrder;
+                categoryArea.CategoryAreaCode = data.CategoryAreaCode;
+                categoryArea.Title = data.Title;
+                categoryArea.SortOrder = data.SortOrder;
+                categoryArea.CategoryAreaType = (int)data.CategoryAreaType;
                 await _accountingContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, CategoryArea.CategoryAreaId, $"Cập nhật vùng dữ liệu {CategoryArea.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Category, categoryArea.CategoryAreaId, $"Cập nhật vùng dữ liệu {categoryArea.Title}", data.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)

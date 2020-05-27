@@ -2,6 +2,7 @@
 using AutoMapper;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountingDB;
 using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
@@ -19,6 +20,7 @@ namespace VErp.Services.Accountant.Model.Category
         [MaxLength(45, ErrorMessage = "Vùng dữ liệu quá dài")]
         public string CategoryAreaCode { get; set; }
         public int SortOrder { get; set; }
+        public EnumCategoryAreaType CategoryAreaType { get; set; }
     }
 
     public class CategoryAreaModel : CategoryAreaInputModel
