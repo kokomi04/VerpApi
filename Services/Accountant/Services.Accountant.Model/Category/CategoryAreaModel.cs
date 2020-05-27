@@ -20,7 +20,7 @@ namespace VErp.Services.Accountant.Model.Category
         [MaxLength(45, ErrorMessage = "Vùng dữ liệu quá dài")]
         public string CategoryAreaCode { get; set; }
         public int SortOrder { get; set; }
-        public EnumCategoryAreaType CategoryAreaType { get; set; }
+        public int CategoryAreaType { get; set; }
     }
 
     public class CategoryAreaModel : CategoryAreaInputModel
