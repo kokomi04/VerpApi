@@ -229,7 +229,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .ThenInclude(rv => rv.CategoryField);
                 }
                 var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
-               
+
 
 
 
@@ -238,10 +238,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value)));
 
                     var referObject = new NonCamelCaseDictionary();
-                 
-                    foreach (var rowValue in row?.CategoryRowValue)
+
+                    if (row != null)
                     {
-                        referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);
+                        foreach (var rowValue in row.CategoryRowValue)
+                        {
+                            referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);
+                        }
                     }
 
                     MapTitleOutputModel title = new MapTitleOutputModel
