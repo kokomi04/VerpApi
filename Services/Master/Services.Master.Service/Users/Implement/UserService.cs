@@ -78,11 +78,14 @@ namespace VErp.Services.Master.Service.Users.Implement
                         return r;
                     }
                     // Gắn phòng ban cho nhân sự
-                    var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId, updatedUserId);
-                    if (!r2.IsSuccess())
+                    if (req.DepartmentId.HasValue)
                     {
-                        trans.Rollback();
-                        return r2;
+                        var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId.Value, updatedUserId);
+                        if (!r2.IsSuccess())
+                        {
+                            trans.Rollback();
+                            return r2;
+                        }
                     }
 
                     trans.Commit();
@@ -259,14 +262,22 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var userIds = employees.Where(em => em.FullName.Contains(keyword)
+                var userIds = await employees.Where(em => em.FullName.Contains(keyword)
                     || em.EmployeeCode.Contains(keyword)
-                    || em.Email.Contains(keyword)).Select(em => em.UserId).AsEnumerable();
+                    || em.Email.Contains(keyword)).Select(em => em.UserId).ToArrayAsync();
 
                 users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
             }
 
-            var query = users.AsEnumerable().Join(employees.AsEnumerable(), u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
+            var total = await users.CountAsync();
+
+            var lstUsers = await (size > 0 ? users.OrderBy(u => u.UserStatusId).ThenBy(u => u.UserName).Skip((page - 1) * size).Take(size).ToListAsync() : users.OrderBy(u => u.UserStatusId).ThenBy(u => u.UserName).ToListAsync());
+
+            var selectedUserIds = lstUsers.Select(u => u.UserId).ToList();
+
+            var lstEmployees = employees.Where(e => selectedUserIds.Contains(e.UserId));
+
+            var lst = lstUsers.AsEnumerable().Join(lstEmployees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
             {
                 UserId = u.UserId,
                 UserName = u.UserName,
@@ -278,12 +289,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone
-            });
+            })
+            .ToList();
 
-            var total = query.Count();
-
-            var lst = size > 0 ? query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToList() : query.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).ToList();
-
+           
             return (lst, total);
         }
 
@@ -348,10 +357,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                     var departmentId = _organizationContext.EmployeeDepartmentMapping
                         .Where(m => m.UserId == userId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
                         .Select(d => d.DepartmentId).FirstOrDefault();
+
                     // Nếu khác update lại thông tin
-                    if (departmentId != req.DepartmentId)
+                    if (departmentId != req.DepartmentId && req.DepartmentId.HasValue)
                     {
-                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
+                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);
                         if (!r3.IsSuccess())
                         {
                             trans.Rollback();
