@@ -73,7 +73,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 from t in _accountingContext.InputType
                 join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                 join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
-                join rtf in _accountingContext.CategoryField on f.ReferenceCategoryTitleFieldId equals rtf.CategoryFieldId
+                join rtf in _accountingContext.CategoryField on f.ReferenceCategoryTitleFieldId equals rtf.CategoryFieldId into rtfs
+                from rtf in rtfs.DefaultIfEmpty()
                 where t.InputTypeId == inputTypeId && !a.IsMultiRow
                 orderby a.SortOrder, f.SortOrder
                 select new InputTypeListColumn
@@ -100,7 +101,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                           from t in _accountingContext.InputType
                           join a in _accountingContext.InputArea on t.InputTypeId equals a.InputTypeId
                           join f in _accountingContext.InputAreaField on a.InputAreaId equals f.InputAreaId
-                          join rtf in _accountingContext.CategoryField on f.ReferenceCategoryTitleFieldId equals rtf.CategoryFieldId
+                          join rtf in _accountingContext.CategoryField on f.ReferenceCategoryTitleFieldId equals rtf.CategoryFieldId into rtfs
+                          from rtf in rtfs.DefaultIfEmpty()
                           where t.InputTypeId == inputTypeId && a.InputAreaId == firstArea.InputAreaId
                           orderby a.SortOrder, f.SortOrder
                           select new InputTypeListColumn
