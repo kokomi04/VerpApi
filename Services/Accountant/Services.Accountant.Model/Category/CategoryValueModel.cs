@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System.Collections.Generic;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -26,12 +27,12 @@ namespace VErp.Services.Accountant.Model.Category
     public class MapTitleInputModel
     {
         public int CategoryFieldId { get; set; }
-        public int? CategoryFieldTitleId { get; set; }
+        //public int? CategoryFieldTitleId { get; set; }
         public string Value { get; set; }
     }
 
     public class MapTitleOutputModel : MapTitleInputModel
     {
-        public string Title { get; set; }
+        public Dictionary<string, string> ReferObject { get; set; }
     }
 }

@@ -204,12 +204,12 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues)
         {
             List<MapTitleOutputModel> lst = new List<MapTitleOutputModel>();
-            var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId, v.CategoryFieldTitleId });
+            var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId });
             foreach (var group in groups)
             {
                 CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
-                CategoryField titleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldTitleId);
-                CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == field.CategoryId);
+                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId);
+                CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == referField.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
                 IQueryable<CategoryRow> query;
@@ -227,32 +227,27 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     query = _accountingContext.CategoryRow
                         .Where(r => r.CategoryId == category.CategoryId)
-                        .Include(r => r.CategoryRowValue);
+                        .Include(r => r.CategoryRowValue)
+                        .ThenInclude(rv => rv.CategoryField);
                 }
-
-                var titles = query
-                   .Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)))
-                   .Select(r => new MapTitleOutputModel
-                   {
-                       CategoryFieldId = group.Key.CategoryFieldId,
-                       CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
-                       Value = r.CategoryRowValue.First(rv => rv.CategoryFieldId == field.CategoryFieldId).Value,
-                       Title = r.CategoryRowValue.First(rv => rv.CategoryFieldId == titleField.CategoryFieldId).Value
-                   }).ToList();
-                
-                // Insert title empty when not found title
-                foreach(string value in values)
+                var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value))).ToList();
+                List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
+                foreach (var value in values)
                 {
-                    if(!titles.Any(t => t.Value == value))
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)));
+
+                    Dictionary<string, string> referObject = new Dictionary<string, string>();
+                    foreach (var rowValue in row?.CategoryRowValue)
                     {
-                        titles.Add(new MapTitleOutputModel
-                        {
-                            CategoryFieldId = group.Key.CategoryFieldId,
-                            CategoryFieldTitleId = group.Key.CategoryFieldTitleId,
-                            Value = value,
-                            Title = string.Empty
-                        });
+                        referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);
                     }
+
+                    MapTitleOutputModel title = new MapTitleOutputModel
+                    {
+                        CategoryFieldId = field.CategoryFieldId,
+                        Value = value,
+                        ReferObject = referObject
+                    };
                 }
 
                 lst.AddRange(titles);
@@ -870,7 +865,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         // Insert relationship
                         if (category.IsTreeView)
                         {
-                            foreach(var categoryRow in categoryRows)
+                            foreach (var categoryRow in categoryRows)
                             {
                                 if (!string.IsNullOrEmpty(categoryRow.ParentKey))
                                 {

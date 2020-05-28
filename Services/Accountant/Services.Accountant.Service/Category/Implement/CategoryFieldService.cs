@@ -41,7 +41,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _accountingContext.CategoryField.AsQueryable();
+            var query = _accountingContext.CategoryField
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.InverseReferenceCategoryTitleField)
+                .AsQueryable();
 
             query = query.Where(c => categoryId == c.CategoryId);
             if (!string.IsNullOrEmpty(keyword))
@@ -58,22 +61,13 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .OrderBy(f => f.SortOrder)
                 .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
-            foreach (var field in lst)
-            {
-                if (field.ReferenceCategoryId.HasValue)
-                {
-                    CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryId);
-                    field.ReferenceCategoryId = referField.CategoryId;
-                }
-            }
+
             return (lst, total);
         }
 
         public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountingContext.CategoryField
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
                 .Include(f => f.ReferenceCategoryTitleField)
                 .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
@@ -81,11 +75,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (categoryField == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
-            }
-            if (categoryField.ReferenceCategoryId.HasValue)
-            {
-                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == categoryField.ReferenceCategoryId);
-                categoryField.ReferenceCategoryId = referField.CategoryId;
             }
             return categoryField;
         }

@@ -45,9 +45,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -68,9 +67,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -118,9 +116,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var inputAreaField = await _accountingContext.InputAreaField
                 .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (inputAreaField == null)
@@ -128,11 +125,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputAreaFieldNotFound;
             }
 
-            if (inputAreaField.ReferenceCategoryId.HasValue)
-            {
-                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == inputAreaField.ReferenceCategoryId.Value);
-                inputAreaField.ReferenceCategoryId = referField.CategoryId;
-            }
             return inputAreaField;
         }
 
@@ -336,7 +328,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                where row.InputAreaId == inputAreaId
                                select rowVersion).All(Expression.Lambda<Func<InputValueRowVersion, bool>>(expression, rParam));
 
-                    if(firstIndex == -1)
+                    if (firstIndex == -1)
                     {
                         firstIndex = indx;
                     }
@@ -350,7 +342,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
             }
 
-            if(index == -1)
+            if (index == -1)
             {
                 index = firstIndex;
             }
