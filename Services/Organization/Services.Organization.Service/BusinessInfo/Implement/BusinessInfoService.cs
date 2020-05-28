@@ -73,6 +73,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
                     Email = data.Email,
                     LogoFileId = data.LogoFileId,
                     CreatedTime = DateTime.UtcNow,
+                    UpdatedTime = DateTime.UtcNow,
                     UpdatedUserId = updatedUserId
                 };
                 _organizationContext.BusinessInfo.Add(businessInfo);
