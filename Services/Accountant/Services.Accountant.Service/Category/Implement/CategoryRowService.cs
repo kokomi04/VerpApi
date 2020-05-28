@@ -203,20 +203,18 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues)
         {
-            List<MapTitleOutputModel> lst = new List<MapTitleOutputModel>();
-            var groups = categoryValues.GroupBy(v => new { v.CategoryFieldId });
+            List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
+            var groups = categoryValues.GroupBy(v => new { v.ReferCategoryFieldId });
             foreach (var group in groups)
             {
-                CategoryField field = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.CategoryFieldId);
-                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId);
+                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
                 CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == referField.CategoryId);
                 bool isOutSide = category.IsOutSideData;
-                bool isFieldRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !isOutSide;
                 IQueryable<CategoryRow> query;
                 List<string> values = group.Select(g => g.Value).Distinct().ToList();
                 if (isOutSide)
                 {
-                    string fieldName = field.CategoryFieldName != AccountantConstants.F_IDENTITY ? field.CategoryFieldName : category.OutSideDataConfig.Key;
+                    string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
                     Dictionary<string, List<string>> body = new Dictionary<string, List<string>>
                     {
                         {fieldName,  values}
@@ -230,11 +228,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .Include(r => r.CategoryRowValue)
                         .ThenInclude(rv => rv.CategoryField);
                 }
-                var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value))).ToList();
-                List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
+                var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
+               
                 foreach (var value in values)
                 {
-                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == field.CategoryFieldId && values.Contains(rv.Value)));
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value)));
 
                     Dictionary<string, string> referObject = new Dictionary<string, string>();
                     foreach (var rowValue in row?.CategoryRowValue)
@@ -244,15 +242,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                     MapTitleOutputModel title = new MapTitleOutputModel
                     {
-                        CategoryFieldId = field.CategoryFieldId,
+                        ReferCategoryFieldId = referField.CategoryFieldId,
                         Value = value,
                         ReferObject = referObject
                     };
+                    titles.Add(title);
                 }
-
-                lst.AddRange(titles);
             }
-            return lst;
+            return titles;
         }
 
         private void GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRowOutputModel categoryRow)

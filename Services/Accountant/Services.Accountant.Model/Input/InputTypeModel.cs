@@ -24,6 +24,8 @@ namespace VErp.Services.Accountant.Model.Input
 
         public int SortOrder { get; set; }
         public int? InputTypeGroupId { get; set; }
+        public string PreLoadAction { get; set; }
+        public string PostLoadAction { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel

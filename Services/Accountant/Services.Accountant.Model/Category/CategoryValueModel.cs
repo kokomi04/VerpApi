@@ -26,7 +26,7 @@ namespace VErp.Services.Accountant.Model.Category
 
     public class MapTitleInputModel
     {
-        public int CategoryFieldId { get; set; }
+        public int ReferCategoryFieldId { get; set; }
         //public int? CategoryFieldTitleId { get; set; }
         public string Value { get; set; }
     }

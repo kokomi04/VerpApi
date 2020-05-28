@@ -359,6 +359,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.PostLoadAction).HasMaxLength(512);
+
+                entity.Property(e => e.PreLoadAction).HasMaxLength(512);
+
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.HasOne(d => d.InputTypeGroup)

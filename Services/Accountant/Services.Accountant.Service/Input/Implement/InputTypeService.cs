@@ -146,6 +146,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 inputType.Title = data.Title;
                 inputType.SortOrder = data.SortOrder;
                 inputType.InputTypeGroupId = data.InputTypeGroupId;
+                inputType.PreLoadAction = data.PreLoadAction;
+                inputType.PostLoadAction = data.PostLoadAction;
 
                 await _accountingContext.SaveChangesAsync();
 

@@ -24,6 +24,8 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string PreLoadAction { get; set; }
+        public string PostLoadAction { get; set; }
 
         public virtual InputTypeGroup InputTypeGroup { get; set; }
         public virtual ICollection<InputArea> InputArea { get; set; }
