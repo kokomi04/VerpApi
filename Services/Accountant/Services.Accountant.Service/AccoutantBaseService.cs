@@ -166,26 +166,27 @@ namespace VErp.Services.Accountant.Service
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            CategoryRowValue rowValue;
+                             string value = string.Empty;
                             if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                rowValue = new CategoryRowValue
-                                {
-                                    CategoryRowId = id,
-                                    CategoryFieldId = field.CategoryFieldId,
-                                    Value = id.ToString()
-                                };
+                                value = id.ToString();
                             }
                             else
                             {
-                                bool bValue = properties.TryGetValue(field.CategoryFieldName, out string value);
-                                rowValue = new CategoryRowValue
+                                bool bValue = properties.TryGetValue(field.CategoryFieldName, out value);
+                                if (value == true.ToString() || value == false.ToString())
                                 {
-                                    CategoryRowId = id,
-                                    CategoryFieldId = field.CategoryFieldId,
-                                    Value = bValue ? value : string.Empty,
-                                };
+                                    value = value.ToLower();
+                                }
                             }
+
+                            CategoryRowValue rowValue = new CategoryRowValue
+                            {
+                                CategoryRowId = id,
+                                CategoryFieldId = field.CategoryFieldId,
+                                Value = value,
+                                CategoryField = field
+                            };
 
                             categoryRow.CategoryRowValue.Add(rowValue);
                         }

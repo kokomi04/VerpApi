@@ -44,14 +44,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .Include(c => c.OutSideDataConfig)
                 .Include(c => c.CategoryArea)
                 .ThenInclude(a => a.CategoryField)
+                .ThenInclude(f => f.ReferenceCategoryField)
+                .Include(c => c.CategoryArea)
+                .ThenInclude(a => a.CategoryField)
+                .ThenInclude(f => f.InverseReferenceCategoryTitleField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 return CategoryErrorCode.CategoryNotFound;
             }
-            //category.SubCategories = GetSubCategories(category.CategoryId);
-            //category.CategoryFields = GetFields(category.CategoryId);
             return category;
         }
 
