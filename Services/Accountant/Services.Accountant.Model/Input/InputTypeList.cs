@@ -23,6 +23,7 @@ namespace VErp.Services.Accountant.Model.Input
         public bool IsMultiRow { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
+        public string ReferenceCategoryTitleFieldName { get; set; }
         public EnumDataType DataTypeId { get; set; }
 
     }
