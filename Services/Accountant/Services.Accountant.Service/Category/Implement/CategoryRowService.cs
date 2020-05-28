@@ -215,7 +215,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (isOutSide)
                 {
                     string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
-                    Dictionary<string, List<string>> body = new Dictionary<string, List<string>>
+                    var body = new Dictionary<string, List<string>>
                     {
                         {fieldName,  values}
                     };
@@ -230,11 +230,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
                 var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
                
+
+
+
                 foreach (var value in values)
                 {
                     var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value)));
 
-                    Dictionary<string, string> referObject = new Dictionary<string, string>();
+                    var referObject = new NonCamelCaseDictionary();
+                 
                     foreach (var rowValue in row?.CategoryRowValue)
                     {
                         referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);

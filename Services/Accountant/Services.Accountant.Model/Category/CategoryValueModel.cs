@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
@@ -31,8 +33,9 @@ namespace VErp.Services.Accountant.Model.Category
         public string Value { get; set; }
     }
 
+
     public class MapTitleOutputModel : MapTitleInputModel
     {
-        public Dictionary<string, string> ReferObject { get; set; }
+        public NonCamelCaseDictionary ReferObject { get; set; }
     }
 }

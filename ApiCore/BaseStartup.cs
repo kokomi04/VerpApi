@@ -98,7 +98,7 @@ namespace VErp.Infrastructure.ApiCore
            .AddNewtonsoftJson(options =>
            {
                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-               options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+               options.SerializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
                //options.SerializerSettings.Converters.Add(new StringEnumConverter());
