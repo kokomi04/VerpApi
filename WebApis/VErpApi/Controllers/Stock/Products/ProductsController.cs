@@ -159,7 +159,7 @@ namespace VErpApi.Controllers.Stock.Products
                 return objectCode;
             }
 
-            objectCode.Data = string.IsNullOrWhiteSpace(typeCode) ? objectCode.Data : typeCode + "-" + objectCode.Data;
+            objectCode.Data = string.IsNullOrWhiteSpace(typeCode) ? objectCode.Data : typeCode + objectCode.Data;
 
             return objectCode;
         }
