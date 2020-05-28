@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -61,54 +62,59 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return validate;
             }
 
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
+            try
             {
-                try
+                var user = await CreateUserAuthen(req);
+                if (!user.Code.IsSuccess())
                 {
-                    var user = await CreateUserAuthen(req);
-                    if (!user.Code.IsSuccess())
-                    {
-                        trans.Rollback();
-                        return user.Code;
-                    }
-                    var r = await CreateEmployee(user.Data, req);
-                    if (!r.IsSuccess())
-                    {
-                        trans.Rollback();
-                        return r;
-                    }
-                    // Gắn phòng ban cho nhân sự
-                    if (req.DepartmentId.HasValue)
-                    {
-                        var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId.Value, updatedUserId);
-                        if (!r2.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return r2;
-                        }
-                    }
+                    await trans.RollbackAsync();
 
-                    trans.Commit();
-
-                    var info = await GetUserFullInfo(user.Data);
-
-                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
-
-                    _logger.LogInformation("CreateUser({0}) successful!", user.Data);
-
-                    if (req.AvatarFileId.HasValue)
-                    {
-                        _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, user.Data));
-                    }
-
-                    return user.Data;
+                    return user.Code;
                 }
-                catch (Exception ex)
+
+                var r = await CreateEmployee(user.Data, req);
+
+                if (!r.IsSuccess())
                 {
-                    trans.Rollback();
-                    _logger.LogError(ex, "CreateUser");
-                    return GeneralCode.InternalError;
+                    await trans.RollbackAsync();
+                    return r;
                 }
+
+                // Gắn phòng ban cho nhân sự
+                if (req.DepartmentId.HasValue)
+                {
+                    var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId.Value, updatedUserId);
+                    if (!r2.IsSuccess())
+                    {
+                        await trans.RollbackAsync();
+
+                        return r2;
+                    }
+                }
+
+
+                trans.Commit();
+
+                var info = await GetUserFullInfo(user.Data);
+
+                await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
+
+                _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+
+                if (req.AvatarFileId.HasValue)
+                {
+                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, user.Data));
+                }
+
+                return user.Data;
+            }
+
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateUser");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -214,7 +220,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             var userInfo = await GetUserFullInfo(userId);
             long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
 
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            await using (var trans = new MultipleDbTransaction(_masterContext, _organizationContext))
             {
                 try
                 {
@@ -292,7 +298,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             })
             .ToList();
 
-           
+
             return (lst, total);
         }
 
@@ -334,7 +340,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             var userInfo = await GetUserFullInfo(userId);
 
             long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            await using (var trans = new MultipleDbTransaction(_masterContext, _organizationContext))
             {
                 try
                 {

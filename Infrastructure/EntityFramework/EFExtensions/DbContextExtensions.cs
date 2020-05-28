@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -107,6 +108,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         obj.SetValue("UpdatedDatetimeUtc", DateTime.UtcNow);
                     }
                 }
+            }
+        }
+
+
+        public static IEnumerable<IDbContextTransaction> BeginTransaction(params DbContext[] contexts)
+        {
+            foreach (var ctx in contexts)
+            {
+                yield return ctx.Database.BeginTransactionAsync().GetAwaiter().GetResult();
             }
         }
 
