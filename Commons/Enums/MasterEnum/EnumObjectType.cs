@@ -99,6 +99,11 @@ namespace VErp.Commons.Enums.MasterEnum
 
         Subsidiary = 41,
 
-        ObjectProcessStep = 42
+        ObjectProcessStep = 42,
+
+        ReportTypeGroup = 43,
+
+        ReportTypeView = 44,
+        ReportType = 45
     }
 }

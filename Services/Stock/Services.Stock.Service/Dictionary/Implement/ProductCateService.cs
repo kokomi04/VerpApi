@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -124,7 +125,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate;
         }
 
-        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             var query = (from c in _stockContext.ProductCate select c);
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -133,7 +134,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         where c.ProductCateName.Contains(keyword)
                         select c;
             }
-
+            query = query.InternalFilter(filters);
             var total = await query.CountAsync();
 
             var lst = query.Select(c => new ProductCateOutput()

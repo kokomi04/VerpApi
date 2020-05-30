@@ -42,8 +42,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsTreeViewKey { get; set; }
         public bool? IsShowSearchTable { get; set; }
         public bool IsReadOnly { get; set; }
+        public int CategoryAreaId { get; set; }
 
         public virtual Category Category { get; set; }
+        public virtual CategoryArea CategoryArea { get; set; }
         public virtual DataType DataType { get; set; }
         public virtual FormType FormType { get; set; }
         public virtual CategoryField ReferenceCategoryField { get; set; }

@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
+        public Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
             var bTime = DateTime.MinValue;
             var eTime = DateTime.MinValue;
@@ -84,7 +84,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 eTime = eTime.AddDays(1);
             }
 
-            var query = from i in _stockDbContext.Inventory
+            var query = from i in _stockDbContext.Inventory.AsNoTracking()
                         select i;
             if (stockId > 0)
             {
@@ -116,6 +116,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     query = query.Where(q => q.Date < eTime);
                 }
             }
+
+            if (isApproved.HasValue)
+            {
+                query = query.Where(q => q.IsApproved == isApproved);
+            }
+
             query = query.SortByFieldName(sortBy, asc);
 
             var total = query.Count();

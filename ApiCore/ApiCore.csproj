@@ -52,6 +52,7 @@
     <ProjectReference Include="..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\ReportConfigDB\ReportConfigDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>

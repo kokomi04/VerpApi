@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Stock;
-using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Stock;
 
 namespace VErpApi.Controllers.Stock.Internal
@@ -25,10 +20,12 @@ namespace VErpApi.Controllers.Stock.Internal
             _stockService = stockService;
         }
 
-        [HttpGet]
-        public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("")]
+        public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromBody] Dictionary<string, List<string>> filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetList(keyword, page, size);
+            return await _stockService.GetList(keyword, page, size, filters);
         }
 
         [HttpGet]

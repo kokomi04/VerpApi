@@ -3,7 +3,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -16,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
+using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -227,8 +231,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-
-        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             var query = from p in _stockContext.Stock
                         select p;
@@ -239,7 +242,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
-
+            query = query.InternalFilter(filters);
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
@@ -260,6 +263,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (pagedData, total);
         }
+
+
 
         public async Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size)
         {
@@ -646,7 +651,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductName = pk.ProductName,
                 PackageId = pk.PackageId,
                 PackageCode = pk.PackageCode,
-                Date = pk.Date.HasValue? pk.Date.Value.GetUnix() : (long?)0,
+                Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)0,
                 ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
                 PrimaryUnitId = pk.PrimaryUnitId,
                 PrimaryQuantity = pk.PrimaryQuantity,
@@ -1026,7 +1031,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (stockIds.Count > 0)
                     inPerdiodQuery = inPerdiodQuery.Where(q => stockIds.Contains(q.i.StockId));
 
-               
+
 
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {

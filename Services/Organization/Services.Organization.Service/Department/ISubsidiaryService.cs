@@ -9,7 +9,7 @@ namespace Services.Organization.Service.Department
 {
     public interface ISubsidiaryService
     {
-        Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size);
+        Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null);
 
         Task<int> Create(SubsidiaryModel data);
 

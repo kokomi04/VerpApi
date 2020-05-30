@@ -790,6 +790,62 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
+        public async Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderBySuggest(IList<long> purchasingSuggestIds)
+        {
+            var poDetail = await(
+                from s in _purchaseOrderDBContext.PurchaseOrder
+                join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
+                join r in _purchaseOrderDBContext.PurchasingSuggestDetail on sd.PurchasingSuggestDetailId equals r.PurchasingSuggestDetailId
+                where purchasingSuggestIds.Contains(r.PurchasingSuggestId)
+                select new
+                {
+                    r.PurchasingSuggestId,
+                    s.PurchaseOrderId,
+                    s.PurchaseOrderCode
+                }).ToListAsync();
+
+            return purchasingSuggestIds.Distinct()
+                .ToDictionary(
+                r => r,
+                r => (IList<PurchaseOrderOutputBasic>)poDetail.Where(d => d.PurchasingSuggestId == r).Select(d => new PurchaseOrderOutputBasic
+                {
+                    PurchaseOrderId = d.PurchaseOrderId,
+                    PurchaseOrderCode = d.PurchaseOrderCode
+                })
+                    .Distinct()
+                    .ToList()
+                );
+
+        }
+
+        public async Task<IDictionary<long, IList<PurchaseOrderOutputBasic>>> GetPurchaseOrderByAssignment(IList<long> poAssignmentIds)
+        {
+            var poDetail = await(
+                from s in _purchaseOrderDBContext.PurchaseOrder
+                join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
+                join r in _purchaseOrderDBContext.PoAssignmentDetail on sd.PoAssignmentDetailId equals r.PoAssignmentDetailId
+                where poAssignmentIds.Contains(r.PoAssignmentId)
+                select new
+                {
+                    r.PoAssignmentId,
+                    s.PurchaseOrderId,
+                    s.PurchaseOrderCode
+                }).ToListAsync();
+
+            return poAssignmentIds.Distinct()
+                .ToDictionary(
+                r => r,
+                r => (IList<PurchaseOrderOutputBasic>)poDetail.Where(d => d.PoAssignmentId == r).Select(d => new PurchaseOrderOutputBasic
+                {
+                    PurchaseOrderId = d.PurchaseOrderId,
+                    PurchaseOrderCode = d.PurchaseOrderCode
+                })
+                    .Distinct()
+                    .ToList()
+                );
+        }
+
+
         private async Task<Enum> ValidatePoModelInput(long? poId, PurchaseOrderInput model)
         {
             if (!string.IsNullOrEmpty(model.PurchaseOrderCode))
@@ -982,6 +1038,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
              }).AsNoTracking()
              .ToListAsync();
         }
+
+    
 
         private class PoAssignmentDetailInfo
         {

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -192,7 +193,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size)
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -213,6 +214,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                      CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
              );
+
+            query = query.InternalFilter(filters);
+
             if (customerStatusId.HasValue)
             {
                 query = from u in query

@@ -11,6 +11,8 @@ using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
+using Verp.Services.ReportConfig.Model;
+using Verp.Services.ReportConfig.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -80,6 +82,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(StockServiceAssembly.Assembly);
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
             services.AddScopedServices(OrganizationServiceAssembly.Assembly);
+            services.AddScopedServices(ReportConfigServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
 
@@ -90,6 +93,7 @@ namespace VErp.WebApis.VErpApi
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }

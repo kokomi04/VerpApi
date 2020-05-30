@@ -39,11 +39,12 @@ namespace VErp.Services.Accountant.Model.Input
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
     {
         public int? ReferenceCategoryId { get; set; }
-
+        public string ReferenceCategoryTitleFieldName { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputAreaField, InputAreaFieldOutputFullModel>()
-                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId));
+                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId))
+                .ForMember(dest => dest.ReferenceCategoryTitleFieldName, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField.CategoryFieldName));
         }
     }
 }

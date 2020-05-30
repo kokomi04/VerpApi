@@ -14,6 +14,6 @@ namespace VErp.Services.Accountant.Service.Input
         Task<ServiceResult<int>> AddInputAreaField(int inputTypeId, int inputAreaId, InputAreaFieldInputModel data);
         Task<Enum> UpdateInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data);
         Task<Enum> DeleteInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId);
-        Task<ServiceResult<int[]>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields);
+        Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields);
     }
 }

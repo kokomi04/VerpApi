@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
@@ -44,9 +45,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -59,13 +59,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = await query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToListAsync();
-            foreach (var field in lst)
-            {
-                if (field.ReferenceCategoryId.HasValue)
-                {
-                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
-                }
-            }
             return (lst, total);
         }
 
@@ -74,9 +67,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
@@ -116,13 +108,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
             }
             List<InputAreaFieldOutputFullModel> lst = query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToList();
-            foreach (var field in lst)
-            {
-                if (field.ReferenceCategoryId.HasValue)
-                {
-                    field.ReferenceCategoryId = GetReferenceCategory(field.ReferenceCategoryId.Value).CategoryId;
-                }
-            }
             return (lst, total);
         }
 
@@ -131,9 +116,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var inputAreaField = await _accountingContext.InputAreaField
                 .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
                 .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.DataType)
-                .Include(f => f.FormType)
                 .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.ReferenceCategoryTitleField)
                 .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (inputAreaField == null)
@@ -141,10 +125,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputAreaFieldNotFound;
             }
 
-            if (inputAreaField.ReferenceCategoryId.HasValue)
-            {
-                inputAreaField.ReferenceCategoryId = GetReferenceCategory(inputAreaField.ReferenceCategoryId.Value).CategoryId;
-            }
             return inputAreaField;
         }
 
@@ -173,7 +153,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
                 updateFieldName = inputAreaField.FieldName == data.FieldName;
             }
-            if (updateFieldName && _accountingContext.InputAreaField.Any(f => (!inputAreaFieldId.HasValue || f.InputAreaFieldId != inputAreaFieldId.Value) && f.FieldName == data.FieldName))
+            if (updateFieldName && _accountingContext.InputAreaField.Any(f => (!inputAreaFieldId.HasValue || f.InputAreaFieldId != inputAreaFieldId.Value) && f.InputAreaFieldId == data.InputAreaFieldId && f.FieldName == data.FieldName))
             {
                 return InputErrorCode.InputAreaFieldNameAlreadyExisted;
             }
@@ -209,19 +189,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<ServiceResult<int[]>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
+        public async Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
         {
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                List<int> updateId = new List<int>();
                 // Validate trùng name trong danh sách
-                if (fields.Select(f => new { f.InputAreaId, f.FieldName}).Distinct().Count() != fields.Count)
+                if (fields.Select(f => new { f.InputAreaId, f.FieldName }).Distinct().Count() != fields.Count)
                 {
                     return InputErrorCode.InputAreaFieldNameAlreadyExisted;
                 }
 
-                var groups = fields.GroupBy(i => new { i.InputAreaId});
+                var groups = fields.GroupBy(i => new { i.InputAreaId });
                 foreach (var group in groups)
                 {
                     Enum r = ValidateExistedInputType(inputTypeId, group.Key.InputAreaId);
@@ -229,10 +208,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     {
                         return r;
                     }
-                 
-                    for (int indx = 0; indx < fields.Count; indx++)
+
+                    for (int indx = 0; indx < group.Count(); indx++)
                     {
-                        var data = fields[indx];
+                        var data = group.ElementAt(indx);
                         var inputAreaField = data.InputAreaFieldId > 0 ? _accountingContext.InputAreaField.FirstOrDefault(f => f.InputAreaFieldId == data.InputAreaFieldId) : null;
                         r = ValidateInputAreaField(data, inputAreaField, data.InputAreaFieldId);
                         if (!r.IsSuccess())
@@ -259,14 +238,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                             await _accountingContext.SaveChangesAsync();
                         }
-
-                        updateId.Add(inputAreaField.InputTypeId);
                     }
                 }
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
-                return updateId.ToArray();
+                return inputTypeId;
             }
             catch (Exception ex)
             {
@@ -275,7 +252,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
-
 
         public async Task<ServiceResult<int>> AddInputAreaField(int inputTypeId, int inputAreaId, InputAreaFieldInputModel data)
         {
@@ -323,15 +299,55 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         private int GetFieldIndex(int inputAreaId)
         {
             int index = -1;
-            var arrIndex = _accountingContext.InputAreaField.Where(f => f.InputAreaId == inputAreaId).Select(f => f.FieldIndex).ToList();
-            for (int indx = 0; indx <= 20; indx++)
+            var arrIndex = _accountingContext.InputAreaField
+                .Where(f => f.InputAreaId == inputAreaId)
+                .Select(f => f.FieldIndex).ToList();
+            int firstIndex = -1;
+            // Lấy ra index bị xóa và data null hoặc empty hoặc chưa được sử dụng 
+            for (int indx = 0; indx <= AccountantConstants.INPUT_TYPE_FIELD_NUMBER; indx++)
             {
-                if (!arrIndex.Contains(indx))
+                // Check bị xóa hoặc chưa sử dụng
+                bool isUsedYet = !arrIndex.Contains(indx);
+
+                // Check data null hoặc empty
+                bool isEmpty = false;
+                if (isUsedYet)
+                {
+                    var rParam = Expression.Parameter(typeof(InputValueRowVersion), "rv");
+                    string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, indx);
+                    var methodInfo = typeof(string).GetMethod(nameof(string.IsNullOrEmpty), new[] { typeof(string) });
+                    var prop = Expression.Property(rParam, fieldName);
+
+                    Expression expression = Expression.Call(methodInfo, prop);
+
+
+                    isEmpty = (from row in _accountingContext.InputValueRow
+                               join rowVersion in _accountingContext.InputValueRowVersion
+                               on new { rowId = row.InputValueRowId, rowVersionId = row.LastestInputValueRowVersionId }
+                               equals new { rowId = rowVersion.InputValueRowId, rowVersionId = rowVersion.InputValueRowVersionId }
+                               where row.InputAreaId == inputAreaId
+                               select rowVersion).All(Expression.Lambda<Func<InputValueRowVersion, bool>>(expression, rParam));
+
+                    if (firstIndex == -1)
+                    {
+                        firstIndex = indx;
+                    }
+                }
+
+
+                if (isUsedYet && isEmpty)
                 {
                     index = indx;
                     break;
                 }
             }
+
+            if (index == -1)
+            {
+                index = firstIndex;
+            }
+
+
             return index;
         }
 

@@ -9,7 +9,7 @@ namespace VErp.Services.Accountant.Service.Category
     public interface ICategoryService
     {
         Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId);
-        Task<PageData<CategoryModel>> GetCategories(string keyword, bool? isModule, bool? hasParent, int page, int size);
+        Task<PageData<CategoryModel>> GetCategories(string keyword, int page, int size);
         Task<ServiceResult<int>> AddCategory(CategoryModel data);
         Task<Enum> UpdateCategory(int categoryId, CategoryModel data);
         Task<Enum> DeleteCategory(int categoryId);
