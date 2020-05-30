@@ -331,11 +331,33 @@ namespace VErp.Commons.Library
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    valueInNumber = value.GetHashCode();
+                    valueInNumber = value.GetLongHash();
                     break;
             }
 
             return valueInNumber;
+        }
+
+        public static long GetLongHash(this string input)
+        {
+            long hashCode = 0;
+            if (!string.IsNullOrEmpty(input))
+            {
+                //Unicode Encode Covering all characterset
+                byte[] byteContents = Encoding.Unicode.GetBytes(input);
+                SHA256 hash = new SHA256CryptoServiceProvider();
+                byte[] hashText = hash.ComputeHash(byteContents);
+                //32Byte hashText separate
+                //hashCodeStart = 0~7  8Byte
+                //hashCodeMedium = 8~23  8Byte
+                //hashCodeEnd = 24~31  8Byte
+                //and Fold
+                Int64 hashCodeStart = BitConverter.ToInt64(hashText, 0);
+                Int64 hashCodeMedium = BitConverter.ToInt64(hashText, 8);
+                Int64 hashCodeEnd = BitConverter.ToInt64(hashText, 24);
+                hashCode = hashCodeStart ^ hashCodeMedium ^ hashCodeEnd;
+            }
+            return (hashCode);
         }
 
         public static string ConvertValueToData(this string value, EnumDataType dataType)
