@@ -69,6 +69,7 @@ WHILE @@FETCH_STATUS = 0
 			DELETE FROM @tblProductUnitConversionQuantity
 		END
 
+		SET @LastProductUnitConversionQuantity = NULL
 		SELECT @LastProductUnitConversionQuantity = Quantity FROM @tblProductUnitConversionQuantity WHERE ProductUnitConversionId = @ProductUnitConversionId
 
 		IF @LastProductUnitConversionQuantity IS NULL
