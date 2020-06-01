@@ -27,7 +27,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public string BillSerial { set; get; }
 
-        public long BillDate { set; get; }
+        public long? BillDate { set; get; }
 
         /// <summary>
         /// Id file đính kèm

@@ -192,8 +192,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
             if (!updateResult.Code.IsSuccess()) return updateResult.Code;
 
-            var issuedDate = req.Inventory.Date.UnixToDateTime();
-            var billDate = req.Inventory.BillDate.UnixToDateTime();
+            var issuedDate = req.Inventory.Date.UnixToDateTime().Value;
+            var billDate = req.Inventory.BillDate?.UnixToDateTime();
 
             await _stockDbContext.SaveChangesAsync();
 
@@ -231,7 +231,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
                 inventoryInfo.BillCode = req.Inventory.BillCode;
                 inventoryInfo.BillSerial = req.Inventory.BillSerial;
-                inventoryInfo.BillDate = billDate == DateTime.MinValue ? null : (DateTime?)billDate;
+                inventoryInfo.BillDate = billDate;
                 inventoryInfo.TotalMoney = totalMoney;
                 inventoryInfo.UpdatedByUserId = currentUserId;
                 inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;

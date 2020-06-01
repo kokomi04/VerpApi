@@ -24,8 +24,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public CensoredInventoryInputUpdateContext(StockDBContext stockDbContext, Inventory inventory, InventoryDetail inventoryDetail, long fromDate, long toDate)
         {
-            FromDate = fromDate.UnixToDateTime();
-            ToDate = toDate.UnixToDateTime();
+            FromDate = fromDate.UnixToDateTime().Value;
+            ToDate = toDate.UnixToDateTime().Value;
 
             //this.stockDbContext = stockDbContext;
             this.affectObjects = new List<CensoredInventoryInputObject>();
