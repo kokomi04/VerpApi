@@ -151,7 +151,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model)
+        public async Task<ServiceResult> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model)
         {
             try
             {
@@ -239,7 +239,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<ServiceResult<long>> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model)
+        public async Task<ServiceResult> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model)
         {
             try
             {
