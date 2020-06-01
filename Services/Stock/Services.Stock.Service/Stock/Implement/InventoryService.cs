@@ -76,11 +76,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (beginTime > 0)
             {
-                bTime = beginTime.UnixToDateTime();
+                bTime = beginTime.UnixToDateTime().Value;
             }
             if (endTime > 0)
             {
-                eTime = endTime.UnixToDateTime();
+                eTime = endTime.UnixToDateTime().Value;
                 eTime = eTime.AddDays(1);
             }
 
@@ -329,8 +329,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
 
-                var issuedDate = req.Date.UnixToDateTime();
-                var billDate = req.BillDate.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime().Value;
+                var billDate = req.BillDate?.UnixToDateTime();
                 var validInventoryDetails = await ValidateInventoryIn(false, req);
 
                 if (!validInventoryDetails.Code.IsSuccess())
@@ -439,7 +439,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     return InventoryErrorCode.InventoryCodeAlreadyExisted;
                 }
-                var issuedDate = req.Date.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime().Value;
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -529,8 +529,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
 
-                var issuedDate = req.Date.UnixToDateTime();
-                var billDate = req.Date.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime().Value;
+                var billDate = req.BillDate?.UnixToDateTime();
 
                 var validate = await ValidateInventoryIn(false, req);
 
@@ -655,7 +655,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                var issuedDate = req.Date.UnixToDateTime();
+                var issuedDate = req.Date.UnixToDateTime().Value;
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {

@@ -321,7 +321,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var purchasingSuggest = new PurchasingSuggest()
                     {
                         PurchasingSuggestCode = model.PurchasingSuggestCode,
-                        Date = model.Date.UnixToDateTime(),
+                        Date = model.Date.UnixToDateTime().Value,
                         OrderCode = model.OrderCode,
                         ProductionOrderCode = model.ProductionOrderCode,
                         Content = model.Content,
@@ -379,7 +379,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
 
                     info.PurchasingSuggestCode = model.PurchasingSuggestCode;
-                    info.Date = model.Date.UnixToDateTime();
+                    info.Date = model.Date.UnixToDateTime().Value;
                     info.OrderCode = model.OrderCode;
                     info.ProductionOrderCode = model.ProductionOrderCode;
                     info.Content = model.Content;

@@ -20,7 +20,6 @@ using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
-using VErp.Services.Stock.Service.Products;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -32,7 +31,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IProductService _productService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -41,7 +39,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-            , IProductService productService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -50,7 +47,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _productService = productService;
         }
 
 
@@ -314,7 +310,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingRequestCode = model.PurchasingRequestCode,
                     OrderCode = model.OrderCode,
-                    Date = model.Date.UnixToDateTime(),
+                    Date = model.Date.UnixToDateTime().Value,
                     ProductionOrderCode = model.ProductionOrderCode,
                     Content = model.Content,
                     RejectCount = 0,
@@ -373,7 +369,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.PurchasingRequestCode = model.PurchasingRequestCode;
                 info.OrderCode = model.OrderCode;
-                info.Date = model.Date.UnixToDateTime();
+                info.Date = model.Date.UnixToDateTime().Value;
                 info.ProductionOrderCode = model.ProductionOrderCode;
                 info.Content = model.Content;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;

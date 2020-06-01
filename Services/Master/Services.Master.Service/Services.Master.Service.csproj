@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>VErp.Services.Master.Service</RootNamespace>
     <AssemblyName>VErp.Services.Master.Service</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ApiCore\ApiCore.csproj" />
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
