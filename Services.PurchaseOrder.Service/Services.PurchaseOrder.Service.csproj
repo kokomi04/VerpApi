@@ -14,8 +14,6 @@
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
     <ProjectReference Include="..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
-    <ProjectReference Include="..\Services\Stock\Services.Stock.Model\Services.Stock.Model.csproj" />
-    <ProjectReference Include="..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
   </ItemGroup>
 
 </Project>

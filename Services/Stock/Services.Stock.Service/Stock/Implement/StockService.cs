@@ -242,7 +242,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
-            query = query.InternalFilter(filters);
+            query = Utils.InternalFilter(query, filters);
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
@@ -812,10 +812,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             DateTime toDate = DateTime.UtcNow;
 
             if (beginTime > 0)
-                fromDate = beginTime.UnixToDateTime();
+                fromDate = beginTime.UnixToDateTime().Value;
 
             if (endTime > 0)
-                toDate = endTime.UnixToDateTime();
+                toDate = endTime.UnixToDateTime().Value;
 
             toDate = toDate.AddDays(1).Date;
 
@@ -987,10 +987,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             DateTime toDate = DateTime.MinValue;
 
             if (bTime > 0)
-                fromDate = bTime.UnixToDateTime();
+                fromDate = bTime.UnixToDateTime().Value;
 
             if (eTime > 0)
-                toDate = eTime.UnixToDateTime();
+                toDate = eTime.UnixToDateTime().Value;
 
             toDate = toDate.AddDays(1);
 
@@ -1134,10 +1134,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             DateTime toDate = DateTime.MinValue;
 
             if (bTime > 0)
-                fromDate = bTime.UnixToDateTime();
+                fromDate = bTime.UnixToDateTime().Value;
 
             if (eTime > 0)
-                toDate = eTime.UnixToDateTime();
+                toDate = eTime.UnixToDateTime().Value;
 
             toDate = toDate.AddDays(1).Date;
 
@@ -1313,10 +1313,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 DateTime toDate = DateTime.Now;
 
                 if (bTime > 0)
-                    fromDate = bTime.UnixToDateTime();
+                    fromDate = bTime.UnixToDateTime().Value;
 
                 if (eTime > 0)
-                    toDate = eTime.UnixToDateTime();
+                    toDate = eTime.UnixToDateTime().Value;
 
                 toDate = toDate.AddDays(1).Date;
 
@@ -1611,11 +1611,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (beginTime > 0)
                 {
-                    bTime = beginTime.UnixToDateTime();
+                    bTime = beginTime.UnixToDateTime().Value;
                 }
                 if (endTime > 0)
                 {
-                    eTime = endTime.UnixToDateTime();
+                    eTime = endTime.UnixToDateTime().Value;
                     eTime = eTime.AddDays(1);
                 }
 

@@ -14,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {

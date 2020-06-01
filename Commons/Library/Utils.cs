@@ -139,8 +139,9 @@ namespace VErp.Commons.Library
             return (long)dateTime.Value.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
-        public static DateTime UnixToDateTime(this long unixTime)
+        public static DateTime? UnixToDateTime(this long unixTime)
         {
+           // if (unixTime == 0) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
@@ -370,7 +371,7 @@ namespace VErp.Commons.Library
                     break;
                 case EnumDataType.Date:
                     long valueInNumber = long.Parse(value);
-                    value = valueInNumber.UnixToDateTime().ToString(DateFormats.DD_MM_YYYY);
+                    value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
 
                 case EnumDataType.Number:
