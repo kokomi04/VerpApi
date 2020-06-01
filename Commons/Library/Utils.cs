@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -330,11 +331,33 @@ namespace VErp.Commons.Library
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    valueInNumber = value.GetHashCode();
+                    valueInNumber = value.GetLongHash();
                     break;
             }
 
             return valueInNumber;
+        }
+
+        public static long GetLongHash(this string input)
+        {
+            long hashCode = 0;
+            if (!string.IsNullOrEmpty(input))
+            {
+                //Unicode Encode Covering all characterset
+                byte[] byteContents = Encoding.Unicode.GetBytes(input);
+                SHA256 hash = new SHA256CryptoServiceProvider();
+                byte[] hashText = hash.ComputeHash(byteContents);
+                //32Byte hashText separate
+                //hashCodeStart = 0~7  8Byte
+                //hashCodeMedium = 8~23  8Byte
+                //hashCodeEnd = 24~31  8Byte
+                //and Fold
+                Int64 hashCodeStart = BitConverter.ToInt64(hashText, 0);
+                Int64 hashCodeMedium = BitConverter.ToInt64(hashText, 8);
+                Int64 hashCodeEnd = BitConverter.ToInt64(hashText, 24);
+                hashCode = hashCodeStart ^ hashCodeMedium ^ hashCodeEnd;
+            }
+            return (hashCode);
         }
 
         public static string ConvertValueToData(this string value, EnumDataType dataType)
@@ -360,5 +383,31 @@ namespace VErp.Commons.Library
 
             return value;
         }
+
+        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
+        {
+            if (filters != null && filters.Count > 0)
+            {
+                foreach (var filter in filters)
+                {
+                    var sParam = Expression.Parameter(typeof(T), "s");
+                    var prop = Expression.Property(sParam, filter.Key);
+                    TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+                    Type listType = typeof(List<>);
+                    Type constructedListType = listType.MakeGenericType(prop.Type);
+                    var instance = Activator.CreateInstance(constructedListType);
+                    foreach (var value in filter.Value)
+                    {
+                        MethodInfo method = constructedListType.GetMethod("Add");
+                        method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
+                    }
+                    var methodInfo = constructedListType.GetMethod("Contains");
+                    var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
+                    query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
+                }
+            }
+            return query;
+        }
+
     }
 }

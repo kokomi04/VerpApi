@@ -98,7 +98,7 @@ namespace VErp.Infrastructure.ApiCore
            .AddNewtonsoftJson(options =>
            {
                options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-               options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+               options.SerializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
                options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
                //options.SerializerSettings.Converters.Add(new StringEnumConverter());
@@ -146,6 +146,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigOrganizationContext(AppSetting);
             services.ConfigAccountingContext(AppSetting);
             services.ConfigActivityLogContext(AppSetting);
+            services.ConfigReportConfigDBContextContext(AppSetting);
         }
         private void ConfigSwagger(IServiceCollection services)
         {
@@ -193,6 +194,14 @@ namespace VErp.Infrastructure.ApiCore
                     Description = "The Accountant Service HTTP API"
                 });
 
+                options.SwaggerDoc("report", new OpenApiInfo
+                {
+                    Title = "VERP Report HTTP API",
+                    Version = "v1",
+                    Description = "The Report Service HTTP API"
+                });
+
+                
                 options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
                 {
                     Type = SecuritySchemeType.OAuth2,
@@ -303,6 +312,8 @@ namespace VErp.Infrastructure.ApiCore
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
 
                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
+
+                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/report/swagger.json", "REPORT.API V1");
 
                    c.OAuthClientId("web");
                    c.OAuthClientSecret("secretWeb");

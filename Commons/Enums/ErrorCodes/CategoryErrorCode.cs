@@ -36,11 +36,11 @@ namespace VErp.Commons.Enums.StandardEnum
         FormTypeNotFound = 13,
         [Description("Danh mục không được phép thay đổi")]
         CategoryReadOnly = 14,
-        [Description("Không được phép để trống trường thông tin bắt buộc")]
+        [Description("Không được phép để trống trường thông tin {0}")]
         RequiredFieldIsEmpty = 15,
-        [Description("Trường thông tin unique có giá trị đã tồn tại")]
+        [Description("Trường thông tin {0} có giá trị đã tồn tại")]
         UniqueValueAlreadyExisted = 16,
-        [Description("Thông tin được chọn không tồn tại")]
+        [Description("Thông tin {0} không tồn tại")]
         ReferValueNotFound = 17,
         [Description("Dòng thông tin không tồn tại")]
         CategoryRowNotFound = 18,
@@ -56,7 +56,7 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryValueNotFound = 23,
         [Description("Trường dữ liệu không cần giá trị mặc định")]
         CategoryFieldNotDefaultValue = 24,
-        [Description("Giá trị không hợp lệ")]
+        [Description("Giá trị {0} không hợp lệ")]
         CategoryValueInValid = 25,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
         CategoryRowAlreadyExisted = 26,

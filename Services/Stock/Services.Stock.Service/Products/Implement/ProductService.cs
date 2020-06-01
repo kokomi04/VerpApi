@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -486,31 +487,33 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Dictionary<string, List<string>> filters = null)
         {
+            var products = _stockContext.Product.AsQueryable();
+            products = products.InternalFilter(filters);
             var query = (
-                from p in _stockContext.Product
-                join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId
-                join pt in _stockContext.ProductType on p.ProductTypeId equals pt.ProductTypeId into pts
-                from pt in pts.DefaultIfEmpty()
-                join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
-                from pc in pcs.DefaultIfEmpty()
-                select new
-                {
-                    p.ProductId,
-                    p.ProductCode,
-                    p.ProductName,
-                    p.MainImageFileId,
-                    p.ProductTypeId,
-                    ProductTypeName = pt == null ? null : pt.ProductTypeName,
-                    p.ProductCateId,
-                    ProductCateName = pc == null ? null : pc.ProductCateName,
-                    p.Barcode,
-                    pe.Specification,
-                    pe.Description,
-                    p.UnitId,
-                    p.EstimatePrice
-                });
+              from p in products
+              join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId
+              join pt in _stockContext.ProductType on p.ProductTypeId equals pt.ProductTypeId into pts
+              from pt in pts.DefaultIfEmpty()
+              join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
+              from pc in pcs.DefaultIfEmpty()
+              select new
+              {
+                  p.ProductId,
+                  p.ProductCode,
+                  p.ProductName,
+                  p.MainImageFileId,
+                  p.ProductTypeId,
+                  ProductTypeName = pt == null ? null : pt.ProductTypeName,
+                  p.ProductCateId,
+                  ProductCateName = pc == null ? null : pc.ProductCateName,
+                  p.Barcode,
+                  pe.Specification,
+                  pe.Description,
+                  p.UnitId,
+                  p.EstimatePrice
+              });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
             {

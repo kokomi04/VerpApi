@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Service.Dictionary
 {
     public interface IProductCateService
     {
-        Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size);
+        Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null);
         Task<ServiceResult<int>> AddProductCate(ProductCateInput req);
         Task<Enum> UpdateProductCate(int productCateId, ProductCateInput req);
         Task<Enum> DeleteProductCate(int productCateId);

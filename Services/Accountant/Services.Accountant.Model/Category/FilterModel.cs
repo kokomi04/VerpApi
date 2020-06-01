@@ -31,6 +31,7 @@ namespace VErp.Services.Accountant.Model.Category
 
         public ICollection<Clause> Rules { get; set; }
         public EnumLogicOperator Condition { get; set; }
+        public bool Not { get; set; }
     }
 
     public class ClauseConverter : JsonConverter
@@ -63,23 +64,26 @@ namespace VErp.Services.Accountant.Model.Category
             bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
             if (isSingle)
             {
-                var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.Field).ToLower()).Value;
-                var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value;
+                var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.Field).ToLower()).Value.ToString();
+                var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
                 var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
                 resultClause = new SingleClause
                 {
-                    Field = int.Parse(key.ToString()),
-                    Operator = (EnumOperator)int.Parse(ope.ToString()),
+                    Field = int.Parse(key),
+                    Operator = (EnumOperator)int.Parse(ope),
                     Value = value.ToObject<object>()
                 };
             }
             else
             {
                 var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
-                var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value;
+                var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value.ToString();
+                var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower()).Value.ToString();
+
                 resultClause = new ArrayClause
                 {
-                    Condition = (EnumLogicOperator)int.Parse(logicOperator.ToString()),
+                    Condition = AccountantEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
+                    Not = bool.Parse(not)
                 };
                 var arrClause = clauses.ToArray();
                 foreach (var item in arrClause)

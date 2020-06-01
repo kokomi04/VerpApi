@@ -124,7 +124,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Dictionary<string, List<string>> filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
@@ -136,7 +136,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 query = query.Where(d => d.DepartmentCode.Contains(keyword) || d.DepartmentName.Contains(keyword) || d.Description.Contains(keyword));
             }
-            var a = query.ToList();
+            query = query.InternalFilter(filters);
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
             {
                 DepartmentId = d.DepartmentId,
@@ -176,7 +176,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             if (department.IsActived && !data.IsActived)
             {
                 // Check còn phòng ban trực thuộc đang hoạt động
-                if(_organizationContext.Department.Any(d => d.ParentId == departmentId && d.IsActived))
+                if (_organizationContext.Department.Any(d => d.ParentId == departmentId && d.IsActived))
                 {
                     return DepartmentErrorCode.DepartmentChildActivedAlreadyExisted;
                 }
