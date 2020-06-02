@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using VErp.Commons.Enums.AccountantEnum;
 
-namespace VErp.Services.Accountant.Model.Category
+namespace VErp.Infrastructure.EF.EFExtensions
 {
     [JsonConverter(typeof(ClauseConverter))]
     public abstract class Clause
@@ -17,7 +17,8 @@ namespace VErp.Services.Accountant.Model.Category
 
     public class SingleClause : Clause
     {
-        public int Field { get; set; }
+        public int FieldId { get; set; }
+        public string FieldName { get; set; }
         public EnumOperator Operator { get; set; }
         public object Value { get; set; }
     }
@@ -64,12 +65,14 @@ namespace VErp.Services.Accountant.Model.Category
             bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
             if (isSingle)
             {
-                var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.Field).ToLower()).Value.ToString();
+                var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.FieldId).ToLower()).Value.ToString();
+                var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
                 var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
                 var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
                 resultClause = new SingleClause
                 {
-                    Field = int.Parse(key),
+                    FieldId = int.Parse(key),
+                    FieldName = fieldName,
                     Operator = (EnumOperator)int.Parse(ope),
                     Value = value.ToObject<object>()
                 };

@@ -14,6 +14,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Department;
+using VErp.Infrastructure.EF.EFExtensions;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
 
 namespace VErp.Services.Organization.Service.Department.Implement
@@ -124,7 +125,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();

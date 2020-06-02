@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
+using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -231,7 +232,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = from p in _stockContext.Stock
                         select p;

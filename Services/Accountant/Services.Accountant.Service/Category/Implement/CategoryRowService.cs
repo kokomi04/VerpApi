@@ -25,6 +25,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
@@ -49,11 +50,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, Clause filters, int page, int size)
+        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
         {
             var total = 0;
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
 
+            Clause filterClause = null;
+            if (!string.IsNullOrEmpty(filters))
+            {
+                filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+            }
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
             IQueryable<CategoryRow> query;
@@ -77,7 +83,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (filters != null)
             {
-                List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
+                List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
                 query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
             }
 
@@ -215,11 +221,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (isOutSide)
                 {
                     string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
-                    var body = new Dictionary<string, List<string>>
+                    Clause clause = new SingleClause
                     {
-                        {fieldName,  values}
+                        FieldName = fieldName,
+                        Operator = EnumOperator.InList,
+                        Value = string.Join(",", values.ToArray())
                     };
-                    query = GetOutSideCategoryRows(category.CategoryId, body);
+
+                    query = GetOutSideCategoryRows(category.CategoryId, clause);
                 }
                 else
                 {
@@ -235,7 +244,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
                 foreach (var value in values)
                 {
-                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value)));
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && value == rv.Value));
 
                     var referObject = new NonCamelCaseDictionary();
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Model.Department;
@@ -25,7 +26,7 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<DepartmentModel>>> Get([FromBody] Dictionary<string, List<string>> filters, [FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<DepartmentModel>>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
         {
             return await _departmentService.GetList(keyword, isActived, page, size, filters);
         }

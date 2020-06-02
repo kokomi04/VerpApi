@@ -13,6 +13,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
@@ -125,7 +126,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate;
         }
 
-        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = (from c in _stockContext.ProductCate select c);
             if (!string.IsNullOrWhiteSpace(keyword))
