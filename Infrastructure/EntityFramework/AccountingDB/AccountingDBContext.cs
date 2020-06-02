@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
         public virtual DbSet<InputValueRowVersionNumber> InputValueRowVersionNumber { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
         public virtual DbSet<Sysdiagrams> Sysdiagrams { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -251,6 +252,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
+           
 
             modelBuilder.Entity<InputArea>(entity =>
             {
@@ -707,6 +709,17 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<ProgramingFunction>(entity =>
+            {
+                entity.Property(e => e.ProgramingFunctionId).ValueGeneratedNever();
+
+                entity.Property(e => e.FunctionBody).IsRequired();
+
+                entity.Property(e => e.ProgramingFunctionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<Sysdiagrams>(entity =>
