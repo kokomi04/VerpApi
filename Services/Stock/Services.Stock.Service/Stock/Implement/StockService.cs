@@ -1237,7 +1237,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details = new List<StockProductDetailsModel>();
 
                 var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-                var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId.Value, o => o.TotalProductUnitConversion);
+                var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
                 var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
                 foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.CreatedDatetimeUtc).ToList())
@@ -1247,19 +1247,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName : string.Empty;
                     var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
 
-                    if (!totalByTimes.ContainsKey(item.ProductUnitConversionId.Value))
+                    if (!totalByTimes.ContainsKey(item.ProductUnitConversionId))
                     {
-                        totalByTimes.Add(item.ProductUnitConversionId.Value, 0);
+                        totalByTimes.Add(item.ProductUnitConversionId, 0);
                     }
 
                     if (item.InventoryTypeId == (int)EnumInventoryType.Input)
                     {
-                        totalByTimes[item.ProductUnitConversionId.Value] += item.ProductUnitConversionQuantity;
+                        totalByTimes[item.ProductUnitConversionId] += item.ProductUnitConversionQuantity;
                         totalPrimary += item.PrimaryQuantity;
                     }
                     else
                     {
-                        totalByTimes[item.ProductUnitConversionId.Value] -= item.ProductUnitConversionQuantity;
+                        totalByTimes[item.ProductUnitConversionId] -= item.ProductUnitConversionQuantity;
                         totalPrimary -= item.PrimaryQuantity;
                     }
 
@@ -1282,7 +1282,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         ProductUnitConversion = productUnitConversionObj,
                         EndOfPerdiodPrimaryQuantity = totalPrimary,
-                        EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId.Value],
+                        EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
                     });
                 }
                 #endregion
@@ -1733,7 +1733,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             public int ProductId { get; set; }
 
-            public int? ProductUnitConversionId { get; set; }
+            public int ProductUnitConversionId { get; set; }
         }
     }
 }

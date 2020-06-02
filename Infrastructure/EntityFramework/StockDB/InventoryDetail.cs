@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal UnitPrice { get; set; }
-        public int? ProductUnitConversionId { get; set; }
+        public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public long? FromPackageId { get; set; }
         public long? ToPackageId { get; set; }
@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public int? SortOrder { get; set; }
         public decimal? PrimaryQuantityRemaning { get; set; }
+        public decimal? ProductUnitConversionQuantityRemaning { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

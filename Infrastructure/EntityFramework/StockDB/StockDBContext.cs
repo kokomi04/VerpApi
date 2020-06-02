@@ -122,6 +122,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
+                entity.Property(e => e.ProductUnitConversionQuantityRemaning).HasColumnType("decimal(32, 16)");
+
                 entity.Property(e => e.ProductionOrderCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -154,6 +156,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.InventoryDetail)
                     .HasForeignKey(d => d.ProductUnitConversionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryDetail_ProductUnitConversion");
 
                 entity.HasOne(d => d.ToPackage)
@@ -171,6 +174,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
             });
+           
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
             {
@@ -459,6 +463,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
+          
 
             OnModelCreatingPartial(modelBuilder);
         }

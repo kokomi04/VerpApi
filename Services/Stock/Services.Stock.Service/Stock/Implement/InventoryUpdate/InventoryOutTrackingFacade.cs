@@ -61,7 +61,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await UpdateCurrentInventoryBalance(oldDetailGroup);
 
             //Step2: Trừ dồn số lượng từ thời điểm của đơn đến hiện tại
-            await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange);
+            await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange, productChange.PuChanges.ToDictionary(c => c.Key, c => c.Value.DeltaPuChange));
         }
 
         private async Task OutputInventoryIncreaseDateEvent(IGrouping<int, InventoryDetailChange> oldDetailGroup, ProductChangeInfo productChange)
@@ -72,7 +72,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //Step1. Nếu đổi thời gian tăng lên: Tăng số lượng cũ từ oldDate -> newDate
                 if (_context.InventoryInfo.Date > _context.InventoryChange.OldDate.Value)
                 {
-                    await InventoryOutputBetweenAdd(oldDetailGroup.Key, productChange.TotalOldPrimaryQuantity);
+                    await InventoryOutputBetweenAdd(oldDetailGroup.Key, productChange.TotalOldPrimaryQuantity, productChange.PuChanges.ToDictionary(c => c.Key, c => c.Value.TotalOldPuQuantity));
                 }
 
                 //Step2: Cập nhật số dư hiện thời của phiếu
@@ -82,7 +82,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                 //Step3: Trừ dồn số lượng từ thời điểm của đơn đến hiện tại
-                await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange);
+                await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange, productChange.PuChanges.ToDictionary(c => c.Key, c => c.Value.DeltaPuChange));
             }
         }
 
@@ -94,10 +94,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await UpdateCurrentInventoryBalance(oldDetailGroup);
 
             //Step2. Giảm số lượng từ newDate -> oldDate
-            await InventoryOutputBetweenAdd(oldDetailGroup.Key, -productChange.TotalNewPrimaryQuantity);
+            await InventoryOutputBetweenAdd(oldDetailGroup.Key, -productChange.TotalNewPrimaryQuantity, productChange.PuChanges.ToDictionary(c => c.Key, c => c.Value.TotalNewPuQuantity));
 
             //Step3: Trừ dồn số lượng oldDate => Now bằng số tăng lên (hoặc giảm đi)
-            await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange);
+            await InventoryOutputUpdateToNow(oldDetailGroup.Key, productChange.DeltaChange, productChange.PuChanges.ToDictionary(c => c.Key, c => c.Value.DeltaPuChange));
         }
 
         protected override async Task<decimal> GetBeforeBalance(int productId)
@@ -123,8 +123,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
+        protected override async Task<decimal> GetBeforePu(int productId, int productUnitConversionId)
+        {
+            var puRemaningSameTimeBefore = await (
+              from d in _context.StockDbContext.InventoryDetail
+              join iv in _context.StockDbContext.Inventory on d.InventoryId equals iv.InventoryId
+              where iv.IsApproved
+              && iv.StockId == _context.StockId
+              && d.ProductId == productId
+              && d.ProductUnitConversionId == productUnitConversionId
+              && iv.Date == _context.InventoryInfo.Date
+              && (iv.InventoryTypeId == (int)EnumInventoryType.Input || iv.InventoryTypeId == (int)EnumInventoryType.Output && iv.InventoryId < _context.InventoryId)//Hoặc phiếu nhập cùng thời điểm hoặc phiếu xuất vào trước
 
-        private async Task InventoryOutputBetweenAdd(int productId, decimal primaryQuantity)
+
+              orderby iv.Date descending, iv.InventoryTypeId descending, iv.InventoryId descending, d.InventoryDetailId descending
+              select d.ProductUnitConversionQuantityRemaning
+                             ).FirstOrDefaultAsync();
+
+            if (puRemaningSameTimeBefore > 0) return puRemaningSameTimeBefore.Value;
+
+            return await GetBeforeDatePu(productId, productUnitConversionId);
+        }
+
+
+        private async Task InventoryOutputBetweenAdd(int productId, decimal primaryQuantity, Dictionary<int, decimal> addPuQuantities)
         {
             //1. Cùng ngày from: Phiếu xuất có ID > ID hiện hành
 
@@ -137,10 +159,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         OR iv.Date > @FromDate AND iv.Date < @ToDate
         OR iv.Date = @ToDate AND (iv.InventoryTypeId = @OutputInventoryTypeId AND iv.InventoryId < @InventoryId OR iv.InventoryTypeId = @InputInventoryTypeId)
 ";
-            await UpdateInventoryDetailByCondition(dateRangeCondition, productId, primaryQuantity);
+            await UpdateInventoryDetailByCondition(dateRangeCondition, productId, primaryQuantity, addPuQuantities);
         }
 
-        private async Task InventoryOutputUpdateToNow(int productId, decimal deltaChangePrimaryQuantity)
+        private async Task InventoryOutputUpdateToNow(int productId, decimal deltaChangePrimaryQuantity, Dictionary<int, decimal> addPuQuantities)
         {
 
             //1. Cùng ngày: Phiếu xuất có ID > ID hiện hành
@@ -150,7 +172,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 iv.Date = @ToDate AND (iv.InventoryTypeId = @OutputInventoryTypeId AND iv.InventoryId > @InventoryId)
 OR iv.Date > @ToDate
 ";
-            await UpdateInventoryDetailByCondition(dateRangeCondition, productId, -deltaChangePrimaryQuantity);
+            await UpdateInventoryDetailByCondition(dateRangeCondition, productId, -deltaChangePrimaryQuantity, addPuQuantities);
         }
 
     }

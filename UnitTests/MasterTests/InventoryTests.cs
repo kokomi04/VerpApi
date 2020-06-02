@@ -78,7 +78,7 @@ namespace MasterTests
 
                 throw;
             }
-          
+
 
         }
 
@@ -115,7 +115,7 @@ namespace MasterTests
             var inv11 = await InputInventory(stockId, "TEST-INV-1-1", new DateTime(2020, 1, 1), P(productId1, 20));
 
             Assert.True((await inventoryService.ApproveInventoryInput(inv11.Data, UserId)).IsSuccess());
-            
+
 
 
             //TEST-OUV-1-1
@@ -274,7 +274,7 @@ namespace MasterTests
             var balance = await (
                 from d in _stockDBContext.InventoryDetail
                 join iv in _stockDBContext.Inventory on d.InventoryId equals iv.InventoryId
-                where iv.IsApproved && iv.Date == date
+                where iv.IsApproved && iv.Date == date && iv.StockId == stockId && d.ProductId == productId
                 orderby iv.InventoryTypeId descending, iv.InventoryId descending, d.InventoryDetailId descending
                 select d.PrimaryQuantityRemaning
                                 ).FirstOrDefaultAsync();
