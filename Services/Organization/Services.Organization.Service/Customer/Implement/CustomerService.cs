@@ -14,6 +14,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Customer;
+using VErp.Infrastructure.EF.EFExtensions;
 using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
@@ -193,7 +194,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 

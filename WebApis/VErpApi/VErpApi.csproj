@@ -9,6 +9,7 @@
     <DocumentationFile>bin\Debug\netcoreapp3.1\VErpApi.xml</DocumentationFile>
     <OutputPath></OutputPath>
     <NoWarn>1701;1702;1705;1591</NoWarn>
+    <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

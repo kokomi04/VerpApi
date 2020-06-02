@@ -17,6 +17,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace Services.Organization.Service.Department.Implement
 {
@@ -44,7 +45,7 @@ namespace Services.Organization.Service.Department.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 

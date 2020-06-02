@@ -25,6 +25,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
@@ -96,31 +97,31 @@ namespace VErp.Services.Accountant.Service
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? rv.Value != (string)clause.Value : rv.Value == (string)clause.Value)).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? rv.Value != (string)clause.Value : rv.Value == (string)clause.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.NotEqual:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? rv.Value == (string)clause.Value : rv.Value != (string)clause.Value)).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? rv.Value == (string)clause.Value : rv.Value != (string)clause.Value)).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.Contains:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? !rv.Value.Contains((string)clause.Value) : rv.Value.Contains((string)clause.Value))).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? !rv.Value.Contains((string)clause.Value) : rv.Value.Contains((string)clause.Value))).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.InList:
                         List<string> values = ((string)clause.Value).Split(',').ToList();
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? !values.Contains(rv.Value) : values.Contains(rv.Value))).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? !values.Contains(rv.Value) : values.Contains(rv.Value))).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.IsLeafNode:
                         List<string> nodeValues = query
-                            .Where(rv => rv.CategoryFieldId == clause.Field)
+                            .Where(rv => rv.CategoryFieldId == clause.FieldId)
                             .Select(rv => rv.Value)
                             .ToList();
                         List<string> isLeafValues = nodeValues.Where(v => !nodeValues.Any(n => n != v && n.Contains(v))).ToList();
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? !isLeafValues.Contains(rv.Value) : isLeafValues.Contains(rv.Value))).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? !isLeafValues.Contains(rv.Value) : isLeafValues.Contains(rv.Value))).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.StartsWith:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? !rv.Value.StartsWith((string)clause.Value) : rv.Value.StartsWith((string)clause.Value))).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? !rv.Value.StartsWith((string)clause.Value) : rv.Value.StartsWith((string)clause.Value))).Select(rv => rv.CategoryRowId);
                         break;
                     case EnumOperator.EndsWith:
-                        expression = query.Where(rv => rv.CategoryFieldId == clause.Field && (not ? !rv.Value.EndsWith((string)clause.Value) : rv.Value.EndsWith((string)clause.Value))).Select(rv => rv.CategoryRowId);
+                        expression = query.Where(rv => rv.CategoryFieldId == clause.FieldId && (not ? !rv.Value.EndsWith((string)clause.Value) : rv.Value.EndsWith((string)clause.Value))).Select(rv => rv.CategoryRowId);
                         break;
                     default:
                         break;

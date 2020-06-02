@@ -17,6 +17,7 @@ using Newtonsoft.Json;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.Library;
 using System.Linq.Expressions;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
@@ -72,7 +73,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
 
 
-        public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 

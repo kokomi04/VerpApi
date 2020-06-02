@@ -18,6 +18,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Infrastructure.EF.EFExtensions;
 using static VErp.Services.Stock.Model.Product.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
@@ -487,7 +488,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
         {
             var products = _stockContext.Product.AsQueryable();
             products = products.InternalFilter(filters);
