@@ -92,7 +92,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
 
-                var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId.Value);
+                var conversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == d.ProductUnitConversionId);
 
                 if (!productInfos.TryGetValue(d.ProductId, out var productInfo))
                 {
@@ -110,7 +110,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     OldPrimaryQuantity = d.PrimaryQuantity,
                     NewPrimaryQuantity = newPrimaryQuantity,
 
-                    ProductUnitConversionId = d.ProductUnitConversionId.Value,
+                    ProductUnitConversionId = d.ProductUnitConversionId,
                     ProductUnitConversionName = conversionInfo?.ProductUnitConversionName,
                     FactorExpression = conversionInfo?.FactorExpression,
 
@@ -648,7 +648,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                                 InventoryDetailId = childInventoryDetail.InventoryDetailId,
                                                 Date = inventory.Date,
                                                 ProductId = childInventoryDetail.ProductId,
-                                                ProductUnitConversionId = childInventoryDetail.ProductUnitConversionId.Value,
+                                                ProductUnitConversionId = childInventoryDetail.ProductUnitConversionId,
                                                 OutputPrimary = childInventoryDetail.PrimaryQuantity,
                                                 OutputSecondary = childInventoryDetail.ProductUnitConversionQuantity
                                             };

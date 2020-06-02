@@ -28,7 +28,7 @@ namespace VErp.Services.Stock.Model.Inventory
     public class InventoryOutProductModel
     {
         public int ProductId { get; set; }
-        public int? ProductUnitConversionId { set; get; }
+        public int ProductUnitConversionId { set; get; }
 
         //public bool? IsFreeStyle { set; get; }
 

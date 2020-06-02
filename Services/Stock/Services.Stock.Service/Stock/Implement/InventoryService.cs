@@ -28,6 +28,7 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
+using Microsoft.Data.SqlClient;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -229,7 +230,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         };
                     }
 
-                    productUnitConversions.TryGetValue(details.ProductUnitConversionId ?? 0, out var productUnitConversionInfo);
+                    productUnitConversions.TryGetValue(details.ProductUnitConversionId, out var productUnitConversionInfo);
 
                     listInventoryDetailsOutput.Add(new InventoryDetailOutput
                     {
@@ -922,8 +923,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
 
                         inventoryObj.IsApproved = true;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        //inventoryObj.UpdatedByUserId = currentUserId;
+                        //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        inventoryObj.CensorByUserId = currentUserId;
+                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
 
                         await _stockDbContext.SaveChangesAsync();
 
@@ -1027,6 +1030,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="inventoryId"></param>
         private async Task ReCalculateRemainingAfterUpdate(long inventoryId)
         {
+            //await _stockDbContext.Database.ExecuteSqlRawAsync("EXEC usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event @UpdatedInventoryId = @UpdatedInventoryId", new SqlParameter("@UpdatedInventoryId", inventoryId));
             var inventoryTrackingFacade = await InventoryTrackingFacadeFactory.Create(_stockDbContext, inventoryId);
             await inventoryTrackingFacade.Execute();
 
@@ -1072,8 +1076,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
 
                         inventoryObj.IsApproved = true;
-                        inventoryObj.UpdatedByUserId = currentUserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        //inventoryObj.UpdatedByUserId = currentUserId;
+                        //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        inventoryObj.CensorByUserId = currentUserId;
+                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
@@ -1093,7 +1099,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             });
                         foreach (var product in groupByProducts)
                         {
-                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
+                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
 
                             if (!validate.IsSuccessCode())
                             {
