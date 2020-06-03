@@ -69,7 +69,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Include(f => f.ReferenceCategoryField)
                 .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
-
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
+            }
             var total = await query.CountAsync();
 
             if (size > 0)
