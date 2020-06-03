@@ -53,9 +53,30 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("fields")]
-        public async Task<ServiceResult<PageData<InputFieldModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<InputFieldOutputModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputAreaFieldService.GetAll(keyword, page, size);
+            return await _inputAreaFieldService.GetInputFields(keyword, page, size);
+        }
+
+        [HttpPost]
+        [Route("fields")]
+        public async Task<ServiceResult<int>> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        {
+            return await _inputAreaFieldService.AddInputField(inputAreaField);
+        }
+
+        [HttpPut]
+        [Route("fields/{inputFieldId}")]
+        public async Task<ServiceResult> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
+        {
+            return await _inputAreaFieldService.UpdateInputField(inputFieldId, inputField);
+        }
+
+        [HttpDelete]
+        [Route("fields/{inputFieldId}")]
+        public async Task<ServiceResult> DeleteInputField([FromRoute] int inputFieldId)
+        {
+            return await _inputAreaFieldService.DeleteInputField(inputFieldId);
         }
 
         [HttpPost]

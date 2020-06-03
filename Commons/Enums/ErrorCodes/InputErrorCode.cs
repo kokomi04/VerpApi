@@ -56,5 +56,11 @@ namespace VErp.Commons.Enums.StandardEnum
         InputIsNotModule = 27,
         [Description("File không hợp lệ")]
         FormatFileInvalid = 28,
+        [Description("Trường dữ liệu dùng chung không tồn tại")]
+        InputFieldNotFound = 29,
+        [Description("Trường dữ liệu dùng chung đã tồn tại")]
+        InputFieldAlreadyExisted = 30,
+        [Description("Trường dữ liệu dùng chung đang được sử dụng")]
+        InputFieldIsUsed = 31
     }
 }

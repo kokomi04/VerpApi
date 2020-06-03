@@ -6,7 +6,7 @@ using VErp.Services.Accountant.Model.Category;
 
 namespace VErp.Services.Accountant.Model.Input
 {
-    public class InputFieldModel : IMapFrom<InputField>
+    public class InputFieldInputModel : IMapFrom<InputField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
@@ -14,7 +14,6 @@ namespace VErp.Services.Accountant.Model.Input
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
         public string Title { get; set; }
-        public int InputFieldId { get; set; }
         public int FieldIndex { get; set; }
         public string Placeholder { get; set; }
         public int SortOrder { get; set; }
@@ -24,6 +23,20 @@ namespace VErp.Services.Accountant.Model.Input
         public string DefaultValue { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
+
+    }
+
+    public class InputFieldOutputModel : IMapFrom<InputField>
+    {
+        public int InputFieldId { get; set; }
+        public int? ReferenceCategoryId { get; set; }
+        public string ReferenceCategoryTitleFieldName { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<InputField, InputFieldOutputModel>()
+                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId))
+                .ForMember(dest => dest.ReferenceCategoryTitleFieldName, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField.CategoryFieldName));
+        }
     }
 
     public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
@@ -59,14 +72,6 @@ namespace VErp.Services.Accountant.Model.Input
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
     {
-        public int? ReferenceCategoryId { get; set; }
-        public string ReferenceCategoryTitleFieldName { get; set; }
-        public InputFieldModel InputField { get; set; }
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<InputAreaField, InputAreaFieldOutputFullModel>()
-                .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.InputField.ReferenceCategoryField.CategoryId))
-                .ForMember(dest => dest.ReferenceCategoryTitleFieldName, opt => opt.MapFrom(src => src.InputField.ReferenceCategoryTitleField.CategoryFieldName));
-        }
+        public InputFieldOutputModel InputField { get; set; }
     }
 }
