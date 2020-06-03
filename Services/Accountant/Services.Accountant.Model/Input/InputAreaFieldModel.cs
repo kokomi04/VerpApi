@@ -26,7 +26,7 @@ namespace VErp.Services.Accountant.Model.Input
 
     }
 
-    public class InputFieldOutputModel : IMapFrom<InputField>
+    public class InputFieldOutputModel : InputFieldInputModel
     {
         public int InputFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
