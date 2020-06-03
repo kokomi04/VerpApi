@@ -50,7 +50,7 @@ namespace VErp.Services.Accountant.Model.Input
         public EnumFormType FormTypeId { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<InputAreaField, InputAreaFieldBasicOutput>()
-            .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
-            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId));
+            .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.InputField.DataTypeId))
+            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.InputField.FormTypeId));
     }
 }

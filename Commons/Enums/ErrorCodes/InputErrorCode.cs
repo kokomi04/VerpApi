@@ -20,8 +20,8 @@ namespace VErp.Commons.Enums.StandardEnum
         InputAreaCodeAlreadyExisted = 5,
         [Description("Tiêu đề vùng dữ liệu đã tồn tại")]
         InputAreaTitleAlreadyExisted = 6,
-        [Description("Tên trường đã tồn tại")]
-        InputAreaFieldNameAlreadyExisted = 7,
+        [Description("Trường dữ liệu đã tồn tại")]
+        InputAreaFieldAlreadyExisted = 7,
         [Description("Chứng từ không tồn tại")]
         InputValueBillNotFound = 8,
         [Description("Trường tham chiếu không tồn tại")]
@@ -55,6 +55,6 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không phải là chứng từ")]
         InputIsNotModule = 27,
         [Description("File không hợp lệ")]
-        FormatFileInvalid = 28
+        FormatFileInvalid = 28,
     }
 }
