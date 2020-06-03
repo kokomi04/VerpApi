@@ -8,7 +8,11 @@ namespace VErp.Services.Accountant.Service.Input
 {
     public interface IInputAreaFieldService
     {
-        Task<PageData<InputFieldModel>> GetAll(string keyword, int page, int size);
+        Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size);
+        Task<ServiceResult<int>> AddInputField(InputFieldInputModel data);
+        Task<Enum> UpdateInputField(int inputFieldId, InputFieldInputModel data);
+        Task<Enum> DeleteInputField(int inputFieldId);
+
         Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId);
         Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size);
         Task<ServiceResult<int>> AddInputAreaField(int inputTypeId, int inputAreaId, InputAreaFieldInputModel data);
