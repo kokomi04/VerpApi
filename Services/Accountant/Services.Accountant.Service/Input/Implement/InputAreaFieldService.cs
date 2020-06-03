@@ -44,14 +44,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountingContext.InputAreaField
-                .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.ReferenceCategoryField)
-                .Include(f => f.ReferenceCategoryTitleField)
+                .Include(f => f.InputField)
+                .ThenInclude(f => f.ReferenceCategoryField)
+                .ThenInclude(f => f.ReferenceCategoryTitleField)
                 .Where(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId);
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
-            }
+            //if (!string.IsNullOrEmpty(keyword))
+            //{
+            //    query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
+            //}
             query = query.OrderBy(c => c.SortOrder);
             var total = await query.CountAsync();
             if (size > 0)
@@ -62,52 +62,21 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<InputAreaFieldOutputFullModel>> GetAll(string keyword, int page, int size)
+        public async Task<PageData<InputFieldModel>> GetAll(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _accountingContext.InputAreaField
-                .Include(f => f.InputAreaFieldStyle)
+            var query = _accountingContext.InputField
                 .Include(f => f.ReferenceCategoryField)
                 .Include(f => f.ReferenceCategoryTitleField)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
-            }
-
-            var groups = from field in query
-                         group field by new
-                         {
-                             field.FieldName,
-                             field.Title,
-                             field.Filters,
-                             field.ReferenceCategoryFieldId,
-                             field.ReferenceCategoryTitleFieldId,
-                             field.DataTypeId,
-                             field.FormTypeId,
-                             field.IsAutoIncrement,
-                             field.IsHidden,
-                             field.IsRequire,
-                             field.IsUnique,
-                             field.Placeholder,
-                             field.RegularExpression
-
-                         } into fieldGroup
-                         select new
-                         {
-                             fieldGroup.Key,
-                             InputAreaFieldId = fieldGroup.Max(f => f.InputAreaFieldId)
-                         };
-
-            var total = await groups.Select(g => g.Key).CountAsync();
-            var fieldIds = groups.Select(g => g.InputAreaFieldId);
+            var total = await query.CountAsync();
 
             if (size > 0)
             {
-                query = query.Where(f => fieldIds.Contains(f.InputAreaFieldId)).Skip((page - 1) * size).Take(size);
+                query = query.Skip((page - 1) * size).Take(size);
             }
-            List<InputAreaFieldOutputFullModel> lst = query.ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider).ToList();
+            List<InputFieldModel> lst = query.ProjectTo<InputFieldModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
 
@@ -115,9 +84,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             var inputAreaField = await _accountingContext.InputAreaField
                 .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
-                .Include(f => f.InputAreaFieldStyle)
-                .Include(f => f.ReferenceCategoryField)
-                .Include(f => f.ReferenceCategoryTitleField)
+                .Include(f => f.InputField)
+                .ThenInclude(f => f.ReferenceCategoryField)
+                .ThenInclude(f => f.ReferenceCategoryTitleField)
                 .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (inputAreaField == null)
@@ -144,31 +113,30 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         private Enum ValidateInputAreaField(InputAreaFieldInputModel data, InputAreaField inputAreaField = null, int? inputAreaFieldId = null)
         {
-            bool updateFieldName = true;
             if (inputAreaFieldId.HasValue && inputAreaFieldId.Value > 0)
             {
                 if (inputAreaField == null)
                 {
                     return InputErrorCode.InputAreaFieldNotFound;
                 }
-                updateFieldName = inputAreaField.FieldName == data.FieldName;
-            }
-            if (updateFieldName && _accountingContext.InputAreaField.Any(f => (!inputAreaFieldId.HasValue || f.InputAreaFieldId != inputAreaFieldId.Value) && f.InputAreaFieldId == data.InputAreaFieldId && f.FieldName == data.FieldName))
-            {
-                return InputErrorCode.InputAreaFieldNameAlreadyExisted;
-            }
-            if (data.ReferenceCategoryFieldId.HasValue)
-            {
-                var sourceCategoryField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
-                if (sourceCategoryField == null)
+                if (_accountingContext.InputAreaField.Any(f =>  f.InputAreaFieldId != inputAreaFieldId.Value && f.InputAreaId == data.InputAreaId && f.InputFieldId == data.InputFieldId))
                 {
-                    return InputErrorCode.SourceCategoryFieldNotFound;
+                    return InputErrorCode.InputAreaFieldAlreadyExisted;
                 }
             }
+           
+            //if (data.ReferenceCategoryFieldId.HasValue)
+            //{
+            //    var sourceCategoryField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
+            //    if (sourceCategoryField == null)
+            //    {
+            //        return InputErrorCode.SourceCategoryFieldNotFound;
+            //    }
+            //}
             return GeneralCode.Success;
         }
 
-        private void FieldDataProcess(ref InputAreaFieldInputModel data)
+        private void FieldDataProcess(ref InputFieldModel data)
         {
             if (data.ReferenceCategoryFieldId.HasValue)
             {
@@ -195,9 +163,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             try
             {
                 // Validate trùng name trong danh sách
-                if (fields.Select(f => new { f.InputAreaId, f.FieldName }).Distinct().Count() != fields.Count)
+                if (fields.Select(f => new { f.InputAreaId, f.InputFieldId }).Distinct().Count() != fields.Count)
                 {
-                    return InputErrorCode.InputAreaFieldNameAlreadyExisted;
+                    return InputErrorCode.InputAreaFieldAlreadyExisted;
                 }
 
                 var groups = fields.GroupBy(i => new { i.InputAreaId });
@@ -218,7 +186,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         {
                             return r;
                         }
-                        FieldDataProcess(ref data);
+                        //FieldDataProcess(ref data);
                         if (data.InputAreaFieldId > 0)
                         {
                             // Update
@@ -234,7 +202,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                                 trans.Rollback();
                                 return InputErrorCode.InputAreaFieldOverLoad;
                             }
-                            inputAreaField.FieldIndex = fieldIndex;
+                            //inputAreaField.FieldIndex = fieldIndex;
                             await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                             await _accountingContext.SaveChangesAsync();
                         }
@@ -266,7 +234,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 return r;
             }
-            FieldDataProcess(ref data);
+            //FieldDataProcess(ref data);
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -278,7 +246,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     trans.Rollback();
                     return InputErrorCode.InputAreaFieldOverLoad;
                 }
-                inputAreaField.FieldIndex = fieldIndex;
+                //inputAreaField.FieldIndex = fieldIndex;
                 await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                 await _accountingContext.SaveChangesAsync();
 
@@ -301,7 +269,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             int index = -1;
             var arrIndex = _accountingContext.InputAreaField
                 .Where(f => f.InputAreaId == inputAreaId)
-                .Select(f => f.FieldIndex).ToList();
+                .Include(f => f.InputField)
+                .Select(f => f.InputField.FieldIndex).ToList();
             int firstIndex = -1;
             // Lấy ra index bị xóa và data null hoặc empty hoặc chưa được sử dụng 
             for (int indx = 0; indx <= AccountantConstants.INPUT_TYPE_FIELD_NUMBER; indx++)
@@ -356,13 +325,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // update field
             inputAreaField.InputAreaId = data.InputAreaId;
             inputAreaField.InputTypeId = data.InputTypeId;
-            inputAreaField.FieldName = data.FieldName;
             inputAreaField.Title = data.Title;
             inputAreaField.Placeholder = data.Placeholder;
             inputAreaField.SortOrder = data.SortOrder;
-            inputAreaField.DataTypeId = data.DataTypeId;
-            inputAreaField.DataSize = data.DataSize;
-            inputAreaField.FormTypeId = data.FormTypeId;
             inputAreaField.IsAutoIncrement = data.IsAutoIncrement;
             inputAreaField.IsRequire = data.IsRequire;
             inputAreaField.IsUnique = data.IsUnique;
@@ -371,22 +336,29 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             inputAreaField.DefaultValue = data.DefaultValue;
             inputAreaField.Filters = data.Filters;
             inputAreaField.IsDeleted = false;
-            inputAreaField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
-            inputAreaField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
+
+            // update field id
+            inputAreaField.InputFieldId = data.InputFieldId;
+
             // update style
-            int inputAreaFieldId = inputAreaField.InputAreaFieldId;
-            var inputAreaFieldStyle = _accountingContext.InputAreaFieldStyle.First(fs => fs.InputAreaFieldId == inputAreaFieldId);
-            inputAreaFieldStyle.Width = data.InputAreaFieldStyle.Width;
-            inputAreaFieldStyle.Height = data.InputAreaFieldStyle.Height;
-            inputAreaFieldStyle.TitleStyleJson = data.InputAreaFieldStyle.TitleStyleJson;
-            inputAreaFieldStyle.InputStyleJson = data.InputAreaFieldStyle.InputStyleJson;
-            inputAreaFieldStyle.OnFocus = data.InputAreaFieldStyle.OnFocus;
-            inputAreaFieldStyle.OnKeydown = data.InputAreaFieldStyle.OnKeydown;
-            inputAreaFieldStyle.OnKeypress = data.InputAreaFieldStyle.OnKeypress;
-            inputAreaFieldStyle.OnBlur = data.InputAreaFieldStyle.OnBlur;
-            inputAreaFieldStyle.OnChange = data.InputAreaFieldStyle.OnChange;
-            inputAreaFieldStyle.AutoFocus = data.InputAreaFieldStyle.AutoFocus;
-            inputAreaFieldStyle.Column = data.InputAreaFieldStyle.Column;
+            inputAreaField.Width = data.Width;
+            inputAreaField.Height = data.Height;
+            inputAreaField.TitleStyleJson = data.TitleStyleJson;
+            inputAreaField.InputStyleJson = data.InputStyleJson;
+            inputAreaField.OnFocus = data.OnFocus;
+            inputAreaField.OnKeydown = data.OnKeydown;
+            inputAreaField.OnKeypress = data.OnKeypress;
+            inputAreaField.OnBlur = data.OnBlur;
+            inputAreaField.OnChange = data.OnChange;
+            inputAreaField.AutoFocus = data.AutoFocus;
+            inputAreaField.Column = data.Column;
+
+            //inputAreaField.DataTypeId = data.DataTypeId;
+            //inputAreaField.DataSize = data.DataSize;
+            //inputAreaField.FormTypeId = data.FormTypeId;
+            //inputAreaField.FieldName = data.FieldName;
+            //inputAreaField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
+            //inputAreaField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
         }
 
         public async Task<Enum> UpdateInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data)
@@ -405,7 +377,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return r;
             }
 
-            FieldDataProcess(ref data);
+            //FieldDataProcess(ref data);
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -413,7 +385,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 UpdateField(ref inputAreaField, data);
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.FieldIndex, $"Cập nhật trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Cập nhật trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -440,7 +412,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 inputAreaField.IsDeleted = true;
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.FieldIndex, $"Xóa trường dữ liệu {inputAreaField.Title}", inputAreaField.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Xóa trường dữ liệu {inputAreaField.Title}", inputAreaField.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
