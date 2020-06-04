@@ -1093,6 +1093,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             });
                         foreach (var product in groupByProducts)
                         {
+                            if(product.ProductId== 7171)
+                            {
+                                var a = 1;
+                            }
                             var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId.Value, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
 
                             if (!validate.IsSuccessCode())
@@ -1108,10 +1112,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
                             if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                            fromPackageInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                            fromPackageInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                            fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
-                            fromPackageInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                            fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                            fromPackageInfo.PrimaryQuantityRemaining = fromPackageInfo.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
+                            fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                            fromPackageInfo.ProductUnitConversionRemaining = fromPackageInfo.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
 
                             if (fromPackageInfo.PrimaryQuantityRemaining < 0)
                             {
@@ -1149,10 +1153,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                             var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
-                            stockProduct.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                            stockProduct.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                            stockProduct.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
-                            stockProduct.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                            stockProduct.PrimaryQuantityWaiting = stockProduct.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                            stockProduct.PrimaryQuantityRemaining = stockProduct.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
+                            stockProduct.ProductUnitConversionWaitting = stockProduct.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                            stockProduct.ProductUnitConversionRemaining = stockProduct.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
 
                             ValidateStockProduct(stockProduct);
                         }
@@ -1375,11 +1379,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 productDatas = productDatas.Where(q => q.ProductName.Contains(keyword) || q.ProductCode.Contains(keyword));
             }
 
+            var stockValidation = _stockDbContext.ProductStockValidation.AsQueryable();
+            if (stockIdList.Count > 0)
+            {
+                stockValidation = stockValidation.Where(pv => stockIdList.Contains(pv.StockId));
+            }
             var query = (
                 from p in productDatas
-                join pv in _stockDbContext.ProductStockValidation on p.ProductId equals pv.ProductId into pvs
+                join pv in stockValidation on p.ProductId equals pv.ProductId into pvs
                 from pv in pvs.DefaultIfEmpty()
-                where pv == null || stockIdList.Contains(pv.StockId)
+                where pv == null
                 select new
                 {
                     p.ProductId,
