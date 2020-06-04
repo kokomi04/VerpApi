@@ -160,33 +160,33 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         }
 
         public async Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
-        { // Validate trùng trong danh sách
-            if (fields.Select(f => new { f.InputAreaId, f.InputFieldId }).Distinct().Count() != fields.Count)
+        { 
+            // Validate trùng trong danh sách
+            if (fields.Select(f => new { f.InputTypeId, f.InputFieldId }).Distinct().Count() != fields.Count)
             {
                 return InputErrorCode.InputAreaFieldAlreadyExisted;
             }
 
             List<InputAreaField> curFields = _accountingContext.InputAreaField
+                .IgnoreQueryFilters()
                 .Where(f => f.InputTypeId == inputTypeId)
                 .ToList();
 
             List<InputAreaField> deleteFields = curFields
-                .Where(cf => fields.All(f => f.InputAreaFieldId != cf.InputAreaFieldId))
+                .Where(cf => !cf.IsDeleted)
+                .Where(cf => fields.All(f => f.InputFieldId != cf.InputFieldId || f.InputTypeId != cf.InputTypeId))
                 .ToList();
 
-            List<InputAreaFieldInputModel> newFields = fields
-                .Where(f => !f.InputAreaFieldId.HasValue)
-                .ToList();
-
+            List<InputAreaFieldInputModel> newFields = new List<InputAreaFieldInputModel>();
             List<(InputAreaFieldInputModel updateField, InputAreaField currentField)> updateFields = new List<(InputAreaFieldInputModel updateField, InputAreaField currentField)>();
-            foreach (var field in fields.Where(f => f.InputAreaFieldId.HasValue))
+            foreach (var field in fields)
             {
-                var curField = curFields.FirstOrDefault(f => f.InputAreaFieldId == field.InputAreaFieldId);
+                var curField = curFields.FirstOrDefault(f => f.InputFieldId == field.InputFieldId || f.InputTypeId == field.InputTypeId);
                 if (curField == null)
                 {
-                    throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
+                    newFields.Add(field);
                 }
-                if (Comparer(field, curField))
+                else if (Comparer(field, curField))
                 {
                     updateFields.Add((field, curField));
                 }
@@ -209,32 +209,33 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var (updateField, currentField) in updateFields)
                 {
                     // update field
-                    updateField.InputAreaId = updateField.InputAreaId;
-                    updateField.InputTypeId = updateField.InputTypeId;
-                    updateField.Title = updateField.Title;
-                    updateField.Placeholder = updateField.Placeholder;
-                    updateField.SortOrder = updateField.SortOrder;
-                    updateField.IsAutoIncrement = updateField.IsAutoIncrement;
-                    updateField.IsRequire = updateField.IsRequire;
-                    updateField.IsUnique = updateField.IsUnique;
-                    updateField.IsHidden = updateField.IsHidden;
-                    updateField.RegularExpression = updateField.RegularExpression;
-                    updateField.DefaultValue = updateField.DefaultValue;
-                    updateField.Filters = updateField.Filters;
+                    currentField.InputAreaId = updateField.InputAreaId;
+                    currentField.InputTypeId = updateField.InputTypeId;
+                    currentField.Title = updateField.Title;
+                    currentField.Placeholder = updateField.Placeholder;
+                    currentField.SortOrder = updateField.SortOrder;
+                    currentField.IsAutoIncrement = updateField.IsAutoIncrement;
+                    currentField.IsRequire = updateField.IsRequire;
+                    currentField.IsUnique = updateField.IsUnique;
+                    currentField.IsHidden = updateField.IsHidden;
+                    currentField.RegularExpression = updateField.RegularExpression;
+                    currentField.DefaultValue = updateField.DefaultValue;
+                    currentField.Filters = updateField.Filters;
+                    currentField.IsDeleted = false;
                     // update field id
-                    updateField.InputFieldId = updateField.InputFieldId;
+                    currentField.InputFieldId = updateField.InputFieldId;
                     // update style
-                    updateField.Width = updateField.Width;
-                    updateField.Height = updateField.Height;
-                    updateField.TitleStyleJson = updateField.TitleStyleJson;
-                    updateField.InputStyleJson = updateField.InputStyleJson;
-                    updateField.OnFocus = updateField.OnFocus;
-                    updateField.OnKeydown = updateField.OnKeydown;
-                    updateField.OnKeypress = updateField.OnKeypress;
-                    updateField.OnBlur = updateField.OnBlur;
-                    updateField.OnChange = updateField.OnChange;
-                    updateField.AutoFocus = updateField.AutoFocus;
-                    updateField.Column = updateField.Column;
+                    currentField.Width = updateField.Width;
+                    currentField.Height = updateField.Height;
+                    currentField.TitleStyleJson = updateField.TitleStyleJson;
+                    currentField.InputStyleJson = updateField.InputStyleJson;
+                    currentField.OnFocus = updateField.OnFocus;
+                    currentField.OnKeydown = updateField.OnKeydown;
+                    currentField.OnKeypress = updateField.OnKeypress;
+                    currentField.OnBlur = updateField.OnBlur;
+                    currentField.OnChange = updateField.OnChange;
+                    currentField.AutoFocus = updateField.AutoFocus;
+                    currentField.Column = updateField.Column;
                 }
 
                 await _accountingContext.SaveChangesAsync();
@@ -252,30 +253,31 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         private bool Comparer(InputAreaFieldInputModel updateField, InputAreaField curField)
         {
-            return updateField.InputAreaId != updateField.InputAreaId ||
-                updateField.InputFieldId != updateField.InputFieldId ||
-                updateField.InputTypeId != updateField.InputTypeId ||
-                updateField.Title != updateField.Title ||
-                updateField.Placeholder != updateField.Placeholder ||
-                updateField.SortOrder != updateField.SortOrder ||
-                updateField.IsAutoIncrement != updateField.IsAutoIncrement ||
-                updateField.IsRequire != updateField.IsRequire ||
-                updateField.IsUnique != updateField.IsUnique ||
-                updateField.IsHidden != updateField.IsHidden ||
-                updateField.RegularExpression != updateField.RegularExpression ||
-                updateField.DefaultValue != updateField.DefaultValue ||
-                updateField.Filters != updateField.Filters ||
-                updateField.Width != updateField.Width ||
-                updateField.Height != updateField.Height ||
-                updateField.TitleStyleJson != updateField.TitleStyleJson ||
-                updateField.InputStyleJson != updateField.InputStyleJson ||
-                updateField.OnFocus != updateField.OnFocus ||
-                updateField.OnKeydown != updateField.OnKeydown ||
-                updateField.OnKeypress != updateField.OnKeypress ||
-                updateField.OnBlur != updateField.OnBlur ||
-                updateField.OnChange != updateField.OnChange ||
-                updateField.AutoFocus != updateField.AutoFocus ||
-                updateField.Column != updateField.Column;
+            return curField.IsDeleted || 
+                updateField.InputAreaId != curField.InputAreaId ||
+                updateField.InputFieldId != curField.InputFieldId ||
+                updateField.InputTypeId != curField.InputTypeId ||
+                updateField.Title != curField.Title ||
+                updateField.Placeholder != curField.Placeholder ||
+                updateField.SortOrder != curField.SortOrder ||
+                updateField.IsAutoIncrement != curField.IsAutoIncrement ||
+                updateField.IsRequire != curField.IsRequire ||
+                updateField.IsUnique != curField.IsUnique ||
+                updateField.IsHidden != curField.IsHidden ||
+                updateField.RegularExpression != curField.RegularExpression ||
+                updateField.DefaultValue != curField.DefaultValue ||
+                updateField.Filters != curField.Filters ||
+                updateField.Width != curField.Width ||
+                updateField.Height != curField.Height ||
+                updateField.TitleStyleJson != curField.TitleStyleJson ||
+                updateField.InputStyleJson != curField.InputStyleJson ||
+                updateField.OnFocus != curField.OnFocus ||
+                updateField.OnKeydown != curField.OnKeydown ||
+                updateField.OnKeypress != curField.OnKeypress ||
+                updateField.OnBlur != curField.OnBlur ||
+                updateField.OnChange != curField.OnChange ||
+                updateField.AutoFocus != curField.AutoFocus ||
+                updateField.Column != curField.Column;
         }
 
         public async Task<ServiceResult<int>> AddInputField(InputFieldInputModel data)
