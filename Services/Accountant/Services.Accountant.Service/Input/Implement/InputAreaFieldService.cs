@@ -114,30 +114,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return GeneralCode.Success;
         }
 
-        private Enum ValidateInputAreaField(InputAreaFieldInputModel data, InputAreaField inputAreaField = null, int? inputAreaFieldId = null)
-        {
-            if (inputAreaFieldId.HasValue && inputAreaFieldId.Value > 0)
-            {
-                if (inputAreaField == null)
-                {
-                    return InputErrorCode.InputAreaFieldNotFound;
-                }
-                if (_accountingContext.InputAreaField.Any(f =>  f.InputAreaFieldId != inputAreaFieldId.Value && f.InputAreaId == data.InputAreaId && f.InputFieldId == data.InputFieldId))
-                {
-                    return InputErrorCode.InputAreaFieldAlreadyExisted;
-                }
-            }
-            //if (data.ReferenceCategoryFieldId.HasValue)
-            //{
-            //    var sourceCategoryField = _accountingContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
-            //    if (sourceCategoryField == null)
-            //    {
-            //        return InputErrorCode.SourceCategoryFieldNotFound;
-            //    }
-            //}
-            return GeneralCode.Success;
-        }
-       
         private Enum ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
         {
             if (inputFieldId.HasValue && inputFieldId.Value > 0)
@@ -184,56 +160,83 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         }
 
         public async Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
-        {
+        { // Validate trùng trong danh sách
+            if (fields.Select(f => new { f.InputAreaId, f.InputFieldId }).Distinct().Count() != fields.Count)
+            {
+                return InputErrorCode.InputAreaFieldAlreadyExisted;
+            }
+
+            List<InputAreaField> curFields = _accountingContext.InputAreaField
+                .Where(f => f.InputTypeId == inputTypeId)
+                .ToList();
+
+            List<InputAreaField> deleteFields = curFields
+                .Where(cf => fields.All(f => f.InputAreaFieldId != cf.InputAreaFieldId))
+                .ToList();
+
+            List<InputAreaFieldInputModel> newFields = fields
+                .Where(f => !f.InputAreaFieldId.HasValue)
+                .ToList();
+
+            List<(InputAreaFieldInputModel updateField, InputAreaField currentField)> updateFields = new List<(InputAreaFieldInputModel updateField, InputAreaField currentField)>();
+            foreach (var field in fields.Where(f => f.InputAreaFieldId.HasValue))
+            {
+                var curField = curFields.FirstOrDefault(f => f.InputAreaFieldId == field.InputAreaFieldId);
+                if (curField == null)
+                {
+                    throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
+                }
+                if (Comparer(field, curField))
+                {
+                    updateFields.Add((field, curField));
+                }
+            }
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                // Validate trùng name trong danh sách
-                if (fields.Select(f => new { f.InputAreaId, f.InputFieldId }).Distinct().Count() != fields.Count)
+                // delete
+                foreach (var deleteField in deleteFields)
                 {
-                    return InputErrorCode.InputAreaFieldAlreadyExisted;
+                    deleteField.IsDeleted = true;
+                }
+                // create new
+                foreach (var newField in newFields)
+                {
+                    var inputAreaField = _mapper.Map<InputAreaField>(newField);
+                    await _accountingContext.InputAreaField.AddAsync(inputAreaField);
+                }
+                // update field
+                foreach (var (updateField, currentField) in updateFields)
+                {
+                    // update field
+                    updateField.InputAreaId = updateField.InputAreaId;
+                    updateField.InputTypeId = updateField.InputTypeId;
+                    updateField.Title = updateField.Title;
+                    updateField.Placeholder = updateField.Placeholder;
+                    updateField.SortOrder = updateField.SortOrder;
+                    updateField.IsAutoIncrement = updateField.IsAutoIncrement;
+                    updateField.IsRequire = updateField.IsRequire;
+                    updateField.IsUnique = updateField.IsUnique;
+                    updateField.IsHidden = updateField.IsHidden;
+                    updateField.RegularExpression = updateField.RegularExpression;
+                    updateField.DefaultValue = updateField.DefaultValue;
+                    updateField.Filters = updateField.Filters;
+                    // update field id
+                    updateField.InputFieldId = updateField.InputFieldId;
+                    // update style
+                    updateField.Width = updateField.Width;
+                    updateField.Height = updateField.Height;
+                    updateField.TitleStyleJson = updateField.TitleStyleJson;
+                    updateField.InputStyleJson = updateField.InputStyleJson;
+                    updateField.OnFocus = updateField.OnFocus;
+                    updateField.OnKeydown = updateField.OnKeydown;
+                    updateField.OnKeypress = updateField.OnKeypress;
+                    updateField.OnBlur = updateField.OnBlur;
+                    updateField.OnChange = updateField.OnChange;
+                    updateField.AutoFocus = updateField.AutoFocus;
+                    updateField.Column = updateField.Column;
                 }
 
-                var groups = fields.GroupBy(i => new { i.InputAreaId });
-                foreach (var group in groups)
-                {
-                    Enum r = ValidateExistedInputType(inputTypeId, group.Key.InputAreaId);
-                    if (!r.IsSuccess())
-                    {
-                        return r;
-                    }
-
-                    for (int indx = 0; indx < group.Count(); indx++)
-                    {
-                        var data = group.ElementAt(indx);
-                        var inputAreaField = data.InputAreaFieldId > 0 ? _accountingContext.InputAreaField.FirstOrDefault(f => f.InputAreaFieldId == data.InputAreaFieldId) : null;
-                        r = ValidateInputAreaField(data, inputAreaField, data.InputAreaFieldId);
-                        if (!r.IsSuccess())
-                        {
-                            return r;
-                        }
-                        //FieldDataProcess(ref data);
-                        if (data.InputAreaFieldId > 0)
-                        {
-                            // Update
-                            UpdateField(ref inputAreaField, data);
-                        }
-                        else
-                        {
-                            // Create new
-                            inputAreaField = _mapper.Map<InputAreaField>(data);
-                            //int fieldIndex = GetFieldIndex(inputAreaField.InputAreaId);
-                            //if (fieldIndex < 0)
-                            //{
-                            //    trans.Rollback();
-                            //    return InputErrorCode.InputAreaFieldOverLoad;
-                            //}
-                            //inputAreaField.FieldIndex = fieldIndex;
-                            await _accountingContext.InputAreaField.AddAsync(inputAreaField);
-                            await _accountingContext.SaveChangesAsync();
-                        }
-                    }
-                }
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
@@ -247,45 +250,32 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        public async Task<ServiceResult<int>> AddInputAreaField(int inputTypeId, int inputAreaId, InputAreaFieldInputModel data)
+        private bool Comparer(InputAreaFieldInputModel updateField, InputAreaField curField)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-            Enum r = ValidateExistedInputType(inputTypeId, inputAreaId);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-            r = ValidateInputAreaField(data);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-            //FieldDataProcess(ref data);
-
-            using var trans = await _accountingContext.Database.BeginTransactionAsync();
-            try
-            {
-                var inputAreaField = _mapper.Map<InputAreaField>(data);
-                //int fieldIndex = GetFieldIndex(inputAreaId);
-                //if (fieldIndex < 0)
-                //{
-                //    trans.Rollback();
-                //    return InputErrorCode.InputAreaFieldOverLoad;
-                //}
-                //inputAreaField.FieldIndex = fieldIndex;
-                await _accountingContext.InputAreaField.AddAsync(inputAreaField);
-                await _accountingContext.SaveChangesAsync();
-
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Thêm trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
-                return inputAreaField.InputAreaFieldId;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
-            }
+            return updateField.InputAreaId != updateField.InputAreaId ||
+                updateField.InputFieldId != updateField.InputFieldId ||
+                updateField.InputTypeId != updateField.InputTypeId ||
+                updateField.Title != updateField.Title ||
+                updateField.Placeholder != updateField.Placeholder ||
+                updateField.SortOrder != updateField.SortOrder ||
+                updateField.IsAutoIncrement != updateField.IsAutoIncrement ||
+                updateField.IsRequire != updateField.IsRequire ||
+                updateField.IsUnique != updateField.IsUnique ||
+                updateField.IsHidden != updateField.IsHidden ||
+                updateField.RegularExpression != updateField.RegularExpression ||
+                updateField.DefaultValue != updateField.DefaultValue ||
+                updateField.Filters != updateField.Filters ||
+                updateField.Width != updateField.Width ||
+                updateField.Height != updateField.Height ||
+                updateField.TitleStyleJson != updateField.TitleStyleJson ||
+                updateField.InputStyleJson != updateField.InputStyleJson ||
+                updateField.OnFocus != updateField.OnFocus ||
+                updateField.OnKeydown != updateField.OnKeydown ||
+                updateField.OnKeypress != updateField.OnKeypress ||
+                updateField.OnBlur != updateField.OnBlur ||
+                updateField.OnChange != updateField.OnChange ||
+                updateField.AutoFocus != updateField.AutoFocus ||
+                updateField.Column != updateField.Column;
         }
 
         public async Task<ServiceResult<int>> AddInputField(InputFieldInputModel data)
@@ -322,10 +312,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
-        
+
         public async Task<Enum> UpdateInputField(int inputFieldId, InputFieldInputModel data)
         {
-          
+
             var inputField = await _accountingContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
 
             var r = ValidateInputField(data, inputField, inputFieldId);
@@ -441,104 +431,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
 
             return index;
-        }
-
-        private void UpdateField(ref InputAreaField inputAreaField, InputAreaFieldInputModel data)
-        {
-            // update field
-            inputAreaField.InputAreaId = data.InputAreaId;
-            inputAreaField.InputTypeId = data.InputTypeId;
-            inputAreaField.Title = data.Title;
-            inputAreaField.Placeholder = data.Placeholder;
-            inputAreaField.SortOrder = data.SortOrder;
-            inputAreaField.IsAutoIncrement = data.IsAutoIncrement;
-            inputAreaField.IsRequire = data.IsRequire;
-            inputAreaField.IsUnique = data.IsUnique;
-            inputAreaField.IsHidden = data.IsHidden;
-            inputAreaField.RegularExpression = data.RegularExpression;
-            inputAreaField.DefaultValue = data.DefaultValue;
-            inputAreaField.Filters = data.Filters;
-            inputAreaField.IsDeleted = false;
-
-            // update field id
-            inputAreaField.InputFieldId = data.InputFieldId;
-
-            // update style
-            inputAreaField.Width = data.Width;
-            inputAreaField.Height = data.Height;
-            inputAreaField.TitleStyleJson = data.TitleStyleJson;
-            inputAreaField.InputStyleJson = data.InputStyleJson;
-            inputAreaField.OnFocus = data.OnFocus;
-            inputAreaField.OnKeydown = data.OnKeydown;
-            inputAreaField.OnKeypress = data.OnKeypress;
-            inputAreaField.OnBlur = data.OnBlur;
-            inputAreaField.OnChange = data.OnChange;
-            inputAreaField.AutoFocus = data.AutoFocus;
-            inputAreaField.Column = data.Column;
-
-          
-        }
-
-        public async Task<Enum> UpdateInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId, InputAreaFieldInputModel data)
-        {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-            Enum r = ValidateExistedInputType(inputTypeId, inputAreaId);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId);
-
-            r = ValidateInputAreaField(data, inputAreaField, inputAreaFieldId);
-            if (!r.IsSuccess())
-            {
-                return r;
-            }
-
-            //FieldDataProcess(ref data);
-
-            using var trans = await _accountingContext.Database.BeginTransactionAsync();
-            try
-            {
-                UpdateField(ref inputAreaField, data);
-                await _accountingContext.SaveChangesAsync();
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Cập nhật trường dữ liệu {inputAreaField.Title}", data.JsonSerialize());
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
-        }
-
-        public async Task<Enum> DeleteInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
-        {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-            var inputAreaField = await _accountingContext.InputAreaField.FirstOrDefaultAsync(f => f.InputAreaFieldId == inputAreaFieldId && f.InputAreaId == inputAreaId && f.InputTypeId == inputTypeId);
-            if (inputAreaField == null)
-            {
-                return InputErrorCode.InputAreaFieldNotFound;
-            }
-
-            using var trans = await _accountingContext.Database.BeginTransactionAsync();
-            try
-            {
-                // Delete field
-                inputAreaField.IsDeleted = true;
-                await _accountingContext.SaveChangesAsync();
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputAreaField.InputAreaFieldId, $"Xóa trường dữ liệu {inputAreaField.Title}", inputAreaField.JsonSerialize());
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
-            }
         }
     }
 }
