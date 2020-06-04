@@ -582,7 +582,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Lấy thông tin field
             var inputAreaFields = _accountingContext.InputAreaField
                 .Include(f => f.InputField.DataType)
-                //.ThenInclude(f => f.DataType)
                 .Where(f => f.InputTypeId == inputTypeId).AsEnumerable();
 
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
@@ -988,7 +987,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     {
                         throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
                     }
-
                 }
             }
         }
@@ -1010,7 +1008,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     {
                         continue;
                     }
-
                     CheckValue(value.Value, field);
                 }
             }
