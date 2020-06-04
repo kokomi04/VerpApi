@@ -1093,7 +1093,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             });
                         foreach (var product in groupByProducts)
                         {
-                            if(product.ProductId== 7171)
+                            if (product.ProductId == 7171)
                             {
                                 var a = 1;
                             }
@@ -1388,7 +1388,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from p in productDatas
                 join pv in stockValidation on p.ProductId equals pv.ProductId into pvs
                 from pv in pvs.DefaultIfEmpty()
-                where pv == null
                 select new
                 {
                     p.ProductId,
@@ -1399,13 +1398,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.ProductCateId,
                     p.UnitId,
                     p.Barcode,
-                    p.EstimatePrice
+                    p.EstimatePrice,
+                    IsValid = pv != null
                 })
                 .Distinct();
 
             var total = query.Count();
 
-            var pagedData = query.OrderBy(q => q.ProductCode).Skip((page - 1) * size).Take(size).ToList();
+            var pagedData = query.OrderByDescending(p => p.IsValid).ThenBy(q => q.ProductCode).Skip((page - 1) * size).Take(size).ToList();
             var productIdList = pagedData.Select(q => q.ProductId).ToList();
             var productExtraData = _stockDbContext.ProductExtraInfo.AsNoTracking().Where(q => productIdList.Contains(q.ProductId)).ToList();
             var unitIdList = pagedData.Select(q => q.UnitId).Distinct().ToList();
@@ -1413,11 +1413,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var stockProductData = _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToList();
 
+            var productTypeIds = pagedData.Select(p => p.ProductTypeId).ToList();
+            var productTypes = (await _stockDbContext.ProductType.Where(t => productTypeIds.Contains(t.ProductTypeId)).AsNoTracking().ToListAsync())
+                .ToDictionary(t => t.ProductTypeId, t => t.ProductTypeName);
+
+            var productCateIds = pagedData.Select(p => p.ProductCateId).ToList();
+            var productCates = (await _stockDbContext.ProductCate.Where(t => productCateIds.Contains(t.ProductCateId)).AsNoTracking().ToListAsync())
+                .ToDictionary(t => t.ProductCateId, t => t.ProductCateName);
+
             var productList = new List<ProductListOutput>(total);
             foreach (var item in pagedData)
             {
                 var specification = productExtraData.FirstOrDefault(q => q.ProductId == item.ProductId)?.Specification ?? string.Empty;
                 var unitName = unitOutputList.FirstOrDefault(q => q.UnitId == item.UnitId)?.UnitName ?? string.Empty;
+
+                productTypes.TryGetValue(item.ProductTypeId ?? 0, out var productTypeName);
+
+                productCates.TryGetValue(item.ProductCateId, out var productCateName);
 
                 productList.Add(new ProductListOutput
                 {
@@ -1426,9 +1438,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductName = item.ProductName,
                     MainImageFileId = item.MainImageFileId,
                     ProductTypeId = item.ProductTypeId,
-                    ProductTypeName = string.Empty,
+                    ProductTypeName = productTypeName,
                     ProductCateId = item.ProductCateId,
-                    ProductCateName = string.Empty,
+                    ProductCateName = productCateName,
                     Barcode = item.Barcode,
                     Specification = specification,
                     UnitId = item.UnitId,
