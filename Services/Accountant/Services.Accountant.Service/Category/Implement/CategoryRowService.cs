@@ -63,28 +63,25 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
             IQueryable<CategoryRow> query;
-            IQueryable<CategoryRowValue> filterQuery;
 
             if (category.IsOutSideData)
             {
-                query = GetOutSideCategoryRows(categoryId);
-                filterQuery = query.SelectMany(r => r.CategoryRowValue);
+                query = GetOutSideCategoryRows(categoryId, filterClause);
             }
             else
             {
                 query = _accountingContext.CategoryRow
                     .Where(r => r.CategoryId == categoryId)
                     .Include(r => r.CategoryRowValue);
-                filterQuery = from rowValue in _accountingContext.CategoryRowValue
-                              join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
-                              where row.CategoryId == categoryId
-                              select rowValue;
-            }
-
-            if (filters != null)
-            {
-                List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
-                query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                IQueryable<CategoryRowValue> filterQuery = from rowValue in _accountingContext.CategoryRowValue
+                                                           join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
+                                                           where row.CategoryId == categoryId
+                                                           select rowValue;
+                if (filters != null)
+                {
+                    List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
+                    query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                }
             }
 
             // search
@@ -665,24 +662,29 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         bool isOutSide = referCategory.IsOutSideData;
 
                         IQueryable<CategoryRow> query;
+                        Clause filters = null;
+                        if (!string.IsNullOrEmpty(field.Filters))
+                        {
+                            filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                        }
                         if (isOutSide)
                         {
-                            query = GetOutSideCategoryRows(referCategory.CategoryId);
+                            query = GetOutSideCategoryRows(referCategory.CategoryId, filters);
                         }
                         else
                         {
                             query = _accountingContext.CategoryRow
                                 .Where(r => r.CategoryId == referCategory.CategoryId)
                                 .Include(r => r.CategoryRowValue);
+                            if (filters != null)
+                            {
+                                IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
+                                List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
+                                query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                            }
                         }
 
-                        if (!string.IsNullOrEmpty(field.Filters))
-                        {
-                            Clause filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
-                            IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
-                            List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
-                            query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
-                        }
+
                         CategoryRow selectedItem = null;
                         if (!string.IsNullOrEmpty(valueItem.Value))
                         {
