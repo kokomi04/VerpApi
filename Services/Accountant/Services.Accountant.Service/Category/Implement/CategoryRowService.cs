@@ -481,22 +481,24 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin value hiện tại
             var currentValues = (from rowValue in _accountingContext.CategoryRowValue
                                  where rowValue.CategoryRowId == categoryRowId
-                                 join field in _accountingContext.CategoryField on rowValue.CategoryFieldId equals field.CategoryFieldId
-                                 join referRowValue in _accountingContext.CategoryRowValue
-                                 on new { categoryRowId = (int)rowValue.ValueInNumber, categoryFieldId = field.ReferenceCategoryTitleFieldId.Value }
-                                 equals new { categoryRowId = referRowValue.CategoryRowId, categoryFieldId = referRowValue.CategoryFieldId } into g
-                                 from subRefer in g.DefaultIfEmpty()
-                                 select new
-                                 {
-                                     Data = rowValue,
-                                     ReferData = subRefer
-                                 }).ToList();
+                                 //join field in _accountingContext.CategoryField on rowValue.CategoryFieldId equals field.CategoryFieldId
+                                 //join referRowValue in _accountingContext.CategoryRowValue
+                                 //on new { categoryRowId = (int)rowValue.ValueInNumber, categoryFieldId = field.ReferenceCategoryTitleFieldId.Value }
+                                 //equals new { categoryRowId = referRowValue.CategoryRowId, categoryFieldId = referRowValue.CategoryFieldId } into g
+                                 //from subRefer in g.DefaultIfEmpty()
+                                 //select new
+                                 //{
+                                 //    Data = rowValue,
+                                 //    //ReferData = subRefer
+                                 //})
+                                 select rowValue)
+                                 .ToList();
 
             // Lấy các trường thay đổi
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                var currentValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == categoryField.CategoryFieldId);
+                var currentValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
                 var updateValue = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
 
                 if (currentValue != null || updateValue != null)
@@ -508,7 +510,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)categoryField.FormTypeId);
-                        if (currentValue.Data.Value != updateValue.Value)
+                        if (currentValue.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
                         }
@@ -542,7 +544,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 // Duyệt danh sách field
                 foreach (var field in updateFields)
                 {
-                    var oldValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == field.CategoryFieldId);
+                    var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                     var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
                     if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
