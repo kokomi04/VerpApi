@@ -713,8 +713,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
-                entity.Property(e => e.ProgramingFunctionId).ValueGeneratedNever();
-
                 entity.Property(e => e.FunctionBody).IsRequired();
 
                 entity.Property(e => e.ProgramingFunctionName)
