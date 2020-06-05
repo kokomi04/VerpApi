@@ -85,7 +85,7 @@ namespace VErp.Infrastructure.ApiCore
             services.AddControllers(options =>
             {
                 options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
-
+                options.AllowEmptyInputInBodyModelBinding = true;
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
                 options.Filters.Add(typeof(ResponseStatusFilter));

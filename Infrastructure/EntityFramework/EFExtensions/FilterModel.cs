@@ -63,6 +63,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             var props = (token as JObject).Properties();
             bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
+            bool isArray = props.Any(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower());
             if (isSingle)
             {
                 var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.FieldId).ToLower()).Value.ToString();
@@ -77,7 +78,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     Value = value.ToObject<object>()
                 };
             }
-            else
+            else if(isArray)
             {
                 var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
                 var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value.ToString();

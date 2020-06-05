@@ -26,7 +26,7 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<DepartmentModel>>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<DepartmentModel>>> Get([FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
         {
             return await _departmentService.GetList(keyword, isActived, page, size, filters);
         }

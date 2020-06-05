@@ -123,7 +123,7 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpPost]
         [VErpAction(EnumAction.View)]
-        [Route("/categoryfields")]
+        [Route("categoryfields")]
         public async Task<ServiceResult<List<CategoryFieldOutputModel>>> GetCategoryFields([FromBody] IList<int> categoryIds)
         {
             return await _categoryFieldService.GetCategoryFields(categoryIds);
