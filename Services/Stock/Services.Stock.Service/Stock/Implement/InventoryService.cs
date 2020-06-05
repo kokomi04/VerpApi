@@ -28,6 +28,7 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -739,7 +740,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Rollback();
                         _stockDbContext.RollbackEntities();
                         _logger.LogError(ex, "UpdateInventoryOutput");
-                        return GeneralCode.InternalError;
+                        throw ex;
                     }
                 }
 
@@ -1645,7 +1646,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     else
                     {
                         _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
-                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"{productInfo.ProductCode} không thể tính giá trị ĐVCĐ, tính theo tỷ lệ: {pucQuantity.Format()}, nhập vào {details.ProductUnitConversionQuantity.Format()}");
                     }
                 }
                 //Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(primaryQualtity, productUnitConversionInfo.FactorExpression);
