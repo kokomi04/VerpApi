@@ -65,6 +65,21 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (lst, total);
         }
 
+        public async Task<List<CategoryFieldOutputModel>> GetCategoryFields(IList<int> categoryIds)
+        {
+            var query = _accountingContext.CategoryField
+                .Include(f => f.ReferenceCategoryField)
+                .Include(f => f.InverseReferenceCategoryTitleField)
+                .AsQueryable();
+            query = query.Where(c => categoryIds.Contains(c.CategoryId));
+            query = query.OrderBy(c => c.SortOrder);
+            List<CategoryFieldOutputModel> lst = await query
+                .OrderBy(f => f.SortOrder)
+                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            return lst;
+        }
+
         public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountingContext.CategoryField

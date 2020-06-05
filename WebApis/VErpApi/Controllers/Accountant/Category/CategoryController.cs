@@ -121,6 +121,14 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryFieldService.GetCategoryFields(categoryId, keyword, page, size);
         }
 
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("/categoryfields")]
+        public async Task<ServiceResult<List<CategoryFieldOutputModel>>> GetCategoryFields([FromBody] IList<int> categoryIds)
+        {
+            return await _categoryFieldService.GetCategoryFields(categoryIds);
+        }
+
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
         public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)

@@ -22,6 +22,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
@@ -167,7 +168,7 @@ namespace VErp.Services.Accountant.Service
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                             string value = string.Empty;
+                            string value = string.Empty;
                             if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
                                 value = id.ToString();
@@ -237,6 +238,40 @@ namespace VErp.Services.Accountant.Service
             httpRequestMessage.Dispose();
             client.Dispose();
             return (result, status);
+        }
+
+        public Clause AddFieldName(Clause filterClause, List<CategoryField> fields)
+        {
+            Clause result = null;
+            if (filterClause is SingleClause)
+            {
+                var field = fields.FirstOrDefault(f => f.CategoryFieldId == (filterClause as SingleClause).FieldId);
+                if(field == null)
+                {
+                    throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
+                }
+                result = new SingleClause
+                {
+                    FieldId = (filterClause as SingleClause).FieldId,
+                    FieldName = field.CategoryFieldName,
+                    Operator = (filterClause as SingleClause).Operator,
+                    Value = (filterClause as SingleClause).Value,
+                };
+            }
+            else if (filterClause is ArrayClause)
+            {
+                result = new ArrayClause
+                {
+                    Condition = (filterClause as ArrayClause).Condition,
+                    Not = (filterClause as ArrayClause).Not
+                };
+                foreach (var item in (filterClause as ArrayClause).Rules)
+                {
+                    Clause clause = AddFieldName(item, fields);
+                    (result as ArrayClause).Rules.Add(clause);
+                }
+            }
+            return result;
         }
 
     }

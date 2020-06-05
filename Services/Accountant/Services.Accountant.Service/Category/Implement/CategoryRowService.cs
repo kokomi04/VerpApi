@@ -59,6 +59,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             if (!string.IsNullOrEmpty(filters))
             {
                 filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == categoryId).ToList();
+                filterClause = AddFieldName(filterClause, fields);
             }
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
@@ -66,7 +68,20 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             if (category.IsOutSideData)
             {
-                query = GetOutSideCategoryRows(categoryId, filterClause);
+                if (category.IsTreeView)
+                {
+                    query = GetOutSideCategoryRows(categoryId);
+                    IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
+                    if (filters != null)
+                    {
+                        List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
+                        query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                    }
+                }
+                else
+                {
+                    query = GetOutSideCategoryRows(categoryId, filterClause);
+                }
             }
             else
             {
@@ -120,6 +135,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (lst, total);
         }
+
 
         private int[] GetParentIds(List<CategoryRowListOutputModel> categoryRows)
         {
@@ -239,9 +255,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         .ThenInclude(rv => rv.CategoryField);
                 }
                 var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
-
-
-
 
                 foreach (var value in values)
                 {
@@ -670,6 +683,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
                             filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                            var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == referCategory.CategoryId).ToList();
+                            filters = AddFieldName(filters, fields);
                         }
                         if (isOutSide)
                         {
