@@ -26,5 +26,9 @@ namespace VErp.Services.Accountant.Service.Category
         Task<ServiceResult<MemoryStream>> GetImportTemplateCategory(int categoryId);
 
         Task<ServiceResult<MemoryStream>> ExportCategory(int categoryId);
+
+        Task<CategoryNameModel> GetFieldDataForMapping(int categoryId);
+
+        Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream);
     }
 }

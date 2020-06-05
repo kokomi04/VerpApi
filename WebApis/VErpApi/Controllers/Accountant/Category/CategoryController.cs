@@ -218,6 +218,20 @@ namespace VErpApi.Controllers.Accountant
             return await _categoryRowService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }
 
+        [HttpGet]
+        [Route("{categoryId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int categoryId)
+        {
+            return await _categoryRowService.GetFieldDataForMapping(categoryId).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("{categoryId}/importFromMapping")]
+        public async Task<bool> importFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            return await _categoryRowService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<ImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+        }
+
         [HttpDelete]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<ServiceResult> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)

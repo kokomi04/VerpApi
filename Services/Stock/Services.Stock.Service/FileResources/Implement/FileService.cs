@@ -12,7 +12,9 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -44,6 +46,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".docx", EnumFileType.Document },
             { ".xls", EnumFileType.Document },
             { ".xlsx" , EnumFileType.Document },
+            { ".csv" , EnumFileType.Document },
         };
 
         private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
@@ -253,6 +256,28 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 _logger.LogError(e, "Upload");
                 return GeneralCode.InternalError;
             }
+        }
+
+
+        public IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+        {
+
+            var (validate, fileTypeId) = ValidateUploadFile(file);
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
+            var ext = Path.GetExtension(file.FileName).ToLower();
+
+            if (!new[] { ".xls", ".xlsx" }.Contains(ext))
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
+            }
+
+            var reader = new ExcelReader(file.OpenReadStream());
+
+            return reader.ReadSheets(sheetName, fromRow, toRow, maxrows);
         }
 
         public async Task<Enum> GenerateThumbnail(long fileId)
