@@ -181,7 +181,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             List<(InputAreaFieldInputModel updateField, InputAreaField currentField)> updateFields = new List<(InputAreaFieldInputModel updateField, InputAreaField currentField)>();
             foreach (var field in fields)
             {
-                var curField = curFields.FirstOrDefault(f => f.InputFieldId == field.InputFieldId || f.InputTypeId == field.InputTypeId);
+                var curField = curFields.FirstOrDefault(f => f.InputFieldId == field.InputFieldId && f.InputTypeId == field.InputTypeId);
                 if (curField == null)
                 {
                     newFields.Add(field);
@@ -210,7 +210,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 {
                     // update field
                     currentField.InputAreaId = updateField.InputAreaId;
-                    currentField.InputTypeId = updateField.InputTypeId;
                     currentField.Title = updateField.Title;
                     currentField.Placeholder = updateField.Placeholder;
                     currentField.SortOrder = updateField.SortOrder;

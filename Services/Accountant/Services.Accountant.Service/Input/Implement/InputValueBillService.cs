@@ -938,24 +938,26 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)referField.FormTypeId) && !isOutSide;
 
                     IQueryable<CategoryRow> query;
-                    IQueryable<CategoryRowValue> filterQuery;
-
+                    Clause filters = null;
+                    if (!string.IsNullOrEmpty(field.Filters))
+                    {
+                        filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                    }
                     if (isOutSide)
                     {
-                        query = GetOutSideCategoryRows(referCategory.CategoryId);
+                        query = GetOutSideCategoryRows(referCategory.CategoryId, filters);
                     }
                     else
                     {
                         query = _accountingContext.CategoryRow
                                 .Where(r => r.CategoryId == referCategory.CategoryId)
                                 .Include(r => r.CategoryRowValue);
-                    }
-                    filterQuery = query.SelectMany(r => r.CategoryRowValue);
-                    if (!string.IsNullOrEmpty(field.Filters))
-                    {
-                        Clause filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
-                        List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
-                        query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                        if (filters != null)
+                        {
+                            IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
+                            List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
+                            query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                        }
                     }
 
                     var values = fieldValues.Where(v => !string.IsNullOrEmpty(v.Value)).Select(v => v.Value).ToList();
