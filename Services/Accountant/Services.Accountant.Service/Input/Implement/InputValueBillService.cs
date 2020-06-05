@@ -942,6 +942,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (!string.IsNullOrEmpty(field.Filters))
                     {
                         filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                        var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == referCategory.CategoryId).ToList();
+                        filters = AddFieldName(filters, fields);
                     }
                     if (isOutSide)
                     {
