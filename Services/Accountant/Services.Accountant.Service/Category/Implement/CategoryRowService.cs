@@ -98,13 +98,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider).ToList();
                     int[] parentIds = GetParentIds(lst);
-
-
-                    lst.AddRange(_accountingContext.CategoryRow
+                    var parents = _accountingContext.CategoryRow
                         .Include(r => r.CategoryRowValue)
                         .ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
-                        .Where(r => parentIds.Contains(r.CategoryRowId)));
+                        .Where(r => parentIds.Contains(r.CategoryRowId))
+                        .ToList();
+                    foreach (var parent in parents)
+                    {
+                        parent.IsDisabled = true;
+                    }
 
+                    lst.AddRange(parents);
                     lst = SortCategoryRows(lst).Skip((page - 1) * size).Take(size).ToList();
                 }
                 else
