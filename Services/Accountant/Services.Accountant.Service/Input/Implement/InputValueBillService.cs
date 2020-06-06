@@ -217,8 +217,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     Expression<Func<string>> valueLambda = () => firstValue;
 
-                    Expression<Func<long>> valueLambdaNumber = () => long.Parse(firstValue) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
-
+                    Expression<Func<long>> valueLambdaNumber = () => (long)(double.Parse(firstValue) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
 
                     var lstValues = new List<string>();
 

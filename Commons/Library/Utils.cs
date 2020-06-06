@@ -315,19 +315,17 @@ namespace VErp.Commons.Library
 
         public static long ConvertValueToNumber(this string value, EnumDataType dataType)
         {
-            long valueInNumber = 0;
-
+            long valueInNumber;
             switch (dataType)
             {
                 case EnumDataType.Boolean:
                     valueInNumber = bool.Parse(value) ? 1 : 0;
-
+                    break;
+                case EnumDataType.Number:
+                case EnumDataType.Percentage:
+                    valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
                 case EnumDataType.Date:
-                case EnumDataType.Number:
-                    valueInNumber = long.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
-                    break;
-
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
@@ -373,7 +371,7 @@ namespace VErp.Commons.Library
                     long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
-
+                case EnumDataType.Percentage:
                 case EnumDataType.Number:
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:

@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.AccountantEnum
         Date = 3,
         PhoneNumber = 4,
         Email = 5,
-        Boolean = 6
+        Boolean = 6,
+        Percentage = 7
     }
 }
