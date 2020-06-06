@@ -13,7 +13,7 @@ namespace VErp.Services.Accountant.Service.Input
         Task<ServiceResult<int>> AddInputType(InputTypeModel data);
         Task<Enum> UpdateInputType(int inputTypeId, InputTypeModel data);
         Task<Enum> DeleteInputType(int inputTypeId);
-
+        Task<ServiceResult<int>> CloneInputType(int inputTypeId);
 
         Task<int> InputTypeViewCreate(int inputTypeId, InputTypeViewModel model);
         Task<Enum> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model);

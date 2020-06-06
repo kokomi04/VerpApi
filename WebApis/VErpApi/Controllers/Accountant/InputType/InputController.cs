@@ -86,6 +86,13 @@ namespace VErpApi.Controllers.Accountant
             return await _inputTypeService.AddInputType(category);
         }
 
+        [HttpPost]
+        [Route("clone")]
+        public async Task<ServiceResult<int>> CloneInputType([FromBody] int inputTypeId)
+        {
+            return await _inputTypeService.CloneInputType(inputTypeId);
+        }
+
         [HttpGet]
         [Route("{inputTypeId}")]
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType([FromRoute] int inputTypeId)

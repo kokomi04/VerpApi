@@ -63,6 +63,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Trường dữ liệu dùng chung đang được sử dụng")]
         InputFieldIsUsed = 31,
         [Description("Cấu hình mã tự sinh thất bại")]
-        MapGenCodeConfigFail = 32
+        MapGenCodeConfigFail = 32,
+        [Description("Cấu hình chứng từ nguồn không tồn tại")]
+        SourceInputTypeNotFound = 33
     }
 }

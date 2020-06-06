@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -17,9 +16,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
-using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
@@ -106,6 +103,91 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
                 return inputType.InputTypeId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                return GeneralCode.InternalError;
+            }
+        }
+        public async Task<ServiceResult<int>> CloneInputType(int inputTypeId)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
+            var sourceInput = await _accountingContext.InputType
+                .Include(i => i.InputArea)
+                .Include(a => a.InputAreaField)
+                .FirstOrDefaultAsync(i => i.InputTypeId == inputTypeId);
+            if (sourceInput == null)
+            {
+                return InputErrorCode.SourceInputTypeNotFound;
+            }
+
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                InputType cloneType = new InputType
+                {
+                    InputTypeCode = string.Format("{0}_{1}", sourceInput.InputTypeCode, "Copy"),
+                    Title = string.Format("{0}_{1}", sourceInput.InputTypeCode, "Copy"),
+                    InputTypeGroupId = sourceInput.InputTypeGroupId,
+                    SortOrder = sourceInput.SortOrder,
+                    PreLoadAction = sourceInput.PreLoadAction,
+                    PostLoadAction = sourceInput.PostLoadAction
+                };
+                await _accountingContext.InputType.AddAsync(cloneType);
+                await _accountingContext.SaveChangesAsync();
+
+                foreach (var area in sourceInput.InputArea)
+                {
+                    InputArea cloneArea = new InputArea
+                    {
+                        InputTypeId = cloneType.InputTypeId,
+                        InputAreaCode = area.InputAreaCode,
+                        Title = area.Title,
+                        IsMultiRow = area.IsMultiRow,
+                        Columns = area.Columns,
+                        SortOrder = area.SortOrder
+                    };
+                    await _accountingContext.InputArea.AddAsync(cloneArea);
+                    await _accountingContext.SaveChangesAsync();
+
+                    foreach (var field in sourceInput.InputAreaField.Where(f => f.InputAreaId == cloneArea.InputAreaId).ToList())
+                    {
+                        InputAreaField cloneField = new InputAreaField
+                        {
+                            InputFieldId = field.InputFieldId,
+                            InputTypeId = cloneType.InputTypeId,
+                            InputAreaId = cloneArea.InputAreaId,
+                            Title = field.Title,
+                            Placeholder = field.Placeholder,
+                            SortOrder = field.SortOrder,
+                            IsAutoIncrement = field.IsAutoIncrement,
+                            IsRequire = field.IsRequire,
+                            IsUnique = field.IsUnique,
+                            IsHidden = field.IsHidden,
+                            RegularExpression = field.RegularExpression,
+                            DefaultValue = field.DefaultValue,
+                            Filters = field.Filters,
+                            Width = field.Width,
+                            Height = field.Height,
+                            TitleStyleJson = field.TitleStyleJson,
+                            InputStyleJson = field.InputStyleJson,
+                            OnFocus = field.OnFocus,
+                            OnKeydown = field.OnKeydown,
+                            OnKeypress = field.OnKeypress,
+                            OnBlur = field.OnBlur,
+                            OnChange = field.OnChange,
+                            AutoFocus = field.AutoFocus,
+                            Column = field.Column
+                        };
+                        await _accountingContext.InputAreaField.AddAsync(cloneField);
+                    }
+                }
+                await _accountingContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
+                return cloneType.InputTypeId;
             }
             catch (Exception ex)
             {
