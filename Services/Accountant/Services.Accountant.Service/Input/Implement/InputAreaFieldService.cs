@@ -241,8 +241,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     })
                     .ToDictionary(c => c.InputAreaFieldId, c => c.IdGencode);
 
-                string url = $"api/internal/InternalCustomGenCode/{EnumObjectType.InputType}/multiconfigs";
-                (int, HttpStatusCode) result = GetFromAPI<int>(url, 100000, HttpMethod.Post, genCodeConfigs);
+                string url = $"api/internal/InternalCustomGenCode/{(int)EnumObjectType.InputType}/multiconfigs";
+                (bool, HttpStatusCode) result = GetFromAPI<bool>(url, 100000, HttpMethod.Post, genCodeConfigs);
                 if (result.Item2 != HttpStatusCode.OK)
                 {
                     trans.Rollback();
