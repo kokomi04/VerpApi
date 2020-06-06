@@ -29,6 +29,8 @@ namespace VErp.Services.Master.Service.Config
 
         Task<Enum> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
+        Task<Enum> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
+
         Task<Enum> ConfirmCode(int objectTypeId, int objectId);
     }
 }

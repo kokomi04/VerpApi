@@ -68,6 +68,7 @@ namespace VErp.Services.Accountant.Model.Input
         public int Column { get; set; }
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
+        public int? IdGencode { get; set; }
     }
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel

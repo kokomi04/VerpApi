@@ -200,6 +200,46 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return GeneralCode.InternalError;
             }
         }
+        public async Task<Enum> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data)
+        {
+            try
+            {
+                foreach(var mapConfig in data)
+                {
+                    var config = await _masterDbContext.CustomGenCode
+                        .Where(c => c.IsActived)
+                        .Where(c => c.CustomGenCodeId == mapConfig.Value)
+                        .FirstOrDefaultAsync();
+                    if (config == null)
+                    {
+                        return CustomGenCodeErrorCode.CustomConfigNotFound;
+                    }
+                    var curMapConfig = await _masterDbContext.ObjectCustomGenCodeMapping
+                        .FirstOrDefaultAsync(m => m.ObjectTypeId == objectTypeId && m.ObjectId == mapConfig.Key);
+                    if (curMapConfig == null)
+                    {
+                        curMapConfig = new ObjectCustomGenCodeMapping
+                        {
+                            ObjectTypeId = objectTypeId,
+                            ObjectId = mapConfig.Key,
+                            CustomGenCodeId = mapConfig.Value,
+                        };
+                        _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
+                    }
+                    else if(curMapConfig.CustomGenCodeId != mapConfig.Value)
+                    {
+                        curMapConfig.CustomGenCodeId = mapConfig.Value;
+                    }
+                }
+                await _masterDbContext.SaveChangesAsync();
+                return GeneralCode.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update");
+                return GeneralCode.InternalError;
+            }
+        }
 
         public async Task<Enum> Delete(int currentUserId, int customGenCodeId)
         {

@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
@@ -100,18 +102,17 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputAreaField;
         }
 
-        private Enum ValidateExistedInputType(int inputTypeId, int inputAreaId)
+        private void ValidateExistedInputType(int inputTypeId, int inputAreaId)
         {
             // Check inputType
             if (!_accountingContext.InputType.Any(i => i.InputTypeId == inputTypeId))
             {
-                return InputErrorCode.InputTypeNotFound;
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
             if (!_accountingContext.InputArea.Any(f => f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId))
             {
-                return InputErrorCode.InputAreaNotFound;
+                throw new BadRequestException(InputErrorCode.InputAreaNotFound);
             }
-            return GeneralCode.Success;
         }
 
         private Enum ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
@@ -160,7 +161,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         }
 
         public async Task<ServiceResult<int>> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
-        { 
+        {
             // Validate trùng trong danh sách
             if (fields.Select(f => new { f.InputTypeId, f.InputFieldId }).Distinct().Count() != fields.Count)
             {
@@ -177,20 +178,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Where(cf => fields.All(f => f.InputFieldId != cf.InputFieldId || f.InputTypeId != cf.InputTypeId))
                 .ToList();
 
-            List<InputAreaFieldInputModel> newFields = new List<InputAreaFieldInputModel>();
-            List<(InputAreaFieldInputModel updateField, InputAreaField currentField)> updateFields = new List<(InputAreaFieldInputModel updateField, InputAreaField currentField)>();
-            foreach (var field in fields)
-            {
-                var curField = curFields.FirstOrDefault(f => f.InputFieldId == field.InputFieldId && f.InputTypeId == field.InputTypeId);
-                if (curField == null)
-                {
-                    newFields.Add(field);
-                }
-                else if (Comparer(field, curField))
-                {
-                    updateFields.Add((field, curField));
-                }
-            }
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
@@ -199,45 +186,68 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 {
                     deleteField.IsDeleted = true;
                 }
-                // create new
-                foreach (var newField in newFields)
+                foreach (var field in fields)
                 {
-                    var inputAreaField = _mapper.Map<InputAreaField>(newField);
-                    await _accountingContext.InputAreaField.AddAsync(inputAreaField);
+                    // validate
+                    ValidateExistedInputType(inputTypeId, field.InputAreaId);
+                    var curField = curFields.FirstOrDefault(f => f.InputFieldId == field.InputFieldId && f.InputTypeId == field.InputTypeId);
+                    if (curField == null)
+                    {
+                        // create new
+                        var inputAreaField = _mapper.Map<InputAreaField>(field);
+                        await _accountingContext.InputAreaField.AddAsync(inputAreaField);
+                        field.InputAreaFieldId = inputAreaField.InputAreaFieldId;
+                    }
+                    else if (Comparer(field, curField))
+                    {
+                        // update field
+                        curField.InputAreaId = field.InputAreaId;
+                        curField.Title = field.Title;
+                        curField.Placeholder = field.Placeholder;
+                        curField.SortOrder = field.SortOrder;
+                        curField.IsAutoIncrement = field.IsAutoIncrement;
+                        curField.IsRequire = field.IsRequire;
+                        curField.IsUnique = field.IsUnique;
+                        curField.IsHidden = field.IsHidden;
+                        curField.RegularExpression = field.RegularExpression;
+                        curField.DefaultValue = field.DefaultValue;
+                        curField.Filters = field.Filters;
+                        curField.IsDeleted = false;
+                        // update field id
+                        curField.InputFieldId = field.InputFieldId;
+                        // update style
+                        curField.Width = field.Width;
+                        curField.Height = field.Height;
+                        curField.TitleStyleJson = field.TitleStyleJson;
+                        curField.InputStyleJson = field.InputStyleJson;
+                        curField.OnFocus = field.OnFocus;
+                        curField.OnKeydown = field.OnKeydown;
+                        curField.OnKeypress = field.OnKeypress;
+                        curField.OnBlur = field.OnBlur;
+                        curField.OnChange = field.OnChange;
+                        curField.AutoFocus = field.AutoFocus;
+                        curField.Column = field.Column;
+                    }
                 }
-                // update field
-                foreach (var (updateField, currentField) in updateFields)
-                {
-                    // update field
-                    currentField.InputAreaId = updateField.InputAreaId;
-                    currentField.Title = updateField.Title;
-                    currentField.Placeholder = updateField.Placeholder;
-                    currentField.SortOrder = updateField.SortOrder;
-                    currentField.IsAutoIncrement = updateField.IsAutoIncrement;
-                    currentField.IsRequire = updateField.IsRequire;
-                    currentField.IsUnique = updateField.IsUnique;
-                    currentField.IsHidden = updateField.IsHidden;
-                    currentField.RegularExpression = updateField.RegularExpression;
-                    currentField.DefaultValue = updateField.DefaultValue;
-                    currentField.Filters = updateField.Filters;
-                    currentField.IsDeleted = false;
-                    // update field id
-                    currentField.InputFieldId = updateField.InputFieldId;
-                    // update style
-                    currentField.Width = updateField.Width;
-                    currentField.Height = updateField.Height;
-                    currentField.TitleStyleJson = updateField.TitleStyleJson;
-                    currentField.InputStyleJson = updateField.InputStyleJson;
-                    currentField.OnFocus = updateField.OnFocus;
-                    currentField.OnKeydown = updateField.OnKeydown;
-                    currentField.OnKeypress = updateField.OnKeypress;
-                    currentField.OnBlur = updateField.OnBlur;
-                    currentField.OnChange = updateField.OnChange;
-                    currentField.AutoFocus = updateField.AutoFocus;
-                    currentField.Column = updateField.Column;
-                }
-
                 await _accountingContext.SaveChangesAsync();
+
+                // Get list gen code
+                Dictionary<int, int> genCodeConfigs = fields
+                    .Where(f => f.IdGencode.HasValue)
+                    .Select(f => new
+                    {
+                        InputAreaFieldId = f.InputAreaFieldId.Value,
+                        IdGencode = f.IdGencode.Value
+                    })
+                    .ToDictionary(c => c.InputAreaFieldId, c => c.IdGencode);
+
+                string url = $"api/internal/InternalCustomGenCode/{EnumObjectType.InputType}/multiconfigs";
+                (int, HttpStatusCode) result = GetFromAPI<int>(url, 100000, HttpMethod.Post, genCodeConfigs);
+                if (result.Item2 != HttpStatusCode.OK)
+                {
+                    trans.Rollback();
+                    throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
+                }
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
                 return inputTypeId;
@@ -252,7 +262,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         private bool Comparer(InputAreaFieldInputModel updateField, InputAreaField curField)
         {
-            return curField.IsDeleted || 
+            return curField.IsDeleted ||
                 updateField.InputAreaId != curField.InputAreaId ||
                 updateField.InputFieldId != curField.InputFieldId ||
                 updateField.InputTypeId != curField.InputTypeId ||
@@ -316,7 +326,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<Enum> UpdateInputField(int inputFieldId, InputFieldInputModel data)
         {
-
             var inputField = await _accountingContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
 
             var r = ValidateInputField(data, inputField, inputFieldId);
