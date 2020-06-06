@@ -61,6 +61,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Trường dữ liệu dùng chung đã tồn tại")]
         InputFieldAlreadyExisted = 30,
         [Description("Trường dữ liệu dùng chung đang được sử dụng")]
-        InputFieldIsUsed = 31
+        InputFieldIsUsed = 31,
+        [Description("Cấu hình mã tự sinh thất bại")]
+        MapGenCodeConfigFail = 32
     }
 }
