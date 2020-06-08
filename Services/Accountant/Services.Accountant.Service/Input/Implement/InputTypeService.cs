@@ -152,7 +152,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     await _accountingContext.InputArea.AddAsync(cloneArea);
                     await _accountingContext.SaveChangesAsync();
 
-                    foreach (var field in sourceInput.InputAreaField.Where(f => f.InputAreaId == cloneArea.InputAreaId).ToList())
+                    foreach (var field in sourceInput.InputAreaField.Where(f => f.InputAreaId == area.InputAreaId).ToList())
                     {
                         InputAreaField cloneField = new InputAreaField
                         {
