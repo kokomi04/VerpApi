@@ -39,10 +39,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int CreatedByUserId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public bool IsTreeViewKey { get; set; }
         public bool? IsShowSearchTable { get; set; }
         public bool IsReadOnly { get; set; }
         public int CategoryAreaId { get; set; }
+        public bool IsTreeViewKey { get; set; }
 
         public virtual Category Category { get; set; }
         public virtual CategoryArea CategoryArea { get; set; }

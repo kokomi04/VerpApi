@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public string Url { get; set; }
         public string Description { get; set; }
         public string Key { get; set; }
+        public string ParentKey { get; set; }
 
         public virtual Category Category { get; set; }
     }
