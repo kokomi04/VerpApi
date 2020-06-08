@@ -267,7 +267,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
-                    exp = BuildExpression<T>(param, singleClause, query);
+                    exp = BuildExpression<T>(param, singleClause);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -297,7 +297,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return exp;
         }
 
-        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause, IQueryable<T> query)
+        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause)
         {
             Expression expression = null;
             if (clause != null)
@@ -321,7 +321,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
                         var toStringMethod = prop.Type.GetMethod("ToString");
                         var propExpression = Expression.Call(prop, toStringMethod);
-                        method = typeof(string).GetMethod(nameof(string.Contains));
+                        method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.InList:
@@ -336,21 +336,18 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance), method, prop);
                         break;
-                    case EnumOperator.IsLeafNode:
-
-                        break;
                     case EnumOperator.StartsWith:
                         value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
-                        method = typeof(string).GetMethod(nameof(string.StartsWith));
+                        method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.EndsWith:
                         value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
-                        method = typeof(string).GetMethod(nameof(string.EndsWith));
+                        method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     default:

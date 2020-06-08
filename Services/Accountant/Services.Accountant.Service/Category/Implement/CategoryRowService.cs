@@ -54,7 +54,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             var total = 0;
             List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
-
             Clause filterClause = null;
             if (!string.IsNullOrEmpty(filters))
             {
@@ -63,42 +62,30 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 filterClause = AddFieldName(filterClause, fields);
             }
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-
             IQueryable<CategoryRow> query;
-
-            if (category.IsOutSideData)
+            if (category.IsOutSideData && !category.IsTreeView)
             {
-                if (category.IsTreeView)
-                {
-                    query = GetOutSideCategoryRows(categoryId);
-                    IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
-                    if (filters != null)
-                    {
-                        List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
-                        query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
-                    }
-                }
-                else
-                {
-                    query = GetOutSideCategoryRows(categoryId, filterClause);
-                }
+                query = GetOutSideCategoryRows(categoryId, filterClause);
             }
             else
             {
-                query = _accountingContext.CategoryRow
-                    .Where(r => r.CategoryId == categoryId)
-                    .Include(r => r.CategoryRowValue);
-                IQueryable<CategoryRowValue> filterQuery = from rowValue in _accountingContext.CategoryRowValue
-                                                           join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
-                                                           where row.CategoryId == categoryId
-                                                           select rowValue;
+                if(category.IsOutSideData)
+                {
+                    query = GetOutSideCategoryRows(categoryId);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                     .Where(r => r.CategoryId == categoryId)
+                     .Include(r => r.CategoryRowValue);
+                }
                 if (filters != null)
                 {
-                    List<int> filterQueryId = FilterClauseProcess(filterClause, filterQuery).Distinct().ToList();
-                    query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                    ParameterExpression param = Expression.Parameter(typeof(CategoryRow), "r");
+                    Expression filter = FilterClauseProcess(param, filterClause, query);
+                    query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
                 }
             }
-
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -678,7 +665,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
                         CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
-                        bool isOutSide = referCategory.IsOutSideData;
+                        
 
                         IQueryable<CategoryRow> query;
                         Clause filters = null;
@@ -688,23 +675,30 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == referCategory.CategoryId).ToList();
                             filters = AddFieldName(filters, fields);
                         }
-                        if (isOutSide)
+
+                        if (referCategory.IsOutSideData && !referCategory.IsTreeView)
                         {
                             query = GetOutSideCategoryRows(referCategory.CategoryId, filters);
                         }
                         else
                         {
-                            query = _accountingContext.CategoryRow
-                                .Where(r => r.CategoryId == referCategory.CategoryId)
-                                .Include(r => r.CategoryRowValue);
+                            if (referCategory.IsOutSideData)
+                            {
+                                query = GetOutSideCategoryRows(referCategory.CategoryId);
+                            }
+                            else
+                            {
+                                query = _accountingContext.CategoryRow
+                                 .Where(r => r.CategoryId == referCategory.CategoryId)
+                                 .Include(r => r.CategoryRowValue);
+                            }
                             if (filters != null)
                             {
-                                IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
-                                List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
-                                query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                                ParameterExpression param = Expression.Parameter(typeof(CategoryRow), "r");
+                                Expression filter = FilterClauseProcess(param, filters, query);
+                                query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
                             }
                         }
-
 
                         CategoryRow selectedItem = null;
                         if (!string.IsNullOrEmpty(valueItem.Value))

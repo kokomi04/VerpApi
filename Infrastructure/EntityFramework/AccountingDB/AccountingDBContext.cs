@@ -111,8 +111,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .IsRequired()
                     .HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.IsTreeViewKey).HasColumnName("IsTreeViewKey ");
-
                 entity.Property(e => e.RegularExpression)
                     .HasMaxLength(255)
                     .IsUnicode(false);
@@ -695,6 +693,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
+                entity.Property(e => e.ParentKey)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Url)
                     .HasMaxLength(255)
                     .IsUnicode(false);
@@ -708,8 +710,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
-                entity.Property(e => e.ProgramingFunctionId).ValueGeneratedNever();
-
                 entity.Property(e => e.FunctionBody).IsRequired();
 
                 entity.Property(e => e.ProgramingFunctionName)
