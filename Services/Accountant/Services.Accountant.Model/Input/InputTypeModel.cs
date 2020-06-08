@@ -20,6 +20,7 @@ namespace VErp.Services.Accountant.Model.Input
         public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã chứng từ")]
         [MaxLength(45, ErrorMessage = "Mã chứng từ quá dài")]
+        [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Mã chứng từ chỉ gồm các ký tự chữ, số và ký tự _.")]
         public string InputTypeCode { get; set; }
 
         public int SortOrder { get; set; }

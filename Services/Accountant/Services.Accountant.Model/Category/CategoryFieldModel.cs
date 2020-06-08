@@ -14,6 +14,7 @@ namespace VErp.Services.Accountant.Model.Category
         public int? ReferenceCategoryTitleFieldId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
+        [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Tên trường dữ liệu chỉ gồm các ký tự chữ, số và ký tự _.")]
         public string CategoryFieldName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
