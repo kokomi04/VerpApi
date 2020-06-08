@@ -63,13 +63,15 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             IQueryable<CategoryRow> query;
+            IQueryable<CategoryRow> notFilterData;
             if (category.IsOutSideData && !category.IsTreeView)
             {
                 query = GetOutSideCategoryRows(categoryId, filterClause);
+                notFilterData = query;
             }
             else
             {
-                if(category.IsOutSideData)
+                if (category.IsOutSideData)
                 {
                     query = GetOutSideCategoryRows(categoryId);
                 }
@@ -79,6 +81,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                      .Where(r => r.CategoryId == categoryId)
                      .Include(r => r.CategoryRowValue);
                 }
+                notFilterData = query;
                 if (filters != null)
                 {
                     ParameterExpression param = Expression.Parameter(typeof(CategoryRow), "r");
@@ -89,10 +92,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(r => r.CategoryRowValue
-                .Any(rv => rv.Value.Contains(keyword)));
+                query = query.Where(r => r.CategoryRowValue.Any(rv => !string.IsNullOrEmpty(rv.Value) && rv.Value.Contains(keyword)));
             }
-
             total = query.Count();
             if (size > 0)
             {
@@ -100,8 +101,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider).ToList();
                     int[] parentIds = GetParentIds(lst);
-                    var parents = _accountingContext.CategoryRow
-                        .Include(r => r.CategoryRowValue)
+                    var parents = notFilterData
                         .ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
                         .Where(r => parentIds.Contains(r.CategoryRowId))
                         .ToList();
@@ -665,7 +665,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
                         CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
                         CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
-                        
+
 
                         IQueryable<CategoryRow> query;
                         Clause filters = null;
