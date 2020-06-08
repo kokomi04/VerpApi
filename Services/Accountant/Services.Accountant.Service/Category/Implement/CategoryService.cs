@@ -221,9 +221,17 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
-                // Xóa category, field
-
+                // Xóa category
                 category.IsDeleted = true;
+
+                // Xóa area
+                var deleteAreas = _accountingContext.CategoryArea.Where(a => a.CategoryId == category.CategoryId);
+                foreach (var area in deleteAreas)
+                {
+                    area.IsDeleted = true;
+                }
+
+                // Xóa field
                 var deleteFields = _accountingContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
                 foreach (var field in deleteFields)
                 {
@@ -235,7 +243,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     }
                     field.IsDeleted = true;
                 }
-
 
                 // Xóa row
                 var categoryRows = _accountingContext.CategoryRow.Where(r => r.CategoryId == categoryId);
