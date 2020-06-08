@@ -111,6 +111,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
+
+        public string GetStringClone(string source, int suffix = 0)
+        {
+            string suffixText = suffix > 0 ? string.Format("({0})", suffix) : string.Empty;
+            string code = string.Format("{0}_{1}_{2}", source, "Copy", suffixText);
+            if (_accountingContext.InputType.Any(i => i.InputTypeCode == code))
+            {
+                suffix++;
+                code = GetStringClone(source, suffix);
+            }
+            return code;
+        }
+
         public async Task<ServiceResult<int>> CloneInputType(int inputTypeId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
@@ -128,8 +141,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 InputType cloneType = new InputType
                 {
-                    InputTypeCode = string.Format("{0}_{1}", sourceInput.InputTypeCode, "Copy"),
-                    Title = string.Format("{0}_{1}", sourceInput.InputTypeCode, "Copy"),
+                    InputTypeCode = GetStringClone(sourceInput.InputTypeCode),
+                    Title = GetStringClone(sourceInput.Title),
                     InputTypeGroupId = sourceInput.InputTypeGroupId,
                     SortOrder = sourceInput.SortOrder,
                     PreLoadAction = sourceInput.PreLoadAction,
