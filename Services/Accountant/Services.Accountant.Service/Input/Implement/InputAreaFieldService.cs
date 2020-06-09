@@ -209,6 +209,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         curField.IsRequire = field.IsRequire;
                         curField.IsUnique = field.IsUnique;
                         curField.IsHidden = field.IsHidden;
+                        curField.IsCalcSum = field.IsCalcSum;
                         curField.RegularExpression = field.RegularExpression;
                         curField.DefaultValue = field.DefaultValue;
                         curField.Filters = field.Filters;
