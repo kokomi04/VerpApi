@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -69,5 +70,12 @@ namespace VErpApi.Controllers.Stock.Files
             return await _fileService.Upload(objectTypeId, string.Empty, file).ConfigureAwait(true);
         }
 
+        [GlobalApi]
+        [HttpPost]
+        [Route("ParseExcel")]
+        public IList<ExcelSheetDataModel> ParseExcel([FromForm] IFormFile file, [FromQuery] string sheetName, [FromQuery] int fromRow = 1, [FromQuery] int? toRow = null, [FromQuery] int? maxrows = null)
+        {
+            return _fileService.ParseExcel(file, sheetName, fromRow, toRow, maxrows);
+        }
     }
 }

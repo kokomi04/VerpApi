@@ -33,7 +33,7 @@ namespace VErp.Services.Stock.Model.Stock
 
         public string Censor { set; get; }
 
-        public long CensorDate { set; get; }
+        public long? CensorDate { set; get; }
 
         public List<ReportForm04InventoryDetailsOutputModel> InventoryDetailsOutputModel { set; get; }
     }

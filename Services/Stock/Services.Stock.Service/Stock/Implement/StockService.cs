@@ -1708,8 +1708,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.UpdatedByUserId = inventory.UpdatedByUserId;
                     item.UpdatedByUserName = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
                     item.UpdatedDatetimeUtc = inventory.UpdatedDatetimeUtc.GetUnix();
-                    item.Censor = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
-                    item.CensorDate = inventory.UpdatedDatetimeUtc.GetUnix();
+                    item.Censor = userDataList.FirstOrDefault(q => q.UserId == inventory.CensorByUserId)?.UserName ?? string.Empty;
+                    item.CensorDate = inventory.CensorDatetimeUtc.GetUnix();
 
                     item.InventoryDetailsOutputModel = reportInventoryDetailsOutputModelList.Where(q => q.InventoryId == inventory.InventoryId).ToList();
                     reportInventoryOutputModelList.Add(item);
