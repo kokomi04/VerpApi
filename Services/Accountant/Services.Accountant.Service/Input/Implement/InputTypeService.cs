@@ -454,8 +454,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         }
 
-
-
         #region InputTypeGroup
         public async Task<int> InputTypeGroupCreate(InputTypeGroupModel model)
         {
@@ -544,7 +542,5 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             await _accountingContext.InputTypeViewField.AddRangeAsync(fields);
 
         }
-
-
     }
 }

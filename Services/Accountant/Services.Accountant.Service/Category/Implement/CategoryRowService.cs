@@ -216,18 +216,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
             var groups = categoryValues.GroupBy(v => new { v.ReferCategoryFieldId });
 
-            List<CategoryField> referFields = _accountingContext.CategoryField
-                .Where(f => groups.Select(g => g.Key.ReferCategoryFieldId).Contains(f.CategoryFieldId))
-                .ToList();
-            List<CategoryEntity> categorys = _accountingContext.Category
+            var refFieldIds = groups.Select(g => g.Key.ReferCategoryFieldId).ToList();
+
+            List<CategoryEntity> categories = (from category in _accountingContext.Category
+                                               join field in _accountingContext.CategoryField on category.CategoryId equals field.CategoryId
+                                               where refFieldIds.Contains(field.CategoryFieldId)
+                                               select category)
                 .Include(c => c.OutSideDataConfig)
-                .Where(c => referFields.Select(f => f.CategoryId).Contains(c.CategoryId))
                 .ToList();
+            var categoryIds = categories.Select(c => c.CategoryId).ToList();
+            List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+
+            List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)> refObjects = new List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)>();
 
             foreach (var group in groups)
             {
-                CategoryField referField = referFields.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
-                CategoryEntity category = categorys.First(c => c.CategoryId == referField.CategoryId);
+                CategoryField referField = fields.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
+                CategoryEntity category = categories.First(c => c.CategoryId == referField.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 IQueryable<CategoryRow> query;
                 List<string> values = group.Select(g => g.Value).Distinct().ToList();
@@ -246,25 +251,31 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     query = _accountingContext.CategoryRow
                         .Where(r => r.CategoryId == category.CategoryId)
-                        .Include(r => r.CategoryRowValue)
-                        .ThenInclude(rv => rv.CategoryField);
+                        .Include(r => r.CategoryRowValue);
                 }
                 var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
 
                 foreach (var value in values)
                 {
                     var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && value == rv.Value));
-
                     var referObject = new NonCamelCaseDictionary();
-
                     if (row != null)
                     {
                         foreach (var rowValue in row.CategoryRowValue)
                         {
-                            referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);
+                            var field = fields.First(f => f.CategoryFieldId == rowValue.CategoryFieldId);
+                            bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)rowValue.CategoryField.FormTypeId);
+
+                            if (isRef)
+                            {
+                                refObjects.Add((titles.Count, field.ReferenceCategoryFieldId.Value, field.CategoryFieldName, rowValue.Value));
+                            }
+                            else
+                            {
+                                referObject.Add(field.CategoryFieldName, rowValue.Value);
+                            }
                         }
                     }
-
                     MapTitleOutputModel title = new MapTitleOutputModel
                     {
                         ReferCategoryFieldId = referField.CategoryFieldId,
@@ -274,7 +285,71 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     titles.Add(title);
                 }
             }
+            MapRefer(ref titles, refObjects);
             return titles;
+        }
+
+        private void MapRefer(ref List<MapTitleOutputModel> titles, List<(int Index, int ReferCategoryFieldId, string FieldName, string Value)> refObjects)
+        {
+            var groups = refObjects.GroupBy(r => r.ReferCategoryFieldId);
+            var refFieldIds = groups.Select(g => g.Key).ToList();
+            List<CategoryEntity> categories = (from category in _accountingContext.Category
+                                               join field in _accountingContext.CategoryField on category.CategoryId equals field.CategoryId
+                                               where refFieldIds.Contains(field.CategoryFieldId)
+                                               select category)
+                .Include(c => c.OutSideDataConfig)
+                .ToList();
+            var categoryIds = categories.Select(c => c.CategoryId).ToList();
+            List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+            foreach (var group in groups)
+            {
+                CategoryField referField = fields.First(f => f.CategoryFieldId == group.Key);
+                CategoryEntity category = categories.First(c => c.CategoryId == referField.CategoryId);
+                bool isOutSide = category.IsOutSideData;
+                IQueryable<CategoryRow> query;
+                List<string> values = group.Select(g => g.Value).Distinct().ToList();
+                if (isOutSide)
+                {
+                    string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
+                    Clause clause = new SingleClause
+                    {
+                        FieldName = fieldName,
+                        Operator = EnumOperator.InList,
+                        Value = string.Join(",", values.ToArray())
+                    };
+                    query = GetOutSideCategoryRows(category.CategoryId, clause);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                        .Where(r => r.CategoryId == category.CategoryId)
+                        .Include(r => r.CategoryRowValue);
+                }
+
+                var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
+
+                foreach (var value in values)
+                {
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && value == rv.Value));
+                    var referObject = new NonCamelCaseDictionary();
+                    if (row != null)
+                    {
+                        foreach (var rowValue in row.CategoryRowValue)
+                        {
+                            var field = fields.First(f => f.CategoryFieldId == rowValue.CategoryFieldId);
+                            referObject.Add(field.CategoryFieldName, rowValue.Value);
+                        }
+                    }
+                    foreach (var item in group.Where(g => g.Value == value))
+                    {
+                        titles[item.Index].ReferObject.Add(item.FieldName, new
+                        {
+                            item.Value,
+                            ReferObject = referObject
+                        });
+                    }
+                }
+            }
         }
 
         private void GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRowOutputModel categoryRow)

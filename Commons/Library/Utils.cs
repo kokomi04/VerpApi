@@ -326,6 +326,8 @@ namespace VErp.Commons.Library
                     valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
                 case EnumDataType.Date:
+                    valueInNumber = (long)(double.Parse(value));
+                    break;
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
