@@ -314,7 +314,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-
         public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)
         {
             return await _accountingContext.InputTypeView.Where(v => v.InputTypeId == inputTypeId).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();

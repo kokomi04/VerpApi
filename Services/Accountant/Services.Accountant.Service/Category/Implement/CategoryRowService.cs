@@ -215,10 +215,19 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
             var groups = categoryValues.GroupBy(v => new { v.ReferCategoryFieldId });
+
+            List<CategoryField> referFields = _accountingContext.CategoryField
+                .Where(f => groups.Select(g => g.Key.ReferCategoryFieldId).Contains(f.CategoryFieldId))
+                .ToList();
+            List<CategoryEntity> categorys = _accountingContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .Where(c => referFields.Select(f => f.CategoryId).Contains( c.CategoryId))
+                .ToList();
+
             foreach (var group in groups)
             {
-                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
-                CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == referField.CategoryId);
+                CategoryField referField = referFields.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
+                CategoryEntity category = categorys.First(c => c.CategoryId == referField.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 IQueryable<CategoryRow> query;
                 List<string> values = group.Select(g => g.Value).Distinct().ToList();
@@ -231,7 +240,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         Operator = EnumOperator.InList,
                         Value = string.Join(",", values.ToArray())
                     };
-
                     query = GetOutSideCategoryRows(category.CategoryId, clause);
                 }
                 else
