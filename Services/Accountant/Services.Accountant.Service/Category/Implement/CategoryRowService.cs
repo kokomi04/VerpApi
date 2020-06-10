@@ -221,7 +221,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 .ToList();
             List<CategoryEntity> categorys = _accountingContext.Category
                 .Include(c => c.OutSideDataConfig)
-                .Where(c => referFields.Select(f => f.CategoryId).Contains( c.CategoryId))
+                .Where(c => referFields.Select(f => f.CategoryId).Contains(c.CategoryId))
                 .ToList();
 
             foreach (var group in groups)
@@ -308,10 +308,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            CategoryValueModel rowValue;
+                            CategoryValueInputModel rowValue;
                             if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                rowValue = new CategoryValueModel
+                                rowValue = new CategoryValueInputModel
                                 {
                                     CategoryFieldId = field.CategoryFieldId,
                                     Value = categoryRowId.ToString()
@@ -320,7 +320,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             else
                             {
                                 bool bValue = properties.TryGetValue(field.CategoryFieldName, out string value);
-                                rowValue = new CategoryValueModel
+                                rowValue = new CategoryValueInputModel
                                 {
                                     CategoryFieldId = field.CategoryFieldId,
                                     Value = bValue ? value : string.Empty,
@@ -664,17 +664,14 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in selectFields)
             {
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (valueItem != null && !string.IsNullOrEmpty(valueItem.TitleValue))
+                if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
                 {
                     bool isExisted = false;
 
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
-                        CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
                         CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
-
-
                         IQueryable<CategoryRow> query;
                         Clause filters = null;
                         if (!string.IsNullOrEmpty(field.Filters))
@@ -683,7 +680,6 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == referCategory.CategoryId).ToList();
                             filters = AddFieldName(filters, fields);
                         }
-
                         if (referCategory.IsOutSideData && !referCategory.IsTreeView)
                         {
                             query = GetOutSideCategoryRows(referCategory.CategoryId, filters);
@@ -707,16 +703,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
                             }
                         }
-
-                        CategoryRow selectedItem = null;
-                        if (!string.IsNullOrEmpty(valueItem.Value))
-                        {
-                            selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == valueItem.Value));
-                        }
-                        else
-                        {
-                            selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referTitleField.CategoryFieldId && rv.Value == valueItem.TitleValue));
-                        }
+                        CategoryRow selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == valueItem.Value));
                         if (isExisted = selectedItem != null)
                         {
                             valueItem.Value = selectedItem.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == referField.CategoryFieldId)?.Value ?? null;
@@ -752,7 +739,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             foreach (var field in requiredFields)
             {
-                if (!data.CategoryRowValues.Any(v => v.CategoryFieldId == field.CategoryFieldId && (!string.IsNullOrEmpty(v.TitleValue) || !string.IsNullOrEmpty(v.Value))))
+                if (!data.CategoryRowValues.Any(v => v.CategoryFieldId == field.CategoryFieldId && !string.IsNullOrEmpty(v.Value)))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
@@ -772,7 +759,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        private void CheckValue(CategoryValueModel valueItem, CategoryField field)
+        private void CheckValue(CategoryValueInputModel valueItem, CategoryField field)
         {
             if ((field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
                 || (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
@@ -866,14 +853,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             CategoryFieldId = field.CategoryFieldId,
                         };
-                        if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId))
-                        {
-                            rowValue.TitleValue = row[fieldIndx];
-                        }
-                        else
-                        {
-                            rowValue.Value = row[fieldIndx];
-                        }
+                        rowValue.Value = row[fieldIndx];
                         rowInput.CategoryRowValues.Add(rowValue);
                     }
 

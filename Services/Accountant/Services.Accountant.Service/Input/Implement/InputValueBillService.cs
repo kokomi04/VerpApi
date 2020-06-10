@@ -827,14 +827,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             List<int> changeFieldIndexes = new List<int>();
             foreach (var field in fields.Where(f => f.InputAreaId == curRow.InputAreaId))
             {
-                bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.InputField.FormTypeId);
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
                 string curValue = (string)typeof(InputValueRowVersion)
                     .GetProperty(fieldName)
                     .GetValue(curRow.InputValueRowVersion.First(rv => rv.InputValueRowVersionId == curRow.LastestInputValueRowVersionId));
 
                 var fieldValue = futureRow.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
-                string futureValue = isRefer ? fieldValue.Value ?? fieldValue.TitleValue : fieldValue.Value;
+                string futureValue = fieldValue.Value;
                 if (curValue != futureValue)
                 {
                     changeFieldIndexes.Add(field.InputField.FieldIndex);
@@ -857,7 +856,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 foreach (var row in changeRows)
                 {
                     var fieldValue = row.Item1.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
-                    if (fieldValue == null || (string.IsNullOrEmpty(fieldValue.Value) && string.IsNullOrEmpty(fieldValue.TitleValue)))
+                    if (fieldValue == null || string.IsNullOrEmpty(fieldValue.Value))
                     {
                         throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                     }
@@ -931,7 +930,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 if (field.InputField.ReferenceCategoryFieldId.HasValue)
                 {
                     CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.InputField.ReferenceCategoryFieldId.Value);
-                    CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.InputField.ReferenceCategoryTitleFieldId.Value);
                     CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
                     IQueryable<CategoryRow> query;
                     Clause filters = null;
@@ -965,30 +963,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
                         }
                     }
-                    var values = fieldValues.Where(v => !string.IsNullOrEmpty(v.Value)).Select(v => v.Value).ToList();
-                    var inputValues = fieldValues.Where(v => string.IsNullOrEmpty(v.Value) && !string.IsNullOrEmpty(v.TitleValue)).ToList();
-
+                    var values = fieldValues.Select(v => v.Value).ToList();
                     if (values.Count > 0)
                     {
                         isExisted = values.All(v => query.Any(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == v)));
-                    }
-
-                    if (isExisted && inputValues.Count > 0)
-                    {
-                        foreach (var inputValue in inputValues)
-                        {
-                            var selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referTitleField.CategoryFieldId && rv.Value == inputValue.TitleValue));
-
-                            if (selectedItem == null)
-                            {
-                                isExisted = false;
-                                break;
-                            }
-                            else
-                            {
-                                inputValue.Value = selectedItem.CategoryRowValue.First(rv => rv.CategoryFieldId == referField.CategoryFieldId).Value;
-                            }
-                        }
                     }
                     if (!isExisted)
                     {
