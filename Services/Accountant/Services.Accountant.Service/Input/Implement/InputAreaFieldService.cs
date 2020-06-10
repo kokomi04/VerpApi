@@ -274,6 +274,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 updateField.IsRequire != curField.IsRequire ||
                 updateField.IsUnique != curField.IsUnique ||
                 updateField.IsHidden != curField.IsHidden ||
+                updateField.IsCalcSum != curField.IsCalcSum ||
                 updateField.RegularExpression != curField.RegularExpression ||
                 updateField.DefaultValue != curField.DefaultValue ||
                 updateField.Filters != curField.Filters ||
