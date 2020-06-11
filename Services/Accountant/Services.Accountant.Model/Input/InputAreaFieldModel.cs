@@ -32,11 +32,13 @@ namespace VErp.Services.Accountant.Model.Input
         public int InputFieldId { get; set; }
         public int? ReferenceCategoryId { get; set; }
         public string ReferenceCategoryTitleFieldName { get; set; }
+        public string ReferenceCategoryFieldName { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InputField, InputFieldOutputModel>()
                 .ForMember(dest => dest.ReferenceCategoryId, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryId))
-                .ForMember(dest => dest.ReferenceCategoryTitleFieldName, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField.CategoryFieldName));
+                .ForMember(dest => dest.ReferenceCategoryTitleFieldName, opt => opt.MapFrom(src => src.ReferenceCategoryTitleField.CategoryFieldName))
+                .ForMember(dest => dest.ReferenceCategoryFieldName, opt => opt.MapFrom(src => src.ReferenceCategoryField.CategoryFieldName));
         }
     }
 
