@@ -23,10 +23,10 @@ namespace VErpApi.Controllers.Accountant
 
     public class InputTypeGroupController : VErpBaseController
     {
-        private readonly IInputTypeService _inputTypeService;
-        public InputTypeGroupController(IInputTypeService inputTypeService)
+        private readonly IInputConfigService _inputConfigService;
+        public InputTypeGroupController(IInputConfigService inputConfigService)
         {
-            _inputTypeService = inputTypeService;
+            _inputConfigService = inputConfigService;
         }
 
 
@@ -34,28 +34,28 @@ namespace VErpApi.Controllers.Accountant
         [Route("")]
         public async Task<IList<InputTypeGroupList>> GetList()
         {
-            return await _inputTypeService.InputTypeGroupList().ConfigureAwait(true);
+            return await _inputConfigService.InputTypeGroupList().ConfigureAwait(true);
         }
 
         [HttpPost]
         [Route("")]
         public async Task<ServiceResult<int>> InputTypeGroupCreate([FromBody] InputTypeGroupModel model)
         {
-            return await _inputTypeService.InputTypeGroupCreate(model).ConfigureAwait(true);
+            return await _inputConfigService.InputTypeGroupCreate(model).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{inputTypeGroupId}")]
         public async Task<bool> GetInputType([FromRoute] int inputTypeGroupId, [FromBody] InputTypeGroupModel model)
         {
-            return await _inputTypeService.InputTypeGroupUpdate(inputTypeGroupId, model).ConfigureAwait(true);
+            return await _inputConfigService.InputTypeGroupUpdate(inputTypeGroupId, model).ConfigureAwait(true);
         }
 
         [HttpDelete]
         [Route("{inputTypeGroupId}")]
         public async Task<bool> DeleteInputType([FromRoute] int inputTypeGroupId)
         {
-            return await _inputTypeService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
+            return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
         }        
     }
 }

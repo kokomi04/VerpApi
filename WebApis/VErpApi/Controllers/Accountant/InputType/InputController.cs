@@ -24,22 +24,16 @@ namespace VErpApi.Controllers.Accountant
 
     public class InputController : VErpBaseController
     {
-        private readonly IInputTypeService _inputTypeService;
-        private readonly IInputAreaService _inputAreaService;
-        private readonly IInputAreaFieldService _inputAreaFieldService;
+        private readonly IInputConfigService _inputConfigService;
         private readonly IInputValueBillService _inputValueBillService;
         private readonly IFileService _fileService;
-        public InputController(IInputTypeService inputTypeService
-            , IInputAreaService inputAreaService
-            , IInputAreaFieldService inputAreaFieldService
+        public InputController(IInputConfigService inputConfigService
             , IInputValueBillService inputValueBillService
             , IFileService fileService
             )
         {
             _fileService = fileService;
-            _inputTypeService = inputTypeService;
-            _inputAreaService = inputAreaService;
-            _inputAreaFieldService = inputAreaFieldService;
+            _inputConfigService = inputConfigService;
             _inputValueBillService = inputValueBillService;
         }
 
@@ -48,112 +42,112 @@ namespace VErpApi.Controllers.Accountant
         [Route("")]
         public async Task<ServiceResult<PageData<InputTypeModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputTypeService.GetInputTypes(keyword, page, size);
+            return await _inputConfigService.GetInputTypes(keyword, page, size);
         }
 
         [HttpGet]
         [Route("fields")]
         public async Task<ServiceResult<PageData<InputFieldOutputModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputAreaFieldService.GetInputFields(keyword, page, size);
+            return await _inputConfigService.GetInputFields(keyword, page, size);
         }
 
         [HttpPost]
         [Route("fields")]
         public async Task<ServiceResult<int>> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
-            return await _inputAreaFieldService.AddInputField(inputAreaField);
+            return await _inputConfigService.AddInputField(inputAreaField);
         }
 
         [HttpPut]
         [Route("fields/{inputFieldId}")]
         public async Task<ServiceResult> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
         {
-            return await _inputAreaFieldService.UpdateInputField(inputFieldId, inputField);
+            return await _inputConfigService.UpdateInputField(inputFieldId, inputField);
         }
 
         [HttpDelete]
         [Route("fields/{inputFieldId}")]
         public async Task<ServiceResult> DeleteInputField([FromRoute] int inputFieldId)
         {
-            return await _inputAreaFieldService.DeleteInputField(inputFieldId);
+            return await _inputConfigService.DeleteInputField(inputFieldId);
         }
 
         [HttpPost]
         [Route("")]
         public async Task<ServiceResult<int>> AddInputType([FromBody] InputTypeModel category)
         {
-            return await _inputTypeService.AddInputType(category);
+            return await _inputConfigService.AddInputType(category);
         }
 
         [HttpPost]
         [Route("clone")]
         public async Task<ServiceResult<int>> CloneInputType([FromBody] int inputTypeId)
         {
-            return await _inputTypeService.CloneInputType(inputTypeId);
+            return await _inputConfigService.CloneInputType(inputTypeId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}")]
         public async Task<ServiceResult<InputTypeFullModel>> GetInputType([FromRoute] int inputTypeId)
         {
-            return await _inputTypeService.GetInputType(inputTypeId);
+            return await _inputConfigService.GetInputType(inputTypeId);
         }
 
         [HttpPut]
         [Route("{inputTypeId}")]
         public async Task<ServiceResult> UpdateInputType([FromRoute] int inputTypeId, [FromBody] InputTypeModel inputType)
         {
-            return await _inputTypeService.UpdateInputType(inputTypeId, inputType);
+            return await _inputConfigService.UpdateInputType(inputTypeId, inputType);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}")]
         public async Task<ServiceResult> DeleteInputType([FromRoute] int inputTypeId)
         {
-            return await _inputTypeService.DeleteInputType(inputTypeId);
+            return await _inputConfigService.DeleteInputType(inputTypeId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas")]
         public async Task<ServiceResult<PageData<InputAreaModel>>> GetInputAreas([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputAreaService.GetInputAreas(inputTypeId, keyword, page, size);
+            return await _inputConfigService.GetInputAreas(inputTypeId, keyword, page, size);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
         public async Task<ServiceResult<InputAreaModel>> GetInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
-            return await _inputAreaService.GetInputArea(inputTypeId, inputAreaId);
+            return await _inputConfigService.GetInputArea(inputTypeId, inputAreaId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/basicInfo")]
         public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo([FromRoute] int inputTypeId)
         {
-            return await _inputTypeService.GetInputTypeBasicInfo(inputTypeId).ConfigureAwait(true);
+            return await _inputConfigService.GetInputTypeBasicInfo(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<InputTypeViewModel> GetInputTypeBasicInfo([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
-            return await _inputTypeService.GetInputTypeViewInfo(inputTypeId, inputTypeViewId).ConfigureAwait(true);
+            return await _inputConfigService.GetInputTypeViewInfo(inputTypeId, inputTypeViewId).ConfigureAwait(true);
         }
 
         [HttpPost]
         [Route("{inputTypeId}/views")]
         public async Task<int> InputTypeViewCreate([FromRoute] int inputTypeId, [FromBody] InputTypeViewModel model)
         {
-            return await _inputTypeService.InputTypeViewCreate(inputTypeId, model).ConfigureAwait(true);
+            return await _inputConfigService.InputTypeViewCreate(inputTypeId, model).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId, [FromBody] InputTypeViewModel model)
         {
-            var r = await _inputTypeService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
+            var r = await _inputConfigService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
             return r.IsSuccess();
         }
 
@@ -161,7 +155,7 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
-            var r = await _inputTypeService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
+            var r = await _inputConfigService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
             return r.IsSuccess();
         }
 
@@ -170,42 +164,42 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/inputareas")]
         public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
         {
-            return await _inputAreaService.AddInputArea(inputTypeId, inputArea);
+            return await _inputConfigService.AddInputArea(inputTypeId, inputArea);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
         public async Task<ServiceResult> UpdateInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromBody] InputAreaInputModel inputArea)
         {
-            return await _inputAreaService.UpdateInputArea(inputTypeId, inputAreaId, inputArea);
+            return await _inputConfigService.UpdateInputArea(inputTypeId, inputAreaId, inputArea);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}/inputareas/{inputAreaId}")]
         public async Task<ServiceResult> DeleteInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
-            return await _inputAreaService.DeleteInputArea(inputTypeId, inputAreaId);
+            return await _inputConfigService.DeleteInputArea(inputTypeId, inputAreaId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields")]
         public async Task<ServiceResult<PageData<InputAreaFieldOutputFullModel>>> GetInputAreaFields([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputAreaFieldService.GetInputAreaFields(inputTypeId, inputAreaId, keyword, page, size);
+            return await _inputConfigService.GetInputAreaFields(inputTypeId, inputAreaId, keyword, page, size);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaField}")]
         public async Task<ServiceResult<InputAreaFieldOutputFullModel>> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaField)
         {
-            return await _inputAreaFieldService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField);
+            return await _inputConfigService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField);
         }
 
         [HttpPost]
         [Route("{inputTypeId}/multifields")]
         public async Task<ServiceResult> UpdateMultiField([FromRoute] int inputTypeId, [FromBody] List<InputAreaFieldInputModel> fields)
         {
-            return await _inputAreaFieldService.UpdateMultiField(inputTypeId, fields);
+            return await _inputConfigService.UpdateMultiField(inputTypeId, fields);
         }
 
         [HttpGet]
