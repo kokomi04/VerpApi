@@ -122,7 +122,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public string GetStringClone(string source, int suffix = 0)
         {
             string suffixText = suffix > 0 ? string.Format("({0})", suffix) : string.Empty;
-            string code = string.Format("{0}_{1}_{2}", source, "Copy", suffixText);
+            string code = string.Format("{0}_{1}{2}", source, "Copy", suffixText);
             if (_accountingContext.InputType.Any(i => i.InputTypeCode == code))
             {
                 suffix++;
