@@ -131,10 +131,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         {
             var fields = await _accountingContext.InputAreaField
                 .Include(af => af.InputField)
-                .Where(a => a.InputTypeId == inputTypeId)
+                .Include(af => af.InputArea)
+                .Where(a => a.InputTypeId == inputTypeId && a.InputArea.IsMultiRow == false)
                 .Select(f => new { f.InputAreaId, f.InputAreaFieldId, f.InputField.FieldIndex, f.InputField.FieldName, f.InputField.DataTypeId }).ToListAsync();
 
-            var fieldsByAreas = fields.GroupBy(f => f.InputAreaId).ToDictionary(f => f.Key, f => f.ToList());
+            //var fieldsByAreas = fields.GroupBy(f => f.InputAreaId).ToDictionary(f => f.Key, f => f.ToList());
 
             var query = from b in _accountingContext.InputValueBill
                         select new
@@ -145,139 +146,141 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                             b.CreatedDatetimeUtc
                         };
 
-            var filterAreaIds = (
-                from filter in fieldFilters
-                join f in fields on filter.InputAreaFieldId equals f.InputAreaFieldId
-                select f.InputAreaId
-               ).ToList();
+            //var filterAreaIds = (
+            //    from filter in fieldFilters
+            //    join f in fields on filter.InputAreaFieldId equals f.InputAreaFieldId
+            //    select f.InputAreaId
+            //   ).ToList();
 
-            foreach (var area in fieldsByAreas.Where(a => filterAreaIds.Contains(a.Key)))
+            //foreach (var area in fieldsByAreas.Where(a => filterAreaIds.Contains(a.Key)))
+            //{
+            var fieldIndexs = fields.Select(f => f.FieldIndex).Distinct().ToList();
+
+            var versions = from r in _accountingContext.InputValueRow
+                           join v in _accountingContext.InputValueRowVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                           join b in _accountingContext.InputValueBill on r.InputValueBillId equals b.InputValueBillId
+                           where b.InputTypeId == inputTypeId && r.IsMultiRow == false
+                           select new InputValueRowVersionTextEntity
+                           {
+                               InputValueBillId = r.InputValueBillId,
+                               VersionText = v
+                           };
+
+            var versionsInNumbers = from r in _accountingContext.InputValueRow
+                                    join n in _accountingContext.InputValueRowVersionNumber on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
+                                    join b in _accountingContext.InputValueBill on r.InputValueBillId equals b.InputValueBillId
+                                    where b.InputTypeId == inputTypeId && r.IsMultiRow == false
+                                    select new InputValueRowVersionInNumberEntity
+                                    {
+                                        InputValueBillId = r.InputValueBillId,
+                                        VersionNumber = n
+                                    };
+
+            var tObj = Expression.Parameter(typeof(InputValueRowVersionTextEntity), "t");
+
+            var nObj = Expression.Parameter(typeof(InputValueRowVersionInNumberEntity), "n");
+
+            var tParam = Expression.Property(tObj, nameof(InputValueRowVersionTextEntity.VersionText));
+
+            var nParam = Expression.Property(nObj, nameof(InputValueRowVersionInNumberEntity.VersionNumber));
+
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var fieldIndexs = area.Value.Select(f => f.FieldIndex).Distinct().ToList();
+                var expressions = new List<Expression>();
+                Expression<Func<string>> keywordLambda = () => keyword;
 
-                var versions = from r in _accountingContext.InputValueRow
-                               join v in _accountingContext.InputValueRowVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
-                               where r.InputAreaId == area.Key
-                               select new InputValueRowVersionTextEntity
-                               {
-                                   InputValueBillId = r.InputValueBillId,
-                                   VersionText = v
-                               };
-
-                var versionsInNumbers = from r in _accountingContext.InputValueRow
-                                        join n in _accountingContext.InputValueRowVersionNumber on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
-                                        where r.InputAreaId == area.Key
-                                        select new InputValueRowVersionInNumberEntity
-                                        {
-                                            InputValueBillId = r.InputValueBillId,
-                                            VersionNumber = n
-                                        };
-
-                var tObj = Expression.Parameter(typeof(InputValueRowVersionTextEntity), "t");
-
-                var nObj = Expression.Parameter(typeof(InputValueRowVersionInNumberEntity), "n");
-
-                var tParam = Expression.Property(tObj, nameof(InputValueRowVersionTextEntity.VersionText));
-
-                var nParam = Expression.Property(nObj, nameof(InputValueRowVersionInNumberEntity.VersionNumber));
-
-                if (!string.IsNullOrWhiteSpace(keyword))
+                foreach (var fieldIndex in fieldIndexs)
                 {
-                    var expressions = new List<Expression>();
-                    Expression<Func<string>> keywordLambda = () => keyword;
+                    var methodInfo = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
+                    var prop = Expression.Property(tParam, GetFieldName(fieldIndex));
 
-                    foreach (var fieldIndex in fieldIndexs)
-                    {
-                        var methodInfo = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
-                        var prop = Expression.Property(tParam, GetFieldName(fieldIndex));
-
-                        expressions.Add(Expression.Call(prop, methodInfo, keywordLambda.Body));
-                    }
-
-                    if (expressions.Count > 0)
-                    {
-                        Expression ex = Expression.Constant(false);
-
-                        foreach (var expression in expressions)
-                        {
-                            ex = Expression.OrElse(ex, expression);
-                        }
-
-                        versions = versions.Where(Expression.Lambda<Func<InputValueRowVersionTextEntity, bool>>(ex, tObj));
-                    }
+                    expressions.Add(Expression.Call(prop, methodInfo, keywordLambda.Body));
                 }
 
-
-                var rowAndExpressions = new List<Expression>();
-                var rNumberAndExpressions = new List<Expression>();
-
-                foreach (var filter in fieldFilters)
+                if (expressions.Count > 0)
                 {
-                    var firstValue = filter.Values?.FirstOrDefault();
+                    Expression ex = Expression.Constant(false);
 
-                    Expression<Func<string>> valueLambda = () => firstValue;
-
-                    Expression<Func<long>> valueLambdaNumber = () => (long)(double.Parse(firstValue) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
-
-                    var lstValues = new List<string>();
-
-                    if (filter.Values != null && filter.Values.Count() > 0)
+                    foreach (var expression in expressions)
                     {
-                        lstValues = filter.Values.ToList();
+                        ex = Expression.OrElse(ex, expression);
                     }
-                    Expression<Func<List<string>>> lstValueLambda = () => lstValues;
 
-                    var fieldIndex = area.Value.FirstOrDefault(f => f.InputAreaFieldId == filter.InputAreaFieldId)?.FieldIndex;
-                    if (fieldIndex.HasValue && !string.IsNullOrWhiteSpace(firstValue))
+                    versions = versions.Where(Expression.Lambda<Func<InputValueRowVersionTextEntity, bool>>(ex, tObj));
+                }
+            }
+
+
+            var rowAndExpressions = new List<Expression>();
+            var rNumberAndExpressions = new List<Expression>();
+
+            foreach (var filter in fieldFilters)
+            {
+                var firstValue = filter.Values?.FirstOrDefault();
+
+                Expression<Func<string>> valueLambda = () => firstValue;
+
+                Expression<Func<long>> valueLambdaNumber = () => (long)(double.Parse(firstValue) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
+
+                var lstValues = new List<string>();
+
+                if (filter.Values != null && filter.Values.Count() > 0)
+                {
+                    lstValues = filter.Values.ToList();
+                }
+                Expression<Func<List<string>>> lstValueLambda = () => lstValues;
+
+                var fieldIndex = fields.FirstOrDefault(f => f.InputAreaFieldId == filter.InputAreaFieldId)?.FieldIndex;
+                if (fieldIndex.HasValue && !string.IsNullOrWhiteSpace(firstValue))
+                {
+                    var rProp = Expression.Property(tParam, GetFieldName(fieldIndex.Value));
+
+                    var nProp = Expression.Property(nParam, GetFieldName(fieldIndex.Value));
+
+                    switch (filter.Operator)
                     {
-                        var rProp = Expression.Property(tParam, GetFieldName(fieldIndex.Value));
+                        //text
+                        case EnumOperator.Equal:
+                            rowAndExpressions.Add(Expression.Equal(rProp, valueLambda.Body));
+                            break;
 
-                        var nProp = Expression.Property(nParam, GetFieldName(fieldIndex.Value));
+                        case EnumOperator.Contains:
+                            var methodContainInfo = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
+                            rowAndExpressions.Add(Expression.Call(rProp, methodContainInfo, valueLambda.Body));
+                            break;
 
-                        switch (filter.Operator)
-                        {
-                            //text
-                            case EnumOperator.Equal:
-                                rowAndExpressions.Add(Expression.Equal(rProp, valueLambda.Body));
-                                break;
-
-                            case EnumOperator.Contains:
-                                var methodContainInfo = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
-                                rowAndExpressions.Add(Expression.Call(rProp, methodContainInfo, valueLambda.Body));
-                                break;
-
-                            case EnumOperator.InList:
-                                var methodInList = typeof(List<string>).GetMethod(nameof(List<string>.Contains), new[] { typeof(string) });
-                                rNumberAndExpressions.Add(Expression.Call(lstValueLambda.Body, methodInList, nProp));
-                                break;
+                        case EnumOperator.InList:
+                            var methodInList = typeof(List<string>).GetMethod(nameof(List<string>.Contains), new[] { typeof(string) });
+                            rNumberAndExpressions.Add(Expression.Call(lstValueLambda.Body, methodInList, nProp));
+                            break;
 
 
-                            //number
-                            case EnumOperator.NotEqual:
-                                rowAndExpressions.Add(Expression.NotEqual(rProp, valueLambda.Body));
-                                break;
+                        //number
+                        case EnumOperator.NotEqual:
+                            rowAndExpressions.Add(Expression.NotEqual(rProp, valueLambda.Body));
+                            break;
 
-                            case EnumOperator.Greater:
-                                rNumberAndExpressions.Add(Expression.GreaterThan(nProp, valueLambdaNumber.Body));
-                                break;
+                        case EnumOperator.Greater:
+                            rNumberAndExpressions.Add(Expression.GreaterThan(nProp, valueLambdaNumber.Body));
+                            break;
 
-                            case EnumOperator.GreaterOrEqual:
-                                rNumberAndExpressions.Add(Expression.GreaterThanOrEqual(nProp, valueLambdaNumber.Body));
-                                break;
+                        case EnumOperator.GreaterOrEqual:
+                            rNumberAndExpressions.Add(Expression.GreaterThanOrEqual(nProp, valueLambdaNumber.Body));
+                            break;
 
-                            case EnumOperator.LessThan:
-                                rNumberAndExpressions.Add(Expression.LessThan(nProp, valueLambdaNumber.Body));
-                                break;
+                        case EnumOperator.LessThan:
+                            rNumberAndExpressions.Add(Expression.LessThan(nProp, valueLambdaNumber.Body));
+                            break;
 
-                            case EnumOperator.LessThanOrEqual:
-                                rNumberAndExpressions.Add(Expression.LessThanOrEqual(nProp, valueLambdaNumber.Body));
-                                break;
+                        case EnumOperator.LessThanOrEqual:
+                            rNumberAndExpressions.Add(Expression.LessThanOrEqual(nProp, valueLambdaNumber.Body));
+                            break;
 
 
 
-                        }
                     }
                 }
+                //}
 
 
 
@@ -336,25 +339,25 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var sortField = fields.FirstOrDefault(f => f.FieldName == orderBy);
             if (sortField != null)
             {
-                var versions = from r in _accountingContext.InputValueRow
-                               join v in _accountingContext.InputValueRowVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
-                               where r.InputAreaId == sortField.InputAreaId
-                               select new InputValueRowVersionTextEntity
-                               {
-                                   InputValueBillId = r.InputValueBillId,
-                                   InputValueRowId = r.InputValueRowId,
-                                   VersionText = v
-                               };
+                //    versions = from r in _accountingContext.InputValueRow
+                //                   join v in _accountingContext.InputValueRowVersion on r.LastestInputValueRowVersionId equals v.InputValueRowVersionId
+                //                   where r.InputAreaId == sortField.InputAreaId
+                //                   select new InputValueRowVersionTextEntity
+                //                   {
+                //                       InputValueBillId = r.InputValueBillId,
+                //                       InputValueRowId = r.InputValueRowId,
+                //                       VersionText = v
+                //                   };
 
-                var versionsInNumbers = from r in _accountingContext.InputValueRow
-                                        join n in _accountingContext.InputValueRowVersionNumber on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
-                                        where r.InputAreaId == sortField.InputAreaId
-                                        select new InputValueRowVersionInNumberEntity
-                                        {
-                                            InputValueBillId = r.InputValueBillId,
-                                            InputValueRowId = r.InputValueRowId,
-                                            VersionNumber = n
-                                        };
+                //    versionsInNumbers = from r in _accountingContext.InputValueRow
+                //                            join n in _accountingContext.InputValueRowVersionNumber on r.LastestInputValueRowVersionId equals n.InputValueRowVersionId
+                //                            where r.InputAreaId == sortField.InputAreaId
+                //                            select new InputValueRowVersionInNumberEntity
+                //                            {
+                //                                InputValueBillId = r.InputValueBillId,
+                //                                InputValueRowId = r.InputValueRowId,
+                //                                VersionNumber = n
+                //                            };
 
 
                 var sortFieldName = GetFieldName(sortField.FieldIndex);
@@ -447,7 +450,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                    select new
                    {
                        r.InputValueBillId,
-                       r.InputAreaId,
+                       r.IsMultiRow,
                        Row = v
                    })
                    .ToListAsync()
@@ -486,9 +489,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 row.FieldValues = new Dictionary<int, string>();
                 if (rowData.TryGetValue(billId, out var data))
                 {
-                    foreach (var areaGroup in data.GroupBy(d => d.InputAreaId))
+                    foreach (var areaGroup in data.GroupBy(d => d.IsMultiRow))
                     {
-                        foreach (var prop in props.Where(p => p.Column.InputAreaId == areaGroup.Key))
+                        foreach (var prop in props.Where(p => p.Column.IsMultiRow == areaGroup.Key))
                         {
                             var value = prop.Property.GetValue(areaGroup.First().Row)?.ToString();
                             row.FieldValues.Add(prop.Column.InputAreaFieldId, value);
@@ -518,6 +521,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<InputValueOuputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
+            var lstAreas = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).ToList();
 
             var lstField = _accountingContext.InputAreaField
                 .Include(f => f.InputField)
@@ -532,37 +536,42 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             InputValueOuputModel inputValueOuputModel = new InputValueOuputModel();
 
             // Check exist
-            var lstAreas = (from row in _accountingContext.InputValueRow
-                            where row.InputValueBillId == inputValueBillId
-                            join rowVersion in _accountingContext.InputValueRowVersion
-                            on new { row.InputValueRowId, inputValueRowVersionId = row.LastestInputValueRowVersionId }
-                            equals new { rowVersion.InputValueRowId, inputValueRowVersionId = rowVersion.InputValueRowVersionId }
-                            select new
-                            {
-                                row.InputAreaId,
-                                row.InputValueRowId,
-                                Data = rowVersion
-                            })
+            var lstGroups = (from row in _accountingContext.InputValueRow
+                             where row.InputValueBillId == inputValueBillId
+                             join rowVersion in _accountingContext.InputValueRowVersion
+                             on new { row.InputValueRowId, inputValueRowVersionId = row.LastestInputValueRowVersionId }
+                             equals new { rowVersion.InputValueRowId, inputValueRowVersionId = rowVersion.InputValueRowVersionId }
+                             select new
+                             {
+                                 //row.InputAreaId,
+                                 row.IsMultiRow,
+                                 row.InputValueRowId,
+                                 Data = rowVersion
+                             })
                            .ToList()
-                           .GroupBy(r => r.InputAreaId);
+                           .GroupBy(r => r.IsMultiRow);
+            //.GroupBy(r => r.InputAreaId);
 
-            foreach (var group in lstAreas)
+            foreach (var group in lstGroups)
             {
-                var fields = lstField.Where(f => f.InputAreaId == group.Key);
-
-                foreach (var row in group)
+                foreach (var area in lstAreas.Where(a => a.IsMultiRow == group.Key))
                 {
-                    InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
+                    var fields = lstField.Where(f => f.InputAreaId == area.InputAreaId);
+
+                    foreach (var row in group)
                     {
-                        InputAreaId = group.Key,
-                        InputValueRowId = row.InputValueRowId,
-                    };
-                    foreach (var field in fields)
-                    {
-                        string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
-                        inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
+                        InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
+                        {
+                            InputAreaId = area.InputAreaId,
+                            InputValueRowId = row.InputValueRowId,
+                        };
+                        foreach (var field in fields)
+                        {
+                            string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
+                            inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
+                        }
+                        inputValueOuputModel.Rows.Add(inputRowOutputModel);
                     }
-                    inputValueOuputModel.Rows.Add(inputRowOutputModel);
                 }
             }
             return inputValueOuputModel;
@@ -631,19 +640,19 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 var inputValueRow = new InputValueRow
                 {
-                    InputAreaId = rowModel.InputAreaId,
+                    IsMultiRow = rowModel.IsMultiRow,
                     InputValueBillId = inputValueBillId
                 };
                 await _accountingContext.InputValueRow.AddAsync(inputValueRow);
                 await _accountingContext.SaveChangesAsync();
 
                 // Insert row version
-                var inputValueRowVersion = CreateRowVersion(rowModel.InputAreaId, inputValueRow.InputValueRowId, rowModel.Values, inputAreaFields);
+                var inputValueRowVersion = CreateRowVersion(rowModel.IsMultiRow, inputValueRow.InputValueRowId, rowModel.Values, inputAreaFields);
                 await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
                 await _accountingContext.SaveChangesAsync();
 
                 // Insert row version number
-                var inputValueRowVersionNumber = CreateRowVersionNumber(rowModel.InputAreaId, inputValueRowVersion, inputAreaFields);
+                var inputValueRowVersionNumber = CreateRowVersionNumber(rowModel.IsMultiRow, inputValueRowVersion, inputAreaFields);
                 await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
                 await _accountingContext.SaveChangesAsync();
 
@@ -653,7 +662,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        private InputValueRowVersion CreateRowVersion(int areaId, long rowId, ICollection<InputValueModel> valueModels, IEnumerable<InputAreaField> fields)
+        private InputValueRowVersion CreateRowVersion(bool isMultiField, long rowId, ICollection<InputValueModel> valueModels, IEnumerable<InputAreaField> fields)
         {
             var inputValueRowVersion = new InputValueRowVersion
             {
@@ -661,7 +670,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             };
 
             // Set value AutoIncrement
-            var areaFields = fields.Where(f => f.InputAreaId == areaId);
+            var areaFields = fields.Where(f => f.InputArea.IsMultiRow == isMultiField);
             foreach (var field in areaFields)
             {
                 string value;
@@ -675,7 +684,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     long maxValue = _accountingContext.InputValueRowVersionNumber
                         .Include(rvn => rvn.InputValueRowVersion)
                         .ThenInclude(rv => rv.InputValueRow)
-                        .Where(rvn => rvn.InputValueRowVersion.InputValueRow.InputAreaId == field.InputAreaId)
+                        .Where(rvn => rvn.InputValueRowVersion.InputValueRow.IsMultiRow == field.InputArea.IsMultiRow)
                         .Where(rvn => rvn.InputValueRowVersionId == rvn.InputValueRowVersion.InputValueRow.LastestInputValueRowVersionId)
                         .Max(lambdaExp);
                     maxValue = (maxValue / AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR) + 1;
@@ -687,7 +696,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return inputValueRowVersion;
         }
 
-        private InputValueRowVersionNumber CreateRowVersionNumber(int areaId, InputValueRowVersion rowVersion, IEnumerable<InputAreaField> fields)
+        private InputValueRowVersionNumber CreateRowVersionNumber(bool isMultiRow, InputValueRowVersion rowVersion, IEnumerable<InputAreaField> fields)
         {
             var inputValueRowVersionNumber = new InputValueRowVersionNumber
             {
@@ -697,7 +706,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndx);
                 long valueInNumber = 0;
-                var field = fields.Where(f => f.InputAreaId == areaId && f.InputField.FieldIndex == fieldIndx).FirstOrDefault();
+                var field = fields.Where(f => f.InputArea.IsMultiRow == isMultiRow && f.InputField.FieldIndex == fieldIndx).FirstOrDefault();
                 string value = (string)typeof(InputValueRowVersion).GetProperty(fieldName).GetValue(rowVersion);
                 if (field != null && !string.IsNullOrEmpty(value))
                 {
@@ -721,6 +730,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
 
             var inputAreaFields = _accountingContext.InputAreaField
+                .Include(f => f.InputArea)
                 .Include(f => f.InputField.DataType)
                 .Where(f => f.InputTypeId == inputTypeId).ToList();
 
@@ -754,16 +764,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     futureRows.Remove(futureRow);
                 }
             }
-            // Get list area id is changed (delete/edit/add)
-            int[] changedAreaIds = checkRows.Select(r => r.Item1.InputAreaId).Concat(curRows.Select(cr => cr.InputAreaId)).Distinct().ToArray();
-
             // Lấy thông tin field
-            var changeAreaFields = inputAreaFields
-                .Where(f => changedAreaIds.Contains(f.InputAreaId))
-                .AsEnumerable();
-            var requiredFields = changeAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
-            var uniqueFields = changeAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
-            var selectFields = changeAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.InputField.FormTypeId));
+            var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire);
+            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.InputField.FormTypeId));
 
             // Check field required
             CheckRequired(checkRows, requiredFields);
@@ -772,7 +776,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Check unique
             CheckUnique(checkRows, uniqueFields, curRows.Select(r => r.InputValueRowId).ToArray());
             // Check value
-            CheckValue(checkRows, changeAreaFields);
+            CheckValue(checkRows, inputAreaFields);
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -789,18 +793,18 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
 
                 // Insert new row
-                await InsertRows(futureRows, inputValueBillId, changeAreaFields);
+                await InsertRows(futureRows, inputValueBillId, inputAreaFields);
 
                 // Update row
                 foreach (var (future, current) in updateRows)
                 {
                     // Insert row version
-                    var inputValueRowVersion = CreateRowVersion(future.InputAreaId, future.InputValueRowId.Value, future.Values, changeAreaFields);
+                    var inputValueRowVersion = CreateRowVersion(future.IsMultiRow, future.InputValueRowId.Value, future.Values, inputAreaFields);
                     await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
                     await _accountingContext.SaveChangesAsync();
 
                     // Insert row version number
-                    var inputValueRowVersionNumber = CreateRowVersionNumber(future.InputAreaId, inputValueRowVersion, changeAreaFields);
+                    var inputValueRowVersionNumber = CreateRowVersionNumber(future.IsMultiRow, inputValueRowVersion, inputAreaFields);
                     await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
                     await _accountingContext.SaveChangesAsync();
 
@@ -825,7 +829,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         private int[] CompareRow(InputValueRow curRow, InputValueRowInputModel futureRow, ICollection<InputAreaField> fields)
         {
             List<int> changeFieldIndexes = new List<int>();
-            foreach (var field in fields.Where(f => f.InputAreaId == curRow.InputAreaId))
+            foreach (var field in fields.Where(f => f.InputArea.IsMultiRow == curRow.IsMultiRow))
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
                 string curValue = (string)typeof(InputValueRowVersion)
@@ -847,7 +851,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             foreach (var field in requiredFields)
             {
                 //bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
-                var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
+                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
                 if (changeRows.Count() == 0)
                 {
@@ -874,8 +878,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             foreach (var field in uniqueFields)
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
-                //bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
-                var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
+                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
                    .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
                        .SelectMany(r => r.Item1.Values)
@@ -902,7 +905,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                              join row in _accountingContext.InputValueRow
                              on new { ver.InputValueRowId, inputValueRowVersionId = ver.InputValueRowVersionId }
                              equals new { row.InputValueRowId, inputValueRowVersionId = row.LastestInputValueRowVersionId }
-                             where row.InputAreaId == field.InputAreaId
+                             join bill in _accountingContext.InputValueBill on row.InputValueBillId equals bill.InputValueBillId
+                             join area in _accountingContext.InputArea on field.InputAreaId equals area.InputAreaId
+                             where bill.InputTypeId == field.InputTypeId && row.IsMultiRow == area.IsMultiRow
                              && !deleteInputValueRowId.Contains(row.InputValueRowId)
                              && !rowIds.Contains(row.InputValueRowId)
                              select ver)
@@ -920,7 +925,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             // Check refer
             foreach (var field in selectFields)
             {
-                var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
+                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
                    .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
                        .SelectMany(r => r.Item1.Values)
@@ -981,7 +986,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             foreach (var field in categoryFields)
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
-                var changeRows = data.Where(r => r.Item1.InputAreaId == field.InputAreaId)
+                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
                     .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
                        .SelectMany(r => r.Item1.Values)
@@ -1049,13 +1054,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
-
-
-        private string GetFieldName(int fieldIndex)
-        {
-            return string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndex);
-        }
-
     }
 
     public class InputValueRowVersionTextEntity

@@ -431,12 +431,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputValueRow>(entity =>
             {
-                entity.HasOne(d => d.InputArea)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputAreaId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputValueRow_InputArea");
-
                 entity.HasOne(d => d.InputValueBill)
                     .WithMany(p => p.InputValueRow)
                     .HasForeignKey(d => d.InputValueBillId)

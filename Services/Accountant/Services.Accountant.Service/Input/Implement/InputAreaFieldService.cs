@@ -168,6 +168,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputAreaFieldAlreadyExisted;
             }
 
+            var areas = _accountingContext.InputArea.Where(a => fields.Select(f => f.InputAreaId).Contains(a.InputAreaId)).Select(a => new
+            {
+                a.InputAreaId,
+                a.IsMultiRow
+            }).Distinct().ToList();
+
             List<InputAreaField> curFields = _accountingContext.InputAreaField
                 .IgnoreQueryFilters()
                 .Where(f => f.InputTypeId == inputTypeId)
@@ -177,6 +183,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Where(cf => !cf.IsDeleted)
                 .Where(cf => fields.All(f => f.InputFieldId != cf.InputFieldId || f.InputTypeId != cf.InputTypeId))
                 .ToList();
+
+            List<InputAreaField> singleNewFields = new List<InputAreaField>();
+
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
@@ -197,6 +206,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         var inputAreaField = _mapper.Map<InputAreaField>(field);
                         await _accountingContext.InputAreaField.AddAsync(inputAreaField);
                         field.InputAreaFieldId = inputAreaField.InputAreaFieldId;
+                        // Add field need clear old data
+                        var area = areas.First(a => a.InputAreaId == curField.InputAreaId);
+                        if (!area.IsMultiRow)
+                        {
+                            singleNewFields.Add(inputAreaField);
+                        }
                     }
                     else if (Comparer(field, curField))
                     {
@@ -228,6 +243,44 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                    }
+                }
+              
+                // Clear old data
+                if (singleNewFields.Count > 0)
+                {
+                    Expression ex = Expression.Constant(false);
+                    var param = Expression.Parameter(typeof(InputValueRowVersion), "vrv");
+                    foreach (var field in singleNewFields)
+                    {
+                        var method = typeof(string).GetMethod(nameof(string.IsNullOrEmpty), new[] { typeof(string) });
+                        var prop = Expression.Property(param, GetFieldName(field.InputField.FieldIndex));
+                        var isEmptyFunc = Expression.Lambda<Func<InputValueRowVersion, bool>>(Expression.Call(prop, method), param);
+                        var notEmptyFunc = Expression.Lambda<Func<InputValueRowVersion, bool>>(Expression.Not(isEmptyFunc.Body), isEmptyFunc.Parameters[0]);
+                        ex = Expression.OrElse(ex, notEmptyFunc.Body);
+                    }
+
+                    // Get rows
+                    List<InputValueRowVersion> inputValueRowVersions = (from vrv in _accountingContext.InputValueRowVersion
+                                                                        join vr in _accountingContext.InputValueRow on vrv.InputValueRowId equals vr.InputValueRowId
+                                                                        join b in _accountingContext.InputValueBill on vr.InputValueBillId equals b.InputValueBillId
+                                                                        where b.InputTypeId == inputTypeId && vr.IsMultiRow == false
+                                                                        select vrv).Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, param)).ToList();
+
+                    List<InputValueRowVersionNumber> inputValueRowVersionNumbers = _accountingContext.InputValueRowVersionNumber
+                        .Where(vn => inputValueRowVersions.Select(v => v.InputValueRowVersionId).Contains(vn.InputValueRowVersionId))
+                        .ToList();
+
+                    foreach (var inputValueRowVersion in inputValueRowVersions)
+                    {
+                        var inputValueRowVersionNumber = inputValueRowVersionNumbers.First(vn => vn.InputValueRowVersionId == inputValueRowVersion.InputValueRowVersionId);
+                        foreach (var field in singleNewFields)
+                        {
+                            var fieldName = GetFieldName(field.InputField.FieldIndex);
+                            long valueInNumber = 0;
+                            typeof(InputValueRowVersion).GetProperty(fieldName).SetValue(inputValueRowVersion, valueInNumber);
+                            typeof(InputValueRowVersionNumber).GetProperty(fieldName).SetValue(inputValueRowVersionNumber, valueInNumber);
+                        }
                     }
                 }
                 await _accountingContext.SaveChangesAsync();
@@ -304,13 +357,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             try
             {
                 var inputField = _mapper.Map<InputField>(data);
-                int fieldIndex = GetFieldIndex();
-                if (fieldIndex < 0)
-                {
-                    trans.Rollback();
-                    return InputErrorCode.InputAreaFieldOverLoad;
-                }
-                inputField.FieldIndex = fieldIndex;
+
+                inputField.FieldIndex = GetFieldIndex();
                 await _accountingContext.InputField.AddAsync(inputField);
                 await _accountingContext.SaveChangesAsync();
 
@@ -428,7 +476,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     }
                 }
 
-
                 if (isUsedYet && isEmpty)
                 {
                     index = indx;
@@ -436,11 +483,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
             }
 
-            if (index == -1)
+            if (index == -1 && firstIndex > 0)
             {
                 index = firstIndex;
             }
-
+            else if (index == -1)
+            {
+                throw new BadRequestException(InputErrorCode.InputAreaFieldOverLoad);
+            }
 
             return index;
         }
