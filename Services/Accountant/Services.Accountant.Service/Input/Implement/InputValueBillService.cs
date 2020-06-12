@@ -521,20 +521,17 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<InputValueOuputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
-            var lstAreas = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).ToList();
-
             var lstField = _accountingContext.InputAreaField
                 .Include(f => f.InputField)
+                .Include(f => f.InputArea)
                 .Where(f => f.InputTypeId == inputTypeId)
                 .Select(f => new
                 {
                     f.InputAreaFieldId,
-                    f.InputAreaId,
+                    f.InputArea.IsMultiRow,
                     FieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, f.InputField.FieldIndex)
                 }).ToList();
-
             InputValueOuputModel inputValueOuputModel = new InputValueOuputModel();
-
             // Check exist
             var lstGroups = (from row in _accountingContext.InputValueRow
                              where row.InputValueBillId == inputValueBillId
@@ -550,28 +547,22 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                              })
                            .ToList()
                            .GroupBy(r => r.IsMultiRow);
-            //.GroupBy(r => r.InputAreaId);
-
             foreach (var group in lstGroups)
             {
-                foreach (var area in lstAreas.Where(a => a.IsMultiRow == group.Key))
+                var fields = lstField.Where(f => f.IsMultiRow == group.Key);
+                foreach (var row in group)
                 {
-                    var fields = lstField.Where(f => f.InputAreaId == area.InputAreaId);
-
-                    foreach (var row in group)
+                    InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
                     {
-                        InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
-                        {
-                            InputAreaId = area.InputAreaId,
-                            InputValueRowId = row.InputValueRowId,
-                        };
-                        foreach (var field in fields)
-                        {
-                            string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
-                            inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
-                        }
-                        inputValueOuputModel.Rows.Add(inputRowOutputModel);
+                        IsMultiRow = group.Key,
+                        InputValueRowId = row.InputValueRowId,
+                    };
+                    foreach (var field in fields)
+                    {
+                        string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
+                        inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
                     }
+                    inputValueOuputModel.Rows.Add(inputRowOutputModel);
                 }
             }
             return inputValueOuputModel;
@@ -598,6 +589,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             List<Tuple<InputValueRowInputModel, int[]>> checkRows = data.Rows.Select(r => new Tuple<InputValueRowInputModel, int[]>(r, null)).ToList();
 
+            // Validate multiRow existed
+            if(!data.Rows.Any(r => r.IsMultiRow))
+            {
+                throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
+            }
             // Check field required
             CheckRequired(checkRows, requiredFields);
             // Check refer
@@ -728,7 +724,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 return InputErrorCode.InputValueBillNotFound;
             }
-
+            // Validate multiRow existed
+            if (!data.Rows.Any(r => r.IsMultiRow))
+            {
+                throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
+            }
             var inputAreaFields = _accountingContext.InputAreaField
                 .Include(f => f.InputArea)
                 .Include(f => f.InputField.DataType)

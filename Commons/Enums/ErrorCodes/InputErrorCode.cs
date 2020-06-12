@@ -65,6 +65,10 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Cấu hình mã tự sinh thất bại")]
         MapGenCodeConfigFail = 32,
         [Description("Cấu hình chứng từ nguồn không tồn tại")]
-        SourceInputTypeNotFound = 33
+        SourceInputTypeNotFound = 33,
+        [Description("Vùng dữ liệu dạng bảng đã tồn tại")]
+        MultiRowAreaAlreadyExisted = 34,
+        [Description("Thông tin dữ liệu dạng bảng không được để trống")]
+        MultiRowAreaEmpty = 35
     }
 }
