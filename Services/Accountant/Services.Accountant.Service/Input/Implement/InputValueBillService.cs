@@ -138,6 +138,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             //var fieldsByAreas = fields.GroupBy(f => f.InputAreaId).ToDictionary(f => f.Key, f => f.ToList());
 
             var query = from b in _accountingContext.InputValueBill
+                        where b.InputTypeId == inputTypeId
                         select new
                         {
                             b.InputValueBillId,
