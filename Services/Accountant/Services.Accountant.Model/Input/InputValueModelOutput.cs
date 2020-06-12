@@ -19,8 +19,8 @@ namespace VErp.Services.Accountant.Model.Input
         {
             FieldValues = new Dictionary<int, string>();
         }
-        //public int InputAreaId { get; set; }
-        public bool IsMultiRow { get; set; }
+        public int InputAreaId { get; set; }
+        //public bool IsMultiRow { get; set; }
         public long InputValueRowId { get; set; }
         public IDictionary<int, string> FieldValues { get; set; }
     }

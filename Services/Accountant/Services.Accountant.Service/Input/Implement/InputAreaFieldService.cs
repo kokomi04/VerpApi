@@ -21,9 +21,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountant.Model.Category;
 using VErp.Services.Accountant.Model.Input;
-using CategoryEntity = VErp.Infrastructure.EF.AccountingDB.Category;
 
 namespace VErp.Services.Accountant.Service.Input.Implement
 {
@@ -262,7 +260,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
                     // Get rows
                     List<InputValueRowVersion> inputValueRowVersions = (from vrv in _accountingContext.InputValueRowVersion
-                                                                        join vr in _accountingContext.InputValueRow on vrv.InputValueRowId equals vr.InputValueRowId
+                                                                        join vr in _accountingContext.InputValueRow on new { vrv.InputValueRowId, vrv.InputValueRowVersionId } equals new { vr.InputValueRowId, InputValueRowVersionId = vr.LastestInputValueRowVersionId}
                                                                         join b in _accountingContext.InputValueBill on vr.InputValueBillId equals b.InputValueBillId
                                                                         where b.InputTypeId == inputTypeId && vr.IsMultiRow == false
                                                                         select vrv).Where(Expression.Lambda<Func<InputValueRowVersion, bool>>(ex, param)).ToList();

@@ -521,14 +521,16 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<ServiceResult<InputValueOuputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
+            // Get area
+            var areas = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).ToList();
+
             var lstField = _accountingContext.InputAreaField
                 .Include(f => f.InputField)
-                .Include(f => f.InputArea)
                 .Where(f => f.InputTypeId == inputTypeId)
                 .Select(f => new
                 {
                     f.InputAreaFieldId,
-                    f.InputArea.IsMultiRow,
+                    f.InputAreaId,
                     FieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, f.InputField.FieldIndex)
                 }).ToList();
             InputValueOuputModel inputValueOuputModel = new InputValueOuputModel();
@@ -549,20 +551,23 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                            .GroupBy(r => r.IsMultiRow);
             foreach (var group in lstGroups)
             {
-                var fields = lstField.Where(f => f.IsMultiRow == group.Key);
-                foreach (var row in group)
+                foreach (var area in areas.Where(a => a.IsMultiRow == group.Key))
                 {
-                    InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
+                    var fields = lstField.Where(f => f.InputAreaId == area.InputAreaId);
+                    foreach (var row in group)
                     {
-                        IsMultiRow = group.Key,
-                        InputValueRowId = row.InputValueRowId,
-                    };
-                    foreach (var field in fields)
-                    {
-                        string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
-                        inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
+                        InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
+                        {
+                            InputAreaId = area.InputAreaId,
+                            InputValueRowId = row.InputValueRowId,
+                        };
+                        foreach (var field in fields)
+                        {
+                            string value = typeof(InputValueRowVersion).GetProperty(field.FieldName).GetValue(row.Data)?.ToString();
+                            inputRowOutputModel.FieldValues.Add(field.InputAreaFieldId, value);
+                        }
+                        inputValueOuputModel.Rows.Add(inputRowOutputModel);
                     }
-                    inputValueOuputModel.Rows.Add(inputRowOutputModel);
                 }
             }
             return inputValueOuputModel;
@@ -587,10 +592,13 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique);
             var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.InputField.FormTypeId));
 
-            List<Tuple<InputValueRowInputModel, int[]>> checkRows = data.Rows.Select(r => new Tuple<InputValueRowInputModel, int[]>(r, null)).ToList();
+            List<ValidateRowModel> checkRows = data.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
+
+            // Get area
+            var areas = _accountingContext.InputArea.Where(a => data.Rows.Select(r => r.InputAreaId).Contains(a.InputAreaId)).ToList();
 
             // Validate multiRow existed
-            if(!data.Rows.Any(r => r.IsMultiRow))
+            if (!areas.Any(r => r.IsMultiRow))
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
@@ -614,8 +622,23 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 await _accountingContext.InputValueBill.AddAsync(inputValueBill);
                 await _accountingContext.SaveChangesAsync();
 
-                // Insert rows
-                await InsertRows(checkRows.Select(r => r.Item1).ToList(), inputValueBill.InputValueBillId, inputAreaFields);
+                // Merge singerRow
+                var singerRows = checkRows.Select(r => r.Data).Where(r => areas.Where(a => !a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.InputAreaId)).ToList();
+                if (singerRows.Count > 0)
+                {
+                    var mergeData = singerRows
+                       .Select(r => r.Values)
+                       .Aggregate(new List<InputValueModel>(), (x, y) => x.Concat(y).ToList());
+                    ICollection<ICollection<InputValueModel>> singerData = new List<ICollection<InputValueModel>>
+                    {
+                        mergeData
+                    };
+                    // Insert singer row data
+                    await InsertRows(false, singerData, inputValueBill.InputValueBillId, inputAreaFields);
+                }
+                var multiRows = checkRows.Select(r => r.Data).Where(r => areas.Where(a => a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.InputAreaId)).ToList();
+                // Insert multi row data
+                await InsertRows(true, multiRows.Select(r => r.Values).ToList(), inputValueBill.InputValueBillId, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputValueBill.InputValueBillId, $"Thêm chứng từ cho loại chứng từ {inputType.Title}", data.JsonSerialize());
@@ -629,26 +652,26 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        private async Task InsertRows(ICollection<InputValueRowInputModel> inputValueRows, long inputValueBillId, IEnumerable<InputAreaField> inputAreaFields)
+        private async Task InsertRows(bool isMultiRow, ICollection<ICollection<InputValueModel>> inputValueRows, long inputValueBillId, IEnumerable<InputAreaField> inputAreaFields)
         {
             // Insert row
             foreach (var rowModel in inputValueRows)
             {
                 var inputValueRow = new InputValueRow
                 {
-                    IsMultiRow = rowModel.IsMultiRow,
+                    IsMultiRow = isMultiRow,
                     InputValueBillId = inputValueBillId
                 };
                 await _accountingContext.InputValueRow.AddAsync(inputValueRow);
                 await _accountingContext.SaveChangesAsync();
 
                 // Insert row version
-                var inputValueRowVersion = CreateRowVersion(rowModel.IsMultiRow, inputValueRow.InputValueRowId, rowModel.Values, inputAreaFields);
+                var inputValueRowVersion = CreateRowVersion(isMultiRow, inputValueRow.InputValueRowId, rowModel, inputAreaFields);
                 await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
                 await _accountingContext.SaveChangesAsync();
 
                 // Insert row version number
-                var inputValueRowVersionNumber = CreateRowVersionNumber(rowModel.IsMultiRow, inputValueRowVersion, inputAreaFields);
+                var inputValueRowVersionNumber = CreateRowVersionNumber(isMultiRow, inputValueRowVersion, inputAreaFields);
                 await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
                 await _accountingContext.SaveChangesAsync();
 
@@ -724,8 +747,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             {
                 return InputErrorCode.InputValueBillNotFound;
             }
+            // Get area
+            var areas = _accountingContext.InputArea.Where(a => data.Rows.Select(r => r.InputAreaId).Contains(a.InputAreaId)).ToList();
+
             // Validate multiRow existed
-            if (!data.Rows.Any(r => r.IsMultiRow))
+            if (!areas.Any(r => r.IsMultiRow))
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
@@ -743,14 +769,14 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             List<InputValueRowInputModel> futureRows = new List<InputValueRowInputModel>(data.Rows);
             List<(InputValueRowInputModel Future, InputValueRow Current)> updateRows = new List<(InputValueRowInputModel Future, InputValueRow Current)>();
 
-            List<Tuple<InputValueRowInputModel, int[]>> checkRows = new List<Tuple<InputValueRowInputModel, int[]>>();
+            var checkRows = new List<ValidateRowModel>();
 
             foreach (InputValueRowInputModel futureRow in data.Rows)
             {
                 InputValueRow curRow = curRows.FirstOrDefault(r => r.InputValueRowId == futureRow.InputValueRowId);
                 if (curRow == null)
                 {
-                    checkRows.Add(new Tuple<InputValueRowInputModel, int[]>(futureRow, null));
+                    checkRows.Add(new ValidateRowModel(futureRow, null));
                 }
                 else
                 {
@@ -758,7 +784,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (changeFieldIndexes.Length > 0)
                     {
                         updateRows.Add((futureRow, curRow));
-                        checkRows.Add(new Tuple<InputValueRowInputModel, int[]>(futureRow, changeFieldIndexes));
+                        checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
                     }
                     curRows.Remove(curRow);
                     futureRows.Remove(futureRow);
@@ -792,19 +818,45 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     deleteRow.IsDeleted = true;
                 }
 
-                // Insert new row
-                await InsertRows(futureRows, inputValueBillId, inputAreaFields);
+                #region Insert new data
 
-                // Update row
-                foreach (var (future, current) in updateRows)
+                // Merge singerRow
+                var singerRows = futureRows.Where(r => areas.Where(a => !a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.InputAreaId)).ToList();
+                if (singerRows.Count > 0)
                 {
+                    var mergeData = singerRows
+                       .Select(r => r.Values)
+                       .Aggregate(new List<InputValueModel>(), (x, y) => x.Concat(y).ToList());
+                    ICollection<ICollection<InputValueModel>> singerData = new List<ICollection<InputValueModel>>
+                    {
+                        mergeData
+                    };
+                    // Insert singer row data
+                    await InsertRows(false, singerData, inputValueBillId, inputAreaFields);
+                }
+                var multiRows = futureRows.Where(r => areas.Where(a => a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.InputAreaId)).ToList();
+                // Insert multi row data
+                await InsertRows(true, multiRows.Select(r => r.Values).ToList(), inputValueBillId, inputAreaFields);
+                #endregion
+
+                #region Update row
+
+                // Merge singerRow
+                var singerUpdateRows = updateRows.Where(r => areas.Where(a => !a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.Future.InputAreaId)).ToList();
+                if (singerUpdateRows.Count > 0)
+                {
+                    var current = singerUpdateRows.First().Current;
+                    var mergeUpdateData = singerUpdateRows
+                       .Select(r => r.Future.Values)
+                       .Aggregate(new List<InputValueModel>(), (x, y) => x.Concat(y).ToList());
+
                     // Insert row version
-                    var inputValueRowVersion = CreateRowVersion(future.IsMultiRow, future.InputValueRowId.Value, future.Values, inputAreaFields);
+                    var inputValueRowVersion = CreateRowVersion(false, current.InputValueRowId, mergeUpdateData, inputAreaFields);
                     await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
                     await _accountingContext.SaveChangesAsync();
 
                     // Insert row version number
-                    var inputValueRowVersionNumber = CreateRowVersionNumber(future.IsMultiRow, inputValueRowVersion, inputAreaFields);
+                    var inputValueRowVersionNumber = CreateRowVersionNumber(false, inputValueRowVersion, inputAreaFields);
                     await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
                     await _accountingContext.SaveChangesAsync();
 
@@ -812,6 +864,27 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     current.LastestInputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId;
                     await _accountingContext.SaveChangesAsync();
                 }
+
+                var multiUpdateRows = updateRows.Where(r => areas.Where(a => a.IsMultiRow).Select(a => a.InputAreaId).Contains(r.Future.InputAreaId)).ToList();
+
+                foreach (var (future, current) in multiUpdateRows)
+                {
+
+                    // Insert row version
+                    var inputValueRowVersion = CreateRowVersion(true, future.InputValueRowId.Value, future.Values, inputAreaFields);
+                    await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
+                    await _accountingContext.SaveChangesAsync();
+
+                    // Insert row version number
+                    var inputValueRowVersionNumber = CreateRowVersionNumber(true, inputValueRowVersion, inputAreaFields);
+                    await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
+                    await _accountingContext.SaveChangesAsync();
+
+                    // Update lasted version
+                    current.LastestInputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId;
+                    await _accountingContext.SaveChangesAsync();
+                }
+                #endregion
 
                 await _accountingContext.SaveChangesAsync();
                 trans.Commit();
@@ -829,7 +902,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         private int[] CompareRow(InputValueRow curRow, InputValueRowInputModel futureRow, ICollection<InputAreaField> fields)
         {
             List<int> changeFieldIndexes = new List<int>();
-            foreach (var field in fields.Where(f => f.InputArea.IsMultiRow == curRow.IsMultiRow))
+            foreach (var field in fields.Where(f => f.InputAreaId == futureRow.InputAreaId))
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
                 string curValue = (string)typeof(InputValueRowVersion)
@@ -846,20 +919,20 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             return changeFieldIndexes.ToArray();
         }
 
-        private void CheckRequired(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> requiredFields)
+        private void CheckRequired(List<ValidateRowModel> data, IEnumerable<InputAreaField> requiredFields)
         {
             foreach (var field in requiredFields)
             {
                 //bool isRefer = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId);
-                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
-                    .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
+                var changeRows = data.Where(r => r.Data.InputAreaId == field.InputArea.InputAreaId)
+                    .Where(r => r.CheckFields == null || r.CheckFields.Contains(field.InputField.FieldIndex));
                 if (changeRows.Count() == 0)
                 {
                     throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
                 foreach (var row in changeRows)
                 {
-                    var fieldValue = row.Item1.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
+                    var fieldValue = row.Data.Values.Where(v => v.InputAreaFieldId == field.InputAreaFieldId).FirstOrDefault();
                     if (fieldValue == null || string.IsNullOrEmpty(fieldValue.Value))
                     {
                         throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
@@ -868,7 +941,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        private void CheckUnique(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = null)
+        private void CheckUnique(List<ValidateRowModel> data, IEnumerable<InputAreaField> uniqueFields, long[] deleteInputValueRowId = null)
         {
             if (deleteInputValueRowId is null)
             {
@@ -878,12 +951,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             foreach (var field in uniqueFields)
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
-                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
-                   .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
+                var changeRows = data.Where(r => r.Data.InputAreaId == field.InputArea.InputAreaId)
+                   .Where(r => r.CheckFields == null || r.CheckFields.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
-                       .SelectMany(r => r.Item1.Values)
+                       .SelectMany(r => r.Data.Values)
                        .Where(v => v.InputAreaFieldId == field.InputAreaFieldId);
-                var rowIds = changeRows.Where(r => r.Item1.InputValueRowId.HasValue && r.Item1.InputValueRowId.Value > 0).Select(r => r.Item1.InputValueRowId.Value).ToList();
+                var rowIds = changeRows.Where(r => r.Data.InputValueRowId.HasValue && r.Data.InputValueRowId.Value > 0).Select(r => r.Data.InputValueRowId.Value).ToList();
 
                 bool isExisted = false;
 
@@ -920,15 +993,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        private void CheckRefer(ref List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> selectFields)
+        private void CheckRefer(ref List<ValidateRowModel> data, IEnumerable<InputAreaField> selectFields)
         {
             // Check refer
             foreach (var field in selectFields)
             {
-                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
-                   .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
+                var changeRows = data.Where(r => r.Data.InputAreaId == field.InputArea.InputAreaId)
+                   .Where(r => r.CheckFields == null || r.CheckFields.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
-                       .SelectMany(r => r.Item1.Values)
+                       .SelectMany(r => r.Data.Values)
                        .Where(v => v.InputAreaFieldId == field.InputAreaFieldId);
 
                 bool isExisted = true;
@@ -981,15 +1054,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
-        private void CheckValue(List<Tuple<InputValueRowInputModel, int[]>> data, IEnumerable<InputAreaField> categoryFields)
+        private void CheckValue(List<ValidateRowModel> data, IEnumerable<InputAreaField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
                 string fieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, field.InputField.FieldIndex);
-                var changeRows = data.Where(r => r.Item1.IsMultiRow == field.InputArea.IsMultiRow)
-                    .Where(r => r.Item2 == null || r.Item2.Contains(field.InputField.FieldIndex));
+                var changeRows = data.Where(r => r.Data.InputAreaId == field.InputArea.InputAreaId)
+                    .Where(r => r.CheckFields == null || r.CheckFields.Contains(field.InputField.FieldIndex));
                 var fieldValues = changeRows
-                       .SelectMany(r => r.Item1.Values)
+                       .SelectMany(r => r.Data.Values)
                        .Where(v => v.InputAreaFieldId == field.InputAreaFieldId);
 
                 foreach (var value in fieldValues)
@@ -1054,7 +1127,22 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return GeneralCode.InternalError;
             }
         }
+
+
+        public class ValidateRowModel
+        {
+            public InputValueRowInputModel Data { get; set; }
+            public int[] CheckFields { get; set; }
+
+            public ValidateRowModel(InputValueRowInputModel Data, int[] CheckFields)
+            {
+                this.Data = Data;
+                this.CheckFields = CheckFields;
+            }
+        }
+
     }
+
 
     public class InputValueRowVersionTextEntity
     {
