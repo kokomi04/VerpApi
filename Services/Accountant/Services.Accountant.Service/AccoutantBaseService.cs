@@ -411,5 +411,9 @@ namespace VErp.Services.Accountant.Service
             return result;
         }
 
+        protected string GetFieldName(int fieldIndex)
+        {
+            return string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, fieldIndex);
+        }
     }
 }

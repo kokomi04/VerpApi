@@ -170,20 +170,27 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 }
 
                 // Xóa row
-                List<InputValueRow> inputValueRows = _accountingContext.InputValueRow.Where(r => r.InputAreaId == inputAreaId).ToList();
-                foreach (InputValueRow inputValueRow in inputValueRows)
+                if (inputArea.IsMultiRow)
                 {
-                    inputValueRow.IsDeleted = true;
-                    await _accountingContext.SaveChangesAsync();
-
-                    // Xóa row version
-                    List<InputValueRowVersion> inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == inputValueRow.InputValueRowId).ToList();
-                    foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
+                    List<InputValueRow> inputValueRows = (from vr in _accountingContext.InputValueRow
+                                                         join b in _accountingContext.InputValueBill on vr.InputValueBillId equals b.InputValueBillId
+                                                         where b.InputTypeId == inputTypeId && vr.IsMultiRow == true
+                                                         select vr).ToList();
+                    foreach (InputValueRow inputValueRow in inputValueRows)
                     {
-                        inputValueRowVersion.IsDeleted = true;
+                        inputValueRow.IsDeleted = true;
                         await _accountingContext.SaveChangesAsync();
+
+                        // Xóa row version
+                        List<InputValueRowVersion> inputValueRowVersions = _accountingContext.InputValueRowVersion.Where(rv => rv.InputValueRowId == inputValueRow.InputValueRowId).ToList();
+                        foreach (InputValueRowVersion inputValueRowVersion in inputValueRowVersions)
+                        {
+                            inputValueRowVersion.IsDeleted = true;
+                            await _accountingContext.SaveChangesAsync();
+                        }
                     }
                 }
+               
 
                 // Xóa area
                 inputArea.IsDeleted = true;

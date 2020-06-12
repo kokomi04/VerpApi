@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<FunctionLevel> FunctionLevel { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
         public virtual DbSet<InventoryType> InventoryType { get; set; }
+        public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
@@ -233,6 +234,23 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.InventoryTypeName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<Menu>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Icon)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.MenuName).HasMaxLength(50);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Url).HasMaxLength(128);
             });
 
             modelBuilder.Entity<Method>(entity =>

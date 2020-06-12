@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
         public long InputValueRowId { get; set; }
         public long InputValueBillId { get; set; }
-        public int InputAreaId { get; set; }
+        public bool IsMultiRow { get; set; }
         public long LastestInputValueRowVersionId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -21,7 +21,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual InputArea InputArea { get; set; }
         public virtual InputValueBill InputValueBill { get; set; }
         public virtual ICollection<InputValueRowVersion> InputValueRowVersion { get; set; }
     }
