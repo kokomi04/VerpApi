@@ -82,25 +82,29 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 return InputErrorCode.InputTitleAlreadyExisted;
             }
 
-            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            if (data.IsMultiRow && _accountingContext.InputArea.Any(a => a.InputTypeId == inputTypeId && a.IsMultiRow))
             {
-                try
-                {
-                    InputArea inputArea = _mapper.Map<InputArea>(data);
-                    inputArea.InputTypeId = inputTypeId;
-                    await _accountingContext.InputArea.AddAsync(inputArea);
-                    await _accountingContext.SaveChangesAsync();
+                return InputErrorCode.MultiRowAreaAlreadyExisted;
+            }
 
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Thêm vùng thông tin {inputArea.Title}", data.JsonSerialize());
-                    return inputArea.InputAreaId;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "Create");
-                    return GeneralCode.InternalError;
-                }
+
+            using var trans = await _accountingContext.Database.BeginTransactionAsync();
+            try
+            {
+                InputArea inputArea = _mapper.Map<InputArea>(data);
+                inputArea.InputTypeId = inputTypeId;
+                await _accountingContext.InputArea.AddAsync(inputArea);
+                await _accountingContext.SaveChangesAsync();
+
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Thêm vùng thông tin {inputArea.Title}", data.JsonSerialize());
+                return inputArea.InputAreaId;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "Create");
+                return GeneralCode.InternalError;
             }
         }
 
@@ -126,7 +130,10 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     return InputErrorCode.InputAreaTitleAlreadyExisted;
                 }
             }
-
+            if (data.IsMultiRow && _accountingContext.InputArea.Any(a => a.InputTypeId == inputTypeId && a.InputAreaId != inputAreaId && a.IsMultiRow))
+            {
+                return InputErrorCode.MultiRowAreaAlreadyExisted;
+            }
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
