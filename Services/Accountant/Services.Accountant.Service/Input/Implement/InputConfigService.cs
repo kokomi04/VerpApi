@@ -883,7 +883,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                 .Where(cf => fields.All(f => f.InputFieldId != cf.InputFieldId || f.InputTypeId != cf.InputTypeId))
                 .ToList();
 
-            List<InputAreaField> singleNewFields = new List<InputAreaField>();
+            List<int> singleNewFieldIds = new List<int>();
 
 
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
@@ -902,14 +902,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     if (curField == null)
                     {
                         // create new
-                        var inputAreaField = _mapper.Map<InputAreaField>(field);
-                        await _accountingContext.InputAreaField.AddAsync(inputAreaField);
-                        field.InputAreaFieldId = inputAreaField.InputAreaFieldId;
+                        curField = _mapper.Map<InputAreaField>(field);
+                        await _accountingContext.InputAreaField.AddAsync(curField);
+                        await _accountingContext.SaveChangesAsync();
+                        field.InputAreaFieldId = curField.InputAreaFieldId;
                         // Add field need clear old data
                         var area = areas.First(a => a.InputAreaId == curField.InputAreaId);
                         if (!area.IsMultiRow)
                         {
-                            singleNewFields.Add(inputAreaField);
+                            singleNewFieldIds.Add(curField.InputAreaFieldId);
                         }
                     }
                     else if (Comparer(field, curField))
@@ -945,8 +946,12 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     }
                 }
 
+                await _accountingContext.SaveChangesAsync();
                 // Clear old data
-                if (singleNewFields.Count > 0)
+
+                var singleNewFields = _accountingContext.InputAreaField.Include(f => f.InputField).Where(f => singleNewFieldIds.Contains(f.InputAreaFieldId)).ToList();
+
+                if (singleNewFieldIds.Count > 0)
                 {
                     Expression ex = Expression.Constant(false);
                     var param = Expression.Parameter(typeof(InputValueRowVersion), "vrv");
@@ -954,7 +959,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     {
                         var method = typeof(string).GetMethod(nameof(string.IsNullOrEmpty), new[] { typeof(string) });
                         var prop = Expression.Property(param, GetFieldName(field.InputField.FieldIndex));
-                        var isEmptyFunc = Expression.Lambda<Func<InputValueRowVersion, bool>>(Expression.Call(prop, method), param);
+                        var isEmptyFunc = Expression.Lambda<Func<InputValueRowVersion, bool>>(Expression.Call(method, prop), param);
                         var notEmptyFunc = Expression.Lambda<Func<InputValueRowVersion, bool>>(Expression.Not(isEmptyFunc.Body), isEmptyFunc.Parameters[0]);
                         ex = Expression.OrElse(ex, notEmptyFunc.Body);
                     }
