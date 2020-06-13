@@ -282,40 +282,32 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             List<DataTypeModel> lst = query.ProjectTo<DataTypeModel>(_mapper.ConfigurationProvider).ToList();
             return (lst, total);
         }
+
         public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)
         {
-            var query = _accountingContext.FormType.OrderBy(f => f.Name).AsQueryable();
-            var total = await query.CountAsync();
+            List<FormTypeModel> formTypes = EnumExtensions.GetEnumMembers<EnumFormType>().Select(m => new FormTypeModel
+            {
+                FormTypeId = (int)m.Enum,
+                Title = m.Description,
+                Name = m.ToString()
+            }).ToList();
+          
+            var total = formTypes.Count();
             if (size > 0)
             {
-                query = query.Skip((page - 1) * size).Take(size);
+                formTypes = formTypes.Skip((page - 1) * size).Take(size).ToList();
             }
-            List<FormTypeModel> lst = query.ProjectTo<FormTypeModel>(_mapper.ConfigurationProvider).ToList();
-            return (lst, total);
-        }
-
-        private ICollection<CategoryFieldOutputModel> GetFields(int categoryId)
-        {
-            var query = _accountingContext.CategoryField
-                .Include(f => f.ReferenceCategoryField)
-                .Where(f => f.CategoryId == categoryId)
-                .OrderBy(f => f.SortOrder);
-            List<CategoryFieldOutputModel> result = query.ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider).ToList();
-            return result;
+            return (formTypes, total);
         }
 
         public async Task<PageData<OperatorModel>> GetOperators(int page, int size)
         {
-            List<OperatorModel> operators = new List<OperatorModel>();
-            foreach (EnumOperator ope in (EnumOperator[])EnumOperator.GetValues(typeof(EnumOperator)))
+            List<OperatorModel> operators = EnumExtensions.GetEnumMembers<EnumOperator>().Select(m => new OperatorModel
             {
-                operators.Add(new OperatorModel
-                {
-                    Value = (int)ope,
-                    Title = ope.GetEnumDescription(),
-                    ParamNumber = ope.GetParamNumber()
-                }); ;
-            }
+                Value = (int)m.Enum,
+                Title = m.Description,
+                ParamNumber = m.Enum.GetParamNumber()
+            }).ToList();
             int total = operators.Count;
             if (size > 0)
             {
@@ -326,15 +318,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size)
         {
-            List<LogicOperatorModel> operators = new List<LogicOperatorModel>();
-            foreach (EnumLogicOperator ope in (EnumLogicOperator[])EnumLogicOperator.GetValues(typeof(EnumLogicOperator)))
+            List<LogicOperatorModel> operators = EnumExtensions.GetEnumMembers<EnumLogicOperator>().Select(m => new LogicOperatorModel
             {
-                operators.Add(new OperatorModel
-                {
-                    Value = (int)ope,
-                    Title = ope.GetEnumDescription()
-                }); ;
-            }
+                Value = (int)m.Enum,
+                Title = m.Description
+            }).ToList();
             int total = operators.Count;
             if (size > 0)
             {
@@ -345,15 +333,11 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size)
         {
-            List<ModuleTypeModel> moduleTypes = new List<ModuleTypeModel>();
-            foreach (EnumModuleType type in (EnumModuleType[])EnumModuleType.GetValues(typeof(EnumModuleType)))
+            List<ModuleTypeModel> moduleTypes = EnumExtensions.GetEnumMembers<EnumModuleType>().Select(m => new ModuleTypeModel
             {
-                moduleTypes.Add(new ModuleTypeModel
-                {
-                    ModuleTypeValue = (int)type,
-                    ModuleTypeTitle = type.GetEnumDescription()
-                }); ;
-            }
+                ModuleTypeValue = (int)m.Enum,
+                ModuleTypeTitle = m.Description
+            }).ToList();
             int total = moduleTypes.Count;
             if (size > 0)
             {
