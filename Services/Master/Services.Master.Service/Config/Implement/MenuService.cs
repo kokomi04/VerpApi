@@ -55,7 +55,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return lstMenu;
         }
 
-        public async Task<Enum> Update(int menuId, MenuInputModel model)
+        public async Task<Enum> Update(int updatedUserId, int menuId, MenuInputModel model)
         {
             try
             {
@@ -71,7 +71,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.MenuName = model.MenuName;
                 obj.Url = model.Url;
                 obj.Icon = model.Icon;
-
+                obj.UpdatedByUserId = updatedUserId;
+                obj.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
@@ -85,7 +86,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         }
 
        
-        public async Task<Enum> Delete(int menuId)
+        public async Task<Enum> Delete(int updatedUserId, int menuId)
         {
             try
             {
@@ -95,6 +96,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     return GeneralCode.ItemNotFound;
                 }
                 obj.IsDeleted = true;
+                obj.UpdatedByUserId = updatedUserId;
+                obj.DeletedDatetimeUtc = DateTime.UtcNow;
                 await _masterDbContext.SaveChangesAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
                 return GeneralCode.Success;
@@ -106,7 +109,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<ServiceResult<int>> Create(MenuInputModel model)
+        public async Task<ServiceResult<int>> Create(int updatedUserId, MenuInputModel model)
         {
             var result = new ServiceResult<int>() { Data = 0 };
             try
@@ -119,12 +122,15 @@ namespace VErp.Services.Master.Service.Config.Implement
                     MenuName = model.MenuName,
                     Url = model.Url,
                     Icon = model.Icon,
+                    CreatedByUserId = updatedUserId,
+                    UpdatedByUserId = updatedUserId,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false
                 };
                 _masterDbContext.Menu.Add(entity);
-                await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
-
                 await _masterDbContext.SaveChangesAsync();
-
+                await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
                 result.Code = GeneralCode.Success;
                 result.Data = entity.MenuId;
             }

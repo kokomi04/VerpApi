@@ -36,21 +36,21 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ServiceResult<int>> Post([FromBody] MenuInputModel req)
         {
-            return await _menuService.Create(req);
+            return await _menuService.Create(UserId, req);
         }
 
         [HttpPut]
         [Route("{menuId}")]
         public async Task<ServiceResult> Update([FromRoute] int menuId, [FromBody] MenuInputModel req)
         {
-            return await _menuService.Update(menuId, req);
+            return await _menuService.Update(UserId, menuId, req);
         }
 
         [HttpDelete]
         [Route("{menuId}")]
         public async Task<ServiceResult> Delete([FromRoute] int menuId)
         {
-            return await _menuService.Delete(menuId);
+            return await _menuService.Delete(UserId, menuId);
         }
     }
 }
