@@ -28,17 +28,20 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequest, PurchasingRequestOutputList>()
+        protected IMappingExpression<PurchasingRequest, T> MappingBase<T>(Profile profile) where T : PurchasingRequestOutputList => profile.CreateMap<PurchasingRequest, T>()
           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
           .ForMember(m => m.PurchasingRequestStatusId, m => m.MapFrom(v => (EnumPurchasingRequestStatus)v.PurchasingRequestStatusId))
           .ForMember(m => m.PoProcessStatusId, m =>
-          {
-              m.PreCondition(v => v.PoProcessStatusId.HasValue);
-              m.MapFrom(v => (EnumPoProcessStatus?)v.PoProcessStatusId);
-          })
+              m.MapFrom(v => v.PoProcessStatusId.HasValue ? (EnumPoProcessStatus?)v.PoProcessStatusId : null)
+          )
           .ForMember(m => m.CreatedDatetimeUtc, m => m.MapFrom(v => v.CreatedDatetimeUtc.GetUnix()))
           .ForMember(m => m.UpdatedDatetimeUtc, m => m.MapFrom(v => v.UpdatedDatetimeUtc.GetUnix()))
           .ForMember(m => m.CensorDatetimeUtc, m => m.MapFrom(v => v.CensorDatetimeUtc.GetUnix()));
+
+        public void Mapping(Profile profile)
+        {
+            MappingBase<PurchasingRequestOutputList>(profile);
+        }
     }
 
 
@@ -46,6 +49,12 @@ namespace VErp.Services.PurchaseOrder.Model
     {
         public IList<long> FileIds { get; set; }
         public List<PurchasingRequestOutputDetail> Details { set; get; }
+
+        public new void Mapping(Profile profile)
+        {
+            MappingBase<PurchasingRequestOutput>(profile)
+                .ForMember(m => m.Details, m => m.Ignore());
+        }
     }
 
 
