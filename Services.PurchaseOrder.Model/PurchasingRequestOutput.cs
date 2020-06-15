@@ -61,5 +61,6 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PurchasingRequestOutputDetail : PurchasingRequestInputDetail
     {
         public long PurchasingRequestDetailId { get; set; }
+        public new void Mapping(Profile profile) => MappingBase<PurchasingRequestOutputDetail>(profile);        
     }
 }
