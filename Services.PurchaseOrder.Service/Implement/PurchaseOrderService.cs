@@ -169,7 +169,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PoAssignmentCode = info.PoAssignmentCode,
                     } : null,
 
-                    PurchasingSuggest = info.PoAssignmentId.HasValue ? new PurchasingSuggestBasicInfo()
+                    PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
                     {
                         PurchasingSuggestId = info.PurchasingSuggestId.Value,
                         PurchasingSuggestCode = info.PurchasingSuggestCode
@@ -346,7 +346,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PoAssignmentCode = info.PoAssignmentCode,
                     } : null,
 
-                    PurchasingSuggest = info.PoAssignmentId.HasValue ? new PurchasingSuggestBasicInfo()
+                    PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
                     {
                         PurchasingSuggestId = info.PurchasingSuggestId.Value,
                         PurchasingSuggestCode = info.PurchasingSuggestCode
@@ -478,7 +478,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PoAssignmentCode = info.PoAssignmentCode,
                 } : null,
 
-                PurchasingSuggest = info.PoAssignmentId.HasValue ? new PurchasingSuggestBasicInfo()
+                PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
                 {
                     PurchasingSuggestId = info.PurchasingSuggestId.Value,
                     PurchasingSuggestCode = info.PurchasingSuggestCode
