@@ -50,7 +50,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Url = item.Url,
                     Icon = item.Icon,
                     Param = item.Param,
-                    SortOrder = item.SortOrder
+                    SortOrder = item.SortOrder,
+                    IsGroup =item.IsGroup
                 };
                 lstMenu.Add(info);
             }
@@ -76,6 +77,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.Param = model.Param;
                 obj.UpdatedByUserId = updatedUserId;
                 obj.SortOrder = model.SortOrder;
+                obj.IsGroup = model.IsGroup;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
@@ -132,7 +134,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    SortOrder = model.SortOrder
+                    SortOrder = model.SortOrder,
+                    IsGroup = model.IsGroup
                 };
                 _masterDbContext.Menu.Add(entity);
                 await _masterDbContext.SaveChangesAsync();
