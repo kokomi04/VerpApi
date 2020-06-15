@@ -46,5 +46,15 @@ namespace VErpApi.Controllers.Stock.Internal
         {
             return await _productService.ProductInfo(productId);
         }
+
+
+        [HttpPost]
+        [Route("validateProductUnitConversion")]
+        public async Task<bool> ValidateProductUnitConversion([FromBody] Dictionary<int, int> productUnitConvertsionProduct)
+        {
+            return await _productService.ValidateProductUnitConversions(productUnitConvertsionProduct).ConfigureAwait(true);
+        }
+
+
     }
 }

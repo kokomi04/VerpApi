@@ -264,6 +264,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
+      
         public async Task<Enum> UpdateProduct(int productId, ProductModel req)
         {
             Enum validate;
@@ -487,6 +488,26 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
             }
         }
+
+        public async Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct)
+        {
+            var productIds = productUnitConvertsionProduct.Values;
+            var productUnitConversionIds = productUnitConvertsionProduct.Keys;
+
+            var productUnitConversions = (await _stockContext.ProductUnitConversion
+                .Where(c => productIds.Contains(c.ProductId) && productUnitConversionIds.Contains(c.ProductUnitConversionId))
+                .ToListAsync())
+                .ToDictionary(c => c.ProductUnitConversionId, c => c.ProductId);
+
+            foreach (var item in productUnitConvertsionProduct)
+            {
+                if (!productUnitConversions.ContainsKey(item.Key) || productUnitConversions[item.Key] != item.Value) return false;
+            }
+
+            return true;
+        }
+
+
 
         public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
         {

@@ -11,6 +11,7 @@ using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
 using System.Reflection;
+using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.GlobalObject;
@@ -94,6 +95,8 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
+            
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }

@@ -15,5 +15,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<ServiceResult<ProductModel>> ProductInfo(int productId);
         Task<Enum> UpdateProduct(int productId, ProductModel req);
         Task<Enum> DeleteProduct(int productId);
+
+        Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
     }
 }

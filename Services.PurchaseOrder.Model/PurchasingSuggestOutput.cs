@@ -14,9 +14,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchasingSuggestOutputList: PurchasingSuggestBasic
     {
-        public long Date { get; set; }
-        public string OrderCode { get; set; }
-        public string ProductionOrderCode { get; set; }
+        public long Date { get; set; }      
         public EnumPurchasingSuggestStatus PurchasingSuggestStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
@@ -39,10 +37,8 @@ namespace VErp.Services.PurchaseOrder.Model
     }
 
     public class PurchasingSuggestDetailOutputModel : PurchasingSuggestDetailInputModel
-    {
-        public long? PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
-        public decimal? PurchasingRequestPrimaryQuantity { get; set; }
+    {     
+        public PurchasingRequestDetailInfo RequestDetail { get; set; }
     }
 
     public class PurchasingSuggestOutputListByProduct : PurchasingSuggestOutputList
@@ -51,12 +47,18 @@ namespace VErp.Services.PurchaseOrder.Model
         public int RejectCount { get; set; }
         public long? PurchasingSuggestDetailId { get; set; }
         public int CustomerId { get; set; }
-        public IList<long> PurchasingRequestIds { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal? PrimaryUnitPrice { get; set; }
+        public int ProductUnitConversionId { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
+
+        public PurchasingRequestDetailInfo RequestDetail { get; set; }
+
     }
 
 }

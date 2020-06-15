@@ -32,6 +32,9 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<Enum> Reject(long purchasingSuggestId);
         Task<Enum> UpdatePoProcessStatus(long purchasingSuggestId, EnumPoProcessStatus poProcessStatusId);
 
+        Task<IList<PurchasingSuggestBasicInfo>> PurchasingSuggestBasicInfo(IList<long> purchasingSuggestIds);
+        Task<IList<PurchasingSuggestDetailInfo>> PurchasingSuggestDetailInfo(IList<long> purchasingSuggestDetailIds);
+
         Task<PageData<PoAssignmentOutputList>> PoAssignmentListByUser(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
 
         Task<PageData<PoAssignmentOutputListByProduct>> PoAssignmentListByProduct(string keyword, IList<int> productIds, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
@@ -45,6 +48,10 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<ServiceResult> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model);
 
         Task<ServiceResult> PoAssignmentDelete(long purchasingSuggestId, long poAssignmentId);
+
+        Task<IList<PoAssignmentBasicInfo>> PoAssignmentBasicInfos(IList<long> poAssignmentIds);
+
+        Task<IList<PoAssignmentDetailInfo>> PoAssignmentDetailInfos(IList<long> poAssignmentDetailIds);
 
         Task<ServiceResult> PoAssignmentSendToUser(long purchasingSuggestId, long poAssignmentId);
 

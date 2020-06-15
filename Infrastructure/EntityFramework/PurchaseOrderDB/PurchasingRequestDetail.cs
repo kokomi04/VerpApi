@@ -14,6 +14,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PurchasingRequestId { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
+        public int ProductUnitConversionId { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
