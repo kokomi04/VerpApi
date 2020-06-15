@@ -19,5 +19,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string Param { get; set; }
+        public int SortOrder { get; set; }
     }
 }

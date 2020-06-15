@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<ICollection<MenuOutputModel>> GetList()
         {
             var lstMenu = new List<MenuOutputModel>();
-            foreach (var item in _masterDbContext.Menu)
+            foreach (var item in _masterDbContext.Menu.OrderBy(m => m.SortOrder))
             {
                 var info = new MenuOutputModel()
                 {
@@ -49,7 +49,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     MenuName = item.MenuName,
                     Url = item.Url,
                     Icon = item.Icon,
-                    Param = item.Param
+                    Param = item.Param,
+                    SortOrder = item.SortOrder
                 };
                 lstMenu.Add(info);
             }
@@ -74,6 +75,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.Icon = model.Icon;
                 obj.Param = model.Param;
                 obj.UpdatedByUserId = updatedUserId;
+                obj.SortOrder = model.SortOrder;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
@@ -129,7 +131,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedByUserId = updatedUserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false
+                    IsDeleted = false,
+                    SortOrder = model.SortOrder
                 };
                 _masterDbContext.Menu.Add(entity);
                 await _masterDbContext.SaveChangesAsync();
