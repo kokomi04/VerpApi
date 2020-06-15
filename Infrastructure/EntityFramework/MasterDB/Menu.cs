@@ -20,5 +20,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string Param { get; set; }
         public int SortOrder { get; set; }
+        public bool IsGroup { get; set; }
     }
 }

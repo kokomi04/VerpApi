@@ -15,6 +15,7 @@ namespace VErp.Services.Master.Model.Config
         public string Icon { get; set; }
         public string Param { get; set; }
         public int SortOrder { get; set; }
+        public bool IsGroup { get; set; }
     }
 
     public class MenuOutputModel : MenuInputModel

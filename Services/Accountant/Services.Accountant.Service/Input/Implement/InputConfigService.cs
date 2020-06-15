@@ -885,7 +885,6 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             List<int> singleNewFieldIds = new List<int>();
 
-
             using var trans = await _accountingContext.Database.BeginTransactionAsync();
             try
             {
