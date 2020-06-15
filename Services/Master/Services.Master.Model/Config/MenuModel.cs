@@ -13,6 +13,7 @@ namespace VErp.Services.Master.Model.Config
         public string MenuName { get; set; }
         public string Url { get; set; }
         public string Icon { get; set; }
+        public string Param { get; set; }
     }
 
     public class MenuOutputModel : MenuInputModel

@@ -248,6 +248,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.MenuName).HasMaxLength(50);
 
+                entity.Property(e => e.Param).HasMaxLength(255);
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.Url).HasMaxLength(128);

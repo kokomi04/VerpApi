@@ -49,6 +49,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     MenuName = item.MenuName,
                     Url = item.Url,
                     Icon = item.Icon,
+                    Param = item.Param
                 };
                 lstMenu.Add(info);
             }
@@ -71,6 +72,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.MenuName = model.MenuName;
                 obj.Url = model.Url;
                 obj.Icon = model.Icon;
+                obj.Param = model.Param;
                 obj.UpdatedByUserId = updatedUserId;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
@@ -122,6 +124,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     MenuName = model.MenuName,
                     Url = model.Url,
                     Icon = model.Icon,
+                    Param = model.Param,
                     CreatedByUserId = updatedUserId,
                     UpdatedByUserId = updatedUserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
