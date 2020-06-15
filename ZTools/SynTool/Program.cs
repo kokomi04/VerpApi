@@ -43,7 +43,17 @@ namespace SynTool
 
             var contextPath = projectFolder + "\\" + context + ".cs";
 
-            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\"  Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj";
+            var tableOnly = "";
+
+            var dbHelper = new DbHelper(cnn);
+            var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA],[TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE'");
+            for (var i = 0; i < dataTable.Rows.Count; i++)
+            {
+                tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
+            }
+
+
+            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj";
             Console.WriteLine("\n\n" + cmd + "\n\n");
             Console.WriteLine(Bash(cmd));
 
