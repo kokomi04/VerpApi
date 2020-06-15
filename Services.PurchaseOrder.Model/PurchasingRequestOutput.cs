@@ -31,7 +31,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequest, PurchasingRequestOutputList>()
           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
           .ForMember(m => m.PurchasingRequestStatusId, m => m.MapFrom(v => (EnumPurchasingRequestStatus)v.PurchasingRequestStatusId))
-          .ForMember(m => m.PoProcessStatusId, m => m.MapFrom(v => (EnumPoProcessStatus)v.PoProcessStatusId))
+          .ForMember(m => m.PoProcessStatusId, m => m.MapFrom(v => (EnumPoProcessStatus?)v.PoProcessStatusId))
           .ForMember(m => m.CreatedDatetimeUtc, m => m.MapFrom(v => v.CreatedDatetimeUtc.GetUnix()))
           .ForMember(m => m.UpdatedDatetimeUtc, m => m.MapFrom(v => v.UpdatedDatetimeUtc.GetUnix()))
           .ForMember(m => m.CensorDatetimeUtc, m => m.MapFrom(v => v.CensorDatetimeUtc.GetUnix()));          
