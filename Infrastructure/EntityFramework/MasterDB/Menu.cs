@@ -18,5 +18,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string Param { get; set; }
     }
 }
