@@ -133,7 +133,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var result = new List<PurchasingRequestOutputList>();
             foreach (var info in pagedData)
             {
-                _mapper.Map<PurchasingRequestOutputList>(info);
+                result.Add(_mapper.Map<PurchasingRequestOutputList>(info));
             }
 
             return (result, total);
