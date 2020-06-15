@@ -44,14 +44,14 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetList")]
         public async Task<ServiceResult<PageData<PurchasingRequestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingRequestService.GetList(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
+            return await _purchasingRequestService.GetList(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("GetListByProduct")]
         public async Task<ServiceResult<PageData<PurchasingRequestOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _purchasingRequestService.GetListByProduct(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size);
+            return await _purchasingRequestService.GetListByProduct(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<ServiceResult<PurchasingRequestOutput>> GetInfo([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.GetInfo(purchasingRequestId);
+            return await _purchasingRequestService.GetInfo(purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<ServiceResult<long>> Add([FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.Create(req);
+            return await _purchasingRequestService.Create(req).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<ServiceResult> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.Update(purchasingRequestId, req);
+            return await _purchasingRequestService.Update(purchasingRequestId, req).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}/SendCensor")]
         public async Task<ServiceResult> SentToApprove([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.SendToCensor(purchasingRequestId);
+            return await _purchasingRequestService.SendToCensor(purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ServiceResult> Approve([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Approve(purchasingRequestId);
+            return await _purchasingRequestService.Approve(purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -126,7 +126,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [VErpAction(EnumAction.Censor)]
         public async Task<ServiceResult> Reject([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Reject(purchasingRequestId);
+            return await _purchasingRequestService.Reject(purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<ServiceResult> Delete([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Delete(purchasingRequestId);
+            return await _purchasingRequestService.Delete(purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>

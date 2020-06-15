@@ -11,8 +11,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public long PurchasingSuggestId { get; set; }
         public string PurchasingSuggestCode { get; set; }
         public long PurchasingSuggestDate { get; set; }
-        public string OrderCode { get; set; }
-        public string PurchasingSuggestProductionOrderCode { get; set; }
 
         public string PoAssignmentCode { get; set; }
         public int AssigneeUserId { get; set; }
@@ -35,7 +33,12 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? PoAssignmentDetailId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public decimal? PrimaryUnitPrice { get; set; }
+        public decimal PrimaryUnitPrice { get; set; }
+
+        public int ProductUnitConversionId { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public decimal ProductUnitConversionPrice { get; set; }
+
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
 

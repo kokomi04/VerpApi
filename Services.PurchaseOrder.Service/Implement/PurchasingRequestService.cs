@@ -20,6 +20,9 @@ using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using AutoMapper.QueryableExtensions;
+using AutoMapper;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -31,6 +34,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
+        private readonly IProductHelperService _productHelperService;
+        private readonly IMapper _mapper;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -39,6 +44,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
+            , IProductHelperService productHelperService
+            , IMapper mapper
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -47,12 +54,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
+            _productHelperService = productHelperService;
+            _mapper = mapper;
         }
 
 
         public async Task<ServiceResult<PurchasingRequestOutput>> GetInfo(long purchasingRequestId)
         {
-            var info = await _purchaseOrderDBContext.PurchasingRequest.AsNoTracking()
+            var info = await _purchaseOrderDBContext
+                .PurchasingRequest
+                .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingRequestId == purchasingRequestId);
 
             if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
@@ -61,36 +72,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Where(d => d.PurchasingRequestId == purchasingRequestId)
                 .ToListAsync();
 
-            return new PurchasingRequestOutput()
-            {
-                PurchasingRequestId = info.PurchasingRequestId,
-                PurchasingRequestCode = info.PurchasingRequestCode,
-                Date = info.Date.GetUnix(),
-                OrderCode = info.OrderCode,
-                ProductionOrderCode = info.ProductionOrderCode,
-                PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
-                IsApproved = info.IsApproved,
-                PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
-                CreatedByUserId = info.CreatedByUserId,
-                UpdatedByUserId = info.UpdatedByUserId,
-                CensorByUserId = info.CensorByUserId,
+            var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-                CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
-                CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
 
-                RejectCount = info.RejectCount,
-                Content = info.Content,
-                Details = details.Select(d => new PurchasingRequestOutputDetail()
-                {
-                    PurchasingRequestDetailId = d.PurchasingRequestDetailId,
-                    ProductId = d.ProductId,
-                    PrimaryQuantity = d.PrimaryQuantity,
-                    Description = d.Description
-                }).ToList()
-            };
-
+            return data;
         }
+
 
         public async Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
@@ -98,8 +86,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query
-                    .Where(q => q.OrderCode.Contains(keyword)
-                    || q.PurchasingRequestCode.Contains(keyword)
+                    .Where(q => q.PurchasingRequestCode.Contains(keyword)
                     || q.Content.Contains(keyword));
             }
 
@@ -146,24 +133,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var result = new List<PurchasingRequestOutputList>();
             foreach (var info in pagedData)
             {
-                result.Add(new PurchasingRequestOutputList()
-                {
-                    PurchasingRequestId = info.PurchasingRequestId,
-                    PurchasingRequestCode = info.PurchasingRequestCode,
-                    Date = info.Date.GetUnix(),
-                    OrderCode = info.OrderCode,
-                    ProductionOrderCode = info.ProductionOrderCode,
-                    PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
-                    IsApproved = info.IsApproved,
-                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
-                    CreatedByUserId = info.CreatedByUserId,
-                    UpdatedByUserId = info.UpdatedByUserId,
-                    CensorByUserId = info.CensorByUserId,
-
-                    CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
-                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
-                });
+                _mapper.Map<PurchasingRequestOutputList>(info);
             }
 
             return (result, total);
@@ -181,8 +151,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
                             r.Date,
-                            r.OrderCode,
-                            r.ProductionOrderCode,
+                            d.OrderCode,
+                            d.ProductionOrderCode,
                             r.PurchasingRequestCode,
                             r.Content,
                             r.PoProcessStatusId,
@@ -196,6 +166,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.PurchasingRequestDetailId,
                             d.ProductId,
                             d.PrimaryQuantity,
+                            d.ProductUnitConversionId,
+                            d.ProductUnitConversionQuantity,
                             d.Description
                         };
 
@@ -208,6 +180,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 query = query
                     .Where(q => q.OrderCode.Contains(keyword)
+                    || q.ProductionOrderCode.Contains(keyword)
                     || q.PurchasingRequestCode.Contains(keyword)
                     || q.Content.Contains(keyword));
             }
@@ -288,14 +261,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = r.PurchasingRequestId,
                     PurchasingRequestCode = r.PurchasingRequestCode,
                     PurchasingRequestDetailId = d.PurchasingRequestDetailId,
-                    PrimaryQuantity = d.PrimaryQuantity
+                    ProductId = d.ProductId,
+                    PrimaryQuantity = d.PrimaryQuantity,
+                    ProductUnitConversionId = d.ProductUnitConversionId,
+                    ProductUnitConversionQuantity = d.ProductUnitConversionQuantity
                 })
             .ToListAsync();
         }
 
+
+
         public async Task<ServiceResult<long>> Create(PurchasingRequestInput model)
         {
+            await ValidateProductUnitConversion(model);
+
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
+
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode);
@@ -305,40 +286,29 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
+                var purchasingRequest = _mapper.Map<PurchasingRequest>(model);
 
-                var purchasingRequest = new PurchasingRequest()
-                {
-                    PurchasingRequestCode = model.PurchasingRequestCode,
-                    OrderCode = model.OrderCode,
-                    Date = model.Date.UnixToDateTime().Value,
-                    ProductionOrderCode = model.ProductionOrderCode,
-                    Content = model.Content,
-                    RejectCount = 0,
-                    PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff,
-                    IsApproved = null,
-                    PoProcessStatusId = null,
-                    IsDeleted = false,
-                    CreatedByUserId = _currentContext.UserId,
-                    UpdatedByUserId = _currentContext.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
-                };
+                purchasingRequest.RejectCount = 0;
+                purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
+                purchasingRequest.IsApproved = null;
+                purchasingRequest.PoProcessStatusId = null;
+                purchasingRequest.IsDeleted = false;
+                purchasingRequest.CreatedByUserId = _currentContext.UserId;
+                purchasingRequest.UpdatedByUserId = _currentContext.UserId;
+                purchasingRequest.CreatedDatetimeUtc = DateTime.UtcNow;
+                purchasingRequest.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var purchasingRequestDetailList = model.Details.Select(d => new PurchasingRequestDetail
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
+                foreach (var item in purchasingRequestDetailList)
                 {
-                    PurchasingRequestId = purchasingRequest.PurchasingRequestId,
-                    ProductId = d.ProductId,
-                    PrimaryQuantity = d.PrimaryQuantity,
-                    Description = d.Description,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
-                    DeletedDatetimeUtc = null
-                });
-
+                    item.CreatedDatetimeUtc = DateTime.UtcNow;
+                    item.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    item.IsDeleted = false;
+                    item.DeletedDatetimeUtc = null;
+                }
 
                 await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(purchasingRequestDetailList);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -353,6 +323,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<Enum> Update(long purchasingRequestId, PurchasingRequestInput model)
         {
+            await ValidateProductUnitConversion(model);
+
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
@@ -366,12 +338,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
 
+                _mapper.Map(model, info);
 
-                info.PurchasingRequestCode = model.PurchasingRequestCode;
-                info.OrderCode = model.OrderCode;
-                info.Date = model.Date.UnixToDateTime().Value;
-                info.ProductionOrderCode = model.ProductionOrderCode;
-                info.Content = model.Content;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
                 info.IsApproved = null;
                 info.UpdatedByUserId = _currentContext.UserId;
@@ -385,18 +353,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     item.DeletedDatetimeUtc = DateTime.UtcNow;
                 }
 
-                var purchasingRequestDetailList = model.Details.Select(d => new PurchasingRequestDetail
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
+                foreach (var item in purchasingRequestDetailList)
                 {
-                    PurchasingRequestId = purchasingRequestId,
-                    ProductId = d.ProductId,
-                    PrimaryQuantity = d.PrimaryQuantity,
-                    Description = d.Description,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
-                    DeletedDatetimeUtc = null
-                });
-
+                    item.CreatedDatetimeUtc = DateTime.UtcNow;
+                    item.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    item.IsDeleted = false;
+                    item.DeletedDatetimeUtc = null;
+                }
 
                 await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(purchasingRequestDetailList);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -545,5 +509,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 return GeneralCode.Success;
             }
         }
+
+        private async Task ValidateProductUnitConversion(PurchasingRequestInput model)
+        {
+            var productUnitConversionProductGroup = model.Details.Select(d => new { d.ProductUnitConversionId, d.ProductId })
+               .GroupBy(d => d.ProductUnitConversionId);
+            if (productUnitConversionProductGroup.Any(g => g.Select(p => p.ProductId).Distinct().Count() > 1))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+            }
+
+            if (await _productHelperService.ValidateProductUnitConversions(productUnitConversionProductGroup.ToDictionary(g => g.Key, g => g.First().ProductId)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+            }
+        }
+
     }
 }
