@@ -33,10 +33,13 @@ namespace VErp.Services.PurchaseOrder.Model
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequestDetail, PurchasingRequestInputDetail>()
+        public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
+            => profile.CreateMap<PurchasingRequestDetail, T>()
           .ReverseMap()
           .ForMember(m => m.PurchasingRequest, m => m.Ignore())
           .ForMember(m => m.PurchasingSuggestDetail, m => m.Ignore());
+
+        public void Mapping(Profile profile) => MappingBase<PurchasingRequestInputDetail>(profile);
 
     }
 }
