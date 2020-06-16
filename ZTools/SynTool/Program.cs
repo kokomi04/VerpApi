@@ -49,7 +49,9 @@ namespace SynTool
             var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA],[TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE'");
             for (var i = 0; i < dataTable.Rows.Count; i++)
             {
-                tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
+                var tblName = dataTable.Rows[i]["TABLE_NAME"].ToString();
+                if (!tblName.StartsWith("_"))
+                    tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
             }
 
 
