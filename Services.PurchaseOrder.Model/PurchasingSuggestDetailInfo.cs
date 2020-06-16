@@ -19,6 +19,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
+
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
         
     }
 

@@ -33,6 +33,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<Enum> UpdatePoProcessStatus(long purchasingSuggestId, EnumPoProcessStatus poProcessStatusId);
 
         Task<IList<PurchasingSuggestBasicInfo>> PurchasingSuggestBasicInfo(IList<long> purchasingSuggestIds);
+
         Task<IList<PurchasingSuggestDetailInfo>> PurchasingSuggestDetailInfo(IList<long> purchasingSuggestDetailIds);
 
         Task<PageData<PoAssignmentOutputList>> PoAssignmentListByUser(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
