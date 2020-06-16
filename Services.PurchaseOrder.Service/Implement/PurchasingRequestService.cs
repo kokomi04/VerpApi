@@ -238,6 +238,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestDetailId = info.PurchasingRequestDetailId,
                     ProductId = info.ProductId,
                     PrimaryQuantity = info.PrimaryQuantity,
+
+
+                    ProductUnitConversionId = info.ProductUnitConversionId,
+                    ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
+
                     Description = info.Description
                 });
             }
