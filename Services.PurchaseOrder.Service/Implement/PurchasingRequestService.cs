@@ -304,6 +304,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
                 foreach (var item in purchasingRequestDetailList)
                 {
+                    item.PurchasingRequestId = purchasingRequest.PurchasingRequestId;
+
                     item.CreatedDatetimeUtc = DateTime.UtcNow;
                     item.UpdatedDatetimeUtc = DateTime.UtcNow;
                     item.IsDeleted = false;
@@ -356,6 +358,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
                 foreach (var item in purchasingRequestDetailList)
                 {
+                    item.PurchasingRequestId = purchasingRequestId;
+
                     item.CreatedDatetimeUtc = DateTime.UtcNow;
                     item.UpdatedDatetimeUtc = DateTime.UtcNow;
                     item.IsDeleted = false;
