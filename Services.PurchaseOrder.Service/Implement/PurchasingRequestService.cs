@@ -301,7 +301,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
+
                 foreach (var item in purchasingRequestDetailList)
                 {
                     item.PurchasingRequestId = purchasingRequest.PurchasingRequestId;
@@ -355,7 +356,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     item.DeletedDatetimeUtc = DateTime.UtcNow;
                 }
 
-                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d));
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
                 foreach (var item in purchasingRequestDetailList)
                 {
                     item.PurchasingRequestId = purchasingRequestId;

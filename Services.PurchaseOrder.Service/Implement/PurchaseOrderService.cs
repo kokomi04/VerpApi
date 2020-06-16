@@ -496,7 +496,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         IsDeleted = false,
                         DeletedDatetimeUtc = null
                     };
-                });
+                }).ToList();
 
 
                 await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
