@@ -58,10 +58,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
-                        join a in _purchaseOrderDBContext.PoAssignment on po.PoAssignmentId equals a.PoAssignmentId into ass
-                        from a in ass.DefaultIfEmpty()
-                        join s in _purchaseOrderDBContext.PurchasingSuggest on po.PurchasingSuggestId equals s.PurchasingSuggestId into ss
-                        from s in ss.DefaultIfEmpty()
                         select new
                         {
                             po.PurchaseOrderId,
@@ -85,11 +81,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
 
-                            PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
-                            PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
-
-                            PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
-                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -98,8 +89,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .Where(q => q.PurchaseOrderCode.Contains(keyword)
                    || q.Content.Contains(keyword)
                    || q.AdditionNote.Contains(keyword)
-                   || q.PoAssignmentCode.Contains(keyword)
-                   || q.PurchasingSuggestCode.Contains(keyword)
                    );
             }
 
@@ -162,18 +151,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
-
-                    PoAssignment = info.PoAssignmentId.HasValue ? new PoAssignmentBasicInfo()
-                    {
-                        PoAssignmentId = info.PoAssignmentId.Value,
-                        PoAssignmentCode = info.PoAssignmentCode,
-                    } : null,
-
-                    PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
-                    {
-                        PurchasingSuggestId = info.PurchasingSuggestId.Value,
-                        PurchasingSuggestCode = info.PurchasingSuggestCode
-                    } : null
                 });
             }
 
@@ -184,9 +161,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
-                        join a in _purchaseOrderDBContext.PoAssignment on po.PoAssignmentId equals a.PoAssignmentId into ass
-                        from a in ass.DefaultIfEmpty()
-                        join s in _purchaseOrderDBContext.PurchasingSuggest on po.PurchasingSuggestId equals s.PurchasingSuggestId into ss
+                        join ad in _purchaseOrderDBContext.PoAssignmentDetail on pod.PoAssignmentDetailId equals ad.PoAssignmentDetailId into ads
+                        from ad in ads.DefaultIfEmpty()
+                        join a in _purchaseOrderDBContext.PoAssignment on ad.PoAssignmentId equals a.PoAssignmentId into aa
+                        from a in aa.DefaultIfEmpty()
+                        join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on pod.PurchasingSuggestDetailId equals sd.PurchasingSuggestDetailId into sds
+                        from sd in sds.DefaultIfEmpty()
+                        join s in _purchaseOrderDBContext.PurchasingSuggest on sd.PurchasingSuggestId equals s.PurchasingSuggestId into ss
                         from s in ss.DefaultIfEmpty()
                         select new
                         {
@@ -234,6 +215,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
                             PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
+
+                            OrderCode = sd == null ? null : sd.OrderCode,
+                            ProductionOrderCode = sd == null ? null : sd.ProductionOrderCode
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -244,6 +228,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     || q.AdditionNote.Contains(keyword)
                     || q.PoAssignmentCode.Contains(keyword)
                     || q.PurchasingSuggestCode.Contains(keyword)
+                    || q.OrderCode.Contains(keyword)
+                    || q.ProductionOrderCode.Contains(keyword)
                     );
             }
 
@@ -340,18 +326,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
 
-                    PoAssignment = info.PoAssignmentId.HasValue ? new PoAssignmentBasicInfo()
-                    {
-                        PoAssignmentId = info.PoAssignmentId.Value,
-                        PoAssignmentCode = info.PoAssignmentCode,
-                    } : null,
-
-                    PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
-                    {
-                        PurchasingSuggestId = info.PurchasingSuggestId.Value,
-                        PurchasingSuggestCode = info.PurchasingSuggestCode
-                    } : null,
-
                     PoAssignmentDetail = assignmentDetailInfo,
                     PurchasingSuggestDetail = purchasingSuggestDetailInfo
                 });
@@ -363,75 +337,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo(long purchaseOrderId)
         {
-            var info = await (
-                from po in _purchaseOrderDBContext.PurchaseOrder
-                join a in _purchaseOrderDBContext.PoAssignment on po.PoAssignmentId equals a.PoAssignmentId into ass
-                from a in ass.DefaultIfEmpty()
-                join s in _purchaseOrderDBContext.PurchasingSuggest on po.PurchasingSuggestId equals s.PurchasingSuggestId into ss
-                from s in ss.DefaultIfEmpty()
-                where po.PurchaseOrderId == purchaseOrderId
-                select new
-                {
-                    po.PurchaseOrderId,
-                    po.PurchaseOrderCode,
-                    po.Date,
-                    po.CustomerId,
-                    po.PaymentInfo,
-                    po.DeliveryDate,
-                    po.DeliveryUserId,
-                    po.DeliveryCustomerId,
-                    po.DeliveryDestination,
-                    po.Content,
-                    po.AdditionNote,
-                    po.DeliveryFee,
-                    po.OtherFee,
-                    po.TotalMoney,
-                    po.PurchaseOrderStatusId,
-                    po.IsApproved,
-                    po.PoProcessStatusId,
-                    po.CreatedByUserId,
-                    po.UpdatedByUserId,
-                    po.CensorByUserId,
-
-                    po.CensorDatetimeUtc,
-                    po.CreatedDatetimeUtc,
-                    po.UpdatedDatetimeUtc,
-
-                    PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
-                    PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
-
-                    PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
-                    PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
-
-                }).FirstOrDefaultAsync();
+            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().Where(po => po.PurchaseOrderId == purchaseOrderId).FirstOrDefaultAsync();
 
             if (info == null) return PurchaseOrderErrorCode.PoNotFound;
 
-            var details = await (
-                from d in _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking()
-                where d.PurchaseOrderId == purchaseOrderId
-                select new
-                {
-                    d.PurchaseOrderDetailId,
-
-                    d.PoAssignmentDetailId,
-                    d.PurchasingSuggestDetailId,
-
-                    d.ProviderProductName,
-                    d.ProductId,
-                    d.PrimaryQuantity,
-                    d.PrimaryUnitPrice,
-
-                    d.ProductUnitConversionId,
-                    d.ProductUnitConversionQuantity,
-                    d.ProductUnitConversionPrice,
-
-                    d.TaxInPercent,
-                    d.TaxInMoney,
-
-
-                }).ToListAsync();
-
+            var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
             var poAssignmentDetailIds = details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
@@ -471,18 +381,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
                 CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
-
-                PoAssignment = info.PoAssignmentId.HasValue ? new PoAssignmentBasicInfo()
-                {
-                    PoAssignmentId = info.PoAssignmentId.Value,
-                    PoAssignmentCode = info.PoAssignmentCode,
-                } : null,
-
-                PurchasingSuggest = info.PurchasingSuggestId.HasValue ? new PurchasingSuggestBasicInfo()
-                {
-                    PurchasingSuggestId = info.PurchasingSuggestId.Value,
-                    PurchasingSuggestCode = info.PurchasingSuggestCode
-                } : null,
 
                 Details = details.Select(d =>
                 {
@@ -533,8 +431,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var po = new PurchaseOrderModel()
                 {
                     PurchaseOrderCode = model.PurchaseOrderCode,
-                    PoAssignmentId = poAssignmentDetails.FirstOrDefault()?.PoAssignmentId,
-                    PurchasingSuggestId = poAssignmentDetails.FirstOrDefault()?.PurchasingSuggestId,
                     CustomerId = model.CustomerId,
                     Date = model.Date.UnixToDateTime(),
                     PaymentInfo = model.PaymentInfo,
@@ -633,20 +529,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var poAssignmentDetails = await GetPoAssignmentDetailInfos(poAssignmentDetailIds.Select(d => d.Value).ToList());
 
-                var suggestId = poAssignmentDetails.FirstOrDefault()?.PurchasingSuggestId;
-
-                if (!suggestId.HasValue)
-                {
-                    var suggestDetailIds = model.Details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
-
-                    var suggestDetails = await GetSuggestDetailInfos(suggestDetailIds);
-                    suggestId = suggestDetails.FirstOrDefault()?.PurchasingSuggestId;
-                }
-
 
                 info.PurchaseOrderCode = model.PurchaseOrderCode;
-                info.PoAssignmentId = poAssignmentDetails.FirstOrDefault()?.PoAssignmentId;
-                info.PurchasingSuggestId = suggestId;
 
                 info.CustomerId = model.CustomerId;
                 info.Date = model.Date.UnixToDateTime();

@@ -703,7 +703,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductId = d.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
                     ProductUnitConversionId = d.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = d.ProductUnitConversionQuantity
+                    ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                    OrderCode = d.OrderCode,
+                    ProductionOrderCode = d.ProductionOrderCode,
                 })
             .ToListAsync();
         }

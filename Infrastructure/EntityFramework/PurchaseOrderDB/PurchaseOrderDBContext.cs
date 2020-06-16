@@ -105,11 +105,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
-
-                entity.HasOne(d => d.PoAssignment)
-                    .WithMany(p => p.PurchaseOrder)
-                    .HasForeignKey(d => d.PoAssignmentId)
-                    .HasConstraintName("FK_PurchaseOrder_PoAssignment1");
+               
             });
 
             modelBuilder.Entity<PurchaseOrderDetail>(entity =>

@@ -31,9 +31,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? CensorDatetimeUtc { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
-
-        public PoAssignmentBasicInfo PoAssignment { get; set; }
-        public PurchasingSuggestBasicInfo PurchasingSuggest { get; set; }     
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
