@@ -61,6 +61,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 obj.LocationId = req.LocationId;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                obj.Description = req.Description;
+
                 await _stockDbContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());

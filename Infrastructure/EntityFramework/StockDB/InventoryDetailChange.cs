@@ -9,9 +9,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public long InventoryId { get; set; }
         public int StockId { get; set; }
         public decimal OldPrimaryQuantity { get; set; }
-        public decimal OldPuConversionQuantity { get; set; }        
+        public decimal OldPuConversionQuantity { get; set; }
+        public int ProductUnitConversionId { get; set; }
         public bool IsDeleted { get; set; }
         public int ProductId { get; set; }
-        public int ProductUnitConversionId { get; set; }
     }
 }
