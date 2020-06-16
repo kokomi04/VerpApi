@@ -366,7 +366,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d));
+                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d)).ToList();
 
                     if (model.FileIds?.Count > 0)
                     {
