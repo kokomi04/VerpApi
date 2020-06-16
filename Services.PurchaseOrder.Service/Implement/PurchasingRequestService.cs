@@ -519,7 +519,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
             }
 
-            if (await _productHelperService.ValidateProductUnitConversions(productUnitConversionProductGroup.ToDictionary(g => g.Key, g => g.First().ProductId)))
+            if (!await _productHelperService.ValidateProductUnitConversions(productUnitConversionProductGroup.ToDictionary(g => g.Key, g => g.First().ProductId)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
             }
