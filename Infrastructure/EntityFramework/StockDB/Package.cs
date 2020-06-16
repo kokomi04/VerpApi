@@ -27,6 +27,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal ProductUnitConversionRemaining { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
+        public string Description { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }

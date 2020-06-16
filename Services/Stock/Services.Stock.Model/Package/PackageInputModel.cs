@@ -19,6 +19,7 @@ namespace VErp.Services.Stock.Model.Package
         //public string Date { get; set; }
         public long ExpiryTime { get; set; }
 
+        public string Description { get; set; }
         //public int PrimaryUnitId { get; set; }
         //public decimal PrimaryQuantity { get; set; }
 
