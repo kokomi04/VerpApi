@@ -125,7 +125,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -216,7 +216,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
-                UpdateView();
+               
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
             }
@@ -224,7 +224,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -264,7 +264,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                UpdateView();
+              
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Cập nhật chứng từ {inputType.Title}", data.JsonSerialize());
                 return true;
             }
@@ -272,7 +272,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -288,8 +288,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@InputTypeId",inputTypeId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
-
-            UpdateView();
+        
 
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
             return true;
@@ -600,7 +599,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -650,7 +649,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -911,7 +910,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 trans.Commit();
-                
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}", fields.JsonSerialize());
 
                 return true;
@@ -974,7 +973,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
 
+                await UpdateInputValueView();
+
                 trans.Commit();
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Thêm trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
                 return inputField.InputFieldId;
             }
@@ -982,7 +984,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -1001,17 +1003,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                if(data.FieldName!= inputField.FieldName)
+                if (data.FieldName != inputField.FieldName)
                 {
                     await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
                 }
 
                 await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
 
-                _mapper.Map(data, inputField);             
+                _mapper.Map(data, inputField);
 
                 await _accountancyDBContext.SaveChangesAsync();
+
+                await UpdateInputValueView();
+
                 trans.Commit();
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Cập nhật trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
                 return true;
             }
@@ -1019,7 +1025,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -1028,7 +1034,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
             if (inputField == null)
             {
-                
+
                 throw new BadRequestException(InputErrorCode.InputFieldNotFound);
             }
             // Check used
@@ -1046,6 +1052,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
 
+                await UpdateInputValueView();
+
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField.JsonSerialize());
                 return true;
@@ -1054,7 +1062,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -1062,13 +1070,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         #endregion
 
-        private void UpdateView()
+        private async Task UpdateInputValueView()
         {
-            using var connection = _accountancyDBContext.Database.GetDbConnection();
-            connection.Open();
-            using var cmd = connection.CreateCommand();
-            cmd.CommandText = "usp_InputType_UpdateView";
-            cmd.ExecuteNonQuery();
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", new SqlParameter[0]);
         }
     }
 }

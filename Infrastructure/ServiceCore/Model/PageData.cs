@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Model
 {
@@ -15,6 +18,42 @@ namespace VErp.Infrastructure.ServiceCore.Model
             {
                 Total = result.total,
                 List = result.list
+            };
+        }
+    }
+
+    public class PageDataTable
+    {
+        public int Total { get; set; }
+        public IList<NonCamelCaseDictionary> List { get; set; }
+
+        public static implicit operator PageDataTable((DataTable list, int total) result)
+        {
+            var lst = new List<NonCamelCaseDictionary>();
+
+            for (var i = 0; i < result.list.Rows.Count; i++)
+            {
+                var row = result.list.Rows[i];
+                var dic = new NonCamelCaseDictionary();
+                foreach (DataColumn c in result.list.Columns)
+                {
+                    var v = row[c];
+                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    {
+                        var vInDateTime = (v as DateTime?).GetUnix();
+                        dic.Add(c.ColumnName, vInDateTime);
+                    }
+                    else
+                    {
+                        dic.Add(c.ColumnName, row[c]);
+                    }
+                }
+                lst.Add(dic);
+            }
+            return new PageDataTable()
+            {
+                Total = result.total,
+                List = lst
             };
         }
     }
