@@ -3,11 +3,13 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -141,7 +143,7 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-           // if (unixTime == 0) return null;
+            // if (unixTime == 0) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
@@ -384,5 +386,48 @@ namespace VErp.Commons.Library
 
             return value;
         }
+
+
+       
+
+        public static Type GetColumnDataType(this EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                    return typeof(string);
+                case EnumDataType.Int: return typeof(int);
+                case EnumDataType.Date: return typeof(DateTime);
+                case EnumDataType.PhoneNumber: return typeof(string);
+                case EnumDataType.Email: return typeof(string);
+                case EnumDataType.Boolean: return typeof(bool);
+                case EnumDataType.Percentage: return typeof(short);
+                case EnumDataType.BigInt: return typeof(long);
+                case EnumDataType.Decimal: return typeof(decimal);
+                default: return typeof(string);
+            }
+        }
+
+        public static object GetSqlValue(this EnumDataType dataType, object value)
+        {
+            if (value == null) return DBNull.Value;
+
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                    return value?.ToString();
+                case EnumDataType.Int: return Convert.ToInt32(value);
+                case EnumDataType.Date: return Convert.ToInt64(value).UnixToDateTime();
+                case EnumDataType.PhoneNumber: return value?.ToString();
+                case EnumDataType.Email: return value?.ToString();
+                case EnumDataType.Boolean: return Convert.ToBoolean(value);
+                case EnumDataType.Percentage: return Convert.ToInt16(value);
+                case EnumDataType.BigInt: return Convert.ToInt64(value);
+                case EnumDataType.Decimal: return Convert.ToDecimal(value);
+                default: return value?.ToString();
+            }
+        }
+
+
     }
 }

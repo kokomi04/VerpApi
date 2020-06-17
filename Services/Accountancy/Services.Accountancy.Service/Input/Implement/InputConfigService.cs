@@ -125,7 +125,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -224,7 +224,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -272,7 +272,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -600,7 +600,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -650,7 +650,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -982,7 +982,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -1019,7 +1019,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 
@@ -1054,7 +1054,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                throw new BadRequestException(GeneralCode.InternalError);
+                throw ex;
             }
         }
 

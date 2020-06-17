@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -23,6 +24,66 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync($"EXEC {procedureName.TrimEnd(',')}", parammeters);
         }
 
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters)
+        {
+            using (var command = dbContext.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = rawSql;
+                command.Parameters.Clear();
+                command.Parameters.AddRange(parammeters);
+
+                dbContext.Database.OpenConnection();
+                using (var result = await command.ExecuteReaderAsync())
+                {
+                    DataTable dt = new DataTable();
+                    dt.Load(result);
+                    return dt;
+                }
+            }
+        }
+
+        public static SqlParameter CloneSqlParam(this SqlParameter sqlParameter)
+        {
+            return new SqlParameter(sqlParameter.ParameterName, sqlParameter.Value)
+            {
+                Direction = sqlParameter.Direction,
+                TypeName = sqlParameter.TypeName,
+                DbType = sqlParameter.DbType,
+                Size = sqlParameter.Size
+            };
+        }
+
+
+        public static async Task InsertDataTable(this DbContext dbContext, DataTable table)
+        {
+
+            var columns = new HashSet<DataColumn>();
+            foreach (DataColumn c in table.Columns)
+            {
+                columns.Add(c);
+            }
+
+            for (var i = 0; i < table.Rows.Count; i++)
+            {
+                var row = table.Rows[i];
+
+                var insertColumns = new List<string>();
+                var sqlParams = new List<SqlParameter>();
+                foreach (var c in columns)
+                {
+                    var cell = row[c];
+
+                    insertColumns.Add(c.ColumnName);
+                    sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
+                }
+
+                var sql = $"INSERT INTO [{table.TableName}]({string.Join(",", insertColumns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Select(p => $"{p.ParameterName}"))})";
+
+                await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+            }
+        }
+
+
         public static async Task<int> AddColumn(this DbContext dbContext, string table, string column, EnumDataType dataType, int dataSize, int decimalPlace, string defaultValue, bool isNullable)
         {
             return await dbContext.ModColumn(table, column, true, dataType, dataSize, decimalPlace, defaultValue, isNullable);
@@ -34,8 +95,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<int> ModColumn(this DbContext dbContext, string table, string column, bool isNewColumn, EnumDataType dataType, int dataSize, int decimalPlace, string defaultValue, bool isNullable)
         {
-            if (!table.ValidateValidObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên bảng không được phép"); };
-            if (!column.ValidateValidObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên cột không được phép"); };
+            if (!table.ValidateValidSqlObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên bảng không được phép"); };
+            if (!column.ValidateValidSqlObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên cột không được phép"); };
 
             if (defaultValue?.Contains("--") == true) { throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mặc định không được phép"); };
 
@@ -46,10 +107,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 new SqlParameter("@IsAddNew", isNewColumn),
                 new SqlParameter("@TableName", table),
                 new SqlParameter("@FieldName", column),
-                new SqlParameter("@DataType", GetSqlDataType(dataType).ToString()),
+                new SqlParameter("@DataType", dataType.GetSqlDataType().ToString()),
                 new SqlParameter("@DataSize", dataSize),
                 new SqlParameter("@DecimalPlace", decimalPlace),
-                new SqlParameter("@DefaultValue", defaultValue),
+                new SqlParameter("@DefaultValue", defaultValue==null?(object)DBNull.Value:defaultValue),
                 new SqlParameter("@IsNullable", isNullable),
                 resultParam
             };
@@ -61,8 +122,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<int> DropColumn(this DbContext dbContext, string table, string column)
         {
-            if (!table.ValidateValidObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên bảng không được phép"); };
-            if (!column.ValidateValidObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên cột không được phép"); };
+            if (!table.ValidateValidSqlObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên bảng không được phép"); };
+            if (!column.ValidateValidSqlObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên cột không được phép"); };
 
             var resultParam = new SqlParameter("@ResStatus", 0) { Direction = ParameterDirection.Output };
 
@@ -94,15 +155,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
-        private static bool ValidateValidObjectName(this string objectName)
-        {
-            var pattern = @"^[a-zA-Z0-9_]{1,64}$";
+     
 
-            Regex regex = new Regex(pattern);
-            return regex.IsMatch(objectName);
-        }
-
-        private static SqlDbType GetSqlDataType(EnumDataType dataType) => dataType switch
+        public static SqlDbType GetSqlDataType(this EnumDataType dataType) => dataType switch
         {
             EnumDataType.Text => SqlDbType.NVarChar,
             EnumDataType.Int => SqlDbType.Int,
@@ -115,6 +170,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
             EnumDataType.Decimal => SqlDbType.Decimal,
             _ => SqlDbType.NVarChar
         };
+
+        public static bool ValidateValidSqlObjectName(this string objectName)
+        {
+            var pattern = @"^[a-zA-Z0-9_\.]{1,64}$";
+
+            Regex regex = new Regex(pattern);
+            return regex.IsMatch(objectName);
+        }
 
     }
 }

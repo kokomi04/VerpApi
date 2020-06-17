@@ -20,12 +20,12 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
+        public virtual DbSet<InputBill> InputBill { get; set; }
         public virtual DbSet<InputField> InputField { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
-        public virtual DbSet<InputValueBill> InputValueBill { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -88,7 +88,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.RefTableCode)
-                    .IsRequired()
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
@@ -172,6 +171,20 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_InputAreaField_InputType");
             });
 
+            modelBuilder.Entity<InputBill>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_InputValueBill");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.HasOne(d => d.InputType)
+                    .WithMany(p => p.InputBill)
+                    .HasForeignKey(d => d.InputTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InputValueBill_InputType");
+            });
+
             modelBuilder.Entity<InputField>(entity =>
             {
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
@@ -248,15 +261,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey(d => d.InputTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
-            });
-
-            modelBuilder.Entity<InputValueBill>(entity =>
-            {
-                entity.HasOne(d => d.InputType)
-                    .WithMany(p => p.InputValueBill)
-                    .HasForeignKey(d => d.InputTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputValueBill_InputType");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
