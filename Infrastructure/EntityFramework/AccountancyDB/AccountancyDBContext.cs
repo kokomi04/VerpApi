@@ -16,7 +16,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         }
 
         public virtual DbSet<Category> Category { get; set; }
-        public virtual DbSet<CategoryArea> CategoryArea { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
@@ -47,23 +46,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<CategoryArea>(entity =>
-            {
-                entity.Property(e => e.CategoryAreaCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.CategoryAreaType).HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Title).HasMaxLength(128);
-
-                entity.HasOne(d => d.Category)
-                    .WithMany(p => p.CategoryArea)
-                    .HasForeignKey(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CategoryArea_Category");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
@@ -110,6 +92,12 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryField)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryField_Category");
             });
 
             modelBuilder.Entity<InputArea>(entity =>

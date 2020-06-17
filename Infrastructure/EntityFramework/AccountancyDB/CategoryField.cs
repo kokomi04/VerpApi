@@ -28,10 +28,11 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool? IsShowSearchTable { get; set; }
         public bool IsReadOnly { get; set; }
-        public int CategoryAreaId { get; set; }
         public bool IsTreeViewKey { get; set; }
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+
+        public virtual Category Category { get; set; }
     }
 }

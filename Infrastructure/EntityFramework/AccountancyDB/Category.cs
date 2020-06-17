@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
     {
         public Category()
         {
-            CategoryArea = new HashSet<CategoryArea>();
+            CategoryField = new HashSet<CategoryField>();
         }
 
         public int CategoryId { get; set; }
@@ -24,6 +24,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public bool IsOutSideData { get; set; }
 
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
-        public virtual ICollection<CategoryArea> CategoryArea { get; set; }
+        public virtual ICollection<CategoryField> CategoryField { get; set; }
     }
 }

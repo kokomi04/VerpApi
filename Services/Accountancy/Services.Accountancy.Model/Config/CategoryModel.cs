@@ -30,9 +30,8 @@ namespace VErp.Services.Accountancy.Model.Category
     {
         public CategoryFullModel()
         {
-            CategoryAreas = new List<CategoryAreaModel>();
+            CategoryFields = new List<CategoryFieldOutputModel>();
         }
-      
-        public ICollection<CategoryAreaModel> CategoryAreas { get; set; }
+        public ICollection<CategoryFieldOutputModel> CategoryFields { get; set; }
     }
 }

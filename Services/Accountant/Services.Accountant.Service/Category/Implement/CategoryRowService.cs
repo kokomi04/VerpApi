@@ -912,7 +912,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 throw new BadRequestException(CategoryErrorCode.CategoryValueInValid, new string[] { field.Title });
                             }
                         }
-                        else if (field.DataTypeId == (int)EnumDataType.Date)
+                        else if (field.DataTypeId == (int)EnumDataType.Date && !string.IsNullOrWhiteSpace(row[fieldIndx]))
                         {
                             if (DateTime.TryParse(row[fieldIndx], out DateTime value))
                             {
