@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
-namespace Services.Accountancy.Service
+namespace VErp.Services.Accountancy.Service
 {
     public static class AccountancyServiceAssembly
     {
