@@ -26,7 +26,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
-        public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -232,6 +231,12 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
                 entity.Property(e => e.RegularExpression).HasMaxLength(256);
 
                 entity.Property(e => e.SelectFilters).HasMaxLength(512);
@@ -252,28 +257,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey(d => d.InputTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputValueBill_InputType");
-            });
-
-            modelBuilder.Entity<InputValueRow>(entity =>
-            {
-                entity.ToTable("_InputValueRow");
-
-                entity.Property(e => e.ChungTu)
-                    .IsRequired()
-                    .HasColumnName("CHUNG_TU")
-                    .HasMaxLength(128);
-
-                entity.HasOne(d => d.InputType)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__InputValueRow_InputType");
-
-                entity.HasOne(d => d.InputValueBill)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputValueBillId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputValueRow_InputValueBill");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>

@@ -11,7 +11,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
             InputAreaField = new HashSet<InputAreaField>();
             InputTypeView = new HashSet<InputTypeView>();
             InputValueBill = new HashSet<InputValueBill>();
-            InputValueRow = new HashSet<InputValueRow>();
         }
 
         public int InputTypeId { get; set; }
@@ -33,6 +32,5 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
         public virtual ICollection<InputTypeView> InputTypeView { get; set; }
         public virtual ICollection<InputValueBill> InputValueBill { get; set; }
-        public virtual ICollection<InputValueRow> InputValueRow { get; set; }
     }
 }

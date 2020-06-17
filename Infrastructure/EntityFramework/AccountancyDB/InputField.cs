@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public int SortOrder { get; set; }
         public int DataTypeId { get; set; }
         public int DataSize { get; set; }
+        public int DecimalPlace { get; set; }
         public int FormTypeId { get; set; }
         public string DefaultValue { get; set; }
         public string RefTableCode { get; set; }
