@@ -145,6 +145,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigPurchaseOrderContext(AppSetting);
             services.ConfigOrganizationContext(AppSetting);
             services.ConfigAccountingContext(AppSetting);
+            services.ConfigAccountancyContext(AppSetting);
             services.ConfigActivityLogContext(AppSetting);
             services.ConfigReportConfigDBContextContext(AppSetting);
         }

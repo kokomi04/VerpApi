@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -54,6 +55,13 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+        public static void ConfigAccountancyContext(this IServiceCollection services, AppSetting appSetting)
+        {
+            services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>
+            {
+                option.UseSqlServer(appSetting.DatabaseConnections.AccountancyDatabase);
             }, ServiceLifetime.Scoped);
         }
 

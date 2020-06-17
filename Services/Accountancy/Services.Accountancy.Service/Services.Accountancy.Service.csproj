@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>VErp.Services.Accountancy.Service</RootNamespace>
+    <AssemblyName>VErp.Services.Accountancy.Service</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountancyDB\AccountancyDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\Services.Accountancy.Model\Services.Accountancy.Model.csproj" />
+  </ItemGroup>
+
+</Project>

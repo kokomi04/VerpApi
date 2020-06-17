@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Services.Accountancy.Service;
 using Services.Accountant.Service;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
@@ -79,6 +80,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
             services.AddScopedServices(AccountantServiceAssembly.Assembly);
+            services.AddScopedServices(AccountancyServiceAssembly.Assembly);
             services.AddScopedServices(StockServiceAssembly.Assembly);
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
             services.AddScopedServices(OrganizationServiceAssembly.Assembly);
