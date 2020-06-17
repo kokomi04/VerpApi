@@ -16,7 +16,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         }
 
         public virtual DbSet<Category> Category { get; set; }
-        public virtual DbSet<CategoryArea> CategoryArea { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
@@ -26,7 +25,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<InputValueBill> InputValueBill { get; set; }
-        public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -48,23 +46,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<CategoryArea>(entity =>
-            {
-                entity.Property(e => e.CategoryAreaCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.CategoryAreaType).HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Title).HasMaxLength(128);
-
-                entity.HasOne(d => d.Category)
-                    .WithMany(p => p.CategoryArea)
-                    .HasForeignKey(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CategoryArea_Category");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
@@ -111,6 +92,12 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryField)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryField_Category");
             });
 
             modelBuilder.Entity<InputArea>(entity =>
@@ -232,6 +219,12 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
                 entity.Property(e => e.RegularExpression).HasMaxLength(256);
 
                 entity.Property(e => e.SelectFilters).HasMaxLength(512);
@@ -252,28 +245,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey(d => d.InputTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputValueBill_InputType");
-            });
-
-            modelBuilder.Entity<InputValueRow>(entity =>
-            {
-                entity.ToTable("_InputValueRow");
-
-                entity.Property(e => e.ChungTu)
-                    .IsRequired()
-                    .HasColumnName("CHUNG_TU")
-                    .HasMaxLength(128);
-
-                entity.HasOne(d => d.InputType)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__InputValueRow_InputType");
-
-                entity.HasOne(d => d.InputValueBill)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputValueBillId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputValueRow_InputValueBill");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>

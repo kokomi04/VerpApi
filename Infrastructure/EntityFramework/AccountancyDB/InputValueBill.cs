@@ -5,11 +5,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 {
     public partial class InputValueBill
     {
-        public InputValueBill()
-        {
-            InputValueRow = new HashSet<InputValueRow>();
-        }
-
         public long InputValueBillId { get; set; }
         public int InputTypeId { get; set; }
         public int CreatedByUserId { get; set; }
@@ -21,6 +16,5 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public int LastestBillVersionId { get; set; }
 
         public virtual InputType InputType { get; set; }
-        public virtual ICollection<InputValueRow> InputValueRow { get; set; }
     }
 }
