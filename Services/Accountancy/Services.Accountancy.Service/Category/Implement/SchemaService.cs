@@ -187,7 +187,7 @@ namespace VErp.Services.Accountancy.Service.Category
             try
             {
                 // Rename table, view
-                if(category.CategoryCode != data.CategoryCode)
+                if (category.CategoryCode != data.CategoryCode)
                 {
                     if (!category.IsOutSideData)
                     {
@@ -217,7 +217,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 if (category.IsOutSideData)
                 {
                     OutSideDataConfig config = _accountancyContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
-       
+
                     if (config == null)
                     {
                         config = _mapper.Map<OutSideDataConfig>(data.OutSideDataConfig);
@@ -520,57 +520,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryField;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryField(int categoryId, CategoryFieldInputModel data)
-        {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
-            ValidateExistedCategory(categoryId, data.CategoryAreaId);
-            ValidateCategoryField(data);
-            FieldDataProcess(ref data);
-            using var trans = await _accountancyContext.Database.BeginTransactionAsync();
-            try
-            {
-                var categoryField = _mapper.Map<CategoryField>(data);
-                categoryField.CategoryId = categoryId;
-
-                await _accountancyContext.CategoryField.AddAsync(categoryField);
-                await _accountancyContext.SaveChangesAsync();
-
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Thêm trường danh mục {categoryField.Title}", data.JsonSerialize());
-                return categoryField.CategoryFieldId;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
-            }
-        }
-
-        public async Task<Enum> UpdateCategoryField(int categoryId, int categoryFieldId, CategoryFieldInputModel data)
-        {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
-            ValidateExistedCategory(categoryId, data.CategoryAreaId);
-            var categoryField = await _accountancyContext.CategoryField.FirstOrDefaultAsync(f => f.CategoryFieldId == categoryFieldId);
-            ValidateCategoryField(data, categoryField, categoryFieldId);
-            FieldDataProcess(ref data);
-            using var trans = await _accountancyContext.Database.BeginTransactionAsync();
-            try
-            {
-                UpdateField(ref categoryField, data);
-                await _accountancyContext.SaveChangesAsync();
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Cập nhật trường dữ liệu {categoryField.Title}", data.JsonSerialize());
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                trans.Rollback();
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
-        }
-
         private void UpdateField(ref CategoryField categoryField, CategoryFieldInputModel data)
         {
             categoryField.CategoryFieldName = data.CategoryFieldName;
@@ -591,19 +540,6 @@ namespace VErp.Services.Accountancy.Service.Category
             categoryField.Filters = data.Filters;
             //categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
             //categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
-        }
-
-        private void ValidateExistedCategory(int categoryId, int categoryAreaId)
-        {
-            // Check category
-            if (!_accountancyContext.Category.Any(c => c.CategoryId == categoryId))
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
-            }
-            //if (!_accountancyContext.CategoryArea.Any(a => a.CategoryId == categoryId && a.CategoryAreaId == categoryAreaId))
-            //{
-            //    throw new BadRequestException(CategoryErrorCode.SubCategoryNotFound);
-            //}
         }
 
         private void ValidateCategoryField(CategoryFieldInputModel data, CategoryField categoryField = null, int? categoryFieldId = null)
@@ -666,8 +602,11 @@ namespace VErp.Services.Accountancy.Service.Category
                 var groups = fields.GroupBy(f => new { f.CategoryAreaId, f.CategoryFieldName });
                 foreach (var group in groups)
                 {
-                    ValidateExistedCategory(categoryId, group.Key.CategoryAreaId);
-
+                    var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+                    if (category == null)
+                    {
+                        throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+                    }
                     for (int indx = 0; indx < group.Count(); indx++)
                     {
                         var data = group.ElementAt(indx);
@@ -677,8 +616,15 @@ namespace VErp.Services.Accountancy.Service.Category
                         FieldDataProcess(ref data);
                         if (data.CategoryFieldId > 0)
                         {
+                            // rename field
+                            if (categoryAreaField.CategoryFieldName != data.CategoryFieldName)
+                            {
+                                await _accountancyContext.RenameColumn(string.Format("_{0}", category.CategoryCode), categoryAreaField.CategoryFieldName, data.CategoryFieldName);
+                            }
                             // Update
                             UpdateField(ref categoryAreaField, data);
+                            // update field
+                            await _accountancyContext.UpdateColumn(string.Format("_{0}", category.CategoryCode), categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, categoryAreaField.DataSize, 0, "", !categoryAreaField.IsRequired);
                         }
                         else
                         {
@@ -687,6 +633,8 @@ namespace VErp.Services.Accountancy.Service.Category
                             categoryField.CategoryId = categoryId;
                             await _accountancyContext.CategoryField.AddAsync(categoryField);
                             await _accountancyContext.SaveChangesAsync();
+                            // Add field into table
+                            await _accountancyContext.AddColumn(string.Format("_{0}", category.CategoryCode), categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, categoryField.DataSize, 0, "", !categoryField.IsRequired);
                         }
                     }
                 }
