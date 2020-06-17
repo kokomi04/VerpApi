@@ -96,7 +96,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         private static bool ValidateValidObjectName(this string objectName)
         {
-            var pattern = @"^[a-zA-Z][a-zA-Z0-9_]{1,64}$";
+            var pattern = @"^[a-zA-Z0-9_]{1,64}$";
 
             Regex regex = new Regex(pattern);
             return regex.IsMatch(objectName);

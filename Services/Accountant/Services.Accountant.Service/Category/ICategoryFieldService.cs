@@ -10,6 +10,8 @@ namespace VErp.Services.Accountant.Service.Category
     {
         Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size);
 
+        Task<PageData<CategoryFieldOutputModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size);
+
         Task<List<CategoryFieldOutputModel>> GetCategoryFields(IList<int> categoryIds);
 
         Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId);

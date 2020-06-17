@@ -20,6 +20,7 @@ using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Accountant.Model;
 using VErp.Services.Master.Service;
@@ -96,6 +97,7 @@ namespace VErp.WebApis.VErpApi
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
             
