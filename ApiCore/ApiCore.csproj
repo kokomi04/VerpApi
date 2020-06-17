@@ -47,6 +47,7 @@
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\AccountancyDB\AccountancyDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\AccountingDB\AccountingDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />

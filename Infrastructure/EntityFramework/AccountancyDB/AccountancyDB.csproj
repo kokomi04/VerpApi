@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>VErp.Infrastructure.EF.AccountancyDB</AssemblyName>
+    <RootNamespace>VErp.Infrastructure.EF.AccountancyDB</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Partial\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EFExtensions\EFExtensions.csproj" />
+  </ItemGroup>
+
+</Project>

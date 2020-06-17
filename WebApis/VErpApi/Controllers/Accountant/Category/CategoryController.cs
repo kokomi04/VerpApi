@@ -30,6 +30,7 @@ namespace VErpApi.Controllers.Accountant
         private readonly ICategoryRowService _categoryRowService;
         private readonly ICategoryAreaService _categoryAreaService;
         private readonly IFileService _fileService;
+            
         public CategoryController(ICategoryService categoryService
             , ICategoryFieldService categoryFieldService
             , ICategoryRowService categoryRowService
