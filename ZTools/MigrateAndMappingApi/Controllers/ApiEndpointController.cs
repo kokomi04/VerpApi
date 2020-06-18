@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ConfigApi;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MigrateAndMappingApi.Services;
@@ -27,16 +28,27 @@ namespace MigrateAndMappingApi.Controllers
             _apiEndpointService = apiEndpointService;
         }
 
+        private IList<ApiEndpoint> GetApis()
+        {
+            var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly), VErpApiAssembly.ServiceId);
+
+            var configApis = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(ConfigApiAssembly), ConfigApiAssembly.ServiceId);
+
+            lst.AddRange(configApis);
+
+            foreach (var item in lst)
+            {
+                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.ServiceId, item.Route, (EnumMethod)item.MethodId);
+            }
+            return lst.OrderBy(e => e.ServiceId).ThenBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
+        }
+
+
         [Route("GetApiEndpoints")]
         [HttpGet]
         public IList<ApiEndpoint> GetApiEndpoints()
         {
-            var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly));
-            foreach (var item in lst)
-            {
-                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId);
-            }
-            return lst.OrderBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
+            return GetApis();
         }
 
         [Route("GetApiEndpointsMapping")]
@@ -51,7 +63,7 @@ namespace MigrateAndMappingApi.Controllers
                  )
                  .ToListAsync();
 
-            return lst.OrderBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
+            return lst.OrderBy(e => e.ServiceId).ThenBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
         }
 
         [Route("GetSystemModules")]
@@ -65,7 +77,7 @@ namespace MigrateAndMappingApi.Controllers
         [HttpGet]
         public async Task<IList<ModuleGroup>> GetSystemModuleGroups()
         {
-            return await _masterContext.ModuleGroup.OrderBy(g=>g.SortOrder).ToListAsync();
+            return await _masterContext.ModuleGroup.OrderBy(g => g.SortOrder).ToListAsync();
         }
 
         [Route("AddSystemModuleGroup")]
@@ -154,11 +166,7 @@ namespace MigrateAndMappingApi.Controllers
         [HttpPost]
         public async Task<bool> SyncApiEndpoints()
         {
-            var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly));
-            foreach (var item in lst)
-            {
-                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.Route, (EnumMethod)item.MethodId);
-            }
+            var lst = GetApis();
 
             var storedMappings = await _masterContext.ModuleApiEndpointMapping.ToListAsync();
 
@@ -174,7 +182,7 @@ namespace MigrateAndMappingApi.Controllers
                 await _masterContext.ApiEndpoint.AddRangeAsync(lst);
 
                 var lstNewIds = lst.Select(a => a.ApiEndpointId).ToList();
-                _masterContext.ModuleApiEndpointMapping.AddRange(storedMappings.Where(a=> lstNewIds.Contains(a.ApiEndpointId)));
+                _masterContext.ModuleApiEndpointMapping.AddRange(storedMappings.Where(a => lstNewIds.Contains(a.ApiEndpointId)));
 
                 await _masterContext.SaveChangesAsync();
                 trans.Commit();

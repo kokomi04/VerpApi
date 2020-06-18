@@ -46,5 +46,15 @@ const Actions = [
     }
 ];
 
-export { Methods, Actions };
+const Services = [
+    {
+        serviceId: 0,
+        serviceName: "VERP API"
+    },
+    {
+        serviceId: 1,
+        serviceName: "CONFIG API"
+    }
+]
+export { Methods, Actions, Services };
 

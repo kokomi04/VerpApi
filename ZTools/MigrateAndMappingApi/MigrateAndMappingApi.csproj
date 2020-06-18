@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
+    <ProjectReference Include="..\..\WebApis\ConfigApi\ConfigApi.csproj" />
     <ProjectReference Include="..\..\WebApis\VErpApi\VErpApi.csproj" />
   </ItemGroup>
 

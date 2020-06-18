@@ -1,4 +1,5 @@
 {
-  "ServiceName": "VErpApi",
+  "ServiceName": "ConfigApi",
+  "ServiceId": 1,
   "Port": 8002
 }

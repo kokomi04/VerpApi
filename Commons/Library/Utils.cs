@@ -25,10 +25,16 @@ namespace VErp.Commons.Library
             return new Guid(data);
         }
 
-        public static Guid HashApiEndpointId(string route, EnumMethod method)
+        public static Guid HashApiEndpointId(int serviceId, string route, EnumMethod method)
         {
+            var service = "";
+            if (serviceId > 0)
+            {
+                service = serviceId.ToString();
+            }
+
             route = (route ?? "").Trim().ToLower();
-            return $"{route}{method}".ToGuid();
+            return $"{service}{route}{method}".ToGuid();
         }
 
         public static EnumAction GetDefaultAction(this EnumMethod method)
@@ -388,7 +394,7 @@ namespace VErp.Commons.Library
         }
 
 
-       
+
 
         public static Type GetColumnDataType(this EnumDataType dataType)
         {
