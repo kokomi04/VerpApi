@@ -18,7 +18,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<DataType> DataType { get; set; }
-        public virtual DbSet<FormType> FormType { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -114,25 +113,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.RegularExpression)
                     .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(256)
-                    .HasDefaultValueSql("('')");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<FormType>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasMaxLength(45)
                     .IsUnicode(false);
 
                 entity.Property(e => e.Title)
