@@ -111,6 +111,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Model"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Service", "Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj", "{7D9F3458-B439-4509-9344-4D2F59FA5C5D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigApi", "WebApis\ConfigApi\ConfigApi.csproj", "{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -269,6 +271,10 @@ Global
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -322,6 +328,7 @@ Global
 		{C7D4F911-5D2D-4E14-9B80-6F9902D45FD6} = {BA64BC8E-AA48-43AA-9FB3-F7EC82CC0966}
 		{CCAEBC3F-6A75-4A7D-AEDE-149525468A38} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
+		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B} = {C3655DA8-274F-478F-B89A-0354E56B9E9B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

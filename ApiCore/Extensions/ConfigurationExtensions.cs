@@ -20,64 +20,64 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 {
     public static class ConfigurationExtensions
     {
-        public static void ConfigMasterDBContext(this IServiceCollection services, AppSetting appSetting, ServiceLifetime contextScope)
+        public static void ConfigMasterDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections, ServiceLifetime contextScope)
         {
             services.AddDbContext<MasterDBContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.MasterDatabase);
+                option.UseSqlServer(databaseConnections.MasterDatabase);
             }, contextScope);
         }
 
-        public static void ConfigStockDBContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigStockDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<StockDBContext, StockDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.StockDatabase);
+                option.UseSqlServer(databaseConnections.StockDatabase);
             }, ServiceLifetime.Scoped);
         }
-        public static void ConfigPurchaseOrderContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigPurchaseOrderContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<PurchaseOrderDBContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.PurchaseOrderDatabase);
+                option.UseSqlServer(databaseConnections.PurchaseOrderDatabase);
             }, ServiceLifetime.Scoped);
         }
-        public static void ConfigOrganizationContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigOrganizationContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<OrganizationDBContext, OrganizationDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.OrganizationDatabase);
+                option.UseSqlServer(databaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);
         }
 
-        public static void ConfigAccountingContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigAccountingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.AccountingDatabase);
+                option.UseSqlServer(databaseConnections.AccountingDatabase);
             }, ServiceLifetime.Scoped);
         }
-        public static void ConfigAccountancyContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.AccountancyDatabase);
+                option.UseSqlServer(databaseConnections.AccountancyDatabase);
             }, ServiceLifetime.Scoped);
         }
 
-        public static void ConfigReportConfigDBContextContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigReportConfigDBContextContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<ReportConfigDBContext, ReportConfigDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.ReportConfigDatabase);
+                option.UseSqlServer(databaseConnections.ReportConfigDatabase);
             }, ServiceLifetime.Scoped);
         }
         
-        public static void ConfigActivityLogContext(this IServiceCollection services, AppSetting appSetting)
+        public static void ConfigActivityLogContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<ActivityLogDBContext>((option) =>
             {
-                option.UseSqlServer(appSetting.DatabaseConnections.ActivityLogDatabase);
+                option.UseSqlServer(databaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
         }
 
