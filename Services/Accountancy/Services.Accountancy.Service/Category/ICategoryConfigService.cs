@@ -16,5 +16,6 @@ namespace VErp.Services.Accountancy.Service.Category
 
         Task<ServiceResult<int>> AddCategoryRow(int categoryId, Dictionary<string, string> data);
 
+        Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data);
     }
 }
