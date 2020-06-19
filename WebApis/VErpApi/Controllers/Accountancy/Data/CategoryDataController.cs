@@ -47,5 +47,13 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
+
+
+        [HttpPost]
+        [Route("{categoryId}/categoryrows")]
+        public async Task<ServiceResult<int>> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
+        {
+            return await _categoryDataService.AddCategoryRow(categoryId, data);
+        }
     }
 }

@@ -120,7 +120,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     CategoryAreaId = identityArea.CategoryAreaId,
                     Title = AccountantConstants.F_IDENTITY,
                     FormTypeId = (int)EnumFormType.Input,
-                    DataTypeId = (int)EnumDataType.Number,
+                    DataTypeId = (int)EnumDataType.Int,
                     DataSize = -1,
                     IsHidden = true,
                     IsRequired = false,

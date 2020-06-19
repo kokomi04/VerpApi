@@ -329,7 +329,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Boolean:
                     valueInNumber = bool.Parse(value) ? 1 : 0;
                     break;
-                case EnumDataType.Number:
+                case EnumDataType.Int:
                 case EnumDataType.Percentage:
                     valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
@@ -382,7 +382,7 @@ namespace VErp.Commons.Library
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
                 case EnumDataType.Percentage:
-                case EnumDataType.Number:
+                case EnumDataType.Int:
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:

@@ -54,9 +54,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static async Task InsertDataTable(this DbContext dbContext, DataTable table)
+        public static async Task<int> InsertDataTable(this DbContext dbContext, DataTable table)
         {
-
+            int id = 0;
             var columns = new HashSet<DataColumn>();
             foreach (DataColumn c in table.Columns)
             {
@@ -66,7 +66,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             for (var i = 0; i < table.Rows.Count; i++)
             {
                 var row = table.Rows[i];
-
                 var insertColumns = new List<string>();
                 var sqlParams = new List<SqlParameter>();
                 foreach (var c in columns)
@@ -76,13 +75,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     insertColumns.Add(c.ColumnName);
                     sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
                 }
-
-                var sql = $"INSERT INTO [{table.TableName}]({string.Join(",", insertColumns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Select(p => $"{p.ParameterName}"))})";
+                var idParam = new SqlParameter("@Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                sqlParams.Add(idParam);
+                var sql = $"INSERT INTO [{table.TableName}]({string.Join(",", insertColumns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Where(p => p.ParameterName != "@Id").Select(p => $"{p.ParameterName}"))}); SELECT @Id = SCOPE_IDENTITY();";
 
                 await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+                id = Convert.ToInt32(idParam.Value);
             }
+            return id;
         }
-
 
         public static async Task<int> AddColumn(this DbContext dbContext, string table, string column, EnumDataType dataType, int dataSize, int decimalPlace, string defaultValue, bool isNullable)
         {
@@ -155,7 +156,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
-     
+
 
         public static SqlDbType GetSqlDataType(this EnumDataType dataType) => dataType switch
         {
