@@ -85,6 +85,37 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return id;
         }
 
+        public static async Task<int> UpdateCategoryData(this DbContext dbContext, DataTable table, int fId)
+        {
+            int numberChange = 0;
+            int id = 0;
+            var columns = new HashSet<DataColumn>();
+            foreach (DataColumn c in table.Columns)
+            {
+                columns.Add(c);
+            }
+
+            for (var i = 0; i < table.Rows.Count; i++)
+            {
+                var row = table.Rows[i];
+                var insertColumns = new List<string>();
+                var sqlParams = new List<SqlParameter>();
+                foreach (var c in columns)
+                {
+                    var cell = row[c];
+
+                    insertColumns.Add(c.ColumnName);
+                    sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
+                }
+                var sql = $"UPDATE [{table.TableName}] SET {string.Join(",", insertColumns.Select(c => $"[{c}] = @{c}"))} WHERE F_Id = {fId}";
+
+                numberChange+=  await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+
+            }
+            return numberChange;
+        }
+
+
         public static async Task<int> AddColumn(this DbContext dbContext, string table, string column, EnumDataType dataType, int dataSize, int decimalPlace, string defaultValue, bool isNullable)
         {
             return await dbContext.ModColumn(table, column, true, dataType, dataSize, decimalPlace, defaultValue, isNullable);
