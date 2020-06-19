@@ -388,7 +388,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
-            dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
+            dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId} AND [{tableName}].IsDeleted = 0");
 
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
             var lst = ConvertData(data);
@@ -494,11 +494,12 @@ namespace VErp.Services.Accountancy.Service.Category
                     }
                 }
             }
-            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
+            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName} WHERE [{tableName}].IsDeleted = 0");
+            dataSql.Append($" WHERE [{tableName}].IsDeleted = 0");
             if (serchCondition.Length > 0)
             {
-                dataSql.Append($" WHERE {serchCondition.ToString()}");
-                totalSql.Append($" WHERE {serchCondition.ToString()}");
+                dataSql.Append($" AND {serchCondition.ToString()}");
+                totalSql.Append($" AND {serchCondition.ToString()}");
             }
 
             var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), Array.Empty<SqlParameter>());
