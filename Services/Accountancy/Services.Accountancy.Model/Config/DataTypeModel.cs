@@ -5,7 +5,7 @@ using VErp.Infrastructure.EF.AccountancyDB;
 namespace VErp.Services.Accountancy.Model.Category
 
 {
-    public class DataTypeModel: IMapFrom<DataType>
+    public class DataTypeModel
     {
         public int DataTypeId { get; set; }
         public string Title { get; set; }
