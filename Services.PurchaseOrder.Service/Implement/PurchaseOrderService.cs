@@ -491,6 +491,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        Description = d.Description,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
@@ -587,7 +588,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductUnitConversionId = item.ProductUnitConversionId;
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
-
+                            detail.Description = item.Description;
                             detail.TaxInPercent = item.TaxInPercent;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             break;
@@ -614,6 +615,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
                             TaxInPercent = item.TaxInPercent,
                             TaxInMoney = item.TaxInMoney,
+                            Description = item.Description,
                             CreatedDatetimeUtc = DateTime.UtcNow,
                             UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
