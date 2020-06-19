@@ -136,9 +136,8 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             dataTable.Rows.Add(dataRow);
 
-            await _accountancyContext.InsertDataTable(dataTable);
-
-            return 1;
+            var id = await _accountancyContext.InsertDataTable(dataTable);
+            return id;
         }
 
 
