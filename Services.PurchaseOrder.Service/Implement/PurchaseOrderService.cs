@@ -209,6 +209,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             pod.TaxInPercent,
                             pod.TaxInMoney,
+                            pod.Description,
 
                             PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
                             PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
@@ -325,6 +326,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
+                    Description = info.Description,
 
                     PoAssignmentDetail = assignmentDetailInfo,
                     PurchasingSuggestDetail = purchasingSuggestDetailInfo
@@ -403,6 +405,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        Description = d.Description,
 
                         PoAssignmentDetail = assignmentDetailInfo,
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
