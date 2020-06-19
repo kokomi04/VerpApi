@@ -69,7 +69,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append("1=1");
+            whereCondition.Append($"InputTypeId = {inputTypeId}");
 
             var sqlParams = new List<SqlParameter>();
 
@@ -202,20 +202,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
 
             var dataSql = @$"
- ;WITH tmp AS (
-    SELECT r.InputBill_F_Id, MAX(F_Id) as F_Id
-    FROM v_InputValueRow r
-    WHERE {whereCondition}
-    GROUP BY r.InputBill_F_Id    
-),
-dt AS (
-    SELECT Row_Number() Over(ORDER BY r.[{orderByFieldName}] {(asc ? "ASC" : "DESC")}) AS STT, 
-    t.InputBill_F_Id AS F_Id,
-    {selectColumn}
-    FROM tmp t JOIN v_InputValueRow r ON t.F_Id = r.F_Id
-    
-)
-SELECT * FROM dt WHERE STT BETWEEN {(page - 1) * size} AND {page * size} ORDER BY STT
+                 ;WITH tmp AS (
+                    SELECT r.InputBill_F_Id, MAX(F_Id) as F_Id
+                    FROM v_InputValueRow r
+                    WHERE {whereCondition}
+                    GROUP BY r.InputBill_F_Id    
+                )
+                SELECT 
+                    t.InputBill_F_Id AS F_Id,
+                    {selectColumn}
+                FROM tmp t JOIN v_InputValueRow r ON t.F_Id = r.F_Id
+                ORDER BY r.[{orderByFieldName}] {(asc?"":"DESC")}
+
+                OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT {page * size} ROWS ONLY
 ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
@@ -225,7 +225,7 @@ SELECT * FROM dt WHERE STT BETWEEN {(page - 1) * size} AND {page * size} ORDER B
 
         public async Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
-            var totalSql = @$"SELECT COUNT(0) as Total FROM v_InputValueRow r WHERE InputBill_F_Id = @F_Id AND r.InputType_F_Id = @InputTypeId";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM v_InputValueRow r WHERE InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
 
@@ -241,13 +241,17 @@ SELECT * FROM dt WHERE STT BETWEEN {(page - 1) * size} AND {page * size} ORDER B
             }
 
             var dataSql = @$"
- ;WITH tmp AS (
-    SELECT Row_Number() Over(ORDER BY r.[{orderByFieldName}] {(asc ? "ASC" : "DESC")}) AS STT, 
-    r.*
-    FROM v_InputValueRow r WHERE r.InputBill_F_Id = @F_Id AND r.InputType_F_Id = @InputTypeId    
-)
-SELECT * FROM tmp WHERE STT BETWEEN {(page - 1) * size} AND {page * size} ORDER BY STT
-";
+
+                SELECT     r.*
+                FROM v_InputValueRow r 
+
+                WHERE r.InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId    
+
+                ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
+
+                OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT {page * size} ROWS ONLY
+            ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
 
             return (data, total);

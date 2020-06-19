@@ -335,7 +335,22 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
             inputTypeInfo.Areas = await _accountingContext.InputArea.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).OrderBy(a => a.SortOrder).ProjectTo<InputAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
 
-            var fields = await _accountingContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).OrderBy(f => f.SortOrder).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+            var fields = await (
+                 from af in _accountingContext.InputAreaField
+                 join f in _accountingContext.InputField on af.InputFieldId equals f.InputFieldId
+                 where af.InputTypeId == inputTypeId
+                 orderby af.SortOrder
+                 select new InputAreaFieldBasicOutput
+                 {
+                     InputAreaId = af.InputAreaId,
+                     InputAreaFieldId = af.InputAreaFieldId,
+                     FieldName = f.FieldName,
+                     Title = af.Title,
+                     Placeholder = af.Placeholder,
+                     DataTypeId = (EnumDataType)f.DataTypeId,
+                     DataSize = f.DataSize,
+                     FormTypeId = (EnumFormType)f.FormTypeId
+                 }).ToListAsync();
 
             var views = await _accountingContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
 

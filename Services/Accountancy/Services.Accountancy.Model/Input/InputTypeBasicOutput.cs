@@ -37,18 +37,19 @@ namespace VErp.Services.Accountancy.Model.Input
         }
     }
 
-    public class InputAreaFieldBasicOutput : IMapFrom<InputAreaField>
+    public class InputAreaFieldBasicOutput
     {
         public int InputAreaId { get; set; }
         public int InputAreaFieldId { get; set; }
-        public int FieldIndex { get; set; }
         public string FieldName { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
         public EnumDataType DataTypeId { get; set; }
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
-
-        public void Mapping(Profile profile) => profile.CreateMap<InputAreaField, InputAreaFieldBasicOutput>();
+        public string DefaultValue { get; set; }
+        public string RefTableCode { get; set; }
+        public string RefTableField { get; set; }
+        public string RefTableTitle { get; set; }
     }
 }

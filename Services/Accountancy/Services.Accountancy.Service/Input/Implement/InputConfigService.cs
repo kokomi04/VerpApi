@@ -216,7 +216,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
-               
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
             }
@@ -264,7 +264,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-              
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Cập nhật chứng từ {inputType.Title}", data.JsonSerialize());
                 return true;
             }
@@ -288,7 +288,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@InputTypeId",inputTypeId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
-        
+
 
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
             return true;
@@ -307,7 +307,27 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputTypeInfo.Areas = await _accountancyDBContext.InputArea.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).OrderBy(a => a.SortOrder).ProjectTo<InputAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
 
-            var fields = await _accountancyDBContext.InputAreaField.AsNoTracking().Where(a => a.InputTypeId == inputTypeId).OrderBy(f => f.SortOrder).ProjectTo<InputAreaFieldBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+            var fields = await (
+                from af in _accountancyDBContext.InputAreaField
+                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                where af.InputTypeId == inputTypeId
+                orderby af.SortOrder
+                select new InputAreaFieldBasicOutput
+                {
+                    InputAreaId = af.InputAreaId,
+                    InputAreaFieldId = af.InputAreaFieldId,
+                    FieldName = f.FieldName,
+                    Title = af.Title,
+                    Placeholder = af.Placeholder,
+                    DataTypeId = (EnumDataType)f.DataTypeId,
+                    DataSize = f.DataSize,
+                    FormTypeId = (EnumFormType)f.FormTypeId,
+                    DefaultValue = af.DefaultValue,
+                    RefTableCode = f.RefTableCode,
+                    RefTableField = f.RefTableField,
+                    RefTableTitle = f.RefTableTitle
+                    
+                }).ToListAsync();
 
             var views = await _accountancyDBContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
 
