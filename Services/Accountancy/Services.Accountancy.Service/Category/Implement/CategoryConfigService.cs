@@ -114,7 +114,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     CategoryFieldName = AccountantConstants.F_IDENTITY,
                     Title = AccountantConstants.F_IDENTITY,
                     FormTypeId = (int)EnumFormType.Input,
-                    DataTypeId = (int)EnumDataType.Number,
+                    DataTypeId = (int)EnumDataType.Int,
                     DataSize = -1,
                     IsHidden = true,
                     IsRequired = false,
@@ -557,9 +557,15 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
             }
-            if (data.ReferenceCategoryFieldId.HasValue)
+            if (!string.IsNullOrEmpty(data.RefTableCode))
             {
-                var sourceCategoryField = _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
+                string refTable = data.RefTableCode;
+                string refField = data.RefTableField;
+                var sourceCategoryField = (from f in _accountancyContext.CategoryField
+                                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                                           where f.CategoryFieldName == refField && c.CategoryCode == refTable
+                                           select f).FirstOrDefault();
+
                 if (sourceCategoryField == null)
                 {
                     throw new BadRequestException(CategoryErrorCode.SourceCategoryFieldNotFound);
@@ -569,10 +575,16 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void FieldDataProcess(ref CategoryFieldInputModel data)
         {
-            if (data.ReferenceCategoryFieldId.HasValue)
+            string refTable = data.RefTableCode;
+            string refField = data.RefTableField;
+            if (!string.IsNullOrEmpty(data.RefTableCode))
             {
-                int referId = data.ReferenceCategoryFieldId.Value;
-                var sourceCategoryField = _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == referId);
+                //int referId = data.ReferenceCategoryFieldId.Value;
+                var sourceCategoryField = (from f in _accountancyContext.CategoryField
+                                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                                           where f.CategoryFieldName == refField && c.CategoryCode == refTable
+                                           select f).FirstOrDefault();
+
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
             }
@@ -583,10 +595,12 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
             {
-                data.ReferenceCategoryFieldId = null;
-                data.ReferenceCategoryTitleFieldId = null;
+                data.RefTableCode = null;
+                data.RefTableField = null;
+                data.RefTableTitle = null;
             }
         }
+
         public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size)
         {
             var categoryId = (await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryCode == categoryCode))?.CategoryId;
@@ -620,12 +634,12 @@ namespace VErp.Services.Accountancy.Service.Category
             try
             {
                 // Validate trùng name trong danh sách
-                if (fields.Select(f => new { f.CategoryAreaId, f.CategoryFieldName }).Distinct().Count() != fields.Count)
+                if (fields.Select(f => new { f.CategoryFieldName }).Distinct().Count() != fields.Count)
                 {
                     throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
                 }
 
-                var groups = fields.GroupBy(f => new { f.CategoryAreaId, f.CategoryFieldName });
+                var groups = fields.GroupBy(f => new { f.CategoryFieldName });
                 foreach (var group in groups)
                 {
                     var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
@@ -755,14 +769,21 @@ namespace VErp.Services.Accountancy.Service.Category
 
         public async Task<PageData<DataTypeModel>> GetDataTypes(int page, int size)
         {
-            var query = _accountancyContext.DataType.OrderBy(d => d.Name).AsQueryable();
-            var total = await query.CountAsync();
+            List<DataTypeModel> dataTypes = EnumExtensions.GetEnumMembers<EnumDataType>().Select(m => new DataTypeModel
+            {
+                DataTypeId = (int)m.Enum,
+                DataSizeDefault = m.Enum.GetDataSize(),
+                RegularExpression = m.Enum.GetRegex(),
+                Title = m.Description,
+                Name = m.ToString()
+            }).ToList();
+
+            var total = dataTypes.Count();
             if (size > 0)
             {
-                query = query.Skip((page - 1) * size).Take(size);
+                dataTypes = dataTypes.Skip((page - 1) * size).Take(size).ToList();
             }
-            List<DataTypeModel> lst = query.ProjectTo<DataTypeModel>(_mapper.ConfigurationProvider).ToList();
-            return (lst, total);
+            return (dataTypes, total);
         }
 
         public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)

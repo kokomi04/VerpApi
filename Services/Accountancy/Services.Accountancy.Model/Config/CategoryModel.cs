@@ -17,7 +17,7 @@ namespace VErp.Services.Accountancy.Model.Category
         public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã danh mục")]
         [MaxLength(45, ErrorMessage = "Mã danh mục quá dài")]
-        [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Mã danh mục chỉ gồm các ký tự chữ, số và ký tự _.")]
+        [RegularExpression(@"(^_[a-zA-Z0-9_]*$)", ErrorMessage = "Mã danh mục bắt đầu bằng ký tự _ và chỉ gồm các ký tự chữ, số và ký tự _.")]
         public string CategoryCode { get; set; }
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }

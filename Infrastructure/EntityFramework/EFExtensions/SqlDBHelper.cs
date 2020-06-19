@@ -83,7 +83,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-
         public static async Task<int> AddColumn(this DbContext dbContext, string table, string column, EnumDataType dataType, int dataSize, int decimalPlace, string defaultValue, bool isNullable)
         {
             return await dbContext.ModColumn(table, column, true, dataType, dataSize, decimalPlace, defaultValue, isNullable);
