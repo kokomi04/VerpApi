@@ -105,12 +105,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
-               
             });
 
             modelBuilder.Entity<PurchaseOrderDetail>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
@@ -119,6 +122,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.ProviderProductName).HasMaxLength(128);
 

@@ -211,14 +211,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             pod.TaxInMoney,
                             pod.Description,
 
+                            pod.OrderCode,
+                            pod.ProductionOrderCode,
+
                             PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
                             PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
 
                             PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
-                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
-
-                            OrderCode = sd == null ? null : sd.OrderCode,
-                            ProductionOrderCode = sd == null ? null : sd.ProductionOrderCode
+                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -326,6 +326,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
+                    OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
                     Description = info.Description,
 
                     PoAssignmentDetail = assignmentDetailInfo,
@@ -405,6 +407,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        OrderCode = d.OrderCode,
+                        ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
 
                         PoAssignmentDetail = assignmentDetailInfo,
@@ -494,6 +498,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        OrderCode = d.OrderCode,
+                        ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -588,11 +594,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProviderProductName = item.ProviderProductName;
                             detail.PrimaryQuantity = item.PrimaryQuantity;
                             detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
+
                             detail.ProductUnitConversionId = item.ProductUnitConversionId;
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
-                            detail.Description = item.Description;
+
                             detail.TaxInPercent = item.TaxInPercent;
+                            detail.TaxInMoney = item.TaxInMoney;
+                            detail.OrderCode = item.OrderCode;
+                            detail.ProductionOrderCode = item.ProductionOrderCode;
+                            detail.Description = item.Description;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             break;
                         }
@@ -618,6 +629,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
                             TaxInPercent = item.TaxInPercent,
                             TaxInMoney = item.TaxInMoney,
+                            OrderCode = item.OrderCode,
+                            ProductionOrderCode = item.ProductionOrderCode,
                             Description = item.Description,
                             CreatedDatetimeUtc = DateTime.UtcNow,
                             UpdatedDatetimeUtc = DateTime.UtcNow,
