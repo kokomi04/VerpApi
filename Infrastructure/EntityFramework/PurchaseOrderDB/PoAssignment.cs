@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public PoAssignment()
         {
             PoAssignmentDetail = new HashSet<PoAssignmentDetail>();
-            PurchaseOrder = new HashSet<PurchaseOrder>();
         }
 
         public long PoAssignmentId { get; set; }
@@ -28,6 +27,5 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }
         public virtual ICollection<PoAssignmentDetail> PoAssignmentDetail { get; set; }
-        public virtual ICollection<PurchaseOrder> PurchaseOrder { get; set; }
     }
 }
