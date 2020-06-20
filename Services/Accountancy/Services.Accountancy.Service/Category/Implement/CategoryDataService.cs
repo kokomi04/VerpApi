@@ -262,8 +262,90 @@ namespace VErp.Services.Accountancy.Service.Category
             return numberChange;
         }
 
+        public async Task<int> DeleteCategoryRow(int categoryId, int fId)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            var tableName = $"v{category.CategoryCode}";
 
+            if (category.IsReadonly)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+            }
+            if (category.IsOutSideData)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
+            }
 
+            // Validate child-parent relationship
+            if (category.IsTreeView)
+            {
+                var existSql = $"SELECT [{tableName}].F_Id as Total FROM {tableName} WHERE [{tableName}].ParentId = {fId};";
+                var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                bool isExisted = result != null && result.Rows.Count > 0;
+                if (isExisted)
+                {
+                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                }
+            }
+
+            // Get row
+            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var dataSql = new StringBuilder();
+            dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
+            dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
+
+            var currentData = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
+            var lst = ConvertData(currentData);
+            if (lst.Count == 0)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryRowNotFound);
+            }
+            NonCamelCaseDictionary categoryRow = lst[0];
+            var fieldNames = categoryFields.Select(f => f.CategoryFieldName).ToList();
+            var referToFields = _accountancyContext.CategoryField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
+            var referToCategoryIds = referToFields.Select(f => f.CategoryId).Distinct().ToList();
+            var referToCategories = _accountancyContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
+
+            // Check reference
+            foreach (var field in categoryFields)
+            {
+                categoryRow.TryGetValue(field.CategoryFieldName, out object value);
+                if (value == null) continue;
+                foreach (var referToField in referToFields.Where(c => c.RefTableField == field.CategoryFieldName))
+                {
+                    var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
+                    var referToTable = $"v{referToCategory.CategoryCode}";
+
+                    var existSql = $"SELECT [{referToTable}].F_Id as Total FROM {referToTable} WHERE [{referToTable}].IsDeleted = 0 AND [{referToTable}].{referToField.CategoryFieldName} = {value.ToString()};";
+                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (isExisted)
+                    {
+                        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                    }
+                }
+            }
+            // Delete data
+            var dataTable = new DataTable(category.CategoryCode);
+            dataTable.Columns.Add("IsDeleted", typeof(bool));
+            dataTable.Columns.Add("UpdatedByUserId", typeof(int));
+            dataTable.Columns.Add("DeletedDatetimeUtc", typeof(DateTime));
+
+            var dataRow = dataTable.NewRow();
+            dataRow["IsDeleted"] = true;
+            dataRow["UpdatedByUserId"] = _currentContextService.UserId;
+            dataRow["DeletedDatetimeUtc"] = DateTime.UtcNow;
+
+            dataTable.Rows.Add(dataRow);
+            int numberChange = await _accountancyContext.UpdateCategoryData(dataTable, fId);
+            await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Xóa dòng dữ liệu {fId}", categoryRow.JsonSerialize());
+            return numberChange;
+        }
 
         private void CheckRequired(Dictionary<string, string> data, IEnumerable<CategoryField> requiredFields)
         {
@@ -388,7 +470,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
-            dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId} AND [{tableName}].IsDeleted = 0");
+            dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
             var lst = ConvertData(data);
@@ -494,12 +576,11 @@ namespace VErp.Services.Accountancy.Service.Category
                     }
                 }
             }
-            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName} WHERE [{tableName}].IsDeleted = 0");
-            dataSql.Append($" WHERE [{tableName}].IsDeleted = 0");
+            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
             if (serchCondition.Length > 0)
             {
-                dataSql.Append($" AND {serchCondition.ToString()}");
-                totalSql.Append($" AND {serchCondition.ToString()}");
+                dataSql.Append($" WHERE {serchCondition.ToString()}");
+                totalSql.Append($" WHERE {serchCondition.ToString()}");
             }
 
             var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), Array.Empty<SqlParameter>());

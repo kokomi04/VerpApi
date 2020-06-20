@@ -62,5 +62,12 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _categoryDataService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }
+
+        [HttpDelete]
+        [Route("{categoryId}/categoryrows/{categoryRowId}")]
+        public async Task<ServiceResult<int>> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
+        {
+            return await _categoryDataService.DeleteCategoryRow(categoryId, categoryRowId);
+        }
     }
 }
