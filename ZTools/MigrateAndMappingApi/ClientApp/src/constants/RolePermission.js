@@ -43,6 +43,10 @@ const Actions = [
     {
         id: EnumAction.CENSOR,
         name: 'Censor'
+    },
+    {
+        id: EnumAction.CHECK,
+        name: 'Check'
     }
 ];
 
