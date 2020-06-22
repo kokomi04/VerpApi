@@ -18,6 +18,7 @@ namespace VErp.Services.Accountancy.Model.Input
     public class InputValueFilterModel
     {
         public string FieldName { get; set; }
+        public EnumDataType DataTypeId { get; set; }
         public EnumOperator Operator { get; set; }
         public string[] Values { get; set; }
     }

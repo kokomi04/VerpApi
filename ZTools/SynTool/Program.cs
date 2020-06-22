@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using VErp.Commons.Constants;
 
 namespace SynTool
 {
@@ -50,7 +51,7 @@ namespace SynTool
             for (var i = 0; i < dataTable.Rows.Count; i++)
             {
                 var tblName = dataTable.Rows[i]["TABLE_NAME"].ToString();
-                if (!tblName.StartsWith("_"))
+                if (!tblName.StartsWith("_") && !tblName.Equals(AccountantConstants.INPUTVALUEROW_TABLE, StringComparison.OrdinalIgnoreCase))
                     tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
             }
 
