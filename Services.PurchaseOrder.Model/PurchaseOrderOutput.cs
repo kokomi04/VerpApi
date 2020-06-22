@@ -27,11 +27,13 @@ namespace VErp.Services.PurchaseOrder.Model
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
+        public int? CheckedByUserId { get; set; }
         public int? CensorByUserId { get; set; }
-
-        public long? CensorDatetimeUtc { get; set; }
+        
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
+        public long? CensorDatetimeUtc { get; set; }
+        public long? CheckedDatetimeUtc { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList

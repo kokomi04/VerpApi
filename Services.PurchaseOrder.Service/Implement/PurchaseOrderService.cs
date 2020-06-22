@@ -76,11 +76,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.PoProcessStatusId,
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
+                            po.CheckedByUserId,
                             po.CensorByUserId,
-
-                            po.CensorDatetimeUtc,
+                            
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
+                            po.CheckedDatetimeUtc,
+                            po.CensorDatetimeUtc,
 
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -153,11 +155,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
+                    CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),                    
+                    CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix()
                 });
             }
 
@@ -194,11 +198,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.PoProcessStatusId,
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
+                            po.CheckedByUserId,
                             po.CensorByUserId,
-
-                            po.CensorDatetimeUtc,
+                            
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
+                            po.CheckedDatetimeUtc,
+                            po.CensorDatetimeUtc,
 
                             //detail
                             pod.PurchaseOrderDetailId,
@@ -317,11 +323,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
+                    CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                    CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
 
 
                     //detail
@@ -395,11 +403,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                 CreatedByUserId = info.CreatedByUserId,
                 UpdatedByUserId = info.UpdatedByUserId,
+                CheckedByUserId = info.CheckedByUserId,
                 CensorByUserId = info.CensorByUserId,
-
-                CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                
                 CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
 
                 Details = details.Select(d =>
                 {
