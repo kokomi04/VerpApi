@@ -54,7 +54,10 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
             {
-                option.UseSqlServer(databaseConnections.AccountingDatabase);
+                option.UseSqlServer(databaseConnections.AccountingDatabase, opt =>
+                {
+                    opt.CommandTimeout(600);
+                });
             }, ServiceLifetime.Scoped);
         }
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
@@ -72,7 +75,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
                 option.UseSqlServer(databaseConnections.ReportConfigDatabase);
             }, ServiceLifetime.Scoped);
         }
-        
+
         public static void ConfigActivityLogContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<ActivityLogDBContext>((option) =>
