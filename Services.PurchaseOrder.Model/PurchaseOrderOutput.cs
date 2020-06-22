@@ -22,6 +22,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
         public EnumPurchaseOrderStatus PurchaseOrderStatusId { get; set; }
+        public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public int CreatedByUserId { get; set; }

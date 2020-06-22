@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums.MasterEnum.PO
     {
         Draff = 1,
         WaitToCensor = 2,
-        Censored = 3
+        Checked = 3,
+        Censored = 4        
     }
 }
