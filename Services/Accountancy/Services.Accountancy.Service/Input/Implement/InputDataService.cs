@@ -24,12 +24,14 @@ using VErp.Commons.Library;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Accountancy.Model.Data;
+using VErp.Commons.Constants;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class InputDataService : IInputDataService
     {
-        private const string INPUTVALUEROW_TABLE = "_InputValueRow";
+        private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
+        private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
 
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
@@ -81,9 +83,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //if (!fields.ContainsKey(filter.FieldName)) continue;
 
                 //var field = fields[filter.FieldName];
-                string singleValue = filter.Values[0];
+
                 if (filter.Values != null && filter.Values.Length > 0 && !string.IsNullOrWhiteSpace(filter.Values[0]))//field != null && 
                 {
+                    object objectValue = objectValue = filter.DataTypeId.GetSqlValue(filter.Values[0]);
 
                     whereCondition.Append(" AND ");
 
@@ -96,7 +99,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         //text
                         case EnumOperator.Equal:
                             whereCondition.Append($"[{filter.FieldName}] = {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
 
                             break;
 
@@ -106,18 +109,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             switch (filter.Operator)
                             {
                                 case EnumOperator.StartsWith:
-                                    singleValue = $"{filter.Values[0]}%";
+                                    objectValue = $"{objectValue}%";
                                     break;
                                 case EnumOperator.EndsWith:
-                                    singleValue = $"%{filter.Values[0]}";
+                                    objectValue = $"%{objectValue}";
                                     break;
                                 case EnumOperator.Contains:
-                                    singleValue = $"%{filter.Values[0]}%";
+                                    objectValue = $"%{objectValue}%";
                                     break;
                             }
 
                             whereCondition.Append($"[{filter.FieldName}] LIKE {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, singleValue));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
 
                             break;
 
@@ -141,28 +144,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         //number
                         case EnumOperator.NotEqual:
                             whereCondition.Append($"[{filter.FieldName}] != {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
 
                             break;
 
                         case EnumOperator.Greater:
                             whereCondition.Append($"[{filter.FieldName}] > {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
                             break;
 
                         case EnumOperator.GreaterOrEqual:
                             whereCondition.Append($"[{filter.FieldName}] >= {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
                             break;
 
                         case EnumOperator.LessThan:
                             whereCondition.Append($"[{filter.FieldName}] < {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
                             break;
 
                         case EnumOperator.LessThanOrEqual:
                             whereCondition.Append($"[{filter.FieldName}] <= {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, filter.Values[0]));
+                            sqlParams.Add(new SqlParameter(paramName, objectValue));
                             break;
                     }
                 }
@@ -189,7 +192,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 asc = false;
             }
 
-            var totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total FROM v_InputValueRow r WHERE {whereCondition}";
+            var totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
 
@@ -204,15 +207,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var dataSql = @$"
                  ;WITH tmp AS (
                     SELECT r.InputBill_F_Id, MAX(F_Id) as F_Id
-                    FROM v_InputValueRow r
+                    FROM {INPUTVALUEROW_VIEW} r
                     WHERE {whereCondition}
                     GROUP BY r.InputBill_F_Id    
                 )
                 SELECT 
                     t.InputBill_F_Id AS F_Id,
                     {selectColumn}
-                FROM tmp t JOIN v_InputValueRow r ON t.F_Id = r.F_Id
-                ORDER BY r.[{orderByFieldName}] {(asc?"":"DESC")}
+                FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
+                ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {page * size} ROWS ONLY
@@ -225,7 +228,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
-            var totalSql = @$"SELECT COUNT(0) as Total FROM v_InputValueRow r WHERE InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
 
@@ -243,7 +246,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var dataSql = @$"
 
                 SELECT     r.*
-                FROM v_InputValueRow r 
+                FROM {INPUTVALUEROW_VIEW} r 
 
                 WHERE r.InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId    
 
