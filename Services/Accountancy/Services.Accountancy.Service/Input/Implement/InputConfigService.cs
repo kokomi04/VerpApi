@@ -31,7 +31,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class InputConfigService : IInputConfigService
     {
-        private const string INPUTVALUEROW_TABLE = "_InputValueRow";
+        private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
