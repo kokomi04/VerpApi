@@ -218,7 +218,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
                 OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT {page * size} ROWS ONLY
+                FETCH NEXT {size} ROWS ONLY
 ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
@@ -253,7 +253,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
                 OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT {page * size} ROWS ONLY
+                FETCH NEXT {size} ROWS ONLY
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
 
