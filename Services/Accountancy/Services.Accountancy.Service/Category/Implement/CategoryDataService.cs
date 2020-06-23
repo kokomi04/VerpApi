@@ -543,10 +543,25 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
+            return await GetCategoryRows(category, keyword, filters, page, size);
+        }
+
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, string filters, int page, int size)
+        {
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return await GetCategoryRows(category, keyword, filters, page, size);
+        }
+
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, int page, int size)
+        {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
                           select f).ToList();
 
             var dataSql = new StringBuilder();
