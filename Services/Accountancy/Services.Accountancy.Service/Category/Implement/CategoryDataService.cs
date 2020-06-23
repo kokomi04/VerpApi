@@ -462,10 +462,25 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
+            return await GetCategoryRow(category, fId);
+        }
+
+        public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(string categoryCode, int fId)
+        {
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return await GetCategoryRow(category, fId);
+        }
+
+        private async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(CategoryEntity category, int fId)
+        {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var dataSql = new StringBuilder();
@@ -556,7 +571,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return await GetCategoryRows(category, keyword, filters, page, size);
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, int page, int size)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, int page, int size)
         {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField

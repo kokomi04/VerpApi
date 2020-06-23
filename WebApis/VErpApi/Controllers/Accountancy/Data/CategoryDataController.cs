@@ -55,6 +55,12 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
 
+        [HttpGet]
+        [Route("{categoryCode}/categoryrowsbycode/{categoryRowId}")]
+        public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow([FromRoute] string categoryCode, [FromRoute] int categoryRowId)
+        {
+            return await _categoryDataService.GetCategoryRow(categoryCode, categoryRowId);
+        }
 
         [HttpPost]
         [Route("{categoryId}/categoryrows")]
