@@ -40,9 +40,9 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryConfigService.GetCategories(keyword, page, size);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("categoryFieldsByCodes")]
-        public async Task<ServiceResult<List<CategoryFieldReferModel>>> GetCategoryFieldsByCodes(string[] categoryCodes)
+        public async Task<ServiceResult<List<CategoryFieldReferModel>>> GetCategoryFieldsByCodes([FromBody] string[] categoryCodes)
         {
             return await _categoryConfigService.GetCategoryFieldsByCodes(categoryCodes);
         }
