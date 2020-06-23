@@ -224,7 +224,20 @@ DECLARE @RefFieldTitle nvarchar(512)
 			--EnumDataType.Text => SqlDbType.NVarChar,
 			IF @DataTypeId = 1 SET @SqlDataType = 'NVarChar'
            -- EnumDataType.Int => SqlDbType.Int,
-			IF @DataTypeId = 2 BEGIN SET @SqlDataType = 'Int'; SET @DataSize=0 END
+			IF @DataTypeId = 2 
+			BEGIN 
+				SET @SqlDataType = 'Int'; 
+				SET @DataSize=0 
+
+				IF @FormTypeId NOT IN(2,4)--select, SearchTable
+				BEGIN
+					SET @DataTypeId = 9
+					SET @SqlDataType = 'Decimal'
+					SET @DataSize = 18					
+				END
+				
+			END
+
             --EnumDataType.Date => SqlDbType.DateTime2,
 			IF @DataTypeId = 3 SET @SqlDataType = 'DateTime2'
             --EnumDataType.PhoneNumber => SqlDbType.NVarChar,
@@ -241,6 +254,11 @@ DECLARE @RefFieldTitle nvarchar(512)
 			IF @DataTypeId = 9 SET @SqlDataType = 'Decimal'
             --_ => SqlDbType.NVarChar
 			IF LEN(@SqlDataType)=0 SET @SqlDataType = 'NVarChar'
+
+		IF @SqlDataType = 'NVarChar' AND @DataSize<=1
+		BEGIN
+			SET @DataSize = 512
+		END
 
 		EXEC asp_Table_UpdateField
 			@IsAddNew = @IsAddNew,
