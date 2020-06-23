@@ -41,16 +41,18 @@ namespace VErp.Services.Stock.Model.Inventory
     {
         public long? InventoryDetailId { get; set; }
         public int ProductId { get; set; }
-        public int ProductUnitConversionId { set; get; }
-
+        
         //public bool? IsFreeStyle { set; get; }
 
+        public decimal RequestPrimaryQuantity { get; set; }        
+
         public decimal PrimaryQuantity { get; set; }
-
-        public decimal ProductUnitConversionQuantity { get; set; }
-        public decimal ProductUnitConversionPrice { get; set; }
-
         public decimal UnitPrice { get; set; }
+
+        public int ProductUnitConversionId { set; get; }
+        public decimal RequestProductUnitConversionQuantity { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }        
+        public decimal ProductUnitConversionPrice { get; set; }
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }

@@ -136,6 +136,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
+                entity.Property(e => e.RequestPrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.RequestProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
                 entity.Property(e => e.ToPackageId).HasComment("Nhập kho vào kiện nào");
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
@@ -179,7 +183,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.OldPuConversionQuantity).HasColumnType("decimal(32, 16)");
-            });          
+            });
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
             {
