@@ -497,7 +497,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var item in field.RefTableTitle.Split(","))
                     {
                         var title = item.Trim();
-                        sql.Append($"[{tableName}].{field.RefTableCode}_{title},");
+                        sql.Append($"[{tableName}].{field.CategoryFieldName}_{title},");
                     }
                 }
             }
