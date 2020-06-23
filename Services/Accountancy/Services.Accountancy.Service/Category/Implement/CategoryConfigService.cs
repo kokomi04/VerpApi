@@ -464,7 +464,7 @@ namespace VErp.Services.Accountancy.Service.Category
         #endregion
 
         #region Field
-        public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size)
+        public async Task<PageData<CategoryFieldModel>> GetCategoryFields(int categoryId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountancyContext.CategoryField
@@ -483,15 +483,15 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryFieldOutputModel> lst = await query
+            List<CategoryFieldModel> lst = await query
                 .OrderBy(f => f.SortOrder)
-                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<CategoryFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             return (lst, total);
         }
 
-        public async Task<List<CategoryFieldOutputModel>> GetCategoryFields(IList<int> categoryIds)
+        public async Task<List<CategoryFieldModel>> GetCategoryFields(IList<int> categoryIds)
         {
             var query = _accountancyContext.CategoryField
                 //.Include(f => f.ReferenceCategoryField)
@@ -499,19 +499,19 @@ namespace VErp.Services.Accountancy.Service.Category
                 .AsQueryable();
             query = query.Where(c => categoryIds.Contains(c.CategoryId));
             query = query.OrderBy(c => c.SortOrder);
-            List<CategoryFieldOutputModel> lst = await query
+            List<CategoryFieldModel> lst = await query
                 .OrderBy(f => f.SortOrder)
-                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<CategoryFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
             return lst;
         }
 
-        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldModel>> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountancyContext.CategoryField
                 //.Include(f => f.ReferenceCategoryField)
                 //.Include(f => f.ReferenceCategoryTitleField)
-                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<CategoryFieldModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
             if (categoryField == null)
             {
@@ -520,7 +520,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryField;
         }
 
-        private void UpdateField(ref CategoryField categoryField, CategoryFieldInputModel data)
+        private void UpdateField(ref CategoryField categoryField, CategoryFieldModel data)
         {
             categoryField.CategoryFieldName = data.CategoryFieldName;
             //categoryField.CategoryAreaId = data.CategoryAreaId;
@@ -542,7 +542,7 @@ namespace VErp.Services.Accountancy.Service.Category
             //categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
         }
 
-        private void ValidateCategoryField(CategoryFieldInputModel data, CategoryField categoryField = null, int? categoryFieldId = null)
+        private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
         {
             bool updateFieldName = true;
             if (categoryFieldId.HasValue && categoryFieldId.Value > 0)
@@ -573,7 +573,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        private void FieldDataProcess(ref CategoryFieldInputModel data)
+        private void FieldDataProcess(ref CategoryFieldModel data)
         {
             string refTable = data.RefTableCode;
             string refField = data.RefTableField;
@@ -601,7 +601,23 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        public async Task<PageData<CategoryFieldOutputModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size)
+        public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes(string[] categoryCodes)
+        {
+
+            List<CategoryFieldReferModel> lst = await (from f in _accountancyContext.CategoryField
+                                                       join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                                                       where categoryCodes.Contains(c.CategoryCode)
+                                                       select new CategoryFieldReferModel
+                                                       {
+                                                           CategoryCode = c.CategoryCode,
+                                                           CategoryFieldName = f.CategoryFieldName,
+                                                           Title = f.Title
+                                                       }).ToListAsync();
+
+            return lst;
+        }
+
+        public async Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size)
         {
             var categoryId = (await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryCode == categoryCode))?.CategoryId;
 
@@ -620,15 +636,15 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryFieldOutputModel> lst = await query
+            List<CategoryFieldModel> lst = await query
                 .OrderBy(f => f.SortOrder)
-                .ProjectTo<CategoryFieldOutputModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<CategoryFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldInputModel> fields)
+        public async Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields)
         {
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
             try

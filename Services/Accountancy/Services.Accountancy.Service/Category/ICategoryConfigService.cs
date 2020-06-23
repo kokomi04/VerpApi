@@ -29,12 +29,12 @@ namespace VErp.Services.Accountancy.Service.Category
         //Task<Enum> UpdateCategoryArea(int CategoryTypeId, int categoryAreaId, CategoryAreaInputModel data);
         //Task<Enum> DeleteCategoryArea(int CategoryTypeId, int categoryAreaId);
 
-
-        Task<PageData<CategoryFieldOutputModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size);
-        Task<PageData<CategoryFieldOutputModel>> GetCategoryFields(int categoryId, string keyword, int page, int size);
-        Task<List<CategoryFieldOutputModel>> GetCategoryFields(IList<int> categoryIds);
-        Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField(int categoryId, int categoryFieldId);
+        Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes(string[] categoryCodes);
+        Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode(string categoryCode, string keyword, int page, int size);
+        Task<PageData<CategoryFieldModel>> GetCategoryFields(int categoryId, string keyword, int page, int size);
+        Task<List<CategoryFieldModel>> GetCategoryFields(IList<int> categoryIds);
+        Task<ServiceResult<CategoryFieldModel>> GetCategoryField(int categoryId, int categoryFieldId);
         Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId);
-        Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldInputModel> fields);
+        Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields);
     }
 }

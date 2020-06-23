@@ -5,7 +5,7 @@ using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Category
 {
-    public class CategoryFieldInputModel : IMapFrom<CategoryField>
+    public class CategoryFieldModel : IMapFrom<CategoryField>
     {
         public int CategoryFieldId { get; set; }
         public int CategoryId { get; set; }
@@ -37,8 +37,10 @@ namespace VErp.Services.Accountancy.Model.Category
 
     }
 
-
-    public class CategoryFieldOutputModel : CategoryFieldInputModel
+    public class CategoryFieldReferModel
     {
+        public string CategoryCode { get; set; }
+        public string CategoryFieldName { get; set; }
+        public string Title { get; set; }
     }
 }
