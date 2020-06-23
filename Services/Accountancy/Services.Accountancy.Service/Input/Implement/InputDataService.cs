@@ -181,7 +181,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (!string.IsNullOrWhiteSpace(f.RefTableTitle) && !string.IsNullOrWhiteSpace(f.RefTableTitle))
                 {
-                    refColumns.AddRange(f.RefTableTitle.Split(',').Select(c => f.RefTableCode + "_" + c.Trim()));
+                    refColumns.AddRange(f.RefTableTitle.Split(',').Select(c => f.FieldName + "_" + c.Trim()));
                 }
                 return refColumns;
             }).ToList();
