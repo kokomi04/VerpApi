@@ -13,9 +13,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public long InventoryDetailId { get; set; }
         public long InventoryId { get; set; }
         public int ProductId { get; set; }
+        public decimal? RequestPrimaryQuantity { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal UnitPrice { get; set; }
         public int ProductUnitConversionId { get; set; }
+        public decimal? RequestProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal? ProductUnitConversionPrice { get; set; }
         public long? FromPackageId { get; set; }
