@@ -48,6 +48,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public decimal PrimaryQuantity { get; set; }
 
         public decimal ProductUnitConversionQuantity { get; set; }
+        public decimal ProductUnitConversionPrice { get; set; }
 
         public decimal UnitPrice { get; set; }
 
@@ -69,6 +70,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public EnumPackageOption PackageOptionId { set; get; }
 
         public int SortOrder { get; set; }
+        public string Description { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel

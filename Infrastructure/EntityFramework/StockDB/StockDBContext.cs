@@ -103,6 +103,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
 
                 entity.Property(e => e.OrderCode)
@@ -119,6 +121,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryQuantityRemaning).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
@@ -173,8 +177,9 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
 
                 entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
-            });
-           
+
+                entity.Property(e => e.OldPuConversionQuantity).HasColumnType("decimal(32, 16)");
+            });          
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
             {
@@ -221,6 +226,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
                     .HasMaxLength(128)
@@ -246,6 +253,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.Package)
                     .HasForeignKey(d => d.ProductUnitConversionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Package_ProductUnitConversion");
 
                 entity.HasOne(d => d.Stock)
@@ -301,6 +309,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
 
@@ -463,7 +473,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
-          
 
             OnModelCreatingPartial(modelBuilder);
         }

@@ -20,6 +20,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? ProductUnitConversionId { set; get; }
 
         public decimal? ProductUnitConversionQuantity { get; set; }
+        public decimal? ProductUnitConversionPrice { get; set; }
 
         public long? FromPackageId { set; get; }
 
@@ -41,6 +42,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string ProductionOrderCode { get; set; }
 
         public int? SortOrder { get; set; }
+
+        public string Description { get; set; }
 
         public ProductListOutput ProductOutput { get; set; }
 
