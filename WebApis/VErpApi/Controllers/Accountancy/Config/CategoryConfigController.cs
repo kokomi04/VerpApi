@@ -40,6 +40,13 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryConfigService.GetCategories(keyword, page, size);
         }
 
+        [HttpGet]
+        [Route("categoryFieldsByCodes")]
+        public async Task<ServiceResult<List<CategoryFieldReferModel>>> GetCategoryFieldsByCodes(string[] categoryCodes)
+        {
+            return await _categoryConfigService.GetCategoryFieldsByCodes(categoryCodes);
+        }
+
         [HttpPost]
         [Route("")]
         public async Task<ServiceResult<int>> AddCategory([FromBody] CategoryModel category)
@@ -70,14 +77,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFields(categoryId, keyword, page, size);
         }
 
         [HttpGet]
         [Route("categoryfieldsByCode")]
-        public async Task<ServiceResult<PageData<CategoryFieldOutputModel>>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
         }
@@ -85,21 +92,21 @@ namespace VErpApi.Controllers.Accountancy.Config
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("categoryfields")]
-        public async Task<ServiceResult<List<CategoryFieldOutputModel>>> GetCategoryFields([FromBody] IList<int> categoryIds)
+        public async Task<ServiceResult<List<CategoryFieldModel>>> GetCategoryFields([FromBody] IList<int> categoryIds)
         {
             return await _categoryConfigService.GetCategoryFields(categoryIds);
         }
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult<CategoryFieldOutputModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        public async Task<ServiceResult<CategoryFieldModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
             return await _categoryConfigService.GetCategoryField(categoryId, categoryFieldId);
         }
 
         [HttpPost]
         [Route("{categoryId}/multifields")]
-        public async Task<ServiceResult> UpdateMultiField([FromRoute] int categoryId, [FromBody] List<CategoryFieldInputModel> fields)
+        public async Task<ServiceResult> UpdateMultiField([FromRoute] int categoryId, [FromBody] List<CategoryFieldModel> fields)
         {
             return await _categoryConfigService.UpdateMultiField(categoryId, fields);
         }
