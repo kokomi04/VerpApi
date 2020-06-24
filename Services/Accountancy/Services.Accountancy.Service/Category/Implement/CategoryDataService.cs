@@ -49,10 +49,10 @@ namespace VErp.Services.Accountancy.Service.Category
             _currentContextService = currentContextService;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryRow(int categoryId, Dictionary<string, string> data)
+        public async Task<ServiceResult<int>> AddCategoryRow(string categoryCode, Dictionary<string, string> data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -73,7 +73,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             // Lấy thông tin field
             var categoryFields = _accountancyContext.CategoryField
-                .Where(f => categoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .AsEnumerable();
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
@@ -142,10 +142,9 @@ namespace VErp.Services.Accountancy.Service.Category
         }
 
 
-        public async Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data)
+        public async Task<int> UpdateCategoryRow(string categoryCode, int fId, Dictionary<string, string> data)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -158,9 +157,9 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
             }
-
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(category.CategoryId));
             var tableName = $"v{category.CategoryCode}";
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
@@ -262,10 +261,9 @@ namespace VErp.Services.Accountancy.Service.Category
             return numberChange;
         }
 
-        public async Task<int> DeleteCategoryRow(int categoryId, int fId)
+        public async Task<int> DeleteCategoryRow(string categoryCode, int fId)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -280,7 +278,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
             }
-
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             // Validate child-parent relationship
             if (category.IsTreeView)
             {
@@ -294,7 +292,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
 
             // Get row
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
@@ -453,18 +451,6 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-
-
-        public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(int categoryId, int fId)
-        {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-            if (category == null)
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
-            }
-            return await GetCategoryRow(category, fId);
-        }
-
         public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(string categoryCode, int fId)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
@@ -549,16 +535,6 @@ namespace VErp.Services.Accountancy.Service.Category
                 lst.Add(dic);
             }
             return lst;
-        }
-
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
-        {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-            if (category == null)
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
-            }
-            return await GetCategoryRows(category, keyword, filters, page, size);
         }
 
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, string filters, int page, int size)
