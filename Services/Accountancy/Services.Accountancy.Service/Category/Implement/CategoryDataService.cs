@@ -22,6 +22,7 @@ using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountancy.Model.Data;
 using CategoryEntity = VErp.Infrastructure.EF.AccountancyDB.Category;
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -387,14 +388,17 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in uniqueFields)
             {
                 data.TryGetValue(field.CategoryFieldName, out string valueItem);
-                if (valueItem != null && !string.IsNullOrEmpty(valueItem))
+                if (!string.IsNullOrEmpty(valueItem))
                 {
-                    var existSql = $"SELECT F_Id FROM v{categoryCode} WHERE {field.CategoryFieldName} = {valueItem}";
+                    var sqlParams = new List<SqlParameter>();
+                    var paramName = $"@{field.CategoryFieldName}";
+                    var existSql = $"SELECT F_Id FROM v{categoryCode} WHERE {field.CategoryFieldName} = {paramName}";
+                    sqlParams.Add(new SqlParameter(paramName, valueItem));
                     if (fId.HasValue)
                     {
                         existSql += $" AND F_Id != {fId}";
                     }
-                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    var result = await _accountancyContext.QueryDataTable(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -512,6 +516,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             return sql.ToString();
         }
+
         private List<NonCamelCaseDictionary> ConvertData(DataTable data)
         {
             var lst = new List<NonCamelCaseDictionary>();
@@ -684,6 +689,15 @@ namespace VErp.Services.Accountancy.Service.Category
                 nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
             }
             return nodes;
+        }
+
+        public async Task<ServiceResult<List<MapObjectOutputModel>>> MapObject(MapObjectInputModel[] categoryValues)
+        {
+            List<MapObjectOutputModel> titles = new List<MapObjectOutputModel>();
+            var groups = categoryValues.GroupBy(v => new { v.CategoryCode });
+
+
+            return titles;
         }
     }
 }
