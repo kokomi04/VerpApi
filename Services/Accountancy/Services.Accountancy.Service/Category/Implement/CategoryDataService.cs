@@ -571,7 +571,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         serchCondition.Append(" OR ");
                     }
-                   
+
                     if (string.IsNullOrEmpty(field.RefTableCode))
                     {
                         var paramName = $"@{field.CategoryFieldName}_{idx}";
@@ -608,7 +608,7 @@ namespace VErp.Services.Accountancy.Service.Category
             if (!category.IsTreeView)
             {
                 dataSql.Append($" ORDER BY [{tableName}].F_Id");
-                if(size > 0)
+                if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
                 }
@@ -616,49 +616,74 @@ namespace VErp.Services.Accountancy.Service.Category
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var lstData = ConvertData(data);
 
-            //if (category.IsTreeView)
-            //{
-            //    var allData = await _accountancyContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
-            //    var lstAll = ConvertData(allData);
-              
-            //    var parents = GetParents(lstData.Select(r => (int)r["parentId"]).ToArray(), lstAll);
-               
-                //foreach (var parent in parents)
-                //{
-                //    parent.IsDisabled = true;
-                //}
+            if (category.IsTreeView)
+            {
+                var allData = await _accountancyContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
+                var lstAll = ConvertData(allData);
 
-                //lstData.AddRange(parents);
-                //lstData = SortCategoryRows(lstData).Skip((page - 1) * size).Take(size).ToList();
+                AddParents(ref lstData, lstAll);
 
-            //}
+                lstData = SortCategoryRows(lstData);
+                if (size > 0)
+                {
+                    lstData = lstData.Skip((page - 1) * size).Take(size).ToList();
+                }
+            }
 
             return (lstData, total);
         }
 
-        //private List<NonCamelCaseDictionary> GetParents(int[] parentIds, List<NonCamelCaseDictionary> lstAll)
-        //{
-        //    List<int> result = new List<int>();
+        private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
+        {
+            List<NonCamelCaseDictionary> result = new List<NonCamelCaseDictionary>();
 
-        //    int[] parentIds = categoryRows
-        //        .Where(r => r.ParentCategoryRowId.HasValue && !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId))
-        //        .Select(r => r.ParentCategoryRowId.Value)
-        //        .Distinct()
-        //        .ToArray();
-        //    result.AddRange(parentIds);
+            var ids = categoryRows.Select(r => (int)r["F_Id"]).ToList();
+            var parentIds = categoryRows.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+            while (parentIds.Count > 0)
+            {
+                var parents = lstAll.Where(r => parentIds.Contains((int)r["F_Id"])).ToList();
+                foreach (var parent in parents)
+                {
+                    parent["IsDisable"] = true;
+                    categoryRows.Add(parent);
+                    ids.Add((int)parent["F_Id"]);
+                }
+                parentIds = parents.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+            }
+        }
 
-        //    while (parentIds.Length > 0)
-        //    {
-        //        parentIds = _accountingContext.CategoryRow
-        //            .Where(r => parentIds.Contains(r.CategoryRowId) && r.ParentCategoryRowId.HasValue)
-        //            .Select(r => r.ParentCategoryRowId.Value)
-        //            .Distinct()
-        //            .ToArray();
-        //        result.AddRange(parentIds);
-        //    }
+        private List<NonCamelCaseDictionary> SortCategoryRows(List<NonCamelCaseDictionary> categoryRows)
+        {
+            int level = 0;
+            categoryRows = categoryRows.OrderBy(r => (int)r["F_Id"]).ToList();
+            List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
 
-        //    return result.Distinct().ToArray();
-        //}
+            var items = categoryRows.Where(r => r["ParentId"] == DBNull.Value || !categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
+            categoryRows = categoryRows.Where(r => r["ParentId"] != DBNull.Value && categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
 
+            foreach (var item in items)
+            {
+                item["CategoryRowLevel"] = level;
+                nodes.Add(item);
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+            }
+
+            return nodes;
+        }
+
+        private IEnumerable<NonCamelCaseDictionary> GetChilds(ref List<NonCamelCaseDictionary> categoryRows, int categoryRowId, int level)
+        {
+            level++;
+            List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
+            var items = categoryRows.Where(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId).ToList();
+            categoryRows.RemoveAll(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId);
+            foreach (var item in items)
+            {
+                item["CategoryRowLevel"] = level;
+                nodes.Add(item);
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+            }
+            return nodes;
+        }
     }
 }
