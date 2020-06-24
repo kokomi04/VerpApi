@@ -466,7 +466,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var dataSql = new StringBuilder();
@@ -485,7 +485,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
         {
             StringBuilder sql = new StringBuilder();
-            sql.Append($"SELECT ");
+            sql.Append($"SELECT [{tableName}].F_Id, ");
             foreach (var field in fields)
             {
                 if (string.IsNullOrEmpty(field.RefTableCode))
@@ -552,14 +552,15 @@ namespace VErp.Services.Accountancy.Service.Category
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
+                          where c.CategoryId == category.CategoryId && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
                           select f).ToList();
 
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
-
+            var allDataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
             dataSql.Append($" FROM {tableName}");
+            allDataSql.Append(dataSql.ToString());
             var serchCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -604,16 +605,60 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 total = (countTable.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
-            dataSql.Append($" ORDER BY [{tableName}].F_Id");
-            if (size > 0)
+            if (!category.IsTreeView)
             {
-                dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
+                dataSql.Append($" ORDER BY [{tableName}].F_Id");
+                if(size > 0)
+                {
+                    dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
+                }
             }
-
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = ConvertData(data);
+            var lstData = ConvertData(data);
 
-            return (lst, total);
+            //if (category.IsTreeView)
+            //{
+            //    var allData = await _accountancyContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
+            //    var lstAll = ConvertData(allData);
+              
+            //    var parents = GetParents(lstData.Select(r => (int)r["parentId"]).ToArray(), lstAll);
+               
+                //foreach (var parent in parents)
+                //{
+                //    parent.IsDisabled = true;
+                //}
+
+                //lstData.AddRange(parents);
+                //lstData = SortCategoryRows(lstData).Skip((page - 1) * size).Take(size).ToList();
+
+            //}
+
+            return (lstData, total);
         }
+
+        //private List<NonCamelCaseDictionary> GetParents(int[] parentIds, List<NonCamelCaseDictionary> lstAll)
+        //{
+        //    List<int> result = new List<int>();
+
+        //    int[] parentIds = categoryRows
+        //        .Where(r => r.ParentCategoryRowId.HasValue && !categoryRows.Any(p => p.CategoryRowId == r.ParentCategoryRowId))
+        //        .Select(r => r.ParentCategoryRowId.Value)
+        //        .Distinct()
+        //        .ToArray();
+        //    result.AddRange(parentIds);
+
+        //    while (parentIds.Length > 0)
+        //    {
+        //        parentIds = _accountingContext.CategoryRow
+        //            .Where(r => parentIds.Contains(r.CategoryRowId) && r.ParentCategoryRowId.HasValue)
+        //            .Select(r => r.ParentCategoryRowId.Value)
+        //            .Distinct()
+        //            .ToArray();
+        //        result.AddRange(parentIds);
+        //    }
+
+        //    return result.Distinct().ToArray();
+        //}
+
     }
 }
