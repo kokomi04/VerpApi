@@ -10,6 +10,7 @@ namespace VErp.Services.Accountancy.Service.Category
     public interface ICategoryConfigService
     {
         Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId);
+        Task<ServiceResult<CategoryFullModel>> GetCategory(string categoryCode);
         Task<PageData<CategoryModel>> GetCategories(string keyword, int page, int size);
         Task<ServiceResult<int>> AddCategory(CategoryModel data);
         Task<Enum> UpdateCategory(int categoryId, CategoryModel data);
