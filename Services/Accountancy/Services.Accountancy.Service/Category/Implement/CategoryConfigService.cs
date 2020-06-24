@@ -64,6 +64,20 @@ namespace VErp.Services.Accountancy.Service.Category
             return category;
         }
 
+        public async Task<ServiceResult<CategoryFullModel>> GetCategory(string categoryCode)
+        {
+            var category = await _accountancyContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .Include(c => c.CategoryField)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                return CategoryErrorCode.CategoryNotFound;
+            }
+            return category;
+        }
+
         public async Task<PageData<CategoryModel>> GetCategories(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();

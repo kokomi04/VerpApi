@@ -61,6 +61,14 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryConfigService.GetCategory(categoryId);
         }
 
+
+        [HttpGet]
+        [Route("categoryByCode/{categoryCode}")]
+        public async Task<ServiceResult<CategoryFullModel>> GetCategory([FromRoute] string categoryCode)
+        {
+            return await _categoryConfigService.GetCategory(categoryCode);
+        }
+
         [HttpPut]
         [Route("{categoryId}")]
         public async Task<ServiceResult> UpdateCategory([FromRoute] int categoryId, [FromBody] CategoryModel category)
