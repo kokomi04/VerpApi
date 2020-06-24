@@ -556,30 +556,39 @@ namespace VErp.Services.Accountancy.Service.Category
                           select f).ToList();
 
             var dataSql = new StringBuilder();
+            var sqlParams = new List<SqlParameter>();
+
             dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
             dataSql.Append($" FROM {tableName}");
             var serchCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
+                var idx = 0;
                 foreach (var field in fields)
                 {
                     if (serchCondition.Length > 0)
                     {
                         serchCondition.Append(" OR ");
                     }
-
+                   
                     if (string.IsNullOrEmpty(field.RefTableCode))
                     {
-                        serchCondition.Append($"[{tableName}].{field.CategoryFieldName} LIKE %{keyword}%");
+                        var paramName = $"@{field.CategoryFieldName}_{idx}";
+                        sqlParams.Add(new SqlParameter(paramName, $"%{keyword}%"));
+                        serchCondition.Append($"[{tableName}].{field.CategoryFieldName} LIKE {paramName}");
+
                     }
                     else
                     {
                         foreach (var item in field.RefTableTitle.Split(","))
                         {
                             var title = item.Trim();
-                            serchCondition.Append($"[{tableName}].{field.RefTableCode}_{title} LIKE %{keyword}%");
+                            var paramName = $"@{field.CategoryFieldName}_{title}_{idx}";
+                            sqlParams.Add(new SqlParameter(paramName, $"%{keyword}%"));
+                            serchCondition.Append($"[{tableName}].{field.CategoryFieldName}_{title} LIKE {paramName}");
                         }
                     }
+                    idx++;
                 }
             }
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
@@ -589,7 +598,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 totalSql.Append($" WHERE {serchCondition.ToString()}");
             }
 
-            var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), Array.Empty<SqlParameter>());
+            var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var total = 0;
             if (countTable != null && countTable.Rows.Count > 0)
             {
@@ -601,7 +610,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
             }
 
-            var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
+            var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var lst = ConvertData(data);
 
             return (lst, total);
