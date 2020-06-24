@@ -697,7 +697,8 @@ namespace VErp.Services.Accountancy.Service.Category
                             // update field 
                             if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                             {
-                                await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, categoryAreaField.DataSize, 0, "", !categoryAreaField.IsRequired);
+                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
+                                await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
                             }
                         }
                         else
@@ -710,7 +711,8 @@ namespace VErp.Services.Accountancy.Service.Category
                             // Add field into table
                             if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                             {
-                                await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, categoryField.DataSize, 0, "", !categoryField.IsRequired);
+                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
+                                await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
                             }
                         }
                     }
