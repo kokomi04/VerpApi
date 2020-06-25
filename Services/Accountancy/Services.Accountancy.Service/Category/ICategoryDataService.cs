@@ -5,6 +5,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Model.Category;
+using VErp.Services.Accountancy.Model.Data;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -19,5 +20,7 @@ namespace VErp.Services.Accountancy.Service.Category
         Task<int> UpdateCategoryRow(string categoryCode, int fId, Dictionary<string, string> data);
 
         Task<int> DeleteCategoryRow(string categoryCode, int fId);
+
+        Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues);
     }
 }

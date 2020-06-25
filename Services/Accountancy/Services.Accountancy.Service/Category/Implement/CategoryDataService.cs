@@ -142,7 +142,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return id;
         }
 
-
         public async Task<int> UpdateCategoryRow(string categoryCode, int fId, Dictionary<string, string> data)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
@@ -413,7 +412,11 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in categoryFields)
             {
                 data.TryGetValue(field.CategoryFieldName, out string valueItem);
-                if ((field.FormTypeId == (int)EnumFormType.SearchTable || field.FormTypeId == (int)EnumFormType.Select) || field.AutoIncrement || valueItem == null || string.IsNullOrEmpty(valueItem))
+                if ((field.FormTypeId == (int)EnumFormType.SearchTable
+                    || field.FormTypeId == (int)EnumFormType.Select)
+                    || field.AutoIncrement
+                    || valueItem == null
+                    || string.IsNullOrEmpty(valueItem))
                 {
                     continue;
                 }
@@ -691,11 +694,41 @@ namespace VErp.Services.Accountancy.Service.Category
             return nodes;
         }
 
-        public async Task<ServiceResult<List<MapObjectOutputModel>>> MapObject(MapObjectInputModel[] categoryValues)
+        public async Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues)
         {
             List<MapObjectOutputModel> titles = new List<MapObjectOutputModel>();
-            var groups = categoryValues.GroupBy(v => new { v.CategoryCode });
+            var groups = categoryValues.GroupBy(v => new { v.CategoryCode, v.CategoryFieldName });
 
+            foreach (var group in groups)
+            {
+                var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
+                var values = group.Select(g => g.Value).ToList();
+
+                var tableName = $"v{category.CategoryCode}";
+                var fields = (from f in _accountancyContext.CategoryField
+                              join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                              where c.CategoryCode == category.CategoryCode && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly
+                              select f).ToList();
+
+                var dataSql = new StringBuilder();
+                var sqlParams = new List<SqlParameter>();
+                dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
+                var paramName = $"@{group.Key.CategoryFieldName}";
+                dataSql.Append($" FROM {tableName} WHERE [{tableName}].{group.Key.CategoryFieldName} IN ({paramName})");
+                sqlParams.Add(new SqlParameter(paramName, string.Join(",", values.ToArray())));
+
+                var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                var lst = ConvertData(data);
+
+
+                titles.AddRange(lst.Select(r => new MapObjectOutputModel
+                {
+                    CategoryCode = category.CategoryCode,
+                    CategoryFieldName = group.Key.CategoryFieldName,
+                    Value = r[group.Key.CategoryFieldName].ToString(),
+                    ReferObject = r
+                }));
+            }
 
             return titles;
         }
