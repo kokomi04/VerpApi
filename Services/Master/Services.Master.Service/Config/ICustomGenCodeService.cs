@@ -21,7 +21,7 @@ namespace VErp.Services.Master.Service.Config
         
         Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model);
 
-        Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue);
+        Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue, string code = "");
 
         Task<PageData<ObjectType>> GetAllObjectType();
 

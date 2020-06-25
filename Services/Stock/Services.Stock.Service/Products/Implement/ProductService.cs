@@ -680,6 +680,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
         private Enum ValidateProduct(ProductModel req)
         {
+            if (string.IsNullOrWhiteSpace(req?.ProductCode))
+            {
+                return ProductErrorCode.ProductCodeEmpty;
+            }
+
             if (req.StockInfo.UnitConversions?.Count > 0)
             {
                 foreach (var unitConversion in req.StockInfo.UnitConversions)

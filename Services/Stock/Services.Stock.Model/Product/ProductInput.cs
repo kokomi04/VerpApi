@@ -8,8 +8,7 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductModel
     {
-        [Required(ErrorMessage = "Vui lòng nhập mã sản phẩm")]
-        [MaxLength(128, ErrorMessage = "Mã sản phẩm quá dài")]
+      
         public string ProductCode { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
         [MaxLength(128, ErrorMessage = "Tên sản phẩm quá dài")]

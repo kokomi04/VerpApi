@@ -353,7 +353,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue)
+        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue, string code = "")
         {
             CustomCodeModel result;
             try
@@ -387,6 +387,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                         var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
                         newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                     }
+
+                    newCode = newCode.Replace("%CODE%", code);
                     if (!(newId < maxId))
                     {
                         config.CodeLength += 1;
