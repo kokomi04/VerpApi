@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using NPOI.SS.Formula.Functions;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -52,7 +53,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             var total = await query.CountAsync();
-            var objList = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var objList = size > 0 ? await query.OrderBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderBy(c => c.SortOrder).ToListAsync();
 
             var pagedData = new List<CustomGenCodeOutputModel>();
             foreach (var item in objList)
@@ -60,17 +61,20 @@ namespace VErp.Services.Master.Service.Config.Implement
                 var info = new CustomGenCodeOutputModel()
                 {
                     CustomGenCodeId = item.CustomGenCodeId,
+                    ParentId = item.ParentId,
                     CustomGenCodeName = item.CustomGenCodeName,
                     Description = item.Description,
                     CodeLength = item.CodeLength,
                     Prefix = item.Prefix,
                     Suffix = item.Suffix,
                     Seperator = item.Seperator,
+                    LastValue = item.LastValue,
                     LastCode = item.LastCode,
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
                     CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
-                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0
+                    UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
+                    SortOrder = item.SortOrder
                 };
                 pagedData.Add(info);
             }
@@ -88,17 +92,20 @@ namespace VErp.Services.Master.Service.Config.Implement
             var info = new CustomGenCodeOutputModel()
             {
                 CustomGenCodeId = obj.CustomGenCodeId,
+                ParentId = obj.ParentId,
                 CustomGenCodeName = obj.CustomGenCodeName,
                 Description = obj.Description,
                 CodeLength = obj.CodeLength,
                 Prefix = obj.Prefix,
                 Suffix = obj.Suffix,
                 Seperator = obj.Seperator,
+                LastValue = obj.LastValue,
                 LastCode = obj.LastCode,
                 IsActived = obj.IsActived,
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
+                SortOrder = obj.SortOrder
             };
             return info;
         }
@@ -123,20 +130,23 @@ namespace VErp.Services.Master.Service.Config.Implement
                 return CustomGenCodeErrorCode.CustomConfigNotExisted;
             }
 
-            CustomGenCodeOutputModel info = new CustomGenCodeOutputModel()
+            var info = new CustomGenCodeOutputModel()
             {
                 CustomGenCodeId = obj.CustomGenCodeId,
+                ParentId = obj.ParentId,
                 CustomGenCodeName = obj.CustomGenCodeName,
                 Description = obj.Description,
                 CodeLength = obj.CodeLength,
                 Prefix = obj.Prefix,
                 Suffix = obj.Suffix,
                 Seperator = obj.Seperator,
+                LastValue = obj.LastValue,
                 LastCode = obj.LastCode,
                 IsActived = obj.IsActived,
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
+                SortOrder = obj.SortOrder
             };
             return info;
         }
@@ -151,6 +161,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     return CustomGenCodeErrorCode.CustomConfigNotFound;
                 }
+                obj.ParentId = model.ParentId;
                 obj.CustomGenCodeName = model.CustomGenCodeName;
                 obj.CodeLength = model.CodeLength;
                 obj.Prefix = model.Prefix;
@@ -160,9 +171,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.UpdatedUserId = currentUserId;
                 obj.UpdatedTime = DateTime.UtcNow;
 
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
+                obj.LastValue = model.LastValue;
+                obj.SortOrder = model.SortOrder;
 
                 await _masterDbContext.SaveChangesAsync();
+                await UpdateSortOrder();
+
+                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -170,6 +185,31 @@ namespace VErp.Services.Master.Service.Config.Implement
                 _logger.LogError(ex, "Update");
                 return GeneralCode.InternalError;
             }
+        }
+
+
+        private async Task UpdateSortOrder()
+        {
+            var lst = await _masterDbContext.CustomGenCode.OrderBy(c => c.SortOrder).ToListAsync();
+            var st = new Stack<CustomGenCode>();
+            st.Push(null);
+            var idx = 0;
+            while (st.Count > 0)
+            {
+                var customCode = st.Pop();
+                if (customCode != null)
+                {
+                    customCode.SortOrder = ++idx;
+                }
+
+                foreach (var child in lst.Where(c => c.ParentId == customCode?.CustomGenCodeId).Reverse())
+                {
+                    st.Push(child);
+                }
+
+            }
+
+            await _masterDbContext.SaveChangesAsync();
         }
 
         public async Task<Enum> MapObjectCustomGenCode(int currentUserId, ObjectCustomGenCodeMapping model)
@@ -204,7 +244,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             try
             {
-                foreach(var mapConfig in data)
+                foreach (var mapConfig in data)
                 {
                     var config = await _masterDbContext.CustomGenCode
                         .Where(c => c.IsActived)
@@ -226,7 +266,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                         };
                         _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
                     }
-                    else if(curMapConfig.CustomGenCodeId != mapConfig.Value)
+                    else if (curMapConfig.CustomGenCodeId != mapConfig.Value)
                     {
                         curMapConfig.CustomGenCodeId = mapConfig.Value;
                     }
@@ -254,9 +294,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.UpdatedUserId = currentUserId;
                 obj.UpdatedTime = DateTime.UtcNow;
 
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
+                await UpdateSortOrder();
+
+                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
+
 
                 return GeneralCode.Success;
             }
@@ -269,7 +312,6 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model)
         {
-            var result = new ServiceResult<int>() { Data = 0 };
             try
             {
                 if (_masterDbContext.CustomGenCode.Any(q => q.CustomGenCodeName == model.CustomGenCodeName))
@@ -286,7 +328,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Seperator = model.Seperator ?? string.Empty,
                     Description = model.Description,
                     DateFormat = string.Empty,
-                    LastValue = 0,
+                    LastValue = model.LastValue,
                     LastCode = string.Empty,
                     IsActived = true,
                     IsDeleted = false,
@@ -296,20 +338,19 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedTime = DateTime.UtcNow
                 };
                 _masterDbContext.CustomGenCode.Add(entity);
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
 
                 await _masterDbContext.SaveChangesAsync();
+                await UpdateSortOrder();
 
-                result.Code = GeneralCode.Success;
-                result.Data = entity.CustomGenCodeId;
+                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
+
+                return entity.CustomGenCodeId;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Create");
-                result.Message = ex.Message;
-                result.Code = GeneralCode.InternalError;
+                return GeneralCode.InternalError;
             }
-            return result;
         }
 
         public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue)

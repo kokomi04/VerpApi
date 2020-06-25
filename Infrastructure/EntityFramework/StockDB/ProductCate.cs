@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public int SortOrder { get; set; }
 
         public virtual ProductCate ParentProductCate { get; set; }
         public virtual ICollection<ProductCate> InverseParentProductCate { get; set; }

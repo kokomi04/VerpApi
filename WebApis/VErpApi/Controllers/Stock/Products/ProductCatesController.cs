@@ -27,7 +27,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<ServiceResult<PageData<ProductCateOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _productCateService.GetList(keyword, page, size);
+            return await _productCateService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<ServiceResult<int>> AddProductCate([FromBody] ProductCateInput productCate)
         {
-            return await _productCateService.AddProductCate(productCate);
+            return await _productCateService.AddProductCate(productCate).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productCateId}")]
         public async Task<ServiceResult<ProductCateOutput>> GetProductCateInfo([FromRoute] int productCateId)
         {
-            return await _productCateService.GetInfoProductCate(productCateId);
+            return await _productCateService.GetInfoProductCate(productCateId).ConfigureAwait(true);
         }
 
        /// <summary>
@@ -63,7 +63,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productCateId}")]
         public async Task<ServiceResult> UpdateProductCate([FromRoute] int productCateId, [FromBody] ProductCateInput productCate)
         {
-            return await _productCateService.UpdateProductCate(productCateId, productCate);
+            return await _productCateService.UpdateProductCate(productCateId, productCate).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productCateId}")]
         public async Task<ServiceResult> DeleteProductCate([FromRoute] int productCateId)
         {
-            return await _productCateService.DeleteProductCate(productCateId);
+            return await _productCateService.DeleteProductCate(productCateId).ConfigureAwait(true);
         }       
     }
 }
