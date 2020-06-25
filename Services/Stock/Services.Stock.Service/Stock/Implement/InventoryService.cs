@@ -99,7 +99,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
+                query = query.Where(q => q.InventoryCode.Contains(keyword) 
+                || q.Shipper.Contains(keyword) 
+                || q.Content.Contains(keyword) 
+                || q.Department.Contains(keyword) 
+                || q.BillCode.Contains(keyword) 
+                || q.BillSerial.Contains(keyword));
             }
 
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
