@@ -19,6 +19,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Accountancy.Service.Category;
 using VErp.Services.Accountancy.Model.Category;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Accountancy.Model.Data;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
@@ -68,5 +69,13 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _categoryDataService.DeleteCategoryRow(categoryCode, categoryRowId);
         }
+
+        [HttpPost]
+        [Route("mapToObject")]
+        public async Task<ServiceResult<List<MapObjectOutputModel>>> MapToObject([FromBody] MapObjectInputModel[] data)
+        {
+            return await _categoryDataService.MapToObject(data);
+        }
+
     }
 }
