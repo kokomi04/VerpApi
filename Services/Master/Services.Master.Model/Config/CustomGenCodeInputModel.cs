@@ -7,6 +7,7 @@ namespace VErp.Services.Master.Model.Config
 {
     public class CustomGenCodeInputModel
     {
+        public int? ParentId { get; set; }
         public int CodeLength { get; set; }
 
         [StringLength(128)]
@@ -23,5 +24,8 @@ namespace VErp.Services.Master.Model.Config
 
         [StringLength(128)]
         public string Description { get; set; }
+
+        public int LastValue { get; set; }
+        public int SortOrder { get; set; }
     }
 }

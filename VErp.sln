@@ -111,7 +111,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Model"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Service", "Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj", "{7D9F3458-B439-4509-9344-4D2F59FA5C5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigApi", "WebApis\ConfigApi\ConfigApi.csproj", "{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigApi", "WebApis\ConfigApi\ConfigApi.csproj", "{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ids4Migration", "ZTools\Ids4Migration\Ids4Migration.csproj", "{52261907-8C73-4A4B-BA83-040CF3CE2D5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -275,6 +277,10 @@ Global
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52261907-8C73-4A4B-BA83-040CF3CE2D5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52261907-8C73-4A4B-BA83-040CF3CE2D5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52261907-8C73-4A4B-BA83-040CF3CE2D5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52261907-8C73-4A4B-BA83-040CF3CE2D5A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -329,6 +335,7 @@ Global
 		{CCAEBC3F-6A75-4A7D-AEDE-149525468A38} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B} = {C3655DA8-274F-478F-B89A-0354E56B9E9B}
+		{52261907-8C73-4A4B-BA83-040CF3CE2D5A} = {F9CC3F1A-C548-498E-9464-8F45EA648F2A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

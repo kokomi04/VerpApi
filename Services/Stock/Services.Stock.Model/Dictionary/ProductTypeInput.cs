@@ -9,5 +9,6 @@ namespace VErp.Services.Stock.Model.Dictionary
         public string ProductTypeName { get; set; }
         public string IdentityCode { get; set; }
         public int? ParentProductTypeId { get; set; }
+        public int SortOrder { get; set; }
     }
 }
