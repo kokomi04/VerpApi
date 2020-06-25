@@ -99,7 +99,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(q => q.InventoryCode.Contains(keyword) || q.Shipper.Contains(keyword));
+                query = query.Where(q => q.InventoryCode.Contains(keyword) 
+                || q.Shipper.Contains(keyword) 
+                || q.Content.Contains(keyword) 
+                || q.Department.Contains(keyword) 
+                || q.BillCode.Contains(keyword) 
+                || q.BillSerial.Contains(keyword));
             }
 
             if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
@@ -238,10 +243,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryDetailId = details.InventoryDetailId,
                         ProductId = details.ProductId,
                         PrimaryUnitId = productInfo?.UnitId,
+                        RequestPrimaryQuantity = details.RequestPrimaryQuantity,
                         PrimaryQuantity = details.PrimaryQuantity,
                         UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
+                        RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity,
                         ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
+                        ProductUnitConversionPrice = details.ProductUnitConversionPrice,
                         FromPackageId = details.FromPackageId,
                         ToPackageId = details.ToPackageId,
                         PackageOptionId = details.PackageOptionId,
@@ -255,7 +263,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null,
-                        SortOrder = details.SortOrder
+                        SortOrder = details.SortOrder,
+                        Description = details.Description
                     });
                 }
                 #endregion
@@ -1546,10 +1555,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
+                    RequestPrimaryQuantity = details.RequestPrimaryQuantity,
                     PrimaryQuantity = details.PrimaryQuantity,
-                    UnitPrice = details.UnitPrice,
-                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
+                    UnitPrice = details.UnitPrice,                    
                     ProductUnitConversionId = details.ProductUnitConversionId,
+                    RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity,
+                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
+                    ProductUnitConversionPrice = details.ProductUnitConversionPrice,
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
@@ -1559,7 +1571,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FromPackageId = null,
                     ToPackageId = details.ToPackageId,
                     PackageOptionId = (int)details.PackageOptionId,
-                    SortOrder = details.SortOrder
+                    SortOrder = details.SortOrder,
+                    Description = details.Description
                 });
             }
             return inventoryDetailList;
@@ -1716,10 +1729,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
+                    RequestPrimaryQuantity = details.RequestPrimaryQuantity,
                     PrimaryQuantity = primaryQualtity,
-                    UnitPrice = details.UnitPrice,
-                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
+                    UnitPrice = details.UnitPrice,                    
                     ProductUnitConversionId = details.ProductUnitConversionId,
+                    RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity,
+                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity,
+                    ProductUnitConversionPrice = details.ProductUnitConversionPrice,
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
@@ -1729,7 +1745,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FromPackageId = details.FromPackageId,
                     ToPackageId = null,
                     PackageOptionId = null,
-                    SortOrder = details.SortOrder
+                    SortOrder = details.SortOrder,
+                    Description = details.Description
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;

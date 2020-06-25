@@ -111,7 +111,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Model"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Accountancy.Service", "Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj", "{7D9F3458-B439-4509-9344-4D2F59FA5C5D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConfigApi", "WebApis\ConfigApi\ConfigApi.csproj", "{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConfigApi", "WebApis\ConfigApi\ConfigApi.csproj", "{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

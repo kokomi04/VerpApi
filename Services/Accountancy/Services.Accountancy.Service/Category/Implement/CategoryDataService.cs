@@ -139,7 +139,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var id = await _accountancyContext.InsertDataTable(dataTable);
             await _activityLogService.CreateLog(EnumObjectType.Category, id, $"Thêm mới dữ liệu danh mục {id}", data.JsonSerialize());
-            return id;
+            return (int)id;
         }
 
         public async Task<int> UpdateCategoryRow(string categoryCode, int fId, Dictionary<string, string> data)

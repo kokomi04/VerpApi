@@ -47,6 +47,11 @@ namespace VErp.Services.PurchaseOrder.Model
 
         decimal? TaxInPercent { get; set; }
         decimal? TaxInMoney { get; set; }      
+
+        string OrderCode { get; set; }
+        string ProductionOrderCode { get; set; }
+
+        string Description { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -65,8 +70,12 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
 
-        
+        public string Description { get; set; }
+
+
     }
 
     public class DeliveryDestinationModel

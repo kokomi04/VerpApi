@@ -27,6 +27,10 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         {
             modelBuilder.Entity<ReportType>(entity =>
             {
+                entity.Property(e => e.MainView).HasMaxLength(128);
+
+                entity.Property(e => e.PrintTitle).HasMaxLength(128);
+
                 entity.Property(e => e.ReportPath)
                     .IsRequired()
                     .HasMaxLength(512);

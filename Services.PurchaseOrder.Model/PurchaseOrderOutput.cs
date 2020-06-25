@@ -22,15 +22,18 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
         public EnumPurchaseOrderStatus PurchaseOrderStatusId { get; set; }
+        public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
+        public int? CheckedByUserId { get; set; }
         public int? CensorByUserId { get; set; }
-
-        public long? CensorDatetimeUtc { get; set; }
+        
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
+        public long? CensorDatetimeUtc { get; set; }
+        public long? CheckedDatetimeUtc { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -69,6 +72,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Description { get; set; }
 
         public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
         public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }

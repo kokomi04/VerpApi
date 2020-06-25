@@ -653,9 +653,11 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
+
         private async Task InsertRows(bool isMultiRow, ICollection<ICollection<InputValueModel>> inputValueRows, long inputValueBillId, IEnumerable<InputAreaField> inputAreaFields)
         {
-            // Insert row
+            var insertedRows = new Dictionary<ICollection<InputValueModel>, DataRowModel>();
+
             foreach (var rowModel in inputValueRows)
             {
                 var inputValueRow = new InputValueRow
@@ -663,23 +665,38 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     IsMultiRow = isMultiRow,
                     InputValueBillId = inputValueBillId
                 };
-                await _accountingContext.InputValueRow.AddAsync(inputValueRow);
-                await _accountingContext.SaveChangesAsync();
-
-                // Insert row version
-                var inputValueRowVersion = CreateRowVersion(isMultiRow, inputValueRow.InputValueRowId, rowModel, inputAreaFields);
-                await _accountingContext.InputValueRowVersion.AddAsync(inputValueRowVersion);
-                await _accountingContext.SaveChangesAsync();
-
-                // Insert row version number
-                var inputValueRowVersionNumber = CreateRowVersionNumber(isMultiRow, inputValueRowVersion, inputAreaFields);
-                await _accountingContext.InputValueRowVersionNumber.AddAsync(inputValueRowVersionNumber);
-                await _accountingContext.SaveChangesAsync();
-
-                // Update lasted version
-                inputValueRow.LastestInputValueRowVersionId = inputValueRowVersion.InputValueRowVersionId;
-                await _accountingContext.SaveChangesAsync();
+                insertedRows.Add(rowModel, new DataRowModel { row = inputValueRow });
             }
+
+            await _accountingContext.InputValueRow.AddRangeAsync(insertedRows.Values.Select(v => v.row));
+            await _accountingContext.SaveChangesAsync();
+
+            foreach (var insertedRow in insertedRows)
+            {
+                // Insert row version
+                var inputValueRowVersion = CreateRowVersion(isMultiRow, insertedRow.Value.row.InputValueRowId, insertedRow.Key, inputAreaFields);
+                insertedRow.Value.rowVersion = inputValueRowVersion;
+            }
+
+            await _accountingContext.InputValueRowVersion.AddRangeAsync(insertedRows.Values.Select(v => v.rowVersion));
+            await _accountingContext.SaveChangesAsync();
+
+            foreach (var insertedRow in insertedRows)
+            {
+                // Insert row version number
+                var inputValueRowVersionNumber = CreateRowVersionNumber(isMultiRow, insertedRow.Value.rowVersion, inputAreaFields);
+                insertedRow.Value.rowVersionNumber = inputValueRowVersionNumber;
+            }
+
+            await _accountingContext.InputValueRowVersionNumber.AddRangeAsync(insertedRows.Values.Select(v => v.rowVersionNumber));
+            await _accountingContext.SaveChangesAsync();
+
+            foreach (var insertedRow in insertedRows)
+            {
+                insertedRow.Value.row.LastestInputValueRowVersionId = insertedRow.Value.rowVersion.InputValueRowVersionId;
+            }
+
+            await _accountingContext.SaveChangesAsync();
         }
 
         private InputValueRowVersion CreateRowVersion(bool isMultiField, long rowId, ICollection<InputValueModel> valueModels, IEnumerable<InputAreaField> fields)
@@ -1131,7 +1148,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         }
 
 
-        public class ValidateRowModel
+        protected class ValidateRowModel
         {
             public InputValueRowInputModel Data { get; set; }
             public int[] CheckFields { get; set; }
@@ -1143,32 +1160,41 @@ namespace VErp.Services.Accountant.Service.Input.Implement
             }
         }
 
+        protected class DataRowModel
+        {
+            public InputValueRow row { get; set; }
+            public InputValueRowVersion rowVersion { get; set; }
+            public InputValueRowVersionNumber rowVersionNumber { get; set; }
+        }
+
+        protected class InputValueRowVersionTextEntity
+        {
+            public long InputValueBillId { get; set; }
+            public long InputValueRowId { get; set; }
+            public InputValueRowVersion VersionText { get; set; }
+        }
+
+        protected class InputValueRowVersionInNumberEntity
+        {
+            public long InputValueBillId { get; set; }
+            public long InputValueRowId { get; set; }
+            public InputValueRowVersionNumber VersionNumber { get; set; }
+        }
+
+        protected class InputValueBillOrderValueModel
+        {
+            public long InputValueBillId { get; set; }
+            public string OrderValue { get; set; }
+        }
+
+        protected class InputValueBillOrderValueInNumberModel
+        {
+            public long InputValueBillId { get; set; }
+            public long OrderValueInNumber { get; set; }
+        }
+
     }
 
 
-    public class InputValueRowVersionTextEntity
-    {
-        public long InputValueBillId { get; set; }
-        public long InputValueRowId { get; set; }
-        public InputValueRowVersion VersionText { get; set; }
-    }
 
-    public class InputValueRowVersionInNumberEntity
-    {
-        public long InputValueBillId { get; set; }
-        public long InputValueRowId { get; set; }
-        public InputValueRowVersionNumber VersionNumber { get; set; }
-    }
-
-    public class InputValueBillOrderValueModel
-    {
-        public long InputValueBillId { get; set; }
-        public string OrderValue { get; set; }
-    }
-
-    public class InputValueBillOrderValueInNumberModel
-    {
-        public long InputValueBillId { get; set; }
-        public long OrderValueInNumber { get; set; }
-    }
 }

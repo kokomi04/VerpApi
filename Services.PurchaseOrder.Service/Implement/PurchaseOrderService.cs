@@ -55,7 +55,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchasingSuggestService = purchasingSuggestService;
         }
 
-        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
                         select new
@@ -71,15 +71,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.OtherFee,
                             po.TotalMoney,
                             po.PurchaseOrderStatusId,
+                            po.IsChecked,
                             po.IsApproved,
                             po.PoProcessStatusId,
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
+                            po.CheckedByUserId,
                             po.CensorByUserId,
-
-                            po.CensorDatetimeUtc,
+                            
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
+                            po.CheckedDatetimeUtc,
+                            po.CensorDatetimeUtc,
 
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -106,6 +109,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (isApproved.HasValue)
             {
                 query = query.Where(q => q.IsApproved == isApproved);
+            }
+
+            if (isChecked.HasValue)
+            {
+                query = query.Where(q => q.IsChecked == isChecked);
             }
 
             if (fromDate.HasValue)
@@ -142,22 +150,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     OtherFee = info.OtherFee,
                     TotalMoney = info.TotalMoney,
                     PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
+                    IsChecked = info.IsChecked,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
+                    CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),                    
+                    CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix()
                 });
             }
 
             return (result, total);
         }
 
-        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
@@ -182,15 +193,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.OtherFee,
                             po.TotalMoney,
                             po.PurchaseOrderStatusId,
+                            po.IsChecked,
                             po.IsApproved,
                             po.PoProcessStatusId,
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
+                            po.CheckedByUserId,
                             po.CensorByUserId,
-
-                            po.CensorDatetimeUtc,
+                            
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
+                            po.CheckedDatetimeUtc,
+                            po.CensorDatetimeUtc,
 
                             //detail
                             pod.PurchaseOrderDetailId,
@@ -209,15 +223,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             pod.TaxInPercent,
                             pod.TaxInMoney,
+                            pod.Description,
+
+                            pod.OrderCode,
+                            pod.ProductionOrderCode,
 
                             PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
                             PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
 
                             PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
-                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
-
-                            OrderCode = sd == null ? null : sd.OrderCode,
-                            ProductionOrderCode = sd == null ? null : sd.ProductionOrderCode
+                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -241,6 +256,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (poProcessStatusId.HasValue)
             {
                 query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (isChecked.HasValue)
+            {
+                query = query.Where(q => q.IsChecked == isChecked);
             }
 
             if (isApproved.HasValue)
@@ -298,15 +318,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     OtherFee = info.OtherFee,
                     TotalMoney = info.TotalMoney,
                     PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
+                    IsChecked = info.IsChecked,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
+                    CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                    CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
 
 
                     //detail
@@ -325,6 +348,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
+                    OrderCode = info.OrderCode,
+                    ProductionOrderCode = info.ProductionOrderCode,
+                    Description = info.Description,
 
                     PoAssignmentDetail = assignmentDetailInfo,
                     PurchasingSuggestDetail = purchasingSuggestDetailInfo
@@ -335,11 +361,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo(long purchaseOrderId)
+        public async Task<PurchaseOrderOutput> GetInfo(long purchaseOrderId)
         {
             var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().Where(po => po.PurchaseOrderId == purchaseOrderId).FirstOrDefaultAsync();
 
-            if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+            if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
             var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
@@ -372,15 +398,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 OtherFee = info.OtherFee,
                 TotalMoney = info.TotalMoney,
                 PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
+                IsChecked = info.IsChecked,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
                 CreatedByUserId = info.CreatedByUserId,
                 UpdatedByUserId = info.UpdatedByUserId,
+                CheckedByUserId = info.CheckedByUserId,
                 CensorByUserId = info.CensorByUserId,
-
-                CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                
                 CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
 
                 Details = details.Select(d =>
                 {
@@ -403,6 +432,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        OrderCode = d.OrderCode,
+                        ProductionOrderCode = d.ProductionOrderCode,
+                        Description = d.Description,
 
                         PoAssignmentDetail = assignmentDetailInfo,
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
@@ -413,13 +445,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             };
         }
 
-        public async Task<ServiceResult<long>> Create(PurchaseOrderInput model)
+        public async Task<long> Create(PurchaseOrderInput model)
         {
             var validate = await ValidatePoModelInput(null, model);
 
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
@@ -491,6 +523,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
+                        OrderCode = d.OrderCode,
+                        ProductionOrderCode = d.ProductionOrderCode,
+                        Description = d.Description,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
@@ -511,19 +546,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        public async Task<ServiceResult> Update(long purchaseOrderId, PurchaseOrderInput model)
+        public async Task<bool> Update(long purchaseOrderId, PurchaseOrderInput model)
         {
             var validate = await ValidatePoModelInput(purchaseOrderId, model);
 
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
                 var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId).ToList();
 
@@ -584,11 +619,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProviderProductName = item.ProviderProductName;
                             detail.PrimaryQuantity = item.PrimaryQuantity;
                             detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
+
                             detail.ProductUnitConversionId = item.ProductUnitConversionId;
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
                             detail.TaxInPercent = item.TaxInPercent;
+                            detail.TaxInMoney = item.TaxInMoney;
+                            detail.OrderCode = item.OrderCode;
+                            detail.ProductionOrderCode = item.ProductionOrderCode;
+                            detail.Description = item.Description;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             break;
                         }
@@ -614,6 +654,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
                             TaxInPercent = item.TaxInPercent,
                             TaxInMoney = item.TaxInMoney,
+                            OrderCode = item.OrderCode,
+                            ProductionOrderCode = item.ProductionOrderCode,
+                            Description = item.Description,
                             CreatedDatetimeUtc = DateTime.UtcNow,
                             UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
@@ -640,46 +683,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<ServiceResult> Approve(long purchaseOrderId)
+
+
+        public async Task<bool> Delete(long purchaseOrderId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
-
-                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
-                  && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
-                  )
-                {
-                    return GeneralCode.InvalidParams;
-                }
-
-                info.IsApproved = true;
-
-                info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
-                info.CensorByUserId = _currentContext.UserId;
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
-
-                return GeneralCode.Success;
-            }
-        }
-
-        public async Task<ServiceResult> Delete(long purchaseOrderId)
-        {
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
-            {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
 
                 var oldDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
@@ -699,24 +714,140 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-
-        public async Task<ServiceResult> Reject(long purchaseOrderId)
+        public async Task<bool> Checked(long purchaseOrderId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+                if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == true)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được kiểm tra");
+                }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
-                  && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
-                  )
+                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
                 }
+
+                info.IsChecked = true;
+
+                info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Checked;
+                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedByUserId = _currentContext.UserId;
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Đã kiểm tra PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                return true;
+            }
+        }
+
+        public async Task<bool> RejectCheck(long purchaseOrderId)
+        {
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+                if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == false)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã kiểm tra từ chối");
+                }
+
+                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
+                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                }
+
+                info.IsChecked = false;
+
+                info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Checked;
+                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedByUserId = _currentContext.UserId;
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Kiểm tra từ chối  PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                return true;
+            }
+        }
+
+        public async Task<bool> Approve(long purchaseOrderId)
+        {
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == true)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được duyệt");
+                }
+
+                if (info.IsChecked != true)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                }
+
+                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
+                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                }
+
+                info.IsApproved = true;
+
+                info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Censored;
+                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorByUserId = _currentContext.UserId;
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                return true;
+            }
+        }
+
+        public async Task<bool> Reject(long purchaseOrderId)
+        {
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == false)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã từ chối");
+                }
+
+                if (info.IsChecked != true)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                }
+
+                if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
+                   && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                }
+
 
                 info.IsApproved = false;
 
@@ -730,20 +861,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Từ chối PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<ServiceResult> SentToCensor(long purchaseOrderId)
+        public async Task<bool> SentToCensor(long purchaseOrderId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Draff)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.WaitToCensor;
@@ -757,17 +888,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Gửi duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
 
-        public async Task<ServiceResult> UpdatePoProcessStatus(long purchaseOrderId, EnumPoProcessStatus poProcessStatusId)
+        public async Task<bool> UpdatePoProcessStatus(long purchaseOrderId, EnumPoProcessStatus poProcessStatusId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) return PurchaseOrderErrorCode.PoNotFound;
+                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -777,7 +908,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật tiến trình PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 

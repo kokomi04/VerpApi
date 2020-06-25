@@ -27,7 +27,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<ServiceResult<PageData<ProductTypeOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _productTypeService.GetList(keyword, page, size);
+            return await _productTypeService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<ServiceResult<int>> AddProductType([FromBody] ProductTypeInput type)
         {
-            return await _productTypeService.AddProductType(type);
+            return await _productTypeService.AddProductType(type).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productTypeId}")]
         public async Task<ServiceResult<ProductTypeOutput>> GetProductTypeInfo([FromRoute] int productTypeId)
         {
-            return await _productTypeService.GetInfoProductType(productTypeId);
+            return await _productTypeService.GetInfoProductType(productTypeId).ConfigureAwait(true);
         }
 
        /// <summary>
@@ -63,7 +63,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productTypeId}")]
         public async Task<ServiceResult> UpdateProductType([FromRoute] int productTypeId, [FromBody] ProductTypeInput type)
         {
-            return await _productTypeService.UpdateProductType(productTypeId, type);
+            return await _productTypeService.UpdateProductType(productTypeId, type).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productTypeId}")]
         public async Task<ServiceResult> DeleteProductType([FromRoute] int productTypeId)
         {
-            return await _productTypeService.DeleteProductType(productTypeId);
+            return await _productTypeService.DeleteProductType(productTypeId).ConfigureAwait(true);
         }       
     }
 }
