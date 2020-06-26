@@ -672,58 +672,56 @@ namespace VErp.Services.Accountancy.Service.Category
                     throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
                 }
 
-                var groups = fields.GroupBy(f => new { f.CategoryFieldName });
-                foreach (var group in groups)
+                var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
+
+                for (int indx = 0; indx < fields.Count; indx ++)
                 {
-                    var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
+                    var data = fields[indx];
                     if (category == null)
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
                     }
 
-                    for (int indx = 0; indx < group.Count(); indx++)
+                    var categoryAreaField = data.CategoryFieldId > 0 ? _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
+                    ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
+                    FieldDataProcess(ref data);
+
+                    int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : data.DataSize;
+
+                    if (data.CategoryFieldId > 0 && !data.Compare(categoryAreaField))
                     {
-                        var data = group.ElementAt(indx);
-                        var categoryAreaField = data.CategoryFieldId > 0 ? _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
-                        ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
-                        FieldDataProcess(ref data);
-
-                        int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : data.DataSize;
-
-                        if (data.CategoryFieldId > 0 && !data.Compare(categoryAreaField))
+                        // rename field
+                        if (!category.IsOutSideData && categoryAreaField.CategoryFieldName != data.CategoryFieldName)
                         {
-                            // rename field
-                            if (!category.IsOutSideData && categoryAreaField.CategoryFieldName != data.CategoryFieldName )
-                            {
-                                await _accountancyContext.RenameColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, data.CategoryFieldName);
-                            }
-                            // Update
-                            UpdateField(ref categoryAreaField, data);
-                            // update field 
-                            if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
-                            {
-                                await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
-                            }
+                            await _accountancyContext.RenameColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, data.CategoryFieldName);
                         }
-                        else if (data.CategoryFieldId == 0)
+                        // Update
+                        UpdateField(ref categoryAreaField, data);
+                        // update field 
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            // Create new
-                            var categoryField = _mapper.Map<CategoryField>(data);
-                            categoryField.CategoryId = categoryId;
-                            await _accountancyContext.CategoryField.AddAsync(categoryField);
-                            await _accountancyContext.SaveChangesAsync();
-                            // Add field into table
-                            if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
-                            {
-                                await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
-                            }
+                            await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
                         }
                     }
+                    else if (data.CategoryFieldId == 0)
+                    {
+                        // Create new
+                        var categoryField = _mapper.Map<CategoryField>(data);
+                        categoryField.CategoryId = categoryId;
+                        await _accountancyContext.CategoryField.AddAsync(categoryField);
+                        await _accountancyContext.SaveChangesAsync();
+                        // Add field into table
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        {
+                            await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
+                        }
+                    }
+                }
 
-                    await _accountancyContext.SaveChangesAsync();
-                    // Update view
-                    string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
-                    await _accountancyContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
+                await _accountancyContext.SaveChangesAsync();
+                // Update view
+                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
+                await _accountancyContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
                         new SqlParameter("@CategoryCode", category.CategoryCode ),
                         new SqlParameter("@TableName", tableName ),
                         new SqlParameter("@IsTreeView", category.IsTreeView),
@@ -731,7 +729,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
                     });
-                }
+
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
                 return categoryId;
