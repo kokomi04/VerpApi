@@ -76,7 +76,7 @@ namespace MasterTests
             catch (Exception ex)
             {
 
-                throw;
+                throw ex;
             }
 
 

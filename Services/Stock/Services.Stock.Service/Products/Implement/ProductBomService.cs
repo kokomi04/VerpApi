@@ -38,11 +38,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ServiceResult<ProductBomOutput>> Get(long productBomId)
         {
-            var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == productBomId);
+            var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == productBomId);
             if (entity != null)
             {
-                var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
-                var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
+                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
+                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
                 var billOfMaterialOutputModel = new ProductBomOutput
                 {
                     ProductBomId = entity.ProductBomId,
@@ -72,9 +72,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var resultList = new List<ProductBomOutput>(BomData.Count);
             foreach (var item in BomData)
             {
-                var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == item.ProductBomId);
-                var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
-                var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
+                var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == item.ProductBomId);
+                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
+                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
                 var billOfMaterialOutputModel = new ProductBomOutput
                 {
                     ProductBomId = entity.ProductBomId,
@@ -105,9 +105,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var resultList = new List<ProductBomOutput>(totalRecord);
             foreach (var item in bomDataList)
             {
-                var entity = _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefault(q => q.ProductBomId == item.ProductBomId);
-                var productExtraObj = _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefault(q => q.ProductId == entity.ProductId);
-                var productCateObj = _stockDbContext.ProductCate.AsNoTracking().FirstOrDefault(q => q.ProductCateId == entity.Product.ProductCateId);
+                var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == item.ProductBomId);
+                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
+                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
                 var billOfMaterialOutputModel = new ProductBomOutput
                 {
                     ProductBomId = entity.ProductBomId,

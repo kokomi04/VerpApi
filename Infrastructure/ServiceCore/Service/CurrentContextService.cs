@@ -57,7 +57,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private EnumAction? _action;
 
         private IList<int> _stockIds;
-        private IList<int> _roleIds;
+        //private IList<int> _roleIds;
         private RoleInfo _roleInfo;
 
         public HttpCurrentContextService(

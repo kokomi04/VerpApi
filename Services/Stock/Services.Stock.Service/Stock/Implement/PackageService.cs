@@ -288,16 +288,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
+                var obj = await _stockDbContext.Package.FirstOrDefaultAsync(q => q.PackageId == packageId);
 
                 if (obj == null)
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
 
-                var productInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == obj.ProductId);
+                var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == obj.ProductId);
 
-                var locationObj = _stockDbContext.Location.FirstOrDefault(q => q.LocationId == obj.LocationId);
+                var locationObj = await _stockDbContext.Location.FirstOrDefaultAsync(q => q.LocationId == obj.LocationId);
                 var locationOutputModel = locationObj == null ? null : new LocationOutput
                 {
                     LocationId = locationObj.LocationId,

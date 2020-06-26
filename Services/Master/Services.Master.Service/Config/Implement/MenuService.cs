@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<ICollection<MenuOutputModel>> GetList()
         {
             var lstMenu = new List<MenuOutputModel>();
-            foreach (var item in _masterDbContext.Menu.OrderBy(m => m.SortOrder))
+            foreach (var item in await _masterDbContext.Menu.OrderBy(m => m.SortOrder).ToListAsync())
             {
                 var info = new MenuOutputModel()
                 {

@@ -147,6 +147,10 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId, [FromBody] InputTypeViewModel model)
         {
+            if (inputTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
             var r = await _inputConfigService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
             return r.IsSuccess();
         }
@@ -155,6 +159,11 @@ namespace VErpApi.Controllers.Accountant
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
+            if (inputTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
             var r = await _inputConfigService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
             return r.IsSuccess();
         }

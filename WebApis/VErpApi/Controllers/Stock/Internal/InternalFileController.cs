@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -27,6 +28,11 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPut]
         public async Task<ServiceResult> FileAssignToObject([FromRoute] long fileId, [FromBody] FileAssignToObjectInput req)
         {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
             return await _fileService.FileAssignToObject(req.ObjectTypeId, req.ObjectId, fileId);
         }
 

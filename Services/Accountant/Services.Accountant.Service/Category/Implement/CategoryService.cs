@@ -283,9 +283,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<FormTypeModel>> GetFormTypes(int page, int size)
+        public PageData<FormTypeModel> GetFormTypes(int page, int size)
         {
-            List<FormTypeModel> formTypes = EnumExtensions.GetEnumMembers<EnumFormType>().Select(m => new FormTypeModel
+            var formTypes = EnumExtensions.GetEnumMembers<EnumFormType>().Select(m => new FormTypeModel
             {
                 FormTypeId = (int)m.Enum,
                 Title = m.Description,
@@ -300,9 +300,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (formTypes, total);
         }
 
-        public async Task<PageData<OperatorModel>> GetOperators(int page, int size)
+        public PageData<OperatorModel> GetOperators(int page, int size)
         {
-            List<OperatorModel> operators = EnumExtensions.GetEnumMembers<EnumOperator>().Select(m => new OperatorModel
+            var operators = EnumExtensions.GetEnumMembers<EnumOperator>().Select(m => new OperatorModel
             {
                 Value = (int)m.Enum,
                 Title = m.Description,
@@ -316,9 +316,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (operators, total);
         }
 
-        public async Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size)
+        public PageData<LogicOperatorModel> GetLogicOperators(int page, int size)
         {
-            List<LogicOperatorModel> operators = EnumExtensions.GetEnumMembers<EnumLogicOperator>().Select(m => new LogicOperatorModel
+            var operators = EnumExtensions.GetEnumMembers<EnumLogicOperator>().Select(m => new LogicOperatorModel
             {
                 Value = (int)m.Enum,
                 Title = m.Description
@@ -331,9 +331,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             return (operators, total);
         }
 
-        public async Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size)
+        public PageData<ModuleTypeModel> GetModuleTypes(int page, int size)
         {
-            List<ModuleTypeModel> moduleTypes = EnumExtensions.GetEnumMembers<EnumModuleType>().Select(m => new ModuleTypeModel
+            var moduleTypes = EnumExtensions.GetEnumMembers<EnumModuleType>().Select(m => new ModuleTypeModel
             {
                 ModuleTypeValue = (int)m.Enum,
                 ModuleTypeTitle = m.Description

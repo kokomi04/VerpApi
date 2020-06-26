@@ -88,7 +88,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         public static async Task<int> UpdateCategoryData(this DbContext dbContext, DataTable table, int fId)
         {
             int numberChange = 0;
-            int id = 0;
+            //int id = 0;
             var columns = new HashSet<DataColumn>();
             foreach (DataColumn c in table.Columns)
             {

@@ -21,7 +21,6 @@ using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.Services.Organization.Model.Department;
-using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {

@@ -15,10 +15,10 @@ namespace VErp.Services.Accountant.Service.Category
         Task<Enum> DeleteCategory(int categoryId);
 
         Task<PageData<DataTypeModel>> GetDataTypes(int page, int size);
-        Task<PageData<FormTypeModel>> GetFormTypes(int page, int size);
-        Task<PageData<OperatorModel>> GetOperators(int page, int size);
+        PageData<FormTypeModel> GetFormTypes(int page, int size);
+        PageData<OperatorModel> GetOperators(int page, int size);
 
-        Task<PageData<LogicOperatorModel>> GetLogicOperators(int page, int size);
-        Task<PageData<ModuleTypeModel>> GetModuleTypes(int page, int size);
+        PageData<LogicOperatorModel> GetLogicOperators(int page, int size);
+        PageData<ModuleTypeModel> GetModuleTypes(int page, int size);
     }
 }

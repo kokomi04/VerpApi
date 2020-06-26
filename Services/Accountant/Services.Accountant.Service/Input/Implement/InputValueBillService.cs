@@ -523,9 +523,9 @@ namespace VErp.Services.Accountant.Service.Input.Implement
         public async Task<ServiceResult<InputValueOuputModel>> GetInputValueBill(int inputTypeId, long inputValueBillId)
         {
             // Get area
-            var areas = _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).ToList();
+            var areas = await _accountingContext.InputArea.Where(a => a.InputTypeId == inputTypeId).ToListAsync();
 
-            var lstField = _accountingContext.InputAreaField
+            var lstField = await _accountingContext.InputAreaField
                 .Include(f => f.InputField)
                 .Where(f => f.InputTypeId == inputTypeId)
                 .Select(f => new
@@ -533,23 +533,24 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     f.InputAreaFieldId,
                     f.InputAreaId,
                     FieldName = string.Format(AccountantConstants.INPUT_TYPE_FIELDNAME_FORMAT, f.InputField.FieldIndex)
-                }).ToList();
-            InputValueOuputModel inputValueOuputModel = new InputValueOuputModel();
+                }).ToListAsync();
+
+            var inputValueOuputModel = new InputValueOuputModel();
             // Check exist
-            var lstGroups = (from row in _accountingContext.InputValueRow
-                             where row.InputValueBillId == inputValueBillId
-                             join rowVersion in _accountingContext.InputValueRowVersion
-                             on new { row.InputValueRowId, inputValueRowVersionId = row.LastestInputValueRowVersionId }
-                             equals new { rowVersion.InputValueRowId, inputValueRowVersionId = rowVersion.InputValueRowVersionId }
-                             select new
-                             {
-                                 //row.InputAreaId,
-                                 row.IsMultiRow,
-                                 row.InputValueRowId,
-                                 Data = rowVersion
-                             })
-                           .ToList()
-                           .GroupBy(r => r.IsMultiRow);
+            var lstGroups = (await (from row in _accountingContext.InputValueRow
+                                    where row.InputValueBillId == inputValueBillId
+                                    join rowVersion in _accountingContext.InputValueRowVersion
+                                    on new { row.InputValueRowId, inputValueRowVersionId = row.LastestInputValueRowVersionId }
+                                    equals new { rowVersion.InputValueRowId, inputValueRowVersionId = rowVersion.InputValueRowVersionId }
+                                    select new
+                                    {
+                                        //row.InputAreaId,
+                                        row.IsMultiRow,
+                                        row.InputValueRowId,
+                                        Data = rowVersion
+                                    })
+                           .ToListAsync()
+                           ).GroupBy(r => r.IsMultiRow);
             foreach (var group in lstGroups)
             {
                 foreach (var area in areas.Where(a => a.IsMultiRow == group.Key))
@@ -557,7 +558,7 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                     var fields = lstField.Where(f => f.InputAreaId == area.InputAreaId);
                     foreach (var row in group)
                     {
-                        InputRowOutputModel inputRowOutputModel = new InputRowOutputModel
+                        var inputRowOutputModel = new InputRowOutputModel
                         {
                             InputAreaId = area.InputAreaId,
                             InputValueRowId = row.InputValueRowId,

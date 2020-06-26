@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
@@ -42,6 +43,7 @@ namespace VErp.WebApis.VErpApi
 
         }
 
+        private X509Certificate2 _cert;
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             ConfigureStandardServices(services, true);
@@ -50,9 +52,11 @@ namespace VErp.WebApis.VErpApi
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
+            _cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
+
             services
                 .AddIdentityServer()
-                .AddSigningCredential(Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword))
+                .AddSigningCredential(_cert)
                 .AddConfigurationStore((option) =>
                 {
                     option.ConfigureDbContext = (builder) =>
@@ -86,7 +90,7 @@ namespace VErp.WebApis.VErpApi
 
             return BuildService(services);
         }
-        private void ConfigureBussinessService(IServiceCollection services)
+        private static void ConfigureBussinessService(IServiceCollection services)
         {
             services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
@@ -109,7 +113,7 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
-            
+
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }

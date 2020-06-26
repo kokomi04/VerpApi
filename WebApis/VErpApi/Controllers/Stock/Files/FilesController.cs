@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.Stock.Files
         [VErpAction(EnumAction.View)]
         public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails([FromBody] GetThumbnailsInput req)
         {
-            return await _fileService.GetThumbnails(req.FileIds, req.ThumbnailSize).ConfigureAwait(true);
+            return await _fileService.GetThumbnails(req?.FileIds, req.ThumbnailSize).ConfigureAwait(true);
         }
 
 

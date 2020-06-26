@@ -128,37 +128,37 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("datatypes")]
-        public async Task<ServiceResult<PageData<DataTypeModel>>> GetDataTypes([FromQuery] int page, [FromQuery] int size)
+        public PageData<DataTypeModel> GetDataTypes([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryConfigService.GetDataTypes(page, size);
+            return _categoryConfigService.GetDataTypes(page, size);
         }
 
         [HttpGet]
         [Route("formtypes")]
-        public async Task<ServiceResult<PageData<FormTypeModel>>> GetFormTypes([FromQuery] int page, [FromQuery] int size)
+        public PageData<FormTypeModel> GetFormTypes([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryConfigService.GetFormTypes(page, size);
+            return _categoryConfigService.GetFormTypes(page, size);
         }
 
         [HttpGet]
         [Route("operators")]
-        public async Task<ServiceResult<PageData<OperatorModel>>> GetOperators([FromQuery] int page, [FromQuery] int size)
+        public PageData<OperatorModel> GetOperators([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryConfigService.GetOperators(page, size);
+            return _categoryConfigService.GetOperators(page, size);
         }
 
         [HttpGet]
         [Route("logicoperators")]
-        public async Task<ServiceResult<PageData<LogicOperatorModel>>> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
+        public PageData<LogicOperatorModel> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryConfigService.GetLogicOperators(page, size);
+            return _categoryConfigService.GetLogicOperators(page, size);
         }
 
         [HttpGet]
         [Route("moduletypes")]
-        public async Task<ServiceResult<PageData<ModuleTypeModel>>> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
+        public PageData<ModuleTypeModel> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryConfigService.GetModuleTypes(page, size);
+            return _categoryConfigService.GetModuleTypes(page, size);
         }
     }
 }

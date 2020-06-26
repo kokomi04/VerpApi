@@ -18,6 +18,7 @@ using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Accountant
 {
@@ -197,6 +198,11 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/categoryrows/file")]
         public async Task<ServiceResult> ImportCategoryRow([FromRoute] int categoryId, [FromForm] IFormFile file)
         {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Empty file");
+            }
+
             var r = await _categoryRowService.ImportCategoryRow(categoryId, file.OpenReadStream());
             if (r.IsSuccessCode())
             {
@@ -240,6 +246,10 @@ namespace VErpApi.Controllers.Accountant
         [Route("{categoryId}/importFromMapping")]
         public async Task<bool> importFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
         {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
             return await _categoryRowService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<ImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
 
@@ -267,30 +277,30 @@ namespace VErpApi.Controllers.Accountant
 
         [HttpGet]
         [Route("formtypes")]
-        public async Task<ServiceResult<PageData<FormTypeModel>>> GetFormTypes([FromQuery] int page, [FromQuery] int size)
+        public PageData<FormTypeModel> GetFormTypes([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryService.GetFormTypes(page, size);
+            return _categoryService.GetFormTypes(page, size);
         }
 
         [HttpGet]
         [Route("operators")]
-        public async Task<ServiceResult<PageData<OperatorModel>>> GetOperators([FromQuery] int page, [FromQuery] int size)
+        public PageData<OperatorModel> GetOperators([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryService.GetOperators(page, size);
+            return _categoryService.GetOperators(page, size);
         }
 
         [HttpGet]
         [Route("logicoperators")]
-        public async Task<ServiceResult<PageData<LogicOperatorModel>>> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
+        public PageData<LogicOperatorModel> GetLogicOperators([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryService.GetLogicOperators(page, size);
+            return _categoryService.GetLogicOperators(page, size);
         }
 
         [HttpGet]
         [Route("moduletypes")]
-        public async Task<ServiceResult<PageData<ModuleTypeModel>>> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
+        public PageData<ModuleTypeModel> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryService.GetModuleTypes(page, size);
+            return _categoryService.GetModuleTypes(page, size);
         }
     }
 }

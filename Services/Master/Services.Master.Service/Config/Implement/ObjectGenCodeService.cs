@@ -297,8 +297,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<PageData<ObjectType>> GetAllObjectType()
         {
 
-            var total = _masterDbContext.ObjectType.Count();
-            var allData = _masterDbContext.ObjectType.AsNoTracking().ToList();
+            var total = await _masterDbContext.ObjectType.CountAsync();
+            var allData = await _masterDbContext.ObjectType.AsNoTracking().ToListAsync();
 
             return (allData, total);
 

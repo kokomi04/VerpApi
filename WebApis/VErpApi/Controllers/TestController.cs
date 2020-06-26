@@ -35,7 +35,7 @@ namespace VErp.WebApis.VErpApi.Controllers
             )
         {
             _masterDBContext = masterDBContext;
-            _appSetting = appSetting.Value;
+            _appSetting = appSetting?.Value;
             _activityService = activityService;
             _asyncRunnerService = asyncRunnerService;
         }
@@ -70,6 +70,7 @@ namespace VErp.WebApis.VErpApi.Controllers
 
         public async Task<int> RunAbc(int a)
         {
+            Console.WriteLine(a);
             var u = await _masterDBContext.User.FirstOrDefaultAsync();
             return u.UserId;
         }

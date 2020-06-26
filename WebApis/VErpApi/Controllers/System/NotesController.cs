@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -37,6 +39,10 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<ServiceResult> AddNote(AddNoteInput req)
         {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
             return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, (int)EnumAction.View, EnumMessageType.Comment, req.Message);
         }
 

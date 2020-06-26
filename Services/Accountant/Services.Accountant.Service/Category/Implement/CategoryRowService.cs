@@ -53,7 +53,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
         {
             var total = 0;
-            List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
+            var lst = new List<CategoryRowListOutputModel>();
             Clause filterClause = null;
             if (!string.IsNullOrEmpty(filters))
             {
@@ -115,9 +115,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
                 else
                 {
-                    lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
+                    lst = await query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
                          .OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size)
-                         .ToList();
+                         .ToListAsync();
                 }
             }
             return (lst, total);
@@ -213,21 +213,23 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues)
         {
-            List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
+            var titles = new List<MapTitleOutputModel>();
             var groups = categoryValues.GroupBy(v => new { v.ReferCategoryFieldId });
 
             var refFieldIds = groups.Select(g => g.Key.ReferCategoryFieldId).ToList();
 
-            List<CategoryEntity> categories = (from category in _accountingContext.Category
+            var categories = (from category in _accountingContext.Category
                                                join field in _accountingContext.CategoryField on category.CategoryId equals field.CategoryId
                                                where refFieldIds.Contains(field.CategoryFieldId)
                                                select category)
                 .Include(c => c.OutSideDataConfig)
                 .ToList();
-            var categoryIds = categories.Select(c => c.CategoryId).ToList();
-            List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
 
-            List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)> refObjects = new List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)>();
+            var categoryIds = categories.Select(c => c.CategoryId).ToList();
+
+            var fields = await _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToListAsync();
+
+            var refObjects = new List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)>();
 
             foreach (var group in groups)
             {
@@ -276,7 +278,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             }
                         }
                     }
-                    MapTitleOutputModel title = new MapTitleOutputModel
+
+                    var title = new MapTitleOutputModel
                     {
                         ReferCategoryFieldId = referField.CategoryFieldId,
                         Value = value,
@@ -408,6 +411,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "GetOutSideCategoryRow");
                 throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideDataError);
             }
         }
@@ -983,6 +987,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Import");
                 return CategoryErrorCode.FormatFileInvalid;
             }
         }

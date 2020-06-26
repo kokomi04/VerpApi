@@ -1490,7 +1490,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
 
-                if (details.ProductUnitConversionId != null && details.ProductUnitConversionId > 0)
+                if (details.ProductUnitConversionId > 0)
                 {
                     var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
                     if (productUnitConversionInfo == null)

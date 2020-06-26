@@ -15,7 +15,7 @@ namespace VErpApi.Controllers.System
     public class UtilityController : VErpBaseController
     {
         [HttpPost]
-        public async Task<ServiceResult<decimal>> Eval([FromBody] string expression)
+        public decimal Eval([FromBody] string expression)
         {
             return Utils.Eval(expression);
         }

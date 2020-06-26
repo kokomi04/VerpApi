@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
@@ -160,6 +162,10 @@ namespace VErpApi.Controllers.Accountancy.Config
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId, [FromBody] InputTypeViewModel model)
         {
+            if (inputTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
             return await _inputConfigService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
         }
 
@@ -167,6 +173,10 @@ namespace VErpApi.Controllers.Accountancy.Config
         [Route("{inputTypeId}/views/{inputTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
+            if (inputTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
             return await _inputConfigService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
         }
 
