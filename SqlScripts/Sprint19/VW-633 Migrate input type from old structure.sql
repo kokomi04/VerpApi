@@ -175,7 +175,50 @@ DECLARE @RefFieldTitle nvarchar(512)
 			END
 
 			
-			INSERT INTO dbo.InputField
+			
+			
+
+			--EnumDataType.Text => SqlDbType.NVarChar,
+			IF @DataTypeId = 1 SET @SqlDataType = 'NVarChar'
+           -- EnumDataType.Int => SqlDbType.Int,
+			IF @DataTypeId = 2 
+			BEGIN 
+				SET @SqlDataType = 'Int'; 
+				SET @DataSize=0 
+
+				IF @FormTypeId NOT IN(2,4)--select, SearchTable
+				BEGIN
+					SET @DataTypeId = 9
+					SET @SqlDataType = 'Decimal'
+					SET @DataSize = 18					
+				END
+				
+			END
+
+            --EnumDataType.Date => SqlDbType.DateTime2,
+			IF @DataTypeId = 3 SET @SqlDataType = 'DateTime2'
+            --EnumDataType.PhoneNumber => SqlDbType.NVarChar,
+			IF @DataTypeId = 4 SET @SqlDataType = 'NVarChar'
+            --EnumDataType.Email => SqlDbType.NVarChar,
+			IF @DataTypeId = 5 SET @SqlDataType = 'NVarChar'
+            --EnumDataType.Boolean => SqlDbType.Bit,
+			IF @DataTypeId = 6 BEGIN SET @SqlDataType = 'Bit'; SET @DataSize=0 END
+            --EnumDataType.Percentage => SqlDbType.TinyInt,
+			IF @DataTypeId = 7 BEGIN SET @SqlDataType = 'TinyInt'; SET @DataSize=0 END
+            --EnumDataType.BigInt => SqlDbType.BigInt,
+			IF @DataTypeId = 8 BEGIN SET @SqlDataType = 'BigInt'; SET @DataSize=0 END
+            --EnumDataType.Decimal => SqlDbType.Decimal,
+			IF @DataTypeId = 9 SET @SqlDataType = 'Decimal'
+            --_ => SqlDbType.NVarChar
+			IF LEN(@SqlDataType)=0 SET @SqlDataType = 'NVarChar'
+
+		IF @SqlDataType = 'NVarChar' AND @DataSize<=1
+		BEGIN
+			SET @DataSize = 512
+		END
+
+
+		INSERT INTO dbo.InputField
 			(
 			    InputFieldId, -- column value is auto-generated
 			    FieldName,
@@ -219,46 +262,6 @@ DECLARE @RefFieldTitle nvarchar(512)
 			    0, -- IsDeleted - bit
 			    NULL -- DeletedDatetimeUtc - datetime2
 			)
-			
-
-			--EnumDataType.Text => SqlDbType.NVarChar,
-			IF @DataTypeId = 1 SET @SqlDataType = 'NVarChar'
-           -- EnumDataType.Int => SqlDbType.Int,
-			IF @DataTypeId = 2 
-			BEGIN 
-				SET @SqlDataType = 'Int'; 
-				SET @DataSize=0 
-
-				IF @FormTypeId NOT IN(2,4)--select, SearchTable
-				BEGIN
-					SET @DataTypeId = 9
-					SET @SqlDataType = 'Decimal'
-					SET @DataSize = 18					
-				END
-				
-			END
-
-            --EnumDataType.Date => SqlDbType.DateTime2,
-			IF @DataTypeId = 3 SET @SqlDataType = 'DateTime2'
-            --EnumDataType.PhoneNumber => SqlDbType.NVarChar,
-			IF @DataTypeId = 4 SET @SqlDataType = 'NVarChar'
-            --EnumDataType.Email => SqlDbType.NVarChar,
-			IF @DataTypeId = 5 SET @SqlDataType = 'NVarChar'
-            --EnumDataType.Boolean => SqlDbType.Bit,
-			IF @DataTypeId = 6 BEGIN SET @SqlDataType = 'Bit'; SET @DataSize=0 END
-            --EnumDataType.Percentage => SqlDbType.TinyInt,
-			IF @DataTypeId = 7 BEGIN SET @SqlDataType = 'TinyInt'; SET @DataSize=0 END
-            --EnumDataType.BigInt => SqlDbType.BigInt,
-			IF @DataTypeId = 8 BEGIN SET @SqlDataType = 'BigInt'; SET @DataSize=0 END
-            --EnumDataType.Decimal => SqlDbType.Decimal,
-			IF @DataTypeId = 9 SET @SqlDataType = 'Decimal'
-            --_ => SqlDbType.NVarChar
-			IF LEN(@SqlDataType)=0 SET @SqlDataType = 'NVarChar'
-
-		IF @SqlDataType = 'NVarChar' AND @DataSize<=1
-		BEGIN
-			SET @DataSize = 512
-		END
 
 		EXEC asp_Table_UpdateField
 			@IsAddNew = @IsAddNew,
