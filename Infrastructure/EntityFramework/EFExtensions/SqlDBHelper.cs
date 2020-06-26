@@ -187,6 +187,20 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
+        public static async Task<int> DeleteColumn(this DbContext dbContext, string table, string column)
+        {
+            var resultParam = new SqlParameter("@ResStatus", 0) { Direction = ParameterDirection.Output };
+
+            var parammeters = new[]
+            {
+                new SqlParameter("@TableName", table),
+                new SqlParameter("@FieldName", column),
+                resultParam
+            };
+
+            await dbContext.ExecuteStoreProcedure("asp_Table_DeleteField", parammeters);
+            return (resultParam.Value as int?).GetValueOrDefault();
+        }
 
 
         public static SqlDbType GetSqlDataType(this EnumDataType dataType) => dataType switch
