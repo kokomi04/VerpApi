@@ -876,7 +876,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         //    singleNewFieldIds.Add(curField.InputAreaFieldId);
                         //}
                     }
-                    else if (Comparer(field, curField))
+                    else if (!field.Compare(curField))
                     {
                         // update field
                         curField.InputAreaId = field.InputAreaId;
@@ -941,36 +941,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 _logger.LogError(ex, "Create");
                 return false;
             }
-        }
-
-        private bool Comparer(InputAreaFieldInputModel updateField, InputAreaField curField)
-        {
-            return curField.IsDeleted ||
-                updateField.InputAreaId != curField.InputAreaId ||
-                updateField.InputFieldId != curField.InputFieldId ||
-                updateField.InputTypeId != curField.InputTypeId ||
-                updateField.Title != curField.Title ||
-                updateField.Placeholder != curField.Placeholder ||
-                updateField.SortOrder != curField.SortOrder ||
-                updateField.IsAutoIncrement != curField.IsAutoIncrement ||
-                updateField.IsRequire != curField.IsRequire ||
-                updateField.IsUnique != curField.IsUnique ||
-                updateField.IsHidden != curField.IsHidden ||
-                updateField.IsCalcSum != curField.IsCalcSum ||
-                updateField.RegularExpression != curField.RegularExpression ||
-                updateField.DefaultValue != curField.DefaultValue ||
-                updateField.Filters != curField.Filters ||
-                updateField.Width != curField.Width ||
-                updateField.Height != curField.Height ||
-                updateField.TitleStyleJson != curField.TitleStyleJson ||
-                updateField.InputStyleJson != curField.InputStyleJson ||
-                updateField.OnFocus != curField.OnFocus ||
-                updateField.OnKeydown != curField.OnKeydown ||
-                updateField.OnKeypress != curField.OnKeypress ||
-                updateField.OnBlur != curField.OnBlur ||
-                updateField.OnChange != curField.OnChange ||
-                updateField.AutoFocus != curField.AutoFocus ||
-                updateField.Column != curField.Column;
         }
 
         public async Task<int> AddInputField(InputFieldInputModel data)

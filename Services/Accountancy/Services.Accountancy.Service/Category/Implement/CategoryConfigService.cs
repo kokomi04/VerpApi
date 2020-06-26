@@ -605,7 +605,10 @@ namespace VErp.Services.Accountancy.Service.Category
             if (data.FormTypeId == (int)EnumFormType.Generate)
             {
                 data.DataTypeId = (int)EnumDataType.Text;
-                data.DataSize = 0;
+            }
+            if (data.DataTypeId != (int)EnumDataType.Text && data.DataTypeId != (int)EnumDataType.Decimal)
+            {
+                data.DataSize = -1;
             }
             if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
             {
@@ -677,14 +680,20 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
                     }
+                    if (category.IsReadonly)
+                    {
+                        throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+                    }
                     for (int indx = 0; indx < group.Count(); indx++)
                     {
                         var data = group.ElementAt(indx);
                         var categoryAreaField = data.CategoryFieldId > 0 ? _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
                         ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
-
                         FieldDataProcess(ref data);
-                        if (data.CategoryFieldId > 0)
+
+                        int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber? 64 : data.DataSize;
+
+                        if (data.CategoryFieldId > 0 && !data.Compare(categoryAreaField))
                         {
                             // rename field
                             if (categoryAreaField.CategoryFieldName != data.CategoryFieldName)
@@ -693,11 +702,9 @@ namespace VErp.Services.Accountancy.Service.Category
                             }
                             // Update
                             UpdateField(ref categoryAreaField, data);
-
                             // update field 
                             if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                             {
-                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
                                 await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
                             }
                         }
@@ -711,7 +718,6 @@ namespace VErp.Services.Accountancy.Service.Category
                             // Add field into table
                             if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                             {
-                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
                                 await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
                             }
                         }
@@ -739,7 +745,6 @@ namespace VErp.Services.Accountancy.Service.Category
                 return GeneralCode.InternalError;
             }
         }
-
 
         public async Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId)
         {
