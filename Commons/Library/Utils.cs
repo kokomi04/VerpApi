@@ -13,6 +13,8 @@ using System.Text.RegularExpressions;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library
 {
@@ -418,18 +420,62 @@ namespace VErp.Commons.Library
         {
             if (value == null) return DBNull.Value;
 
+            if (value.GetType() == typeof(string))
+            {
+                value = (value as string).Trim();
+
+                if (string.Empty.Equals(value)) return DBNull.Value;
+            }
+
             switch (dataType)
             {
                 case EnumDataType.Text:
                     return value?.ToString();
-                case EnumDataType.Int: return Convert.ToInt32(value);
-                case EnumDataType.Date: return Convert.ToInt64(value).UnixToDateTime();
+                case EnumDataType.Int:
+                    int intValue;
+                    if (!int.TryParse(value.ToString(), out intValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
+                    }
+                    return intValue;
+
+                case EnumDataType.Date:
+                    long dateValue;
+                    if (!long.TryParse(value.ToString(), out dateValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                    }
+                    return dateValue.UnixToDateTime();
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
-                case EnumDataType.Boolean: return Convert.ToBoolean(value);
-                case EnumDataType.Percentage: return Convert.ToInt16(value);
-                case EnumDataType.BigInt: return Convert.ToInt64(value);
-                case EnumDataType.Decimal: return Convert.ToDecimal(value);
+                case EnumDataType.Boolean:
+                    bool boolValue;
+                    if (!bool.TryParse(value.ToString(), out boolValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
+                    }
+                    return boolValue;
+                case EnumDataType.Percentage:
+                    short percentValue;
+                    if (!short.TryParse(value.ToString(), out percentValue)|| percentValue < -100 || percentValue > 100)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
+                    }
+                    return percentValue;
+                case EnumDataType.BigInt:
+                    long longValue;
+                    if (!long.TryParse(value.ToString(), out longValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
+                    }
+                    return longValue;
+                case EnumDataType.Decimal:
+                    decimal decimalValue;
+                    if (!decimal.TryParse(value.ToString(), out decimalValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
+                    }
+                    return decimalValue;
                 default: return value?.ToString();
             }
         }
