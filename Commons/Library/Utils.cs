@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -480,6 +481,37 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static object ConvertValueByType(this string value, EnumDataType dataType)
+        {
+            object result;
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    result = value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    break;
+                case EnumDataType.Date:
+                    result = DateTime.ParseExact(value, DateFormats.DD_MM_YYYY, CultureInfo.InvariantCulture);
+                    break;
+                case EnumDataType.Percentage:
+                case EnumDataType.Decimal:
+                    result = double.Parse(value);
+                    break;
+                case EnumDataType.Int:
+                    result = int.Parse(value);
+                    break;
+                case EnumDataType.BigInt:
+                    result = long.Parse(value);
+                    break;
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    result = value;
+                    break;
+            }
+
+            return result;
+        }
 
     }
 }
