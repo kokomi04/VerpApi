@@ -282,15 +282,15 @@ namespace VErp.Services.Accountant.Service
                         Dictionary<string, string> properties = new Dictionary<string, string>();
                         foreach (var jprop in item.Properties())
                         {
-                            var key = jprop.Name;
+                            var key = jprop.Name.ToLower();
                             var value = jprop.Value.ToString();
                             properties.Add(key, value);
                         }
 
                         // Map row Id
-                        int id = int.Parse(properties[config.Key]);
+                        int id = int.Parse(properties[config.Key.ToLower()]);
                         int? parentId = null;
-                        if (!string.IsNullOrEmpty(config.ParentKey) && properties.TryGetValue(config.ParentKey, out string parentValue))
+                        if (!string.IsNullOrEmpty(config.ParentKey.ToLower()) && properties.TryGetValue(config.ParentKey.ToLower(), out string parentValue))
                         {
                             parentId = int.Parse(parentValue);
                         }
@@ -312,7 +312,7 @@ namespace VErp.Services.Accountant.Service
                             }
                             else
                             {
-                                properties.TryGetValue(field.CategoryFieldName, out value);
+                                properties.TryGetValue(field.CategoryFieldName.ToLower(), out value);
                                 if (value == true.ToString() || value == false.ToString())
                                 {
                                     value = value.ToLower();
