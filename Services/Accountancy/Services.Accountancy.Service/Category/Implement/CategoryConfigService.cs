@@ -773,10 +773,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 //
                 if (!category.IsOutSideData)
                 {
-                    await _accountancyContext.ExecuteStoreProcedure("asp_Category_Delete", new[] {
-                        new SqlParameter("@CategoryCode", category.CategoryCode),
-                        new SqlParameter("@CategoryFieldName", categoryField.CategoryFieldName )
-                    });
+                    await _accountancyContext.DeleteColumn(category.CategoryCode, categoryField.CategoryFieldName);
                 }
 
                 // Update view

@@ -363,20 +363,24 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 data.TryGetValue(field.CategoryFieldName, out string valueItem);
 
-                if (valueItem != null && !string.IsNullOrEmpty(valueItem))
+                if (!string.IsNullOrEmpty(valueItem))
                 {
-                    Clause filters = null;
-                    if (!string.IsNullOrEmpty(field.Filters))
-                    {
-                        filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
-                        // Filter
-                    }
                     var whereCondition = new StringBuilder();
                     var sqlParams = new List<SqlParameter>();
                     int suffix = 0;
                     if (!string.IsNullOrEmpty(field.Filters))
                     {
-                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                        var filters = field.Filters;
+                        var pattern = @"@{(?<word>\w+)}";
+                        Regex rx = new Regex(pattern);
+                        MatchCollection match = rx.Matches(field.Filters);
+                        for (int i = 0; i < match.Count; i++)
+                        {
+                            var fieldName = match[i].Groups["word"].Value;
+                            filters = filters.Replace(match[i].Value, data[fieldName]);
+                        }
+
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                         if (filterClause != null)
                         {
                             FilterClauseProcess(filterClause, tableName, ref whereCondition, ref sqlParams, ref suffix);
@@ -615,6 +619,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
                 whereCondition.Append(")");
             }
+
             if (!string.IsNullOrEmpty(filters))
             {
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
@@ -644,6 +649,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 total = (countTable.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
+
             if (!category.IsTreeView)
             {
                 dataSql.Append($" ORDER BY [{tableName}].F_Id");
