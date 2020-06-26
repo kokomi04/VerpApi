@@ -61,7 +61,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == categoryId).ToList();
                 filterClause = AddFieldName(filterClause, fields);
             }
-            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = await _accountingContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+
             IQueryable<CategoryRow> query;
             IQueryable<CategoryRow> notFilterData;
             if (category.IsOutSideData && !category.IsTreeView)
@@ -115,9 +116,9 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
                 else
                 {
-                    lst = await query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
+                    lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
                          .OrderBy(r => r.CategoryRowId).Skip((page - 1) * size).Take(size)
-                         .ToListAsync();
+                         .ToList();
                 }
             }
             return (lst, total);
