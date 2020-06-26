@@ -506,7 +506,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id, ");
-            foreach (var field in fields)
+            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 if (string.IsNullOrEmpty(field.RefTableCode))
                 {
@@ -811,20 +811,37 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var group in groups)
             {
                 var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
-                var values = group.Select(g => g.Value).ToList();
+
+
 
                 var tableName = $"v{category.CategoryCode}";
                 var fields = (from f in _accountancyContext.CategoryField
                               join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                              where c.CategoryCode == category.CategoryCode && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly
+                              where c.CategoryCode == category.CategoryCode && f.FormTypeId != (int)EnumFormType.ViewOnly
                               select f).ToList();
+
+                var inputField = fields.First(f => f.CategoryFieldName == group.Key.CategoryFieldName);
+
+                var values = group.Select(g => g.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
 
                 var dataSql = new StringBuilder();
                 var sqlParams = new List<SqlParameter>();
                 dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
-                var paramName = $"@{group.Key.CategoryFieldName}";
-                dataSql.Append($" FROM {tableName} WHERE [{tableName}].{group.Key.CategoryFieldName} IN ({paramName})");
-                sqlParams.Add(new SqlParameter(paramName, string.Join(",", values.ToArray())));
+
+                dataSql.Append($" FROM {tableName} WHERE [{tableName}].{group.Key.CategoryFieldName} IN (");
+                int suffix = 0;
+                foreach (var value in values)
+                {
+                    if (suffix > 0)
+                    {
+                        dataSql.Append(",");
+                    }
+                    var paramName = $"@{group.Key.CategoryFieldName}_in_{suffix}";
+                    dataSql.Append($"{paramName}");
+                    sqlParams.Add(new SqlParameter(paramName, value));
+                    suffix++;
+                }
+                dataSql.Append(")");
 
                 var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
                 var lst = ConvertData(data);
