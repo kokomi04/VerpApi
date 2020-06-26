@@ -83,7 +83,7 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check field required
             CheckRequired(data, requiredFields);
             // Check refer
-            await CheckRefer(data, selectFields);
+            await CheckRefer(data, selectFields, tableName);
             // Check unique
             await CheckUnique(data, uniqueFields, category.CategoryCode);
             // Check value
@@ -206,7 +206,7 @@ namespace VErp.Services.Accountancy.Service.Category
             CheckRequired(data, requiredFields);
 
             // Check refer
-            await CheckRefer(data, selectFields);
+            await CheckRefer(data, selectFields, tableName);
 
             // Check unique
             await CheckUnique(data, uniqueFields, category.CategoryCode);
@@ -356,7 +356,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        private async Task CheckRefer(Dictionary<string, string> data, IEnumerable<CategoryField> selectFields)
+        private async Task CheckRefer(Dictionary<string, string> data, IEnumerable<CategoryField> selectFields, string tableName)
         {
             // Check refer
             foreach (var field in selectFields)
@@ -371,8 +371,21 @@ namespace VErp.Services.Accountancy.Service.Category
                         filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
                         // Filter
                     }
-                    var existSql = $"SELECT F_Id FROM v{field.RefTableCode} WHERE {field.RefTableField} = {valueItem}";
-                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    var whereCondition = new StringBuilder();
+                    var sqlParams = new List<SqlParameter>();
+                    int suffix = 0;
+                    if (!string.IsNullOrEmpty(field.Filters))
+                    {
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                        if (filterClause != null)
+                        {
+                            FilterClauseProcess(filterClause, tableName, ref whereCondition, ref sqlParams, ref suffix);
+                        }
+                    }
+                    var paramName = $"@{field.RefTableField}_{suffix}";
+                    var existSql = $"SELECT F_Id FROM v{field.RefTableCode} WHERE {field.RefTableField} = {paramName}";
+                    sqlParams.Add(new SqlParameter(paramName, valueItem));
+                    var result = await _accountancyContext.QueryDataTable(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
@@ -569,22 +582,23 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
             dataSql.Append($" FROM {tableName}");
             allDataSql.Append(dataSql.ToString());
-            var serchCondition = new StringBuilder();
+            var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
+                whereCondition.Append("(");
                 var idx = 0;
                 foreach (var field in fields)
                 {
-                    if (serchCondition.Length > 0)
+                    if (whereCondition.Length > 0)
                     {
-                        serchCondition.Append(" OR ");
+                        whereCondition.Append(" OR ");
                     }
 
                     if (string.IsNullOrEmpty(field.RefTableCode))
                     {
                         var paramName = $"@{field.CategoryFieldName}_{idx}";
                         sqlParams.Add(new SqlParameter(paramName, $"%{keyword}%"));
-                        serchCondition.Append($"[{tableName}].{field.CategoryFieldName} LIKE {paramName}");
+                        whereCondition.Append($"[{tableName}].{field.CategoryFieldName} LIKE {paramName}");
 
                     }
                     else
@@ -594,17 +608,34 @@ namespace VErp.Services.Accountancy.Service.Category
                             var title = item.Trim();
                             var paramName = $"@{field.CategoryFieldName}_{title}_{idx}";
                             sqlParams.Add(new SqlParameter(paramName, $"%{keyword}%"));
-                            serchCondition.Append($"[{tableName}].{field.CategoryFieldName}_{title} LIKE {paramName}");
+                            whereCondition.Append($"[{tableName}].{field.CategoryFieldName}_{title} LIKE {paramName}");
                         }
                     }
                     idx++;
                 }
+                whereCondition.Append(")");
             }
-            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
-            if (serchCondition.Length > 0)
+            if (!string.IsNullOrEmpty(filters))
             {
-                dataSql.Append($" WHERE {serchCondition.ToString()}");
-                totalSql.Append($" WHERE {serchCondition.ToString()}");
+                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                if (filterClause != null)
+                {
+                    if (whereCondition.Length > 0)
+                    {
+                        whereCondition.Append(" AND ");
+                    }
+
+                    int suffix = 0;
+                    FilterClauseProcess(filterClause, tableName, ref whereCondition, ref sqlParams, ref suffix);
+                }
+            }
+
+            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
+
+            if (whereCondition.Length > 0)
+            {
+                dataSql.Append($" WHERE {whereCondition.ToString()}");
+                totalSql.Append($" WHERE {whereCondition.ToString()}");
             }
 
             var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
@@ -639,6 +670,84 @@ namespace VErp.Services.Accountancy.Service.Category
             }
 
             return (lstData, total);
+        }
+
+        public void FilterClauseProcess(Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false)
+        {
+            if (clause != null)
+            {
+                condition.Append("( ");
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+                    BuildExpression(singleClause, tableName, ref condition, ref sqlParams, ref suffix, not);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    bool isNot = not ^ arrClause.Not;
+                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
+                    {
+                        if (indx != 0)
+                        {
+                            condition.Append(isOr ? " OR " : " AND ");
+                        }
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot);
+                    }
+                }
+                condition.Append(" )");
+            }
+        }
+
+        private void BuildExpression(SingleClause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
+        {
+            if (clause != null)
+            {
+                var paramName = $"@{clause.FieldName}_filter_{suffix}";
+                string ope;
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        ope = not ? "!=" : "==";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, (string)clause.Value));
+                        break;
+                    case EnumOperator.NotEqual:
+                        ope = not ? "==" : "!=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, (string)clause.Value));
+                        break;
+                    case EnumOperator.Contains:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{(string)clause.Value}%"));
+                        break;
+                    case EnumOperator.InList:
+                        ope = not ? "NOT IN" : "IN";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"({(string)clause.Value})"));
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        ope = not ? "EXISTS" : "NOT EXISTS";
+                        var alias = $"{tableName}_{suffix}";
+                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{tableName}].F_Id)");
+                        break;
+                    case EnumOperator.StartsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"{(string)clause.Value}%"));
+                        break;
+                    case EnumOperator.EndsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{(string)clause.Value}"));
+                        break;
+                    default:
+                        break;
+                }
+                suffix++;
+            }
         }
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)

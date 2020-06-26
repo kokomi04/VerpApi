@@ -28,7 +28,6 @@ namespace VErpApi.Controllers.Accountancy.Config
     public class CategoryDataController : VErpBaseController
     {
         private readonly ICategoryDataService _categoryDataService;
- 
             
         public CategoryDataController(ICategoryDataService categoryDataService)
         {
@@ -76,6 +75,5 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _categoryDataService.MapToObject(data);
         }
-
     }
 }
