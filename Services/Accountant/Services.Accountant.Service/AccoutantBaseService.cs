@@ -290,7 +290,7 @@ namespace VErp.Services.Accountant.Service
                         // Map row Id
                         int id = int.Parse(properties[config.Key.ToLower()]);
                         int? parentId = null;
-                        if (!string.IsNullOrEmpty(config.ParentKey.ToLower()) && properties.TryGetValue(config.ParentKey.ToLower(), out string parentValue))
+                        if (!string.IsNullOrEmpty(config.ParentKey) && properties.TryGetValue(config.ParentKey.ToLower(), out string parentValue))
                         {
                             parentId = int.Parse(parentValue);
                         }
