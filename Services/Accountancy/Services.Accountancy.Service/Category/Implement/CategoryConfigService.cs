@@ -708,7 +708,7 @@ namespace VErp.Services.Accountancy.Service.Category
                                 await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
                             }
                         }
-                        else
+                        else if(data.CategoryFieldId == 0)
                         {
                             // Create new
                             var categoryField = _mapper.Map<CategoryField>(data);
