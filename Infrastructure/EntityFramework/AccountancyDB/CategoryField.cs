@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public int DecimalPlace { get; set; }
+        public string DefaultValue { get; set; }
 
         public virtual Category Category { get; set; }
     }

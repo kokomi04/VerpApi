@@ -27,6 +27,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public int? InputTypeGroupId { get; set; }
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
+        public string AfterLoadAction { get; set; }
+        public string BeforeSubmitAction { get; set; }
+        public string BeforeSaveAction { get; set; }
+        public string AfterSaveAction { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel

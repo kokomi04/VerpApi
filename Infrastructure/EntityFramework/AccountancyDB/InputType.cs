@@ -26,6 +26,10 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
+        public string AfterLoadAction { get; set; }
+        public string BeforeSubmitAction { get; set; }
+        public string BeforeSaveAction { get; set; }
+        public string AfterSaveAction { get; set; }
 
         public virtual InputTypeGroup InputTypeGroup { get; set; }
         public virtual ICollection<InputArea> InputArea { get; set; }
