@@ -163,7 +163,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     InputTypeGroupId = sourceInput.InputTypeGroupId,
                     SortOrder = sourceInput.SortOrder,
                     PreLoadAction = sourceInput.PreLoadAction,
-                    PostLoadAction = sourceInput.PostLoadAction
+                    PostLoadAction = sourceInput.PostLoadAction,
+                    AfterLoadAction = sourceInput.AfterLoadAction,
+                    BeforeSubmitAction = sourceInput.BeforeSubmitAction,
+                    BeforeSaveAction = sourceInput.BeforeSaveAction,
+                    AfterSaveAction = sourceInput.AfterSaveAction
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
