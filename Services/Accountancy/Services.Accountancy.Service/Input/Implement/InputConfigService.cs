@@ -57,30 +57,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputTypeFullModel> GetInputType(int inputTypeId)
         {
-            try
+            var inputType = await _accountancyDBContext.InputType
+           .Where(i => i.InputTypeId == inputTypeId)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
+            if (inputType == null)
             {
-                var inputType = await _accountancyDBContext.InputType
-               .Where(i => i.InputTypeId == inputTypeId)
-               .Include(t => t.InputArea)
-               .ThenInclude(a => a.InputAreaField)
-               .ThenInclude(af => af.InputField)
-               .Include(t => t.InputArea)
-               .ThenInclude(a => a.InputAreaField)
-               .ThenInclude(af => af.InputField)
-               .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
-               .FirstOrDefaultAsync();
-                if (inputType == null)
-                {
-                    throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-                }
-                return inputType;
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
-            catch (Exception ex)
-            {
-                var a = ex;
-                throw new Exception();
-            }
-           
+            return inputType;
         }
 
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
