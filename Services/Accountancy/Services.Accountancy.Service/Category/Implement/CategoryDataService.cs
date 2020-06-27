@@ -593,7 +593,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var idx = 0;
                 foreach (var field in fields)
                 {
-                    if (whereCondition.Length > 0)
+                    if (idx > 0)
                     {
                         whereCondition.Append(" OR ");
                     }
@@ -715,24 +715,24 @@ namespace VErp.Services.Accountancy.Service.Category
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        ope = not ? "!=" : "==";
+                        ope = not ? "!=" : "=";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, (string)clause.Value));
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
                         break;
                     case EnumOperator.NotEqual:
-                        ope = not ? "==" : "!=";
+                        ope = not ? "=" : "!=";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, (string)clause.Value));
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
                         break;
                     case EnumOperator.Contains:
                         ope = not ? "NOT LIKE" : "LIKE";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{(string)clause.Value}%"));
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
                         break;
                     case EnumOperator.InList:
                         ope = not ? "NOT IN" : "IN";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"({(string)clause.Value})"));
+                        sqlParams.Add(new SqlParameter(paramName, $"({clause.Value})"));
                         break;
                     case EnumOperator.IsLeafNode:
                         ope = not ? "EXISTS" : "NOT EXISTS";
@@ -742,12 +742,12 @@ namespace VErp.Services.Accountancy.Service.Category
                     case EnumOperator.StartsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"{(string)clause.Value}%"));
+                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
                         break;
                     case EnumOperator.EndsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{(string)clause.Value}"));
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;
                     default:
                         break;

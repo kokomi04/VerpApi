@@ -552,6 +552,8 @@ namespace VErp.Services.Accountancy.Service.Category
             categoryField.IsTreeViewKey = data.IsTreeViewKey;
             categoryField.RegularExpression = data.RegularExpression;
             categoryField.Filters = data.Filters;
+            categoryField.DecimalPlace = data.DecimalPlace;
+            categoryField.DefaultValue = data.DefaultValue;
             //categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
             //categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
         }

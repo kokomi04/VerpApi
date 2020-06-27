@@ -35,6 +35,8 @@ namespace VErp.Services.Accountancy.Model.Category
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public int DecimalPlace { get; set; }
+        public string DefaultValue { get; set; }
 
         public bool Compare(CategoryField curField)
         {
@@ -58,7 +60,10 @@ namespace VErp.Services.Accountancy.Model.Category
                 IsReadOnly == curField.IsReadOnly &&
                 RefTableCode == curField.RefTableCode &&
                 RefTableField == curField.RefTableField &&
-                RefTableTitle == curField.RefTableTitle;
+                RefTableTitle == curField.RefTableTitle &&
+                DecimalPlace == curField.DecimalPlace &&
+                DefaultValue == curField.DefaultValue;
+
         }
     }
 
