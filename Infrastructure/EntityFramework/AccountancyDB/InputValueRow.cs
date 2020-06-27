@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool? IsDeleted { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string MaCt { get; set; }
         public int? StockId { get; set; }

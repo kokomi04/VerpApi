@@ -58,15 +58,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<InputTypeFullModel> GetInputType(int inputTypeId)
         {
             var inputType = await _accountancyDBContext.InputType
-                .Where(i => i.InputTypeId == inputTypeId)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(af => af.InputField)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(af => af.InputField)
-                .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
+           .Where(i => i.InputTypeId == inputTypeId)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
             if (inputType == null)
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
@@ -330,7 +330,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
                     RefTableTitle = f.RefTableTitle
-                    
+
                 }).ToListAsync();
 
             var views = await _accountancyDBContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
