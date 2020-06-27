@@ -79,7 +79,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnKeypress { get; set; }
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
-        public bool AutoFocus { get; set; }
+        public bool? AutoFocus { get; set; }
         public int Column { get; set; }
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
