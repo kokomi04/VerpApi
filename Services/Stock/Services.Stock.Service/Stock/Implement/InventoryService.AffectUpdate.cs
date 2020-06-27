@@ -500,6 +500,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.RefObjectId = submitDetail?.RefObjectId;
                 detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
                 detail.RefObjectCode = submitDetail?.RefObjectCode;
+                
+                detail.OrderCode = submitDetail?.OrderCode;
+                detail.Pocode = submitDetail.POCode;
+                detail.ProductionOrderCode = submitDetail.ProductionOrderCode;
+
+                detail.Description = submitDetail?.Description;
+
                 if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
