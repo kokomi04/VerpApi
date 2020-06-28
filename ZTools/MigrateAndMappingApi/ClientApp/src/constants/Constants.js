@@ -1,6 +1,7 @@
-﻿import { Methods, Actions } from './RolePermission';
+﻿import { Methods, Actions, Services } from './RolePermission';
 
 export default {
     Methods,
-    Actions
+    Actions,
+    Services
 };

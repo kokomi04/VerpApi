@@ -39,8 +39,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         public decimal TotalOldPrimaryQuantity { get; set; }
         public decimal TotalNewPrimaryQuantity { get; set; }
+
         public bool IsChange { get; set; }
         public decimal DeltaChange { get; set; }
+
+        public Dictionary<int, PuChangeInfo> PuChanges { get; set; }
+    }
+
+    public class PuChangeInfo
+    {
+        public decimal TotalOldPuQuantity { get; set; }
+        public decimal TotalNewPuQuantity { get; set; }
+
+        public decimal DeltaPuChange { get; set; }
     }
 
     public class InventoryTrackingUpdateContextBuilder
@@ -107,8 +118,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryId = context.InventoryId,
                         StockId = context.StockId,
                         OldPrimaryQuantity = 0,
+                        OldPuConversionQuantity = 0,
                         IsDeleted = false,
-                        ProductId = inventoryDetail.ProductId
+                        ProductId = inventoryDetail.ProductId,
+                        ProductUnitConversionId = inventoryDetail.ProductUnitConversionId
                     });
                 }
             }
@@ -135,12 +148,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var isChange = totalOldPrimaryQuantity != totalNewPrimaryQuantity;
 
+                var puChanges = new Dictionary<int, PuChangeInfo>();
+                foreach (var g in oldDetailGroup.GroupBy(p => p.ProductUnitConversionId))
+                {
+                    var totalOldPuQuantity = g.Sum(d => d.OldPuConversionQuantity);
+
+                    var totalNewPuQuantity = newInventoryDetails.Where(d => d.ProductId == oldDetailGroup.Key && d.ProductUnitConversionId == g.Key).Sum(d => d.ProductUnitConversionQuantity);
+
+                    var deltaPuChange = totalNewPuQuantity - totalOldPuQuantity;
+
+                    puChanges.Add(g.Key, new PuChangeInfo()
+                    {
+                        TotalOldPuQuantity = totalOldPuQuantity,
+                        TotalNewPuQuantity = totalNewPuQuantity,
+                        DeltaPuChange = deltaPuChange
+                    });
+                }
+
                 productChanges.Add(oldDetailGroup.Key, new ProductChangeInfo()
                 {
                     TotalOldPrimaryQuantity = totalOldPrimaryQuantity,
                     TotalNewPrimaryQuantity = totalNewPrimaryQuantity,
+
                     IsChange = isChange,
-                    DeltaChange = totalNewPrimaryQuantity - totalOldPrimaryQuantity
+                    DeltaChange = totalNewPrimaryQuantity - totalOldPrimaryQuantity,
+
+                    PuChanges = puChanges
                 });
             }
 

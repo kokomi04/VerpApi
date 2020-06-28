@@ -16,7 +16,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public int CategoryId { get; set; }
         public string Title { get; set; }
         public string CategoryCode { get; set; }
-        public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
         public bool IsTreeView { get; set; }
         public bool IsDeleted { get; set; }

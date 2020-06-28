@@ -21,11 +21,11 @@ namespace VErp.WebApis.VErpApi.Validator
         public ResourceOwnerPasswordValidator(MasterDBContext masterDB, IOptionsSnapshot<AppSetting> appSetting)
         {
             _masterDB = masterDB;
-            _appSetting = appSetting.Value;
+            _appSetting = appSetting?.Value;
         }
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
         {
-            if (string.IsNullOrEmpty(context.UserName) || string.IsNullOrEmpty(context.Password))
+            if (string.IsNullOrEmpty(context?.UserName) || string.IsNullOrEmpty(context.Password))
             {
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Bạn chưa nhập tên đăng nhập hoặc mật khẩu");
                 return;
@@ -53,7 +53,7 @@ namespace VErp.WebApis.VErpApi.Validator
 
             var customClaims = new List<Claim>
             {
-                new Claim("userId", user.UserId.ToString()),
+                new Claim("userId", user.UserId+""),
                 new Claim("clientId", context.Request.ClientId),
             };
 

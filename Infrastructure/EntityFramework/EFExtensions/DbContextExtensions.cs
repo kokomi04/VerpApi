@@ -3,13 +3,18 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -98,8 +103,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 else
                 {
-                    var isDeleted = obj.GetValue("IsDeleted") == (object)true;
-                    if (isDeleted)
+                    if (obj.GetValue("IsDeleted") == (object)true)
                     {
                         obj.SetValue("DeletedDatetimeUtc", DateTime.UtcNow);
                     }
@@ -217,5 +221,143 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
             return query.Select(lambda);
         }
+
+        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
+        {
+            if (filters != null && filters.Count > 0)
+            {
+                foreach (var filter in filters)
+                {
+                    var sParam = Expression.Parameter(typeof(T), "s");
+                    var prop = Expression.Property(sParam, filter.Key);
+                    TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+                    Type listType = typeof(List<>);
+                    Type constructedListType = listType.MakeGenericType(prop.Type);
+                    var instance = Activator.CreateInstance(constructedListType);
+                    foreach (var value in filter.Value)
+                    {
+                        MethodInfo method = constructedListType.GetMethod("Add");
+                        method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
+                    }
+                    var methodInfo = constructedListType.GetMethod("Contains");
+                    var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
+                    query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
+                }
+            }
+            return query;
+        }
+
+        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null)
+        {
+            if (filters != null)
+            {
+                var param = Expression.Parameter(typeof(T), "s");
+                Expression filterExp = FilterClauseProcess<T>(param, filters, query);
+                query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
+            }
+            return query;
+        }
+
+        public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false)
+        {
+            Expression exp = Expression.Constant(false);
+            if (clause != null)
+            {
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+                    exp = BuildExpression<T>(param, singleClause);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    bool isNot = not ^ arrClause.Not;
+                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    foreach (var item in arrClause.Rules)
+                    {
+                        if (exp == null)
+                        {
+                            exp = FilterClauseProcess<T>(param, item, query, isNot);
+                        }
+                        else
+                        {
+                            if (isOr)
+                            {
+                                exp = Expression.OrElse(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                            }
+                            else
+                            {
+                                exp = Expression.AndAlso(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                            }
+                        }
+                    }
+                }
+            }
+            return exp;
+        }
+
+        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause)
+        {
+            Expression expression = null;
+            if (clause != null)
+            {
+                var prop = Expression.Property(param, clause.FieldName);
+                TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+                // Check value
+                ConstantExpression value;
+                MethodInfo method;
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        expression = Expression.Equal(prop, value);
+                        break;
+                    case EnumOperator.NotEqual:
+                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        expression = Expression.NotEqual(prop, value);
+                        break;
+                    case EnumOperator.Contains:
+                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        var toStringMethod = prop.Type.GetMethod("ToString");
+                        var propExpression = Expression.Call(prop, toStringMethod);
+                        method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
+                        expression = Expression.Call(propExpression, method, value);
+                        break;
+                    case EnumOperator.InList:
+                        Type listType = typeof(List<>);
+                        Type constructedListType = listType.MakeGenericType(prop.Type);
+                        var instance = Activator.CreateInstance(constructedListType);
+                        foreach (var item in ((string)clause.Value).Split(','))
+                        {
+                            MethodInfo addMethod = constructedListType.GetMethod("Add");
+                            addMethod.Invoke(instance, new object[] { typeConverter.ConvertFromString(item) });
+                        }
+                        method = constructedListType.GetMethod("Contains");
+                        expression = Expression.Call(Expression.Constant(instance), method, prop);
+                        break;
+                    case EnumOperator.StartsWith:
+                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        toStringMethod = prop.Type.GetMethod("ToString");
+                        propExpression = Expression.Call(prop, toStringMethod);
+                        method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
+                        expression = Expression.Call(propExpression, method, value);
+                        break;
+                    case EnumOperator.EndsWith:
+                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        toStringMethod = prop.Type.GetMethod("ToString");
+                        propExpression = Expression.Call(prop, toStringMethod);
+                        method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
+                        expression = Expression.Call(propExpression, method, value);
+                        break;
+                    default:
+                        expression = Expression.Constant(true);
+                        break;
+                }
+            }
+            return expression;
+        }
+
+
+
     }
 }

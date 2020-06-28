@@ -3,5 +3,6 @@
     ADD: 2,
     UPDATE: 4,
     DELETE: 8,
-    CENSOR: 16
+    CENSOR: 16,
+    CHECK: 32
 }

@@ -59,7 +59,7 @@ namespace VErpApi.Controllers.System
 
         [HttpDelete]
         [Route("{objectProcessTypeId}/Steps/{objectProcessStepId}")]
-        public async Task<bool> ObjectProcessStepDelete([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromRoute] int objectProcessStepId, [FromBody] IList<ObjectProcessInfoStepListModel> model)
+        public async Task<bool> ObjectProcessStepDelete([FromRoute] EnumObjectProcessType objectProcessTypeId, [FromRoute] int objectProcessStepId)
         {
             return await _objectProcessService.ObjectProcessStepDelete(objectProcessTypeId, objectProcessStepId).ConfigureAwait(true);
         }

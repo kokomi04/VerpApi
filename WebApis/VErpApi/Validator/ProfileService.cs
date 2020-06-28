@@ -15,7 +15,7 @@ namespace VErp.WebApis.VErpApi.Validator
 
         public Task GetProfileDataAsync(ProfileDataRequestContext context)
         {
-            context.IssuedClaims.AddRange(context.Subject.Claims);
+            context?.IssuedClaims?.AddRange(context?.Subject?.Claims);
             return Task.FromResult(0);
         }
 

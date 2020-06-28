@@ -460,8 +460,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 });
                             }
                             var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
-                            _organizationDBContext.BulkRead<Customer>(customerDataList, readCustomerBulkConfig);
-                            _organizationDBContext.BulkInsertOrUpdate<Customer>(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
+                            await _organizationDBContext.BulkReadAsync(customerDataList, readCustomerBulkConfig);
+                            await _organizationDBContext.BulkInsertOrUpdateAsync(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
                             return GeneralCode.Success;
                         }
                     }
@@ -476,7 +476,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ProcessCustomerExcelSheet");
-                return GeneralCode.InternalError;
+                throw ex;
             }
         }
 
@@ -834,7 +834,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                                 {
                                     ProductId = productObj != null ? productObj.ProductId : 0,
                                     ProductCode = item.ProductCode,
-                                    ProductUnitConversionId = productUnitConversionObj != null ? productUnitConversionObj?.ProductUnitConversionId : null,
+                                    ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
                                     PrimaryQuantity = item.Qty1,
                                     ProductUnitConversionQuantity = item.Qty2,
                                     UnitPrice = item.UnitPrice,
@@ -1057,7 +1057,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         var productObj = productDataList.FirstOrDefault(q => q.ProductCode == item.ProductCode);
                         var packageObj = defaultPackageDataList.FirstOrDefault(q => q.ProductId == productObj.ProductId);
 
-                        int? productUnitConversionId = null;
+                        int productUnitConversionId = 0;
                         if (!string.IsNullOrEmpty(item.Unit2) && item.Factor != 0)
                         {
                             var productUnitConversionName = string.Format("{0}-{1}", item.Unit2, item.Factor);

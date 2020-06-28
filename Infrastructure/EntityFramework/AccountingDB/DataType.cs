@@ -8,7 +8,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DataType()
         {
             CategoryField = new HashSet<CategoryField>();
-            InputAreaField = new HashSet<InputAreaField>();
+            InputField = new HashSet<InputField>();
             InputTypeViewField = new HashSet<InputTypeViewField>();
         }
 
@@ -25,7 +25,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<CategoryField> CategoryField { get; set; }
-        public virtual ICollection<InputAreaField> InputAreaField { get; set; }
+        public virtual ICollection<InputField> InputField { get; set; }
         public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
     }
 }

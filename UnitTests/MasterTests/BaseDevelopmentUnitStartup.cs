@@ -16,8 +16,8 @@ namespace MasterTests
     {
         protected readonly IWebHost webHost;
 
-        private IList<int> _stockIds;
-        private IList<int> _roleIds;
+        //private IList<int> _stockIds;
+        //private IList<int> _roleIds;
         private RoleInfo _roleInfo;
 
         protected MasterDBContext _masterDBContext;

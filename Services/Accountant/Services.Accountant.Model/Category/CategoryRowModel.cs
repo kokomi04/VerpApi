@@ -31,12 +31,14 @@ namespace VErp.Services.Accountant.Model.Category
     {
         public CategoryRowListOutputModel()
         {
-            CategoryRowValues = new HashSet<CategoryValueModel>();
+            IsDisabled = false;
+            CategoryRowValues = new HashSet<CategoryValueInputModel>();
         }
         public int CategoryRowId { get; set; }
         public int CategoryRowLevel { get; set; }
         public int? ParentCategoryRowId { get; set; }
-        public ICollection<CategoryValueModel> CategoryRowValues { get; set; }
+        public bool IsDisabled { get; set; }
+        public ICollection<CategoryValueInputModel> CategoryRowValues { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap(typeof(CategoryRow), GetType())

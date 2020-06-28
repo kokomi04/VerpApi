@@ -87,7 +87,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             var method = context.HttpContext.Request.Method;
             var methodId = Enum.Parse<EnumMethod>(method, true);
 
-            var apiEndpointId = Utils.HashApiEndpointId(route, methodId);
+            var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
             var apiInfo = await _masterContext.ApiEndpoint.FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
 

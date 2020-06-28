@@ -4,8 +4,12 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using NPOI;
+using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Commons.Library
 {
@@ -91,6 +95,180 @@ namespace VErp.Commons.Library
                 rowIdx++;
             }
             return data.ToArray();
+        }
+
+
+        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+        {
+            var sheetDatas = new List<ExcelSheetDataModel>();
+
+            //if (hssfwb is XSSFWorkbook)
+            //{
+            //    XSSFFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+            //}
+            //else
+            //{
+            //    HSSFFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+            //}
+
+            var fromRowIndex = fromRow - 1;
+            var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
+
+            for (int i = 0; i < hssfwb.NumberOfSheets; i++)
+            {
+
+                var sheet = hssfwb.GetSheetAt(i);
+
+                if (!string.IsNullOrWhiteSpace(sheetName) && sheet.SheetName != sheetName)
+                    continue;
+
+                if (!maxrows.HasValue)
+                {
+                    maxrows = sheet.PhysicalNumberOfRows;
+                }
+                else
+                {
+                    if (maxrows > sheet.PhysicalNumberOfRows)
+                    {
+                        maxrows = sheet.PhysicalNumberOfRows;
+                    }
+                }
+
+                var sheetData = new List<NonCamelCaseDictionary>();
+
+
+                var mergeRegions = new List<CellRangeAddress>();
+                for (var re = 0; re < sheet.NumMergedRegions; re++)
+                {
+                    mergeRegions.Add(sheet.GetMergedRegion(re));
+                }
+
+                var continuousEmpty = 0;
+                for (int row = fromRowIndex; row <= maxrows && (!toRowIndex.HasValue || row < toRowIndex); row++)
+                {
+                    var rowData = new NonCamelCaseDictionary();
+                    if (sheet.GetRow(row) != null) //null is when the row only contains empty cells 
+                    {
+                        foreach (var col in sheet.GetRow(row).Cells)
+                        {
+                            var columnName = GetExcelColumnName(col.ColumnIndex + 1);
+                            var cell = col;
+
+                            if (cell.IsMergedCell)
+                            {
+                                foreach (var region in mergeRegions)
+                                {
+                                    if (region.IsInRange(row, col.ColumnIndex))
+                                    {
+                                        var isFirstRowValue = false;
+
+                                        var r = sheet.GetRow(region.FirstRow);
+
+                                        var c = r.Cells[region.FirstColumn];
+
+                                        var v = GetCellString(c);
+                                        if (!string.IsNullOrWhiteSpace(v))
+                                        {
+                                            cell = c;
+                                            isFirstRowValue = true;
+                                        }
+
+
+                                        if (!isFirstRowValue)
+                                        {
+                                            r = sheet.GetRow(region.LastRow);
+
+                                            c = r.Cells[region.LastColumn];
+
+                                            v = GetCellString(c);
+                                            if (!string.IsNullOrWhiteSpace(v))
+                                            {
+                                                cell = c;
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+
+
+                            try
+                            {
+                                rowData.Add(columnName, GetCellString(cell));
+
+                            }
+                            catch
+                            {
+                                rowData.Add(columnName, cell.StringCellValue.ToString());
+
+                            }
+
+                        }
+
+                        continuousEmpty = 0;
+                    }
+                    else
+                    {
+                        continuousEmpty++;
+                    }
+
+                    sheetData.Add(rowData);
+                }
+
+
+                sheetDatas.Add(new ExcelSheetDataModel() { SheetName = sheet.SheetName, Rows = sheetData.ToArray() });
+            }
+
+            return sheetDatas;
+        }
+
+        private string GetCellString(ICell cell)
+        {
+            var type = cell.CellType;
+
+            if (cell.CellType == CellType.Formula)
+            {
+                try
+                {
+                    hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
+                    type = cell.CachedFormulaResultType;
+                }
+                catch (Exception)
+                {
+                    type = CellType.String;
+                }
+
+
+            }
+
+            switch (type)
+            {
+                case CellType.String:
+                    return cell.StringCellValue?.Trim();
+                case CellType.Formula:
+                    throw new Exception();
+
+                case CellType.Numeric:
+                    return cell.NumericCellValue.ToString()?.Trim();
+            }
+
+            return cell.StringCellValue?.Trim();
+        }
+
+        private string GetExcelColumnName(int columnNumber)
+        {
+            int dividend = columnNumber;
+            string columnName = String.Empty;
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
         }
     }
 }

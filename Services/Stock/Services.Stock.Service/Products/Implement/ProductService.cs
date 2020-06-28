@@ -18,6 +18,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Infrastructure.EF.EFExtensions;
 using static VErp.Services.Stock.Model.Product.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
@@ -263,6 +264,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
+      
         public async Task<Enum> UpdateProduct(int productId, ProductModel req)
         {
             Enum validate;
@@ -487,7 +489,27 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct)
+        {
+            var productIds = productUnitConvertsionProduct.Values;
+            var productUnitConversionIds = productUnitConvertsionProduct.Keys;
+
+            var productUnitConversions = (await _stockContext.ProductUnitConversion
+                .Where(c => productIds.Contains(c.ProductId) && productUnitConversionIds.Contains(c.ProductUnitConversionId))
+                .ToListAsync())
+                .ToDictionary(c => c.ProductUnitConversionId, c => c.ProductId);
+
+            foreach (var item in productUnitConvertsionProduct)
+            {
+                if (!productUnitConversions.ContainsKey(item.Key) || productUnitConversions[item.Key] != item.Value) return false;
+            }
+
+            return true;
+        }
+
+
+
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
         {
             var products = _stockContext.Product.AsQueryable();
             products = products.InternalFilter(filters);
@@ -658,6 +680,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
         private Enum ValidateProduct(ProductModel req)
         {
+            if (string.IsNullOrWhiteSpace(req?.ProductCode))
+            {
+                return ProductErrorCode.ProductCodeEmpty;
+            }
+
             if (req.StockInfo.UnitConversions?.Count > 0)
             {
                 foreach (var unitConversion in req.StockInfo.UnitConversions)

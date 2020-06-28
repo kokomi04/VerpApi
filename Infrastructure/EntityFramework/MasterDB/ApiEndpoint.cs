@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         public Guid ApiEndpointId { get; set; }
         public string Route { get; set; }
+        public int ServiceId { get; set; }
         public int MethodId { get; set; }
         public int ActionId { get; set; }
 

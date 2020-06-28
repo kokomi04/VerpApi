@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -244,6 +245,11 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("ProcessOpeningBalance")]
         public async Task<ServiceResult> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceModel model)
         {
+            if (model == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
             var currentUserId = UserId;
             if (model.Type == EnumInventoryType.Input)
                 return await _fileProcessDataService.ImportInventoryInputOpeningBalance(currentUserId, model);

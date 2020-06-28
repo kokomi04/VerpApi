@@ -10,6 +10,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Add = 2,
         Update = 4,
         Delete = 8,
-        Censor = 16
+        Censor = 16,
+        Check = 32
     }
 }

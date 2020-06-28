@@ -3,14 +3,19 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library
 {
@@ -23,10 +28,16 @@ namespace VErp.Commons.Library
             return new Guid(data);
         }
 
-        public static Guid HashApiEndpointId(string route, EnumMethod method)
+        public static Guid HashApiEndpointId(int serviceId, string route, EnumMethod method)
         {
+            var service = "";
+            if (serviceId > 0)
+            {
+                service = serviceId.ToString();
+            }
+
             route = (route ?? "").Trim().ToLower();
-            return $"{route}{method}".ToGuid();
+            return $"{service}{route}{method}".ToGuid();
         }
 
         public static EnumAction GetDefaultAction(this EnumMethod method)
@@ -141,7 +152,7 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-           // if (unixTime == 0) return null;
+            // if (unixTime == 0) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
@@ -315,19 +326,19 @@ namespace VErp.Commons.Library
 
         public static long ConvertValueToNumber(this string value, EnumDataType dataType)
         {
-            long valueInNumber = 0;
-
+            long valueInNumber;
             switch (dataType)
             {
                 case EnumDataType.Boolean:
                     valueInNumber = bool.Parse(value) ? 1 : 0;
-
+                    break;
+                case EnumDataType.Int:
+                case EnumDataType.Percentage:
+                    valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
                 case EnumDataType.Date:
-                case EnumDataType.Number:
-                    valueInNumber = long.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR;
+                    valueInNumber = (long)(double.Parse(value));
                     break;
-
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
@@ -373,8 +384,8 @@ namespace VErp.Commons.Library
                     long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
-
-                case EnumDataType.Number:
+                case EnumDataType.Percentage:
+                case EnumDataType.Int:
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
@@ -385,29 +396,121 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
+
+
+
+        public static Type GetColumnDataType(this EnumDataType dataType)
         {
-            if (filters != null && filters.Count > 0)
+            switch (dataType)
             {
-                foreach (var filter in filters)
-                {
-                    var sParam = Expression.Parameter(typeof(T), "s");
-                    var prop = Expression.Property(sParam, filter.Key);
-                    TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
-                    Type listType = typeof(List<>);
-                    Type constructedListType = listType.MakeGenericType(prop.Type);
-                    var instance = Activator.CreateInstance(constructedListType);
-                    foreach (var value in filter.Value)
-                    {
-                        MethodInfo method = constructedListType.GetMethod("Add");
-                        method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
-                    }
-                    var methodInfo = constructedListType.GetMethod("Contains");
-                    var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
-                    query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
-                }
+                case EnumDataType.Text:
+                    return typeof(string);
+                case EnumDataType.Int: return typeof(int);
+                case EnumDataType.Date: return typeof(DateTime);
+                case EnumDataType.PhoneNumber: return typeof(string);
+                case EnumDataType.Email: return typeof(string);
+                case EnumDataType.Boolean: return typeof(bool);
+                case EnumDataType.Percentage: return typeof(short);
+                case EnumDataType.BigInt: return typeof(long);
+                case EnumDataType.Decimal: return typeof(decimal);
+                default: return typeof(string);
             }
-            return query;
+        }
+
+        public static object GetSqlValue(this EnumDataType dataType, object value)
+        {
+            if (value == null) return DBNull.Value;
+
+            if (value.GetType() == typeof(string))
+            {
+                value = (value as string).Trim();
+
+                if (string.Empty.Equals(value)) return DBNull.Value;
+            }
+
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                    return value?.ToString();
+                case EnumDataType.Int:
+                    int intValue;
+                    if (!int.TryParse(value.ToString(), out intValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
+                    }
+                    return intValue;
+
+                case EnumDataType.Date:
+                    long dateValue;
+                    if (!long.TryParse(value.ToString(), out dateValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                    }
+                    return dateValue.UnixToDateTime();
+                case EnumDataType.PhoneNumber: return value?.ToString();
+                case EnumDataType.Email: return value?.ToString();
+                case EnumDataType.Boolean:
+                    bool boolValue;
+                    if (!bool.TryParse(value.ToString(), out boolValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
+                    }
+                    return boolValue;
+                case EnumDataType.Percentage:
+                    short percentValue;
+                    if (!short.TryParse(value.ToString(), out percentValue)|| percentValue < -100 || percentValue > 100)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
+                    }
+                    return percentValue;
+                case EnumDataType.BigInt:
+                    long longValue;
+                    if (!long.TryParse(value.ToString(), out longValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
+                    }
+                    return longValue;
+                case EnumDataType.Decimal:
+                    decimal decimalValue;
+                    if (!decimal.TryParse(value.ToString(), out decimalValue))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
+                    }
+                    return decimalValue;
+                default: return value?.ToString();
+            }
+        }
+
+        public static object ConvertValueByType(this string value, EnumDataType dataType)
+        {
+            object result;
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    result = value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    break;
+                case EnumDataType.Date:
+                    result = DateTime.ParseExact(value, DateFormats.DD_MM_YYYY, CultureInfo.InvariantCulture);
+                    break;
+                case EnumDataType.Percentage:
+                case EnumDataType.Decimal:
+                    result = double.Parse(value);
+                    break;
+                case EnumDataType.Int:
+                    result = int.Parse(value);
+                    break;
+                case EnumDataType.BigInt:
+                    result = long.Parse(value);
+                    break;
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    result = value;
+                    break;
+            }
+
+            return result;
         }
 
     }

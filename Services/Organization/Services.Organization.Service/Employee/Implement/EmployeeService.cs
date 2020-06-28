@@ -76,7 +76,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    return GeneralCode.InternalError;
+                    throw ex;
                 }
             }
         }
@@ -244,7 +244,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    return GeneralCode.InternalError;
+                    throw ex;
                 }
             }
 

@@ -14,7 +14,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PoAssignmentId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public decimal? PrimaryUnitPrice { get; set; }
+        public decimal PrimaryUnitPrice { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public decimal ProductUnitConversionPrice { get; set; }
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

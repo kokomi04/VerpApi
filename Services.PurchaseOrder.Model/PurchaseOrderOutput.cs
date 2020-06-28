@@ -22,21 +22,18 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
         public EnumPurchaseOrderStatus PurchaseOrderStatusId { get; set; }
+        public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
+        public int? CheckedByUserId { get; set; }
         public int? CensorByUserId { get; set; }
-
-        public long? CensorDatetimeUtc { get; set; }
+        
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
-
-        public long? PoAssignmentId { get; set; }
-        public string PoAssignmentCode { get; set; }
-
-        public long? PurchasingSuggestId { get; set; }
-        public string PurchasingSuggestCode { get; set; }
+        public long? CensorDatetimeUtc { get; set; }
+        public long? CheckedDatetimeUtc { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -52,12 +49,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
     {
-
-        public long? PoAssignmentId { get; set; }
-        public string PoAssignmentCode { get; set; }
-
-        public long? PurchasingSuggestId { get; set; }
-        public string PurchasingSuggestCode { get; set; }
+        public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
+        public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }
     }
 
     public class PurchaseOrderOutputListByProduct : PurchaseOrderOutputList, IPurchaseOrderInputDetail
@@ -70,10 +63,21 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public decimal? PrimaryUnitPrice { get; set; }
+        public decimal PrimaryUnitPrice { get; set; }
+
+        public int ProductUnitConversionId { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public decimal ProductUnitConversionPrice { get; set; }
+
+
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Description { get; set; }
 
+        public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
+        public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }
 
     }
 

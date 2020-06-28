@@ -21,22 +21,30 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
         public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomerStatus> CustomerStatus { get; set; }
         public virtual DbSet<CustomerType> CustomerType { get; set; }
         public virtual DbSet<FileStatus> FileStatus { get; set; }
         public virtual DbSet<FileType> FileType { get; set; }
+        public virtual DbSet<FunctionLevel> FunctionLevel { get; set; }
         public virtual DbSet<Gender> Gender { get; set; }
         public virtual DbSet<InventoryType> InventoryType { get; set; }
+        public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
+        public virtual DbSet<ObjectProcessType> ObjectProcessType { get; set; }
         public virtual DbSet<ObjectType> ObjectType { get; set; }
         public virtual DbSet<PackageOperationType> PackageOperationType { get; set; }
         public virtual DbSet<PackageOption> PackageOption { get; set; }
         public virtual DbSet<PackageType> PackageType { get; set; }
         public virtual DbSet<PoProcessStatus> PoProcessStatus { get; set; }
+        public virtual DbSet<ProductStatus> ProductStatus { get; set; }
+        public virtual DbSet<ProgramingLang> ProgramingLang { get; set; }
+        public virtual DbSet<ProgramingLevel> ProgramingLevel { get; set; }
         public virtual DbSet<PurchaseOrderStatus> PurchaseOrderStatus { get; set; }
         public virtual DbSet<PurchasingRequestStatus> PurchasingRequestStatus { get; set; }
         public virtual DbSet<PurchasingSuggestStatus> PurchasingSuggestStatus { get; set; }
@@ -52,10 +60,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
-        public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
-        public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -120,7 +126,53 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(512);
             });
-        
+
+            modelBuilder.Entity<CustomGenCode>(entity =>
+            {
+                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
+
+                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.CustomGenCodeName).HasMaxLength(128);
+
+                entity.Property(e => e.DateFormat)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Prefix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ResetDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Seperator)
+                    .HasMaxLength(1)
+                    .IsUnicode(false)
+                    .IsFixedLength();
+
+                entity.Property(e => e.Suffix)
+                    .HasMaxLength(32)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.TempCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
             modelBuilder.Entity<CustomerStatus>(entity =>
             {
                 entity.Property(e => e.CustomerStatusId).ValueGeneratedNever();
@@ -157,6 +209,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
+            modelBuilder.Entity<FunctionLevel>(entity =>
+            {
+                entity.Property(e => e.FunctionLevelId).ValueGeneratedNever();
+
+                entity.Property(e => e.FunctionLevelName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Gender>(entity =>
             {
                 entity.Property(e => e.GenderId).ValueGeneratedNever();
@@ -173,6 +234,25 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.InventoryTypeName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<Menu>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Icon)
+                    .HasMaxLength(50)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.MenuName).HasMaxLength(50);
+
+                entity.Property(e => e.Param).HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Url).HasMaxLength(128);
             });
 
             modelBuilder.Entity<Method>(entity =>
@@ -227,6 +307,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
+            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            {
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId })
+                    .HasName("UK_ObjectCustomGenCode")
+                    .IsUnique();
+            });
+
             modelBuilder.Entity<ObjectGenCode>(entity =>
             {
                 entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
@@ -263,6 +350,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<ObjectProcessType>(entity =>
+            {
+                entity.Property(e => e.ObjectProcessTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.ObjectProcessTypeDescription).HasMaxLength(512);
+
+                entity.Property(e => e.ObjectProcessTypeName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<ObjectType>(entity =>
@@ -306,6 +404,35 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.PoProcessStatusId).ValueGeneratedNever();
 
                 entity.Property(e => e.PoProcessStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProductStatus>(entity =>
+            {
+                entity.Property(e => e.ProductStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.ProductStatusName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProgramingLang>(entity =>
+            {
+                entity.HasKey(e => e.ProgramingLevelId);
+
+                entity.Property(e => e.ProgramingLevelId).ValueGeneratedNever();
+
+                entity.Property(e => e.ProgramingLevelName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProgramingLevel>(entity =>
+            {
+                entity.Property(e => e.ProgramingLevelId).ValueGeneratedNever();
+
+                entity.Property(e => e.ProgramingLevelName)
                     .IsRequired()
                     .HasMaxLength(128);
             });
@@ -481,49 +608,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UserStatusName)
                     .IsRequired()
                     .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<CustomGenCode>(entity =>
-            {
-                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
-
-                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.DateFormat)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.LastCode)
-                    .IsRequired()
-                    .HasMaxLength(64)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
-
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ResetDate).HasColumnType("datetime");
-
-                entity.Property(e => e.Seperator)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .IsFixedLength();
-
-                entity.Property(e => e.Suffix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
-            });
-
-            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
-            {
-                entity.Property(e => e.ObjectTypeId).IsRequired();
-                entity.Property(e => e.ObjectId).IsRequired();
-                entity.Property(e => e.CustomGenCodeId).IsRequired();
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -43,8 +43,22 @@ const Actions = [
     {
         id: EnumAction.CENSOR,
         name: 'Censor'
+    },
+    {
+        id: EnumAction.CHECK,
+        name: 'Check'
     }
 ];
 
-export { Methods, Actions };
+const Services = [
+    {
+        serviceId: 0,
+        serviceName: "VERP API"
+    },
+    {
+        serviceId: 1,
+        serviceName: "CONFIG API"
+    }
+]
+export { Methods, Actions, Services };
 

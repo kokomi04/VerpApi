@@ -115,6 +115,7 @@ class SyncApiEndpoint extends Component {
         endpoints.forEach((row, index) => {
             rows.push(<tr key={index}>
                 <th scope="row">{row.apiEndpointId}</th>
+                <td>{Constants.Services.find(m => m.serviceId === row.serviceId).serviceName}</td>
                 <td>{Constants.Methods.find(m => m.id === row.methodId).name}</td>
                 <td>{row.route}</td>
                 <td>{Constants.Actions.find(m => m.id === row.actionId).name}</td>
@@ -148,6 +149,7 @@ class SyncApiEndpoint extends Component {
                         <thead className="thead-light">
                             <tr>
                                 <th scope="col">#</th>
+                                <th scope="col">Service</th>
                                 <th scope="col">Method</th>
                                 <th scope="col">Route</th>
                                 <th scope="col">Action</th>

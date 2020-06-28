@@ -16,6 +16,7 @@ namespace VErp.Services.Accountant.Model.Input
     public class InputValueRowInputModel
     {
         public int InputAreaId { get; set; }
+        //public bool IsMultiRow { get; set; }
         public long? InputValueRowId { get; set; }
         public ICollection<InputValueModel> Values { get; set; }
     }
@@ -25,7 +26,5 @@ namespace VErp.Services.Accountant.Model.Input
     {
         public int InputAreaFieldId { get; set; }
         public string Value { get; set; }
-        public string TitleValue { get; set; }
-
     }
 }

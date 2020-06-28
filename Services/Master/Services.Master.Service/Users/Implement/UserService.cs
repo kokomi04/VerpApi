@@ -261,7 +261,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<PageData<UserInfoOutput>> GetList( string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<UserInfoOutput>> GetList( string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             IQueryable<Employee> employees = _organizationContext.Employee;

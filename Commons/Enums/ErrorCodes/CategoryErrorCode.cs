@@ -76,5 +76,7 @@ namespace VErp.Commons.Enums.StandardEnum
         ParentCategoryFromItSelf = 33,
         [Description("Trường dữ liệu không được phép thay đổi")]
         CategoryFieldReadOnly = 44,
+        [Description("Đang tồn tại tham chiếu tới giá trị này")]
+        RelationshipAlreadyExisted = 45,
     }
 }

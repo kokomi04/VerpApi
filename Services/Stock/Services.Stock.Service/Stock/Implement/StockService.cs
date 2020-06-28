@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
+using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -231,7 +232,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = from p in _stockContext.Stock
                         select p;
@@ -242,7 +243,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
-            query = Utils.InternalFilter(query, filters);
+            query = query.InternalFilter(filters);
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
@@ -545,6 +546,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     LocationName = l == null ? null : l.Name,
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
+                    pk.Description,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
@@ -581,6 +583,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 LocationName = pk.LocationName,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
                 ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                Description = pk.Description,
                 PrimaryUnitId = pk.PrimaryUnitId,
                 PrimaryQuantity = pk.PrimaryQuantity,
                 SecondaryUnitId = pk.SecondaryUnitId,
@@ -630,6 +633,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageCode = pk.PackageCode,
                     Date = pk.Date,
                     ExpriredDate = pk.ExpiryTime,
+                    pk.Description,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
                     SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
@@ -653,6 +657,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 PackageCode = pk.PackageCode,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)0,
                 ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                Description = pk.Description,
                 PrimaryUnitId = pk.PrimaryUnitId,
                 PrimaryQuantity = pk.PrimaryQuantity,
                 SecondaryUnitId = pk.SecondaryUnitId,
@@ -1237,7 +1242,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details = new List<StockProductDetailsModel>();
 
                 var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-                var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId.Value, o => o.TotalProductUnitConversion);
+                var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
                 var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
                 foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.CreatedDatetimeUtc).ToList())
@@ -1247,19 +1252,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var secondaryUnitName = secondaryUnitObj != null ? secondaryUnitObj.UnitName : string.Empty;
                     var secondaryUnitId = secondaryUnitObj != null ? (int?)secondaryUnitObj.UnitId : null;
 
-                    if (!totalByTimes.ContainsKey(item.ProductUnitConversionId.Value))
+                    if (!totalByTimes.ContainsKey(item.ProductUnitConversionId))
                     {
-                        totalByTimes.Add(item.ProductUnitConversionId.Value, 0);
+                        totalByTimes.Add(item.ProductUnitConversionId, 0);
                     }
 
                     if (item.InventoryTypeId == (int)EnumInventoryType.Input)
                     {
-                        totalByTimes[item.ProductUnitConversionId.Value] += item.ProductUnitConversionQuantity;
+                        totalByTimes[item.ProductUnitConversionId] += item.ProductUnitConversionQuantity;
                         totalPrimary += item.PrimaryQuantity;
                     }
                     else
                     {
-                        totalByTimes[item.ProductUnitConversionId.Value] -= item.ProductUnitConversionQuantity;
+                        totalByTimes[item.ProductUnitConversionId] -= item.ProductUnitConversionQuantity;
                         totalPrimary -= item.PrimaryQuantity;
                     }
 
@@ -1282,7 +1287,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversionId = item.ProductUnitConversionId,
                         ProductUnitConversion = productUnitConversionObj,
                         EndOfPerdiodPrimaryQuantity = totalPrimary,
-                        EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId.Value],
+                        EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
                     });
                 }
                 #endregion
@@ -1707,8 +1712,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.UpdatedByUserId = inventory.UpdatedByUserId;
                     item.UpdatedByUserName = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
                     item.UpdatedDatetimeUtc = inventory.UpdatedDatetimeUtc.GetUnix();
-                    item.Censor = userDataList.FirstOrDefault(q => q.UserId == inventory.UpdatedByUserId)?.UserName ?? string.Empty;
-                    item.CensorDate = inventory.UpdatedDatetimeUtc.GetUnix();
+                    item.Censor = userDataList.FirstOrDefault(q => q.UserId == inventory.CensorByUserId)?.UserName ?? string.Empty;
+                    item.CensorDate = inventory.CensorDatetimeUtc.GetUnix();
 
                     item.InventoryDetailsOutputModel = reportInventoryDetailsOutputModelList.Where(q => q.InventoryId == inventory.InventoryId).ToList();
                     reportInventoryOutputModelList.Add(item);
@@ -1733,7 +1738,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             public int ProductId { get; set; }
 
-            public int? ProductUnitConversionId { get; set; }
+            public int ProductUnitConversionId { get; set; }
         }
     }
 }

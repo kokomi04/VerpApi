@@ -9,6 +9,7 @@
     <DocumentationFile>bin\Debug\netcoreapp3.1\VErpApi.xml</DocumentationFile>
     <OutputPath></OutputPath>
     <NoWarn>1701;1702;1705;1591</NoWarn>
+    <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -44,11 +45,11 @@
   
   <ItemGroup>    
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />    
-    <PackageReference Include="IdentityServer4" Version="3.1.3" />    
-    <PackageReference Include="IdentityServer4.EntityFramework" Version="3.1.3" />    
-    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="3.1.3" />    
-    <PackageReference Include="IdentityServer4.Storage" Version="3.1.3" />    
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
+    <PackageReference Include="IdentityServer4" Version="4.0.0" />    
+    <PackageReference Include="IdentityServer4.EntityFramework" Version="4.0.0" />    
+    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="4.0.0" />    
+    <PackageReference Include="IdentityServer4.Storage" Version="4.0.0" />    
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>    
@@ -62,6 +63,7 @@
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
+    <ProjectReference Include="..\..\Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj" />
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Model\Services.Accountant.Model.csproj" />
     <ProjectReference Include="..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
     <ProjectReference Include="..\..\Services\Master\Services.Master.Model\Services.Master.Model.csproj" />
@@ -80,6 +82,10 @@
     <Content Update="web.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Handlers\Stock\" />
   </ItemGroup>
 
 </Project>

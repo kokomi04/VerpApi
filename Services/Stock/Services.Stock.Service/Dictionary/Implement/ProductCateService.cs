@@ -13,6 +13,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
@@ -66,11 +67,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
+                SortOrder = req.SortOrder
             };
 
             await _stockContext.ProductCate.AddAsync(productCate);
 
             await _stockContext.SaveChangesAsync();
+
+            await UpdateSortOrder();
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
@@ -101,6 +105,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
+            await UpdateSortOrder();
+
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize());
 
             return GeneralCode.Success;
@@ -113,7 +119,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 {
                     ProductCateId = c.ProductCateId,
                     ParentProductCateId = c.ParentProductCateId,
-                    ProductCateName = c.ProductCateName
+                    ProductCateName = c.ProductCateName,
+                    SortOrder = c.SortOrder
                 })
                 .FirstOrDefaultAsync();
 
@@ -125,7 +132,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate;
         }
 
-        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null)
+        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = (from c in _stockContext.ProductCate select c);
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -141,12 +148,13 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 ParentProductCateId = c.ParentProductCateId,
                 ProductCateId = c.ProductCateId,
-                ProductCateName = c.ProductCateName
+                ProductCateName = c.ProductCateName,
+                SortOrder = c.SortOrder
             });
 
             if (size > 0)
             {
-                lst = lst.Skip((page - 1) * size).Take(size);
+                lst = lst.OrderBy(c => c.SortOrder).Skip((page - 1) * size).Take(size);
             }
 
             return (await lst.ToListAsync(), total);
@@ -169,9 +177,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             productCate.ProductCateName = req.ProductCateName;
             productCate.ParentProductCateId = req.ParentProductCateId;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
-
+            productCate.SortOrder = req.SortOrder;
 
             await _stockContext.SaveChangesAsync();
+
+            await UpdateSortOrder();
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
@@ -186,6 +196,34 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 return ProductCateErrorCode.EmptyProductCateName;
             }
             return GeneralCode.Success;
+        }
+
+        private async Task UpdateSortOrder()
+        {
+            var lst = await _stockContext.ProductCate.OrderBy(c => c.SortOrder).ToListAsync();
+
+            var outList = new Stack<ProductCate>();
+
+            var st = new Stack<ProductCate>();
+            st.Push(null);
+            var idx = 1;
+            while (st.Count > 0)
+            {
+                var info = st.Pop();
+                if (info != null)
+                {
+                    info.SortOrder = ++idx;
+                }
+
+                foreach (var child in lst.Where(c => c.ParentProductCateId == info?.ProductCateId).Reverse())
+                {
+                    st.Push(child);
+                }
+
+            }
+
+
+            await _stockContext.SaveChangesAsync();
         }
         #endregion
     }

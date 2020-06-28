@@ -64,6 +64,7 @@ export default class ModalModuleApiMapping extends Component {
             this.state.endpoints.forEach((endpoint) => {
                 options.push({
                     id: endpoint.apiEndpointId,
+                    serviceId: endpoint.serviceId,
                     route: endpoint.route,
                     methodId: endpoint.methodId,
                     methodName: Constants.Methods.find(m => m.id === endpoint.methodId).name,
@@ -77,7 +78,7 @@ export default class ModalModuleApiMapping extends Component {
 
         return (
             <div ref={modal => this.modal = modal} className="modal fade" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                <div className="modal-dialog" role="document">
+                <div className="modal-dialog modal-xl" role="document">
                     <div className="modal-content">
                         <div className="modal-header">
                             <h5 className="modal-title" id="exampleModalLabel">Select api endpoint for mapping</h5>
@@ -94,7 +95,7 @@ export default class ModalModuleApiMapping extends Component {
                                         filterBy={['search']}
                                         labelKey={
                                             endpoint =>
-                                                `${endpoint.methodName} ${endpoint.route} ${endpoint.actionName}`
+                                                `${Constants.Services.find(s => s.serviceId == endpoint.serviceId).serviceName} --- ${endpoint.methodName} --- ${endpoint.route} ${endpoint.actionName}`
                                         }
                                         onChange={selected => this.selectEndpoint(selected)()}
                                         options={options}

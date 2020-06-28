@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Accountancy.Model.Data;
+using VErp.Services.Accountancy.Model.Input;
+
+namespace VErp.Services.Accountancy.Service.Input
+{
+    public interface IInputDataService
+    {
+
+        Task<PageDataTable> GetBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderByFieldName, bool asc, int page, int size);
+
+        Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
+
+        Task<long> CreateBill(int inputTypeId, BillInfoModel data);
+
+        Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data);
+
+        Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
+
+
+    }
+}

@@ -8,29 +8,22 @@ using VErp.Infrastructure.EF.AccountingDB;
 
 namespace VErp.Services.Accountant.Model.Category
 {
-    public class CategoryValueModel : IMapFrom<CategoryRowValue>
+    public class CategoryValueInputModel : IMapFrom<CategoryRowValue>
     {
         public int CategoryFieldId { get; set; }
         public string Value { get; set; }
-
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<CategoryRowValue, CategoryValueModel>()
+            profile.CreateMap<CategoryRowValue, CategoryValueInputModel>()
                 .ForMember(nameof(Value), opt => opt.MapFrom(src => src.Value ?? src.ValueInNumber.ToString()));
         }
-
-    }
-
-    public class CategoryValueInputModel : CategoryValueModel
-    {
-        public string TitleValue { get; set; }
     }
 
     public class MapTitleInputModel
     {
         public int ReferCategoryFieldId { get; set; }
-        //public int? CategoryFieldTitleId { get; set; }
         public string Value { get; set; }
+        public string TitleValue { get; set; }
     }
 
 

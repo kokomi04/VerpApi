@@ -14,5 +14,8 @@ namespace VErp.Commons.Constants
         public const string F_IDENTITY = "F_Id";
         public const string IDENTITY_AREA = "IdentityArea";
         public const string IDENTITY_AREA_TITLE = "Thông tin định danh";
+
+        public const string INPUTVALUEROW_TABLE = "InputValueRow";
+        public const string INPUTVALUEROW_VIEW = "vInputValueRow";
     }
 }

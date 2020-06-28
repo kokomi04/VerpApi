@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<FormType> FormType { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
-        public virtual DbSet<InputAreaFieldStyle> InputAreaFieldStyle { get; set; }
+        public virtual DbSet<InputField> InputField { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
         public virtual DbSet<InputValueRowVersion> InputValueRowVersion { get; set; }
         public virtual DbSet<InputValueRowVersionNumber> InputValueRowVersionNumber { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
         public virtual DbSet<Sysdiagrams> Sysdiagrams { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -109,8 +110,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 entity.Property(e => e.IsShowSearchTable)
                     .IsRequired()
                     .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.IsTreeViewKey).HasColumnName("IsTreeViewKey ");
 
                 entity.Property(e => e.RegularExpression)
                     .HasMaxLength(255)
@@ -271,17 +270,19 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputAreaField>(entity =>
             {
-                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+                entity.HasIndex(e => new { e.InputTypeId, e.InputFieldId })
+                    .HasName("IX_InputAreaField")
+                    .IsUnique();
 
-                entity.Property(e => e.FieldName)
-                    .IsRequired()
-                    .HasMaxLength(64);
+                entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.Filters).HasMaxLength(512);
 
-                entity.Property(e => e.IsListFilter)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
+                entity.Property(e => e.InputStyleJson).HasMaxLength(512);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
@@ -289,17 +290,7 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
                 entity.Property(e => e.Title).HasMaxLength(128);
 
-                entity.HasOne(d => d.DataType)
-                    .WithMany(p => p.InputAreaField)
-                    .HasForeignKey(d => d.DataTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputAreaField_DataType");
-
-                entity.HasOne(d => d.FormType)
-                    .WithMany(p => p.InputAreaField)
-                    .HasForeignKey(d => d.FormTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputAreaField_FormType");
+                entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
 
                 entity.HasOne(d => d.InputArea)
                     .WithMany(p => p.InputAreaField)
@@ -307,50 +298,46 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputAreaField_InputArea");
 
+                entity.HasOne(d => d.InputField)
+                    .WithMany(p => p.InputAreaField)
+                    .HasForeignKey(d => d.InputFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InputAreaField_InputField");
+
                 entity.HasOne(d => d.InputType)
                     .WithMany(p => p.InputAreaField)
                     .HasForeignKey(d => d.InputTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputAreaField_InputType");
-
-                entity.HasOne(d => d.ReferenceCategoryField)
-                    .WithMany(p => p.InputAreaFieldReferenceCategoryField)
-                    .HasForeignKey(d => d.ReferenceCategoryFieldId)
-                    .HasConstraintName("FK_InputAreaField_CategoryField");
-
-                entity.HasOne(d => d.ReferenceCategoryTitleField)
-                    .WithMany(p => p.InputAreaFieldReferenceCategoryTitleField)
-                    .HasForeignKey(d => d.ReferenceCategoryTitleFieldId)
-                    .HasConstraintName("FK_InputAreaField_CategoryTitleField");
             });
 
-            modelBuilder.Entity<InputAreaFieldStyle>(entity =>
+            modelBuilder.Entity<InputField>(entity =>
             {
-                entity.HasKey(e => e.InputAreaFieldId);
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
-                entity.Property(e => e.InputAreaFieldId).ValueGeneratedNever();
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
 
-                entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
 
-                entity.Property(e => e.InputStyleJson).HasMaxLength(512);
+                entity.Property(e => e.Title).HasMaxLength(128);
 
-                entity.Property(e => e.OnBlur).HasMaxLength(512);
-
-                entity.Property(e => e.OnChange).HasMaxLength(512);
-
-                entity.Property(e => e.OnFocus).HasMaxLength(512);
-
-                entity.Property(e => e.OnKeydown).HasMaxLength(512);
-
-                entity.Property(e => e.OnKeypress).HasMaxLength(512);
-
-                entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
-
-                entity.HasOne(d => d.InputAreaField)
-                    .WithOne(p => p.InputAreaFieldStyle)
-                    .HasForeignKey<InputAreaFieldStyle>(d => d.InputAreaFieldId)
+                entity.HasOne(d => d.DataType)
+                    .WithMany(p => p.InputField)
+                    .HasForeignKey(d => d.DataTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputAreaFieldStyle_InputAreaField");
+                    .HasConstraintName("FK_InputField_DataType");
+
+                entity.HasOne(d => d.ReferenceCategoryField)
+                    .WithMany(p => p.InputFieldReferenceCategoryField)
+                    .HasForeignKey(d => d.ReferenceCategoryFieldId)
+                    .HasConstraintName("FK_InputField_CategoryField");
+
+                entity.HasOne(d => d.ReferenceCategoryTitleField)
+                    .WithMany(p => p.InputFieldReferenceCategoryTitleField)
+                    .HasForeignKey(d => d.ReferenceCategoryTitleFieldId)
+                    .HasConstraintName("FK_InputField_CategoryField1");
             });
 
             modelBuilder.Entity<InputType>(entity =>
@@ -358,10 +345,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
                 entity.Property(e => e.InputTypeCode)
                     .IsRequired()
                     .HasMaxLength(128);
-
-                entity.Property(e => e.PostLoadAction).HasMaxLength(512);
-
-                entity.Property(e => e.PreLoadAction).HasMaxLength(512);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
 
@@ -448,12 +431,6 @@ namespace VErp.Infrastructure.EF.AccountingDB
 
             modelBuilder.Entity<InputValueRow>(entity =>
             {
-                entity.HasOne(d => d.InputArea)
-                    .WithMany(p => p.InputValueRow)
-                    .HasForeignKey(d => d.InputAreaId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputValueRow_InputArea");
-
                 entity.HasOne(d => d.InputValueBill)
                     .WithMany(p => p.InputValueRow)
                     .HasForeignKey(d => d.InputValueBillId)
@@ -698,6 +675,10 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasMaxLength(255)
                     .IsUnicode(false);
 
+                entity.Property(e => e.ParentKey)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Url)
                     .HasMaxLength(255)
                     .IsUnicode(false);
@@ -707,6 +688,15 @@ namespace VErp.Infrastructure.EF.AccountingDB
                     .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<ProgramingFunction>(entity =>
+            {
+                entity.Property(e => e.FunctionBody).IsRequired();
+
+                entity.Property(e => e.ProgramingFunctionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<Sysdiagrams>(entity =>

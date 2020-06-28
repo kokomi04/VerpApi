@@ -31,6 +31,8 @@ namespace MigrateAndMappingApi
         {
             ConfigureStandardServices(services, false);
 
+            ConfigReadWriteDBContext(services);
+
             // In production, the React files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
@@ -65,7 +67,7 @@ namespace MigrateAndMappingApi
                 spa.Options.SourcePath = "ClientApp";
 
                 //if (env.IsDevelopment())
-                if(env.EnvironmentName == "Local")
+                if (env.EnvironmentName == "Local")
                 {
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }

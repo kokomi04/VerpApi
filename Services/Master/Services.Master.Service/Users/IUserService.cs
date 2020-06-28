@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
@@ -17,7 +18,7 @@ namespace VErp.Services.Master.Service.Users
         Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId);
         Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<Enum> DeleteUser(int userId);
-        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null);
+        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
 
         Task<IList<RolePermissionModel>> GetMePermission();

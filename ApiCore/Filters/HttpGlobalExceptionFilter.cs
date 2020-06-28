@@ -16,10 +16,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
 {
     public partial class HttpGlobalExceptionFilter : IExceptionFilter
     {
-        private readonly IHostingEnvironment _env;
+        private readonly IWebHostEnvironment _env;
         private readonly ILogger<HttpGlobalExceptionFilter> _logger;
 
-        public HttpGlobalExceptionFilter(IHostingEnvironment env, ILogger<HttpGlobalExceptionFilter> logger)
+        public HttpGlobalExceptionFilter(IWebHostEnvironment env, ILogger<HttpGlobalExceptionFilter> logger)
         {
             _env = env;
             _logger = logger;
@@ -61,7 +61,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
                     };
 
-                    if (_env.IsDevelopment())
+                    if (_env.EnvironmentName != "Production")
                     {
                         json.Data = context.Exception;
                     }
@@ -77,7 +77,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                         Message = context.Exception.Message
                     };
 
-                    if (_env.IsDevelopment())
+                    if (_env.EnvironmentName != "Production")
                     {
                         json.Data = context.Exception;
                     }

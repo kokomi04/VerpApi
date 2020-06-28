@@ -20,13 +20,14 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? LocationId { get; set; }
         public int StockId { get; set; }
         public int ProductId { get; set; }
-        public int? ProductUnitConversionId { get; set; }
+        public int ProductUnitConversionId { get; set; }
         public decimal PrimaryQuantityWaiting { get; set; }
         public decimal PrimaryQuantityRemaining { get; set; }
         public decimal ProductUnitConversionWaitting { get; set; }
         public decimal ProductUnitConversionRemaining { get; set; }
         public DateTime? Date { get; set; }
         public DateTime? ExpiryTime { get; set; }
+        public string Description { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }

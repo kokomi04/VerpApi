@@ -25,6 +25,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountingDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountant.Model.Category;
@@ -49,45 +50,51 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, Clause filters, int page, int size)
+        public async Task<PageData<CategoryRowListOutputModel>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
         {
             var total = 0;
-            List<CategoryRowListOutputModel> lst = new List<CategoryRowListOutputModel>();
-
-            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var lst = new List<CategoryRowListOutputModel>();
+            Clause filterClause = null;
+            if (!string.IsNullOrEmpty(filters))
+            {
+                filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == categoryId).ToList();
+                filterClause = AddFieldName(filterClause, fields);
+            }
+            var category = await _accountingContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
 
             IQueryable<CategoryRow> query;
-            IQueryable<CategoryRowValue> filterQuery;
-
-            if (category.IsOutSideData)
+            IQueryable<CategoryRow> notFilterData;
+            if (category.IsOutSideData && !category.IsTreeView)
             {
-                query = GetOutSideCategoryRows(categoryId);
-                filterQuery = query.SelectMany(r => r.CategoryRowValue);
+                query = GetOutSideCategoryRows(categoryId, filterClause);
+                notFilterData = query;
             }
             else
             {
-                query = _accountingContext.CategoryRow
-                    .Where(r => r.CategoryId == categoryId)
-                    .Include(r => r.CategoryRowValue);
-                filterQuery = from rowValue in _accountingContext.CategoryRowValue
-                              join row in _accountingContext.CategoryRow on rowValue.CategoryRowId equals row.CategoryRowId
-                              where row.CategoryId == categoryId
-                              select rowValue;
+                if (category.IsOutSideData)
+                {
+                    query = GetOutSideCategoryRows(categoryId);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                     .Where(r => r.CategoryId == categoryId)
+                     .Include(r => r.CategoryRowValue);
+                }
+                notFilterData = query;
+                if (filters != null)
+                {
+                    ParameterExpression param = Expression.Parameter(typeof(CategoryRow), "r");
+                    Expression filter = FilterClauseProcess(param, filterClause, query);
+                    query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
+                }
             }
-
-            if (filters != null)
-            {
-                List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
-                query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
-            }
-
             // search
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(r => r.CategoryRowValue
-                .Any(rv => rv.Value.Contains(keyword)));
+                query = query.Where(r => r.CategoryRowValue.Any(rv => !string.IsNullOrEmpty(rv.Value) && rv.Value.Contains(keyword)));
             }
-
             total = query.Count();
             if (size > 0)
             {
@@ -95,13 +102,16 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 {
                     lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider).ToList();
                     int[] parentIds = GetParentIds(lst);
-
-
-                    lst.AddRange(_accountingContext.CategoryRow
-                        .Include(r => r.CategoryRowValue)
+                    var parents = notFilterData
                         .ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider)
-                        .Where(r => parentIds.Contains(r.CategoryRowId)));
+                        .Where(r => parentIds.Contains(r.CategoryRowId))
+                        .ToList();
+                    foreach (var parent in parents)
+                    {
+                        parent.IsDisabled = true;
+                    }
 
+                    lst.AddRange(parents);
                     lst = SortCategoryRows(lst).Skip((page - 1) * size).Take(size).ToList();
                 }
                 else
@@ -113,6 +123,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             return (lst, total);
         }
+
 
         private int[] GetParentIds(List<CategoryRowListOutputModel> categoryRows)
         {
@@ -203,51 +214,73 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
         public async Task<ServiceResult<List<MapTitleOutputModel>>> MapTitle(MapTitleInputModel[] categoryValues)
         {
-            List<MapTitleOutputModel> titles = new List<MapTitleOutputModel>();
+            var titles = new List<MapTitleOutputModel>();
             var groups = categoryValues.GroupBy(v => new { v.ReferCategoryFieldId });
+
+            var refFieldIds = groups.Select(g => g.Key.ReferCategoryFieldId).ToList();
+
+            var categories = (from category in _accountingContext.Category
+                                               join field in _accountingContext.CategoryField on category.CategoryId equals field.CategoryId
+                                               where refFieldIds.Contains(field.CategoryFieldId)
+                                               select category)
+                .Include(c => c.OutSideDataConfig)
+                .ToList();
+
+            var categoryIds = categories.Select(c => c.CategoryId).ToList();
+
+            var fields = await _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToListAsync();
+
+            var refObjects = new List<(int Index, int RefeCategoryFieldId, string FieldName, string Value)>();
+
             foreach (var group in groups)
             {
-                CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
-                CategoryEntity category = _accountingContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == referField.CategoryId);
+                CategoryField referField = fields.First(f => f.CategoryFieldId == group.Key.ReferCategoryFieldId);
+                CategoryEntity category = categories.First(c => c.CategoryId == referField.CategoryId);
                 bool isOutSide = category.IsOutSideData;
                 IQueryable<CategoryRow> query;
                 List<string> values = group.Select(g => g.Value).Distinct().ToList();
                 if (isOutSide)
                 {
                     string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
-                    var body = new Dictionary<string, List<string>>
+                    Clause clause = new SingleClause
                     {
-                        {fieldName,  values}
+                        FieldName = fieldName,
+                        Operator = EnumOperator.InList,
+                        Value = string.Join(",", values.ToArray())
                     };
-                    query = GetOutSideCategoryRows(category.CategoryId, body);
+                    query = GetOutSideCategoryRows(category.CategoryId, clause);
                 }
                 else
                 {
                     query = _accountingContext.CategoryRow
                         .Where(r => r.CategoryId == category.CategoryId)
-                        .Include(r => r.CategoryRowValue)
-                        .ThenInclude(rv => rv.CategoryField);
+                        .Include(r => r.CategoryRowValue);
                 }
                 var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
 
-
-
-
                 foreach (var value in values)
                 {
-                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value)));
-
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && value == rv.Value));
                     var referObject = new NonCamelCaseDictionary();
-
                     if (row != null)
                     {
                         foreach (var rowValue in row.CategoryRowValue)
                         {
-                            referObject.Add(rowValue.CategoryField.CategoryFieldName, rowValue.Value);
+                            var field = fields.First(f => f.CategoryFieldId == rowValue.CategoryFieldId);
+                            bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)rowValue.CategoryField.FormTypeId);
+
+                            if (isRef)
+                            {
+                                refObjects.Add((titles.Count, field.ReferenceCategoryFieldId.Value, field.CategoryFieldName, rowValue.Value));
+                            }
+                            else
+                            {
+                                referObject.Add(field.CategoryFieldName, rowValue.Value);
+                            }
                         }
                     }
 
-                    MapTitleOutputModel title = new MapTitleOutputModel
+                    var title = new MapTitleOutputModel
                     {
                         ReferCategoryFieldId = referField.CategoryFieldId,
                         Value = value,
@@ -256,7 +289,71 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     titles.Add(title);
                 }
             }
+            MapRefer(ref titles, refObjects);
             return titles;
+        }
+
+        private void MapRefer(ref List<MapTitleOutputModel> titles, List<(int Index, int ReferCategoryFieldId, string FieldName, string Value)> refObjects)
+        {
+            var groups = refObjects.GroupBy(r => r.ReferCategoryFieldId);
+            var refFieldIds = groups.Select(g => g.Key).ToList();
+            List<CategoryEntity> categories = (from category in _accountingContext.Category
+                                               join field in _accountingContext.CategoryField on category.CategoryId equals field.CategoryId
+                                               where refFieldIds.Contains(field.CategoryFieldId)
+                                               select category)
+                .Include(c => c.OutSideDataConfig)
+                .ToList();
+            var categoryIds = categories.Select(c => c.CategoryId).ToList();
+            List<CategoryField> fields = _accountingContext.CategoryField.Where(f => categoryIds.Contains(f.CategoryId)).ToList();
+            foreach (var group in groups)
+            {
+                CategoryField referField = fields.First(f => f.CategoryFieldId == group.Key);
+                CategoryEntity category = categories.First(c => c.CategoryId == referField.CategoryId);
+                bool isOutSide = category.IsOutSideData;
+                IQueryable<CategoryRow> query;
+                List<string> values = group.Select(g => g.Value).Distinct().ToList();
+                if (isOutSide)
+                {
+                    string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
+                    Clause clause = new SingleClause
+                    {
+                        FieldName = fieldName,
+                        Operator = EnumOperator.InList,
+                        Value = string.Join(",", values.ToArray())
+                    };
+                    query = GetOutSideCategoryRows(category.CategoryId, clause);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                        .Where(r => r.CategoryId == category.CategoryId)
+                        .Include(r => r.CategoryRowValue);
+                }
+
+                var data = query.Where(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && values.Contains(rv.Value))).ToList();
+
+                foreach (var value in values)
+                {
+                    var row = data.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && value == rv.Value));
+                    var referObject = new NonCamelCaseDictionary();
+                    if (row != null)
+                    {
+                        foreach (var rowValue in row.CategoryRowValue)
+                        {
+                            var field = fields.First(f => f.CategoryFieldId == rowValue.CategoryFieldId);
+                            referObject.Add(field.CategoryFieldName, rowValue.Value);
+                        }
+                    }
+                    foreach (var item in group.Where(g => g.Value == value))
+                    {
+                        titles[item.Index].ReferObject.Add(item.FieldName, new
+                        {
+                            item.Value,
+                            ReferObject = referObject
+                        });
+                    }
+                }
+            }
         }
 
         private void GetOutSideCategoryRow(int categoryId, int categoryRowId, ref CategoryRowOutputModel categoryRow)
@@ -290,10 +387,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         // Map value cho các field
                         foreach (var field in fields)
                         {
-                            CategoryValueModel rowValue;
+                            CategoryValueInputModel rowValue;
                             if (field.CategoryFieldName == AccountantConstants.F_IDENTITY)
                             {
-                                rowValue = new CategoryValueModel
+                                rowValue = new CategoryValueInputModel
                                 {
                                     CategoryFieldId = field.CategoryFieldId,
                                     Value = categoryRowId.ToString()
@@ -302,7 +399,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                             else
                             {
                                 bool bValue = properties.TryGetValue(field.CategoryFieldName, out string value);
-                                rowValue = new CategoryValueModel
+                                rowValue = new CategoryValueInputModel
                                 {
                                     CategoryFieldId = field.CategoryFieldId,
                                     Value = bValue ? value : string.Empty,
@@ -315,6 +412,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "GetOutSideCategoryRow");
                 throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideDataError);
             }
         }
@@ -458,22 +556,24 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             // Lấy thông tin value hiện tại
             var currentValues = (from rowValue in _accountingContext.CategoryRowValue
                                  where rowValue.CategoryRowId == categoryRowId
-                                 join field in _accountingContext.CategoryField on rowValue.CategoryFieldId equals field.CategoryFieldId
-                                 join referRowValue in _accountingContext.CategoryRowValue
-                                 on new { categoryRowId = (int)rowValue.ValueInNumber, categoryFieldId = field.ReferenceCategoryTitleFieldId.Value }
-                                 equals new { categoryRowId = referRowValue.CategoryRowId, categoryFieldId = referRowValue.CategoryFieldId } into g
-                                 from subRefer in g.DefaultIfEmpty()
-                                 select new
-                                 {
-                                     Data = rowValue,
-                                     ReferData = subRefer
-                                 }).ToList();
+                                 //join field in _accountingContext.CategoryField on rowValue.CategoryFieldId equals field.CategoryFieldId
+                                 //join referRowValue in _accountingContext.CategoryRowValue
+                                 //on new { categoryRowId = (int)rowValue.ValueInNumber, categoryFieldId = field.ReferenceCategoryTitleFieldId.Value }
+                                 //equals new { categoryRowId = referRowValue.CategoryRowId, categoryFieldId = referRowValue.CategoryFieldId } into g
+                                 //from subRefer in g.DefaultIfEmpty()
+                                 //select new
+                                 //{
+                                 //    Data = rowValue,
+                                 //    //ReferData = subRefer
+                                 //})
+                                 select rowValue)
+                                 .ToList();
 
             // Lấy các trường thay đổi
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                var currentValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == categoryField.CategoryFieldId);
+                var currentValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
                 var updateValue = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == categoryField.CategoryFieldId);
 
                 if (currentValue != null || updateValue != null)
@@ -485,7 +585,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     else
                     {
                         bool isRef = AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)categoryField.FormTypeId);
-                        if (currentValue.Data.Value != updateValue.Value)
+                        if (currentValue.Value != updateValue.Value)
                         {
                             updateFields.Add(categoryField);
                         }
@@ -519,7 +619,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 // Duyệt danh sách field
                 foreach (var field in updateFields)
                 {
-                    var oldValue = currentValues.FirstOrDefault(v => v.Data.CategoryFieldId == field.CategoryFieldId);
+                    var oldValue = currentValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
                     var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
 
                     if (field.AutoIncrement || ((valueItem == null || string.IsNullOrEmpty(valueItem.Value)) && oldValue == null))
@@ -644,45 +744,46 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             foreach (var field in selectFields)
             {
                 var valueItem = data.CategoryRowValues.FirstOrDefault(v => v.CategoryFieldId == field.CategoryFieldId);
-                if (valueItem != null && !string.IsNullOrEmpty(valueItem.TitleValue))
+                if (valueItem != null && !string.IsNullOrEmpty(valueItem.Value))
                 {
                     bool isExisted = false;
 
                     if (field.ReferenceCategoryFieldId.HasValue)
                     {
                         CategoryField referField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryFieldId.Value);
-                        CategoryField referTitleField = _accountingContext.CategoryField.First(f => f.CategoryFieldId == field.ReferenceCategoryTitleFieldId.Value);
                         CategoryEntity referCategory = _accountingContext.Category.First(c => c.CategoryId == referField.CategoryId);
-                        bool isOutSide = referCategory.IsOutSideData;
-
                         IQueryable<CategoryRow> query;
-                        if (isOutSide)
-                        {
-                            query = GetOutSideCategoryRows(referCategory.CategoryId);
-                        }
-                        else
-                        {
-                            query = _accountingContext.CategoryRow
-                                .Where(r => r.CategoryId == referCategory.CategoryId)
-                                .Include(r => r.CategoryRowValue);
-                        }
-
+                        Clause filters = null;
                         if (!string.IsNullOrEmpty(field.Filters))
                         {
-                            Clause filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
-                            IQueryable<CategoryRowValue> filterQuery = query.SelectMany(r => r.CategoryRowValue);
-                            List<int> filterQueryId = FilterClauseProcess(filters, filterQuery).Distinct().ToList();
-                            query = query.Where(r => filterQueryId.Contains(r.CategoryRowId));
+                            filters = JsonConvert.DeserializeObject<Clause>(field.Filters);
+                            var fields = _accountingContext.CategoryField.Where(f => f.CategoryId == referCategory.CategoryId).ToList();
+                            filters = AddFieldName(filters, fields);
                         }
-                        CategoryRow selectedItem = null;
-                        if (!string.IsNullOrEmpty(valueItem.Value))
+                        if (referCategory.IsOutSideData && !referCategory.IsTreeView)
                         {
-                            selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == valueItem.Value));
+                            query = GetOutSideCategoryRows(referCategory.CategoryId, filters);
                         }
                         else
                         {
-                            selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referTitleField.CategoryFieldId && rv.Value == valueItem.TitleValue));
+                            if (referCategory.IsOutSideData)
+                            {
+                                query = GetOutSideCategoryRows(referCategory.CategoryId);
+                            }
+                            else
+                            {
+                                query = _accountingContext.CategoryRow
+                                 .Where(r => r.CategoryId == referCategory.CategoryId)
+                                 .Include(r => r.CategoryRowValue);
+                            }
+                            if (filters != null)
+                            {
+                                ParameterExpression param = Expression.Parameter(typeof(CategoryRow), "r");
+                                Expression filter = FilterClauseProcess(param, filters, query);
+                                query = query.Where(Expression.Lambda<Func<CategoryRow, bool>>(filter, param));
+                            }
                         }
+                        CategoryRow selectedItem = query.FirstOrDefault(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == valueItem.Value));
                         if (isExisted = selectedItem != null)
                         {
                             valueItem.Value = selectedItem.CategoryRowValue.FirstOrDefault(rv => rv.CategoryFieldId == referField.CategoryFieldId)?.Value ?? null;
@@ -718,7 +819,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         {
             foreach (var field in requiredFields)
             {
-                if (!data.CategoryRowValues.Any(v => v.CategoryFieldId == field.CategoryFieldId && (!string.IsNullOrEmpty(v.TitleValue) || !string.IsNullOrEmpty(v.Value))))
+                if (!data.CategoryRowValues.Any(v => v.CategoryFieldId == field.CategoryFieldId && !string.IsNullOrEmpty(v.Value)))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
@@ -738,7 +839,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
         }
 
-        private void CheckValue(CategoryValueModel valueItem, CategoryField field)
+        private void CheckValue(CategoryValueInputModel valueItem, CategoryField field)
         {
             if ((field.DataSize > 0 && valueItem.Value.Length > field.DataSize)
                 || (!string.IsNullOrEmpty(field.DataType.RegularExpression) && !Regex.IsMatch(valueItem.Value, field.DataType.RegularExpression))
@@ -816,7 +917,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                                 throw new BadRequestException(CategoryErrorCode.CategoryValueInValid, new string[] { field.Title });
                             }
                         }
-                        else if (field.DataTypeId == (int)EnumDataType.Date)
+                        else if (field.DataTypeId == (int)EnumDataType.Date && !string.IsNullOrWhiteSpace(row[fieldIndx]))
                         {
                             if (DateTime.TryParse(row[fieldIndx], out DateTime value))
                             {
@@ -832,14 +933,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                         {
                             CategoryFieldId = field.CategoryFieldId,
                         };
-                        if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId))
-                        {
-                            rowValue.TitleValue = row[fieldIndx];
-                        }
-                        else
-                        {
-                            rowValue.Value = row[fieldIndx];
-                        }
+                        rowValue.Value = row[fieldIndx];
                         rowInput.CategoryRowValues.Add(rowValue);
                     }
 
@@ -894,6 +988,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Import");
                 return CategoryErrorCode.FormatFileInvalid;
             }
         }
@@ -942,6 +1037,359 @@ namespace VErp.Services.Accountant.Service.Category.Implement
 
             MemoryStream stream = await writer.WriteToStream();
             return stream;
+        }
+
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)
+        {
+            var category = _accountingContext.Category.AsNoTracking().FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            //if (category.IsReadonly)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+            //}
+            //if (category.IsOutSideData)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
+            //}
+
+
+            var result = new CategoryNameModel()
+            {
+                CategoryId = category.CategoryId,
+                CategoryCode = category.CategoryCode,
+                CategoryTitle = category.Title,
+                IsTreeView = category.IsTreeView,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = await _accountingContext.CategoryField
+                .Where(f => categoryId == f.CategoryId && !f.IsHidden && !f.AutoIncrement && f.CategoryFieldName != AccountantConstants.F_IDENTITY)
+                .ToListAsync();
+
+            var refCategoryFieldIds = fields.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).Distinct().ToList();
+
+            var refFieldCategoryIds = (await _accountingContext.CategoryField.Where(f => refCategoryFieldIds.Contains(f.CategoryFieldId)).Select(f => new { f.CategoryFieldId, f.CategoryId }).ToListAsync())
+                .ToDictionary(f => f.CategoryFieldId, f => f.CategoryId);
+
+            var refCategoryIds = refFieldCategoryIds.Select(f => f.Value).ToList();
+
+            var refCategoryFields = (await (
+                from f in _accountingContext.CategoryField
+                join c in _accountingContext.Category on f.CategoryId equals c.CategoryId
+                where refCategoryIds.Contains(f.CategoryId)
+                select new
+                {
+                    c.CategoryId,
+                    c.CategoryCode,
+                    CategoryTitle = c.Title,
+                    c.IsTreeView,
+                    Field = f
+                })
+                .AsNoTracking()
+                .ToListAsync()
+                )
+                .GroupBy(c => c.CategoryId)
+                .ToDictionary(
+                    c => c.Key,
+                    c => c
+                    .GroupBy(i => new { i.CategoryId, i.CategoryCode, i.CategoryTitle, i.IsTreeView })
+                    .Select(i => new
+                    {
+                        CategoryInfo = i.Key,
+                        Fields = i.Select(f => f.Field).ToList()
+                    })
+                    .First()
+                );
+
+
+
+            foreach (var field in fields)
+            {
+                var fileData = new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = field.CategoryFieldId,
+                    FieldName = field.CategoryFieldName,
+                    FieldTitle = field.Title,
+                    RefCategory = null
+                };
+
+                if (field.ReferenceCategoryFieldId.HasValue)
+                {
+                    var refCategoryId = refFieldCategoryIds[field.ReferenceCategoryFieldId.Value];
+                    var refCategory = refCategoryFields[refCategoryId];
+
+                    fileData.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryId = refCategory.CategoryInfo.CategoryId,
+                        CategoryCode = refCategory.CategoryInfo.CategoryCode,
+                        CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
+                        IsTreeView = refCategory.CategoryInfo.IsTreeView,
+
+                        Fields = refCategory.Fields
+                        .Select(f => new CategoryFieldNameModel()
+                        {
+                            CategoryFieldId = f.CategoryFieldId,
+                            FieldName = f.CategoryFieldName,
+                            FieldTitle = f.Title,
+                            RefCategory = null
+                        }).ToList()
+                    };
+                }
+
+                result.Fields.Add(fileData);
+            }
+
+            return result;
+        }
+
+
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream)
+        {
+
+            var category = _accountingContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            if (category.IsReadonly)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+            }
+            if (category.IsOutSideData)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
+            }
+            var reader = new ExcelReader(stream);
+
+            // Lấy thông tin field
+            var categoryFields = _accountingContext.CategoryField
+                .Include(f => f.DataType)
+                .Where(f => categoryId == f.CategoryId)
+                .ToList();
+
+            var inputFieldCount = categoryFields
+                .Where(f => !f.IsHidden && !f.AutoIncrement)
+                .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY).Count();
+
+
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var rowDatas = new List<List<ImportExcelRowData>>();
+
+            var refCategoryFieldDatas = new Dictionary<int, HashSet<string>>();
+            for (var rowIndx = 1; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                var rowData = new List<ImportExcelRowData>();
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingFields[fieldIndx];
+                    var field = categoryFields.FirstOrDefault(f => f.CategoryFieldId == mappingField.FieldId);
+
+                    if (field == null && mappingField.FieldId.HasValue) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) continue;
+
+                    rowData.Add(new ImportExcelRowData()
+                    {
+                        FieldMapping = mappingField,
+                        FieldConfig = field,
+                        CellValue = value
+                    });
+
+                    if (mappingField.RefCategoryFieldId.HasValue)
+                    {
+                        if (!refCategoryFieldDatas.ContainsKey(mappingField.RefCategoryFieldId.Value))
+                        {
+                            refCategoryFieldDatas.Add(mappingField.RefCategoryFieldId.Value, new HashSet<string>());
+                        }
+
+                        if (!refCategoryFieldDatas[mappingField.RefCategoryFieldId.Value].Contains(value))
+                            refCategoryFieldDatas[mappingField.RefCategoryFieldId.Value].Add(value);
+                    }
+                }
+
+                rowDatas.Add(rowData);
+            }
+
+
+            var categoryQueryData = await GetRefCategoryData(refCategoryFieldDatas);
+
+
+            using (var trans = await _accountingContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var categoryRows = new List<(CategoryRow Data, string Key, string ParentKey)>();
+                    // Insert data
+
+                    foreach (var rowData in rowDatas)
+                    {
+                        var rowInput = new CategoryRowInputModel();
+
+                        var key = "";
+                        var parentKey = "";
+                        var parentRefFieldId = (int?)null;
+
+                        foreach (var cellData in rowData)
+                        {
+                            if (cellData.FieldMapping.FieldId.HasValue)
+                            {
+                                if (cellData.FieldConfig.ReferenceCategoryFieldId.HasValue)
+                                {
+                                    var refCategoryRow = categoryQueryData.FirstOrDefault(c => c.CategoryFieldId == cellData.FieldMapping.RefCategoryFieldId.Value && c.Value == cellData.CellValue);
+
+                                    if (refCategoryRow != null)
+                                    {
+                                        var refValue = refCategoryRow.RowData?.CategoryRowValues?.FirstOrDefault(f => f.CategoryFieldId == cellData.FieldConfig.ReferenceCategoryFieldId)?.Value;
+
+                                        rowInput.CategoryRowValues.Add(new CategoryValueInputModel()
+                                        {
+                                            CategoryFieldId = cellData.FieldMapping.FieldId.Value,
+                                            Value = refValue
+                                        });
+                                    }
+                                }
+                                else
+                                {
+                                    rowInput.CategoryRowValues.Add(new CategoryValueInputModel()
+                                    {
+                                        CategoryFieldId = cellData.FieldMapping.FieldId.Value,
+                                        Value = cellData.CellValue
+                                    });
+                                }
+                            }
+
+                            if (categoryFields.Any(f => f.CategoryFieldId == cellData.FieldMapping.RefCategoryFieldId))
+                            {
+                                parentKey = cellData.CellValue;
+                                parentRefFieldId = cellData.FieldMapping.RefCategoryFieldId;
+                            }
+                        }
+
+                        key = rowData.FirstOrDefault(c => c.FieldMapping.FieldId == parentRefFieldId)?.CellValue;
+
+
+                        var categoryRow = await InsertCategoryRowAsync(categoryId, categoryFields, rowInput);
+
+                        categoryRows.Add((categoryRow, key, parentKey));
+
+                    }
+
+                    // Insert relationship
+                    if (category.IsTreeView)
+                    {
+                        foreach (var categoryRow in categoryRows)
+                        {
+                            if (!string.IsNullOrEmpty(categoryRow.ParentKey))
+                            {
+                                int parentId = categoryRows.Where(r => r.Key == categoryRow.ParentKey).Select(r => r.Data.CategoryRowId).FirstOrDefault();
+                                categoryRow.Data.ParentCategoryRowId = parentId;
+                            }
+                        }
+                        _accountingContext.SaveChanges();
+                    }
+                    trans.Commit();
+
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Import");
+                    throw ex;
+                }
+            }
+
+            return true;
+
+        }
+
+
+        private async Task<List<CategoryQueryData>> GetRefCategoryData(Dictionary<int, HashSet<string>> refCategoryFieldDatas)
+        {
+            var categoryFieldInfos = (await (
+                    from f in _accountingContext.CategoryField
+                    join c in _accountingContext.Category on f.CategoryId equals c.CategoryId
+                    where refCategoryFieldDatas.Keys.Contains(f.CategoryFieldId)
+                    select new
+                    {
+                        f.CategoryFieldId,
+                        CategoryInfo = c
+                    }
+                    )
+                    .AsNoTracking()
+                    .ToListAsync()
+                )
+                .ToDictionary(f => f.CategoryFieldId, f => f);
+
+            var categoryQueryData = new List<CategoryQueryData>();
+
+            var categoryConfigs = new Dictionary<int, CategoryEntity>();
+
+            foreach (var fieldData in refCategoryFieldDatas)
+            {
+                if (!categoryFieldInfos.TryGetValue(fieldData.Key, out var fieldInfo))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu " + fieldData.Key);
+                }
+
+                categoryQueryData.AddRange(fieldData.Value.Select(v => new CategoryQueryData()
+                {
+                    CategoryId = fieldInfo.CategoryInfo.CategoryId,
+                    CategoryFieldId = fieldData.Key,
+                    Value = v,
+                    RowData = null
+
+                }));
+
+
+                if (!categoryConfigs.ContainsKey(fieldInfo.CategoryInfo.CategoryId))
+                {
+                    categoryConfigs.Add(fieldInfo.CategoryInfo.CategoryId, fieldInfo.CategoryInfo);
+
+                }
+
+            }
+
+
+            foreach (var refCategoryId in categoryQueryData.Select(c => c.CategoryId).Distinct().ToList())
+            {
+
+                categoryConfigs.TryGetValue(refCategoryId, out var categoryConfig);
+                IQueryable<CategoryRow> query;
+
+                if (categoryConfig.IsOutSideData)
+                {
+                    query = GetOutSideCategoryRows(refCategoryId);
+                }
+                else
+                {
+                    query = _accountingContext.CategoryRow
+                        .Where(r => r.CategoryId == refCategoryId)
+                        .Include(r => r.CategoryRowValue);
+                }
+
+                var lst = query.ProjectTo<CategoryRowListOutputModel>(_mapper.ConfigurationProvider).ToList();
+
+                foreach (var queryData in categoryQueryData.Where(c => c.CategoryId == refCategoryId))
+                {
+                    var rowData = lst.FirstOrDefault(r => r.CategoryRowValues.Any(v => v.CategoryFieldId == queryData.CategoryFieldId && v.Value?.Trim()?.Equals(queryData.Value, StringComparison.OrdinalIgnoreCase) == true));
+                    queryData.RowData = rowData;
+                }
+            }
+
+
+
+            return categoryQueryData;
         }
 
         public async Task<ServiceResult<MemoryStream>> ExportCategory(int categoryId)

@@ -14,7 +14,7 @@ namespace MigrateAndMappingApi.Services
 {
     public class DiscoverApiEndpointService
     {
-        public List<ApiEndpoint> GetActionsControllerFromAssenbly(Type assemblyType)
+        public List<ApiEndpoint> GetActionsControllerFromAssenbly(Type assemblyType, int serviceId)
         {
             var assembly = assemblyType.Assembly;
 
@@ -45,7 +45,8 @@ namespace MigrateAndMappingApi.Services
                 var endpoint = new ApiEndpoint()
                 {
                     MethodId = (int)EnumMethod.Get,
-                    ActionId = (int)EnumAction.View
+                    ActionId = (int)EnumAction.View,
+                    ServiceId = serviceId
                 };
 
                 var controllerRoute = "";
@@ -75,32 +76,32 @@ namespace MigrateAndMappingApi.Services
                     if (attribute is HttpGetAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Get;
-                    
+
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
 
                     }
                     else if (attribute is HttpPostAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Post;
-                      
+
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpPutAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Put;
-                       
+
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpPatchAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Patch;
-                       
+
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is HttpDeleteAttribute)
                     {
                         endpoint.MethodId = (int)EnumMethod.Delete;
-                        
+
                         controllerRoute = GetRouteTemplateFromHttpMethodAttr(attribute, controllerRoute);
                     }
                     else if (attribute is RouteAttribute)

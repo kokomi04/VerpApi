@@ -29,18 +29,21 @@ namespace VErpApi.Controllers.Stock.Products
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IProductTypeService _productTypeService;
+        private readonly ICustomGenCodeService _customGenCodeService;
 
         public ProductsController(
             IProductService productService
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
             , IProductTypeService productTypeService
+            , ICustomGenCodeService customGenCodeService
             )
         {
             _productService = productService;
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
             _productTypeService = productTypeService;
+            _customGenCodeService = customGenCodeService;
         }
 
         /// <summary>
@@ -81,7 +84,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<ServiceResult<int>> AddProduct([FromBody] ProductModel product)
         {
-            return await _productService.AddProduct(product);
+            return await UpdateOrAddProduct(null, product);
         }
 
         /// <summary>
@@ -106,7 +109,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<ServiceResult> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return await _productService.UpdateProduct(productId, product);
+            return await UpdateOrAddProduct(productId, product);
         }
 
         /// <summary>
@@ -162,6 +165,51 @@ namespace VErpApi.Controllers.Stock.Products
             objectCode.Data = string.IsNullOrWhiteSpace(typeCode) ? objectCode.Data : typeCode + objectCode.Data;
 
             return objectCode;
+        }
+
+
+        private async Task<ServiceResult<int>> UpdateOrAddProduct(int? productId, ProductModel product)
+        {
+            // var lastValue = 0;
+            var isGenCode = false;
+            if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
+            {
+                var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
+                if (!productTypeInfo.Code.IsSuccess())
+                {
+                    return productTypeInfo.Code;
+                }
+
+                var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
+                if (productTypeConfig.Code.IsSuccess())
+                {
+                    var code = await _customGenCodeService.GenerateCode(productTypeConfig.Data.CustomGenCodeId, 0, productTypeInfo.Data.IdentityCode).ConfigureAwait(true);
+                    if (!code.Code.IsSuccess())
+                    {
+                        return code.Code;
+                    }
+
+                    product.ProductCode = code.Data.CustomCode;
+                    // lastValue = code.Data.LastValue;
+                    isGenCode = true;
+                }
+            }
+
+            ServiceResult<int> r;
+            if (!productId.HasValue)
+            {
+                r = await _productService.AddProduct(product).ConfigureAwait(true);
+            }
+            else
+            {
+                r = await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+            }
+
+            if (isGenCode && r.Code.IsSuccess())
+            {
+                await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
+            }
+            return r;
         }
     }
 }

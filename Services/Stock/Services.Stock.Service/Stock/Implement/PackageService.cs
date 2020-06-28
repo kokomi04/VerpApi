@@ -61,6 +61,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 obj.LocationId = req.LocationId;
                 obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                obj.Description = req.Description;
+
                 await _stockDbContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());
@@ -149,6 +151,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = packageInfo.ProductId,
                     Date = packageInfo.Date,
                     ExpiryTime = packageInfo.ExpiryTime,
+                    Description = packageInfo.Description,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -243,6 +246,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = fromPackages[0].ProductId,
                     Date = fromPackages.Max(p => p.Date),
                     ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
+                    Description = string.Join(", ", fromPackages.Select(f => f.Description)),
                     ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -286,16 +290,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             try
             {
-                var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
+                var obj = await _stockDbContext.Package.FirstOrDefaultAsync(q => q.PackageId == packageId);
 
                 if (obj == null)
                 {
                     return PackageErrorCode.PackageNotFound;
                 }
 
-                var productInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == obj.ProductId);
+                var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == obj.ProductId);
 
-                var locationObj = _stockDbContext.Location.FirstOrDefault(q => q.LocationId == obj.LocationId);
+                var locationObj = await _stockDbContext.Location.FirstOrDefaultAsync(q => q.LocationId == obj.LocationId);
                 var locationOutputModel = locationObj == null ? null : new LocationOutput
                 {
                     LocationId = locationObj.LocationId,
@@ -315,6 +319,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = obj.ProductId,
                     Date = obj.Date != null ? ((DateTime)obj.Date).GetUnix() : 0,
                     ExpiryTime = obj.ExpiryTime != null ? ((DateTime)obj.ExpiryTime).GetUnix() : 0,
+                    Description = obj.Description,
                     PrimaryUnitId = productInfo.UnitId,
                     ProductUnitConversionId = obj.ProductUnitConversionId,
                     PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
@@ -391,6 +396,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = item.Package.ProductId,
                     Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
                     ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
+                    Description = item.Package.Description,
 
                     PrimaryUnitId = productUnitInfos[item.Package.ProductId].UnitId,
                     ProductUnitConversionId = item.Package.ProductUnitConversionId,

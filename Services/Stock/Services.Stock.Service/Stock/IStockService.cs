@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
@@ -20,7 +21,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Dictionary<string, List<string>> filters = null);
+        Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Clause filters = null);
 
         /// <summary>
         /// Lấy toàn bộ danh sách kho, bao gồm cả những kho mà user đang đăng nhập không có quyền

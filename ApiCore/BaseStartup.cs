@@ -58,8 +58,7 @@ namespace VErp.Infrastructure.ApiCore
             services.Configure<AppSetting>(Configuration);
 
             CreateSerilogLogger(Configuration);
-
-            ConfigDBContext(services);
+         
 
             services.AddCors(options =>
             {
@@ -85,7 +84,7 @@ namespace VErp.Infrastructure.ApiCore
             services.AddControllers(options =>
             {
                 options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
-
+                options.AllowEmptyInputInBodyModelBinding = true;
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
                 options.Filters.Add(typeof(ValidateModelStateFilter));
                 options.Filters.Add(typeof(ResponseStatusFilter));
@@ -132,122 +131,34 @@ namespace VErp.Infrastructure.ApiCore
            .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
            .AddControllersAsServices();
 
-            ConfigureAuthService(services);
-
-            ConfigSwagger(services);
-
+            ConfigureAuthService(services);          
         }
 
-        private void ConfigDBContext(IServiceCollection services)
+        protected void ConfigReadWriteDBContext(IServiceCollection services)
         {
-            services.ConfigMasterDBContext(AppSetting, ServiceLifetime.Scoped);
-            services.ConfigStockDBContext(AppSetting);
-            services.ConfigPurchaseOrderContext(AppSetting);
-            services.ConfigOrganizationContext(AppSetting);
-            services.ConfigAccountingContext(AppSetting);
-            services.ConfigActivityLogContext(AppSetting);
-            services.ConfigReportConfigDBContextContext(AppSetting);
+            services.ConfigMasterDBContext(AppSetting.DatabaseConnections, ServiceLifetime.Scoped);
+            services.ConfigStockDBContext(AppSetting.DatabaseConnections);
+            services.ConfigPurchaseOrderContext(AppSetting.DatabaseConnections);
+            services.ConfigOrganizationContext(AppSetting.DatabaseConnections);
+            services.ConfigAccountingContext(AppSetting.DatabaseConnections);
+            services.ConfigAccountancyContext(AppSetting.DatabaseConnections);
+            services.ConfigActivityLogContext(AppSetting.DatabaseConnections);
+            services.ConfigReportConfigDBContextContext(AppSetting.DatabaseConnections);
         }
-        private void ConfigSwagger(IServiceCollection services)
+
+        protected void ConfigDbOwnerContext(IServiceCollection services)
         {
-            services.AddSwaggerGen(options =>
-            {
-                // options.DocumentFilter<CustomModelDocumentFilter>();
-                //        //options.UseReferencedDefinitionsForEnums();
-                //        //options.DescribeAllEnumsAsStrings();
-                //        //options.UseReferencedDefinitionsForEnums();
-
-                options.OperationFilter<HeaderFilter>();
-                options.OperationFilter<AuthorizeCheckOperationFilter>();
-                options.OperationFilter<SwaggerFileOperationFilter>();
-                options.IncludeXmlComments(Path.Combine(
-                        PlatformServices.Default.Application.ApplicationBasePath,
-                        "VErpApi.xml"));
-
-
-                options.SwaggerDoc("stock", new OpenApiInfo
-                {
-                    Title = "VERP Stock HTTP API",
-                    Version = "v1",
-                    Description = "The Stock Service HTTP API"
-                });
-
-                options.SwaggerDoc("system", new OpenApiInfo
-                {
-                    Title = "VERP System HTTP API",
-                    Version = "v1",
-                    Description = "The system Service HTTP API"
-                });
-
-
-                options.SwaggerDoc("purchaseorder", new OpenApiInfo
-                {
-                    Title = "VERP System HTTP API",
-                    Version = "v1",
-                    Description = "The system Service HTTP API"
-                });
-
-                options.SwaggerDoc("accountant", new OpenApiInfo
-                {
-                    Title = "VERP Accountant HTTP API",
-                    Version = "v1",
-                    Description = "The Accountant Service HTTP API"
-                });
-
-                options.SwaggerDoc("report", new OpenApiInfo
-                {
-                    Title = "VERP Report HTTP API",
-                    Version = "v1",
-                    Description = "The Report Service HTTP API"
-                });
-
-                
-                options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.OAuth2,
-                    Flows = new OpenApiOAuthFlows()
-                    {
-                        Password = new OpenApiOAuthFlow()
-                        {
-                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/authorize"),
-                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/token"),
-                            Scopes = new Dictionary<string, string>()
-                            {
-                                { "scope", "verp offline_access openId" }
-                            }
-                        }
-                    },
-                    In = ParameterLocation.Header,
-                    Scheme = "Bearer",
-                    Name = "Authorization",
-
-                });
-
-
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.ApiKey,
-                    In = ParameterLocation.Header,
-                    Scheme = "Bearer",
-                    Name = "Authorization",
-                    BearerFormat = "Bearer {token}",
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
-
-                });
-
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement()
-                {
-                    {
-                        new OpenApiSecurityScheme(){ Reference = new OpenApiReference(){ Type = ReferenceType.SecurityScheme, Id="OAuth2" } }, new List<string>()
-                    },
-                    {
-                        new OpenApiSecurityScheme(){ Reference = new OpenApiReference(){ Type = ReferenceType.SecurityScheme, Id="Bearer" } }, new List<string>()
-                    }
-                });
-            })
-            .AddSwaggerGenNewtonsoftSupport();
+            services.ConfigMasterDBContext(AppSetting.OwnerDatabaseConnections, ServiceLifetime.Scoped);
+            services.ConfigStockDBContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigPurchaseOrderContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigOrganizationContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigAccountingContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigAccountancyContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigActivityLogContext(AppSetting.OwnerDatabaseConnections);
+            services.ConfigReportConfigDBContextContext(AppSetting.OwnerDatabaseConnections);
         }
 
+       
 
         protected IServiceProvider BuildService(IServiceCollection services)
         {
@@ -301,24 +212,7 @@ namespace VErp.Infrastructure.ApiCore
             {
                 config.MapControllers();
             });
-
-            app.UseSwagger()
-               .UseSwaggerUI(c =>
-               {
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
-
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
-
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
-
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
-
-                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/report/swagger.json", "REPORT.API V1");
-
-                   c.OAuthClientId("web");
-                   c.OAuthClientSecret("secretWeb");
-                   c.OAuthAppName("VERP Swagger UI");
-               });
+           
 
         }
 
