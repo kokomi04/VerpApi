@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
+    <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
   </ItemGroup>
 
 </Project>

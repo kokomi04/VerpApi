@@ -319,7 +319,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
                     var referToTable = $"v{referToCategory.CategoryCode}";
 
-                    var existSql = $"SELECT [{referToTable}].F_Id as Total FROM {referToTable} WHERE [{referToTable}].IsDeleted = 0 AND [{referToTable}].{referToField.CategoryFieldName} = {value.ToString()};";
+                    var existSql = $"SELECT [{referToTable}].F_Id FROM {referToTable} WHERE [{referToTable}].IsDeleted = 0 AND [{referToTable}].{referToField.CategoryFieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
@@ -362,10 +362,6 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in selectFields)
             {
                 string tableName = field.RefTableField;
-                var fields = (from f in _accountancyContext.CategoryField
-                              join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                              where c.CategoryCode == tableName && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
-                              select f).ToList();
                 data.TryGetValue(field.CategoryFieldName, out string valueItem);
 
                 if (!string.IsNullOrEmpty(valueItem))
@@ -388,7 +384,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                         if (filterClause != null)
                         {
-                            FilterClauseProcess(filterClause, tableName, fields, ref whereCondition, ref sqlParams, ref suffix);
+                            filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
                         }
                     }
                     var paramName = $"@{field.RefTableField}_{suffix}";
@@ -640,7 +636,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     }
 
                     int suffix = 0;
-                    FilterClauseProcess(filterClause, tableName, fields, ref whereCondition, ref sqlParams, ref suffix);
+                    filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
                 }
             }
 
@@ -687,96 +683,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lstData, total);
         }
 
-        public void FilterClauseProcess(Clause clause, string tableName, List<CategoryField> fields, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false)
-        {
-            if (clause != null)
-            {
-                condition.Append("( ");
-                if (clause is SingleClause)
-                {
-                    var singleClause = clause as SingleClause;
-                    var field = fields.First(f => f.CategoryFieldName == singleClause.FieldName);
-                    BuildExpression(singleClause, tableName, field, ref condition, ref sqlParams, ref suffix, not);
-                }
-                else if (clause is ArrayClause)
-                {
-                    var arrClause = clause as ArrayClause;
-                    bool isNot = not ^ arrClause.Not;
-                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
-                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
-                    {
-                        if (indx != 0)
-                        {
-                            condition.Append(isOr ? " OR " : " AND ");
-                        }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, fields, ref condition, ref sqlParams, ref suffix, isNot);
-                    }
-                }
-                condition.Append(" )");
-            }
-        }
-
-        private void BuildExpression(SingleClause clause, string tableName, CategoryField field, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
-        {
-            if (clause != null)
-            {
-                var paramName = $"@{clause.FieldName}_filter_{suffix}";
-                string ope;
-                switch (clause.Operator)
-                {
-                    case EnumOperator.Equal:
-                        ope = not ? "!=" : "=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
-                        break;
-                    case EnumOperator.NotEqual:
-                        ope = not ? "=" : "!=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
-                        break;
-                    case EnumOperator.Contains:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
-                        break;
-                    case EnumOperator.InList:
-                        ope = not ? "NOT IN" : "IN";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
-                        int inSuffix = 0;
-                        foreach (var value in (clause.Value as string).Split(","))
-                        {
-                            if (suffix > 0)
-                            {
-                                condition.Append(",");
-                            }
-                            var inParamName = $"{paramName}_{inSuffix}";
-                            condition.Append($"{inParamName}");
-                            sqlParams.Add(new SqlParameter(inParamName, value.ConvertValueByType((EnumDataType)field.DataTypeId)));
-                            inSuffix++;
-                        }
-                        condition.Append(")");
-                        break;
-                    case EnumOperator.IsLeafNode:
-                        ope = not ? "EXISTS" : "NOT EXISTS";
-                        var alias = $"{tableName}_{suffix}";
-                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{tableName}].F_Id)");
-                        break;
-                    case EnumOperator.StartsWith:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
-                        break;
-                    case EnumOperator.EndsWith:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
-                        break;
-                    default:
-                        break;
-                }
-                suffix++;
-            }
-        }
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
         {
@@ -840,8 +746,6 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
 
-
-
                 var tableName = $"v{category.CategoryCode}";
                 var fields = (from f in _accountancyContext.CategoryField
                               join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
@@ -873,7 +777,6 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
                 var lst = ConvertData(data);
-
 
                 titles.AddRange(lst.Select(r => new MapObjectOutputModel
                 {
