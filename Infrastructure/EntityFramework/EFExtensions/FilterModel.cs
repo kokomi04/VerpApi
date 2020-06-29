@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         public string FieldName { get; set; }
         public EnumOperator Operator { get; set; }
         public object Value { get; set; }
+        public EnumDataType DataType { get; set; }
     }
 
     public class ArrayClause : Clause

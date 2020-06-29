@@ -25,6 +25,8 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Constants;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -267,7 +269,78 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
+            // Validate multiRow existed
+            if (data.Rows == null || data.Rows.Length == 0)
+            {
+                throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
+            }
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
+            // Lấy thông tin field
+            var inputAreaFields = (from af in _accountancyDBContext.InputAreaField
+                                   join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                                   join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                                   where af.InputTypeId == inputTypeId
+                                   select new ValidateField
+                                   {
+                                       Title = af.Title,
+                                       IsAutoIncrement = af.IsAutoIncrement,
+                                       IsRequire = af.IsRequire,
+                                       IsUnique = af.IsUnique,
+                                       Filters = af.Filters,
+                                       FieldName = f.FieldName,
+                                       DataTypeId = f.DataTypeId,
+                                       FormTypeId = f.FormTypeId,
+                                       RefTableCode = f.RefTableCode,
+                                       RefTableField = f.RefTableField,
+                                       RefTableTitle = f.RefTableTitle,
+                                       RegularExpression = af.RegularExpression,
+                                       IsMultiRow = a.IsMultiRow
+                                   }).ToList();
+
+
+            // Validate info
+            var requiredFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            List<ValidateRowModel> checkRows = new List<ValidateRowModel>
+            {
+                new ValidateRowModel(data.Info, null)
+            };
+
+            // Check field required
+            CheckRequired(checkRows, requiredFields);
+            // Check refer
+            await CheckReferAsync(checkRows, selectFields, data.Info);
+            // Check unique
+            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
+            // Check value
+            CheckValue(checkRows, inputAreaFields);
+
+            // Validate rows
+            requiredFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+            uniqueFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
+            selectFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            checkRows = data.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
+
+            // Check field required
+            CheckRequired(checkRows, requiredFields);
+            // Check refer
+            await CheckReferAsync(checkRows, selectFields, data.Info);
+            // Check unique
+            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
+            // Check value
+            CheckValue(checkRows, inputAreaFields);
+
+
+
+
+
+
+
+
+
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -293,6 +366,179 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 trans.Rollback();
                 _logger.LogError(ex, "CreateBill");
                 throw ex;
+            }
+        }
+
+
+        private void CheckRequired(List<ValidateRowModel> rows, List<ValidateField> requiredFields)
+        {
+            foreach (var field in requiredFields)
+            {
+                foreach (var row in rows)
+                {
+                    if (!row.CheckFields.Contains(field.FieldName))
+                    {
+                        continue;
+                    }
+                    row.Data.TryGetValue(field.FieldName, out string value);
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+                    }
+                }
+            }
+        }
+
+        private async Task CheckUniqueAsync(int inputTypeId, List<ValidateRowModel> data, List<ValidateField> uniqueFields, long[] deleteInputValueRowId = null)
+        {
+            if (deleteInputValueRowId is null)
+            {
+                deleteInputValueRowId = Array.Empty<long>();
+            }
+            // Check unique
+            foreach (var field in uniqueFields)
+            {
+                // Get list change value
+                List<object> values = new List<object>();
+                foreach (var row in data)
+                {
+                    if (!row.CheckFields.Contains(field.FieldName))
+                    {
+                        continue;
+                    }
+                    row.Data.TryGetValue(field.FieldName, out string value);
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        values.Add(value.ConvertValueByType((EnumDataType)field.DataTypeId));
+                    }
+                }
+
+                // Check unique trong danh sách values thêm mới/sửa
+                if (values.Count != values.Distinct().Count())
+                {
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                }
+                if (values.Count == 0)
+                {
+                    continue;
+                }
+                // Checkin unique trong db
+                var existSql = $"SELECT F_Id FROM InputValueRow WHERE IsDeleted = 0 AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)} AND {field.FieldName} IN (";
+                List<SqlParameter> sqlParams = new List<SqlParameter>();
+                var suffix = 0;
+                foreach (var value in values)
+                {
+                    var paramName = $"@{field.FieldName}_{suffix}";
+                    if (suffix > 0)
+                    {
+                        existSql += ",";
+                    }
+                    existSql += paramName;
+                    sqlParams.Add(new SqlParameter(paramName, value));
+                    suffix++;
+                }
+                existSql += ")";
+                var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                bool isExisted = result != null && result.Rows.Count > 0;
+
+                if (isExisted)
+                {
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                }
+            }
+        }
+
+        private async Task CheckReferAsync(List<ValidateRowModel> data, List<ValidateField> selectFields, Dictionary<string, string> info)
+        {
+            // Check refer
+            foreach (var field in selectFields)
+            {
+                string tableName = field.RefTableField;
+                foreach (var row in data)
+                {
+                    if (!row.CheckFields.Contains(field.FieldName))
+                    {
+                        continue;
+                    }
+                    row.Data.TryGetValue(field.FieldName, out string textValue);
+                    if (string.IsNullOrEmpty(textValue))
+                    {
+                        continue;
+                    }
+                    var value = textValue.ConvertValueByType((EnumDataType)field.DataTypeId);
+                    var whereCondition = new StringBuilder();
+                    var sqlParams = new List<SqlParameter>();
+
+                    int suffix = 0;
+                    var paramName = $"@{field.RefTableField}_{suffix}";
+                    var existSql = $"SELECT F_Id FROM v{tableName} WHERE {field.RefTableField} = {paramName}";
+                    sqlParams.Add(new SqlParameter(paramName, value));
+                    if (!string.IsNullOrEmpty(field.Filters))
+                    {
+                        var filters = field.Filters;
+                        var pattern = @"@{(?<word>\w+)}";
+                        Regex rx = new Regex(pattern);
+                        MatchCollection match = rx.Matches(field.Filters);
+                        for (int i = 0; i < match.Count; i++)
+                        {
+                            var fieldName = match[i].Groups["word"].Value;
+                            row.Data.TryGetValue(fieldName, out string filterValue);
+                            if (string.IsNullOrEmpty(filterValue))
+                            {
+                                info.TryGetValue(fieldName, out filterValue);
+                            }
+                            filters = filters.Replace(match[i].Value, filterValue);
+                        }
+
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                        if (filterClause != null)
+                        {
+                            filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
+                        }
+                    }
+
+                    if (whereCondition.Length > 0)
+                    {
+                        existSql += whereCondition.ToString();
+                    }
+
+                    var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (!isExisted)
+                    {
+                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                    }
+                }
+            }
+        }
+
+        private void CheckValue(List<ValidateRowModel> data, List<ValidateField> categoryFields)
+        {
+            foreach (var field in categoryFields)
+            {
+                foreach (var row in data)
+                {
+                    if (!row.CheckFields.Contains(field.FieldName))
+                    {
+                        continue;
+                    }
+                    row.Data.TryGetValue(field.FieldName, out string value);
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+                    if ((AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId)) || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+                    {
+                        continue;
+                    }
+                    string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+                    if ((field.DataSize > 0 && value.Length > field.DataSize)
+                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
+                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                    {
+                        throw new BadRequestException(InputErrorCode.InputValueInValid, new string[] { field.Title });
+                    }
+                }
             }
         }
 
@@ -492,6 +738,36 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
                 });
+        }
+
+        protected class ValidateRowModel
+        {
+            public Dictionary<string, string> Data { get; set; }
+            public string[] CheckFields { get; set; }
+
+            public ValidateRowModel(Dictionary<string, string> Data, string[] CheckFields)
+            {
+                this.Data = Data;
+                this.CheckFields = CheckFields;
+            }
+        }
+
+        protected class ValidateField
+        {
+            public string Title { get; set; }
+            public bool IsAutoIncrement { get; set; }
+            public bool IsRequire { get; set; }
+            public bool IsUnique { get; set; }
+            public string Filters { get; set; }
+            public string FieldName { get; set; }
+            public int DataTypeId { get; set; }
+            public int FormTypeId { get; set; }
+            public int DataSize { get; set; }
+            public string RefTableCode { get; set; }
+            public string RefTableField { get; set; }
+            public string RefTableTitle { get; set; }
+            public string RegularExpression { get; set; }
+            public bool IsMultiRow { get; set; }
         }
     }
 }

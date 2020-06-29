@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -224,6 +225,99 @@ namespace VErp.Infrastructure.EF.EFExtensions
             Regex regex = new Regex(pattern);
             return regex.IsMatch(objectName);
         }
+
+
+        public static void FilterClauseProcess(this Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false)
+        {
+            if (clause != null)
+            {
+                condition.Append("( ");
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+                    BuildExpression(singleClause, tableName, ref condition, ref sqlParams, ref suffix, not);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    bool isNot = not ^ arrClause.Not;
+                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
+                    {
+                        if (indx != 0)
+                        {
+                            condition.Append(isOr ? " OR " : " AND ");
+                        }
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot);
+                    }
+                }
+                condition.Append(" )");
+            }
+        }
+
+        public static void BuildExpression(SingleClause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
+        {
+            if (clause != null)
+            {
+                var paramName = $"@{clause.FieldName}_filter_{suffix}";
+                string ope;
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        ope = not ? "!=" : "=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                        break;
+                    case EnumOperator.NotEqual:
+                        ope = not ? "=" : "!=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                        break;
+                    case EnumOperator.Contains:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
+                        break;
+                    case EnumOperator.InList:
+                        ope = not ? "NOT IN" : "IN";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
+                        int inSuffix = 0;
+                        foreach (var value in (clause.Value as string).Split(","))
+                        {
+                            if (suffix > 0)
+                            {
+                                condition.Append(",");
+                            }
+                            var inParamName = $"{paramName}_{inSuffix}";
+                            condition.Append($"{inParamName}");
+                            sqlParams.Add(new SqlParameter(inParamName, value.ConvertValueByType(clause.DataType)));
+                            inSuffix++;
+                        }
+                        condition.Append(")");
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        ope = not ? "EXISTS" : "NOT EXISTS";
+                        var alias = $"{tableName}_{suffix}";
+                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{tableName}].F_Id)");
+                        break;
+                    case EnumOperator.StartsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+                        break;
+                    case EnumOperator.EndsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        break;
+                    default:
+                        break;
+                }
+                suffix++;
+            }
+        }
+
+
 
     }
 }
