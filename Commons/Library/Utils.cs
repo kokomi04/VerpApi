@@ -512,6 +512,30 @@ namespace VErp.Commons.Library
 
             return result;
         }
+        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
+        {
+            var lst = new List<NonCamelCaseDictionary>();
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+                var dic = new NonCamelCaseDictionary();
+                foreach (DataColumn c in data.Columns)
+                {
+                    var v = row[c];
+                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    {
+                        var vInDateTime = (v as DateTime?).GetUnix();
+                        dic.Add(c.ColumnName, vInDateTime);
+                    }
+                    else
+                    {
+                        dic.Add(c.ColumnName, row[c]);
+                    }
+                }
+                lst.Add(dic);
+            }
+            return lst;
+        }
 
     }
 }

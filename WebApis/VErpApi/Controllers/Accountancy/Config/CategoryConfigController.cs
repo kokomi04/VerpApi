@@ -83,16 +83,16 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryConfigService.DeleteCategory(categoryId);
         }
 
-        [HttpGet]
-        [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _categoryConfigService.GetCategoryFields(categoryId, keyword, page, size);
-        }
+        //[HttpGet]
+        //[Route("{categoryId}/categoryfields")]
+        //public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        //{
+        //    return await _categoryConfigService.GetCategoryFields(categoryId, keyword, page, size);
+        //}
 
         [HttpGet]
-        [Route("categoryfieldsByCode")]
-        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        [Route("{categoryCode}/categoryfields")]
+        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFieldsByCode([FromRoute] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
         }

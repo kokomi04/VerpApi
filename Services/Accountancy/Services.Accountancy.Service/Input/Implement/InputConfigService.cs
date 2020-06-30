@@ -264,6 +264,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.InputTypeGroupId = data.InputTypeGroupId;
                 inputType.PreLoadAction = data.PreLoadAction;
                 inputType.PostLoadAction = data.PostLoadAction;
+                inputType.AfterLoadAction = data.AfterLoadAction;
+                inputType.BeforeSubmitAction = data.BeforeSubmitAction;
+                inputType.BeforeSaveAction = data.BeforeSaveAction;
+                inputType.AfterSaveAction = data.AfterSaveAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -836,6 +840,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             var curFields = _accountancyDBContext.InputAreaField
+                .Include(af => af.InputField)
                 .IgnoreQueryFilters()
                 .Where(f => f.InputTypeId == inputTypeId)
                 .ToList();
@@ -943,7 +948,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                return false;
+                throw ex;
             }
         }
 
