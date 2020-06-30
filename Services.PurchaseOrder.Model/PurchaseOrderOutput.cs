@@ -44,6 +44,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public int? DeliveryUserId { get; set; }
         public int? DeliveryCustomerId { get; set; }
 
+        public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
     }
 
