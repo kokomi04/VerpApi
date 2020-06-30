@@ -582,11 +582,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 infoSQL.Append(singleFields[indx].FieldName);
             }
             infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
-            var lst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+            var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             NonCamelCaseDictionary currentInfo = null;
-            if (lst.Count != 0)
+            if (infoLst.Count != 0)
             {
-                currentInfo = lst[0];
+                currentInfo = infoLst[0];
             }
             Dictionary<string, string> futureInfo = data.Info;
             string[] changeFields = CompareRow(currentInfo, futureInfo, singleFields);
@@ -607,30 +607,48 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check value
             CheckValue(checkRows, inputAreaFields);
 
-
-            //foreach (InputValueRowInputModel futureRow in data.Rows)
-            //{
-            //    InputValueRow curRow = curRows.FirstOrDefault(r => r.InputValueRowId == futureRow.InputValueRowId);
-            //    if (curRow == null)
-            //    {
-            //        checkRows.Add(new ValidateRowModel(futureRow, null));
-            //    }
-            //    else
-            //    {
-            //        int[] changeFieldIndexes = CompareRow(curRow, futureRow, inputAreaFields);
-            //        if (changeFieldIndexes.Length > 0)
-            //        {
-            //            updateRows.Add((futureRow, curRow));
-            //            checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
-            //        }
-            //        curRows.Remove(curRow);
-            //        futureRows.Remove(futureRow);
-            //    }
-            //}
-          
-
-
-
+            // Validate rows
+            var rowsSQL = new StringBuilder("SELECT ");
+            var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
+            for (int indx = 0; indx < multiFields.Count; indx++)
+            {
+                if (indx > 0)
+                {
+                    rowsSQL.Append(", ");
+                }
+                rowsSQL.Append(multiFields[indx].FieldName);
+            }
+            rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
+            var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+            checkRows.Clear();
+            foreach (var futureRow in data.Rows)
+            {
+                NonCamelCaseDictionary curRow = currentRows.FirstOrDefault(r => r["F_Id"].ToString() == futureRow["F_Id"]);
+                if (curRow == null)
+                {
+                    checkRows.Add(new ValidateRowModel(futureRow, null));
+                }
+                else
+                {
+                    string[] changeFieldIndexes = CompareRow(curRow, futureRow, multiFields);
+                    if (changeFieldIndexes.Length > 0)
+                    {
+                        checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
+                    }
+                }
+            }
+            // Lấy thông tin field
+            requiredFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            uniqueFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            selectFields = multiFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            // Check field required
+            CheckRequired(checkRows, requiredFields);
+            // Check refer
+            await CheckReferAsync(checkRows, selectFields, data.Info);
+            // Check unique
+            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
+            // Check value
+            CheckValue(checkRows, inputAreaFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
