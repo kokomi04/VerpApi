@@ -502,8 +502,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.RefObjectCode = submitDetail?.RefObjectCode;
                 
                 detail.OrderCode = submitDetail?.OrderCode;
-                detail.Pocode = submitDetail.POCode;
-                detail.ProductionOrderCode = submitDetail.ProductionOrderCode;
+                detail.Pocode = submitDetail?.POCode;
+                detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
 
                 detail.Description = submitDetail?.Description;
 
