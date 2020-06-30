@@ -165,7 +165,7 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var currentData = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
-            var lst = ConvertData(currentData);
+            var lst = currentData.ConvertData();
             if (lst.Count == 0)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryRowNotFound);
@@ -298,7 +298,7 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var currentData = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
-            var lst = ConvertData(currentData);
+            var lst = currentData.ConvertData();
             if (lst.Count == 0)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryRowNotFound);
@@ -503,7 +503,7 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
-            var lst = ConvertData(data);
+            var lst = data.ConvertData();
             if (lst.Count == 0)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryRowNotFound);
@@ -540,31 +540,6 @@ namespace VErp.Services.Accountancy.Service.Category
                 sql.Remove(sql.Length - 1, 1);
             }
             return sql.ToString();
-        }
-
-        private List<NonCamelCaseDictionary> ConvertData(DataTable data)
-        {
-            var lst = new List<NonCamelCaseDictionary>();
-            for (var i = 0; i < data.Rows.Count; i++)
-            {
-                var row = data.Rows[i];
-                var dic = new NonCamelCaseDictionary();
-                foreach (DataColumn c in data.Columns)
-                {
-                    var v = row[c];
-                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
-                    {
-                        var vInDateTime = (v as DateTime?).GetUnix();
-                        dic.Add(c.ColumnName, vInDateTime);
-                    }
-                    else
-                    {
-                        dic.Add(c.ColumnName, row[c]);
-                    }
-                }
-                lst.Add(dic);
-            }
-            return lst;
         }
 
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, string filters, int page, int size)
@@ -664,12 +639,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
             }
             var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-            var lstData = ConvertData(data);
+            var lstData = data.ConvertData();
 
             if (category.IsTreeView)
             {
                 var allData = await _accountancyContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
-                var lstAll = ConvertData(allData);
+                var lstAll = allData.ConvertData();
 
                 AddParents(ref lstData, lstAll);
 
@@ -776,7 +751,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 dataSql.Append(")");
 
                 var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
-                var lst = ConvertData(data);
+                var lst = data.ConvertData();
 
                 titles.AddRange(lst.Select(r => new MapObjectOutputModel
                 {

@@ -281,7 +281,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputAreaFields = (from af in _accountancyDBContext.InputAreaField
                                    join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                                    join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                                   where af.InputTypeId == inputTypeId
+                                   where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
                                    select new ValidateField
                                    {
                                        Title = af.Title,
@@ -332,15 +332,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
             // Check value
             CheckValue(checkRows, inputAreaFields);
-
-
-
-
-
-
-
-
-
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -423,7 +414,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     continue;
                 }
                 // Checkin unique trong db
-                var existSql = $"SELECT F_Id FROM InputValueRow WHERE IsDeleted = 0 AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)} AND {field.FieldName} IN (";
+                var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)} AND {field.FieldName} IN (";
                 List<SqlParameter> sqlParams = new List<SqlParameter>();
                 var suffix = 0;
                 foreach (var value in values)
@@ -548,7 +539,98 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
+            // Validate multiRow existed
+            if (data.Rows == null || data.Rows.Length == 0)
+            {
+                throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
+            }
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
+            // Lấy thông tin field
+            var inputAreaFields = (from af in _accountancyDBContext.InputAreaField
+                                   join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                                   join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                                   where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                                   select new ValidateField
+                                   {
+                                       Title = af.Title,
+                                       IsAutoIncrement = af.IsAutoIncrement,
+                                       IsRequire = af.IsRequire,
+                                       IsUnique = af.IsUnique,
+                                       Filters = af.Filters,
+                                       FieldName = f.FieldName,
+                                       DataTypeId = f.DataTypeId,
+                                       FormTypeId = f.FormTypeId,
+                                       RefTableCode = f.RefTableCode,
+                                       RefTableField = f.RefTableField,
+                                       RefTableTitle = f.RefTableTitle,
+                                       RegularExpression = af.RegularExpression,
+                                       IsMultiRow = a.IsMultiRow
+                                   }).ToList();
+
+            // Validate info
+            // Get changed row info
+            var infoSQL = new StringBuilder("SELECT TOP 1 ");
+            var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
+            for (int indx = 0; indx < singleFields.Count; indx++)
+            {
+                if (indx > 0)
+                {
+                    infoSQL.Append(", ");
+                }
+                infoSQL.Append(singleFields[indx].FieldName);
+            }
+            infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
+            var lst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+            NonCamelCaseDictionary currentInfo = null;
+            if (lst.Count != 0)
+            {
+                currentInfo = lst[0];
+            }
+            Dictionary<string, string> futureInfo = data.Info;
+            string[] changeFields = CompareRow(currentInfo, futureInfo, singleFields);
+            List<ValidateRowModel> checkRows = new List<ValidateRowModel>
+            {
+                new ValidateRowModel(data.Info, changeFields)
+            };
+            // Lấy thông tin field
+            var requiredFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectFields = singleFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            // Check field required
+            CheckRequired(checkRows, requiredFields);
+            // Check refer
+            await CheckReferAsync(checkRows, selectFields, data.Info);
+            // Check unique
+            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
+            // Check value
+            CheckValue(checkRows, inputAreaFields);
+
+
+            //foreach (InputValueRowInputModel futureRow in data.Rows)
+            //{
+            //    InputValueRow curRow = curRows.FirstOrDefault(r => r.InputValueRowId == futureRow.InputValueRowId);
+            //    if (curRow == null)
+            //    {
+            //        checkRows.Add(new ValidateRowModel(futureRow, null));
+            //    }
+            //    else
+            //    {
+            //        int[] changeFieldIndexes = CompareRow(curRow, futureRow, inputAreaFields);
+            //        if (changeFieldIndexes.Length > 0)
+            //        {
+            //            updateRows.Add((futureRow, curRow));
+            //            checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
+            //        }
+            //        curRows.Remove(curRow);
+            //        futureRows.Remove(futureRow);
+            //    }
+            //}
+          
+
+
+
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -577,6 +659,27 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw ex;
             }
         }
+
+        private string[] CompareRow(NonCamelCaseDictionary currentRow, Dictionary<string, string> futureRow, List<ValidateField> fields)
+        {
+            if (currentRow == null || futureRow == null)
+            {
+                return null;
+            }
+            List<string> changeFieldIndexes = new List<string>();
+            foreach (var field in fields)
+            {
+                var currentValue = currentRow[field.FieldName].ToString();
+                var updateValue = futureRow[field.FieldName];
+                if (currentValue != updateValue)
+                {
+                    changeFieldIndexes.Add(field.FieldName);
+                }
+            }
+            return changeFieldIndexes.ToArray();
+        }
+
+
 
         public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id)
         {
