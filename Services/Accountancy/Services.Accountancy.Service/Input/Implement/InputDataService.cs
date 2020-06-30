@@ -336,6 +336,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
+                // Before saving action (SQL)
+                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+
+
                 var billInfo = new InputBill()
                 {
                     InputTypeId = inputTypeId,
@@ -347,6 +351,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
+
+                // After saving action (SQL)
+                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
@@ -360,6 +368,46 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
+        private void ProcessAction(string script, BillInfoModel data, List<ValidateField> fields)
+        {
+            if (!string.IsNullOrEmpty(script))
+            {
+                var parammeters = new List<SqlParameter>();
+                var pattern = @"@{(?<word>\w+)}";
+                Regex rx = new Regex(pattern);
+                MatchCollection match = rx.Matches(script);
+                int suffix = 0;
+                for (int i = 0; i < match.Count; i++)
+                {
+                    var fieldName = match[i].Groups["word"].Value;
+                    var field = fields.First(f => f.FieldName == fieldName);
+                    if (!field.IsMultiRow)
+                    {
+                        var paramName = $"{match[i].Value}_{suffix}";
+                        script = script.Replace(match[i].Value, paramName);
+                        parammeters.Add(new SqlParameter(paramName, data.Info[fieldName].ConvertValueByType((EnumDataType)field.DataTypeId)));
+                        suffix++;
+                    }
+                    else
+                    {
+                        var paramNames = new StringBuilder();
+                        for (int rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+                        {
+                            if (rowIndx > 0)
+                            {
+                                paramNames.Append(", ");
+                            }
+                            var paramName = $"{match[i].Value}_{suffix}";
+                            paramNames.Append(paramName);
+                            parammeters.Add(new SqlParameter(paramName, data.Rows[rowIndx][fieldName].ConvertValueByType((EnumDataType)field.DataTypeId)));
+                            suffix++;
+                        }
+                        script = script.Replace(match[i].Value, paramNames.ToString());
+                    }
+                }
+                _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
+            }
+        }
 
         private void CheckRequired(List<ValidateRowModel> rows, List<ValidateField> requiredFields)
         {
@@ -653,6 +701,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
+                // Before saving action (SQL)
+                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
@@ -665,6 +716,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 billInfo.LatestBillVersion++;
 
                 await _accountancyDBContext.SaveChangesAsync();
+
+                // After saving action (SQL)
+                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
@@ -714,6 +768,67 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
+                var inputAreaFields = new List<ValidateField>();
+                // Get current data
+                BillInfoModel data = new BillInfoModel();
+                if (!string.IsNullOrEmpty(inputTypeInfo.BeforeSaveAction) || !string.IsNullOrEmpty(inputTypeInfo.AfterSaveAction))
+                {
+                    // Lấy thông tin field
+                    inputAreaFields = (from af in _accountancyDBContext.InputAreaField
+                                       join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                                       join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                                       where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                                       select new ValidateField
+                                       {
+                                           Title = af.Title,
+                                           IsAutoIncrement = af.IsAutoIncrement,
+                                           IsRequire = af.IsRequire,
+                                           IsUnique = af.IsUnique,
+                                           Filters = af.Filters,
+                                           FieldName = f.FieldName,
+                                           DataTypeId = f.DataTypeId,
+                                           FormTypeId = f.FormTypeId,
+                                           RefTableCode = f.RefTableCode,
+                                           RefTableField = f.RefTableField,
+                                           RefTableTitle = f.RefTableTitle,
+                                           RegularExpression = af.RegularExpression,
+                                           IsMultiRow = a.IsMultiRow
+                                       }).ToList();
+
+                
+                    // Get changed row info
+                    var infoSQL = new StringBuilder("SELECT TOP 1 ");
+                    var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
+                    for (int indx = 0; indx < singleFields.Count; indx++)
+                    {
+                        if (indx > 0)
+                        {
+                            infoSQL.Append(", ");
+                        }
+                        infoSQL.Append(singleFields[indx].FieldName);
+                    }
+                    infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+
+                    data.Info = infoLst.Count != 0 ? infoLst[0].ToDictionary(f => f.Key, f => f.Value.ToString()) : new Dictionary<string, string>();
+
+                    var rowsSQL = new StringBuilder("SELECT ");
+                    var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
+                    for (int indx = 0; indx < multiFields.Count; indx++)
+                    {
+                        if (indx > 0)
+                        {
+                            rowsSQL.Append(", ");
+                        }
+                        rowsSQL.Append(multiFields[indx].FieldName);
+                    }
+                    rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+                    data.Rows = currentRows.Select(r => r.ToDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
+                }
+
+                // Before saving action (SQL)
+                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -723,6 +838,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 billInfo.UpdatedByUserId = _currentContextService.UserId;
 
                 await _accountancyDBContext.SaveChangesAsync();
+
+                // After saving action (SQL)
+                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());

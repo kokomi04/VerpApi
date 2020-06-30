@@ -699,10 +699,11 @@ namespace VErp.Services.Accountancy.Service.Category
                         }
                         // Update
                         UpdateField(ref categoryAreaField, data);
+                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
                         // update field 
                         if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
+                            await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryAreaField.IsRequired);
                         }
                     }
                     else if (data.CategoryFieldId == 0)
@@ -712,10 +713,11 @@ namespace VErp.Services.Accountancy.Service.Category
                         categoryField.CategoryId = categoryId;
                         await _accountancyContext.CategoryField.AddAsync(categoryField);
                         await _accountancyContext.SaveChangesAsync();
+                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
                         // Add field into table
                         if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
+                            await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryField.IsRequired);
                         }
                     }
                 }

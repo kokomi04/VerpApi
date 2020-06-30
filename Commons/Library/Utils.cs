@@ -493,8 +493,10 @@ namespace VErp.Commons.Library
                     result = DateTime.ParseExact(value, DateFormats.DD_MM_YYYY, CultureInfo.InvariantCulture);
                     break;
                 case EnumDataType.Percentage:
-                case EnumDataType.Decimal:
                     result = double.Parse(value);
+                    break;
+                case EnumDataType.Decimal:
+                    result = decimal.Parse(value);
                     break;
                 case EnumDataType.Int:
                     result = int.Parse(value);
