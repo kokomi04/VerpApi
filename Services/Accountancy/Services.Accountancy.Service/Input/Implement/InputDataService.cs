@@ -415,7 +415,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 foreach (var row in rows)
                 {
-                    if (!row.CheckFields.Contains(field.FieldName))
+                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
@@ -441,7 +441,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 List<object> values = new List<object>();
                 foreach (var row in data)
                 {
-                    if (!row.CheckFields.Contains(field.FieldName))
+                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
@@ -492,10 +492,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check refer
             foreach (var field in selectFields)
             {
-                string tableName = field.RefTableField;
+                string tableName = field.RefTableCode;
                 foreach (var row in data)
                 {
-                    if (!row.CheckFields.Contains(field.FieldName))
+                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
@@ -557,7 +557,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 foreach (var row in data)
                 {
-                    if (!row.CheckFields.Contains(field.FieldName))
+                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
@@ -795,7 +795,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                            IsMultiRow = a.IsMultiRow
                                        }).ToList();
 
-                
+
                     // Get changed row info
                     var infoSQL = new StringBuilder("SELECT TOP 1 ");
                     var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
