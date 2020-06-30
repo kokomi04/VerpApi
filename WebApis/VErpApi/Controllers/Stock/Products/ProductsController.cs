@@ -107,9 +107,9 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPut]
         [Route("{productId}")]
-        public async Task<ServiceResult> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
+        public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return await UpdateOrAddProduct(productId, product);
+            return (await UpdateOrAddProduct(productId, product)).Code.IsSuccess();
         }
 
         /// <summary>
