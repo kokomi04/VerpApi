@@ -676,7 +676,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
 
-                for (int indx = 0; indx < fields.Count; indx ++)
+                for (int indx = 0; indx < fields.Count; indx++)
                 {
                     var data = fields[indx];
                     if (category == null)
@@ -879,6 +879,16 @@ namespace VErp.Services.Accountancy.Service.Category
                 moduleTypes = moduleTypes.Skip((page - 1) * size).Take(size).ToList();
             }
             return (moduleTypes, total);
+        }
+
+        public async Task<int> GetCategoryIdByCode(string categoryCode)
+        {
+            var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return category.CategoryId;
         }
     }
 }
