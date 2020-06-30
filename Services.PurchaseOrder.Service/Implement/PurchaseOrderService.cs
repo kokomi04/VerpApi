@@ -78,7 +78,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.UpdatedByUserId,
                             po.CheckedByUserId,
                             po.CensorByUserId,
-                            
+
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
                             po.CheckedDatetimeUtc,
@@ -157,9 +157,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     UpdatedByUserId = info.UpdatedByUserId,
                     CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-                    
+
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),                    
+                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                     CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
                     CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix()
                 });
@@ -200,7 +200,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.UpdatedByUserId,
                             po.CheckedByUserId,
                             po.CensorByUserId,
-                            
+
                             po.CreatedDatetimeUtc,
                             po.UpdatedDatetimeUtc,
                             po.CheckedDatetimeUtc,
@@ -325,7 +325,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     UpdatedByUserId = info.UpdatedByUserId,
                     CheckedByUserId = info.CheckedByUserId,
                     CensorByUserId = info.CensorByUserId,
-                    
+
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                     CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
@@ -378,6 +378,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var suggestDetails = (await _purchasingSuggestService.PurchasingSuggestDetailInfo(purchasingSuggestDetailIds))
                 .ToDictionary(d => d.PurchasingSuggestDetailId, d => d);
 
+            var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
             return new PurchaseOrderOutput()
             {
@@ -405,12 +406,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 UpdatedByUserId = info.UpdatedByUserId,
                 CheckedByUserId = info.CheckedByUserId,
                 CensorByUserId = info.CensorByUserId,
-                
+
                 CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                 CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
                 CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
-
+                FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
                 {
                     assignmentDetails.TryGetValue(d.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
@@ -440,8 +441,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
 
                     };
-                }
-                ).ToList()
+                }).ToList()
             };
         }
 
@@ -535,6 +535,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
                 await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
+
+
+                if (model.FileIds?.Count > 0)
+                {
+                    await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                    {
+                        PurchaseOrderId = po.PurchaseOrderId,
+                        FileId = f,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        DeletedDatetimeUtc = null,
+                        IsDeleted = false
+                    }));
+                }
+
+
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -676,6 +691,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
 
                 await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(newDetails);
+
+                var oldFiles = await _purchaseOrderDBContext.PurchaseOrderFile.Where(f => f.PurchaseOrderId == info.PurchaseOrderId).ToListAsync();
+
+                if (oldFiles.Count > 0)
+                {
+                    _purchaseOrderDBContext.PurchaseOrderFile.RemoveRange(oldFiles);
+                }
+
+                if (model.FileIds?.Count > 0)
+                {
+                    await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                    {
+                        PurchaseOrderId = info.PurchaseOrderId,
+                        FileId = f,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        DeletedDatetimeUtc = null,
+                        IsDeleted = false
+                    }));
+                }
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 

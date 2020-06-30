@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public PurchaseOrder()
         {
             PurchaseOrderDetail = new HashSet<PurchaseOrderDetail>();
+            PurchaseOrderFile = new HashSet<PurchaseOrderFile>();
         }
 
         public long PurchaseOrderId { get; set; }
@@ -40,5 +41,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual ICollection<PurchaseOrderFile> PurchaseOrderFile { get; set; }
     }
 }

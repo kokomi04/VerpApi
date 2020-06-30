@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
         public virtual DbSet<PurchaseOrder> PurchaseOrder { get; set; }
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual DbSet<PurchaseOrderFile> PurchaseOrderFile { get; set; }
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
@@ -148,6 +149,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .WithMany(p => p.PurchaseOrderDetail)
                     .HasForeignKey(d => d.PurchasingSuggestDetailId)
                     .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
+            });
+
+            modelBuilder.Entity<PurchaseOrderFile>(entity =>
+            {
+                entity.HasKey(e => new { e.PurchaseOrderId, e.FileId });
+
+                entity.HasOne(d => d.PurchaseOrder)
+                    .WithMany(p => p.PurchaseOrderFile)
+                    .HasForeignKey(d => d.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchaseOrderFile_PurchaseOrder");
             });
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
