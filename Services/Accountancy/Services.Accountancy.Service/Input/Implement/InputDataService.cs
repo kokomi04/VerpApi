@@ -462,7 +462,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     continue;
                 }
                 // Checkin unique trong db
-                var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)} AND {field.FieldName} IN (";
+                var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
+                if(deleteInputValueRowId.Length > 0)
+                {
+                    existSql += $"AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)}";
+                }
+                existSql += $" AND {field.FieldName} IN (";
                 List<SqlParameter> sqlParams = new List<SqlParameter>();
                 var suffix = 0;
                 foreach (var value in values)
@@ -477,7 +482,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     suffix++;
                 }
                 existSql += ")";
-                var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
                 bool isExisted = result != null && result.Rows.Count > 0;
 
                 if (isExisted)
