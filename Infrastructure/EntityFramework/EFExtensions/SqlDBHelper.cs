@@ -1,5 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,19 +30,32 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters)
         {
-            using (var command = dbContext.Database.GetDbConnection().CreateCommand())
+            try
             {
-                command.CommandText = rawSql;
-                command.Parameters.Clear();
-                command.Parameters.AddRange(parammeters);
-
-                dbContext.Database.OpenConnection();
-                using (var result = await command.ExecuteReaderAsync())
+                using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
-                    DataTable dt = new DataTable();
-                    dt.Load(result);
-                    return dt;
+                    command.CommandText = rawSql;
+                    command.Parameters.Clear();
+                    command.Parameters.AddRange(parammeters);
+
+                    var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
+                    if (trans != null)
+                    {
+                        command.Transaction = trans;
+                    }
+
+                    dbContext.Database.OpenConnection();
+                    using (var result = await command.ExecuteReaderAsync())
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(result);
+                        return dt;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error QueryDataTable Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -110,7 +126,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 var sql = $"UPDATE [{table.TableName}] SET {string.Join(",", insertColumns.Select(c => $"[{c}] = @{c}"))} WHERE F_Id = {fId}";
 
-                numberChange+=  await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+                numberChange += await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
 
             }
             return numberChange;

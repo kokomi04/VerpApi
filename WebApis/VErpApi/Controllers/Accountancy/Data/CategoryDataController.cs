@@ -28,10 +28,12 @@ namespace VErpApi.Controllers.Accountancy.Config
     public class CategoryDataController : VErpBaseController
     {
         private readonly ICategoryDataService _categoryDataService;
-            
-        public CategoryDataController(ICategoryDataService categoryDataService)
+        private readonly ICategoryConfigService _categoryConfigService;
+
+        public CategoryDataController(ICategoryDataService categoryDataService, ICategoryConfigService categoryConfigService)
         {
             _categoryDataService = categoryDataService;
+            _categoryConfigService = categoryConfigService;
         }
 
         [HttpGet]
@@ -75,5 +77,27 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _categoryDataService.MapToObject(data);
         }
+
+
+        [HttpGet]
+        [Route("{categoryId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int categoryId)
+        {
+            return await _categoryConfigService.GetFieldDataForMapping(categoryId).ConfigureAwait(true);
+        }
+
+
+        [HttpPost]
+        [Route("{categoryId}/importFromMapping")]
+        public async Task<bool> importFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<ImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
     }
 }

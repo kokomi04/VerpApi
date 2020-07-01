@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -22,5 +23,7 @@ namespace VErp.Services.Accountancy.Service.Category
         Task<int> DeleteCategoryRow(int categoryId, int fId);
 
         Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues);
+
+        Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream);
     }
 }

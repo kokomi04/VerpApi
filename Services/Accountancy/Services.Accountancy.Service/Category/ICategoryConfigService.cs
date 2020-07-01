@@ -17,6 +17,8 @@ namespace VErp.Services.Accountancy.Service.Category
         Task<Enum> UpdateCategory(int categoryId, CategoryModel data);
         Task<Enum> DeleteCategory(int categoryId);
 
+        Task<CategoryNameModel> GetFieldDataForMapping(int categoryId);
+
         PageData<DataTypeModel> GetDataTypes(int page, int size);
         PageData<FormTypeModel> GetFormTypes(int page, int size);
         PageData<OperatorModel> GetOperators(int page, int size);
