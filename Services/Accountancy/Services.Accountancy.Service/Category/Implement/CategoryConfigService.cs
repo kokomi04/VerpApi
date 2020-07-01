@@ -801,6 +801,115 @@ namespace VErp.Services.Accountancy.Service.Category
         #endregion
 
 
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)
+        {
+            var category = _accountancyContext.Category.AsNoTracking().FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            //if (category.IsReadonly)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+            //}
+            //if (category.IsOutSideData)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
+            //}
+
+
+            var result = new CategoryNameModel()
+            {
+                CategoryId = category.CategoryId,
+                CategoryCode = category.CategoryCode,
+                CategoryTitle = category.Title,
+                IsTreeView = category.IsTreeView,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = await _accountancyContext.CategoryField
+                .AsNoTracking()
+                .Where(f => category.CategoryId == f.CategoryId && !f.IsHidden && !f.AutoIncrement && f.CategoryFieldName != AccountantConstants.F_IDENTITY)
+                .ToListAsync();
+
+            var refCategoryCodes = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
+                .Select(f => f.RefTableCode).Distinct().ToList();
+          
+            var refCategoryFields = (await (
+                from f in _accountancyContext.CategoryField
+                join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                where refCategoryCodes.Contains(c.CategoryCode)
+                select new
+                {
+                    c.CategoryId,
+                    c.CategoryCode,
+                    CategoryTitle = c.Title,
+                    c.IsTreeView,
+                    Field = f
+                }).ToListAsync())
+                .GroupBy(c => c.CategoryCode)
+                .ToDictionary(
+                    c => c.Key,
+                    c => c.GroupBy(i => new { i.CategoryId, i.CategoryCode, i.CategoryTitle, i.IsTreeView })
+                    .Select(i => new
+                    {
+                        CategoryInfo = new
+                        {
+                            i.FirstOrDefault().CategoryId,
+                            i.FirstOrDefault().CategoryCode,
+                            i.FirstOrDefault().CategoryTitle,
+                            i.FirstOrDefault().IsTreeView
+                        },
+                        Fields = i.Select(f => f.Field).ToList()
+                    })
+                    .First()
+                );
+
+
+
+            foreach (var field in fields)
+            {
+                var fileData = new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = field.CategoryFieldId,
+                    FieldName = field.CategoryFieldName,
+                    FieldTitle = field.Title,
+                    RefCategory = null
+                };
+
+                if (!string.IsNullOrWhiteSpace(field.RefTableCode))
+                {
+                    if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                    }
+
+                    fileData.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryId = refCategory.CategoryInfo.CategoryId,
+                        CategoryCode = refCategory.CategoryInfo.CategoryCode,
+                        CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
+                        IsTreeView = refCategory.CategoryInfo.IsTreeView,
+
+                        Fields = refCategory.Fields
+                        .Select(f => new CategoryFieldNameModel()
+                        {
+                            CategoryFieldId = f.CategoryFieldId,
+                            FieldName = f.CategoryFieldName,
+                            FieldTitle = f.Title,
+                            RefCategory = null
+                        }).ToList()
+                    };
+                }
+
+                result.Fields.Add(fileData);
+            }
+
+            return result;
+        }
+
+
+
         public PageData<DataTypeModel> GetDataTypes(int page, int size)
         {
             var dataTypes = EnumExtensions.GetEnumMembers<EnumDataType>().Select(m => new DataTypeModel
