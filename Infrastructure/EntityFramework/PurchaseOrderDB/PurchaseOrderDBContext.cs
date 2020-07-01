@@ -219,6 +219,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
