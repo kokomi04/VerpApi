@@ -396,8 +396,22 @@ namespace VErp.Commons.Library
             return value;
         }
 
+        public static string FormatStyle(string template, string code, long? fId)
+        {
+            return FormatStyle(template, new Dictionary<string, object>{
+                { StringTemplateConstants.CODE, code },
+                { StringTemplateConstants.FID, fId },
+            });
+        }
 
-
+        public static string FormatStyle(string template, IDictionary<string, object> data)
+        {
+            foreach (var item in data)
+            {
+                template = template?.Replace(item.Key, item.Value?.ToString());
+            }
+            return template;
+        }
 
         public static Type GetColumnDataType(this EnumDataType dataType)
         {
@@ -458,7 +472,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     short percentValue;
-                    if (!short.TryParse(value.ToString(), out percentValue)|| percentValue < -100 || percentValue > 100)
+                    if (!short.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }

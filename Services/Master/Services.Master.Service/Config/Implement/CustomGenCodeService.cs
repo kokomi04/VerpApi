@@ -388,7 +388,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                         newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                     }
 
-                    newCode = newCode.Replace("%CODE%", code);
+                    newCode = Utils.FormatStyle(newCode, code, null);
+
                     if (!(newId < maxId))
                     {
                         config.CodeLength += 1;
