@@ -71,8 +71,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
                 var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
                 var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
+                var dataType = props.First(c => c.Name.ToLower() == nameof(SingleClause.DataType).ToLower()).Value.ToString();
                 resultClause = new SingleClause
                 {
+                    DataType = (EnumDataType)int.Parse(dataType),
                     Field = int.Parse(key),
                     FieldName = fieldName,
                     Operator = (EnumOperator)int.Parse(ope),

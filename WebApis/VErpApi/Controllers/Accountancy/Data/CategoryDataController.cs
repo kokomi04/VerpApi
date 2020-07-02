@@ -78,14 +78,12 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _categoryDataService.MapToObject(data);
         }
 
-
         [HttpGet]
         [Route("{categoryId}/fieldDataForMapping")]
         public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int categoryId)
         {
             return await _categoryConfigService.GetFieldDataForMapping(categoryId).ConfigureAwait(true);
         }
-
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
@@ -97,7 +95,5 @@ namespace VErpApi.Controllers.Accountancy.Config
             }
             return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<ImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
-
-
     }
 }

@@ -242,8 +242,10 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 if (isOutSide)
                 {
                     string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
+                   
                     Clause clause = new SingleClause
                     {
+                        DataType = (EnumDataType)referField.DataTypeId,
                         FieldName = fieldName,
                         Operator = EnumOperator.InList,
                         Value = string.Join(",", values.ToArray())
@@ -317,6 +319,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                     string fieldName = referField.CategoryFieldName != AccountantConstants.F_IDENTITY ? referField.CategoryFieldName : category.OutSideDataConfig.Key;
                     Clause clause = new SingleClause
                     {
+                        DataType = (EnumDataType)referField.DataTypeId,
                         FieldName = fieldName,
                         Operator = EnumOperator.InList,
                         Value = string.Join(",", values.ToArray())

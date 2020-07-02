@@ -661,7 +661,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lstData, total);
         }
 
-
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
         {
             List<NonCamelCaseDictionary> result = new List<NonCamelCaseDictionary>();
@@ -767,7 +766,6 @@ namespace VErp.Services.Accountancy.Service.Category
 
             return titles;
         }
-
 
         public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream)
         {
@@ -1036,8 +1034,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return true;
 
         }
-
-
 
         private async Task<Dictionary<string, List<NonCamelCaseDictionary>>> GetRefCategoryDataByMultiField(IList<CategoryQueryRequest> categoryQueryRequests)
         {
