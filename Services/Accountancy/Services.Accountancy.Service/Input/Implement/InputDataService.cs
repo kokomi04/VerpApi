@@ -27,6 +27,7 @@ using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Constants;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using System.IO;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -221,7 +222,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
-";
+                ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             return (data, total);
@@ -463,7 +464,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 // Checkin unique trong db
                 var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
-                if(deleteInputValueRowId.Length > 0)
+                if (deleteInputValueRowId.Length > 0)
                 {
                     existSql += $"AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)}";
                 }
@@ -983,6 +984,168 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
                 });
         }
+
+
+
+        public async Task<bool> ImportCategoryRowFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
+        {
+            var inputType = _accountancyDBContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
+            if (inputType == null)
+            {
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            }
+            var reader = new ExcelReader(stream);
+
+            // Lấy thông tin field
+            var fields = (from af in _accountancyDBContext.InputAreaField
+                          join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                          join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                          where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FieldName != AccountantConstants.F_IDENTITY
+                          select new ValidateField
+                          {
+                              Title = af.Title,
+                              IsAutoIncrement = af.IsAutoIncrement,
+                              IsRequire = af.IsRequire,
+                              IsUnique = af.IsUnique,
+                              Filters = af.Filters,
+                              FieldName = f.FieldName,
+                              DataTypeId = f.DataTypeId,
+                              FormTypeId = f.FormTypeId,
+                              RefTableCode = f.RefTableCode,
+                              RefTableField = f.RefTableField,
+                              RefTableTitle = f.RefTableTitle,
+                              RegularExpression = af.RegularExpression,
+                              IsMultiRow = a.IsMultiRow
+                          }).ToList();
+
+            var infoData = reader.ReadSheets(mapping.SheetInfo, mapping.FromInfo, mapping.ToInfo, null).FirstOrDefault();
+            var info = new Dictionary<string, string>();
+            var rows = new List<Dictionary<string, string>>();
+            var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
+            if (infoData.Rows.Length > 2)
+            {
+                var row = infoData.Rows[1];
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingInfoFields.Count; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingInfoFields[fieldIndx];
+                    var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+
+                    if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+
+                    if (string.IsNullOrEmpty(field.RefTableCode))
+                    {
+                        info.Add(field.FieldName, value);
+                    }
+                    else
+                    {
+                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
+                        var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                        if (referData != null && referData.Rows.Count > 0)
+                        {
+                            var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                            info.Add(field.FieldName, referValue);
+                        }
+                        else
+                        {
+                            throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                        }
+                    }
+                }
+            }
+
+            var rowData = reader.ReadSheets(mapping.SheetInfo, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+            for (var rowIndx = 1; rowIndx < rowData.Rows.Length; rowIndx++)
+            {
+                var map = new Dictionary<string, string>();
+                var row = rowData.Rows[rowIndx];
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingRowFields.Count; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingRowFields[fieldIndx];
+                    var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+
+                    if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+
+                    if (string.IsNullOrEmpty(field.RefTableCode))
+                    {
+                        info.Add(field.FieldName, value);
+                    }
+                    else
+                    {
+                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
+                        var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                        if (referData != null && referData.Rows.Count > 0)
+                        {
+                            var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                            info.Add(field.FieldName, referValue);
+                        }
+                        else
+                        {
+                            throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                        }
+                    }
+                }
+
+                rows.Add(map);
+            }
+
+            BillInfoModel data = new BillInfoModel
+            {
+                Info = info,
+                Rows = rows.ToArray()
+            };
+
+            using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Before saving action (SQL)
+                    ProcessAction(inputType.BeforeSaveAction, data, fields);
+
+                    var billInfo = new InputBill()
+                    {
+                        InputTypeId = inputTypeId,
+                        LatestBillVersion = 1,
+                        IsDeleted = false
+                    };
+
+                    await _accountancyDBContext.InputBill.AddAsync(billInfo);
+
+                    await _accountancyDBContext.SaveChangesAsync();
+
+                    await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
+
+                    // After saving action (SQL)
+                    ProcessAction(inputType.AfterSaveAction, data, fields);
+
+                    trans.Commit();
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError(ex, "Import");
+                    throw ex;
+                }
+            }
+            return true;
+        }
+
+
 
         protected class ValidateRowModel
         {
