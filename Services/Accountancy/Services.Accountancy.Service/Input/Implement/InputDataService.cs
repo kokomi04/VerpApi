@@ -987,7 +987,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
 
-        public async Task<bool> ImportCategoryRowFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
+        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
         {
             var inputType = _accountancyDBContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
             if (inputType == null)
