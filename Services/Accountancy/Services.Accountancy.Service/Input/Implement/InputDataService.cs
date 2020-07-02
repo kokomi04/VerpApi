@@ -1115,7 +1115,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 try
                 {
                     // Before saving action (SQL)
-                    ProcessActionAsync(inputType.BeforeSaveAction, data, fields);
+                    await ProcessActionAsync(inputType.BeforeSaveAction, data, fields);
 
                     var billInfo = new InputBill()
                     {
@@ -1131,7 +1131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
 
                     // After saving action (SQL)
-                    ProcessActionAsync(inputType.AfterSaveAction, data, fields);
+                    await ProcessActionAsync(inputType.AfterSaveAction, data, fields);
 
                     trans.Commit();
                 }
