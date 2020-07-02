@@ -498,7 +498,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check refer
             foreach (var field in selectFields)
             {
-                string tableName = field.RefTableCode;
+                string tableName = $"v{field.RefTableCode}";
                 foreach (var row in data)
                 {
                     if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
@@ -516,7 +516,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     int suffix = 0;
                     var paramName = $"@{field.RefTableField}_{suffix}";
-                    var existSql = $"SELECT F_Id FROM v{tableName} WHERE {field.RefTableField} = {paramName}";
+                    var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
                     sqlParams.Add(new SqlParameter(paramName, value));
                     if (!string.IsNullOrEmpty(field.Filters))
                     {
@@ -544,7 +544,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (whereCondition.Length > 0)
                     {
-                        existSql += whereCondition.ToString();
+                        existSql += $" AND {whereCondition.ToString()}";
                     }
 
                     var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
