@@ -364,7 +364,7 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check refer
             foreach (var field in selectFields)
             {
-                string tableName = field.RefTableCode;
+                string tableName = $"v{field.RefTableCode}";
                 data.TryGetValue(field.CategoryFieldName, out string valueItem);
 
                 if (!string.IsNullOrEmpty(valueItem))
@@ -391,10 +391,10 @@ namespace VErp.Services.Accountancy.Service.Category
                         }
                     }
                     var paramName = $"@{field.RefTableField}_{suffix}";
-                    var existSql = $"SELECT F_Id FROM v{tableName} WHERE {field.RefTableField} = {paramName}";
+                    var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
                     if (whereCondition.Length > 0)
                     {
-                        existSql += whereCondition.ToString();
+                        existSql += $" AND {whereCondition.ToString()}";
                     }
                     sqlParams.Add(new SqlParameter(paramName, valueItem));
                     var result = await _accountancyContext.QueryDataTable(existSql, sqlParams.ToArray());
