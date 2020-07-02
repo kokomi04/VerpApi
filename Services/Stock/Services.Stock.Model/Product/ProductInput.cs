@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductModel
+    public class ProductModel : IProductModel
     {
-      
+        public int? ProductId { get; set; }
         public string ProductCode { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
         [MaxLength(128, ErrorMessage = "Tên sản phẩm quá dài")]
@@ -24,16 +25,16 @@ namespace VErp.Services.Stock.Model.Product
         public int UnitId { get; set; }
         public decimal? EstimatePrice { get; set; }
 
-        public ProductModelExtra Extra { get; set; }
-        public ProductModelStock StockInfo { get; set; }
+        public IProductModelExtra Extra { get; set; }
+        public IProductModelStock StockInfo { get; set; }
 
-        public class ProductModelExtra
+        public class ProductModelExtra : IProductModelExtra
         {
             public string Specification { get; set; }
             public string Description { get; set; }
         }
 
-        public class ProductModelStock
+        public class ProductModelStock : IProductModelStock
         {
             public EnumStockOutputRule? StockOutputRuleId { get; set; }
             public long? AmountWarningMin { get; set; }
@@ -52,16 +53,17 @@ namespace VErp.Services.Stock.Model.Product
 
             public IList<int> StockIds { get; set; }
 
-            public IList<ProductModelUnitConversion> UnitConversions { get; set; }
+            public IList<IProductModelUnitConversion> UnitConversions { get; set; }
         }
 
-        public class ProductModelUnitConversion
+        public class ProductModelUnitConversion : IProductModelUnitConversion
         {
             public int ProductUnitConversionId { get; set; }
             [Required(ErrorMessage = "Vui lòng nhập quy cách đơn vị chuyển đổi")]
             [MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi quá dài")]
             public string ProductUnitConversionName { get; set; }
             public int SecondaryUnitId { get; set; }
+            public bool IsDefault { get; set; }
             public string FactorExpression { get; set; }
             public string ConversionDescription { get; set; }
         }

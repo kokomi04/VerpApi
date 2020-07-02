@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -53,6 +54,14 @@ namespace VErpApi.Controllers.Stock.Internal
         public async Task<bool> ValidateProductUnitConversion([FromBody] Dictionary<int, int> productUnitConvertsionProduct)
         {
             return await _productService.ValidateProductUnitConversions(productUnitConvertsionProduct).ConfigureAwait(true);
+        }
+
+
+        [HttpPost]
+        [Route("GetListByCodeAndInternalNames")]
+        public async Task<IList<IProductModel>> GetListByCodeAndInternalNames([FromBody] ProductQueryByProductCodeOrInternalNameRequest req)
+        {
+            return await _productService.GetListByCodeAndInternalNames(req);
         }
 
 
