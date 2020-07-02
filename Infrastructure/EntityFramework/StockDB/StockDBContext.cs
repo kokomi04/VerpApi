@@ -314,6 +314,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.ProductInternalName)
+                   .IsRequired()
+                   .HasMaxLength(128);
+
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");

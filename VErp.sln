@@ -118,6 +118,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MigrateData", "MigrateData", "{9CEE3E3D-30B4-46A6-ACBC-9C2143047A29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MigrateProductInternalName", "ZTools\MigrateData\MigrateProductInternalName\MigrateProductInternalName.csproj", "{7C824428-102E-4880-B068-9D99B62A507D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -280,6 +284,10 @@ Global
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C824428-102E-4880-B068-9D99B62A507D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C824428-102E-4880-B068-9D99B62A507D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C824428-102E-4880-B068-9D99B62A507D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C824428-102E-4880-B068-9D99B62A507D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -334,6 +342,8 @@ Global
 		{CCAEBC3F-6A75-4A7D-AEDE-149525468A38} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
 		{7D9F3458-B439-4509-9344-4D2F59FA5C5D} = {C7D4F911-5D2D-4E14-9B80-6F9902D45FD6}
 		{532856B4-DF9C-4FA7-ABA7-FB3324CC2F8B} = {C3655DA8-274F-478F-B89A-0354E56B9E9B}
+		{9CEE3E3D-30B4-46A6-ACBC-9C2143047A29} = {F9CC3F1A-C548-498E-9464-8F45EA648F2A}
+		{7C824428-102E-4880-B068-9D99B62A507D} = {9CEE3E3D-30B4-46A6-ACBC-9C2143047A29}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}

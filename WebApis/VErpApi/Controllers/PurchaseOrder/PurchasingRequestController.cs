@@ -2,16 +2,19 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
@@ -42,14 +45,14 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<ServiceResult<PageData<PurchasingRequestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<PurchasingRequestOutputList>>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingRequestService.GetList(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("GetListByProduct")]
-        public async Task<ServiceResult<PageData<PurchasingRequestOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<ServiceResult<PageData<PurchasingRequestOutputListByProduct>>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingRequestStatus? purchasingRequestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingRequestService.GetListByProduct(keyword, productIds, purchasingRequestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
@@ -73,9 +76,21 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<long>> Add([FromBody] PurchasingRequestInput req)
+        public async Task<long> Add([FromBody] PurchasingRequestInput req)
         {
             return await _purchasingRequestService.Create(req).ConfigureAwait(true);
+        }
+
+
+        [HttpPost]
+        [Route("parseDetailsFromExcelMapping")]
+        public IAsyncEnumerable<PurchasingRequestInputDetail> importFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return _purchasingRequestService.ParseInvoiceDetails(JsonConvert.DeserializeObject<SingleInvoicePurchasingRequestExcelMappingModel>(mapping), file.OpenReadStream());
         }
 
         /// <summary>

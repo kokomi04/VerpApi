@@ -20,6 +20,7 @@ using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.EF.EFExtensions;
 using static VErp.Services.Stock.Model.Product.ProductModel;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -88,6 +89,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         ProductCode = req.ProductCode,
                         ProductName = req.ProductName,
+                        ProductInternalName = req.ProductName.NormalizeAsInternalName(),
                         IsCanBuy = req.IsCanBuy,
                         IsCanSell = req.IsCanSell,
                         MainImageFileId = req.MainImageFileId,
@@ -150,15 +152,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         return UnitErrorCode.UnitNotFound;
                     }
 
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?.Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
-                    {
-                        ProductId = productInfo.ProductId,
-                        ProductUnitConversionName = u.ProductUnitConversionName,
-                        SecondaryUnitId = u.SecondaryUnitId,
-                        FactorExpression = u.FactorExpression,
-                        ConversionDescription = u.ConversionDescription,
-                        IsDefault = false,
-                    })
+                    var lstUnitConverions = req.StockInfo?.UnitConversions?
+                        .Where(u => !u.IsDefault)?
+                        .Select(u => new ProductUnitConversion()
+                        {
+                            ProductId = productInfo.ProductId,
+                            ProductUnitConversionName = u.ProductUnitConversionName,
+                            SecondaryUnitId = u.SecondaryUnitId,
+                            FactorExpression = u.FactorExpression,
+                            ConversionDescription = u.ConversionDescription,
+                            IsDefault = false,
+                        })
                     .ToList();
 
                     if (lstUnitConverions == null)
@@ -218,7 +222,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             var stockValidations = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
-            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => !p.IsDefault && p.ProductId == productId).ToListAsync();
+            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
 
             return new ProductModel()
             {
@@ -255,16 +259,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         ProductUnitConversionId = c.ProductUnitConversionId,
                         ProductUnitConversionName = c.ProductUnitConversionName,
+                        IsDefault = c.IsDefault,
                         SecondaryUnitId = c.SecondaryUnitId,
                         FactorExpression = c.FactorExpression,
                         ConversionDescription = c.ConversionDescription
-                    }).ToList()
+                    } as IProductModelUnitConversion).ToList()
                 } : null
             };
         }
 
 
-      
+
         public async Task<Enum> UpdateProduct(int productId, ProductModel req)
         {
             Enum validate;
@@ -301,7 +306,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-                    var keepIds = req.StockInfo?.UnitConversions.Select(c => c.ProductUnitConversionId);
+                    var keepIds = req.StockInfo?.UnitConversions?.Select(c => c.ProductUnitConversionId);
                     var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
                     if (toRemoveUnitConversions.Count > 0)
                     {
@@ -332,6 +337,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //Productinfo
                     productInfo.ProductCode = req.ProductCode;
                     productInfo.ProductName = req.ProductName;
+                    productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
                     productInfo.IsCanBuy = req.IsCanBuy;
                     productInfo.IsCanSell = req.IsCanSell;
                     productInfo.MainImageFileId = req.MainImageFileId;
@@ -379,7 +385,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var lstNewUnitConverions = req.StockInfo?.UnitConversions?
                         .Where(c => c.ProductUnitConversionId <= 0)?
-                        .Select(u => new Infrastructure.EF.StockDB.ProductUnitConversion()
+                        .Select(u => new ProductUnitConversion()
                         {
                             ProductId = productInfo.ProductId,
                             ProductUnitConversionName = u.ProductUnitConversionName,
@@ -678,6 +684,90 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return data;
         }
+
+        public async Task<IList<IProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req)
+        {
+            var productCodes = req.ProductCodes;
+            var productInternalNames = req.ProductInternalNames;
+
+            if (!(productCodes?.Count > 0) && !(productInternalNames?.Count > 0)) return new List<IProductModel>();
+
+
+            if (productCodes == null)
+            {
+                productCodes = new List<string>();
+            }
+
+            if (productInternalNames == null)
+            {
+                productInternalNames = new List<string>();
+            }
+
+
+            var products = await _stockContext.Product.AsNoTracking().Where(p => productCodes.Contains(p.ProductCode) || productInternalNames.Contains(p.ProductInternalName)).ToListAsync();
+
+            var productIds = products.Select(d => d.ProductId).ToList();
+
+            var productExtraData = await _stockContext.ProductExtraInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+            var productStockInfoData = await _stockContext.ProductStockInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+            var stockValidationData = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+            var unitConverionData = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+
+            var result = new List<IProductModel>();
+            foreach (var productInfo in products)
+            {
+                var productExtra = productExtraData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
+                var productStockInfo = productStockInfoData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
+                var stockValidations = stockValidationData.Where(p => p.ProductId == productInfo.ProductId);
+                var unitConverions = unitConverionData.Where(p => p.ProductId == productInfo.ProductId);
+
+                var productData = new ProductModel()
+                {
+                    ProductCode = productInfo.ProductCode,
+                    ProductName = productInfo.ProductName,
+                    IsCanBuy = productInfo.IsCanBuy,
+                    IsCanSell = productInfo.IsCanSell,
+                    MainImageFileId = productInfo.MainImageFileId,
+                    ProductTypeId = productInfo.ProductTypeId,
+                    ProductCateId = productInfo.ProductCateId,
+                    BarcodeConfigId = productInfo.BarcodeConfigId,
+                    BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
+                    Barcode = productInfo.Barcode,
+                    UnitId = productInfo.UnitId,
+                    EstimatePrice = productInfo.EstimatePrice,
+
+                    Extra = productExtra != null ? new ProductModelExtra()
+                    {
+                        Specification = productExtra.Specification,
+                        Description = productExtra.Description
+                    } : null,
+                    StockInfo = productStockInfo != null ? new ProductModelStock()
+                    {
+                        StockOutputRuleId = (EnumStockOutputRule?)productStockInfo.StockOutputRuleId,
+                        AmountWarningMin = productStockInfo.AmountWarningMin,
+                        AmountWarningMax = productStockInfo.AmountWarningMax,
+                        TimeWarningTimeTypeId = (EnumTimeType?)productStockInfo.TimeWarningTimeTypeId,
+                        TimeWarningAmount = productStockInfo.TimeWarningAmount,
+                        ExpireTimeTypeId = (EnumTimeType?)productStockInfo.ExpireTimeTypeId,
+                        ExpireTimeAmount = productStockInfo.ExpireTimeAmount,
+                        DescriptionToStock = productStockInfo.DescriptionToStock,
+                        StockIds = stockValidations?.Select(s => s.StockId).ToList(),
+                        UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
+                        {
+                            ProductUnitConversionId = c.ProductUnitConversionId,
+                            ProductUnitConversionName = c.ProductUnitConversionName,
+                            SecondaryUnitId = c.SecondaryUnitId,
+                            FactorExpression = c.FactorExpression,
+                            ConversionDescription = c.ConversionDescription
+                        } as IProductModelUnitConversion).ToList()
+                    } : null
+                };
+                result.Add(productData);
+            }
+
+            return result;
+        }
+
         private Enum ValidateProduct(ProductModel req)
         {
             if (string.IsNullOrWhiteSpace(req?.ProductCode))

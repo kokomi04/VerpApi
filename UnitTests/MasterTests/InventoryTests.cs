@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -597,15 +598,16 @@ namespace MasterTests
 
                     StockIds = null,
 
-                    UnitConversions = new List<ProductModelUnitConversion>()
+                    UnitConversions = new List<IProductModelUnitConversion>()
                     {
                         new ProductModelUnitConversion()
                         {
                             SecondaryUnitId = unitInfo.UnitId,
                             ProductUnitConversionName = "x2 " + unitInfo.UnitName,
                             FactorExpression = "2",
-                            ConversionDescription = ""
-                        }
+                            ConversionDescription = "",
+                            IsDefault = false,
+                        } as IProductModelUnitConversion
                     }
                 }
             });

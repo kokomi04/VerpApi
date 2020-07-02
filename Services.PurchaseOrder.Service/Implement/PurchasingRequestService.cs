@@ -23,6 +23,9 @@ using VErp.Services.PurchaseOrder.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using AutoMapper.QueryableExtensions;
 using AutoMapper;
+using System.IO;
+using VErp.Services.PurchaseOrder.Model.Request;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -276,7 +279,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
 
-        public async Task<ServiceResult<long>> Create(PurchasingRequestInput model)
+        public async Task<long> Create(PurchasingRequestInput model)
         {
             await ValidateProductUnitConversion(model);
 
@@ -285,7 +288,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode);
-                if (existedItem != null) return PurchasingRequestErrorCode.RequestCodeAlreadyExisted;
+                if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
             }
 
 
@@ -410,6 +413,211 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return GeneralCode.Success;
+            }
+        }
+
+        public async IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream)
+        {
+            var reader = new ExcelReader(stream);
+
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var rowDatas = SingleInvoiceParseExcel(mapping, stream);
+
+            var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
+            var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
+
+            var productInfos = await _productHelperService.GetListByCodeAndInternalNames(productCodes, productInternalNames);
+
+            var productInfoByCode = productInfos.GroupBy(p => p.ProductCode)
+                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
+
+            var productInfoByInternalName = productInfos.GroupBy(p => p.ProductName.NormalizeAsInternalName())
+                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
+
+            foreach (var item in rowDatas)
+            {
+                IList<IProductModel> productInfo = null;
+                if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
+                {
+                    productInfo = productInfoByCode[item.ProductCode?.ToLower()];
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
+                    {
+                        productInfo = productInfoByCode[item.ProductInternalName];
+                    }
+                }
+
+                if (productInfo == null || productInfo.Count == 0)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
+                }
+
+                if (productInfo.Count > 1)
+                {
+                    productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
+
+                    if (productInfo.Count != 1)
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
+                }
+
+                var productUnitConversionId = 0;
+                if (string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
+                {
+                    var pus = productInfo[0].StockInfo.UnitConversions
+                            .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
+                            .ToList();
+
+                    if (pus.Count != 1)
+                    {
+                        pus = productInfo[0].StockInfo.UnitConversions
+                           .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
+                           .ToList();
+
+                        if (pus.Count > 1)
+                        {
+                            pus = productInfo[0].StockInfo.UnitConversions
+                             .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
+                             .ToList();
+                        }
+                    }
+
+                    if (pus.Count == 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                    }
+                    if (pus.Count > 1)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                    }
+
+                    productUnitConversionId = pus[0].ProductUnitConversionId;
+
+                }
+                else
+                {
+                    var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
+                    if (puDefault == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
+
+                    }
+                    productUnitConversionId = puDefault.ProductUnitConversionId;
+                }
+
+                yield return new PurchasingRequestInputDetail()
+                {
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Description = item.Description,
+                    ProductId = productInfo[0].ProductId.Value,
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    ProductUnitConversionId = productUnitConversionId,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionUnitQuantity,
+                };
+
+            }
+        }
+
+        private IEnumerable<PurchasingRequestDetailRowValue> SingleInvoiceParseExcel(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream)
+        {
+            var reader = new ExcelReader(stream);
+
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                var rowData = new PurchasingRequestDetailRowValue();
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductCodeColumn))
+                {
+                    rowData.ProductCode = row[mapping.ColumnMapping.ProductCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductNameColumn))
+                {
+                    rowData.ProductName = row[mapping.ColumnMapping.ProductNameColumn]?.ToString();
+                    rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
+                }
+
+                if (string.IsNullOrWhiteSpace(rowData.ProductCode) || string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn))
+                {
+                    try
+                    {
+                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
+
+                        if (rowData.PrimaryQuantity <= 0)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phải lớn hơn 0");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductUnitConversionName))
+                {
+                    rowData.ProductUnitConversionName = mapping.StaticValue.ProductUnitConversionName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionNameColumn))
+                {
+                    rowData.ProductUnitConversionName = row[mapping.ColumnMapping.ProductUnitConversionNameColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn))
+                {
+                    try
+                    {
+                        rowData.ProductUnitConversionUnitQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
+
+                        if (rowData.ProductUnitConversionUnitQuantity <= 0)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phải lớn hơn 0");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.OrderCode))
+                {
+                    rowData.OrderCode = mapping.StaticValue.OrderCode;
+                }
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.OrderCodeColumn))
+                {
+                    rowData.OrderCode = row[mapping.ColumnMapping.OrderCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductionOrderCode))
+                {
+                    rowData.ProductionOrderCode = mapping.StaticValue.ProductionOrderCode;
+                }
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductionOrderCodeColumn))
+                {
+                    rowData.ProductionOrderCode = row[mapping.ColumnMapping.ProductionOrderCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.DescriptionColumn))
+                {
+                    rowData.Description = row[mapping.ColumnMapping.DescriptionColumn]?.ToString();
+                }
+
+                yield return rowData;
             }
         }
 

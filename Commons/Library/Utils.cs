@@ -458,7 +458,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     short percentValue;
-                    if (!short.TryParse(value.ToString(), out percentValue)|| percentValue < -100 || percentValue > 100)
+                    if (!short.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }
@@ -511,6 +511,33 @@ namespace VErp.Commons.Library
             }
 
             return result;
+        }
+
+
+        public static string ConvertToUnSign2(this string s)
+        {
+            string stFormD = s.Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+            for (int ich = 0; ich < stFormD.Length; ich++)
+            {
+                UnicodeCategory uc = CharUnicodeInfo.GetUnicodeCategory(stFormD[ich]);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(stFormD[ich]);
+                }
+            }
+            sb = sb.Replace('Đ', 'D');
+            sb = sb.Replace('đ', 'd');
+            return (sb.ToString().Normalize(NormalizationForm.FormD));
+        }
+
+        public static string NormalizeAsInternalName(this string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            s = s.ConvertToUnSign2();
+            s = s.ToLower().Trim();
+            return Regex.Replace(s, "[^a-zA-Z0-9]", "");
         }
 
     }
