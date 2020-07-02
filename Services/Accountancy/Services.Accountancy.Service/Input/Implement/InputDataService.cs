@@ -338,7 +338,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
 
                 var billInfo = new InputBill()
@@ -354,7 +354,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
 
                 // After saving action (SQL)
-                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
 
                 trans.Commit();
@@ -369,7 +369,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private void ProcessAction(string script, BillInfoModel data, List<ValidateField> fields)
+        private async Task ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields)
         {
             if (!string.IsNullOrEmpty(script))
             {
@@ -406,7 +406,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         script = script.Replace(match[i].Value, paramNames.ToString());
                     }
                 }
-                _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
+                await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
             }
         }
 
@@ -708,7 +708,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
 
@@ -724,7 +724,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
@@ -834,7 +834,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 // Before saving action (SQL)
-                ProcessAction(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -846,7 +846,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                ProcessAction(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
@@ -1115,7 +1115,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 try
                 {
                     // Before saving action (SQL)
-                    ProcessAction(inputType.BeforeSaveAction, data, fields);
+                    ProcessActionAsync(inputType.BeforeSaveAction, data, fields);
 
                     var billInfo = new InputBill()
                     {
@@ -1131,7 +1131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
 
                     // After saving action (SQL)
-                    ProcessAction(inputType.AfterSaveAction, data, fields);
+                    ProcessActionAsync(inputType.AfterSaveAction, data, fields);
 
                     trans.Commit();
                 }

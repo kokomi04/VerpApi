@@ -81,6 +81,5 @@ namespace VErpApi.Controllers.Accountancy.Data
             }
             return await _inputDataService.ImportBillFromMapping(inputTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
-
     }
 }

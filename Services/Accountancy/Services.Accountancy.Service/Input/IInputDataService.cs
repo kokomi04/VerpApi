@@ -12,7 +12,6 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface IInputDataService
     {
-
         Task<PageDataTable> GetBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
@@ -24,6 +23,5 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
-
     }
 }
