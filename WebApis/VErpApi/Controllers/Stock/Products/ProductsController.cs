@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;

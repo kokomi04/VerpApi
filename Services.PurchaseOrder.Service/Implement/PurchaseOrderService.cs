@@ -727,7 +727,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream)
         {
-            var rowDatas = SingleInvoiceParseExcel(mapping, stream);
+            var rowDatas = SingleInvoiceParseExcel(mapping, stream).ToList();
 
             var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
             var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
@@ -742,7 +742,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             foreach (var item in rowDatas)
             {
-                IList<IProductModel> productInfo = null;
+                IList<ProductModel> productInfo = null;
                 if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
                 {
                     productInfo = productInfoByCode[item.ProductCode?.ToLower()];

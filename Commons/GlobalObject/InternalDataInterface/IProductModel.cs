@@ -1,61 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
-    public interface IProductModel
+    public class ProductModel
     {
         public int? ProductId { get; set; }
+        public string ProductCode { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
+        [MaxLength(128, ErrorMessage = "Tên sản phẩm quá dài")]
+        public string ProductName { get; set; }
+        public bool IsCanBuy { get; set; }
+        public bool IsCanSell { get; set; }
+        public long? MainImageFileId { get; set; }
+        public int? ProductTypeId { get; set; }
+        public int ProductCateId { get; set; }
+        public int? BarcodeConfigId { get; set; }
+        public EnumBarcodeStandard? BarcodeStandardId { get; set; }
+        public string Barcode { get; set; }
+        public int UnitId { get; set; }
+        public decimal? EstimatePrice { get; set; }
 
-        string ProductCode { get; set; }
+        public ProductModelExtra Extra { get; set; }
+        public ProductModelStock StockInfo { get; set; }
 
-        string ProductName { get; set; }
-        bool IsCanBuy { get; set; }
-        bool IsCanSell { get; set; }
-        long? MainImageFileId { get; set; }
-        int? ProductTypeId { get; set; }
-        int ProductCateId { get; set; }
-        int? BarcodeConfigId { get; set; }
-        EnumBarcodeStandard? BarcodeStandardId { get; set; }
-        string Barcode { get; set; }
-        int UnitId { get; set; }
-        decimal? EstimatePrice { get; set; }
+        public class ProductModelExtra
+        {
+            public string Specification { get; set; }
+            public string Description { get; set; }
+        }
 
-        IProductModelExtra Extra { get; set; }
-        IProductModelStock StockInfo { get; set; }
-    }
+        public class ProductModelStock
+        {
+            public EnumStockOutputRule? StockOutputRuleId { get; set; }
+            public long? AmountWarningMin { get; set; }
+            public long? AmountWarningMax { get; set; }
+            /// <summary>
+            /// Thời gian cảnh báo lưu kho
+            /// </summary>
+            public double? TimeWarningAmount { get; set; }
+            public EnumTimeType? TimeWarningTimeTypeId { get; set; }
+            /// <summary>
+            /// Hạn sử dụng
+            /// </summary>
+            public double? ExpireTimeAmount { get; set; }
+            public EnumTimeType? ExpireTimeTypeId { get; set; }
+            public string DescriptionToStock { get; set; }
 
-    public interface IProductModelExtra
-    {
-        string Specification { get; set; }
-        string Description { get; set; }
-    }
+            public IList<int> StockIds { get; set; }
 
-    public interface IProductModelStock
-    {
-        EnumStockOutputRule? StockOutputRuleId { get; set; }
-        long? AmountWarningMin { get; set; }
-        long? AmountWarningMax { get; set; }
-        double? TimeWarningAmount { get; set; }
-        EnumTimeType? TimeWarningTimeTypeId { get; set; }
-        double? ExpireTimeAmount { get; set; }
-        EnumTimeType? ExpireTimeTypeId { get; set; }
-        string DescriptionToStock { get; set; }
+            public IList<ProductModelUnitConversion> UnitConversions { get; set; }
+        }
 
-        IList<int> StockIds { get; set; }
-
-        IList<IProductModelUnitConversion> UnitConversions { get; set; }
-    }
-
-    public interface IProductModelUnitConversion
-    {
-        int ProductUnitConversionId { get; set; }
-        string ProductUnitConversionName { get; set; }
-        bool IsDefault { get; set; }
-        int SecondaryUnitId { get; set; }
-        string FactorExpression { get; set; }
-        string ConversionDescription { get; set; }
+        public class ProductModelUnitConversion
+        {
+            public int ProductUnitConversionId { get; set; }
+            [Required(ErrorMessage = "Vui lòng nhập quy cách đơn vị chuyển đổi")]
+            [MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi quá dài")]
+            public string ProductUnitConversionName { get; set; }
+            public int SecondaryUnitId { get; set; }
+            public bool IsDefault { get; set; }
+            public bool IsFreeStyle { get; set; }
+            public string FactorExpression { get; set; }
+            public string ConversionDescription { get; set; }
+        }
     }
 }
