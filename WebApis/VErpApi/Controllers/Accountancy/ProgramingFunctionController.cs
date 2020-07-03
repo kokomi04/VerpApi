@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum.Accountant;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Programing;
 using VErp.Services.Accountancy.Service.Programing;
@@ -24,6 +25,7 @@ namespace VErpApi.Controllers.Accountancy
         }
 
         [HttpGet("List")]
+        [GlobalApi]
         public Task<PageData<ProgramingFunctionOutputList>> GetListFunctions([FromQuery] string keyword, [FromQuery] EnumProgramingLang? programingLangId, [FromQuery] EnumProgramingLevel? programingLevelId, [FromQuery] int page, [FromQuery] int size)
         {
             return _programingFunctionService.GetListFunctions(keyword, programingLangId, programingLevelId, page, size);
