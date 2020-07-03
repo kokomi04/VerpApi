@@ -136,6 +136,7 @@ namespace VErp.Commons.Library
 
                 var sheetData = new List<NonCamelCaseDictionary>();
 
+                var columns = new HashSet<string>();
 
                 var mergeRegions = new List<CellRangeAddress>();
                 for (var re = 0; re < sheet.NumMergedRegions; re++)
@@ -150,15 +151,6 @@ namespace VErp.Commons.Library
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
                     {
                         continuousEmpty++;
-
-                        if (rowData.Count > 0)
-                        {
-                            foreach (var col in rowData)
-                            {
-                                rowData.Add(col.Key, null);
-                            }
-                        }
-
                         continue;
                     }
                     else
@@ -168,6 +160,10 @@ namespace VErp.Commons.Library
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
                             var columnName = GetExcelColumnName(col.ColumnIndex + 1);
+                            if (!columns.Contains(columnName))
+                            {
+                                columns.Add(columnName);
+                            }
 
                             var cell = col;
 
@@ -222,11 +218,20 @@ namespace VErp.Commons.Library
                         }
                     }
 
-
-
                     sheetData.Add(rowData);
                 }
 
+                //set default value for null column
+                foreach (var column in columns)
+                {
+                    foreach (var row in sheetData)
+                    {
+                        if (!row.ContainsKey(column))
+                        {
+                            row.Add(column, null);
+                        }
+                    }
+                }
 
                 sheetDatas.Add(new ExcelSheetDataModel() { SheetName = sheet.SheetName, Rows = sheetData.ToArray() });
             }
