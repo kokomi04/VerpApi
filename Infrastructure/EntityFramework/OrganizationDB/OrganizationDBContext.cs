@@ -269,8 +269,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
-
-                entity.Property(e => e.DataContent).IsRequired();
             });
 
             OnModelCreatingPartial(modelBuilder);
