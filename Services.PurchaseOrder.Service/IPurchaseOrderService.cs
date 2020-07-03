@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service
 {
@@ -19,6 +21,8 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<long> Create(PurchaseOrderInput req);
 
         Task<bool> Update(long purchaseOrderId, PurchaseOrderInput req);
+
+        IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream);
 
         Task<bool> SentToCensor(long purchaseOrderId);
 

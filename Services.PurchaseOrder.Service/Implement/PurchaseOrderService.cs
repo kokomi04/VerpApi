@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,13 +13,16 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
@@ -33,7 +37,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly ICurrentContextService _currentContext;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
-
+        private readonly IProductHelperService _productHelperService;
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , IOptions<AppSetting> appSetting
@@ -43,6 +47,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , ICurrentContextService currentContext
            , IObjectGenCodeService objectGenCodeService
            , IPurchasingSuggestService purchasingSuggestService
+           , IProductHelperService productHelperService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -53,6 +58,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _currentContext = currentContext;
             _objectGenCodeService = objectGenCodeService;
             _purchasingSuggestService = purchasingSuggestService;
+            _productHelperService = productHelperService;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -751,6 +757,288 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 return true;
             }
         }
+
+
+        public async IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream)
+        {
+            var rowDatas = SingleInvoiceParseExcel(mapping, stream);
+
+            var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
+            var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
+
+            var productInfos = await _productHelperService.GetListByCodeAndInternalNames(productCodes, productInternalNames);
+
+            var productInfoByCode = productInfos.GroupBy(p => p.ProductCode)
+                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
+
+            var productInfoByInternalName = productInfos.GroupBy(p => p.ProductName.NormalizeAsInternalName())
+                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
+
+            foreach (var item in rowDatas)
+            {
+                IList<IProductModel> productInfo = null;
+                if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
+                {
+                    productInfo = productInfoByCode[item.ProductCode?.ToLower()];
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
+                    {
+                        productInfo = productInfoByCode[item.ProductInternalName];
+                    }
+                }
+
+                if (productInfo == null || productInfo.Count == 0)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
+                }
+
+                if (productInfo.Count > 1)
+                {
+                    productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
+
+                    if (productInfo.Count != 1)
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
+                }
+
+                var productUnitConversionId = 0;
+                if (string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
+                {
+                    var pus = productInfo[0].StockInfo.UnitConversions
+                            .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
+                            .ToList();
+
+                    if (pus.Count != 1)
+                    {
+                        pus = productInfo[0].StockInfo.UnitConversions
+                           .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
+                           .ToList();
+
+                        if (pus.Count > 1)
+                        {
+                            pus = productInfo[0].StockInfo.UnitConversions
+                             .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
+                             .ToList();
+                        }
+                    }
+
+                    if (pus.Count == 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                    }
+                    if (pus.Count > 1)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                    }
+
+                    productUnitConversionId = pus[0].ProductUnitConversionId;
+
+                }
+                else
+                {
+                    var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
+                    if (puDefault == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
+
+                    }
+                    productUnitConversionId = puDefault.ProductUnitConversionId;
+                }
+
+                yield return new PurchaseOrderInputDetail()
+                {
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Description = item.Description,
+                    ProductId = productInfo[0].ProductId.Value,
+                    ProviderProductName = item.ProductProviderName,
+
+
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    PrimaryUnitPrice = item.PrimaryQuantity > 0 ? item.PrimaryMoney / item.PrimaryQuantity : 0,
+
+                    ProductUnitConversionId = productUnitConversionId,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                    ProductUnitConversionPrice = item.ProductUnitConversionQuantity > 0 ? item.ProductUnitConversionMoney / item.ProductUnitConversionQuantity : 0,
+
+                    TaxInPercent = item.TaxInPercent,
+                    TaxInMoney = item.TaxInMoney
+                };
+
+            }
+        }
+
+        private IEnumerable<PoDetailRowValue> SingleInvoiceParseExcel(SingleInvoicePoExcelMappingModel mapping, Stream stream)
+        {
+            var reader = new ExcelReader(stream);
+
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                var rowData = new PoDetailRowValue();
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductCodeColumn))
+                {
+                    rowData.ProductCode = row[mapping.ColumnMapping.ProductCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductNameColumn))
+                {
+                    rowData.ProductName = row[mapping.ColumnMapping.ProductNameColumn]?.ToString();
+                    rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
+                }
+
+                if (string.IsNullOrWhiteSpace(rowData.ProductCode) || string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductProviderNameColumn))
+                {
+                    rowData.ProductProviderName = row[mapping.ColumnMapping.ProductProviderNameColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn)
+                                   && row[mapping.ColumnMapping.PrimaryQuantityColumn] != null
+                                   && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityColumn].ToString())
+                                   )
+                {
+                    try
+                    {
+                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityMoneyColumn)
+                    && row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn].ToString())
+                    )
+                {
+                    try
+                    {
+                        rowData.PrimaryMoney = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số tiền ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductUnitConversionName))
+                {
+                    rowData.ProductUnitConversionName = mapping.StaticValue.ProductUnitConversionName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionNameColumn))
+                {
+                    rowData.ProductUnitConversionName = row[mapping.ColumnMapping.ProductUnitConversionNameColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
+                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn)
+                    && row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn].ToString())
+                    )
+                {
+                    try
+                    {
+                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionMoneyColumn)
+                    && row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn].ToString())
+                    )
+                {
+                    try
+                    {
+                        rowData.ProductUnitConversionMoney = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số tiền ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.TaxInPercentColumn)
+                  && row[mapping.ColumnMapping.TaxInPercentColumn] != null
+                  && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.TaxInPercentColumn].ToString())
+                  )
+                {
+                    try
+                    {
+                        rowData.TaxInPercent = Convert.ToDecimal(row[mapping.ColumnMapping.TaxInPercentColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Thuế % ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.TaxInMoneyColumn)
+                  && row[mapping.ColumnMapping.TaxInMoneyColumn] != null
+                  && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.TaxInMoneyColumn].ToString())
+                  )
+                {
+                    try
+                    {
+                        rowData.TaxInMoney = Convert.ToDecimal(row[mapping.ColumnMapping.TaxInMoneyColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tiền thuế ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.OrderCode))
+                {
+                    rowData.OrderCode = mapping.StaticValue.OrderCode;
+                }
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.OrderCodeColumn))
+                {
+                    rowData.OrderCode = row[mapping.ColumnMapping.OrderCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductionOrderCode))
+                {
+                    rowData.ProductionOrderCode = mapping.StaticValue.ProductionOrderCode;
+                }
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductionOrderCodeColumn))
+                {
+                    rowData.ProductionOrderCode = row[mapping.ColumnMapping.ProductionOrderCodeColumn]?.ToString();
+                }
+
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.DescriptionColumn))
+                {
+                    rowData.Description = row[mapping.ColumnMapping.DescriptionColumn]?.ToString();
+                }
+
+                yield return rowData;
+            }
+        }
+
 
         public async Task<bool> Checked(long purchaseOrderId)
         {
