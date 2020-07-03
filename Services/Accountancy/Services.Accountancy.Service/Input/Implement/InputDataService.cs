@@ -429,12 +429,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task CheckUniqueAsync(int inputTypeId, List<ValidateRowModel> data, List<ValidateField> uniqueFields, long[] deleteInputValueRowId = null)
+        private async Task CheckUniqueAsync(int inputTypeId, List<ValidateRowModel> data, List<ValidateField> uniqueFields, long? inputValueBillId = null)
         {
-            if (deleteInputValueRowId is null)
-            {
-                deleteInputValueRowId = Array.Empty<long>();
-            }
             // Check unique
             foreach (var field in uniqueFields)
             {
@@ -464,9 +460,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 // Checkin unique trong db
                 var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
-                if (deleteInputValueRowId.Length > 0)
+                if (inputValueBillId.HasValue)
                 {
-                    existSql += $"AND F_Id NOT IN {string.Join(",", deleteInputValueRowId)}";
+                    existSql += $"AND InputBill_F_Id != {inputValueBillId}";
                 }
                 existSql += $" AND {field.FieldName} IN (";
                 List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -622,7 +618,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                        RegularExpression = af.RegularExpression,
                                        IsMultiRow = a.IsMultiRow
                                    }).ToList();
-
+            List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             // Validate info
             // Get changed row info
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
@@ -644,25 +640,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             Dictionary<string, string> futureInfo = data.Info;
             string[] changeFields = CompareRow(currentInfo, futureInfo, singleFields);
-            List<ValidateRowModel> checkRows = new List<ValidateRowModel>
+            if (changeFields == null || changeFields.Length > 0)
             {
-                new ValidateRowModel(data.Info, changeFields)
-            };
-            // Lấy thông tin field
-            var requiredFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            var uniqueFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = singleFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
-            // Check field required
-            CheckRequired(checkRows, requiredFields);
-            // Check refer
-            await CheckReferAsync(checkRows, selectFields, data.Info);
-            // Check unique
-            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
-            // Check value
-            CheckValue(checkRows, inputAreaFields);
+                checkRows.Add(new ValidateRowModel(data.Info, changeFields));
+                // Lấy thông tin field
+                var requiredSingleFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+                var uniqueSingleFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+                var selectSingleFields = singleFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+                // Check field required
+                CheckRequired(checkRows, requiredSingleFields);
+                // Check refer
+                await CheckReferAsync(checkRows, selectSingleFields, data.Info);
+                // Check unique
+                await CheckUniqueAsync(inputTypeId, checkRows, uniqueSingleFields, inputValueBillId);
+                // Check value
+                CheckValue(checkRows, singleFields);
+            }
 
             // Validate rows
-            var rowsSQL = new StringBuilder("SELECT ");
+            var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
             for (int indx = 0; indx < multiFields.Count; indx++)
             {
@@ -677,7 +673,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             checkRows.Clear();
             foreach (var futureRow in data.Rows)
             {
-                NonCamelCaseDictionary curRow = currentRows.FirstOrDefault(r => r["F_Id"].ToString() == futureRow["F_Id"]);
+                futureRow.TryGetValue("F_Id", out string futureValue);
+                NonCamelCaseDictionary curRow = currentRows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
                 if (curRow == null)
                 {
                     checkRows.Add(new ValidateRowModel(futureRow, null));
@@ -692,17 +689,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
             // Lấy thông tin field
-            requiredFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            uniqueFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            selectFields = multiFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            var requiredMultiFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueMultiFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectMultiFields = multiFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
             // Check field required
-            CheckRequired(checkRows, requiredFields);
+            CheckRequired(checkRows, requiredMultiFields);
             // Check refer
-            await CheckReferAsync(checkRows, selectFields, data.Info);
+            await CheckReferAsync(checkRows, selectMultiFields, data.Info);
             // Check unique
-            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
+            await CheckUniqueAsync(inputTypeId, checkRows, uniqueMultiFields, inputValueBillId);
             // Check value
-            CheckValue(checkRows, inputAreaFields);
+            CheckValue(checkRows, multiFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -859,7 +856,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw ex;
             }
         }
-
 
         private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data)
         {
