@@ -104,9 +104,9 @@ namespace VErpApi.Controllers.System
         [Route("UserData/{key}")]
         [HttpPut]
         [GlobalApi]
-        public async Task<bool> UpdateUserData([FromRoute] string key, [FromRoute] string data)
+        public async Task<bool> UpdateUserData([FromRoute] string key, [FromBody] UserDataModel data)
         {
-            return await _userDataService.UpdateUserData(key, data);
+            return await _userDataService.UpdateUserData(key, data?.DataContent);
         }
     }
 }
