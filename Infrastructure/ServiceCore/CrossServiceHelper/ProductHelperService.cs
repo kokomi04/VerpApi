@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface IProductHelperService
     {
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
-        Task<IList<IProductModel>> GetListByCodeAndInternalNames(IList<string> productCodes, IList<string> productInternalNames);
+        Task<IList<ProductModel>> GetListByCodeAndInternalNames(IList<string> productCodes, IList<string> productInternalNames);
     }
 
 
@@ -33,9 +33,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Post<bool>("api/internal/InternalProduct/ValidateProductUnitConversion", productUnitConvertsionProduct);
         }
 
-        public async Task<IList<IProductModel>> GetListByCodeAndInternalNames(IList<string> productCodes, IList<string> productInternalNames)
+        public async Task<IList<ProductModel>> GetListByCodeAndInternalNames(IList<string> productCodes, IList<string> productInternalNames)
         {
-            return await _httpCrossService.Post<IList<IProductModel>>("api/internal/InternalProduct/GetListByCodeAndInternalNames", new
+            return await _httpCrossService.Post<IList<ProductModel>>("api/internal/InternalProduct/GetListByCodeAndInternalNames", new
             {
                 productCodes,
                 productInternalNames,

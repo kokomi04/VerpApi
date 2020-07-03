@@ -19,8 +19,8 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.EF.EFExtensions;
-using static VErp.Services.Stock.Model.Product.ProductModel;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -162,6 +162,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             FactorExpression = u.FactorExpression,
                             ConversionDescription = u.ConversionDescription,
                             IsDefault = false,
+                            IsFreeStyle = u.IsFreeStyle
                         })
                     .ToList();
 
@@ -178,7 +179,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             SecondaryUnitId = req.UnitId,
                             FactorExpression = "1",
                             ConversionDescription = "Mặc định",
-                            IsDefault = true
+                            IsDefault = true,
+                            IsFreeStyle = false
                         }
                     );
 
@@ -226,6 +228,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return new ProductModel()
             {
+                ProductId = productInfo.ProductId,
                 ProductCode = productInfo.ProductCode,
                 ProductName = productInfo.ProductName,
                 IsCanBuy = productInfo.IsCanBuy,
@@ -260,10 +263,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         ProductUnitConversionId = c.ProductUnitConversionId,
                         ProductUnitConversionName = c.ProductUnitConversionName,
                         IsDefault = c.IsDefault,
+                        IsFreeStyle = c.IsFreeStyle ?? false,
                         SecondaryUnitId = c.SecondaryUnitId,
                         FactorExpression = c.FactorExpression,
                         ConversionDescription = c.ConversionDescription
-                    } as IProductModelUnitConversion).ToList()
+                    }).ToList()
                 } : null
             };
         }
@@ -391,7 +395,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             ProductUnitConversionName = u.ProductUnitConversionName,
                             SecondaryUnitId = u.SecondaryUnitId,
                             FactorExpression = u.FactorExpression,
-                            ConversionDescription = u.ConversionDescription
+                            ConversionDescription = u.ConversionDescription,
+                            IsDefault = false,
+                            IsFreeStyle = u.IsFreeStyle
                         });
 
 
@@ -410,12 +416,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             db.SecondaryUnitId = u.SecondaryUnitId;
                             db.FactorExpression = u.FactorExpression;
                             db.ConversionDescription = u.ConversionDescription;
+                            db.IsFreeStyle = u.IsFreeStyle;
                         }
                     }
                     var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
                     if (defaultUnitConversion != null)
                     {
                         defaultUnitConversion.SecondaryUnitId = req.UnitId;
+                        defaultUnitConversion.IsDefault = true;
+                        defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.Data.UnitName;
                     }
 
@@ -685,12 +694,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return data;
         }
 
-        public async Task<IList<IProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req)
+        public async Task<IList<ProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req)
         {
             var productCodes = req.ProductCodes;
             var productInternalNames = req.ProductInternalNames;
 
-            if (!(productCodes?.Count > 0) && !(productInternalNames?.Count > 0)) return new List<IProductModel>();
+            if (!(productCodes?.Count > 0) && !(productInternalNames?.Count > 0)) return new List<ProductModel>();
 
 
             if (productCodes == null)
@@ -713,7 +722,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var stockValidationData = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
             var unitConverionData = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
 
-            var result = new List<IProductModel>();
+            var result = new List<ProductModel>();
             foreach (var productInfo in products)
             {
                 var productExtra = productExtraData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
@@ -723,6 +732,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var productData = new ProductModel()
                 {
+                    ProductId = productInfo.ProductId,
                     ProductCode = productInfo.ProductCode,
                     ProductName = productInfo.ProductName,
                     IsCanBuy = productInfo.IsCanBuy,
@@ -757,9 +767,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             ProductUnitConversionId = c.ProductUnitConversionId,
                             ProductUnitConversionName = c.ProductUnitConversionName,
                             SecondaryUnitId = c.SecondaryUnitId,
+                            IsDefault = c.IsDefault,
+                            IsFreeStyle = c.IsFreeStyle ?? false,
                             FactorExpression = c.FactorExpression,
                             ConversionDescription = c.ConversionDescription
-                        } as IProductModelUnitConversion).ToList()
+                        }).ToList()
                     } : null
                 };
                 result.Add(productData);
