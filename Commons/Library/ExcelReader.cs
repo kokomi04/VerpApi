@@ -144,14 +144,31 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousEmpty = 0;
-                for (int row = fromRowIndex; row <= maxrows && (!toRowIndex.HasValue || row < toRowIndex); row++)
+                for (int row = fromRowIndex; row < maxrows && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
                     var rowData = new NonCamelCaseDictionary();
-                    if (sheet.GetRow(row) != null) //null is when the row only contains empty cells 
+                    if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
                     {
+                        continuousEmpty++;
+
+                        if (rowData.Count > 0)
+                        {
+                            foreach (var col in rowData)
+                            {
+                                rowData.Add(col.Key, null);
+                            }
+                        }
+
+                        continue;
+                    }
+                    else
+                    {
+                        continuousEmpty = 0;
+
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
                             var columnName = GetExcelColumnName(col.ColumnIndex + 1);
+
                             var cell = col;
 
                             if (cell.IsMergedCell)
@@ -195,7 +212,6 @@ namespace VErp.Commons.Library
                             try
                             {
                                 rowData.Add(columnName, GetCellString(cell));
-
                             }
                             catch
                             {
@@ -204,13 +220,9 @@ namespace VErp.Commons.Library
                             }
 
                         }
+                    }
 
-                        continuousEmpty = 0;
-                    }
-                    else
-                    {
-                        continuousEmpty++;
-                    }
+
 
                     sheetData.Add(rowData);
                 }
