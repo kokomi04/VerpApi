@@ -25,8 +25,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
-        public virtual DbSet<InputValueRow> InputValueRow { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
         public virtual DbSet<Tet> Tet { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -253,240 +253,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
             });
 
-            modelBuilder.Entity<InputValueRow>(entity =>
-            {
-                entity.HasKey(e => e.FId)
-                    .HasName("PK_@_InputValueRow");
-
-                entity.Property(e => e.FId).HasColumnName("F_Id");
-
-                entity.Property(e => e.Attachment).HasMaxLength(512);
-
-                entity.Property(e => e.BoPhan).HasColumnName("Bo_phan");
-
-                entity.Property(e => e.CongTrinh).HasColumnName("Cong_trinh");
-
-                entity.Property(e => e.ConstrainTyGia).HasColumnName("Constrain_Ty_gia");
-
-                entity.Property(e => e.DiaChi)
-                    .HasColumnName("Dia_chi")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.DienGiai)
-                    .HasColumnName("DIEN_GIAI")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.DonGia)
-                    .HasColumnName("Don_gia")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.DonGiaDvt2)
-                    .HasColumnName("Don_gia_DVT2")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Dvt)
-                    .HasColumnName("DVT")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.Dvt2)
-                    .HasColumnName("DVT2")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.GhiChu)
-                    .HasColumnName("Ghi_chu")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
-
-                entity.Property(e => e.KheUocVay).HasColumnName("Khe_uoc_vay");
-
-                entity.Property(e => e.KhoC).HasColumnName("Kho_C");
-
-                entity.Property(e => e.KhoanMucCp).HasColumnName("Khoan_muc_CP");
-
-                entity.Property(e => e.KhoanMucTc).HasColumnName("Khoan_muc_TC");
-
-                entity.Property(e => e.KyHieuHd)
-                    .HasColumnName("Ky_hieu_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.LoaiTien).HasColumnName("Loai_tien");
-
-                entity.Property(e => e.MaChuongNsnn).HasColumnName("Ma_chuong_NSNN");
-
-                entity.Property(e => e.MaCt)
-                    .HasColumnName("MA_CT")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MaKh0).HasColumnName("Ma_kh0");
-
-                entity.Property(e => e.MaKh1).HasColumnName("Ma_kh1");
-
-                entity.Property(e => e.MaKh3).HasColumnName("Ma_kh3");
-
-                entity.Property(e => e.MaKhc0).HasColumnName("Ma_khc0");
-
-                entity.Property(e => e.MaLinkHd)
-                    .HasColumnName("Ma_link_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MaLsx)
-                    .HasColumnName("Ma_LSX")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MaMucNsnn).HasColumnName("Ma_muc_NSNN");
-
-                entity.Property(e => e.MaTscd).HasColumnName("Ma_TSCD");
-
-                entity.Property(e => e.MaVthhtp).HasColumnName("Ma_VTHHTP");
-
-                entity.Property(e => e.MauHd)
-                    .HasColumnName("Mau_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.NgayCt).HasColumnName("Ngay_ct");
-
-                entity.Property(e => e.NgayHd).HasColumnName("Ngay_hd");
-
-                entity.Property(e => e.NgoaiTe0)
-                    .HasColumnName("Ngoai_te0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.NoiDung)
-                    .HasColumnName("Noi_dung")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.OngBa)
-                    .HasColumnName("Ong_ba")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.OrderCode)
-                    .HasColumnName("Order_Code")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.PhanXuong).HasColumnName("Phan_xuong");
-
-                entity.Property(e => e.PoCode)
-                    .HasColumnName("PO_Code")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SeriHd)
-                    .HasColumnName("Seri_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SlOd)
-                    .HasColumnName("SL_OD")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SlPo)
-                    .HasColumnName("SL_PO")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SlReq)
-                    .HasColumnName("SL_Req")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SlTonKho)
-                    .HasColumnName("SL_ton_kho")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SoCt)
-                    .HasColumnName("So_ct")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SoLuong)
-                    .HasColumnName("So_luong")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SoLuongDv2)
-                    .HasColumnName("So_luong_DV2")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Stt)
-                    .HasColumnName("STT")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TenKh0)
-                    .HasColumnName("Ten_kh0")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TenKh1)
-                    .HasColumnName("Ten_kh1")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TenKh3)
-                    .HasColumnName("Ten_kh3")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TenKhc0)
-                    .HasColumnName("Ten_khc0")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TenTscd)
-                    .HasColumnName("Ten_TSCD")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TenVthhtp)
-                    .HasColumnName("Ten_VTHHTP")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.ThueSuatVat).HasColumnName("Thue_suat_VAT");
-
-                entity.Property(e => e.ThueSuatXnk)
-                    .HasColumnName("Thue_suat_xnk")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TkCo0).HasColumnName("TK_co0");
-
-                entity.Property(e => e.TkCo1).HasColumnName("TK_co1");
-
-                entity.Property(e => e.TkCo2).HasColumnName("TK_co2");
-
-                entity.Property(e => e.TkCo3).HasColumnName("TK_co3");
-
-                entity.Property(e => e.TkNo0).HasColumnName("Tk_no0");
-
-                entity.Property(e => e.TkNo1).HasColumnName("Tk_no1");
-
-                entity.Property(e => e.TkNo2).HasColumnName("Tk_no2");
-
-                entity.Property(e => e.TkNo3).HasColumnName("Tk_no3");
-
-                entity.Property(e => e.TkThuKbnn).HasColumnName("TK_thu_KBNN");
-
-                entity.Property(e => e.TknhDn).HasColumnName("TKNH_DN");
-
-                entity.Property(e => e.TknhDt).HasColumnName("TKNH_DT");
-
-                entity.Property(e => e.TongCong)
-                    .HasColumnName("Tong_cong")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TongNgoaiTe0)
-                    .HasColumnName("Tong_ngoai_te0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TongTienHang)
-                    .HasColumnName("Tong_tien_hang")
-                    .HasColumnType("decimal(18, 0)");
-
-                entity.Property(e => e.TongVnd0)
-                    .HasColumnName("Tong_vnd0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TongVnd1)
-                    .HasColumnName("Tong_vnd1")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TyGia)
-                    .HasColumnName("Ty_gia")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Vnd0).HasColumnType("decimal(18, 0)");
-
-                entity.Property(e => e.Vnd1).HasColumnType("decimal(18, 5)");
-            });
-
             modelBuilder.Entity<OutSideDataConfig>(entity =>
             {
                 entity.HasKey(e => e.CategoryId)
@@ -513,6 +279,15 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<ProgramingFunction>(entity =>
+            {
+                entity.Property(e => e.FunctionBody).IsRequired();
+
+                entity.Property(e => e.ProgramingFunctionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<Tet>(entity =>

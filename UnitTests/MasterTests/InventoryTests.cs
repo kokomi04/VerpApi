@@ -18,7 +18,7 @@ using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
 using Xunit;
-using static VErp.Services.Stock.Model.Product.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace MasterTests
 {
@@ -598,7 +598,7 @@ namespace MasterTests
 
                     StockIds = null,
 
-                    UnitConversions = new List<IProductModelUnitConversion>()
+                    UnitConversions = new List<ProductModelUnitConversion>()
                     {
                         new ProductModelUnitConversion()
                         {
@@ -607,7 +607,7 @@ namespace MasterTests
                             FactorExpression = "2",
                             ConversionDescription = "",
                             IsDefault = false,
-                        } as IProductModelUnitConversion
+                        }
                     }
                 }
             });
