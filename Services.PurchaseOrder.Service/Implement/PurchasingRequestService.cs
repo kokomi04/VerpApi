@@ -418,10 +418,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream)
         {
-            var reader = new ExcelReader(stream);
-
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
             var rowDatas = SingleInvoiceParseExcel(mapping, stream);
 
             var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
@@ -515,7 +511,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductId = productInfo[0].ProductId.Value,
                     PrimaryQuantity = item.PrimaryQuantity,
                     ProductUnitConversionId = productUnitConversionId,
-                    ProductUnitConversionQuantity = item.ProductUnitConversionUnitQuantity,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                 };
 
             }
@@ -548,16 +544,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (string.IsNullOrWhiteSpace(rowData.ProductCode) || string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
 
 
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn))
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn)
+                    && row[mapping.ColumnMapping.PrimaryQuantityColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityColumn].ToString())
+                    )
                 {
                     try
                     {
-                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
-
-                        if (rowData.PrimaryQuantity <= 0)
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phải lớn hơn 0");
-                        }
+                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);                        
                     }
                     catch (Exception ex)
                     {
@@ -577,22 +571,27 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     rowData.ProductUnitConversionName = row[mapping.ColumnMapping.ProductUnitConversionNameColumn]?.ToString();
                 }
 
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn))
+                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
+                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn)
+                    && row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn].ToString())
+                    )
                 {
                     try
                     {
-                        rowData.ProductUnitConversionUnitQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
-
-                        if (rowData.ProductUnitConversionUnitQuantity <= 0)
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phải lớn hơn 0");
-                        }
+                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);                      
                     }
                     catch (Exception ex)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
                 }
+
+                if (rowData.PrimaryQuantity <= 0 && rowData.ProductUnitConversionQuantity <= 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng không hợp lệ ở mặt hàng {rowData.ProductCode} {rowData.ProductName}");
+                }
+
 
                 if (!string.IsNullOrWhiteSpace(mapping.StaticValue.OrderCode))
                 {
