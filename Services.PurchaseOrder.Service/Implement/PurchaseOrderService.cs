@@ -879,6 +879,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
                 var row = data.Rows[rowIndx];
+                if (row.Count == 0) continue;
 
                 var rowData = new PoDetailRowValue();
 
