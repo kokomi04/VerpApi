@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -22,16 +23,19 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
 
         public MenuService(MasterDBContext masterDbContext
             , ILogger<MenuService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
 
         )
         {
             _masterDbContext = masterDbContext;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
 
         }
 
@@ -58,7 +62,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return lstMenu;
         }
 
-        public async Task<Enum> Update(int updatedUserId, int menuId, MenuInputModel model)
+        public async Task<Enum> Update(int menuId, MenuInputModel model)
         {
             try
             {
@@ -75,7 +79,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 obj.Url = model.Url;
                 obj.Icon = model.Icon;
                 obj.Param = model.Param;
-                obj.UpdatedByUserId = updatedUserId;
+                obj.UpdatedByUserId = _currentContextService.UserId;
                 obj.SortOrder = model.SortOrder;
                 obj.IsGroup = model.IsGroup;
                 obj.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -92,7 +96,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         }
 
        
-        public async Task<Enum> Delete(int updatedUserId, int menuId)
+        public async Task<Enum> Delete(int menuId)
         {
             try
             {
@@ -102,7 +106,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     return GeneralCode.ItemNotFound;
                 }
                 obj.IsDeleted = true;
-                obj.UpdatedByUserId = updatedUserId;
+                obj.UpdatedByUserId = _currentContextService.UserId;
                 obj.DeletedDatetimeUtc = DateTime.UtcNow;
                 await _masterDbContext.SaveChangesAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
@@ -115,7 +119,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<ServiceResult<int>> Create(int updatedUserId, MenuInputModel model)
+        public async Task<ServiceResult<int>> Create(MenuInputModel model)
         {
             var result = new ServiceResult<int>() { Data = 0 };
             try
@@ -129,8 +133,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Url = model.Url,
                     Icon = model.Icon,
                     Param = model.Param,
-                    CreatedByUserId = updatedUserId,
-                    UpdatedByUserId = updatedUserId,
+                    CreatedByUserId = _currentContextService.UserId,
+                    UpdatedByUserId = _currentContextService.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,

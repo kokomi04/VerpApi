@@ -38,12 +38,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IMenuHelperService _menuHelperService;
+        private readonly ICurrentContextService _currentContextService;
+
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IMenuHelperService menuHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -51,6 +56,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _menuHelperService = menuHelperService;
+            _currentContextService = currentContextService;
         }
 
         #region InputType
@@ -119,6 +126,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
+
+                if (data.MenuStyle != null)
+                {
+                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, data.InputTypeCode, inputType.InputTypeId);
+                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
+                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.ModuleName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                }
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
@@ -141,7 +155,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return code;
         }
 
-        public async Task<int> CloneInputType(int inputTypeId)
+        public async Task<int> CloneInputType(int inputTypeId, InputTypeMenuStyle menuStyle)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var sourceInput = await _accountancyDBContext.InputType
@@ -220,6 +234,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
+
+                if (menuStyle != null)
+                {
+                    var url = Utils.FormatStyle(menuStyle.UrlFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                    var param = Utils.FormatStyle(menuStyle.ParamFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.ModuleName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
+                }
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
