@@ -822,8 +822,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (endTime > 0)
                 toDate = endTime.UnixToDateTime().Value;
 
-            toDate = toDate.AddDays(1).Date;
-
             var productQuery = _stockContext.Product.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -907,7 +905,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from iv in inventories
                 join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                 join p in productQuery on d.ProductId equals p.ProductId
-                where iv.IsApproved && iv.Date >= fromDate && iv.Date < toDate
+                where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
                 group new { d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId } into g
                 select new
                 {
@@ -1144,8 +1142,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (eTime > 0)
                 toDate = eTime.UnixToDateTime().Value;
 
-            toDate = toDate.AddDays(1).Date;
-
+          
             try
             {
                 DateTime? beginTime = fromDate != DateTime.MinValue ? fromDate : _stockContext.Inventory.OrderBy(q => q.Date).Select(q => q.Date).FirstOrDefault().AddDays(-1);
@@ -1192,7 +1189,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (fromDate != DateTime.MinValue && toDate != DateTime.MinValue)
                 {
-                    inPerdiodInventories = inPerdiodInventories.Where(q => q.Date >= fromDate && q.Date < toDate);
+                    inPerdiodInventories = inPerdiodInventories.Where(q => q.Date >= fromDate && q.Date <= toDate);
                 }
                 else
                 {
@@ -1202,7 +1199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     if (toDate != DateTime.MinValue)
                     {
-                        inPerdiodInventories = inPerdiodInventories.Where(q => q.Date < toDate);
+                        inPerdiodInventories = inPerdiodInventories.Where(q => q.Date <= toDate);
                     }
                 }
 
@@ -1322,9 +1319,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (eTime > 0)
                     toDate = eTime.UnixToDateTime().Value;
-
-                toDate = toDate.AddDays(1).Date;
-
+               
                 var productQuery = _stockContext.Product.AsQueryable();
                 if (!string.IsNullOrWhiteSpace(keyword))
                 {
@@ -1409,7 +1404,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     from iv in inventoryQuery
                     join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                     join p in productQuery on d.ProductId equals p.ProductId
-                    where iv.IsApproved && iv.Date >= fromDate && iv.Date < toDate
+                    where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
 
                     group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
                     select new
@@ -1440,7 +1435,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                    from iv in inventoryQuery
                    join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                    join p in productQuery on d.ProductId equals p.ProductId
-                   where iv.IsApproved && iv.Date >= fromDate && iv.Date < toDate
+                   where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
                    group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
                    select new
                    {
@@ -1620,11 +1615,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 if (endTime > 0)
                 {
-                    eTime = endTime.UnixToDateTime().Value;
-                    eTime = eTime.AddDays(1);
+                    eTime = endTime.UnixToDateTime().Value;                    
                 }
-
-                eTime = eTime.AddDays(1).Date;
 
                 var inventoryQuery = _stockContext.Inventory.AsNoTracking().Where(q => q.IsApproved);
                 if (stockIds != null && stockIds.Count > 0)
@@ -1633,7 +1625,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 if (bTime != DateTime.MinValue && eTime != DateTime.MinValue)
                 {
-                    inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date < eTime);
+                    inventoryQuery = inventoryQuery.Where(q => q.Date >= bTime && q.Date <= eTime);
                 }
                 else
                 {
@@ -1643,7 +1635,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     if (eTime != DateTime.MinValue)
                     {
-                        inventoryQuery = inventoryQuery.Where(q => q.Date < eTime);
+                        inventoryQuery = inventoryQuery.Where(q => q.Date <= eTime);
                     }
                 }
                 inventoryQuery = inventoryQuery.OrderByDescending(q => q.Date);
