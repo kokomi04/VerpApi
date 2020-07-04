@@ -785,7 +785,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
                     {
-                        productInfo = productInfoByCode[item.ProductInternalName];
+                        productInfo = productInfoByInternalName[item.ProductInternalName];
                     }
                 }
 
@@ -803,7 +803,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
 
                 var productUnitConversionId = 0;
-                if (string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
+                if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
                 {
                     var pus = productInfo[0].StockInfo.UnitConversions
                             .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
@@ -894,7 +894,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
                 }
 
-                if (string.IsNullOrWhiteSpace(rowData.ProductCode) || string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
+                if (string.IsNullOrWhiteSpace(rowData.ProductCode) && string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
 
                 if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductProviderNameColumn))
                 {
@@ -960,6 +960,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
+                }
+
+                if (rowData.ProductUnitConversionQuantity == 0)
+                {
+                    rowData.ProductUnitConversionName = null;
                 }
 
 

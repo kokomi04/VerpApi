@@ -460,7 +460,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
 
                 var productUnitConversionId = 0;
-                if (string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
+                if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
                 {
                     var pus = productInfo[0].StockInfo.UnitConversions
                             .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
@@ -586,6 +586,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
+                }
+
+                if (rowData.ProductUnitConversionQuantity == 0)
+                {
+                    rowData.ProductUnitConversionName = null;
                 }
 
                 if (rowData.PrimaryQuantity <= 0 && rowData.ProductUnitConversionQuantity <= 0)

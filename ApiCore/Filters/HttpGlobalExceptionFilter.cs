@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -29,64 +31,88 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             _logger.LogError(context.Exception, context.Exception.Message);
 
-            if (context.Exception is BadRequestException badRequest)
+            var (response, statusCode) = Handler(context.Exception);
+
+            if (!_env.IsProduction())
             {
-                var json = new ServiceResult
+                response.Data = context.Exception;
+            }
+
+            if (context.Exception is BadRequestException)
+            {
+                context.Result = new BadRequestObjectResult(response);
+            }
+            else if (context.Exception.GetType() == typeof(VerpException))
+            {
+                context.Result = new BadRequestObjectResult(response);
+            }
+            else
+            {
+                if (context.Exception is DistributedLockExeption)
+                {
+                    context.Result = new InternalServerErrorObjectResult(response);
+                }
+                else
+                {
+                    context.Result = new InternalServerErrorObjectResult(response);
+                }
+            }
+
+           
+
+            context.HttpContext.Response.StatusCode = (int)statusCode;
+            context.ExceptionHandled = true;
+        }
+
+        public static (ServiceResult<Exception> response, HttpStatusCode statusCode) Handler(Exception exception)
+        {
+            ServiceResult<Exception> response;
+            HttpStatusCode statusCode;
+
+            if (exception is BadRequestException badRequest)
+            {
+                response = new ServiceResult<Exception>
                 {
                     Code = badRequest.Code,
                     Message = badRequest.Message
                 };
-
-                context.Result = new BadRequestObjectResult(json);
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                statusCode = HttpStatusCode.BadRequest;
             }
-            else if (context.Exception.GetType() == typeof(VerpException))
+            else if (exception is VerpException)
             {
-                var json = new ServiceResult
+                response = new ServiceResult<Exception>
                 {
                     Code = GeneralCode.InternalError,
-                    Message = context.Exception.Message
+                    Message = exception.Message
                 };
 
-                context.Result = new BadRequestObjectResult(json);
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                statusCode = HttpStatusCode.BadRequest;
             }
             else
             {
-                if (context.Exception.GetType() == typeof(DistributedLockExeption))
+                if (exception is DistributedLockExeption)
                 {
-                    var json = new ServiceResult<Exception>
+                    response = new ServiceResult<Exception>
                     {
                         Code = GeneralCode.DistributedLockExeption,
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
                     };
 
-                    if (_env.EnvironmentName != "Production")
-                    {
-                        json.Data = context.Exception;
-                    }
+                    statusCode = HttpStatusCode.BadGateway;
 
-                    context.Result = new InternalServerErrorObjectResult(json);
-                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadGateway;
                 }
                 else
                 {
-                    var json = new ServiceResult<Exception>
+                    response = new ServiceResult<Exception>
                     {
                         Code = GeneralCode.InternalError,
-                        Message = context.Exception.Message
+                        Message = exception.Message
                     };
 
-                    if (_env.EnvironmentName != "Production")
-                    {
-                        json.Data = context.Exception;
-                    }
-
-                    context.Result = new InternalServerErrorObjectResult(json);
-                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    statusCode = HttpStatusCode.InternalServerError;
                 }
             }
-            context.ExceptionHandled = true;
+            return (response, statusCode);
         }
     }
 }
