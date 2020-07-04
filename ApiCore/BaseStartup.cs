@@ -217,7 +217,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 var exception = feature.Error;
 
-               // _logger.LogError(exception, exception?.Message);
+                // _logger.LogError(exception, exception?.Message);
 
                 var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception);
 
@@ -229,7 +229,7 @@ namespace VErp.Infrastructure.ApiCore
                 var result = JsonConvert.SerializeObject(response, JsonSetting(null));
 
                 context.Response.ContentType = "application/json";
-
+                context.Response.StatusCode = (int)statusCode;
                 await context.Response.WriteAsync(result);
             }));
 
