@@ -7,12 +7,15 @@ namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchaseOrderInput
     {
-        public int CustomerId { get; set; }
+        public int CustomerId { get; set; }        
+        public IList<long> FileIds { get; set; }
+
         [Required(ErrorMessage = "")]
         [MinLength(1, ErrorMessage = "Vui lòng chọn mặt hàng")]
-        public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderInputDetail> Details { get; set; }
+
         public long Date { get; set; }
+
         [Required(ErrorMessage = "Vui lòng nhập mã PO")]
         public string PurchaseOrderCode { get; set; }
 
