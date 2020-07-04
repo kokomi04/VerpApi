@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption;
 using Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.ConfigurationModel;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Serilog;
@@ -58,7 +61,7 @@ namespace VErp.Infrastructure.ApiCore
             services.Configure<AppSetting>(Configuration);
 
             CreateSerilogLogger(Configuration);
-         
+
 
             services.AddCors(options =>
             {
@@ -96,10 +99,8 @@ namespace VErp.Infrastructure.ApiCore
             })
            .AddNewtonsoftJson(options =>
            {
-               options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-               options.SerializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
-               options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-               options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+               JsonSetting(options.SerializerSettings);
+
                //options.SerializerSettings.Converters.Add(new StringEnumConverter());
            });
 
@@ -131,7 +132,7 @@ namespace VErp.Infrastructure.ApiCore
            .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
            .AddControllersAsServices();
 
-            ConfigureAuthService(services);          
+            ConfigureAuthService(services);
         }
 
         protected void ConfigReadWriteDBContext(IServiceCollection services)
@@ -158,7 +159,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigReportConfigDBContextContext(AppSetting.OwnerDatabaseConnections);
         }
 
-       
+
 
         protected IServiceProvider BuildService(IServiceCollection services)
         {
@@ -208,11 +209,35 @@ namespace VErp.Infrastructure.ApiCore
 
             app.UseAuthorization();
 
+            var _logger = loggerFactory.CreateLogger<BaseStartup>();
+
+            app.UseExceptionHandler(a => a.Run(async context =>
+            {
+                var feature = context.Features.Get<IExceptionHandlerPathFeature>();
+
+                var exception = feature.Error;
+
+               // _logger.LogError(exception, exception?.Message);
+
+                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception);
+
+                if (!env.IsProduction())
+                {
+                    response.Data = exception;
+                }
+
+                var result = JsonConvert.SerializeObject(response, JsonSetting(null));
+
+                context.Response.ContentType = "application/json";
+
+                await context.Response.WriteAsync(result);
+            }));
+
             app.UseEndpoints(config =>
             {
                 config.MapControllers();
             });
-           
+
 
         }
 
@@ -273,6 +298,18 @@ namespace VErp.Infrastructure.ApiCore
                 .CreateLogger();
 
             Log.Logger = logger;
+        }
+
+        private JsonSerializerSettings JsonSetting(JsonSerializerSettings serializerSettings)
+        {
+            if (serializerSettings == null)
+                serializerSettings = new JsonSerializerSettings();
+
+            serializerSettings.NullValueHandling = NullValueHandling.Ignore;
+            serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
+            serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
+            return serializerSettings;
         }
     }
     class ExceptionEnricher : ILogEventEnricher

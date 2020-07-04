@@ -243,6 +243,7 @@ namespace VErp.Commons.Library
         {
             var type = cell.CellType;
 
+            string formulaMessage = "";
             if (cell.CellType == CellType.Formula)
             {
                 try
@@ -250,9 +251,9 @@ namespace VErp.Commons.Library
                     hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
                     type = cell.CachedFormulaResultType;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    type = CellType.String;
+                    formulaMessage = cell.CellFormula + " => " + ex.Message;
                 }
 
 
@@ -263,7 +264,7 @@ namespace VErp.Commons.Library
                 case CellType.String:
                     return cell.StringCellValue?.Trim();
                 case CellType.Formula:
-                    throw new Exception();
+                    return formulaMessage;
 
                 case CellType.Numeric:
                     return cell.NumericCellValue.ToString()?.Trim();
