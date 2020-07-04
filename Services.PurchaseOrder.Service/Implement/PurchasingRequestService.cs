@@ -442,7 +442,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
                     {
-                        productInfo = productInfoByCode[item.ProductInternalName];
+                        productInfo = productInfoByInternalName[item.ProductInternalName];
                     }
                 }
 
@@ -542,7 +542,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
                 }
 
-                if (string.IsNullOrWhiteSpace(rowData.ProductCode) || string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
+                if (string.IsNullOrWhiteSpace(rowData.ProductCode) && string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
 
 
                 if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn)
