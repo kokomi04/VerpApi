@@ -151,7 +151,7 @@ namespace VErp.Commons.Library
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
                     {
                         continuousEmpty++;
-                        continue;
+                        //continue;
                     }
                     else
                     {
