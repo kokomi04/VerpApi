@@ -302,7 +302,16 @@ namespace VErp.Commons.Library
                 case CellType.Numeric:
                     return DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue.ToString() : cell.NumericCellValue.ToString();
             }
+            try
+            {
+                return dataFormatter.FormatCellValue(cell);
+                // return cell.StringCellValue?.Trim();
+            }
+            catch (Exception ex)
+            {
 
+                return cell.StringCellValue?.Trim() + " => [" + GetExcelColumnName(cell.ColumnIndex + 1) + cell.RowIndex + "] " + ex.Message;
+            }
             return dataFormatter.FormatCellValue(cell);
             // return cell.StringCellValue?.Trim();
         }
