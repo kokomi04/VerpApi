@@ -43,7 +43,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public string DefaultValue { get; set; }
-        public IList<InputTypeViewFieldSelectFilter> SelectFilters { get; set; }
+        public string SelectFilters { get; set; }
         public int? ReferenceCategoryId { get; set; }
         public int? ReferenceCategoryFieldId { get; set; }
         public int? ReferenceCategoryTitleFieldId { get; set; }
@@ -53,12 +53,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public void Mapping(Profile profile) => profile.CreateMap<InputTypeViewField, InputTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ForMember(m => m.SelectFilters, m => m.MapFrom(s => s.SelectFilters.JsonDeserialize<IList<InputTypeViewFieldSelectFilter>>()))
             .ReverseMap()
             .ForMember(m => m.InputTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
-            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId))
-            .ForMember(m => m.SelectFilters, m => m.MapFrom(s => s.SelectFilters.JsonSerialize()));
+            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));
     }
 
     public class InputTypeViewFieldSelectFilter
