@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NPOI;
 using NPOI.HSSF.UserModel;
+using NPOI.SS.Formula;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
@@ -15,15 +17,17 @@ namespace VErp.Commons.Library
 {
     public class ExcelReader
     {
-        private XSSFWorkbook hssfwb;
+        private IWorkbook hssfwb;
+        private DataFormatter dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
 
         public ExcelReader(string filePath) : this(new FileStream(filePath, FileMode.Open, FileAccess.Read))
         {
+
         }
 
         public ExcelReader(Stream file)
         {
-            hssfwb = new XSSFWorkbook(file);
+            hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
             file.Close();
         }
 
@@ -102,9 +106,20 @@ namespace VErp.Commons.Library
         {
             var sheetDatas = new List<ExcelSheetDataModel>();
 
+            //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateAll();
+            try
+            {
+                BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+            }
+            catch (Exception e)
+            {
+
+            }
+
+
             //if (hssfwb is XSSFWorkbook)
             //{
-            //    XSSFFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+            //    NPOI.SS.Formula.BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
             //}
             //else
             //{
@@ -124,13 +139,13 @@ namespace VErp.Commons.Library
 
                 if (!maxrows.HasValue)
                 {
-                    maxrows = sheet.PhysicalNumberOfRows;
+                    maxrows = sheet.LastRowNum + 1;
                 }
                 else
                 {
-                    if (maxrows > sheet.PhysicalNumberOfRows)
+                    if (maxrows > sheet.LastRowNum)
                     {
-                        maxrows = sheet.PhysicalNumberOfRows;
+                        maxrows = sheet.LastRowNum + 1;
                     }
                 }
 
@@ -138,10 +153,46 @@ namespace VErp.Commons.Library
 
                 var columns = new HashSet<string>();
 
-                var mergeRegions = new List<CellRangeAddress>();
+                var mergeRegions = new CellRangeAddress[sheet.NumMergedRegions];
+
+                var regionValues = new ICell[sheet.NumMergedRegions];
+
                 for (var re = 0; re < sheet.NumMergedRegions; re++)
                 {
-                    mergeRegions.Add(sheet.GetMergedRegion(re));
+                    var region = sheet.GetMergedRegion(re);
+
+                    mergeRegions[re] = region;
+
+                    var isFirstRowValue = false;
+
+                    ICell cell = null;
+
+                    var r = sheet.GetRow(region.FirstRow);
+
+                    var c = r.Cells.FirstOrDefault(c => c.ColumnIndex == region.FirstColumn);
+
+                    var v = GetCellString(c);
+                    if (!string.IsNullOrWhiteSpace(v))
+                    {
+                        cell = c;
+                        isFirstRowValue = true;
+                    }
+
+
+                    if (!isFirstRowValue)
+                    {
+                        r = sheet.GetRow(region.LastRow);
+
+                        c = r.Cells.FirstOrDefault(c => c.ColumnIndex == region.LastColumn);
+
+                        v = GetCellString(c);
+                        if (!string.IsNullOrWhiteSpace(v))
+                        {
+                            cell = c;
+                        }
+                    }
+
+                    regionValues[re] = cell;
                 }
 
                 var continuousEmpty = 0;
@@ -169,37 +220,17 @@ namespace VErp.Commons.Library
 
                             if (cell.IsMergedCell)
                             {
-                                foreach (var region in mergeRegions)
+                                for (var regionIdx = 0; regionIdx < mergeRegions.Length; regionIdx++)
                                 {
+                                    var region = mergeRegions[regionIdx];
                                     if (region.IsInRange(row, col.ColumnIndex))
                                     {
-                                        var isFirstRowValue = false;
-
-                                        var r = sheet.GetRow(region.FirstRow);
-
-                                        var c = r.Cells[region.FirstColumn];
-
+                                        var c = regionValues[regionIdx];
                                         var v = GetCellString(c);
                                         if (!string.IsNullOrWhiteSpace(v))
                                         {
                                             cell = c;
-                                            isFirstRowValue = true;
                                         }
-
-
-                                        if (!isFirstRowValue)
-                                        {
-                                            r = sheet.GetRow(region.LastRow);
-
-                                            c = r.Cells[region.LastColumn];
-
-                                            v = GetCellString(c);
-                                            if (!string.IsNullOrWhiteSpace(v))
-                                            {
-                                                cell = c;
-                                            }
-                                        }
-
                                     }
                                 }
                             }
@@ -241,6 +272,8 @@ namespace VErp.Commons.Library
 
         private string GetCellString(ICell cell)
         {
+            if (cell == null) return null;
+
             var type = cell.CellType;
 
             string formulaMessage = "";
@@ -248,7 +281,7 @@ namespace VErp.Commons.Library
             {
                 try
                 {
-                    hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
+                    //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
                     type = cell.CachedFormulaResultType;
                 }
                 catch (Exception ex)
@@ -267,10 +300,11 @@ namespace VErp.Commons.Library
                     return formulaMessage;
 
                 case CellType.Numeric:
-                    return cell.NumericCellValue.ToString()?.Trim();
+                    return DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue.ToString() : cell.NumericCellValue.ToString();
             }
 
-            return cell.StringCellValue?.Trim();
+            return dataFormatter.FormatCellValue(cell);
+            // return cell.StringCellValue?.Trim();
         }
 
         private string GetExcelColumnName(int columnNumber)
