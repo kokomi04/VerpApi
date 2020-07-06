@@ -856,11 +856,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
                     PrimaryQuantity = item.PrimaryQuantity,
-                    PrimaryUnitPrice = item.PrimaryQuantity > 0 ? item.PrimaryMoney / item.PrimaryQuantity : 0,
+                    PrimaryUnitPrice = item.PrimaryQuantity > 0 ? item.Money / item.PrimaryQuantity : 0,
 
                     ProductUnitConversionId = productUnitConversionId,
                     ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                    ProductUnitConversionPrice = item.ProductUnitConversionQuantity > 0 ? item.ProductUnitConversionMoney / item.ProductUnitConversionQuantity : 0,
+                    ProductUnitConversionPrice = item.ProductUnitConversionQuantity > 0 ? item.Money / item.ProductUnitConversionQuantity : 0,
 
                     TaxInPercent = item.TaxInPercent,
                     TaxInMoney = item.TaxInMoney
@@ -919,14 +919,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
 
 
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityMoneyColumn)
-                    && row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn].ToString())
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.MoneyColumn)
+                    && row[mapping.ColumnMapping.MoneyColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.MoneyColumn].ToString())
                     )
                 {
                     try
                     {
-                        rowData.PrimaryMoney = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityMoneyColumn]);
+                        rowData.Money = Convert.ToDecimal(row[mapping.ColumnMapping.MoneyColumn]);
                     }
                     catch (Exception ex)
                     {
@@ -965,23 +965,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (rowData.ProductUnitConversionQuantity == 0)
                 {
                     rowData.ProductUnitConversionName = null;
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionMoneyColumn)
-                    && row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.ProductUnitConversionMoney = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionMoneyColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số tiền ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
                 }
 
 
