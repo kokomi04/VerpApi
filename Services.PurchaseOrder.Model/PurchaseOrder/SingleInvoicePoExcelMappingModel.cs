@@ -28,12 +28,12 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
             public string ProductNameColumn { get; set; }
             public string ProductProviderNameColumn { get; set; }
 
-            public string PrimaryQuantityColumn { get; set; }
-            public string PrimaryQuantityMoneyColumn { get; set; }
+            public string PrimaryQuantityColumn { get; set; }            
 
             public string ProductUnitConversionNameColumn { get; set; }
             public string ProductUnitConversionQuantityColumn { get; set; }
-            public string ProductUnitConversionMoneyColumn { get; set; }
+
+            public string MoneyColumn { get; set; }
 
             public string TaxInPercentColumn { get; set; }
             public string TaxInMoneyColumn { get; set; }
@@ -53,12 +53,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
 
         public decimal PrimaryQuantity { get; set; }
-        public decimal PrimaryMoney { get; set; }
-
-
+        
         public string ProductUnitConversionName { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
-        public decimal ProductUnitConversionMoney { get; set; }
+        public decimal Money { get; set; }
 
         public decimal TaxInPercent { get; set; }
         public decimal TaxInMoney { get; set; }
