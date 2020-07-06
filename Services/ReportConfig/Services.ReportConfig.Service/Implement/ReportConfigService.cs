@@ -323,10 +323,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
             {
-                report.ReportTypeName = data.ReportTypeName;
-                report.ReportPath = data.ReportPath;
-                report.SortOrder = data.SortOrder;
-                report.ReportTypeGroupId = data.ReportTypeGroupId;
+                _mapper.Map(data, report);
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
