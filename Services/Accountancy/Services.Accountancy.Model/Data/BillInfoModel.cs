@@ -12,14 +12,11 @@ namespace VErp.Services.Accountancy.Model.Data
 
     public class ImportBillExelMapping
     {
-        public string SheetInfo { get; set; }
-        public int FromInfo { get; set; }
-        public int ToInfo { get; set; }
-        public string SheetRow { get; set; }
+        public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }
-        public IList<ImportBillExcelMappingField> MappingInfoFields { get; set; }
-        public IList<ImportBillExcelMappingField> MappingRowFields { get; set; }
+        public string Key { get; set; }
+        public IList<ImportBillExcelMappingField> MappingFields { get; set; }
     }
 
     public class ImportBillExcelMappingField

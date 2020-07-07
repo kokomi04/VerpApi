@@ -4,6 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AssemblyName>Services.PurchaseOrder.Service</AssemblyName>
     <RootNamespace>VErp.Services.PurchaseOrder.Service</RootNamespace>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

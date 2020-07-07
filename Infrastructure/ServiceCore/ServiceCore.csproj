@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>VErp.Infrastructure.ServiceCore</RootNamespace>
     <AssemblyName>VErp.Infrastructure.ServiceCore</AssemblyName>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
