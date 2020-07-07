@@ -88,29 +88,32 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var sqlParams = new List<SqlParameter>();
 
-            foreach (var filter in filters)
+            if (filters != null)
             {
-                var viewField = viewFields.FirstOrDefault(f => f.InputTypeViewFieldId == filter.Key);
-                if (viewField == null) continue;
-
-                var value = filter.Value;
-                if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
+                foreach (var filter in filters)
                 {
-                    value = Convert.ToInt64(value).UnixToDateTime();
-                }
+                    var viewField = viewFields.FirstOrDefault(f => f.InputTypeViewFieldId == filter.Key);
+                    if (viewField == null) continue;
 
-                if (!string.IsNullOrEmpty(viewField.SelectFilters))
-                {
-                    Clause filterClause = JsonConvert.DeserializeObject<Clause>(viewField.SelectFilters);
-                    if (filterClause != null)
+                    var value = filter.Value;
+                    if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
                     {
-                        if (whereCondition.Length > 0)
-                        {
-                            whereCondition.Append(" AND ");
-                        }
+                        value = Convert.ToInt64(value).UnixToDateTime();
+                    }
 
-                        int suffix = 0;
-                        filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, ref whereCondition, ref sqlParams, ref suffix, false, value);
+                    if (!string.IsNullOrEmpty(viewField.SelectFilters))
+                    {
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(viewField.SelectFilters);
+                        if (filterClause != null)
+                        {
+                            if (whereCondition.Length > 0)
+                            {
+                                whereCondition.Append(" AND ");
+                            }
+
+                            int suffix = 0;
+                            filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, ref whereCondition, ref sqlParams, ref suffix, false, value);
+                        }
                     }
                 }
             }
