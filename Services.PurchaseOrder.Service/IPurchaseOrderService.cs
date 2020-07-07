@@ -22,7 +22,7 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<bool> Update(long purchaseOrderId, PurchaseOrderInput req);
 
-        IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream);
+        IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream);
 
         Task<bool> SentToCensor(long purchaseOrderId);
 

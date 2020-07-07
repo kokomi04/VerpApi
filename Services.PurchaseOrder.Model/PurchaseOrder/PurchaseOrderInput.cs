@@ -24,7 +24,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
-        public  int? DeliveryCustomerId { get; set; }
+        public int? DeliveryCustomerId { get; set; }
 
         public DeliveryDestinationModel DeliveryDestination { get; set; }
         public string Content { get; set; }
@@ -50,7 +50,7 @@ namespace VErp.Services.PurchaseOrder.Model
         decimal ProductUnitConversionPrice { get; set; }
 
         decimal? TaxInPercent { get; set; }
-        decimal? TaxInMoney { get; set; }      
+        decimal? TaxInMoney { get; set; }
 
         string OrderCode { get; set; }
         string ProductionOrderCode { get; set; }
@@ -80,6 +80,11 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Description { get; set; }
 
 
+    }
+
+    public class PurchaseOrderExcelParseDetail : PurchaseOrderInputDetail
+    {
+        public decimal Money { get; set; }
     }
 
     public class DeliveryDestinationModel
