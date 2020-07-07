@@ -1014,121 +1014,131 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               IsMultiRow = a.IsMultiRow
                           }).ToList();
 
-            var infoData = reader.ReadSheets(mapping.SheetInfo, mapping.FromInfo, mapping.ToInfo, null).FirstOrDefault();
-            var info = new Dictionary<string, string>();
-            var rows = new List<Dictionary<string, string>>();
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
             var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
-            if (infoData.Rows.Length > 2)
+            var singleMappingFields = mapping.MappingFields.Where(mf => singleFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
+            var multiFields = fields.Where(f => f.IsMultiRow).ToList();
+            var multiMappingFields = mapping.MappingFields.Where(mf => multiFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
+
+            var groups = data.Rows.GroupBy(r => r[mapping.Key]);
+            List<BillInfoModel> bills = new List<BillInfoModel>();
+
+            foreach (var bill in groups)
             {
-                var row = infoData.Rows[1];
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingInfoFields.Count; fieldIndx++)
+                var info = new Dictionary<string, string>();
+                var rows = new List<Dictionary<string, string>>();
+
+                if (bill.Count() > 0)
                 {
-                    var mappingField = mapping.MappingInfoFields[fieldIndx];
-                    var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
-
-                    if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
-
-                    string value = null;
-                    if (row.ContainsKey(mappingField.Column))
-                        value = row[mappingField.Column]?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
-
-                    if (string.IsNullOrWhiteSpace(value)) continue;
-
-                    if (string.IsNullOrEmpty(field.RefTableCode))
+                    var singleRow = bill.First();
+                    for (int fieldIndx = 0; fieldIndx < singleMappingFields.Count; fieldIndx++)
                     {
-                        info.Add(field.FieldName, value);
-                    }
-                    else
-                    {
-                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
-                        var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
-                        if (referData != null && referData.Rows.Count > 0)
+                        var mappingField = singleMappingFields[fieldIndx];
+                        var field = singleFields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+
+                        if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
+
+                        string value = null;
+                        if (singleRow.ContainsKey(mappingField.Column))
+                            value = singleRow[mappingField.Column]?.ToString();
+
+                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+
+                        if (string.IsNullOrWhiteSpace(value)) continue;
+
+                        if (string.IsNullOrEmpty(field.RefTableCode))
                         {
-                            var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                            info.Add(field.FieldName, referValue);
+                            info.Add(field.FieldName, value);
                         }
                         else
                         {
-                            throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
+                            var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                            if (referData != null && referData.Rows.Count > 0)
+                            {
+                                var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                                info.Add(field.FieldName, referValue);
+                            }
+                            else
+                            {
+                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                            }
                         }
                     }
-                }
-            }
 
-            var rowData = reader.ReadSheets(mapping.SheetInfo, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-            for (var rowIndx = 1; rowIndx < rowData.Rows.Length; rowIndx++)
-            {
-                var map = new Dictionary<string, string>();
-                var row = rowData.Rows[rowIndx];
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingRowFields.Count; fieldIndx++)
+                    foreach (var row in bill)
+                    {
+                        var map = new Dictionary<string, string>();
+                        for (int fieldIndx = 0; fieldIndx < multiMappingFields.Count; fieldIndx++)
+                        {
+                            var mappingField = multiMappingFields[fieldIndx];
+                            var field = multiFields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+
+                            if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
+
+                            string value = null;
+                            if (row.ContainsKey(mappingField.Column))
+                                value = row[mappingField.Column]?.ToString();
+
+                            if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+
+                            if (string.IsNullOrWhiteSpace(value)) continue;
+
+                            if (string.IsNullOrEmpty(field.RefTableCode))
+                            {
+                                info.Add(field.FieldName, value);
+                            }
+                            else
+                            {
+                                var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
+                                var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                                if (referData != null && referData.Rows.Count > 0)
+                                {
+                                    var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                                    info.Add(field.FieldName, referValue);
+                                }
+                                else
+                                {
+                                    throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                                }
+                            }
+                        }
+                        rows.Add(map);
+                    }
+                }
+
+                bills.Add(new BillInfoModel
                 {
-                    var mappingField = mapping.MappingRowFields[fieldIndx];
-                    var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
-
-                    if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
-
-                    string value = null;
-                    if (row.ContainsKey(mappingField.Column))
-                        value = row[mappingField.Column]?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
-
-                    if (string.IsNullOrWhiteSpace(value)) continue;
-
-                    if (string.IsNullOrEmpty(field.RefTableCode))
-                    {
-                        info.Add(field.FieldName, value);
-                    }
-                    else
-                    {
-                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
-                        var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
-                        if (referData != null && referData.Rows.Count > 0)
-                        {
-                            var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                            info.Add(field.FieldName, referValue);
-                        }
-                        else
-                        {
-                            throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
-                        }
-                    }
-                }
-
-                rows.Add(map);
+                    Info = info,
+                    Rows = rows.ToArray()
+                });
             }
-
-            BillInfoModel data = new BillInfoModel
-            {
-                Info = info,
-                Rows = rows.ToArray()
-            };
 
             using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    // Before saving action (SQL)
-                    await ProcessActionAsync(inputType.BeforeSaveAction, data, fields);
-
-                    var billInfo = new InputBill()
+                    foreach(var bill in bills)
                     {
-                        InputTypeId = inputTypeId,
-                        LatestBillVersion = 1,
-                        IsDeleted = false
-                    };
+                        // Before saving action (SQL)
+                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields);
 
-                    await _accountancyDBContext.InputBill.AddAsync(billInfo);
+                        var billInfo = new InputBill()
+                        {
+                            InputTypeId = inputTypeId,
+                            LatestBillVersion = 1,
+                            IsDeleted = false
+                        };
 
-                    await _accountancyDBContext.SaveChangesAsync();
+                        await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
-                    await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
+                        await _accountancyDBContext.SaveChangesAsync();
 
-                    // After saving action (SQL)
-                    await ProcessActionAsync(inputType.AfterSaveAction, data, fields);
+                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill);
 
+                        // After saving action (SQL)
+                        await ProcessActionAsync(inputType.AfterSaveAction, bill, fields);
+                    }
                     trans.Commit();
                 }
                 catch (Exception ex)

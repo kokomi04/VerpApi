@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>VErp.Commons.GlobalObject</AssemblyName>
     <RootNamespace>VErp.Commons.GlobalObject</RootNamespace>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
