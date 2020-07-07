@@ -243,7 +243,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false)
+        public static void FilterClauseProcess(this Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
         {
             if (clause != null)
             {
@@ -251,6 +251,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
+                    if (value != null)
+                    {
+                        singleClause.Value = value;
+                    }
                     BuildExpression(singleClause, tableName, ref condition, ref sqlParams, ref suffix, not);
                 }
                 else if (clause is ArrayClause)
@@ -264,7 +268,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot);
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot, value);
                     }
                 }
                 condition.Append(" )");

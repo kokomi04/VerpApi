@@ -61,8 +61,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, string orderByFieldName, bool asc, int page, int size)
         {
+            var viewInfo = await _accountancyDBContext.InputTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
+
+            var inputTypeViewId = viewInfo?.InputTypeViewId;
+
             var fields = (await (
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
@@ -72,108 +76,44 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
 
+            var viewFields = await (
+                from f in _accountancyDBContext.InputTypeViewField
+                where f.InputTypeViewId == inputTypeViewId
+                select f
+            ).ToListAsync();
+
             var whereCondition = new StringBuilder();
 
             whereCondition.Append($"InputTypeId = {inputTypeId}");
 
             var sqlParams = new List<SqlParameter>();
 
-            var idx = 0;
-            foreach (var filter in fieldFilters)
+            foreach (var filter in filters)
             {
-                if (!filter.FieldName.ValidateValidSqlObjectName()) { throw new BadRequestException(GeneralCode.InvalidParams, "Tên cột không được phép"); };
+                var viewField = viewFields.FirstOrDefault(f => f.InputTypeViewFieldId == filter.Key);
+                if (viewField == null) continue;
 
-                //if (!fields.ContainsKey(filter.FieldName)) continue;
-
-                //var field = fields[filter.FieldName];
-
-                if (filter.Values != null && filter.Values.Length > 0 && !string.IsNullOrWhiteSpace(filter.Values[0]))//field != null && 
+                var value = filter.Value;
+                if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
                 {
-                    object objectValue = objectValue = filter.DataTypeId.GetSqlValue(filter.Values[0]);
+                    value = Convert.ToInt64(value).UnixToDateTime();
+                }
 
-                    whereCondition.Append(" AND ");
-
-                    idx++;
-
-                    var paramName = "@" + filter.FieldName + "" + idx;
-
-                    switch (filter.Operator)
+                if (!string.IsNullOrEmpty(viewField.SelectFilters))
+                {
+                    Clause filterClause = JsonConvert.DeserializeObject<Clause>(viewField.SelectFilters);
+                    if (filterClause != null)
                     {
-                        //text
-                        case EnumOperator.Equal:
-                            whereCondition.Append($"[{filter.FieldName}] = {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
+                        if (whereCondition.Length > 0)
+                        {
+                            whereCondition.Append(" AND ");
+                        }
 
-                            break;
-
-                        case EnumOperator.StartsWith:
-                        case EnumOperator.EndsWith:
-                        case EnumOperator.Contains:
-                            switch (filter.Operator)
-                            {
-                                case EnumOperator.StartsWith:
-                                    objectValue = $"{objectValue}%";
-                                    break;
-                                case EnumOperator.EndsWith:
-                                    objectValue = $"%{objectValue}";
-                                    break;
-                                case EnumOperator.Contains:
-                                    objectValue = $"%{objectValue}%";
-                                    break;
-                            }
-
-                            whereCondition.Append($"[{filter.FieldName}] LIKE {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-
-                            break;
-
-                        case EnumOperator.InList:
-
-                            var nvalues = new DataTable("_NVALUES");
-                            nvalues.Columns.Add("NValue", typeof(string));
-                            foreach (var value in filter.Values)
-                            {
-                                var row = nvalues.NewRow();
-                                row["NValue"] = value;
-                                nvalues.Rows.Add(row);
-                            }
-
-                            whereCondition.Append($"[{filter.FieldName}] IN (SELECT NValue FROM {paramName})");
-                            sqlParams.Add(new SqlParameter(paramName, nvalues) { SqlDbType = SqlDbType.Structured, TypeName = "_NVALUES" });
-
-                            break;
-
-
-                        //number
-                        case EnumOperator.NotEqual:
-                            whereCondition.Append($"[{filter.FieldName}] != {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-
-                            break;
-
-                        case EnumOperator.Greater:
-                            whereCondition.Append($"[{filter.FieldName}] > {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-                            break;
-
-                        case EnumOperator.GreaterOrEqual:
-                            whereCondition.Append($"[{filter.FieldName}] >= {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-                            break;
-
-                        case EnumOperator.LessThan:
-                            whereCondition.Append($"[{filter.FieldName}] < {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-                            break;
-
-                        case EnumOperator.LessThanOrEqual:
-                            whereCondition.Append($"[{filter.FieldName}] <= {paramName}");
-                            sqlParams.Add(new SqlParameter(paramName, objectValue));
-                            break;
+                        int suffix = 0;
+                        filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, ref whereCondition, ref sqlParams, ref suffix, false, value);
                     }
                 }
             }
-
 
             var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
             {
