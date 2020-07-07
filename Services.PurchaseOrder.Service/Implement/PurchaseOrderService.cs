@@ -821,12 +821,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProviderProductName = item.ProductProviderName,
 
 
-                    PrimaryQuantity = item.PrimaryQuantity,
-                    PrimaryUnitPrice = item.PrimaryQuantity > 0 ? item.Money / item.PrimaryQuantity : 0,
+                    PrimaryQuantity = item.PrimaryQuantity ?? 0,
+                    PrimaryUnitPrice = item.PrimaryPrice ?? 0,
 
                     ProductUnitConversionId = productUnitConversionId,
-                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                    ProductUnitConversionPrice = item.ProductUnitConversionQuantity > 0 ? item.Money / item.ProductUnitConversionQuantity : 0,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity ?? 0,
+                    ProductUnitConversionPrice = item.ProductUnitConversionPrice ?? 0,
 
                     TaxInPercent = item.TaxInPercent,
                     TaxInMoney = item.TaxInMoney
@@ -884,6 +884,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 }
 
+                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryPriceColumn)
+                                   && row[mapping.ColumnMapping.PrimaryPriceColumn] != null
+                                   && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryPriceColumn].ToString())
+                )
+                {
+                    try
+                    {
+                        rowData.PrimaryPrice = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryPriceColumn]);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn giá ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+                }
+
 
                 if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.MoneyColumn)
                     && row[mapping.ColumnMapping.MoneyColumn] != null
@@ -925,6 +941,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     catch (Exception ex)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
+                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionPriceColumn)
+                    && row[mapping.ColumnMapping.ProductUnitConversionPriceColumn] != null
+                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionPriceColumn].ToString())
+                    )
+                {
+                    try
+                    {
+                        rowData.ProductUnitConversionPrice = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionPriceColumn]);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn giá ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
                 }
 
