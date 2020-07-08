@@ -16,6 +16,13 @@ namespace VErp.Commons.Constants
         public const string IDENTITY_AREA = "IdentityArea";
         public const string IDENTITY_AREA_TITLE = "Thông tin định danh";
 
+
+        public const string THANH_TIEN_VND_PREFIX = "vnd";
+        public const string THANH_TIEN_NGOAI_TE_PREFIX = "ngoai_te";
+        public const string TAI_KHOAN_CO_PREFIX = "tk_co";
+        public const string TAI_KHOAN_NO_PREFIX = "tk_no";
+        public const int MAX_COUPLE_RECIPROCAL = 5;
+
         public const string INPUTVALUEROW_TABLE = "InputValueRow";
         public const string INPUTVALUEROW_VIEW = "vInputValueRow";
     }

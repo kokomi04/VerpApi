@@ -174,9 +174,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
 
-            var table = await _accountancyDBContext.QueryDataTable(totalSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
+            var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
             var total = 0;
             if (table != null && table.Rows.Count > 0)
@@ -194,14 +194,34 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = @F_Id AND r.InputTypeId = @InputTypeId    
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, new[] { new SqlParameter("@InputTypeId", inputTypeId), new SqlParameter("@F_Id", fId) });
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+
+            if (billEntryInfo.Rows.Count > 0)
+            {
+                for (var i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    for (var j = 0; j < data.Columns.Count; j++)
+                    {
+                        var column = data.Columns[j];
+                        if (column.ColumnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) || column.ColumnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower()))
+                        {
+                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
+                        }
+                    }
+                }
+            }
 
             return (data, total);
         }
@@ -865,6 +885,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataTable.Columns.Add("InputTypeId", typeof(int));
             dataTable.Columns.Add("InputBill_F_Id", typeof(long));
             dataTable.Columns.Add("BillVersion", typeof(int));
+            dataTable.Columns.Add("IsBillEntry", typeof(bool));
             dataTable.Columns.Add("CreatedByUserId", typeof(int));
             dataTable.Columns.Add("CreatedDatetimeUtc", typeof(DateTime));
             dataTable.Columns.Add("UpdatedByUserId", typeof(int));
@@ -880,26 +901,86 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
+
+            //Create rows
             foreach (var row in data.Rows)
             {
-                var dataRow = dataTable.NewRow();
-                dataRow["InputTypeId"] = inputTypeId;
-                dataRow["InputBill_F_Id"] = inputBill_F_Id;
-                dataRow["BillVersion"] = billVersionId;
-                dataRow["CreatedByUserId"] = _currentContextService.UserId;
-                dataRow["CreatedDatetimeUtc"] = DateTime.UtcNow;
-                dataRow["UpdatedByUserId"] = _currentContextService.UserId;
-                dataRow["UpdatedDatetimeUtc"] = DateTime.UtcNow;
-                dataRow["IsDeleted"] = false;
-                dataRow["DeletedDatetimeUtc"] = DBNull.Value;
+                var dataRow = NewBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, false);
 
                 foreach (var item in data.Info)
                 {
+                    if (item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) || item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower()))
+                    {
+                        continue;
+                    }
+
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                 }
 
                 foreach (var item in row)
+                {
+                    if (item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()))
+                    {
+                        continue;
+                    }
+                    var field = fields[item.Key];
+                    dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
+                }
+
+                var columns = dataTable.Columns;
+
+                for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
+                {
+                    var credit_column = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
+                    var debit_column = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
+                    var money_column = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
+
+                    var entry = new CoupleReciprocalValidate();
+
+                    for (var j = 0; j < dataTable.Columns.Count; j++)
+                    {
+                        var column = dataTable.Columns[j];
+                        if (dataRow[column] == null || string.IsNullOrWhiteSpace(dataRow[column]?.ToString())) continue;
+
+                        if (column.ColumnName.Equals(debit_column, StringComparison.OrdinalIgnoreCase))
+                        {
+                            entry.Tk_No = dataRow[column];
+                        }
+
+                        if (column.ColumnName.Equals(credit_column, StringComparison.OrdinalIgnoreCase))
+                        {
+                            entry.Tk_Co = dataRow[column];
+                        }
+
+                        if (column.ColumnName.Equals(money_column, StringComparison.OrdinalIgnoreCase))
+                        {
+                            entry.Vnd = Convert.ToDecimal(dataRow[column]);
+                        }
+                    }
+
+                    if (!entry.IsValid())
+                    {
+                        var key = fields.Keys.FirstOrDefault(k => k.Equals(money_column, StringComparison.OrdinalIgnoreCase));
+                        var fieldName = "";
+                        if (!string.IsNullOrWhiteSpace(key))
+                        {
+                            fieldName = fields[key].FieldName;
+                        }
+
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldName}");
+                    }
+                }
+
+                dataTable.Rows.Add(dataRow);
+            }
+
+            //Create addition reciprocal accounting
+            if (data.Info.Any(k => k.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) && decimal.TryParse(k.Value, out var value) && value != 0))
+            {
+                var dataRow = NewBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, true);
+
+                foreach (var item in data.Info)
                 {
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
@@ -909,9 +990,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             await _accountancyDBContext.InsertDataTable(dataTable);
-
         }
 
+        private DataRow NewBillVersionRow(DataTable dataTable, int inputTypeId, long inputBill_F_Id, int billVersionId, bool isBillEntry)
+        {
+            var dataRow = dataTable.NewRow();
+
+            dataRow["InputTypeId"] = inputTypeId;
+            dataRow["InputBill_F_Id"] = inputBill_F_Id;
+            dataRow["BillVersion"] = billVersionId;
+            dataRow["IsBillEntry"] = isBillEntry;
+            dataRow["CreatedByUserId"] = _currentContextService.UserId;
+            dataRow["CreatedDatetimeUtc"] = DateTime.UtcNow;
+            dataRow["UpdatedByUserId"] = _currentContextService.UserId;
+            dataRow["UpdatedDatetimeUtc"] = DateTime.UtcNow;
+            dataRow["IsDeleted"] = false;
+            dataRow["DeletedDatetimeUtc"] = DBNull.Value;
+
+            return dataRow;
+        }
 
         private async Task DeleteBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId)
         {
@@ -1061,7 +1158,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 try
                 {
-                    foreach(var bill in bills)
+                    foreach (var bill in bills)
                     {
                         // Before saving action (SQL)
                         await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields);
@@ -1124,6 +1221,29 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+        }
+
+        protected class CoupleReciprocalValidate
+        {
+            public object Tk_Co { get; set; }
+            public object Tk_No { get; set; }
+            public decimal Vnd { get; set; }
+            public bool IsValid()
+            {
+                if (Vnd == 0) return true;
+
+                var strTkCo = Tk_Co?.ToString();
+
+                var strTkNo = Tk_No?.ToString();
+
+                if (string.IsNullOrWhiteSpace(strTkCo) || string.IsNullOrWhiteSpace(strTkNo)) return false;
+
+                if (int.TryParse(strTkCo, out var tk_co_id) && tk_co_id <= 0) return false;
+
+                if (int.TryParse(strTkNo, out var tk_no_id) && tk_no_id <= 0) return false;
+
+                return true;
+            }
         }
     }
 }
