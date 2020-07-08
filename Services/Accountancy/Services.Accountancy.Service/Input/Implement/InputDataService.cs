@@ -919,11 +919,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 foreach (var item in row)
-                {
-                    if (item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()))
-                    {
-                        continue;
-                    }
+                {                    
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                 }
