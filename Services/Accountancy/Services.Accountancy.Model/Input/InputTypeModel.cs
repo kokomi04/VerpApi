@@ -53,7 +53,7 @@ namespace VErp.Services.Accountancy.Model.Input
     {
         public int? ParentId { get; set; }
         public int ModuleId { get; set; }
-        public string ModuleName { get; set; }
+        public string MenuName { get; set; }
         public string UrlFormat { get; set; }
         public string ParamFormat { get; set; }
         public string Icon { get; set; }
