@@ -1015,8 +1015,10 @@ namespace VErp.Services.Accountancy.Service.Category
                             sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key};");                            
                           
                         }
-
-                        await _accountancyContext.Database.ExecuteSqlRawAsync(sqlUpdateParent.ToString());
+                        if (sqlUpdateParent.Length > 0)
+                        {
+                            await _accountancyContext.Database.ExecuteSqlRawAsync(sqlUpdateParent.ToString());
+                        }
                     }
 
 
