@@ -145,8 +145,8 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     // Create table
                     await _accountancyContext.ExecuteStoreProcedure("asp_Category_Table_Add", new[] {
-                    new SqlParameter("@CategoryCode", category.CategoryCode ),
-                    new SqlParameter("@IsTreeView", category.IsTreeView),
+                        new SqlParameter("@CategoryCode", category.CategoryCode ),
+                        new SqlParameter("@IsTreeView", category.IsTreeView),
                     });
                 }
 
@@ -219,12 +219,51 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@IsTable", false),
                     });
                 }
-
                 category.CategoryCode = data.CategoryCode;
+
+                // Change IsOutSideData
+                if (category.IsOutSideData != data.IsOutSideData)
+                {
+                    if (data.IsOutSideData)
+                    {
+                        // Delete category table
+                        await _accountancyContext.ExecuteStoreProcedure("asp_Category_Delete", new[] {
+                            new SqlParameter("@@CategoryCode", data.CategoryCode ),
+                            new SqlParameter("@IsTable", true),
+                        });
+                    }
+                    else
+                    {
+                        // Create category table
+                        await _accountancyContext.ExecuteStoreProcedure("asp_Category_Table_Add", new[] {
+                            new SqlParameter("@CategoryCode", data.CategoryCode ),
+                            new SqlParameter("@IsTreeView", category.IsTreeView),
+                        });
+                    }
+                }
+                category.IsOutSideData = data.IsOutSideData;
+
+                // Change IsTreeView
+                if (category.IsTreeView != data.IsTreeView)
+                {
+                    if (data.IsTreeView)
+                    {
+                        // Create ParentId Field
+                        await _accountancyContext.AddColumn(data.CategoryCode, "ParentId", EnumDataType.Int, -1, 0, null, true);
+                    }
+                    else
+                    {
+                        // Drop ParentId Field
+                        await _accountancyContext.DeleteColumn(data.CategoryCode, "ParentId");
+                    }
+                
+                }
+                category.IsTreeView = data.IsTreeView;
+
+                // Update other info
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
-                category.IsTreeView = data.IsTreeView;
-                category.IsOutSideData = data.IsOutSideData;
+                
                 await _accountancyContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -834,7 +873,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var refCategoryCodes = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
                 .Select(f => f.RefTableCode).Distinct().ToList();
-          
+
             var refCategoryFields = (await (
                 from f in _accountancyContext.CategoryField
                 join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
