@@ -836,7 +836,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                 where af.InputTypeId == inputTypeId
-                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.DataTypeId, a.IsMultiRow }
+                select new { af.Title, af.IsRequire, a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.DataTypeId, a.IsMultiRow }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
 
@@ -910,6 +910,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
+            var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
 
             //Create rows
             foreach (var row in data.Rows)
@@ -933,17 +934,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                 }
 
-                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow);
+                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
                 if (!string.IsNullOrWhiteSpace(inValidReciprocalColumn))
                 {
                     var key = fields.Keys.FirstOrDefault(k => k.Equals(inValidReciprocalColumn, StringComparison.OrdinalIgnoreCase));
-                    var fieldName = "";
+                    var fieldTitle = "";
                     if (!string.IsNullOrWhiteSpace(key))
                     {
-                        fieldName = fields[key].FieldName;
+                        fieldTitle = fields[key].Title;
                     }
 
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldName}");
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldTitle}");
                 }
 
                 dataTable.Rows.Add(dataRow);
@@ -960,7 +961,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                 }
 
-                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow);
+                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
                 if (!string.IsNullOrWhiteSpace(inValidReciprocalColumn))
                 {
                     var key = fields.Keys.FirstOrDefault(k => k.Equals(inValidReciprocalColumn, StringComparison.OrdinalIgnoreCase));
@@ -998,41 +999,55 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow)
+        private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow, HashSet<string> requireFields)
         {
             for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
             {
-                var credit_column = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
-                var debit_column = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
-                var money_column = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
+                var credit_column_name = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
+                var debit_column_name = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
+                var money_column_name = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
 
-                var entry = new CoupleReciprocalValidate();
+                object tk_co = null;
+                object tk_no = null;
+                decimal vnd = 0;
 
                 for (var j = 0; j < dataTable.Columns.Count; j++)
                 {
                     var column = dataTable.Columns[j];
                     if (dataRow[column] == null || string.IsNullOrWhiteSpace(dataRow[column]?.ToString())) continue;
 
-                    if (column.ColumnName.Equals(debit_column, StringComparison.OrdinalIgnoreCase))
+                    if (column.ColumnName.Equals(debit_column_name, StringComparison.OrdinalIgnoreCase))
                     {
-                        entry.Tk_No = dataRow[column];
+                        debit_column_name = column.ColumnName;
+
+                        tk_no = dataRow[column];
                     }
 
-                    if (column.ColumnName.Equals(credit_column, StringComparison.OrdinalIgnoreCase))
+                    if (column.ColumnName.Equals(credit_column_name, StringComparison.OrdinalIgnoreCase))
                     {
-                        entry.Tk_Co = dataRow[column];
+                        credit_column_name = column.ColumnName;
+
+                        tk_co = dataRow[column];
                     }
 
-                    if (column.ColumnName.Equals(money_column, StringComparison.OrdinalIgnoreCase))
+                    if (column.ColumnName.Equals(money_column_name, StringComparison.OrdinalIgnoreCase))
                     {
-                        entry.Vnd = Convert.ToDecimal(dataRow[column]);
+                        money_column_name = column.ColumnName;
+
+                        vnd = Convert.ToDecimal(dataRow[column]);
                     }
                 }
 
-                if (!entry.IsValid())
+                if (vnd > 0)
                 {
-                    return money_column;
+                    var strTkCo = tk_co?.ToString();
+                    var strTkNo = tk_no?.ToString();
+
+                    if (requireFields.Contains(credit_column_name) && (string.IsNullOrWhiteSpace(strTkCo) || int.TryParse(strTkCo, out var tk_co_id) && tk_co_id <= 0)) return credit_column_name;
+
+                    if (requireFields.Contains(debit_column_name) && (string.IsNullOrWhiteSpace(strTkNo) || int.TryParse(strTkNo, out var tk_no_id) && tk_no_id <= 0)) return debit_column_name;
                 }
+
             }
             return null;
         }
@@ -1248,29 +1263,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
-        }
-
-        protected class CoupleReciprocalValidate
-        {
-            public object Tk_Co { get; set; }
-            public object Tk_No { get; set; }
-            public decimal Vnd { get; set; }
-            public bool IsValid()
-            {
-                if (Vnd == 0) return true;
-
-                var strTkCo = Tk_Co?.ToString();
-
-                var strTkNo = Tk_No?.ToString();
-
-                if (string.IsNullOrWhiteSpace(strTkCo) || string.IsNullOrWhiteSpace(strTkNo)) return false;
-
-                if (int.TryParse(strTkCo, out var tk_co_id) && tk_co_id <= 0) return false;
-
-                if (int.TryParse(strTkNo, out var tk_no_id) && tk_no_id <= 0) return false;
-
-                return true;
-            }
         }
     }
 }
