@@ -504,7 +504,7 @@ namespace VErp.Commons.Library
                     result = value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
                     break;
                 case EnumDataType.Date:
-                    result = DateTime.ParseExact(value, DateFormats.DD_MM_YYYY, CultureInfo.InvariantCulture);
+                    result = DateTime.Parse(value);
                     break;
                 case EnumDataType.Percentage:
                     result = double.Parse(value);
