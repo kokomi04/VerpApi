@@ -27,14 +27,14 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _logger = logger;
         }
 
-        public async Task<bool> CreateMenu(int? parentId, bool isGroup, int moduleId, string moduleName, string url, string param, string icon, int sortOrder, bool isDisabled)
+        public async Task<bool> CreateMenu(int? parentId, bool isGroup, int moduleId, string menuName, string url, string param, string icon, int sortOrder, bool isDisabled)
         {
             return await _httpCrossService.Post<bool>("api/internal/InternalMenu", new
             {
                 parentId,
                 isGroup,
                 moduleId,
-                moduleName,
+                menuName,
                 url,
                 param,
                 icon,
