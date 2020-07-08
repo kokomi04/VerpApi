@@ -174,6 +174,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
+            var singleFields = (await (
+               from af in _accountancyDBContext.InputAreaField
+               join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+               join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+               where af.InputTypeId == inputTypeId && !a.IsMultiRow
+               select f.FieldName
+          ).ToListAsync()
+          ).ToHashSet();
+
             var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
@@ -215,7 +224,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     for (var j = 0; j < data.Columns.Count; j++)
                     {
                         var column = data.Columns[j];
-                        if (column.ColumnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) || column.ColumnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower()))
+                        if (singleFields.Contains(column.ColumnName))
                         {
                             row[column] = billEntryInfo.Rows[0][column.ColumnName];
                         }
@@ -919,53 +928,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 foreach (var item in row)
-                {                    
+                {
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                 }
 
-                var columns = dataTable.Columns;
-
-                for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
+                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow);
+                if (!string.IsNullOrWhiteSpace(inValidReciprocalColumn))
                 {
-                    var credit_column = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
-                    var debit_column = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
-                    var money_column = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
-
-                    var entry = new CoupleReciprocalValidate();
-
-                    for (var j = 0; j < dataTable.Columns.Count; j++)
+                    var key = fields.Keys.FirstOrDefault(k => k.Equals(inValidReciprocalColumn, StringComparison.OrdinalIgnoreCase));
+                    var fieldName = "";
+                    if (!string.IsNullOrWhiteSpace(key))
                     {
-                        var column = dataTable.Columns[j];
-                        if (dataRow[column] == null || string.IsNullOrWhiteSpace(dataRow[column]?.ToString())) continue;
-
-                        if (column.ColumnName.Equals(debit_column, StringComparison.OrdinalIgnoreCase))
-                        {
-                            entry.Tk_No = dataRow[column];
-                        }
-
-                        if (column.ColumnName.Equals(credit_column, StringComparison.OrdinalIgnoreCase))
-                        {
-                            entry.Tk_Co = dataRow[column];
-                        }
-
-                        if (column.ColumnName.Equals(money_column, StringComparison.OrdinalIgnoreCase))
-                        {
-                            entry.Vnd = Convert.ToDecimal(dataRow[column]);
-                        }
+                        fieldName = fields[key].FieldName;
                     }
 
-                    if (!entry.IsValid())
-                    {
-                        var key = fields.Keys.FirstOrDefault(k => k.Equals(money_column, StringComparison.OrdinalIgnoreCase));
-                        var fieldName = "";
-                        if (!string.IsNullOrWhiteSpace(key))
-                        {
-                            fieldName = fields[key].FieldName;
-                        }
-
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldName}");
-                    }
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldName}");
                 }
 
                 dataTable.Rows.Add(dataRow);
@@ -980,6 +958,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
+                }
+
+                var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow);
+                if (!string.IsNullOrWhiteSpace(inValidReciprocalColumn))
+                {
+                    var key = fields.Keys.FirstOrDefault(k => k.Equals(inValidReciprocalColumn, StringComparison.OrdinalIgnoreCase));
+                    var fieldName = "";
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        fieldName = fields[key].FieldName;
+                    }
+
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập đầy đủ tài khoản đối ứng tương ứng {fieldName}");
                 }
 
                 dataTable.Rows.Add(dataRow);
@@ -1004,6 +995,46 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataRow["DeletedDatetimeUtc"] = DBNull.Value;
 
             return dataRow;
+        }
+
+
+        private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow)
+        {
+            for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
+            {
+                var credit_column = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
+                var debit_column = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
+                var money_column = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
+
+                var entry = new CoupleReciprocalValidate();
+
+                for (var j = 0; j < dataTable.Columns.Count; j++)
+                {
+                    var column = dataTable.Columns[j];
+                    if (dataRow[column] == null || string.IsNullOrWhiteSpace(dataRow[column]?.ToString())) continue;
+
+                    if (column.ColumnName.Equals(debit_column, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entry.Tk_No = dataRow[column];
+                    }
+
+                    if (column.ColumnName.Equals(credit_column, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entry.Tk_Co = dataRow[column];
+                    }
+
+                    if (column.ColumnName.Equals(money_column, StringComparison.OrdinalIgnoreCase))
+                    {
+                        entry.Vnd = Convert.ToDecimal(dataRow[column]);
+                    }
+                }
+
+                if (!entry.IsValid())
+                {
+                    return money_column;
+                }
+            }
+            return null;
         }
 
         private async Task DeleteBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId)
