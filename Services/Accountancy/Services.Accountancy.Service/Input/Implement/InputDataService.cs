@@ -1102,7 +1102,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var multiFields = fields.Where(f => f.IsMultiRow).ToList();
             var multiMappingFields = mapping.MappingFields.Where(mf => multiFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
 
-            var groups = data.Rows.GroupBy(r => r[mapping.Key]);
+            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
+            var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
+            var referFields = (from f in _accountancyDBContext.CategoryField
+                               join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
+                               where referTableNames.Contains(c.CategoryCode) && referMapingFields.Select(f => f.RefTableField).Contains(f.CategoryFieldName)
+                               select new
+                               {
+                                   c.CategoryCode,
+                                   f.CategoryFieldName,
+                                   f.DataTypeId
+                               }).ToList();
+
+            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
+            if (columnKey == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
+            }
+            var groups = data.Rows.GroupBy(r => r[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
             foreach (var bill in groups)
@@ -1134,8 +1151,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         else
                         {
-                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
-                            var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                            var paramName = $"@{mappingField.RefTableField}";
+                            var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
+
+                            var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData != null && referData.Rows.Count > 0)
                             {
                                 var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
@@ -1172,8 +1193,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             else
                             {
-                                var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {value}";
-                                var referData = await _accountancyDBContext.QueryDataTable(referSql, Array.Empty<SqlParameter>());
+                                var paramName = $"@{mappingField.RefTableField}";
+                                var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                                var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
+                                var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                                 if (referData != null && referData.Rows.Count > 0)
                                 {
                                     var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
