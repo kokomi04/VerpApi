@@ -1020,7 +1020,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var multiFields = fields.Where(f => f.IsMultiRow).ToList();
             var multiMappingFields = mapping.MappingFields.Where(mf => multiFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
 
-            var groups = data.Rows.GroupBy(r => r[mapping.Key]);
+            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
+            if(columnKey == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
+            }
+            var groups = data.Rows.GroupBy(r => r[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
             foreach (var bill in groups)
