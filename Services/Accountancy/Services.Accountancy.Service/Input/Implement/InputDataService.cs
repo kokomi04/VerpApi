@@ -1089,7 +1089,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     foreach (var row in bill)
                     {
-                        var map = new Dictionary<string, string>();
+                        var mapRow = new Dictionary<string, string>();
                         for (int fieldIndx = 0; fieldIndx < multiMappingFields.Count; fieldIndx++)
                         {
                             var mappingField = multiMappingFields[fieldIndx];
@@ -1107,7 +1107,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                             if (string.IsNullOrEmpty(field.RefTableCode))
                             {
-                                info.Add(field.FieldName, value);
+                                mapRow.Add(field.FieldName, value);
                             }
                             else
                             {
@@ -1119,7 +1119,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 if (referData != null && referData.Rows.Count > 0)
                                 {
                                     var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                                    info.Add(field.FieldName, referValue);
+                                    mapRow.Add(field.FieldName, referValue);
                                 }
                                 else
                                 {
@@ -1127,7 +1127,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 }
                             }
                         }
-                        rows.Add(map);
+                        rows.Add(mapRow);
                     }
                 }
 
