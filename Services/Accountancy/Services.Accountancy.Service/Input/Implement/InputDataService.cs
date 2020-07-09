@@ -93,9 +93,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 foreach (var filter in filters)
                 {
                     var viewField = viewFields.FirstOrDefault(f => f.InputTypeViewFieldId == filter.Key);
-                    if (viewField == null || filter.Value == null || string.IsNullOrWhiteSpace(filter.Value.ToString())) continue;
+                    if (viewField == null) continue;
 
                     var value = filter.Value;
+
+                    if (value.IsNullObject()) continue;
+
                     if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
                     {
                         value = Convert.ToInt64(value).UnixToDateTime();

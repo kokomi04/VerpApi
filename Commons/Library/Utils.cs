@@ -431,16 +431,22 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static bool IsNullObject(this object obj)
+        {
+            if (obj == null) return true;
+
+            if (obj.GetType() == typeof(string))
+            {
+                obj = (obj as string).Trim();
+
+                if (string.Empty.Equals(obj)) return true;
+            }
+
+            return false;
+        }
         public static object GetSqlValue(this EnumDataType dataType, object value)
         {
-            if (value == null) return DBNull.Value;
-
-            if (value.GetType() == typeof(string))
-            {
-                value = (value as string).Trim();
-
-                if (string.Empty.Equals(value)) return DBNull.Value;
-            }
+            if (value.IsNullObject()) return DBNull.Value;
 
             switch (dataType)
             {
