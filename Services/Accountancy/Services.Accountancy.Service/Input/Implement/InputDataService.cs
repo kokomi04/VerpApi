@@ -84,7 +84,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"InputTypeId = {inputTypeId}");
+            whereCondition.Append($"r.InputTypeId = {inputTypeId}");
 
             var sqlParams = new List<SqlParameter>();
 
@@ -93,7 +93,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 foreach (var filter in filters)
                 {
                     var viewField = viewFields.FirstOrDefault(f => f.InputTypeViewFieldId == filter.Key);
-                    if (viewField == null) continue;
+                    if (viewField == null || filter.Value == null || string.IsNullOrWhiteSpace(filter.Value.ToString())) continue;
 
                     var value = filter.Value;
                     if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
@@ -112,7 +112,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
 
                             int suffix = 0;
-                            filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, value);
                         }
                     }
                 }
