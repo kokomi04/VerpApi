@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\ReportConfigDB\ReportConfigDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 
 </Project>

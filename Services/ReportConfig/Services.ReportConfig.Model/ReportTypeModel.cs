@@ -27,6 +27,7 @@ namespace Verp.Services.ReportConfig.Model
         public string Head { get; set; }
         public string Footer { get; set; }
         public string HeadSql { get; set; }
+        public string BodySql { get; set; }
         public string FooterSql { get; set; }
         public string PrintTitle { get; set; }
         public string GroupColumns { get; set; }

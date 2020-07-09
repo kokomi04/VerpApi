@@ -553,6 +553,28 @@ namespace VErp.Commons.Library
             return lst;
         }
 
+        public static NonCamelCaseDictionary ConvertFirstRowData(this DataTable data)
+        {
+            var result = new NonCamelCaseDictionary();
+            if (data.Rows.Count == 0) return result;
+
+            var row = data.Rows[0];
+            foreach (DataColumn c in data.Columns)
+            {
+                var v = row[c];
+                if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                {
+                    var vInDateTime = (v as DateTime?).GetUnix();
+                    result.Add(c.ColumnName, vInDateTime);
+                }
+                else
+                {
+                    result.Add(c.ColumnName, row[c]);
+                }
+            }
+
+            return result;
+        }
 
         public static string ConvertToUnSign2(this string s)
         {
