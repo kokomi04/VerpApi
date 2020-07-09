@@ -25,5 +25,8 @@ namespace VErp.Commons.Constants
 
         public const string INPUTVALUEROW_TABLE = "InputValueRow";
         public const string INPUTVALUEROW_VIEW = "vInputValueRow";
+
+
+        public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
     }
 }
