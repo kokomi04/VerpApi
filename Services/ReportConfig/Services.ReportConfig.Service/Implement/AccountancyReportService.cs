@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -38,14 +39,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public class ReportColumn
         {
-            public int SortOrder { get; set; }
+            //public int SortOrder { get; set; }
             public string Name { get; set; }
             public string Value { get; set; }
             public string Alias { get; set; }
             public string Where { get; set; }
-            public string Width { get; set; }
-            public int DataTypeId { get; set; }
-            public int DecimalPlace { get; set; }
+            //public string Width { get; set; }
+            //public int DataTypeId { get; set; }
+            //public int DecimalPlace { get; set; }
             public bool IsCalcSum { get; set; }
         }
 
@@ -84,9 +85,21 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sqlParams.Add(new SqlParameter($"@{filterFiled.ParamerterName}", filterFiled.DataTypeId.GetSqlValue(value)));
             }
 
+
+            if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
+            {
+                var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                result.Head = data.ConvertFirstRowData();
+                foreach (var head in result.Head)
+                {
+                    sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_HEAD_PARAM_PREFIX}" + head.Key, head.Value == null ? DBNull.Value : head.Value));
+                }
+            }
+
+
             if (string.IsNullOrWhiteSpace(reportInfo.BodySql))
             {
-                var (data, totals) = await GetRowsByView(reportInfo, orderByFieldName, asc, page, size, sqlParams);
+                var (data, totals) = await GetRowsByView(reportInfo, orderByFieldName, asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                 result.Totals = totals;
                 result.Rows = data;
             }
@@ -128,11 +141,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
-            {
-                var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                result.Head = data.ConvertFirstRowData();
-            }
+
 
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
