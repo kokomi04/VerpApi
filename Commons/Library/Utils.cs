@@ -461,12 +461,11 @@ namespace VErp.Commons.Library
                     return intValue;
 
                 case EnumDataType.Date:
-                    long dateValue;
-                    if (!long.TryParse(value.ToString(), out dateValue))
+                    if (!long.TryParse(value.ToString(), out long dateValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                     }
-                    return dateValue.UnixToDateTime();
+                    return dateValue.UnixToDateTime().Value;
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
