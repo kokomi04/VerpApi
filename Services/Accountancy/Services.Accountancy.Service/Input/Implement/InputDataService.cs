@@ -1097,10 +1097,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                           }).ToList();
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-            var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
-            var singleMappingFields = mapping.MappingFields.Where(mf => singleFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
-            var multiFields = fields.Where(f => f.IsMultiRow).ToList();
-            var multiMappingFields = mapping.MappingFields.Where(mf => multiFields.Select(f => f.FieldName).Contains(mf.FieldName)).ToList();
+
+            if(mapping.MappingFields.Where(mf => mf.IsRequire).Any(mf => !fields.Exists(f => f.FieldName == mf.FieldName))) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu không tìm thấy");
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
@@ -1122,32 +1120,89 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var groups = data.Rows.GroupBy(r => r[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
+
+            // Validate unique single field
+            foreach (var field in fields.Where(f => f.IsUnique))
+            {
+                var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
+                if (mappingField == null) continue;
+
+                var values = field.IsMultiRow ? groups.SelectMany(b => b.Select(r => r[mappingField.Column]?.ToString())).ToList() : groups.Where(b => b.Count() > 0).Select(b => b.First()[mappingField.Column]?.ToString()).ToList();
+
+                // Check unique trong danh sách values thêm mới
+                if (values.Distinct().Count() < values.Count)
+                {
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                }
+                // Checkin unique trong db
+                var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
+
+                existSql += $" AND {field.FieldName} IN (";
+                List<SqlParameter> sqlParams = new List<SqlParameter>();
+                var suffix = 0;
+                foreach (var value in values)
+                {
+                    var paramName = $"@{field.FieldName}_{suffix}";
+                    if (suffix > 0)
+                    {
+                        existSql += ",";
+                    }
+                    existSql += paramName;
+                    sqlParams.Add(new SqlParameter(paramName, value));
+                    suffix++;
+                }
+                existSql += ")";
+                var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+                bool isExisted = result != null && result.Rows.Count > 0;
+                if (isExisted)
+                {
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                }
+            }
+
             foreach (var bill in groups)
             {
                 var info = new Dictionary<string, string>();
                 var rows = new List<Dictionary<string, string>>();
-
-                if (bill.Count() > 0)
+                int count = bill.Count();
+                for (int rowIndx = 0; rowIndx < count; rowIndx++)
                 {
-                    var singleRow = bill.First();
-                    for (int fieldIndx = 0; fieldIndx < singleMappingFields.Count; fieldIndx++)
+                    var mapRow = new Dictionary<string, string>();
+                    var row = bill.ElementAt(rowIndx);
+                    foreach (var field in fields)
                     {
-                        var mappingField = singleMappingFields[fieldIndx];
-                        var field = singleFields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
-
-                        if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
-
+                        if (!field.IsMultiRow && rowIndx > 0) continue;
+                        var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
+                        // Validate mapping required
+                        if (mappingField == null && field.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {field.FieldName} không tìm thấy");
+                        if (mappingField == null) continue;
                         string value = null;
-                        if (singleRow.ContainsKey(mappingField.Column))
-                            value = singleRow[mappingField.Column]?.ToString();
-
+                        if (row.ContainsKey(mappingField.Column))
+                            value = row[mappingField.Column]?.ToString();
+                        // Validate require
                         if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
-
                         if (string.IsNullOrWhiteSpace(value)) continue;
-
+                        if (field.DataTypeId == (int)EnumDataType.Date )
+                        {
+                            if(!DateTime.TryParse(value.ToString(), out DateTime date))
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                            value = date.AddHours(-7).GetUnix().ToString();
+                        }
+                        
+                        // Validate refer
                         if (string.IsNullOrEmpty(field.RefTableCode))
                         {
-                            info.Add(field.FieldName, value);
+                            // Validate value
+                            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !field.IsAutoIncrement && !string.IsNullOrEmpty(value))
+                            {
+                                string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+                                if ((field.DataSize > 0 && value.Length > field.DataSize)
+                                    || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
+                                    || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                                {
+                                    throw new BadRequestException(InputErrorCode.InputValueInValid, new string[] { field.Title });
+                                }
+                            }
                         }
                         else
                         {
@@ -1155,62 +1210,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
                             var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
                             var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
-
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
-                            if (referData != null && referData.Rows.Count > 0)
-                            {
-                                var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                                info.Add(field.FieldName, referValue);
-                            }
-                            else
+                            if (referData == null || referData.Rows.Count == 0)
                             {
                                 throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
                             }
+                            value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
-                    }
-
-                    foreach (var row in bill)
-                    {
-                        var mapRow = new Dictionary<string, string>();
-                        for (int fieldIndx = 0; fieldIndx < multiMappingFields.Count; fieldIndx++)
+                        if (!field.IsMultiRow)
                         {
-                            var mappingField = multiMappingFields[fieldIndx];
-                            var field = multiFields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
-
-                            if (field == null && !string.IsNullOrEmpty(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, "Trường dữ liệu không tìm thấy");
-
-                            string value = null;
-                            if (row.ContainsKey(mappingField.Column))
-                                value = row[mappingField.Column]?.ToString();
-
-                            if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
-
-                            if (string.IsNullOrWhiteSpace(value)) continue;
-
-                            if (string.IsNullOrEmpty(field.RefTableCode))
-                            {
-                                mapRow.Add(field.FieldName, value);
-                            }
-                            else
-                            {
-                                var paramName = $"@{mappingField.RefTableField}";
-                                var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
-                                var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
-                                var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
-                                var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
-                                if (referData != null && referData.Rows.Count > 0)
-                                {
-                                    var referValue = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                                    mapRow.Add(field.FieldName, referValue);
-                                }
-                                else
-                                {
-                                    throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
-                                }
-                            }
+                            info.Add(field.FieldName, value);
                         }
-                        rows.Add(mapRow);
+                        else
+                        {
+                            mapRow.Add(field.FieldName, value);
+                        }
                     }
+                    rows.Add(mapRow);
                 }
 
                 bills.Add(new BillInfoModel
