@@ -76,11 +76,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     var value = filter.Value;
 
-                    if (value.IsNullObject()) continue;
-
-                    if (filterFiled.DataTypeId == EnumDataType.Date)
+                    if (!value.IsNullObject())
                     {
-                        value = Convert.ToInt64(value).UnixToDateTime();
+                        if (filterFiled.DataTypeId == EnumDataType.Date)
+                        {
+                            value = Convert.ToInt64(value).UnixToDateTime();
+                        }
                     }
 
                     sqlParams.Add(new SqlParameter($"@{filter.Key}", filterFiled.DataTypeId.GetSqlValue(filter.Value)));
