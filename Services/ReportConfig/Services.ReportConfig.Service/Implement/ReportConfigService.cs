@@ -262,13 +262,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<ReportTypeModel> ReportType(int reportTypeId)
         {
             var reportType = await _reportConfigContext.ReportType
-                .ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
+                //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
             if (reportType == null)
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
-            return reportType;
+            return _mapper.Map<ReportTypeModel>(reportType);
         }
 
         public async Task<int> AddReportType(ReportTypeModel data)
@@ -354,7 +354,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 report.IsDeleted = true;
                 // Xóa View
                 var reportTypeViews = _reportConfigContext.ReportTypeView.Where(v => v.ReportTypeId == reportTypeId).ToList();
-                foreach(var reportTypeView in reportTypeViews)
+                foreach (var reportTypeView in reportTypeViews)
                 {
                     reportTypeView.IsDeleted = true;
                 }

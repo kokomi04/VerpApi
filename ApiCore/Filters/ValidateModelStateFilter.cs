@@ -72,7 +72,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 }
                 else
                 {
-                    if (type.IsArray || type.IsGenericType)
+                    if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
                     {
                         if (!ValidateEnum(obj).IsSuccess())
                         {
@@ -100,9 +100,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                                         catch (Exception)
                                         {
 
-                                            
+
                                         }
-                                        
+
                                     }
                                 }
                                 if (!ValidateEnum(new List<object>() { v }).IsSuccess())

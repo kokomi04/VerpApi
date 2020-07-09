@@ -40,6 +40,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string AfterLoadDataJsCode { get; set; }
         public string OnCloseJsCode { get; set; }
         public string Columns { get; set; }
+        public bool IsBsc { get; set; }
+        public string BscConfig { get; set; }
 
         public virtual ReportTypeGroup ReportTypeGroup { get; set; }
         public virtual ICollection<ReportTypeView> ReportTypeView { get; set; }
