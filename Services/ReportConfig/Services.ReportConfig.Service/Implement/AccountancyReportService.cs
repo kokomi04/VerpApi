@@ -38,14 +38,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public class ReportColumn
         {
-            public int SortOrder { get; set; }
+            //public int SortOrder { get; set; }
             public string Name { get; set; }
             public string Value { get; set; }
             public string Alias { get; set; }
             public string Where { get; set; }
-            public string Width { get; set; }
-            public int DataTypeId { get; set; }
-            public int DecimalPlace { get; set; }
+            //public string Width { get; set; }
+            //public int DataTypeId { get; set; }
+            //public int DecimalPlace { get; set; }
             public bool IsCalcSum { get; set; }
         }
 
