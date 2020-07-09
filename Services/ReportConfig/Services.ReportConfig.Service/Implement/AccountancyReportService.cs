@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -73,7 +74,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var filterFiled = reportViewInfo.Fields.FirstOrDefault(f => f.ParamerterName == filter.Key);
                     if (filterFiled == null) continue;
 
-                    sqlParams.Add(new SqlParameter($"@{filter.Key}", filter.Value));
+                    var value = filter.Value;
+                    if (filterFiled.DataTypeId == EnumDataType.Date)
+                    {
+                        value = Convert.ToInt64(value).UnixToDateTime();
+                    }
+
+                    sqlParams.Add(new SqlParameter($"@{filter.Key}", filterFiled.DataTypeId.GetSqlValue(filter.Value)));
                 }
             }
 

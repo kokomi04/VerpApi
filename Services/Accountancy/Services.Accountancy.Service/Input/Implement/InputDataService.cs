@@ -112,7 +112,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
 
                             int suffix = 0;
-                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, ((EnumDataType)viewField.DataTypeId).GetSqlValue(filter.Value));
                         }
                     }
                 }
