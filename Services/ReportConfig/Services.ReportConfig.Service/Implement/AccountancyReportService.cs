@@ -67,15 +67,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var sqlParams = new List<SqlParameter>();
 
-            if (filters != null)
+            foreach (var filterFiled in reportViewInfo.Fields)
             {
-                foreach (var filter in filters)
+                object value = null;
+                if (filters.ContainsKey(filterFiled.ParamerterName))
                 {
-                    var filterFiled = reportViewInfo.Fields.FirstOrDefault(f => f.ParamerterName == filter.Key);
-                    if (filterFiled == null) continue;
-
-                    var value = filter.Value;
-
+                    value = filters[filterFiled.ParamerterName];
                     if (!value.IsNullObject())
                     {
                         if (filterFiled.DataTypeId == EnumDataType.Date)
@@ -83,9 +80,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             value = Convert.ToInt64(value).UnixToDateTime();
                         }
                     }
-
-                    sqlParams.Add(new SqlParameter($"@{filter.Key}", filterFiled.DataTypeId.GetSqlValue(filter.Value)));
                 }
+                sqlParams.Add(new SqlParameter($"@{filterFiled.ParamerterName}", filterFiled.DataTypeId.GetSqlValue(value)));
             }
 
             if (string.IsNullOrWhiteSpace(reportInfo.BodySql))
