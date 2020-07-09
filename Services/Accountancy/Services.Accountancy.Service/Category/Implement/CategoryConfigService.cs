@@ -593,6 +593,9 @@ namespace VErp.Services.Accountancy.Service.Category
             categoryField.Filters = data.Filters;
             categoryField.DecimalPlace = data.DecimalPlace;
             categoryField.DefaultValue = data.DefaultValue;
+            categoryField.RefTableCode = data.RefTableCode;
+            categoryField.RefTableField = data.RefTableField;
+            categoryField.RefTableTitle = data.RefTableTitle;
             //categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
             //categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
         }
