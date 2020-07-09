@@ -101,7 +101,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
                     {
-                        value = Convert.ToInt64(value).UnixToDateTime();
+                        value = Convert.ToInt64(value);
                     }
 
                     if (!string.IsNullOrEmpty(viewField.SelectFilters))
@@ -115,7 +115,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
 
                             int suffix = 0;
-                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, ((EnumDataType)viewField.DataTypeId).GetSqlValue(filter.Value));
+                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, ((EnumDataType)viewField.DataTypeId).GetSqlValue(value));
                         }
                     }
                 }
