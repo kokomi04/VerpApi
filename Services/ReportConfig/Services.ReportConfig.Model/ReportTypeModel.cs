@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using NPOI.HPSF;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -39,8 +40,16 @@ namespace Verp.Services.ReportConfig.Model
         public string PreLoadDataJsCode { get; set; }
         public string AfterLoadDataJsCode { get; set; }
         public string OnCloseJsCode { get; set; }
-        public string Columns { get; set; }
+        public IList<ReportColumnModel> Columns { get; set; }
+        public bool IsBsc { get; set; }
+        public BscConfigModel BscConfig { get; set; }
 
+        public void Mapping(Profile profile) => profile.CreateMap<ReportType, ReportTypeModel>()
+       .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonDeserialize<List<ReportColumnModel>>()))
+       .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonDeserialize<BscConfigModel>()))
+       .ReverseMap()
+       .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
+       .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()));
     }
 
 }
