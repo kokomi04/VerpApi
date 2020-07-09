@@ -55,7 +55,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -285,12 +285,30 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 {
                     case EnumOperator.Equal:
                         ope = not ? "!=" : "=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+
+                        if (clause.Value == null || clause.Value == DBNull.Value)
+                        {
+                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                        }
+                        else
+                        {
+                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        }
+
                         sqlParams.Add(new SqlParameter(paramName, clause.Value));
+
                         break;
                     case EnumOperator.NotEqual:
                         ope = not ? "=" : "!=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        if (clause.Value == null || clause.Value == DBNull.Value)
+                        {
+                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                        }
+                        else
+                        {
+                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        }
+
                         sqlParams.Add(new SqlParameter(paramName, clause.Value));
                         break;
                     case EnumOperator.Contains:

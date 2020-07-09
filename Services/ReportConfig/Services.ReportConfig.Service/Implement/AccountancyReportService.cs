@@ -75,6 +75,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (filterFiled == null) continue;
 
                     var value = filter.Value;
+
+                    if (value.IsNullObject()) continue;
+
                     if (filterFiled.DataTypeId == EnumDataType.Date)
                     {
                         value = Convert.ToInt64(value).UnixToDateTime();
