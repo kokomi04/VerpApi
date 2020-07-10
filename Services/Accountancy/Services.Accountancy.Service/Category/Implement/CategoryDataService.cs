@@ -517,7 +517,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
         {
             StringBuilder sql = new StringBuilder();
-            sql.Append($"SELECT [{tableName}].F_Id, ");
+            sql.Append($"SELECT [{tableName}].F_Id,");
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 if (string.IsNullOrEmpty(field.RefTableCode))
