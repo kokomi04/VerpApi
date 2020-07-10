@@ -157,7 +157,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     if (!string.IsNullOrWhiteSpace(keyValue))
                     {
-                        sqlParams.Add(new SqlParameter($"@_bsc_rows_{keyValue}_{column.Name}", value == null ? DBNull.Value : value));
+                        sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_BSC_ROW_PARAM_PREFIX}{keyValue}_{column.Name}", value == null ? DBNull.Value : value));
                     }
 
                     rowValue[column.Name] = value;
