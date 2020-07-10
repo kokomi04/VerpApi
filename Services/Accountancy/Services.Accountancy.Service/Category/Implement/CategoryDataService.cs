@@ -538,10 +538,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 sql.Append($"[{tableName}].ParentId,");
             }
-            if (fields.Count > 0)
-            {
-                sql.Remove(sql.Length - 1, 1);
-            }
+            sql.Remove(sql.Length - 1, 1);
             return sql.ToString();
         }
 
@@ -1012,8 +1009,8 @@ namespace VErp.Services.Accountancy.Service.Category
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"{category.Title} cha {row.Value.ParentValue} không tìm thấy");
                             }
 
-                            sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key};");                            
-                          
+                            sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key};");
+
                         }
                         if (sqlUpdateParent.Length > 0)
                         {
