@@ -562,11 +562,21 @@ namespace VErp.Commons.Library
         public static NonCamelCaseDictionary ConvertFirstRowData(this DataTable data)
         {
             var result = new NonCamelCaseDictionary();
-            if (data.Rows.Count == 0) return result;
 
-            var row = data.Rows[0];
+            DataRow row = null;
+            if (data.Rows.Count > 0)
+            {
+                row = data.Rows[0];
+            }
+
             foreach (DataColumn c in data.Columns)
             {
+                if (row == null)
+                {
+                    result.Add(c.ColumnName, null);
+                    continue;
+                }
+
                 var v = row[c];
                 if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                 {
