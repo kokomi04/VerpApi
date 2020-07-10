@@ -129,26 +129,65 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (bscConfig == null) return (null, null);
 
             var bscRows = new List<NonCamelCaseDictionary>();
-            foreach (var row in bscConfig.Rows)
+
+            var sql = new StringBuilder();
+            sql.AppendLine(reportInfo.BodySql ?? "");
+
+            var queryResult = new NonCamelCaseDictionary();
+
+            var isFirstSelect = true;
+            for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
+                var row = bscConfig.Rows[i];
+
+                foreach (var column in bscConfig.BscColumns)
+                {
+                    var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
+                    if (valueConfig?.ToString()?.StartsWith("=") == true)
+                    {
+                        valueConfig = valueConfig.ToString().TrimStart('=');
+
+                        if (isFirstSelect)
+                        {
+                            isFirstSelect = false;
+                            sql.AppendLine("SELECT ");
+                        }
+                        else
+                        {
+                            sql.Append(",");
+                        }
+
+                        sql.AppendLine($"{valueConfig} AS {column.Name}_{i}");
+                    }
+                }
+            }
+
+            NonCamelCaseDictionary selectValue = null;
+
+            if (sql.Length > 0)
+            {
+                var data = await _accountancyDBContext.QueryDataTable($"{sql}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                selectValue = data.ConvertFirstRowData();
+            }
+
+            for (var i = 0; i < bscConfig.Rows.Count; i++)
+            {
+                var row = bscConfig.Rows[i];
+
                 var rowValue = new NonCamelCaseDictionary();
 
                 var keyValue = "";
                 foreach (var column in bscConfig.BscColumns)
                 {
-
                     var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
                     object value = null;
-                    if (valueConfig?.ToString()?.StartsWith("=") == true)
+                    if (valueConfig?.ToString()?.StartsWith("=") == true && selectValue != null)
                     {
-                        valueConfig = valueConfig.ToString().TrimStart('=');
-                        var data = await _accountancyDBContext.QueryDataTable($"SELECT {valueConfig} AS {column.Name}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                        value = data.ConvertFirstRowData()[column.Name];
+                        value = selectValue[$"{column.Name}_{i}"];
                     }
                     else
                     {
                         value = valueConfig;
-
                     }
                     if (column.IsRowKey)
                     {
