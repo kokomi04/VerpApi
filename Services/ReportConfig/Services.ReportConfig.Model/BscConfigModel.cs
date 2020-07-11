@@ -31,7 +31,7 @@ namespace Verp.Services.ReportConfig.Model
 
         public static bool IsBscSelect(object valueConfig)
         {
-            return valueConfig?.ToString()?.StartsWith("=") == true && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_ROW_PARAM_PREFIX);
+            return IsSqlSelect(valueConfig) && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
         }
     }
 }

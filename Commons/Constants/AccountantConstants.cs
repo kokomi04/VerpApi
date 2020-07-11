@@ -28,6 +28,6 @@ namespace VErp.Commons.Constants
 
 
         public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
-        public const string REPORT_BSC_ROW_PARAM_PREFIX = "BSC_ROW_";
+        public const string REPORT_BSC_VALUE_PARAM_PREFIX = "BSC_VALUE_";
     }
 }

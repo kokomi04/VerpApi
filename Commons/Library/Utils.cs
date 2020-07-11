@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -431,6 +432,18 @@ namespace VErp.Commons.Library
             }
         }
 
+        private static readonly HashSet<Type> NumericTypes = new HashSet<Type>
+        {
+            typeof(int),  typeof(double),  typeof(decimal),
+            typeof(long), typeof(short),   typeof(sbyte),
+            typeof(byte), typeof(ulong),   typeof(ushort),
+            typeof(uint), typeof(float)
+        };
+        public static bool IsNumber(this Type objectType)
+        {
+            return NumericTypes.Contains(objectType);
+        }
+
         public static bool IsNullObject(this object obj)
         {
             if (obj == null) return true;
@@ -534,6 +547,38 @@ namespace VErp.Commons.Library
 
             return result;
         }
+
+
+        private static Hashtable dbTypeTable;
+
+        public static SqlDbType ConvertToDbType(this Type t)
+        {
+            if (dbTypeTable == null)
+            {
+                dbTypeTable = new Hashtable();
+                dbTypeTable.Add(typeof(bool), SqlDbType.Bit);
+                dbTypeTable.Add(typeof(short), SqlDbType.SmallInt);
+                dbTypeTable.Add(typeof(int), SqlDbType.Int);
+                dbTypeTable.Add(typeof(long), SqlDbType.BigInt);
+                dbTypeTable.Add(typeof(double), SqlDbType.Float);
+                dbTypeTable.Add(typeof(decimal), SqlDbType.Decimal);
+                dbTypeTable.Add(typeof(string), SqlDbType.NVarChar);
+                dbTypeTable.Add(typeof(DateTime), SqlDbType.DateTime);
+                dbTypeTable.Add(typeof(byte[]), SqlDbType.VarBinary);
+                dbTypeTable.Add(typeof(Guid), SqlDbType.UniqueIdentifier);
+            }
+            SqlDbType dbtype;
+            try
+            {
+                dbtype = (SqlDbType)dbTypeTable[t];
+            }
+            catch
+            {
+                dbtype = SqlDbType.Variant;
+            }
+            return dbtype;
+        }
+
         public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
         {
             var lst = new List<NonCamelCaseDictionary>();
@@ -559,9 +604,9 @@ namespace VErp.Commons.Library
             return lst;
         }
 
-        public static NonCamelCaseDictionary ConvertFirstRowData(this DataTable data)
+        public static Dictionary<string, (object value, Type type)> ConvertFirstRowData(this DataTable data)
         {
-            var result = new NonCamelCaseDictionary();
+            var result = new Dictionary<string, (object value, Type type)>();
 
             DataRow row = null;
             if (data.Rows.Count > 0)
@@ -571,22 +616,35 @@ namespace VErp.Commons.Library
 
             foreach (DataColumn c in data.Columns)
             {
+
                 if (row == null)
                 {
-                    result.Add(c.ColumnName, null);
+                    result.Add(c.ColumnName, (null, c.DataType));
                     continue;
                 }
 
                 var v = row[c];
+
                 if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                 {
                     var vInDateTime = (v as DateTime?).GetUnix();
-                    result.Add(c.ColumnName, vInDateTime);
+                    result.Add(c.ColumnName, (vInDateTime, c.DataType));
                 }
                 else
                 {
-                    result.Add(c.ColumnName, row[c]);
+                    result.Add(c.ColumnName, (row[c], c.DataType));
                 }
+            }
+
+            return result;
+        }
+
+        public static NonCamelCaseDictionary ToNonCamelCaseDictionary(this Dictionary<string, (object value, Type type)> values)
+        {
+            var result = new NonCamelCaseDictionary();
+            foreach (var data in values)
+            {
+                result.Add(data.Key, data.Value.value);
             }
 
             return result;
