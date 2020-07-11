@@ -78,7 +78,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
                 var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                result.Head = data.ConvertFirstRowData();
+                result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
                 foreach (var head in result.Head)
                 {
                     sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_HEAD_PARAM_PREFIX}" + head.Key, head.Value == null ? DBNull.Value : head.Value));
@@ -117,7 +117,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
                 var data = await _accountancyDBContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                result.Head = data.ConvertFirstRowData();
+                result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
             return result;
@@ -130,81 +130,84 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var bscRows = new List<NonCamelCaseDictionary>();
 
+            var keyValueRows = new Dictionary<string, string>[bscConfig.Rows.Count];
+
+            //1. Query body sql
             var sql = new StringBuilder();
-            sql.AppendLine(reportInfo.BodySql ?? "");
+            var sqlBscSelect = new StringBuilder();
 
             var queryResult = new NonCamelCaseDictionary();
 
-            var isFirstSelect = true;
             for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
-                var row = bscConfig.Rows[i];
-
-                foreach (var column in bscConfig.BscColumns)
-                {
-                    var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
-                    if (valueConfig?.ToString()?.StartsWith("=") == true)
-                    {
-                        valueConfig = valueConfig.ToString().TrimStart('=');
-
-                        if (isFirstSelect)
-                        {
-                            isFirstSelect = false;
-                            sql.AppendLine("SELECT ");
-                        }
-                        else
-                        {
-                            sql.Append(",");
-                        }
-
-                        sql.AppendLine($"{valueConfig} AS {column.Name}_{i}");
-                    }
-                }
-            }
-
-            NonCamelCaseDictionary selectValue = null;
-
-            if (sql.Length > 0)
-            {
-                var data = await _accountancyDBContext.QueryDataTable($"{sql}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                selectValue = data.ConvertFirstRowData();
-            }
-
-            for (var i = 0; i < bscConfig.Rows.Count; i++)
-            {
-                var row = bscConfig.Rows[i];
-
                 var rowValue = new NonCamelCaseDictionary();
+                bscRows.Add(rowValue);
+                keyValueRows[i] = new Dictionary<string, string>();
 
-                var keyValue = "";
+                var row = bscConfig.Rows[i];
                 foreach (var column in bscConfig.BscColumns)
                 {
                     var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
-                    object value = null;
-                    if (valueConfig?.ToString()?.StartsWith("=") == true && selectValue != null)
+
+                    var configStr = (valueConfig?.ToString()?.Trim()) ?? "";
+                    if (configStr.StartsWith("["))
                     {
-                        value = selectValue[$"{column.Name}_{i}"];
+                        var endKeyIndex = configStr.IndexOf(']');
+                        var keyValue = configStr.Substring(1, endKeyIndex - 1);
+
+                        keyValueRows[i].Add(column.Name, keyValue);
+
+                        configStr = configStr.Substring(endKeyIndex + 1).Trim();
                     }
                     else
                     {
-                        value = valueConfig;
-                    }
-                    if (column.IsRowKey)
-                    {
-                        keyValue = value?.ToString()?.NormalizeAsInternalName();
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(keyValue))
-                    {
-                        sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_BSC_ROW_PARAM_PREFIX}{keyValue}_{column.Name}", value == null ? DBNull.Value : value));
+                        if (configStr.StartsWith("\\["))
+                        {
+                            configStr = "[" + configStr.Substring(2);
+                        }
                     }
 
-                    rowValue[column.Name] = value;
+                    rowValue.TryAdd(column.Name, configStr);
+                    if (keyValueRows[i].ContainsKey(column.Name) && !string.IsNullOrWhiteSpace(keyValueRows[i][column.Name]))
+                    {
+                        rowValue.TryAdd(column.Name + ".key", keyValueRows[i][column.Name]);
+
+                    }
+
+                    if (BscRowsModel.IsSqlSelect(configStr))
+                    {
+                        var selectData = $"{configStr.TrimStart('=')} AS [{column.Name}_{i}]";
+
+                        if (BscRowsModel.IsBscSelect(configStr))
+                        {
+                            BscAppendSelect(sqlBscSelect, selectData);
+                        }
+                        else
+                        {
+                            BscAppendSelect(sql, selectData);
+                        }
+                    }
                 }
-
-                bscRows.Add(rowValue);
             }
 
+            Dictionary<string, (object value, Type type)> selectValue = null;
+
+            if (sql.Length > 0)
+            {
+                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                selectValue = data.ConvertFirstRowData();
+                BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
+            }
+
+
+            if (sqlBscSelect.Length > 0)
+            {
+                var data = await _accountancyDBContext.QueryDataTable($"{sqlBscSelect}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                selectValue = data.ConvertFirstRowData();
+                BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
+            }
+
+            //Totals
             var totals = new NonCamelCaseDictionary();
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
@@ -229,7 +232,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
                     }
-
                 }
 
             }
@@ -239,6 +241,55 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 List = bscRows,
                 Total = bscRows.Count
             }, totals);
+
+        }
+
+        private void BscAppendSelect(StringBuilder selectBuilder, string selectColumn)
+        {
+            if (selectBuilder.Length > 0)
+            {
+                selectBuilder.Append(",");
+            }
+            else
+            {
+                selectBuilder.AppendLine("SELECT");
+            }
+
+            selectBuilder.AppendLine(selectColumn);
+        }
+
+        private void BscSetValue(List<NonCamelCaseDictionary> bscRows, Dictionary<string, (object value, Type type)> selectValue, Dictionary<string, string>[] keyvalueRows, IList<SqlParameter> sqlParams)
+        {
+            for (var i = 0; i < bscRows.Count; i++)
+            {
+                var row = bscRows[i];
+                var keys = row.Keys.ToList();
+                foreach (var col in keys)
+                {
+                    var fieldName = $"{col}_{i}";
+                    if (selectValue.ContainsKey(fieldName))
+                    {
+                        var value = selectValue[fieldName].value;
+                        var type = selectValue[fieldName].type;
+
+                        row[col] = value;
+
+                        if (!BscRowsModel.IsSqlSelect(value))
+                        {
+                            var rowKeys = keyvalueRows[i];
+                            if (rowKeys.ContainsKey(col))
+                            {
+                                var keyValue = rowKeys[col];
+                                var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
+                                if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
+                                {
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value == null ? DBNull.Value : value });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
         }
 
