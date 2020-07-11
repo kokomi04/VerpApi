@@ -128,7 +128,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
 
-            var bscRows = new List<NonCamelCaseDictionary>();
+            IList<NonCamelCaseDictionary> bscRows = new List<NonCamelCaseDictionary>();
 
             var keyValueRows = new Dictionary<string, string>[bscConfig.Rows.Count];
 
@@ -207,10 +207,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
 
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+            bscRows = CastAlias(columns, bscRows);
+
             //Totals
             var totals = new NonCamelCaseDictionary();
-
-            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
             foreach (var column in calSumColumns)
@@ -258,7 +260,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             selectBuilder.AppendLine(selectColumn);
         }
 
-        private void BscSetValue(List<NonCamelCaseDictionary> bscRows, Dictionary<string, (object value, Type type)> selectValue, Dictionary<string, string>[] keyvalueRows, IList<SqlParameter> sqlParams)
+        private void BscSetValue(IList<NonCamelCaseDictionary> bscRows, Dictionary<string, (object value, Type type)> selectValue, Dictionary<string, string>[] keyvalueRows, IList<SqlParameter> sqlParams)
         {
             for (var i = 0; i < bscRows.Count; i++)
             {
@@ -295,11 +297,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, IList<SqlParameter> sqlParams)
         {
-            var data = await _accountancyDBContext.QueryDataTable(reportInfo.BodySql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var table = await _accountancyDBContext.QueryDataTable(reportInfo.BodySql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             var totals = new NonCamelCaseDictionary();
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+            var data = CastAlias(columns, table.ConvertData());
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
             foreach (var column in calSumColumns)
@@ -307,9 +311,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 totals.Add(column.Alias, 0M);
             }
 
-            for (var i = 0; i < data.Rows.Count; i++)
+            for (var i = 0; i < data.Count; i++)
             {
-                var row = data.Rows[i];
+                var row = data[i];
 
                 if (row != null)
                 {
@@ -326,7 +330,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            return ((data, data.Rows.Count), totals);
+            return (new PageDataTable() { List = data, Total = data.Count }, totals);
 
         }
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, bool asc, int page, int size, IList<SqlParameter> sqlParams)
@@ -411,5 +415,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return ((data, totalRows), totals);
         }
 
+
+        private IList<NonCamelCaseDictionary> CastAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData)
+        {
+            var data = new List<NonCamelCaseDictionary>();
+            foreach (var row in orignalData)
+            {
+                var newRow = new NonCamelCaseDictionary();
+                var oldNames = row.Keys.ToList();
+                for (var i = 0; i < oldNames.Count; i++)
+                {
+                    if (i < columns.Length)
+                    {
+                        newRow.Add(columns[i].Alias, row[oldNames[i]]);
+                    }
+                    else
+                    {
+                        newRow.Add(oldNames[i], row[oldNames[i]]);
+                    }
+                }
+                data.Add(newRow);
+            }
+
+            return data;
+        }
     }
 }
