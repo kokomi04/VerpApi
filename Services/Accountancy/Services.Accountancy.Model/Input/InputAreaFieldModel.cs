@@ -26,7 +26,6 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
-        public string RefValue { get; set; }
 
         protected void MappingBase<T>(Profile profile) where T: InputFieldInputModel
         {
