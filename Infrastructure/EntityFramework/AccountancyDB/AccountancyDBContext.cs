@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
+        public virtual DbSet<AccountancyOutsiteMapping> AccountancyOutsiteMapping { get; set; }
+        public virtual DbSet<AccountancyOutsiteMappingFunction> AccountancyOutsiteMappingFunction { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -27,13 +29,34 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
-        public virtual DbSet<Tet> Tet { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AccountancyOutsiteMapping>(entity =>
+            {
+                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<AccountancyOutsiteMappingFunction>(entity =>
+            {
+                entity.HasIndex(e => e.FunctionName)
+                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.FunctionName).HasMaxLength(128);
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.Property(e => e.CategoryCode)
@@ -288,22 +311,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.ProgramingFunctionName)
                     .IsRequired()
                     .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<Tet>(entity =>
-            {
-                entity.HasKey(e => e.FId)
-                    .HasName("PK__tet__2C6EC723091E16CD");
-
-                entity.ToTable("tet");
-
-                entity.Property(e => e.FId).HasColumnName("F_Id");
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -71,7 +71,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId
+                where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
                 select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.DataTypeId, a.IsMultiRow }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
@@ -181,7 +181,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                from af in _accountancyDBContext.InputAreaField
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-               where af.InputTypeId == inputTypeId && !a.IsMultiRow
+               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f.FieldName
           ).ToListAsync()
           ).ToHashSet();
