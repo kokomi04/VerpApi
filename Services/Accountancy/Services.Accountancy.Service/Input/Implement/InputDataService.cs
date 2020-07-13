@@ -1120,7 +1120,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
             }
-            var groups = data.Rows.GroupBy(r => r[columnKey.Column]);
+            var groups = data.Rows.Where(r => r[columnKey.Column] != null).GroupBy(r => r[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
 
