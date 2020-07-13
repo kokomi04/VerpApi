@@ -991,8 +991,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.InputField.AddAsync(inputField);
                 await _accountancyDBContext.SaveChangesAsync();
 
-                await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -1023,13 +1025,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (data.FieldName != inputField.FieldName)
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
                 {
-                    await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    if (data.FieldName != inputField.FieldName)
+                    {
+                        await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    }
+                    await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
-
-                await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
                 _mapper.Map(data, inputField);
 
                 await _accountancyDBContext.SaveChangesAsync();
@@ -1069,9 +1072,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Delete field
                 inputField.IsDeleted = true;
                 await _accountancyDBContext.SaveChangesAsync();
-
-                await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -1086,13 +1090,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-
-
         #endregion
 
         private async Task UpdateInputValueView()
         {
-            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", new SqlParameter[0]);
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", Array.Empty<SqlParameter>());
         }
     }
 }
