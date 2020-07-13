@@ -996,10 +996,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
                 }
 
-                if (rowData.ProductUnitConversionQuantity == 0)
-                {
-                    rowData.ProductUnitConversionName = null;
-                }
+                //if (rowData.ProductUnitConversionQuantity == 0)
+                //{
+                //    rowData.ProductUnitConversionName = null;
+                //}
 
 
                 if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.TaxInPercentColumn)
