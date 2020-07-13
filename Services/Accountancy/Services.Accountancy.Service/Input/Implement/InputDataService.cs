@@ -522,7 +522,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
-                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { value.ToString(), field.Title });
                     }
                 }
             }
@@ -1185,6 +1185,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         // Validate require
                         if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                         if (string.IsNullOrWhiteSpace(value)) continue;
+                        value = value.Trim();
                         if (field.DataTypeId == (int)EnumDataType.Date )
                         {
                             if(!DateTime.TryParse(value.ToString(), out DateTime date))
@@ -1216,7 +1217,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { value, field.Title });
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }

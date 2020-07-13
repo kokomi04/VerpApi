@@ -1062,13 +1062,15 @@ namespace VErp.Services.Accountant.Service.Input.Implement
                         }
                     }
                     var values = fieldValues.Select(v => v.Value).ToList();
+                    List<string> notExistValues = null;
                     if (values.Count > 0)
                     {
-                        isExisted = values.All(v => query.Any(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == v)));
+                        notExistValues = values.Where(v => !query.Any(r => r.CategoryRowValue.Any(rv => rv.CategoryFieldId == referField.CategoryFieldId && rv.Value == v))).ToList();
+                        isExisted = notExistValues.Count > 0;
                     }
                     if (!isExisted)
                     {
-                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { field.Title });
+                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { string.Join(",", notExistValues), field.Title });
                     }
                 }
             }
