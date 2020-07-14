@@ -9,12 +9,14 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
 {
     public class OutsideMappingModelList : IMapFrom<OutsideImportMappingFunction>
     {
+        public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }
         public string FunctionName { get; set; }
         public string Description { get; set; }
         public bool IsWarningOnDuplicated { get; set; }
         public string SourceDetailsPropertyName { get; set; }
         public string DestinationDetailsPropertyName { get; set; }
+        public string ObjectIdFieldName { get; set; }
 
         public virtual void Mapping(Profile profile)
         {

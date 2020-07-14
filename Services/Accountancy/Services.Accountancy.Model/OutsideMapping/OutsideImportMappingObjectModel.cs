@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace VErp.Infrastructure.EF.AccountancyDB
+namespace VErp.Services.Accountancy.Model.OutsideMapping
 {
-    public partial class OutsideImportMappingObject
+    public class OutsideImportMappingObjectModel
     {
         public int OutsideImportMappingFunctionId { get; set; }
+        public int InputTypeId { get; set; }
         public string SourceId { get; set; }
         public long InputBillFId { get; set; }
-
-        public virtual OutsideImportMappingFunction OutsideImportMappingFunction { get; set; }
     }
 }

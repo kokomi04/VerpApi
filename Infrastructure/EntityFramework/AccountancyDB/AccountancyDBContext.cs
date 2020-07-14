@@ -311,6 +311,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.ObjectIdFieldName).HasMaxLength(128);
+
                 entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
             });
 
@@ -318,6 +320,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
             {
                 entity.HasKey(e => new { e.OutsideImportMappingFunctionId, e.SourceId, e.InputBillFId })
                     .HasName("PK_AccountancyOutsiteMappingObject");
+
+                entity.Property(e => e.SourceId).HasMaxLength(128);
 
                 entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
 

@@ -40,6 +40,14 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpGet]
+        [GlobalApi]
+        [Route("GetBillInfoByMappingObject")]
+        public async Task<PageDataTable> GetBillInfoByMappingObject([FromQuery] string mappingFunctionKey, [FromQuery] string objectId)
+        {
+            return await _inputDataService.GetBillInfoByMappingObject(mappingFunctionKey, objectId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("{inputTypeId}/{fId}")]
         public async Task<PageDataTable> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {

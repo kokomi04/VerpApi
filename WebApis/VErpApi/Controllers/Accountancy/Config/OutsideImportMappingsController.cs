@@ -44,19 +44,19 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet("InfoByKey/{mappingFunctionKey}")]
         [GlobalApi]
-        public async Task<OutsideMappingModel> GetImportMappingInfo(string mappingFunctionKey)
+        public async Task<OutsideMappingModel> GetImportMappingInfo([FromRoute] string mappingFunctionKey)
         {
             return await _outsideMappingService.GetImportMappingInfo(mappingFunctionKey);
         }
 
         [HttpPut("{outsideImportMappingFunctionId}")]
-        public async Task<bool> UpdateImportMapping(int outsideImportMappingFunctionId, OutsideMappingModel model)
+        public async Task<bool> UpdateImportMapping([FromRoute] int outsideImportMappingFunctionId, [FromBody] OutsideMappingModel model)
         {
             return await _outsideMappingService.UpdateImportMapping(outsideImportMappingFunctionId, model);
         }
 
         [HttpDelete("{outsideImportMappingFunctionId}")]
-        public async Task<bool> DeleteImportMapping(int outsideImportMappingFunctionId)
+        public async Task<bool> DeleteImportMapping([FromRoute] int outsideImportMappingFunctionId)
         {
             return await _outsideMappingService.DeleteImportMapping(outsideImportMappingFunctionId);
         }

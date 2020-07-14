@@ -187,5 +187,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
         }
+
+
+        public async Task<OutsideImportMappingObjectModel> MappingObjectInfo(string mappingFunctionKey, string objectId)
+        {
+            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
+            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+
+            var mappingObject = await _accountancyDBContext.OutsideImportMappingObject.FirstOrDefaultAsync(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId && m.SourceId == objectId);
+            return new OutsideImportMappingObjectModel()
+            {
+                OutsideImportMappingFunctionId = mappingObject.OutsideImportMappingFunctionId,
+                InputTypeId = functionInfo.InputTypeId,
+                SourceId = mappingObject.SourceId,
+                InputBillFId = mappingObject.InputBillFId
+            };
+        }
+
+        public async Task<bool> MappingObjectCreate(string mappingFunctionKey, string objectId, long inputBillFId)
+        {
+            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
+            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+
+            await _accountancyDBContext.OutsideImportMappingObject.AddAsync(new OutsideImportMappingObject()
+            {
+                OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId,
+                SourceId = objectId,
+                InputBillFId = inputBillFId
+            });
+
+            await _accountancyDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> MappingObjectDelete(long inputBillFId)
+        {
+            var data = _accountancyDBContext.OutsideImportMappingObject.Where(m => m.InputBillFId == inputBillFId);
+            _accountancyDBContext.OutsideImportMappingObject.RemoveRange(data);
+            await _accountancyDBContext.SaveChangesAsync();
+            return true;
+        }
     }
 }
