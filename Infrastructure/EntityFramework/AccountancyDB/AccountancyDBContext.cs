@@ -303,11 +303,15 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.DestinationDetailsPropertyName).HasMaxLength(128);
+
                 entity.Property(e => e.FunctionName).HasMaxLength(128);
 
                 entity.Property(e => e.MappingFunctionKey)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
             });
 
             modelBuilder.Entity<OutsideImportMappingObject>(entity =>

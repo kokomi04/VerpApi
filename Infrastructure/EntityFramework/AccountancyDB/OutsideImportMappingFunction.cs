@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string FunctionName { get; set; }
         public string Description { get; set; }
         public bool IsWarningOnDuplicated { get; set; }
+        public string SourceDetailsPropertyName { get; set; }
+        public string DestinationDetailsPropertyName { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
