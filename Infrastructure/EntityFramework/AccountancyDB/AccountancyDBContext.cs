@@ -26,8 +26,10 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
+        public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
+        public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
-        public virtual DbSet<Tet> Tet { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -281,6 +283,47 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_OutSideDataConfig_Category");
             });
 
+            modelBuilder.Entity<OutsideImportMapping>(entity =>
+            {
+                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMapping)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .HasConstraintName("FK_AccountancyOutsiteMapping_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
+            {
+                entity.HasIndex(e => e.FunctionName)
+                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.FunctionName).HasMaxLength(128);
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<OutsideImportMappingObject>(entity =>
+            {
+                entity.HasKey(e => new { e.OutsideImportMappingFunctionId, e.SourceId, e.InputBillFId })
+                    .HasName("PK_AccountancyOutsiteMappingObject");
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMappingObject)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
+            });
+
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
                 entity.Property(e => e.FunctionBody).IsRequired();
@@ -288,22 +331,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.ProgramingFunctionName)
                     .IsRequired()
                     .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<Tet>(entity =>
-            {
-                entity.HasKey(e => e.FId)
-                    .HasName("PK__tet__2C6EC723091E16CD");
-
-                entity.ToTable("tet");
-
-                entity.Property(e => e.FId).HasColumnName("F_Id");
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             OnModelCreatingPartial(modelBuilder);
