@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -171,6 +172,8 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
+            app.UseAllElasticApm(Configuration);
+
             loggerFactory.AddSerilog();
 
             var pathBase = AppSetting.PathBase;
