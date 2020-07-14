@@ -14,6 +14,8 @@ namespace VErp.Services.Accountancy.Service.Input
     {
         Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, string orderByFieldName, bool asc, int page, int size);
 
+        Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
+
         Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
         Task<long> CreateBill(int inputTypeId, BillInfoModel data);

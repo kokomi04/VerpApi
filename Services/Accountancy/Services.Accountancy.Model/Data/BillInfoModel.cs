@@ -8,6 +8,13 @@ namespace VErp.Services.Accountancy.Model.Data
     {
         public Dictionary<string, string> Info { get; set; }
         public Dictionary<string, string>[] Rows { get; set; }
+        public OutsideImportMappingData OutsideImportMappingData { get; set; }
+    }
+
+    public class OutsideImportMappingData
+    {
+        public string MappingFunctionKey { get; set; }
+        public string ObjectId { get; set; }
     }
 
     public class ImportBillExelMapping

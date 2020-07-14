@@ -42,7 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
-
+        private readonly IOutsideImportMappingService _outsideImportMappingService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -50,6 +50,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
+            , IOutsideImportMappingService outsideImportMappingService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -58,6 +59,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
+            _outsideImportMappingService = outsideImportMappingService;
         }
 
 
@@ -239,6 +241,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
+        public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
+        {
+            var mappingInfo = await _outsideImportMappingService.MappingObjectInfo(mappingFunctionKey, objectId);
+            if (mappingInfo == null)
+            {
+                return null;
+            }
+            return await GetBillInfo(mappingInfo.InputTypeId, mappingInfo.InputBillFId, "", false, 1, int.MaxValue);
+
+        }
+
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
@@ -331,6 +344,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
+                if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
+                {
+                    await _outsideImportMappingService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, billInfo.FId);
+                }
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
@@ -820,6 +837,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
+                await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
+
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
                 return true;
@@ -1101,7 +1120,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            if(mapping.MappingFields.Where(mf => mf.IsRequire).Any(mf => !fields.Exists(f => f.FieldName == mf.FieldName))) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu không tìm thấy");
+            if (mapping.MappingFields.Where(mf => mf.IsRequire).Any(mf => !fields.Exists(f => f.FieldName == mf.FieldName))) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu không tìm thấy");
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
@@ -1188,11 +1207,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         value = value.Trim();
                         if (field.DataTypeId == (int)EnumDataType.Date )
                         {
-                            if(!DateTime.TryParse(value.ToString(), out DateTime date))
+                            if (!DateTime.TryParse(value.ToString(), out DateTime date))
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                             value = date.AddHours(-7).GetUnix().ToString();
                         }
-                        
+
                         // Validate refer
                         if (string.IsNullOrEmpty(field.RefTableCode))
                         {

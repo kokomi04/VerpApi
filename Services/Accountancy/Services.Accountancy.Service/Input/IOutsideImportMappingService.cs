@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.OutsideMapping;
 
@@ -20,5 +21,11 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> UpdateImportMapping(int outsideImportMappingFunctionId, OutsideMappingModel model);
 
         Task<bool> DeleteImportMapping(int outsideImportMappingFunctionId);
+
+        Task<OutsideImportMappingObjectModel> MappingObjectInfo(string mappingFunctionKey, string objectId);
+
+        Task<bool> MappingObjectCreate(string mappingFunctionKey, string objectId, long inputBillFId);
+
+        Task<bool> MappingObjectDelete(long inputBillFId);
     }
 }
