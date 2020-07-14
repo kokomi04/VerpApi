@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
     {
         public long OutsideImportMappingId { get; set; }
         public int? OutsideImportMappingFunctionId { get; set; }
+        public bool IsDetail { get; set; }
         public string SourceFieldName { get; set; }
         public string DestinationFieldName { get; set; }
         public int CreatedByUserId { get; set; }

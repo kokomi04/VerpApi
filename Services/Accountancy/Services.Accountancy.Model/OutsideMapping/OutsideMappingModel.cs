@@ -13,6 +13,8 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
         public string FunctionName { get; set; }
         public string Description { get; set; }
         public bool IsWarningOnDuplicated { get; set; }
+        public string SourceDetailsPropertyName { get; set; }
+        public string DestinationDetailsPropertyName { get; set; }
 
         public virtual void Mapping(Profile profile)
         {
@@ -40,6 +42,7 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
     }
     public class OutsiteMappingModel : IMapFrom<OutsideImportMapping>
     {
+        public bool IsDetail { get; set; }
         public string SourceFieldName { get; set; }
         public string DestinationFieldName { get; set; }
         public void Mapping(Profile profile)
