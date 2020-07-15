@@ -18,6 +18,7 @@ namespace VErp.Commons.Constants
 
 
         public const string THANH_TIEN_VND_PREFIX = "vnd";
+        public const string SUM_RECIPROCAL_PREFIX = "sum_";
         public const string THANH_TIEN_NGOAI_TE_PREFIX = "ngoai_te";
         public const string TAI_KHOAN_CO_PREFIX = "tk_co";
         public const string TAI_KHOAN_NO_PREFIX = "tk_no";

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Model.Data
 {
     public class BillInfoModel
     {
-        public Dictionary<string, string> Info { get; set; }
-        public Dictionary<string, string>[] Rows { get; set; }
+        public NonCamelCaseDictionary Info { get; set; }
+        public IList<NonCamelCaseDictionary> Rows { get; set; }
         public OutsideImportMappingData OutsideImportMappingData { get; set; }
     }
 
