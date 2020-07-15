@@ -666,5 +666,19 @@ namespace VErp.Commons.Library
             return Regex.Replace(s, "[^a-zA-Z0-9]", "");
         }
 
+        public static bool IsVndColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower());
+        }
+
+        public static string VndSumName(this string columnName)
+        {
+            return $"{AccountantConstants.SUM_RECIPROCAL_PREFIX}{columnName}";
+        }
+        public static bool IsNgoaiTeColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
+        }
+
     }
 }

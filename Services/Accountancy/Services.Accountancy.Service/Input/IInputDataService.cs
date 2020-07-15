@@ -18,6 +18,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
+        Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
+
         Task<long> CreateBill(int inputTypeId, BillInfoModel data);
 
         Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data);

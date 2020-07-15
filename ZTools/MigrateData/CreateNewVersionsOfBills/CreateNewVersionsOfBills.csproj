@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -20,10 +20,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\ApiCore\ApiCore.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
     <ProjectReference Include="..\..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj" />
-    <ProjectReference Include="..\..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
+    <ProjectReference Include="..\..\..\Services\Organization\Services.Organization.Model\Services.Organization.Model.csproj" />
     <ProjectReference Include="..\..\..\Services\Organization\Services.Organization.Service\Services.Organization.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\ReportConfig\Services.ReportConfig.Service\Services.ReportConfig.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />

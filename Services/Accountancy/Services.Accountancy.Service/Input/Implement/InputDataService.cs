@@ -241,6 +241,56 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
+        public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
+        {
+            var singleFields = (await (
+               from af in _accountancyDBContext.InputAreaField
+               join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+               join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               select f.FieldName
+          ).ToListAsync()
+          ).ToHashSet();
+
+            var result = new BillInfoModel();
+
+            var dataSql = @$"
+
+                SELECT     r.*
+                FROM {INPUTVALUEROW_VIEW} r 
+
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+            ";
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+
+            result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
+
+            if (billEntryInfo.Rows.Count > 0)
+            {
+                for (var i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    for (var j = 0; j < data.Columns.Count; j++)
+                    {
+                        var column = data.Columns[j];
+                        if (singleFields.Contains(column.ColumnName))
+                        {
+                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
+                        }
+                    }
+                }
+            }
+
+            result.Rows = data.ConvertData();
+
+            return result;
+        }
+
+
         public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
         {
             var mappingInfo = await _outsideImportMappingService.MappingObjectInfo(mappingFunctionKey, objectId);
@@ -259,7 +309,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
             // Validate multiRow existed
-            if (data.Rows == null || data.Rows.Length == 0)
+            if (data.Rows == null || data.Rows.Count == 0)
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
@@ -384,12 +434,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var paramName = $"@{match[i]}";
                         script = script.Replace($"@{{{match[i]}}}", paramName);
                         data.Info.TryGetValue(fieldName, out string value);
-                        parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId)?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                        parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                     }
                     else
                     {
                         var paramNames = new List<string>();
-                        for (int rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+                        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
                         {
                             var paramName = $"@{match[i]}_{rowIndx}";
                             paramNames.Add($"({paramName})");
@@ -487,7 +537,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task CheckReferAsync(List<ValidateRowModel> data, List<ValidateField> selectFields, Dictionary<string, string> info)
+        private async Task CheckReferAsync(List<ValidateRowModel> data, List<ValidateField> selectFields, NonCamelCaseDictionary info)
         {
             // Check refer
             foreach (var field in selectFields)
@@ -538,7 +588,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (whereCondition.Length > 0)
                     {
-                        existSql += $" AND {whereCondition.ToString()}";
+                        existSql += $" AND {whereCondition}";
                     }
 
                     var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
@@ -588,7 +638,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
             // Validate multiRow existed
-            if (data.Rows == null || data.Rows.Length == 0)
+            if (data.Rows == null || data.Rows.Count == 0)
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
@@ -636,7 +686,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 currentInfo = infoLst[0];
             }
-            Dictionary<string, string> futureInfo = data.Info;
+            NonCamelCaseDictionary futureInfo = data.Info;
             string[] changeFields = CompareRow(currentInfo, futureInfo, singleFields);
             if (changeFields == null || changeFields.Length > 0)
             {
@@ -733,7 +783,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private string[] CompareRow(NonCamelCaseDictionary currentRow, Dictionary<string, string> futureRow, List<ValidateField> fields)
+        private string[] CompareRow(NonCamelCaseDictionary currentRow, NonCamelCaseDictionary futureRow, List<ValidateField> fields)
         {
             if (currentRow == null || futureRow == null)
             {
@@ -744,7 +794,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var currentValue = currentRow[field.FieldName].ToString();
                 var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue)
+                if (currentValue != updateValue?.ToString())
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
@@ -811,7 +861,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
                     var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
-                    data.Info = infoLst.Count != 0 ? infoLst[0].ToDictionary(f => f.Key, f => f.Value.ToString()) : new Dictionary<string, string>();
+                    data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
 
                     var rowsSQL = new StringBuilder("SELECT ");
                     var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
@@ -825,7 +875,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                     rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
-                    data.Rows = currentRows.Select(r => r.ToDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
+                    data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
 
                 // Before saving action (SQL)
@@ -930,11 +980,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataTable.Columns.Add("IsDeleted", typeof(bool));
             dataTable.Columns.Add("DeletedDatetimeUtc", typeof(DateTime));
 
+
+            var sumReciprocals = new Dictionary<string, decimal>();
             foreach (var column in insertColumns)
             {
                 var field = fields[column];
 
                 dataTable.Columns.Add(column, ((EnumDataType)field.DataTypeId).GetColumnDataType());
+
+                if (column.IsVndColumn())
+                {
+                    var sumColumn = column.VndSumName();
+                    dataTable.Columns.Add(sumColumn, EnumDataType.Decimal.GetColumnDataType());
+                    sumReciprocals.Add(sumColumn, 0);
+                }
             }
 
 
@@ -947,7 +1006,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 foreach (var item in data.Info)
                 {
-                    if (item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) || item.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower()))
+                    if (item.Key.IsVndColumn() || item.Key.IsNgoaiTeColumn())
                     {
                         continue;
                     }
@@ -959,7 +1018,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 foreach (var item in row)
                 {
                     var field = fields[item.Key];
-                    dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
+                    var value = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
+                    dataRow[item.Key] = value;
+
+                    if (item.Key.IsVndColumn() && value != null)
+                    {
+                        sumReciprocals[item.Key.VndSumName()] += (decimal)value;
+                    }
+
                 }
 
                 var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
@@ -979,7 +1045,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             //Create addition reciprocal accounting
-            if (data.Info.Any(k => k.Key.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower()) && decimal.TryParse(k.Value, out var value) && value != 0))
+            if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
             {
                 var dataRow = NewBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, true);
 
@@ -987,6 +1053,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
+
+                    if (item.Key.IsVndColumn())
+                    {
+                        var sumColumn = item.Key.VndSumName();
+                        dataRow[sumColumn] = sumReciprocals[sumColumn];
+                    }
                 }
 
                 var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
@@ -1190,12 +1262,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var bill in groups)
             {
-                var info = new Dictionary<string, string>();
-                var rows = new List<Dictionary<string, string>>();
+                var info = new NonCamelCaseDictionary();
+                var rows = new List<NonCamelCaseDictionary>();
                 int count = bill.Count();
                 for (int rowIndx = 0; rowIndx < count; rowIndx++)
                 {
-                    var mapRow = new Dictionary<string, string>();
+                    var mapRow = new NonCamelCaseDictionary();
                     var row = bill.ElementAt(rowIndx);
                     foreach (var field in fields)
                     {
@@ -1306,10 +1378,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         protected class ValidateRowModel
         {
-            public Dictionary<string, string> Data { get; set; }
+            public NonCamelCaseDictionary Data { get; set; }
             public string[] CheckFields { get; set; }
 
-            public ValidateRowModel(Dictionary<string, string> Data, string[] CheckFields)
+            public ValidateRowModel(NonCamelCaseDictionary Data, string[] CheckFields)
             {
                 this.Data = Data;
                 this.CheckFields = CheckFields;

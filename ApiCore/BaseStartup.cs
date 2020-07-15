@@ -142,7 +142,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigStockDBContext(AppSetting.DatabaseConnections);
             services.ConfigPurchaseOrderContext(AppSetting.DatabaseConnections);
             services.ConfigOrganizationContext(AppSetting.DatabaseConnections);
-            services.ConfigAccountingContext(AppSetting.DatabaseConnections);
+            //services.ConfigAccountingContext(AppSetting.DatabaseConnections);
             services.ConfigAccountancyContext(AppSetting.DatabaseConnections);
             services.ConfigActivityLogContext(AppSetting.DatabaseConnections);
             services.ConfigReportConfigDBContextContext(AppSetting.DatabaseConnections);
@@ -154,7 +154,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigStockDBContext(AppSetting.OwnerDatabaseConnections);
             services.ConfigPurchaseOrderContext(AppSetting.OwnerDatabaseConnections);
             services.ConfigOrganizationContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigAccountingContext(AppSetting.OwnerDatabaseConnections);
+            //services.ConfigAccountingContext(AppSetting.OwnerDatabaseConnections);
             services.ConfigAccountancyContext(AppSetting.OwnerDatabaseConnections);
             services.ConfigActivityLogContext(AppSetting.OwnerDatabaseConnections);
             services.ConfigReportConfigDBContextContext(AppSetting.OwnerDatabaseConnections);

@@ -29,8 +29,6 @@
     <ProjectReference Include="..\..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\Accountancy\Services.Accountancy.Model\Services.Accountancy.Model.csproj" />
     <ProjectReference Include="..\..\..\Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj" />
-    <ProjectReference Include="..\..\..\Services\Accountant\Services.Accountant.Model\Services.Accountant.Model.csproj" />
-    <ProjectReference Include="..\..\..\Services\Accountant\Services.Accountant.Service\Services.Accountant.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\Organization\Services.Organization.Model\Services.Organization.Model.csproj" />
     <ProjectReference Include="..\..\..\Services\Organization\Services.Organization.Service\Services.Organization.Service.csproj" />
     <ProjectReference Include="..\..\..\Services\ReportConfig\Services.ReportConfig.Service\Services.ReportConfig.Service.csproj" />
