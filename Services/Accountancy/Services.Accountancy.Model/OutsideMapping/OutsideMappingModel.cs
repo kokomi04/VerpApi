@@ -34,6 +34,10 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
 
     public class OutsideMappingModel : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
     {       
+        public OutsideMappingModel()
+        {
+            FieldMappings = new List<OutsiteMappingModel>();
+        }
         public IList<OutsiteMappingModel> FieldMappings { get; set; }
 
         public void Mapping(Profile profile)
