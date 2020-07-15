@@ -714,9 +714,9 @@ namespace VErp.Services.Accountancy.Service.Category
         public async Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues)
         {
             List<MapObjectOutputModel> titles = new List<MapObjectOutputModel>();
-            var groups = categoryValues.GroupBy(v => new { v.CategoryCode, v.CategoryFieldName });
+            var groupByCodes = categoryValues.Where(v => !string.IsNullOrEmpty(v.Value)).Distinct().GroupBy(v => new { v.CategoryCode });
 
-            foreach (var group in groups)
+            foreach (var group in groupByCodes)
             {
                 var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
 
@@ -726,39 +726,68 @@ namespace VErp.Services.Accountancy.Service.Category
                               where c.CategoryCode == category.CategoryCode && f.FormTypeId != (int)EnumFormType.ViewOnly
                               select f).ToList();
 
-                var inputField = fields.First(f => f.CategoryFieldName == group.Key.CategoryFieldName);
-
-                var values = group.Select(g => g.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
-
-                var dataSql = new StringBuilder();
-                var sqlParams = new List<SqlParameter>();
-                dataSql.Append(GetSelect(tableName, fields, category.IsTreeView));
-
-                dataSql.Append($" FROM {tableName} WHERE [{tableName}].{group.Key.CategoryFieldName} IN (");
-                int suffix = 0;
-                foreach (var value in values)
+                var selectCondition = $"{GetSelect(tableName, fields, category.IsTreeView)} FROM {tableName} ";
+                var groupByFilters = group.GroupBy(v => new { v.Filters });
+                foreach (var groupByFilter in groupByFilters)
                 {
-                    if (suffix > 0)
+                    var dataSql = new StringBuilder(selectCondition);
+                    var sqlParams = new List<SqlParameter>();
+                    int suffix = 0;
+                    dataSql.Append("WHERE (");
+                    var groupByFields = group.GroupBy(v => new { v.CategoryFieldName });
+                    foreach (var groupByField in groupByFields)
                     {
-                        dataSql.Append(",");
+                        var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
+                        var values = groupByField.Select(v => v.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
+                        if(values.Count() > 0)
+                        {
+                            if (suffix > 0)
+                            {
+                                dataSql.Append(" OR ");
+                            }
+                            dataSql.Append($" [{tableName}].{inputField.CategoryFieldName} IN (");
+                            var paramNames = new List<string>();
+                            foreach (var value in values)
+                            {
+                                var paramName = $"@{inputField.CategoryFieldName}_in_{suffix}";
+                                paramNames.Add(paramName);
+                                sqlParams.Add(new SqlParameter(paramName, value));
+                                suffix++;
+                            }
+                            dataSql.Append(string.Join(",", paramNames));
+                            dataSql.Append(")");
+                        }
                     }
-                    var paramName = $"@{group.Key.CategoryFieldName}_in_{suffix}";
-                    dataSql.Append($"{paramName}");
-                    sqlParams.Add(new SqlParameter(paramName, value));
-                    suffix++;
+                    dataSql.Append(")");
+                    if (!string.IsNullOrEmpty(groupByFilter.Key.Filters))
+                    {
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(groupByFilter.Key.Filters);
+                        if (filterClause != null)
+                        {
+                            dataSql.Append(" AND ");
+                            filterClause.FilterClauseProcess(tableName, ref dataSql, ref sqlParams, ref suffix);
+                        }
+                    }
+
+                    var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                    var lst = data.ConvertData();
+
+                    foreach (var item in groupByFilter)
+                    {
+                        var referObject = lst.FirstOrDefault(o => o[item.CategoryFieldName].ToString() == item.Value);
+                        if(referObject != null)
+                        {
+                            titles.Add(new MapObjectOutputModel
+                            {
+                                CategoryCode = item.CategoryCode,
+                                Filters = item.Filters,
+                                CategoryFieldName = item.CategoryFieldName,
+                                Value = item.Value,
+                                ReferObject = referObject
+                            });
+                        }
+                    }
                 }
-                dataSql.Append(")");
-
-                var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
-                var lst = data.ConvertData();
-
-                titles.AddRange(lst.Select(r => new MapObjectOutputModel
-                {
-                    CategoryCode = category.CategoryCode,
-                    CategoryFieldName = group.Key.CategoryFieldName,
-                    Value = r[group.Key.CategoryFieldName].ToString(),
-                    ReferObject = r
-                }));
             }
 
             return titles;
