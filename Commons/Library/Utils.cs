@@ -515,36 +515,27 @@ namespace VErp.Commons.Library
 
         public static object ConvertValueByType(this string value, EnumDataType dataType)
         {
-            object result;
+            if (value == null) return null;
             switch (dataType)
             {
                 case EnumDataType.Boolean:
-                    result = value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
-                    break;
+                    return value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
                 case EnumDataType.Date:
-                    result = DateTime.Parse(value);
-                    break;
+                    return DateTime.Parse(value);
                 case EnumDataType.Percentage:
-                    result = double.Parse(value);
-                    break;
+                    return double.Parse(value);
                 case EnumDataType.Decimal:
-                    result = decimal.Parse(value);
-                    break;
+                    return decimal.Parse(value);
                 case EnumDataType.Int:
-                    result = int.Parse(value);
-                    break;
+                    return int.Parse(value);
                 case EnumDataType.BigInt:
-                    result = long.Parse(value);
-                    break;
+                    return long.Parse(value);
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    result = value;
-                    break;
+                    return value;
             }
-
-            return result;
         }
 
 

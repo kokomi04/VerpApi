@@ -783,8 +783,8 @@ namespace VErp.Services.Accountancy.Service.Category
             catch (Exception ex)
             {
                 trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
+                _logger.LogError(ex, "Update");
+                throw ex;
             }
         }
 
@@ -807,7 +807,7 @@ namespace VErp.Services.Accountancy.Service.Category
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
             try
             {
-                var category = _accountancyContext.Category.First(c => c.CategoryId == categoryField.CategoryId);
+                var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == categoryField.CategoryId);
                 // Delete field
                 categoryField.IsDeleted = true;
                 await _accountancyContext.SaveChangesAsync();
@@ -837,7 +837,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
+                throw ex;
             }
         }
         #endregion

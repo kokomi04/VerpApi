@@ -420,7 +420,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 _logger.LogError(ex, "InputTypeViewCreate");
                 throw ex;
             }
-
         }
 
         public async Task<bool> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model)

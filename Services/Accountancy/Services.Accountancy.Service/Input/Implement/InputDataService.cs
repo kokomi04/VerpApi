@@ -326,8 +326,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
+                if (result != 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Thông tin chứng từ không hợp lệ. Mã lỗi {result}");
+                }
 
                 var billInfo = new InputBill()
                 {
@@ -361,45 +365,47 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields)
+        private async Task<int> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields)
         {
+            var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             if (!string.IsNullOrEmpty(script))
             {
                 var parammeters = new List<SqlParameter>();
                 var pattern = @"@{(?<word>\w+)}";
                 Regex rx = new Regex(pattern);
-                MatchCollection match = rx.Matches(script);
-                int suffix = 0;
+                var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
+
                 for (int i = 0; i < match.Count; i++)
                 {
-                    var fieldName = match[i].Groups["word"].Value;
+                    var fieldName = match[i];
                     var field = fields.First(f => f.FieldName == fieldName);
                     if (!field.IsMultiRow)
                     {
-                        var paramName = $"{match[i].Value}_{suffix}";
-                        script = script.Replace(match[i].Value, paramName);
-                        parammeters.Add(new SqlParameter(paramName, data.Info[fieldName].ConvertValueByType((EnumDataType)field.DataTypeId)));
-                        suffix++;
+                        var paramName = $"@{match[i]}";
+                        script = script.Replace($"@{{{match[i]}}}", paramName);
+                        data.Info.TryGetValue(fieldName, out string value);
+                        parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId)?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                     }
                     else
                     {
-                        var paramNames = new StringBuilder();
+                        var paramNames = new List<string>();
                         for (int rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
                         {
-                            if (rowIndx > 0)
-                            {
-                                paramNames.Append(", ");
-                            }
-                            var paramName = $"{match[i].Value}_{suffix}";
-                            paramNames.Append(paramName);
-                            parammeters.Add(new SqlParameter(paramName, data.Rows[rowIndx][fieldName].ConvertValueByType((EnumDataType)field.DataTypeId)));
-                            suffix++;
+                            var paramName = $"@{match[i]}_{rowIndx}";
+                            paramNames.Add($"({paramName})");
+                            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
+                            parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                         }
-                        script = script.Replace(match[i].Value, paramNames.ToString());
+                        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
+                        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
                     }
                 }
+
+                parammeters.Add(resultParam);
+
                 await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
             }
+            return (resultParam.Value as int?).GetValueOrDefault();
         }
 
         private void CheckRequired(List<ValidateRowModel> rows, List<ValidateField> requiredFields)
@@ -1205,7 +1211,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
-                        if (field.DataTypeId == (int)EnumDataType.Date )
+                        if (field.DataTypeId == (int)EnumDataType.Date)
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
