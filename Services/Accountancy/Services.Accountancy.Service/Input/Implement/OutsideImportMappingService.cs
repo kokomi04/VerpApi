@@ -65,7 +65,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         var mappingField = _mapper.Map<OutsideImportMapping>(mapping);
                         mappingField.OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId;
+
+                        mappings.Add(mappingField);
                     }
+
                     await _accountancyDBContext.OutsideImportMapping.AddRangeAsync(mappings);
                     await _accountancyDBContext.SaveChangesAsync();
 
@@ -141,6 +144,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         var mappingField = _mapper.Map<OutsideImportMapping>(mapping);
                         mappingField.OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId;
+                        mappings.Add(mappingField);
                     }
                     await _accountancyDBContext.OutsideImportMapping.AddRangeAsync(mappings);
                     await _accountancyDBContext.SaveChangesAsync();
