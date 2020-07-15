@@ -49,7 +49,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<int> CreateImportMapping(OutsideMappingModel model)
         {
-            var existedFunction = _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == model.MappingFunctionKey);
+            var existedFunction = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == model.MappingFunctionKey);
             if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
 
             using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
@@ -116,7 +116,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateImportMapping(int outsideImportMappingFunctionId, OutsideMappingModel model)
         {
-            var existedFunction = _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId != outsideImportMappingFunctionId && f.MappingFunctionKey == model.MappingFunctionKey);
+            var existedFunction = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId != outsideImportMappingFunctionId && f.MappingFunctionKey == model.MappingFunctionKey);
             if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
 
             var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
