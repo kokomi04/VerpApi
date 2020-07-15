@@ -104,6 +104,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var mappings = await _accountancyDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId).ToListAsync();
 
+            data.FieldMappings = new List<OutsiteMappingModel>();
             foreach (var mapping in mappings)
             {
                 var mappingField = _mapper.Map<OutsiteMappingModel>(mapping);
