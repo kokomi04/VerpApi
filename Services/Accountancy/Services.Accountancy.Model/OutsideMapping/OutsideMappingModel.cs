@@ -7,7 +7,7 @@ using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.OutsideMapping
 {
-    public class OutsideMappingModelList : IMapFrom<OutsideImportMappingFunction>
+    public class OutsideMappingModelBase
     {
         public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }
@@ -17,6 +17,10 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
         public string SourceDetailsPropertyName { get; set; }
         public string DestinationDetailsPropertyName { get; set; }
         public string ObjectIdFieldName { get; set; }
+    }
+    public class OutsideMappingModelList : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
+    {
+        public int OutsideImportMappingFunctionId { get; set; }      
 
         public virtual void Mapping(Profile profile)
         {
@@ -28,11 +32,11 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
 
     }
 
-    public class OutsideMappingModel : OutsideMappingModelList
-    {
+    public class OutsideMappingModel : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
+    {       
         public IList<OutsiteMappingModel> FieldMappings { get; set; }
 
-        public override void Mapping(Profile profile)
+        public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsideMappingModel, OutsideImportMappingFunction>()
                 .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
