@@ -87,7 +87,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> importFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
