@@ -177,7 +177,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
             var singleFields = (await (
                from af in _accountancyDBContext.InputAreaField
@@ -302,7 +302,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 return null;
             }
-            return await GetBillInfo(mappingInfo.InputTypeId, mappingInfo.InputBillFId, "", false, 1, int.MaxValue);
+            return await GetBillInfoRows(mappingInfo.InputTypeId, mappingInfo.InputBillFId, "", false, 1, int.MaxValue);
 
         }
 
