@@ -163,8 +163,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     GROUP BY r.InputBill_F_Id    
                 )
                 SELECT 
-                    t.InputBill_F_Id AS F_Id,
-                    {selectColumn}
+                    t.InputBill_F_Id AS F_Id
+                    {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
@@ -283,6 +283,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                     }
                 }
+            }
+            else
+            {
+                result.Info = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
             result.Rows = data.ConvertData();
@@ -411,7 +415,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "CreateBill");
-                throw ex;
+                throw;
             }
         }
 
@@ -779,7 +783,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "UpdateBill");
-                throw ex;
+                throw;
             }
         }
 
@@ -903,7 +907,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "DeleteBill");
-                throw ex;
+                throw;
             }
         }
 
@@ -1021,9 +1025,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var value = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                     dataRow[item.Key] = value;
 
-                    if (item.Key.IsVndColumn() && value != null)
+                    if (item.Key.IsVndColumn() && !value.IsNullObject())
                     {
-                        sumReciprocals[item.Key.VndSumName()] += (decimal)value;
+                        sumReciprocals[item.Key.VndSumName()] += Convert.ToDecimal(value);
                     }
 
                 }
@@ -1368,7 +1372,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     trans.Rollback();
                     _logger.LogError(ex, "Import");
-                    throw ex;
+                    throw;
                 }
             }
             return true;

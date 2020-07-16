@@ -200,6 +200,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
 
             var mappingObject = await _accountancyDBContext.OutsideImportMappingObject.FirstOrDefaultAsync(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId && m.SourceId == objectId);
+
+            if (mappingObject == null) return null;
+
             return new OutsideImportMappingObjectModel()
             {
                 OutsideImportMappingFunctionId = mappingObject.OutsideImportMappingFunctionId,

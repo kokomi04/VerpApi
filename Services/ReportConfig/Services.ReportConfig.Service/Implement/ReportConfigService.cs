@@ -102,7 +102,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "ReportTypeViewUpdate");
-                throw ex;
+                throw;
             }
         }
 
@@ -185,7 +185,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "ReportTypeViewCreate");
-                throw ex;
+                throw;
             }
 
         }

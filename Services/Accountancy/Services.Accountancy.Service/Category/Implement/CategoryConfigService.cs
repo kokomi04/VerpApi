@@ -784,7 +784,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -837,7 +837,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                throw ex;
+                throw;
             }
         }
         #endregion

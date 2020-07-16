@@ -1055,7 +1055,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     trans.Rollback();
                     _logger.LogError(ex, "Import");
-                    throw ex;
+                    throw;
                 }
             }
 

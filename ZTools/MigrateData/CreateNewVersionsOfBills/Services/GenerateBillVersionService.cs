@@ -36,7 +36,16 @@ namespace CreateNewVersionsOfBills.Services
                 {
                     var fId = Convert.ToInt64(bill["F_Id"]);
                     var info = await _inputDataService.GetBillInfo(type.InputTypeId, fId);
-                    await _inputDataService.UpdateBill(type.InputTypeId, fId, info);
+                    try
+                    {
+                        await _inputDataService.UpdateBill(type.InputTypeId, fId, info);
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
+                    
                 }
 
             }

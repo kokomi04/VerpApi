@@ -126,10 +126,10 @@ namespace VErp.Commons.Library
             {
                 return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
-                throw ex;
+                throw;
             }
 
         }
@@ -165,9 +165,9 @@ namespace VErp.Commons.Library
                 var result = Convert.ToDecimal(outPut);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -446,7 +446,7 @@ namespace VErp.Commons.Library
 
         public static bool IsNullObject(this object obj)
         {
-            if (obj == null) return true;
+            if (obj == null || obj == DBNull.Value) return true;
 
             if (obj.GetType() == typeof(string))
             {

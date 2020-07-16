@@ -139,7 +139,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -249,7 +249,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -301,7 +301,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -418,7 +418,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "InputTypeViewCreate");
-                throw ex;
+                throw;
             }
         }
 
@@ -456,7 +456,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "InputTypeViewUpdate");
-                throw ex;
+                throw;
             }
         }
 
@@ -647,7 +647,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -697,7 +697,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -968,7 +968,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -1005,7 +1005,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -1047,7 +1047,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -1085,7 +1085,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                throw ex;
+                throw;
             }
         }
 
