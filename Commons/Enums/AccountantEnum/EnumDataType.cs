@@ -29,7 +29,7 @@ namespace VErp.Commons.Enums.AccountantEnum
         Email = 5,
         [Description("Boolean")]
         [DataSize(-1)]
-        [Regex("^true|false$")]
+        [Regex("^true|false|True|False|1|0$")]
         Boolean = 6,
         [Description("Tỷ lệ phần trăm")]
         [DataSize(-1)]
