@@ -1027,7 +1027,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (item.Key.IsVndColumn() && !value.IsNullObject())
                     {
-                        sumReciprocals[item.Key.VndSumName()] += Convert.ToDecimal(value);
+                        var deValue = Convert.ToDecimal(value);
+                        var colName = item.Key.VndSumName();
+
+                        sumReciprocals[colName] += deValue;
+                        dataRow[colName] = deValue;
                     }
 
                 }
@@ -1057,12 +1061,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var field = fields[item.Key];
                     dataRow[item.Key] = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
-
-                    if (item.Key.IsVndColumn())
-                    {
-                        var sumColumn = item.Key.VndSumName();
-                        dataRow[sumColumn] = sumReciprocals[sumColumn];
-                    }
+                }
+                foreach (var sum in sumReciprocals)
+                {
+                    dataRow[sum.Key] = sum.Value;
                 }
 
                 var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
