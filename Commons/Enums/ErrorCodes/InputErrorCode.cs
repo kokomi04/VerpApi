@@ -36,11 +36,11 @@ namespace VErp.Commons.Enums.StandardEnum
         FormTypeNotFound = 13,
         [Description("Chứng từ không được phép thay đổi")]
         InputReadOnly = 14,
-        [Description("Không được phép để trống trường thông tin {0}")]
+        [Description("Không được phép để trống dòng {0} trường thông tin {1}")]
         RequiredFieldIsEmpty = 15,
         [Description("Trường thông tin {0} có giá trị đã tồn tại")]
         UniqueValueAlreadyExisted = 16,
-        [Description("Thông tin giá trị {0} của trường {1} không tồn tại")]
+        [Description("Thông tin giá trị dòng {0} của trường {1} không tồn tại")]
         ReferValueNotFound = 17,
         [Description("Dòng thông tin không tồn tại")]
         InputRowNotFound = 18,
@@ -48,7 +48,7 @@ namespace VErp.Commons.Enums.StandardEnum
         IsInputArea = 19,
         [Description("Giá trị không tồn tại")]
         InputValueNotFound = 23,
-        [Description("Giá trị {0} không hợp lệ")]
+        [Description("Giá trị dòng {0} trường dữ liệu {1} không hợp lệ")]
         InputValueInValid = 25,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
         InputRowAlreadyExisted = 26,

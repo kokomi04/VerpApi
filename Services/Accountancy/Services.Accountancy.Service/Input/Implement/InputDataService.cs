@@ -466,8 +466,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             foreach (var field in requiredFields)
             {
+                int rowIndx = 0;
                 foreach (var row in rows)
                 {
+                    rowIndx++;
                     if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
@@ -475,7 +477,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     row.Data.TryGetValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
                     }
                 }
             }
@@ -547,8 +549,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             foreach (var field in selectFields)
             {
                 string tableName = $"v{field.RefTableCode}";
+                int rowIndex = 0;
                 foreach (var row in data)
                 {
+                    rowIndex++;
                     if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
@@ -599,7 +603,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
-                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { value.ToString(), field.Title });
+                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex, field.Title });
                     }
                 }
             }
@@ -609,8 +613,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             foreach (var field in categoryFields)
             {
+                int rowIndex = 0;
                 foreach (var row in data)
                 {
+                    rowIndex++;
                     if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
                     {
                         continue;
@@ -629,7 +635,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                         || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
                     {
-                        throw new BadRequestException(InputErrorCode.InputValueInValid, new string[] { field.Title });
+                        throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { rowIndex, field.Title });
                     }
                 }
             }
@@ -1221,9 +1227,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
             }
-            var groups = data.Rows.Where(r => r[columnKey.Column] != null).GroupBy(r => r[columnKey.Column]);
+            var groups = data.Rows.Select((r, i) => new
+            {
+                Data = r,
+                Index = i + mapping.FromRow
+            }).Where(r => r.Data[columnKey.Column] != null).GroupBy(r => r.Data[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
-
 
             // Validate unique single field
             foreach (var field in fields.Where(f => f.IsUnique))
@@ -1231,7 +1240,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
                 if (mappingField == null) continue;
 
-                var values = field.IsMultiRow ? groups.SelectMany(b => b.Select(r => r[mappingField.Column]?.ToString())).ToList() : groups.Where(b => b.Count() > 0).Select(b => b.First()[mappingField.Column]?.ToString()).ToList();
+                var values = field.IsMultiRow ? groups.SelectMany(b => b.Select(r => r.Data[mappingField.Column]?.ToString())).ToList() : groups.Where(b => b.Count() > 0).Select(b => b.First().Data[mappingField.Column]?.ToString()).ToList();
 
                 // Check unique trong danh sách values thêm mới
                 if (values.Distinct().Count() < values.Count)
@@ -1281,16 +1290,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (mappingField == null && field.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {field.FieldName} không tìm thấy");
                         if (mappingField == null) continue;
                         string value = null;
-                        if (row.ContainsKey(mappingField.Column))
-                            value = row[mappingField.Column]?.ToString();
+                        if (row.Data.ContainsKey(mappingField.Column))
+                            value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
+                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
                         if (field.DataTypeId == (int)EnumDataType.Date)
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
                             value = date.AddHours(-7).GetUnix().ToString();
                         }
 
@@ -1305,7 +1314,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                                     || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
                                 {
-                                    throw new BadRequestException(InputErrorCode.InputValueInValid, new string[] { field.Title });
+                                    throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { row.Index, field.Title });
                                 }
                             }
                         }
@@ -1318,7 +1327,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new string[] { value, field.Title });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title });
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
