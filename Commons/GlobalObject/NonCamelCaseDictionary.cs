@@ -9,7 +9,7 @@ namespace VErp.Commons.GlobalObject
     {
         public bool TryGetValue(string key, out string value)
         {
-            var isSuccess = TryGetValue(key, out var objValue);
+            var isSuccess = base.TryGetValue(key, out var objValue);
             value = objValue?.ToString();
             return isSuccess;
         }
