@@ -49,10 +49,18 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}")]
-        public async Task<PageDataTable> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputDataService.GetBillInfo(inputTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
+            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
         }
+
+        [HttpGet]
+        [Route("{inputTypeId}/{fId}/info")]
+        public async Task<BillInfoModel> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId)
+        {
+            return await _inputDataService.GetBillInfo(inputTypeId, fId).ConfigureAwait(true);
+        }
+
 
         [HttpPost]
         [Route("{inputTypeId}")]

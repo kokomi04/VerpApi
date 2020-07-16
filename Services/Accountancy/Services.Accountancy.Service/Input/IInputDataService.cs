@@ -16,7 +16,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
-        Task<PageDataTable> GetBillInfo(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 
