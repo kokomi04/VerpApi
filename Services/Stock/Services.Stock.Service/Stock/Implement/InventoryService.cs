@@ -750,7 +750,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Rollback();
                         _stockDbContext.RollbackEntities();
                         _logger.LogError(ex, "UpdateInventoryOutput");
-                        throw ex;
+                        throw;
                     }
                 }
 

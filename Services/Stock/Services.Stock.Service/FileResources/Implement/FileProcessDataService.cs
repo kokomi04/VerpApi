@@ -433,7 +433,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         catch (Exception ex)
                         {
                             return GeneralCode.InternalError;
-                            throw ex;
+                            throw;
                         }
                         if (customerExcelModelList != null && customerExcelModelList.Count > 0)
                         {
@@ -468,7 +468,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     catch (Exception ex)
                     {
                         return GeneralCode.InternalError;
-                        throw ex;
+                        throw;
                     }
                 }
                 return GeneralCode.InternalError;
@@ -476,7 +476,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ProcessCustomerExcelSheet");
-                throw ex;
+                throw;
             }
         }
 
@@ -570,7 +570,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     catch (Exception ex)
                     {
                         return GeneralCode.InternalError;
-                        throw ex;
+                        throw;
                     }
 
                     #region Cập nhật ProductCate && ProductType
@@ -978,7 +978,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     catch (Exception ex)
                     {
                         return GeneralCode.InternalError;
-                        throw ex;
+                        throw;
                     }
 
                     #region Thông tin sản phẩm
