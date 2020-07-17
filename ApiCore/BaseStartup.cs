@@ -172,7 +172,10 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
+
+#if !DEBUG
             app.UseAllElasticApm(Configuration);
+#endif
 
             loggerFactory.AddSerilog();
 
@@ -286,9 +289,9 @@ namespace VErp.Infrastructure.ApiCore
 
         private void CreateSerilogLogger(IConfiguration configuration)
         {
-            var seqServerUrl = configuration["Logging"];
-            var logstashUrl = configuration["Serilog:LogstashgUrl"];
-            var filePathFormat = $"{AppSetting.Logging.OutputPath}/{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
+            //var seqServerUrl = configuration["Logging"];
+            //var logstashUrl = configuration["Serilog:LogstashgUrl"];
+            var filePathFormat = $"{AppSetting.Logging.OutputPath}/{EnviromentConfig.EnviromentName}/{AppSetting.ServiceName}/" + "Log-{Date}.log";
             var logTemplate = "{Level:u5} {Timestamp:yyyy-MM-dd HH:mm:ss.fff} - [R#{RequestId}]{Message:j}{EscapedException}{NewLine}{NewLine}";
             var logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
