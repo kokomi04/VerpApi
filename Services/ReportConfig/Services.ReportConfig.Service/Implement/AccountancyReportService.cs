@@ -170,8 +170,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     rowValue.TryAdd(column.Name, configStr);
                     if (keyValueRows[i].ContainsKey(column.Name) && !string.IsNullOrWhiteSpace(keyValueRows[i][column.Name]))
                     {
-                        rowValue.TryAdd(column.Name + ".key", keyValueRows[i][column.Name]);
-
+                        rowValue.TryAdd(column.Name + "_key", keyValueRows[i][column.Name]);
+                    }
+                    else
+                    {
+                        rowValue.TryAdd(column.Name + "_key", null);
                     }
 
                     if (BscRowsModel.IsSqlSelect(configStr))
@@ -209,7 +212,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            bscRows = CastAlias(columns, bscRows);
+            bscRows = await CastAlias(columns, bscRows, sqlParams);
 
             //Totals
             var totals = new NonCamelCaseDictionary();
@@ -303,7 +306,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            var data = CastAlias(columns, table.ConvertData());
+            var data = await CastAlias(columns, table.ConvertData(), sqlParams);
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
             foreach (var column in calSumColumns)
@@ -333,6 +336,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return (new PageDataTable() { List = data, Total = data.Count }, totals);
 
         }
+
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var totals = new NonCamelCaseDictionary();
@@ -362,9 +366,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            var selectColumn = $"{string.Join(",", columns.Select(c => $"{c.Value} AS {c.Alias}"))}";
-
-            var view = $"(SELECT {selectColumn} FROM {viewSql}) AS v";
+            var view = $"(SELECT {SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value))} FROM {viewSql}) AS v";
 
             var whereColumn = new List<string>();
             foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
@@ -416,28 +418,57 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private IList<NonCamelCaseDictionary> CastAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData)
+        private async Task<IList<NonCamelCaseDictionary>> CastAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams)
         {
             var data = new List<NonCamelCaseDictionary>();
+
+            const string staticRowParamPrefix = "@_static_row_data";
+
             foreach (var row in orignalData)
             {
-                var newRow = new NonCamelCaseDictionary();
-                var oldNames = row.Keys.ToList();
-                for (var i = 0; i < oldNames.Count; i++)
+                var rowSql = SelectAsAlias(row.ToDictionary(k => k.Key, k => $"{staticRowParamPrefix}{k.Key}"));
+
+                var rowParams = sqlParams.Select(p => p.CloneSqlParam()).ToList();
+                rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value == null ? DBNull.Value : c.Value)));
+
+                var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value));
+
+                selectAliasSql = $"SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v";
+
+                var whereColumn = new List<string>();
+                foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
                 {
-                    if (i < columns.Length)
-                    {
-                        newRow.Add(columns[i].Alias, row[oldNames[i]]);
-                    }
-                    else
-                    {
-                        newRow.Add(oldNames[i], row[oldNames[i]]);
-                    }
+                    whereColumn.Add($"{column.Alias} {column.Where}");
                 }
-                data.Add(newRow);
+
+                if (whereColumn.Count > 0)
+                {
+                    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+                }
+
+                var rowData = await _accountancyDBContext.QueryDataTable(selectAliasSql, rowParams.ToArray());
+                if (rowData.Rows.Count > 0)
+                    data.Add(rowData.ConvertFirstRowData().ToNonCamelCaseDictionary());
             }
 
             return data;
+        }
+
+        private string SelectAsAlias(Dictionary<string, string> keyValues)
+        {
+            var selectSql = new StringBuilder();
+            var first = true;
+            foreach (var (key, value) in keyValues)
+            {
+                if (!first)
+                {
+                    selectSql.Append(",");
+                }
+                selectSql.AppendLine($"{value} AS {key}");
+                first = false;
+            }
+
+            return selectSql.ToString();
         }
     }
 }
