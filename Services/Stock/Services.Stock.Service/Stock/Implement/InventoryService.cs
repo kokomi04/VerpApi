@@ -295,16 +295,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == inventoryObj.StockId);
 
-                var mappingObjects = _stockDbContext.VMappingOusideImportObject
-                    .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey) && m.SourceId == inventoryId.ToString())
-                    .Select(m => new MappingInputBillModel()
-                    {
-                        MappingFunctionKey = m.MappingFunctionKey,
-                        InputTypeId = m.InputTypeId,
-                        SourceId = m.SourceId,
-                        InputBillFId = m.InputBillFId
-                    })
-                    .ToList();
+                IList<MappingInputBillModel> mappingObjects = null;
+
+                if (mappingFunctionKeys != null && mappingFunctionKeys.Count > 0)
+                {
+                    mappingObjects = _stockDbContext.VMappingOusideImportObject
+                        .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey) && m.SourceId == inventoryId.ToString())
+                        .Select(m => new MappingInputBillModel()
+                        {
+                            MappingFunctionKey = m.MappingFunctionKey,
+                            InputTypeId = m.InputTypeId,
+                            SourceId = m.SourceId,
+                            InputBillFId = m.InputBillFId
+                        })
+                        .ToList();
+                }
 
                 var inventoryOutput = new InventoryOutput()
                 {
