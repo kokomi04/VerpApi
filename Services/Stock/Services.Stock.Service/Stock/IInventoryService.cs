@@ -28,14 +28,15 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType type = 0, long beginTime = 0, long endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
+
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
         /// </summary>
         /// <param name="inventoryId">Mã phiếu</param>
         /// <returns></returns>
-        Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId);
+        Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId, IList<string> mappingFunctionKeys = null);
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
