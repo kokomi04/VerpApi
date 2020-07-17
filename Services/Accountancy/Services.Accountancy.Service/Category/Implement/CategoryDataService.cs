@@ -520,13 +520,11 @@ namespace VErp.Services.Accountancy.Service.Category
             sql.Append($"SELECT [{tableName}].F_Id,");
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
-                if (string.IsNullOrEmpty(field.RefTableCode))
+                sql.Append($"[{tableName}].{field.CategoryFieldName},");
+                if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) 
+                    && !string.IsNullOrEmpty(field.RefTableCode)
+                    && !string.IsNullOrEmpty(field.RefTableTitle))
                 {
-                    sql.Append($"[{tableName}].{field.CategoryFieldName},");
-                }
-                else
-                {
-                    sql.Append($"[{tableName}].{field.CategoryFieldName},");
                     foreach (var item in field.RefTableTitle.Split(","))
                     {
                         var title = item.Trim();

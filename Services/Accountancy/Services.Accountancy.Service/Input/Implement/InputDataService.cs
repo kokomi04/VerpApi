@@ -74,7 +74,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                 where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.DataTypeId, a.IsMultiRow }
+                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
 
@@ -130,7 +130,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     f.FieldName
                 };
 
-                if (!string.IsNullOrWhiteSpace(f.RefTableTitle) && !string.IsNullOrWhiteSpace(f.RefTableTitle))
+                if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)
+                && !string.IsNullOrWhiteSpace(f.RefTableTitle)
+                && !string.IsNullOrWhiteSpace(f.RefTableTitle))
                 {
                     refColumns.AddRange(f.RefTableTitle.Split(',').Select(c => f.FieldName + "_" + c.Trim()));
                 }
@@ -1110,7 +1112,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return dataRow;
         }
 
-
         private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow, HashSet<string> requireFields)
         {
             for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
@@ -1174,8 +1175,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
                 });
         }
-
-
 
         public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
         {
