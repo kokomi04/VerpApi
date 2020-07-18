@@ -54,6 +54,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
@@ -68,6 +69,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
@@ -269,7 +271,9 @@ namespace VErp.Services.Accountancy.Service.Category
                 //Update config outside nếu là danh mục ngoài phân hệ
                 if (category.IsOutSideData)
                 {
-                    OutSideDataConfig config = _accountancyContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
+                    OutSideDataConfig config = _accountancyContext.OutSideDataConfig
+                        .Include(o => o.OutsideDataFieldConfig)
+                        .FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
 
                     if (config == null)
                     {
@@ -283,8 +287,31 @@ namespace VErp.Services.Accountancy.Service.Category
                         config.Url = data.OutSideDataConfig.Url;
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
+                        config.Joins = data.OutSideDataConfig.Joins;
+                        // Update config fields
+                        var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
+                        var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
+                        var updatedFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId != 0).ToList();
+                        foreach(var deletedField in deletedFields)
+                        {
+                            deletedField.IsDeleted = true;
+                        }
+                        foreach(var newField in newFields)
+                        {
+                            var field = _mapper.Map<OutsideDataFieldConfig>(newField);
+                            config.OutsideDataFieldConfig.Add(field);
+                        }
+                        foreach(var updatedField in updatedFields)
+                        {
+                            var curField = config.OutsideDataFieldConfig.FirstOrDefault(f => f.OutsideDataFieldConfigId == updatedField.OutsideDataFieldConfigId);
+                            if (curField == null) continue;
+                            curField.Value = updatedField.Value;
+                            curField.Alias = updatedField.Alias;
+                        }
+
                     }
                 }
+                await _accountancyContext.SaveChangesAsync();
 
                 string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
 
@@ -297,8 +324,6 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
                     });
-
-                await _accountancyContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
                 return GeneralCode.Success;
