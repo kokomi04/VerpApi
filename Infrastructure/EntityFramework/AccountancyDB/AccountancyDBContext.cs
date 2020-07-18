@@ -15,8 +15,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
-        public virtual DbSet<AccountancyOutsiteMapping> AccountancyOutsiteMapping { get; set; }
-        public virtual DbSet<AccountancyOutsiteMappingFunction> AccountancyOutsiteMappingFunction { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -28,6 +26,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
@@ -38,28 +37,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<AccountancyOutsiteMapping>(entity =>
-            {
-                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
-
-                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<AccountancyOutsiteMappingFunction>(entity =>
-            {
-                entity.HasIndex(e => e.FunctionName)
-                    .HasName("IX_AccountancyOutsiteMappingFunction")
-                    .IsUnique();
-
-                entity.Property(e => e.Description).HasMaxLength(512);
-
-                entity.Property(e => e.FunctionName).HasMaxLength(128);
-
-                entity.Property(e => e.MappingFunctionKey)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.Property(e => e.CategoryCode)
@@ -305,6 +282,21 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
+            {
+                entity.Property(e => e.Alias).HasMaxLength(512);
+
+                entity.Property(e => e.Value)
+                    .IsRequired()
+                    .HasMaxLength(512);
+
+                entity.HasOne(d => d.OutsideDataConfig)
+                    .WithMany(p => p.OutsideDataFieldConfig)
+                    .HasForeignKey(d => d.OutsideDataConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
             modelBuilder.Entity<OutsideImportMapping>(entity =>
