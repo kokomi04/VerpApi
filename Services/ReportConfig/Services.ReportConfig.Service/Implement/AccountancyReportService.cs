@@ -81,7 +81,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
                 foreach (var head in result.Head)
                 {
-                    sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_HEAD_PARAM_PREFIX}" + head.Key, head.Value == null ? DBNull.Value : head.Value));
+                    sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_HEAD_PARAM_PREFIX}" + head.Key, head.Value ?? DBNull.Value));
                 }
             }
 
@@ -212,7 +212,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            bscRows = await CastAlias(columns, bscRows, sqlParams);
+            bscRows = await CastBscAlias(columns, bscRows, sqlParams);
 
             //Totals
             var totals = new NonCamelCaseDictionary();
@@ -288,7 +288,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
                                 if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
                                 {
-                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value == null ? DBNull.Value : value });
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value ?? DBNull.Value });
                                 }
                             }
                         }
@@ -300,13 +300,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, IList<SqlParameter> sqlParams)
         {
-            var table = await _accountancyDBContext.QueryDataTable(reportInfo.BodySql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+            var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value));
+
+            selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
+
+            var whereColumn = new List<string>();
+            foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+            {
+                whereColumn.Add($"{column.Alias} {column.Where}");
+            }
+
+            if (whereColumn.Count > 0)
+            {
+                selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+            }
+
+
+            var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             var totals = new NonCamelCaseDictionary();
 
-            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
-
-            var data = await CastAlias(columns, table.ConvertData(), sqlParams);
+            var data = table.ConvertData();
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
             foreach (var column in calSumColumns)
@@ -418,18 +434,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private async Task<IList<NonCamelCaseDictionary>> CastAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams)
+        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams)
         {
             var data = new List<NonCamelCaseDictionary>();
 
-            const string staticRowParamPrefix = "@_static_row_data";
+            const string staticRowParamPrefix = "@_bsc_row_data";
 
             foreach (var row in orignalData)
             {
                 var rowSql = SelectAsAlias(row.ToDictionary(k => k.Key, k => $"{staticRowParamPrefix}{k.Key}"));
 
                 var rowParams = sqlParams.Select(p => p.CloneSqlParam()).ToList();
-                rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value == null ? DBNull.Value : c.Value)));
+                rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value ?? DBNull.Value)));
 
                 var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value));
 
