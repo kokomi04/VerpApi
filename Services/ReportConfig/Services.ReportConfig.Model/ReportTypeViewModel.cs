@@ -43,9 +43,11 @@ namespace Verp.Services.ReportConfig.Model
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public string DefaultValue { get; set; }
-        public int? ReferenceCategoryId { get; set; }
-        public int? ReferenceCategoryFieldId { get; set; }
-        public int? ReferenceCategoryTitleFieldId { get; set; }
+        public string RefTableCode { get; set; }
+        public string RefTableField { get; set; }
+        public string RefTableTitle { get; set; }
+        public string RefFilters { get; set; }
+
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
