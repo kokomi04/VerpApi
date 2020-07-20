@@ -60,18 +60,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
             foreach (var filterFiled in reportViewInfo.Fields)
             {
                 object value = null;
-                if (filters.ContainsKey(filterFiled.ParamerterName))
+                foreach (var param in filterFiled.ParamerterName.Split(','))
                 {
-                    value = filters[filterFiled.ParamerterName];
-                    if (!value.IsNullObject())
+                    if (string.IsNullOrWhiteSpace(param)) continue;
+
+                    var paramName = param.Trim();
+
+                    if (filters.ContainsKey(paramName))
                     {
-                        if (filterFiled.DataTypeId == EnumDataType.Date)
+                        value = filters[paramName];
+                        if (!value.IsNullObject())
                         {
-                            value = Convert.ToInt64(value);
+                            if (filterFiled.DataTypeId == EnumDataType.Date)
+                            {
+                                value = Convert.ToInt64(value);
+                            }
                         }
                     }
+                    sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
                 }
-                sqlParams.Add(new SqlParameter($"@{filterFiled.ParamerterName}", filterFiled.DataTypeId.GetSqlValue(value)));
             }
 
 
