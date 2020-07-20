@@ -104,7 +104,7 @@ namespace VErpApi.Controllers.Report
 
         [HttpGet]
         [Route("{reportTypeId}/ViewInfo")]
-        public async Task<ReportTypeViewModel> ViewInfoCreate([FromRoute] int reportTypeId)
+        public async Task<ReportTypeViewModel> ReportTypeViewInfo([FromRoute] int reportTypeId)
         {
             return await _reportConfigService
                 .ReportTypeViewGetInfo(reportTypeId)

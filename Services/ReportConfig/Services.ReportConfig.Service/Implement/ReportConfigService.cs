@@ -193,33 +193,33 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task ReportTypeViewFieldAddRange(int ReportTypeViewId, IList<ReportTypeViewFieldModel> fieldModels)
         {
-            var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
-            categoryFieldIds.Union(fieldModels.Where(f => f.ReferenceCategoryTitleFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList());
+            //var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
+            //categoryFieldIds.Union(fieldModels.Where(f => f.ReferenceCategoryTitleFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList());
 
-            if (categoryFieldIds.Count > 0)
-            {
+            //if (categoryFieldIds.Count > 0)
+            //{
 
-                //var categoryFields = (await _reportConfigContext.CategoryField
-                //    .Where(f => categoryFieldIds.Contains(f.CategoryFieldId))
-                //    .Select(f => new { f.CategoryFieldId, f.CategoryId })
-                //    .AsNoTracking()
-                //    .ToListAsync())
-                //    .ToDictionary(f => f.CategoryFieldId, f => f);
+            //var categoryFields = (await _reportConfigContext.CategoryField
+            //    .Where(f => categoryFieldIds.Contains(f.CategoryFieldId))
+            //    .Select(f => new { f.CategoryFieldId, f.CategoryId })
+            //    .AsNoTracking()
+            //    .ToListAsync())
+            //    .ToDictionary(f => f.CategoryFieldId, f => f);
 
-                //foreach (var f in fieldModels)
-                //{
-                //    if (f.ReferenceCategoryFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryFieldId.Value, out var cateField) && cateField.CategoryId != f.ReferenceCategoryId)
-                //    {
-                //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường dữ liệu của danh mục không thuộc danh mục");
-                //    }
+            //foreach (var f in fieldModels)
+            //{
+            //    if (f.ReferenceCategoryFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryFieldId.Value, out var cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường dữ liệu của danh mục không thuộc danh mục");
+            //    }
 
-                //    if (f.ReferenceCategoryTitleFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryTitleFieldId.Value, out cateField) && cateField.CategoryId != f.ReferenceCategoryId)
-                //    {
-                //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường hiển thị của danh mục không thuộc danh mục");
-                //    }
-                //}
+            //    if (f.ReferenceCategoryTitleFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryTitleFieldId.Value, out cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường hiển thị của danh mục không thuộc danh mục");
+            //    }
+            //}
 
-            }
+            // }
 
             var fields = fieldModels.Select(f => _mapper.Map<ReportTypeViewField>(f)).ToList();
 
