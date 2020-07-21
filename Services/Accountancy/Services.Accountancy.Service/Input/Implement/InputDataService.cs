@@ -347,13 +347,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             // Validate info
-            var requiredFields = GetRequiredFields(inputAreaFields, data);
-
-            //inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
-
-
-
-
+            var requiredFields = await GetRequiredFields(inputAreaFields, data, false);
             var uniqueFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
             var selectFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>
@@ -371,7 +365,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             CheckValue(checkRows, inputAreaFields);
 
             // Validate rows
-            requiredFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+            requiredFields = await GetRequiredFields(inputAreaFields, data, true);
             uniqueFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
             selectFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
             checkRows = data.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
@@ -428,10 +422,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private List<ValidateField> GetRequiredFields(List<ValidateField> inputAreaFields, BillInfoModel data)
+        private async Task<List<ValidateField>> GetRequiredFields(List<ValidateField> inputAreaFields, BillInfoModel data, bool isMultiRow)
         {
-            var requiredFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
-            var requiredFilterFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && !string.IsNullOrEmpty(f.RequireFilters)).ToList();
+            var requiredFields = inputAreaFields.Where(f => f.IsMultiRow == isMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
+            var requiredFilterFields = inputAreaFields.Where(f => f.IsMultiRow == isMultiRow && !f.IsAutoIncrement && f.IsRequire && !string.IsNullOrEmpty(f.RequireFilters)).ToList();
             foreach (var field in requiredFilterFields)
             {
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
@@ -441,7 +435,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     continue;
                 }
 
-                if (CheckRequireFilter(filterClause, data))
+                if (await CheckRequireFilter(filterClause, data, inputAreaFields))
                 {
                     requiredFields.Add(field);
                 }
@@ -449,10 +443,81 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return requiredFields;
         }
 
-        private bool CheckRequireFilter(Clause filterClause, BillInfoModel data)
+        private async Task<bool> CheckRequireFilter(Clause clause, BillInfoModel data, List<ValidateField> inputAreaFields, bool not = false)
         {
-            // TODO
-
+            bool? isRequire = null;
+            if (clause != null)
+            {
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+                    var field = inputAreaFields.First(f => f.FieldName == singleClause.FieldName);
+                    List<object> rowValues = null;
+                    object infoValue = null;
+                    if (field.IsMultiRow)
+                    {
+                        rowValues = data.Rows.Select(r => r.ContainsKey(field.FieldName) ? r[field.FieldName] : null).ToList();
+                    }
+                    else
+                    {
+                        data.Info.TryGetValue(field.FieldName, out infoValue);
+                    }
+                    switch (singleClause.Operator)
+                    {
+                        case EnumOperator.Equal:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == singleClause.Value) : infoValue == singleClause.Value;
+                            break;
+                        case EnumOperator.NotEqual:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != singleClause.Value) : infoValue != singleClause.Value;
+                            break;
+                        case EnumOperator.Contains:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().Contains(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().Contains(singleClause.Value.ToString());
+                            break;
+                        case EnumOperator.InList:
+                            var arrValues = singleClause.Value.ToString().Split(",");
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && arrValues.Contains(v.ToString())) : infoValue != null && arrValues.Contains(infoValue.ToString());
+                            break;
+                        case EnumOperator.IsLeafNode:
+                            // Check is leaf node
+                            var paramName = $"@{field.RefTableField}";
+                            var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
+                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
+                            var result = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                            isRequire = result != null && result.Rows.Count > 0;
+                            break;
+                        case EnumOperator.StartsWith:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().StartsWith(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().StartsWith(singleClause.Value.ToString());
+                            break;
+                        case EnumOperator.EndsWith:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().EndsWith(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().EndsWith(singleClause.Value.ToString());
+                            break;
+                        case EnumOperator.IsNull:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == null) : infoValue == null;
+                            break;
+                        case EnumOperator.IsEmpty:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && string.IsNullOrEmpty(v.ToString())) : infoValue != null && string.IsNullOrEmpty(infoValue.ToString());
+                            break;
+                        case EnumOperator.IsNullOrEmpty:
+                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString())) : infoValue == null || string.IsNullOrEmpty(infoValue.ToString());
+                            break;
+                        default:
+                            isRequire = true;
+                            break;
+                    }
+                    isRequire = not ? !isRequire : isRequire;
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    bool isNot = not ^ arrClause.Not;
+                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
+                    {
+                        bool clauseResult = CheckRequireFilter(arrClause.Rules.ElementAt(indx), data, inputAreaFields, isNot);
+                        isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
+                    }
+                }
+            }
             return true;
         }
 
@@ -741,7 +806,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 checkRows.Add(new ValidateRowModel(data.Info, changeFields));
                 // Lấy thông tin field
-                var requiredSingleFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+                var requiredSingleFields = await GetRequiredFields(inputAreaFields, data, false);
                 var uniqueSingleFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
                 var selectSingleFields = singleFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
                 // Check field required
@@ -786,7 +851,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
             // Lấy thông tin field
-            var requiredMultiFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var requiredMultiFields = await GetRequiredFields(inputAreaFields, data, true);
             var uniqueMultiFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
             var selectMultiFields = multiFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
             // Check field required
@@ -1329,6 +1394,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
                         if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
                         if (field.DataTypeId == (int)EnumDataType.Date)
