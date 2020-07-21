@@ -515,7 +515,7 @@ namespace VErp.Commons.Library
 
         public static object ConvertValueByType(this string value, EnumDataType dataType)
         {
-            if (value == null) return null;
+            if (string.IsNullOrEmpty(value)) return null;
             switch (dataType)
             {
                 case EnumDataType.Boolean:

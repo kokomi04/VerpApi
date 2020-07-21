@@ -935,6 +935,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                        curField.RequireFilters = field.RequireFilters;
                     }
                 }
 

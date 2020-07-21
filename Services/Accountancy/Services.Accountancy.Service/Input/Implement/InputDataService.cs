@@ -348,8 +348,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Validate info
             var requiredFields = GetRequiredFields(inputAreaFields, data);
-                
-                //inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+
+            //inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
 
 
 
@@ -389,7 +389,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Add);
 
                 if (result != 0)
                 {
@@ -409,7 +409,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
@@ -430,9 +430,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private List<ValidateField> GetRequiredFields(List<ValidateField> inputAreaFields, BillInfoModel data)
         {
-            var requiredFields =  inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
+            var requiredFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
             var requiredFilterFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && !string.IsNullOrEmpty(f.RequireFilters)).ToList();
-            foreach(var field in requiredFilterFields)
+            foreach (var field in requiredFilterFields)
             {
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                 if (filterClause == null)
@@ -441,7 +441,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     continue;
                 }
 
-                if(CheckRequireFilter(filterClause, data))
+                if (CheckRequireFilter(filterClause, data))
                 {
                     requiredFields.Add(field);
                 }
@@ -457,12 +457,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        private async Task<int> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields)
+        private async Task<int> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             if (!string.IsNullOrEmpty(script))
             {
-                var parammeters = new List<SqlParameter>();
+                var parammeters = new List<SqlParameter>() {
+                    new SqlParameter("@Action", (int)action),
+                    resultParam
+                };
                 var pattern = @"@{(?<word>\w+)}";
                 Regex rx = new Regex(pattern);
                 var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
@@ -492,9 +495,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
                     }
                 }
-
-                parammeters.Add(resultParam);
-
                 await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
             }
             return (resultParam.Value as int?).GetValueOrDefault();
@@ -802,7 +802,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Update);
 
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
 
@@ -818,7 +818,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Update);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
@@ -927,7 +927,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -939,7 +939,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Delete);
 
                 await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -1421,7 +1421,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var bill in bills)
                     {
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields);
+                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields, EnumAction.Add);
 
                         var billInfo = new InputBill()
                         {
@@ -1437,7 +1437,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputType.AfterSaveAction, bill, fields);
+                        await ProcessActionAsync(inputType.AfterSaveAction, bill, fields, EnumAction.Add);
                     }
                     trans.Commit();
                 }
