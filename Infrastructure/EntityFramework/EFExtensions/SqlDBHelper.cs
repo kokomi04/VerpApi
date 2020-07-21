@@ -348,6 +348,20 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;
+                    case EnumOperator.IsNull:
+                        ope = not ? "IS NOT NULL" : "IS NULL";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        break;
+                    case EnumOperator.IsEmpty:
+                        ope = not ? "!= ''''" : "=''''";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        break;
+                    case EnumOperator.IsNullOrEmpty:
+                        ope = not ? "IS NOT NULL" : "IS NULL";
+                        condition.Append($"( [{tableName}].{clause.FieldName} {ope}");
+                        ope = not ? "!= ''''" : "=''''";
+                        condition.Append($" AND [{tableName}].{clause.FieldName} {ope})");
+                        break;
                     default:
                         break;
                 }
