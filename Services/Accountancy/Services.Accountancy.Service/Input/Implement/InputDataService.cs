@@ -513,7 +513,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
-                        bool clauseResult = CheckRequireFilter(arrClause.Rules.ElementAt(indx), data, inputAreaFields, isNot);
+                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), data, inputAreaFields, isNot);
                         isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
                     }
                 }
