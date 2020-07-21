@@ -1370,7 +1370,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 for (int i = 0; i < match.Count; i++)
                                 {
                                     var fieldName = match[i].Groups["word"].Value;
-                                    row.Data.TryGetValue(fieldName, out string filterValue);
+                                    mapRow.TryGetValue(fieldName, out string filterValue);
+                                    if (string.IsNullOrEmpty(filterValue))
+                                    {
+                                        info.TryGetValue(fieldName, out filterValue);
+                                    }
+                                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
                                     filters = filters.Replace(match[i].Value, filterValue);
                                 }
 
@@ -1378,7 +1383,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 if (filterClause != null)
                                 {
                                     var whereCondition = new StringBuilder();
-                                    filterClause.FilterClauseProcess(field.RefTableField, ref whereCondition, ref referParams, ref suffix);
+                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
                                     if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
                                 }
                             }
