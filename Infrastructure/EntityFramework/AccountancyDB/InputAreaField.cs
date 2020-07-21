@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string RequireFilters { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual InputField InputField { get; set; }

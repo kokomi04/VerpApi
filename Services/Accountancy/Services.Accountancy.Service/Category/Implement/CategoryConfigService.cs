@@ -140,6 +140,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     IsShowList = false,
                     IsReadOnly = true
                 };
+
                 await _accountancyContext.CategoryField.AddAsync(identityField);
                 await _accountancyContext.SaveChangesAsync();
 

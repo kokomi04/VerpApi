@@ -1035,8 +1035,10 @@ namespace VErp.Services.Accountancy.Service.Category
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"{category.Title} cha {row.Value.ParentValue} không tìm thấy");
                             }
-
-                            sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key};");
+                            if((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
+                            {
+                                sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key} ;");
+                            }
 
                         }
                         if (sqlUpdateParent.Length > 0)
