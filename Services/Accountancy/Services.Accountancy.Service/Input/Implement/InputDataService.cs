@@ -341,12 +341,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                        RefTableField = f.RefTableField,
                                        RefTableTitle = f.RefTableTitle,
                                        RegularExpression = af.RegularExpression,
-                                       IsMultiRow = a.IsMultiRow
+                                       IsMultiRow = a.IsMultiRow,
+                                       RequireFilters = af.RequireFilters
                                    }).ToList();
 
 
             // Validate info
-            var requiredFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+            var requiredFields = GetRequiredFields(inputAreaFields, data);
+                
+                //inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire).ToList();
+
+
+
+
             var uniqueFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
             var selectFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>
@@ -420,6 +427,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw;
             }
         }
+
+        private List<ValidateField> GetRequiredFields(List<ValidateField> inputAreaFields, BillInfoModel data)
+        {
+            var requiredFields =  inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
+            var requiredFilterFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsRequire && !string.IsNullOrEmpty(f.RequireFilters)).ToList();
+            foreach(var field in requiredFilterFields)
+            {
+                Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
+                if (filterClause == null)
+                {
+                    requiredFields.Add(field);
+                    continue;
+                }
+
+                if(CheckRequireFilter(filterClause, data))
+                {
+                    requiredFields.Add(field);
+                }
+            }
+            return requiredFields;
+        }
+
+        private bool CheckRequireFilter(Clause filterClause, BillInfoModel data)
+        {
+            // TODO
+
+            return true;
+        }
+
 
         private async Task<int> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields)
         {
@@ -676,7 +712,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                        RefTableField = f.RefTableField,
                                        RefTableTitle = f.RefTableTitle,
                                        RegularExpression = af.RegularExpression,
-                                       IsMultiRow = a.IsMultiRow
+                                       IsMultiRow = a.IsMultiRow,
+                                       RequireFilters = af.RequireFilters
                                    }).ToList();
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             // Validate info
@@ -814,8 +851,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return changeFieldIndexes.ToArray();
         }
 
-
-
         public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
@@ -855,7 +890,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                            RefTableField = f.RefTableField,
                                            RefTableTitle = f.RefTableTitle,
                                            RegularExpression = af.RegularExpression,
-                                           IsMultiRow = a.IsMultiRow
+                                           IsMultiRow = a.IsMultiRow,
+                                           RequireFilters = af.RequireFilters
                                        }).ToList();
 
 
@@ -951,7 +987,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data.Info.Remove(key);
             }
 
-
             foreach (var row in data.Rows)
             {
                 removeKeys.Clear();
@@ -976,8 +1011,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     row.Remove(key);
                 }
             }
-
-
 
             var dataTable = new DataTable(INPUTVALUEROW_TABLE);
 
@@ -1204,7 +1237,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               RefTableField = f.RefTableField,
                               RefTableTitle = f.RefTableTitle,
                               RegularExpression = af.RegularExpression,
-                              IsMultiRow = a.IsMultiRow
+                              IsMultiRow = a.IsMultiRow,
+                              RequireFilters = af.RequireFilters
                           }).ToList();
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
@@ -1321,10 +1355,34 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         else
                         {
-                            var paramName = $"@{mappingField.RefTableField}";
+                            int suffix = 0;
+                            var paramName = $"@{mappingField.RefTableField}_{suffix}";
                             var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
                             var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
                             var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
+                            suffix++;
+                            if (!string.IsNullOrEmpty(field.Filters))
+                            {
+                                var filters = field.Filters;
+                                var pattern = @"@{(?<word>\w+)}";
+                                Regex rx = new Regex(pattern);
+                                MatchCollection match = rx.Matches(field.Filters);
+                                for (int i = 0; i < match.Count; i++)
+                                {
+                                    var fieldName = match[i].Groups["word"].Value;
+                                    row.Data.TryGetValue(fieldName, out string filterValue);
+                                    filters = filters.Replace(match[i].Value, filterValue);
+                                }
+
+                                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                                if (filterClause != null)
+                                {
+                                    var whereCondition = new StringBuilder();
+                                    filterClause.FilterClauseProcess(field.RefTableField, ref whereCondition, ref referParams, ref suffix);
+                                    if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
+                                }
+                            }
+
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
@@ -1418,6 +1476,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFilters { get; set; }
         }
     }
 }
