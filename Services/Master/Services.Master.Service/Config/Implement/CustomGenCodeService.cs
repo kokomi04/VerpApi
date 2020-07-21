@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using NPOI.SS.Formula.Functions;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -110,7 +111,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return info;
         }
 
-        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig(int objectTypeId, int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId)
         {
             var obj = await _masterDbContext.ObjectCustomGenCodeMapping
                 .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
@@ -127,7 +128,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                return CustomGenCodeErrorCode.CustomConfigNotExisted;
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted);
             }
 
             var info = new CustomGenCodeOutputModel()
@@ -353,7 +354,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue, string code = "")
+        public async Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "")
         {
             CustomCodeModel result;
             try
@@ -366,7 +367,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     if (config == null)
                     {
                         trans.Rollback();
-                        return CustomGenCodeErrorCode.CustomConfigNotFound;
+                        throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                     }
                     string newCode = string.Empty;
                     var newId = 0;
@@ -412,8 +413,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GenerateCode");
-                return GeneralCode.InternalError;
 
+                throw;
             }
             return result;
         }
@@ -428,7 +429,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<Enum> ConfirmCode(int objectTypeId, int objectId)
+        public async Task<bool> ConfirmCode(int objectTypeId, int objectId)
         {
             try
             {
@@ -444,7 +445,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     .FirstOrDefaultAsync();
                 if (config == null)
                 {
-                    return CustomGenCodeErrorCode.CustomConfigNotFound;
+                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                 }
                 if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
                 {
@@ -452,12 +453,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                     config.LastCode = config.TempCode;
                     await _masterDbContext.SaveChangesAsync();
                 }
-                return GeneralCode.Success;
+                return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
+                _logger.LogError(ex, "ConfirmCode");
+                throw;
             }
         }
     }

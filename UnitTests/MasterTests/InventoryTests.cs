@@ -74,7 +74,7 @@ namespace MasterTests
 
                 await InitInventories(stockInfo.StockId, product1, product2);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
                 throw;

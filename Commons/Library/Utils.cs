@@ -478,7 +478,9 @@ namespace VErp.Commons.Library
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                     }
+                    if (dateValue == 0) return DBNull.Value;
                     return dateValue.UnixToDateTime().Value;
+
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
