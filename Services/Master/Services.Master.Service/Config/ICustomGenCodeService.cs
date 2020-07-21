@@ -21,16 +21,16 @@ namespace VErp.Services.Master.Service.Config
         
         Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model);
 
-        Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue, string code = "");
+        Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "");
 
         Task<PageData<ObjectType>> GetAllObjectType();
 
-        Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig(int objectTypeId, int objectId);
+        Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId);
 
         Task<Enum> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
         Task<Enum> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
 
-        Task<Enum> ConfirmCode(int objectTypeId, int objectId);
+        Task<bool> ConfirmCode(int objectTypeId, int objectId);
     }
 }

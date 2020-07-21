@@ -43,6 +43,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideImportMappingService _outsideImportMappingService;
+
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -323,26 +324,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
             // Lấy thông tin field
-            var inputAreaFields = (from af in _accountancyDBContext.InputAreaField
-                                   join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                                   join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                                   where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                                   select new ValidateField
-                                   {
-                                       Title = af.Title,
-                                       IsAutoIncrement = af.IsAutoIncrement,
-                                       IsRequire = af.IsRequire,
-                                       IsUnique = af.IsUnique,
-                                       Filters = af.Filters,
-                                       FieldName = f.FieldName,
-                                       DataTypeId = f.DataTypeId,
-                                       FormTypeId = f.FormTypeId,
-                                       RefTableCode = f.RefTableCode,
-                                       RefTableField = f.RefTableField,
-                                       RefTableTitle = f.RefTableTitle,
-                                       RegularExpression = af.RegularExpression,
-                                       IsMultiRow = a.IsMultiRow
-                                   }).ToList();
+            var inputAreaFields = await GetInputFields(inputTypeId);
 
 
             // Validate info
@@ -378,9 +360,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check value
             CheckValue(checkRows, inputAreaFields);
 
+
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
+
+
+
                 // Before saving action (SQL)
                 var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields);
 
@@ -399,7 +385,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await _accountancyDBContext.SaveChangesAsync();
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, 1, data);
+                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+
+                await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, areaFieldGenCodes);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
@@ -409,7 +397,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _outsideImportMappingService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, billInfo.FId);
                 }
 
+                await ConfirmCustomGenCode(areaFieldGenCodes);
+
                 trans.Commit();
+
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
                 return billInfo.FId;
             }
@@ -658,26 +649,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
             // Lấy thông tin field
-            var inputAreaFields = (from af in _accountancyDBContext.InputAreaField
-                                   join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                                   join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                                   where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                                   select new ValidateField
-                                   {
-                                       Title = af.Title,
-                                       IsAutoIncrement = af.IsAutoIncrement,
-                                       IsRequire = af.IsRequire,
-                                       IsUnique = af.IsUnique,
-                                       Filters = af.Filters,
-                                       FieldName = f.FieldName,
-                                       DataTypeId = f.DataTypeId,
-                                       FormTypeId = f.FormTypeId,
-                                       RefTableCode = f.RefTableCode,
-                                       RefTableField = f.RefTableField,
-                                       RefTableTitle = f.RefTableTitle,
-                                       RegularExpression = af.RegularExpression,
-                                       IsMultiRow = a.IsMultiRow
-                                   }).ToList();
+            var inputAreaFields = await GetInputFields(inputTypeId);
+
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             // Validate info
             // Get changed row info
@@ -774,7 +747,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data);
+
+                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+
+                await CreateBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, areaFieldGenCodes);
 
                 billInfo.LatestBillVersion++;
 
@@ -783,7 +759,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields);
 
+                await ConfirmCustomGenCode(areaFieldGenCodes);
+
                 trans.Commit();
+
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
                 return true;
             }
@@ -837,26 +816,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 if (!string.IsNullOrEmpty(inputTypeInfo.BeforeSaveAction) || !string.IsNullOrEmpty(inputTypeInfo.AfterSaveAction))
                 {
                     // Lấy thông tin field
-                    inputAreaFields = (from af in _accountancyDBContext.InputAreaField
-                                       join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                                       join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                                       where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                                       select new ValidateField
-                                       {
-                                           Title = af.Title,
-                                           IsAutoIncrement = af.IsAutoIncrement,
-                                           IsRequire = af.IsRequire,
-                                           IsUnique = af.IsUnique,
-                                           Filters = af.Filters,
-                                           FieldName = f.FieldName,
-                                           DataTypeId = f.DataTypeId,
-                                           FormTypeId = f.FormTypeId,
-                                           RefTableCode = f.RefTableCode,
-                                           RefTableField = f.RefTableField,
-                                           RefTableTitle = f.RefTableTitle,
-                                           RegularExpression = af.RegularExpression,
-                                           IsMultiRow = a.IsMultiRow
-                                       }).ToList();
+                    inputAreaFields = await GetInputFields(inputTypeId);
 
 
                     // Get changed row info
@@ -919,17 +879,105 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data)
-        {
-            var fields = (await (
-                from af in _accountancyDBContext.InputAreaField
-                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                select new { af.Title, af.IsRequire, a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.DataTypeId, a.IsMultiRow }
-           ).ToListAsync()
-           ).ToDictionary(f => f.FieldName, f => f);
 
+        private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
+        {
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+
+                foreach (var infoField in fields)
+                {
+                    var field = infoField.Value;
+
+                    if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
+                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
+                    )
+                    {
+                        CustomGenCodeOutputModelOut currentConfig;
+                        try
+                        {
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputType, field.InputAreaFieldId);
+
+                            if (currentConfig == null)
+                            {
+                                throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
+                            }
+                        }
+                        catch (BadRequestException badRequest)
+                        {
+                            throw new BadRequestException(badRequest.Code, "Cấu hình sinh mã " + field.Title + " => " + badRequest.Message);
+                        }
+                        catch (Exception)
+                        {
+                            throw;
+                        }
+
+
+                        if (!areaFieldGenCodes.ContainsKey(field.InputAreaFieldId))
+                        {
+                            areaFieldGenCodes.Add(field.InputAreaFieldId, currentConfig);
+                        }
+
+                        var genCodeInfo = areaFieldGenCodes[field.InputAreaFieldId];
+
+                        try
+                        {
+
+                            var generated = await _customGenCodeHelperService.GenerateCode(genCodeInfo.CustomGenCodeId, genCodeInfo.LastValue);
+                            if (generated == null)
+                            {
+                                throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
+                            }
+
+
+                            value = generated.CustomCode;
+                            genCodeInfo.LastValue = generated.LastValue;
+                            genCodeInfo.LastCode = generated.CustomCode;
+                        }
+                        catch (BadRequestException badRequest)
+                        {
+                            throw new BadRequestException(badRequest.Code, "Sinh mã " + field.Title + " => " + badRequest.Message);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+
+                        if (!row.ContainsKey(field.FieldName))
+                        {
+                            row.Add(field.FieldName, value);
+                        }
+                        else
+                        {
+                            row[field.FieldName] = value;
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        {
+            foreach (var (key, value) in areaFieldGenCodes)
+            {
+                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, key);
+            }
+        }
+
+        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        {
+            var fields = (await GetInputFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
+
+
+            var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
+
+            await FillGenerateColumn(areaFieldGenCodes, infoFields, new[] { data.Info });
+
+            var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
+
+            await FillGenerateColumn(areaFieldGenCodes, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -1092,6 +1140,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             await _accountancyDBContext.InsertDataTable(dataTable);
+
         }
 
         private DataRow NewBillVersionRow(DataTable dataTable, int inputTypeId, long inputBill_F_Id, int billVersionId, bool isBillEntry)
@@ -1176,22 +1225,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 });
         }
 
-        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
-        {
-            var inputType = _accountancyDBContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
-            if (inputType == null)
-            {
-                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-            }
-            var reader = new ExcelReader(stream);
 
-            // Lấy thông tin field
-            var fields = (from af in _accountancyDBContext.InputAreaField
+        private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
+        {
+            return await (from af in _accountancyDBContext.InputAreaField
                           join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                           join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                          where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FieldName != AccountantConstants.F_IDENTITY
+                          where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
                           select new ValidateField
                           {
+                              InputAreaFieldId = af.InputAreaFieldId,
                               Title = af.Title,
                               IsAutoIncrement = af.IsAutoIncrement,
                               IsRequire = af.IsRequire,
@@ -1205,7 +1248,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               RefTableTitle = f.RefTableTitle,
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow
-                          }).ToList();
+                          }).ToListAsync();
+        }
+
+        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
+        {
+            var inputType = _accountancyDBContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
+            if (inputType == null)
+            {
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            }
+            var reader = new ExcelReader(stream);
+
+            // Lấy thông tin field
+            var fields = await GetInputFields(inputTypeId);
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
@@ -1355,6 +1411,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 try
                 {
+                    var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+
                     foreach (var bill in bills)
                     {
                         // Before saving action (SQL)
@@ -1371,11 +1429,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         await _accountancyDBContext.SaveChangesAsync();
 
-                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill);
+                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, areaFieldGenCodes);
 
                         // After saving action (SQL)
                         await ProcessActionAsync(inputType.AfterSaveAction, bill, fields);
                     }
+
+                    await ConfirmCustomGenCode(areaFieldGenCodes);
+
                     trans.Commit();
                 }
                 catch (Exception ex)
@@ -1387,7 +1448,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             return true;
         }
-
 
 
         protected class ValidateRowModel
@@ -1404,6 +1464,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         protected class ValidateField
         {
+            public int InputAreaFieldId { get; set; }
             public string Title { get; set; }
             public bool IsAutoIncrement { get; set; }
             public bool IsRequire { get; set; }
