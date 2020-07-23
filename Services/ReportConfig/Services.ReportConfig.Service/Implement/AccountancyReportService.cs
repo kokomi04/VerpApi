@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Constants;
@@ -155,12 +156,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 foreach (var column in bscConfig.BscColumns)
                 {
                     var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
-
+                    var keyValue = string.Empty;
                     var configStr = (valueConfig?.ToString()?.Trim()) ?? "";
                     if (configStr.StartsWith("["))
                     {
                         var endKeyIndex = configStr.IndexOf(']');
-                        var keyValue = configStr.Substring(1, endKeyIndex - 1);
+                        keyValue = configStr.Substring(1, endKeyIndex - 1);
 
                         keyValueRows[i].Add(column.Name, keyValue);
 
@@ -211,13 +212,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (BscRowsModel.IsSqlSelect(configStr))
                     {
                         var selectData = $"{configStr.TrimStart('=')} AS [{column.Name}_{i}]";
-
                         if (BscRowsModel.IsBscSelect(configStr))
                         {
                             sqlBscCalcQuery.Add(new BscValueOrder()
                             {
                                 SortOrder = sortValue,
-                                SelectData = selectData
+                                SelectData = selectData,
+                                KeyValue = keyValue
                             });
 
                             //BscAppendSelect(sqlBscSelect, selectData);
@@ -247,6 +248,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
 
                 var cacls = sqlBscCalcQuery.OrderBy(s => s.SortOrder).ToList();
+                // Xử lý BSC_VALUE chứa BSC_VALUE
+                foreach (var item in cacls)
+                {
+                    item.SelectData = GetBscSelectData(cacls, item.SelectData, item.KeyValue);
+                }
                 foreach (var item in cacls)
                 {
                     var data = await _accountancyDBContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
@@ -293,6 +299,30 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }, totals);
 
         }
+
+
+        private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
+        {
+            string result = selectData;
+            var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
+            Regex rx = new Regex(pattern);
+            var match = rx.Matches(selectData).Select(m => m.Groups["key_value"].Value).Distinct().ToList();
+            for (int i = 0; i < match.Count; i++)
+            {
+                if (match[i] == keyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có dòng dữ liệu BSC bằng chính nó");
+                if (match[i] == parentKeyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có vòng lặp giá trị BSC");
+                var element = cacls.FirstOrDefault(e => e.KeyValue == match[i]);
+                if (element != null)
+                {
+                    var oldText = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{match[i]}";
+                    var newText = GetBscSelectData(cacls, element.SelectData, element.KeyValue, keyValue);
+                    newText = newText.Substring(0, newText.IndexOf("AS"));
+                    result = result.Replace(oldText, newText);
+                }
+            }
+            return result;
+        }
+
 
         private void BscAppendSelect(StringBuilder selectBuilder, string selectColumn)
         {
@@ -536,6 +566,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             public string SelectData { get; set; }
             public int SortOrder { get; set; }
+
+            public string KeyValue { get; set; }
         }
     }
 
