@@ -141,7 +141,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             //1. Query body sql
             var sql = new StringBuilder();
-            var sqlBscSelect = new StringBuilder();
+            var sqlBscCalcQuery = new List<BscValueOrder>();
 
             var queryResult = new NonCamelCaseDictionary();
 
@@ -170,11 +170,35 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         if (configStr.StartsWith("\\["))
                         {
-                            configStr = "[" + configStr.Substring(2);
+                            configStr = configStr.TrimStart('\\');
+                        }
+                    }
+
+
+                    int sortValue = 0;
+                    if (configStr.StartsWith("|"))
+                    {
+                        var endKeyIndex = configStr.IndexOf('=');
+
+                        if (endKeyIndex <= 0)
+                        {
+                            endKeyIndex = 2;
+                        }
+
+                        sortValue = int.Parse(configStr.Substring(1, endKeyIndex - 1).Trim());
+
+                        configStr = configStr.Substring(endKeyIndex).Trim();
+                    }
+                    else
+                    {
+                        if (configStr.StartsWith("\\|"))
+                        {
+                            configStr = configStr.TrimStart('|');
                         }
                     }
 
                     rowValue.TryAdd(column.Name, configStr);
+
                     if (keyValueRows[i].ContainsKey(column.Name) && !string.IsNullOrWhiteSpace(keyValueRows[i][column.Name]))
                     {
                         rowValue.TryAdd(column.Name + "_key", keyValueRows[i][column.Name]);
@@ -190,7 +214,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         if (BscRowsModel.IsBscSelect(configStr))
                         {
-                            BscAppendSelect(sqlBscSelect, selectData);
+                            sqlBscCalcQuery.Add(new BscValueOrder()
+                            {
+                                SortOrder = sortValue,
+                                SelectData = selectData
+                            });
+
+                            //BscAppendSelect(sqlBscSelect, selectData);
                         }
                         else
                         {
@@ -204,17 +234,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (sql.Length > 0)
             {
-                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} OPTION(RECOMPILE)", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
 
 
-            if (sqlBscSelect.Length > 0)
+            if (sqlBscCalcQuery.Count > 0)
             {
-                var data = await _accountancyDBContext.QueryDataTable($"{sqlBscSelect}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-                selectValue = data.ConvertFirstRowData();
-                BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
+                //var data = await _accountancyDBContext.QueryDataTable($"{sqlBscSelect}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                //selectValue = data.ConvertFirstRowData();
+                //BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
+
+                var cacls = sqlBscCalcQuery.OrderBy(s => s.SortOrder).ToList();
+                foreach (var item in cacls)
+                {
+                    var data = await _accountancyDBContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                    selectValue = data.ConvertFirstRowData();
+                    BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
+                }
             }
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
@@ -493,5 +531,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             return selectSql.ToString();
         }
+
+        private class BscValueOrder
+        {
+            public string SelectData { get; set; }
+            public int SortOrder { get; set; }
+        }
     }
+
+
+
 }
