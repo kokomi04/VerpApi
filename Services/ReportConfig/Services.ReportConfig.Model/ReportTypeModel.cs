@@ -25,6 +25,8 @@ namespace Verp.Services.ReportConfig.Model
         public string MainView { get; set; }
         public string Joins { get; set; }
         public string Wheres { get; set; }
+        public string OrderBy { get; set; }
+
         public string Head { get; set; }
         public string Footer { get; set; }
         public string HeadSql { get; set; }
