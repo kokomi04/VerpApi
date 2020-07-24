@@ -504,11 +504,26 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            string orderBy = "";
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+            }
+
+            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+            {
+                orderBy = reportInfo.OrderBy;
+            }
+            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+            {
+                orderBy = "1";
+            }
+
             var dataSql = @$"                 
                 SELECT 
                     *
                 FROM {view}
-                ORDER BY {(string.IsNullOrWhiteSpace(orderByFieldName) ? "1" : orderByFieldName)} {(asc ? "" : "DESC")}
+                ORDER BY {orderBy}
 
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
