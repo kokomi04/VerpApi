@@ -303,24 +303,28 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
         {
-            string result = selectData;
+            var result = new StringBuilder(selectData);
             var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
             Regex rx = new Regex(pattern);
-            var match = rx.Matches(selectData).Select(m => m.Groups["key_value"].Value).Distinct().ToList();
+            var match = rx.Matches(selectData);//.Select(m => m.Groups["key_value"].Value).Distinct().ToList();
+            var moveIndex = 0;
             for (int i = 0; i < match.Count; i++)
             {
-                if (match[i] == keyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có dòng dữ liệu BSC bằng chính nó");
-                if (match[i] == parentKeyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có vòng lặp giá trị BSC");
-                var element = cacls.FirstOrDefault(e => e.KeyValue == match[i]);
+                var key = match[i].Groups["key_value"].Value;
+                if (key == keyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có dòng dữ liệu BSC bằng chính nó");
+                if (key == parentKeyValue) throw new BadRequestException(GeneralCode.InternalError, "Cấu hình lỗi do có vòng lặp giá trị BSC");
+                var element = cacls.FirstOrDefault(e => e.KeyValue == key);
                 if (element != null)
                 {
-                    var oldText = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{match[i]}";
+                    var oldText = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{key}";
                     var newText = GetBscSelectData(cacls, element.SelectData, element.KeyValue, keyValue);
-                    newText = newText.Substring(0, newText.IndexOf("AS"));
-                    result = result.Replace(oldText, newText);
+                    newText = $"({newText.Substring(0, newText.IndexOf("AS"))})";
+                    result.Remove(match[i].Index + moveIndex, match[i].Length);
+                    result.Insert(match[i].Index + moveIndex, newText);
+                    moveIndex = moveIndex + newText.Length - match[i].Length;
                 }
             }
-            return result;
+            return result.ToString();
         }
 
 
