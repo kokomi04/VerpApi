@@ -120,11 +120,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 mappingObjectQuery = _stockDbContext.VMappingOusideImportObject
                      .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey));
+
                 if (isExistedInputBill != null)
                 {
-                    inventoryQuery = from q in inventoryQuery
-                                     where mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
-                                     select q;
+                    if (isExistedInputBill.Value)
+                    {
+                        inventoryQuery = from q in inventoryQuery
+                                         where mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
+                                         select q;
+                    }
+                    else
+                    {
+                        inventoryQuery = from q in inventoryQuery
+                                         where !mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
+                                         select q;
+                    }
                 }
             }
 
