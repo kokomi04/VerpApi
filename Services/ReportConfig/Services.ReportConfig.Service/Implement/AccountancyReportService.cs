@@ -514,7 +514,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 orderBy = reportInfo.OrderBy;
             }
-            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+            if (string.IsNullOrWhiteSpace(orderBy))
             {
                 orderBy = "1";
             }
