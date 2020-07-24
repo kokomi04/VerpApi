@@ -115,7 +115,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 else
                 {
-                    var (data, totals) = await GetRowsByQuery(reportInfo, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByQuery(reportInfo, orderByFieldName, asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
@@ -373,7 +373,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
@@ -424,7 +424,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            return (new PageDataTable() { List = data, Total = data.Count }, totals);
+            if (!asc)
+            {
+                data.Reverse();
+            }
+
+            var pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+
+            return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
 
         }
 
