@@ -325,48 +325,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
+            ValidateRowModel checkInfo = new ValidateRowModel(data.Info, null);
 
-
-            // Validate info
-            var requiredFields = await GetRequiredFields(inputAreaFields, data, false);
-            var uniqueFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = inputAreaFields.Where(f => !f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
-            List<ValidateRowModel> checkRows = new List<ValidateRowModel>
-            {
-                new ValidateRowModel(data.Info, null)
-            };
-
-            // Check field required
-            CheckRequired(checkRows, requiredFields);
-            // Check refer
-            await CheckReferAsync(checkRows, selectFields, data.Info);
-            // Check unique
-            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
-            // Check value
-            CheckValue(checkRows, inputAreaFields);
-
-            // Validate rows
-            requiredFields = await GetRequiredFields(inputAreaFields, data, true);
-            uniqueFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && f.IsUnique).ToList();
-            selectFields = inputAreaFields.Where(f => f.IsMultiRow && !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             checkRows = data.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
 
-            // Check field required
-            CheckRequired(checkRows, requiredFields);
-            // Check refer
-            await CheckReferAsync(checkRows, selectFields, data.Info);
-            // Check unique
-            await CheckUniqueAsync(inputTypeId, checkRows, uniqueFields);
-            // Check value
-            CheckValue(checkRows, inputAreaFields);
+            // Validate info
+            var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
 
+            // Check field required
+            await CheckRequired(checkInfo, checkRows, requiredFields, inputAreaFields);
+            // Check refer
+            await CheckReferAsync(checkInfo, checkRows, selectFields);
+            // Check unique
+            await CheckUniqueAsync(inputTypeId, checkInfo, checkRows, uniqueFields);
+            // Check value
+            await CheckValue(checkInfo, checkRows, inputAreaFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-
-
-
                 // Before saving action (SQL)
                 var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Add);
 
@@ -412,28 +392,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task<List<ValidateField>> GetRequiredFields(List<ValidateField> inputAreaFields, BillInfoModel data, bool isMultiRow)
-        {
-            var requiredFields = inputAreaFields.Where(f => f.IsMultiRow == isMultiRow && !f.IsAutoIncrement && f.IsRequire && string.IsNullOrEmpty(f.RequireFilters)).ToList();
-            var requiredFilterFields = inputAreaFields.Where(f => f.IsMultiRow == isMultiRow && !f.IsAutoIncrement && f.IsRequire && !string.IsNullOrEmpty(f.RequireFilters)).ToList();
-            foreach (var field in requiredFilterFields)
-            {
-                Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                if (filterClause == null)
-                {
-                    requiredFields.Add(field);
-                    continue;
-                }
-
-                if (await CheckRequireFilter(filterClause, data, inputAreaFields))
-                {
-                    requiredFields.Add(field);
-                }
-            }
-            return requiredFields;
-        }
-
-        private async Task<bool> CheckRequireFilter(Clause clause, BillInfoModel data, List<ValidateField> inputAreaFields, bool not = false)
+        private async Task<bool> CheckRequireFilter(Clause clause, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> inputAreaFields, int? rowIndex, bool not = false)
         {
             bool? isRequire = null;
             if (clause != null)
@@ -442,57 +401,107 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var singleClause = clause as SingleClause;
                     var field = inputAreaFields.First(f => f.FieldName == singleClause.FieldName);
-                    List<object> rowValues = null;
-                    object infoValue = null;
-                    if (field.IsMultiRow)
+                    // Data check nằm trong thông tin chung và data điều kiện nằm trong thông tin chi tiết
+                    if (!rowIndex.HasValue && field.IsMultiRow)
                     {
-                        rowValues = data.Rows.Select(r => r.ContainsKey(field.FieldName) ? r[field.FieldName] : null).ToList();
+                        var rowValues = rows.Select(r => r.Data.ContainsKey(field.FieldName) ? r.Data[field.FieldName] : null).ToList();
+                        switch (singleClause.Operator)
+                        {
+                            case EnumOperator.Equal:
+                                isRequire = rowValues.Any(v => v == singleClause.Value);
+                                break;
+                            case EnumOperator.NotEqual:
+                                isRequire = rowValues.Any(v => v != singleClause.Value);
+                                break;
+                            case EnumOperator.Contains:
+                                isRequire = rowValues.Any(v => v != null && v.ToString().Contains(singleClause.Value.ToString()));
+                                break;
+                            case EnumOperator.InList:
+                                var arrValues = singleClause.Value.ToString().Split(",");
+                                isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
+                                break;
+                            case EnumOperator.IsLeafNode:
+                                // Check is leaf node
+                                var paramName = $"@{field.RefTableField}";
+                                var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
+                                var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
+                                var result = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                                isRequire = result != null && result.Rows.Count > 0;
+                                break;
+                            case EnumOperator.StartsWith:
+                                isRequire = rowValues.Any(v => v != null && v.ToString().StartsWith(singleClause.Value.ToString()));
+                                break;
+                            case EnumOperator.EndsWith:
+                                isRequire = rowValues.Any(v => v != null && v.ToString().EndsWith(singleClause.Value.ToString()));
+                                break;
+                            case EnumOperator.IsNull:
+                                isRequire = rowValues.Any(v => v == null);
+                                break;
+                            case EnumOperator.IsEmpty:
+                                isRequire = rowValues.Any(v => v != null && string.IsNullOrEmpty(v.ToString()));
+                                break;
+                            case EnumOperator.IsNullOrEmpty:
+                                isRequire = rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString()));
+                                break;
+                            default:
+                                isRequire = true;
+                                break;
+                        }
                     }
                     else
                     {
-                        data.Info.TryGetValue(field.FieldName, out infoValue);
-                    }
-                    switch (singleClause.Operator)
-                    {
-                        case EnumOperator.Equal:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == singleClause.Value) : infoValue == singleClause.Value;
-                            break;
-                        case EnumOperator.NotEqual:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != singleClause.Value) : infoValue != singleClause.Value;
-                            break;
-                        case EnumOperator.Contains:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().Contains(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().Contains(singleClause.Value.ToString());
-                            break;
-                        case EnumOperator.InList:
-                            var arrValues = singleClause.Value.ToString().Split(",");
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && arrValues.Contains(v.ToString())) : infoValue != null && arrValues.Contains(infoValue.ToString());
-                            break;
-                        case EnumOperator.IsLeafNode:
-                            // Check is leaf node
-                            var paramName = $"@{field.RefTableField}";
-                            var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
-                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
-                            var result = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
-                            isRequire = result != null && result.Rows.Count > 0;
-                            break;
-                        case EnumOperator.StartsWith:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().StartsWith(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().StartsWith(singleClause.Value.ToString());
-                            break;
-                        case EnumOperator.EndsWith:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && v.ToString().EndsWith(singleClause.Value.ToString())) : infoValue != null && infoValue.ToString().EndsWith(singleClause.Value.ToString());
-                            break;
-                        case EnumOperator.IsNull:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == null) : infoValue == null;
-                            break;
-                        case EnumOperator.IsEmpty:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v != null && string.IsNullOrEmpty(v.ToString())) : infoValue != null && string.IsNullOrEmpty(infoValue.ToString());
-                            break;
-                        case EnumOperator.IsNullOrEmpty:
-                            isRequire = field.IsMultiRow ? rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString())) : infoValue == null || string.IsNullOrEmpty(infoValue.ToString());
-                            break;
-                        default:
-                            isRequire = true;
-                            break;
+                        object value = null;
+                        if (!field.IsMultiRow)
+                        {
+                            info.Data.TryGetValue(field.FieldName, out value);
+                        }
+                        else
+                        {
+                            rows[rowIndex.Value].Data.TryGetValue(field.FieldName, out value);
+                        }
+
+                        switch (singleClause.Operator)
+                        {
+                            case EnumOperator.Equal:
+                                isRequire = value == singleClause.Value;
+                                break;
+                            case EnumOperator.NotEqual:
+                                isRequire = value != singleClause.Value;
+                                break;
+                            case EnumOperator.Contains:
+                                isRequire = value != null && value.ToString().Contains(singleClause.Value.ToString());
+                                break;
+                            case EnumOperator.InList:
+                                var arrValues = singleClause.Value.ToString().Split(",");
+                                isRequire = value != null && arrValues.Contains(value.ToString());
+                                break;
+                            case EnumOperator.IsLeafNode:
+                                // Check is leaf node
+                                var paramName = $"@{field.RefTableField}";
+                                var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
+                                var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
+                                var result = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                                isRequire = result != null && result.Rows.Count > 0;
+                                break;
+                            case EnumOperator.StartsWith:
+                                isRequire = value != null && value.ToString().StartsWith(singleClause.Value.ToString());
+                                break;
+                            case EnumOperator.EndsWith:
+                                isRequire = value != null && value.ToString().EndsWith(singleClause.Value.ToString());
+                                break;
+                            case EnumOperator.IsNull:
+                                isRequire = value == null;
+                                break;
+                            case EnumOperator.IsEmpty:
+                                isRequire = value != null && string.IsNullOrEmpty(value.ToString());
+                                break;
+                            case EnumOperator.IsNullOrEmpty:
+                                isRequire = value == null || string.IsNullOrEmpty(value.ToString());
+                                break;
+                            default:
+                                isRequire = true;
+                                break;
+                        }
                     }
                     isRequire = not ? !isRequire : isRequire;
                 }
@@ -503,7 +512,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
-                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), data, inputAreaFields, isNot);
+                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), info, rows, inputAreaFields, rowIndex, isNot);
                         isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
                     }
                 }
@@ -555,184 +564,281 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
-        private void CheckRequired(List<ValidateRowModel> rows, List<ValidateField> requiredFields)
+        private async Task CheckRequired(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> requiredFields, List<ValidateField> inputAreaFields)
         {
             foreach (var field in requiredFields)
             {
-                int rowIndx = 0;
-                foreach (var row in rows)
+                // Validate info
+                if (!field.IsMultiRow)
                 {
-                    rowIndx++;
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                    if (info.CheckFields != null && !info.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
-                    row.Data.TryGetValue(field.FieldName, out string value);
+
+                    if (!string.IsNullOrEmpty(field.RequireFilters))
+                    {
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, null)))
+                        {
+                            continue;
+                        }
+                    }
+
+                    info.Data.TryGetValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
+                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { "thông tin chung", field.Title });
+                    }
+                }
+                else // Validate rows
+                {
+                    int rowIndx = 0;
+                    foreach (var row in rows)
+                    {
+                        rowIndx++;
+                        if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                        {
+                            continue;
+                        }
+
+                        if (!string.IsNullOrEmpty(field.RequireFilters))
+                        {
+                            Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
+                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, rowIndx - 1)))
+                            {
+                                continue;
+                            }
+                        }
+
+                        row.Data.TryGetValue(field.FieldName, out string value);
+                        if (string.IsNullOrEmpty(value))
+                        {
+                            throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
+                        }
                     }
                 }
             }
         }
 
-        private async Task CheckUniqueAsync(int inputTypeId, List<ValidateRowModel> data, List<ValidateField> uniqueFields, long? inputValueBillId = null)
+        private async Task CheckUniqueAsync(int inputTypeId, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> uniqueFields, long? inputValueBillId = null)
         {
             // Check unique
             foreach (var field in uniqueFields)
             {
-                // Get list change value
-                List<object> values = new List<object>();
-                foreach (var row in data)
+                // Validate info
+                if (!field.IsMultiRow)
                 {
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                    if (info.CheckFields != null && !info.CheckFields.Contains(field.FieldName))
                     {
                         continue;
                     }
-                    row.Data.TryGetValue(field.FieldName, out string value);
-                    if (!string.IsNullOrEmpty(value))
+                    info.Data.TryGetValue(field.FieldName, out object value);
+                    // Checkin unique trong db
+                    if (value != null)
+                        await ValidUniqueAsync(inputTypeId, new List<object>() { value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId) }, field, inputValueBillId);
+                }
+                else // Validate rows
+                {
+                    int rowIndx = 0;
+                    foreach (var row in rows)
                     {
-                        values.Add(value.ConvertValueByType((EnumDataType)field.DataTypeId));
+                        rowIndx++;
+                        if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                        {
+                            continue;
+                        }
+                        // Get list change value
+                        List<object> values = new List<object>();
+                        row.Data.TryGetValue(field.FieldName, out object value);
+                        if (value != null)
+                        {
+                            values.Add(value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId));
+                        }
+                        // Check unique trong danh sách values thêm mới/sửa
+                        if (values.Count != values.Distinct().Count())
+                        {
+                            throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                        }
+                        if (values.Count == 0)
+                        {
+                            continue;
+                        }
+                        // Checkin unique trong db
+                        await ValidUniqueAsync(inputTypeId, values, field, inputValueBillId);
                     }
-                }
-
-                // Check unique trong danh sách values thêm mới/sửa
-                if (values.Count != values.Distinct().Count())
-                {
-                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
-                }
-                if (values.Count == 0)
-                {
-                    continue;
-                }
-                // Checkin unique trong db
-                var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
-                if (inputValueBillId.HasValue)
-                {
-                    existSql += $"AND InputBill_F_Id != {inputValueBillId}";
-                }
-                existSql += $" AND {field.FieldName} IN (";
-                List<SqlParameter> sqlParams = new List<SqlParameter>();
-                var suffix = 0;
-                foreach (var value in values)
-                {
-                    var paramName = $"@{field.FieldName}_{suffix}";
-                    if (suffix > 0)
-                    {
-                        existSql += ",";
-                    }
-                    existSql += paramName;
-                    sqlParams.Add(new SqlParameter(paramName, value));
-                    suffix++;
-                }
-                existSql += ")";
-                var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
-                bool isExisted = result != null && result.Rows.Count > 0;
-
-                if (isExisted)
-                {
-                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
                 }
             }
         }
 
-        private async Task CheckReferAsync(List<ValidateRowModel> data, List<ValidateField> selectFields, NonCamelCaseDictionary info)
+        private async Task ValidUniqueAsync(int inputTypeId, List<object> values, ValidateField field, long? inputValueBillId = null)
+        {
+            var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
+            if (inputValueBillId.HasValue)
+            {
+                existSql += $"AND InputBill_F_Id != {inputValueBillId}";
+            }
+            existSql += $" AND {field.FieldName} IN (";
+            List<SqlParameter> sqlParams = new List<SqlParameter>();
+            var suffix = 0;
+            foreach (var value in values)
+            {
+                var paramName = $"@{field.FieldName}_{suffix}";
+                if (suffix > 0)
+                {
+                    existSql += ",";
+                }
+                existSql += paramName;
+                sqlParams.Add(new SqlParameter(paramName, value));
+                suffix++;
+            }
+            existSql += ")";
+            var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            bool isExisted = result != null && result.Rows.Count > 0;
+
+            if (isExisted)
+            {
+                throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+            }
+        }
+
+        private async Task CheckReferAsync(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> selectFields)
         {
             // Check refer
             foreach (var field in selectFields)
             {
-                string tableName = $"v{field.RefTableCode}";
-                int rowIndex = 0;
-                foreach (var row in data)
+                // Validate info
+                if (!field.IsMultiRow)
                 {
-                    rowIndex++;
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                    await ValidReferAsync(info, info, field, null);
+                }
+                else // Validate rows
+                {
+                    int rowIndx = 0;
+                    foreach (var row in rows)
                     {
-                        continue;
-                    }
-                    row.Data.TryGetValue(field.FieldName, out string textValue);
-                    if (string.IsNullOrEmpty(textValue))
-                    {
-                        continue;
-                    }
-                    var value = textValue.ConvertValueByType((EnumDataType)field.DataTypeId);
-                    var whereCondition = new StringBuilder();
-                    var sqlParams = new List<SqlParameter>();
-
-                    int suffix = 0;
-                    var paramName = $"@{field.RefTableField}_{suffix}";
-                    var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
-                    sqlParams.Add(new SqlParameter(paramName, value));
-                    if (!string.IsNullOrEmpty(field.Filters))
-                    {
-                        var filters = field.Filters;
-                        var pattern = @"@{(?<word>\w+)}";
-                        Regex rx = new Regex(pattern);
-                        MatchCollection match = rx.Matches(field.Filters);
-                        for (int i = 0; i < match.Count; i++)
-                        {
-                            var fieldName = match[i].Groups["word"].Value;
-                            row.Data.TryGetValue(fieldName, out string filterValue);
-                            if (string.IsNullOrEmpty(filterValue))
-                            {
-                                info.TryGetValue(fieldName, out filterValue);
-                            }
-                            filters = filters.Replace(match[i].Value, filterValue);
-                        }
-
-                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
-                        if (filterClause != null)
-                        {
-                            filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
-                        }
-                    }
-
-                    if (whereCondition.Length > 0)
-                    {
-                        existSql += $" AND {whereCondition}";
-                    }
-
-                    var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
-                    bool isExisted = result != null && result.Rows.Count > 0;
-                    if (!isExisted)
-                    {
-                        throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex, field.Title });
+                        rowIndx++;
+                        await ValidReferAsync(row, info, field, rowIndx);
                     }
                 }
             }
         }
 
-        private void CheckValue(List<ValidateRowModel> data, List<ValidateField> categoryFields)
+        private async Task ValidReferAsync(ValidateRowModel checkData, ValidateRowModel info, ValidateField field, int? rowIndex)
+        {
+            string tableName = $"v{field.RefTableCode}";
+            if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
+            {
+                return;
+            }
+            checkData.Data.TryGetValue(field.FieldName, out string textValue);
+            if (string.IsNullOrEmpty(textValue))
+            {
+                return;
+            }
+            var value = textValue.ConvertValueByType((EnumDataType)field.DataTypeId);
+            var whereCondition = new StringBuilder();
+            var sqlParams = new List<SqlParameter>();
+
+            int suffix = 0;
+            var paramName = $"@{field.RefTableField}_{suffix}";
+            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
+            sqlParams.Add(new SqlParameter(paramName, value));
+            if (!string.IsNullOrEmpty(field.Filters))
+            {
+                var filters = field.Filters;
+                var pattern = @"@{(?<word>\w+)}";
+                Regex rx = new Regex(pattern);
+                MatchCollection match = rx.Matches(field.Filters);
+                for (int i = 0; i < match.Count; i++)
+                {
+                    var fieldName = match[i].Groups["word"].Value;
+                    checkData.Data.TryGetValue(fieldName, out string filterValue);
+                    if (string.IsNullOrEmpty(filterValue))
+                    {
+                        info.Data.TryGetValue(fieldName, out filterValue);
+                    }
+                    filters = filters.Replace(match[i].Value, filterValue);
+                }
+
+                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                if (filterClause != null)
+                {
+                    filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
+                }
+            }
+
+            if (whereCondition.Length > 0)
+            {
+                existSql += $" AND {whereCondition}";
+            }
+
+            var result = await _accountancyDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            bool isExisted = result != null && result.Rows.Count > 0;
+            if (!isExisted)
+            {
+                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+            }
+        }
+
+        private async Task CheckValue(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
-                int rowIndex = 0;
-                foreach (var row in data)
+                // Validate info
+                if (!field.IsMultiRow)
                 {
-                    rowIndex++;
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
+                    await ValidValueAsync(info, field, null);
+                }
+                else // Validate rows
+                {
+                    int rowIndx = 0;
+                    foreach (var row in rows)
                     {
-                        continue;
-                    }
-                    row.Data.TryGetValue(field.FieldName, out string value);
-                    if (string.IsNullOrEmpty(value))
-                    {
-                        continue;
-                    }
-                    if ((AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId)) || field.IsAutoIncrement || string.IsNullOrEmpty(value))
-                    {
-                        continue;
-                    }
-                    string regex = ((EnumDataType)field.DataTypeId).GetRegex();
-                    if ((field.DataSize > 0 && value.Length > field.DataSize)
-                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
-                    {
-                        throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { rowIndex, field.Title });
+                        rowIndx++;
+                        await ValidValueAsync(row, field, rowIndx);
                     }
                 }
             }
         }
+
+        private async Task ValidValueAsync(ValidateRowModel checkData, ValidateField field, int? rowIndex)
+        {
+            if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
+            {
+                return;
+            }
+
+            checkData.Data.TryGetValue(field.FieldName, out string value);
+            if (string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+            if ((AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId)) || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+            {
+                return;
+            }
+            string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+            if ((field.DataSize > 0 && value.Length > field.DataSize)
+                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
+                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+            {
+                throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+            }
+        }
+
+        private void AppendSelectFields(ref StringBuilder sql, List<ValidateField> fields)
+        {
+            for (int indx = 0; indx < fields.Count; indx++)
+            {
+                if (indx > 0)
+                {
+                    sql.Append(", ");
+                }
+                sql.Append(fields[indx].FieldName);
+            }
+        }
+
 
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
         {
@@ -751,19 +857,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
 
-            List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
-            // Validate info
-            // Get changed row info
+            // Get changed info
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
-            for (int indx = 0; indx < singleFields.Count; indx++)
-            {
-                if (indx > 0)
-                {
-                    infoSQL.Append(", ");
-                }
-                infoSQL.Append(singleFields[indx].FieldName);
-            }
+            AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
             var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             NonCamelCaseDictionary currentInfo = null;
@@ -772,38 +869,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 currentInfo = infoLst[0];
             }
             NonCamelCaseDictionary futureInfo = data.Info;
-            string[] changeFields = CompareRow(currentInfo, futureInfo, singleFields);
-            if (changeFields == null || changeFields.Length > 0)
-            {
-                checkRows.Add(new ValidateRowModel(data.Info, changeFields));
-                // Lấy thông tin field
-                var requiredSingleFields = await GetRequiredFields(inputAreaFields, data, false);
-                var uniqueSingleFields = singleFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-                var selectSingleFields = singleFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
-                // Check field required
-                CheckRequired(checkRows, requiredSingleFields);
-                // Check refer
-                await CheckReferAsync(checkRows, selectSingleFields, data.Info);
-                // Check unique
-                await CheckUniqueAsync(inputTypeId, checkRows, uniqueSingleFields, inputValueBillId);
-                // Check value
-                CheckValue(checkRows, singleFields);
-            }
+            ValidateRowModel checkInfo = new ValidateRowModel(data.Info, CompareRow(currentInfo, futureInfo, singleFields));
 
-            // Validate rows
+            // Get changed rows
+            List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
-            for (int indx = 0; indx < multiFields.Count; indx++)
-            {
-                if (indx > 0)
-                {
-                    rowsSQL.Append(", ");
-                }
-                rowsSQL.Append(multiFields[indx].FieldName);
-            }
+            AppendSelectFields(ref rowsSQL, multiFields);
             rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
             var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
-            checkRows.Clear();
             foreach (var futureRow in data.Rows)
             {
                 futureRow.TryGetValue("F_Id", out string futureValue);
@@ -815,24 +889,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 else
                 {
                     string[] changeFieldIndexes = CompareRow(curRow, futureRow, multiFields);
-                    if (changeFieldIndexes.Length > 0)
-                    {
-                        checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
-                    }
+                    checkRows.Add(new ValidateRowModel(futureRow, changeFieldIndexes));
                 }
             }
+
             // Lấy thông tin field
-            var requiredMultiFields = await GetRequiredFields(inputAreaFields, data, true);
-            var uniqueMultiFields = multiFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectMultiFields = multiFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+
             // Check field required
-            CheckRequired(checkRows, requiredMultiFields);
+            await CheckRequired(checkInfo, checkRows, requiredFields, inputAreaFields);
             // Check refer
-            await CheckReferAsync(checkRows, selectMultiFields, data.Info);
+            await CheckReferAsync(checkInfo, checkRows, selectFields);
             // Check unique
-            await CheckUniqueAsync(inputTypeId, checkRows, uniqueMultiFields, inputValueBillId);
+            await CheckUniqueAsync(inputTypeId, checkInfo, checkRows, uniqueFields, inputValueBillId);
             // Check value
-            CheckValue(checkRows, multiFields);
+            await CheckValue(checkInfo, checkRows, inputAreaFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try

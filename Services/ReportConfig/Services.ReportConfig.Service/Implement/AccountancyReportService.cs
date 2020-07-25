@@ -316,7 +316,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var element = cacls.FirstOrDefault(e => e.KeyValue == key);
                 if (element != null)
                 {
-                    var oldText = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{key}";
                     var newText = GetBscSelectData(cacls, element.SelectData, element.KeyValue, keyValue);
                     newText = $"({newText.Substring(0, newText.IndexOf("AS"))})";
                     result.Remove(match[i].Index + moveIndex, match[i].Length);
