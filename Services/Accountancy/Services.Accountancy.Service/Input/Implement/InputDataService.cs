@@ -1614,6 +1614,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     foreach (var bill in bills)
                     {
+                        // validate require
+                        ValidateRowModel checkInfo = new ValidateRowModel(bill.Info, null);
+
+                        List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
+                        checkRows = bill.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
+
+                        // Validate info
+                        var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+                        // Check field required
+                        await CheckRequired(checkInfo, checkRows, requiredFields, fields);
+
                         // Before saving action (SQL)
                         await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields, EnumAction.Add);
 
