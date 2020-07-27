@@ -24,9 +24,11 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string MainView { get; set; }
         public string Joins { get; set; }
         public string Wheres { get; set; }
+        public string OrderBy { get; set; }
         public string Head { get; set; }
         public string Footer { get; set; }
         public string HeadSql { get; set; }
+        public string BodySql { get; set; }
         public string FooterSql { get; set; }
         public string PrintTitle { get; set; }
         public string GroupColumns { get; set; }
@@ -39,6 +41,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string AfterLoadDataJsCode { get; set; }
         public string OnCloseJsCode { get; set; }
         public string Columns { get; set; }
+        public bool IsBsc { get; set; }
+        public string BscConfig { get; set; }
 
         public virtual ReportTypeGroup ReportTypeGroup { get; set; }
         public virtual ICollection<ReportTypeView> ReportTypeView { get; set; }

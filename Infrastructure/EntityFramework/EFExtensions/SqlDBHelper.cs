@@ -1,5 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,6 +13,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -26,19 +30,32 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters)
         {
-            using (var command = dbContext.Database.GetDbConnection().CreateCommand())
+            try
             {
-                command.CommandText = rawSql;
-                command.Parameters.Clear();
-                command.Parameters.AddRange(parammeters);
-
-                dbContext.Database.OpenConnection();
-                using (var result = await command.ExecuteReaderAsync())
+                using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
-                    DataTable dt = new DataTable();
-                    dt.Load(result);
-                    return dt;
+                    command.CommandText = rawSql;
+                    command.Parameters.Clear();
+                    command.Parameters.AddRange(parammeters);
+
+                    var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
+                    if (trans != null)
+                    {
+                        command.Transaction = trans;
+                    }
+
+                    dbContext.Database.OpenConnection();
+                    using (var result = await command.ExecuteReaderAsync())
+                    {
+                        DataTable dt = new DataTable();
+                        dt.Load(result);
+                        return dt;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error QueryDataTable {ex.Message} Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -109,7 +126,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 var sql = $"UPDATE [{table.TableName}] SET {string.Join(",", insertColumns.Select(c => $"[{c}] = @{c}"))} WHERE F_Id = {fId}";
 
-                numberChange+=  await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+                numberChange += await dbContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
 
             }
             return numberChange;
@@ -225,5 +242,131 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return regex.IsMatch(objectName);
         }
 
+
+        public static void FilterClauseProcess(this Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
+        {
+            if (clause != null)
+            {
+                condition.Append("( ");
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+                    if (value != null)
+                    {
+                        singleClause.Value = value;
+                    }
+                    BuildExpression(singleClause, tableName, ref condition, ref sqlParams, ref suffix, not);
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+                    bool isNot = not ^ arrClause.Not;
+                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
+                    {
+                        if (indx != 0)
+                        {
+                            condition.Append(isOr ? " OR " : " AND ");
+                        }
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot, value);
+                    }
+                }
+                condition.Append(" )");
+            }
+        }
+
+        public static void BuildExpression(SingleClause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
+        {
+            if (clause != null)
+            {
+                var paramName = $"@{clause.FieldName}_filter_{suffix}";
+                string ope;
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+                        ope = not ? "!=" : "=";
+
+                        if (clause.Value == null || clause.Value == DBNull.Value)
+                        {
+                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                        }
+                        else
+                        {
+                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        }
+
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
+
+                        break;
+                    case EnumOperator.NotEqual:
+                        ope = not ? "=" : "!=";
+                        if (clause.Value == null || clause.Value == DBNull.Value)
+                        {
+                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                        }
+                        else
+                        {
+                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        }
+
+                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                        break;
+                    case EnumOperator.Contains:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
+                        break;
+                    case EnumOperator.InList:
+                        ope = not ? "NOT IN" : "IN";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
+                        int inSuffix = 0;
+                        foreach (var value in (clause.Value as string).Split(","))
+                        {
+                            if (suffix > 0)
+                            {
+                                condition.Append(",");
+                            }
+                            var inParamName = $"{paramName}_{inSuffix}";
+                            condition.Append($"{inParamName}");
+                            sqlParams.Add(new SqlParameter(inParamName, value.ConvertValueByType(clause.DataType)));
+                            inSuffix++;
+                        }
+                        condition.Append(")");
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        ope = not ? "EXISTS" : "NOT EXISTS";
+                        var alias = $"{tableName}_{suffix}";
+                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{tableName}].F_Id)");
+                        break;
+                    case EnumOperator.StartsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+                        break;
+                    case EnumOperator.EndsWith:
+                        ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        break;
+                    case EnumOperator.IsNull:
+                        ope = not ? "IS NOT NULL" : "IS NULL";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        break;
+                    case EnumOperator.IsEmpty:
+                        ope = not ? "!= ''''" : "=''''";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        break;
+                    case EnumOperator.IsNullOrEmpty:
+                        ope = not ? "IS NOT NULL" : "IS NULL";
+                        condition.Append($"( [{tableName}].{clause.FieldName} {ope}");
+                        ope = not ? "!= ''''" : "=''''";
+                        condition.Append($" AND [{tableName}].{clause.FieldName} {ope})");
+                        break;
+                    default:
+                        break;
+                }
+                suffix++;
+            }
+        }
     }
 }

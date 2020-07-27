@@ -84,6 +84,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
         public int? IdGencode { get; set; }
+        public string RequireFilters { get; set; }
 
         public bool Compare(InputAreaField curField)
         {
@@ -112,7 +113,8 @@ namespace VErp.Services.Accountancy.Model.Input
                 OnBlur == curField.OnBlur &&
                 OnChange == curField.OnChange &&
                 AutoFocus == curField.AutoFocus &&
-                Column == curField.Column;
+                Column == curField.Column &&
+                RequireFilters == curField.RequireFilters;
         }
     }
 

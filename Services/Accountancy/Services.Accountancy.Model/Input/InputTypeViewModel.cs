@@ -43,29 +43,19 @@ namespace VErp.Services.Accountancy.Model.Input
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public string DefaultValue { get; set; }
-        public IList<InputTypeViewFieldSelectFilter> SelectFilters { get; set; }
-        public int? ReferenceCategoryId { get; set; }
-        public int? ReferenceCategoryFieldId { get; set; }
-        public int? ReferenceCategoryTitleFieldId { get; set; }
+        public string SelectFilters { get; set; }
+        public string RefTableCode { get; set; }
+        public string RefTableField { get; set; }
+        public string RefTableTitle { get; set; }
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<InputTypeViewField, InputTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ForMember(m => m.SelectFilters, m => m.MapFrom(s => s.SelectFilters.JsonDeserialize<IList<InputTypeViewFieldSelectFilter>>()))
             .ReverseMap()
             .ForMember(m => m.InputTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
-            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId))
-            .ForMember(m => m.SelectFilters, m => m.MapFrom(s => s.SelectFilters.JsonSerialize()));
-    }
-
-    public class InputTypeViewFieldSelectFilter
-    {
-        public EnumLogicOperator LogicOperatorId { get; set; }
-        public EnumOperator OperatorId { get; set; }
-
-        public int InputAreaFieldId { get; set; }
+            .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));
     }
 }

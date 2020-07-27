@@ -38,12 +38,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IMenuHelperService _menuHelperService;
+        private readonly ICurrentContextService _currentContextService;
+
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IMenuHelperService menuHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -51,6 +56,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _menuHelperService = menuHelperService;
+            _currentContextService = currentContextService;
         }
 
         #region InputType
@@ -119,13 +126,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
+
+                if (data.MenuStyle != null)
+                {
+                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, data.InputTypeCode, inputType.InputTypeId);
+                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
+                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                }
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -141,7 +155,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return code;
         }
 
-        public async Task<int> CloneInputType(int inputTypeId)
+        public async Task<int> CloneInputType(int inputTypeId, InputTypeMenuStyle menuStyle)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var sourceInput = await _accountancyDBContext.InputType
@@ -221,6 +235,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
 
+                if (menuStyle != null)
+                {
+                    var url = Utils.FormatStyle(menuStyle.UrlFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                    var param = Utils.FormatStyle(menuStyle.ParamFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
+                }
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
             }
@@ -228,7 +249,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -264,6 +285,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.InputTypeGroupId = data.InputTypeGroupId;
                 inputType.PreLoadAction = data.PreLoadAction;
                 inputType.PostLoadAction = data.PostLoadAction;
+                inputType.AfterLoadAction = data.AfterLoadAction;
+                inputType.BeforeSubmitAction = data.BeforeSubmitAction;
+                inputType.BeforeSaveAction = data.BeforeSaveAction;
+                inputType.AfterSaveAction = data.AfterSaveAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -276,7 +301,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -393,9 +418,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "InputTypeViewCreate");
-                throw ex;
+                throw;
             }
-
         }
 
         public async Task<bool> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model)
@@ -432,7 +456,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "InputTypeViewUpdate");
-                throw ex;
+                throw;
             }
         }
 
@@ -623,7 +647,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -673,7 +697,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -836,6 +860,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             var curFields = _accountancyDBContext.InputAreaField
+                .Include(af => af.InputField)
                 .IgnoreQueryFilters()
                 .Where(f => f.InputTypeId == inputTypeId)
                 .ToList();
@@ -910,6 +935,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                        curField.RequireFilters = field.RequireFilters;
                     }
                 }
 
@@ -943,7 +969,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                return false;
+                throw;
             }
         }
 
@@ -965,8 +991,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.InputField.AddAsync(inputField);
                 await _accountancyDBContext.SaveChangesAsync();
 
-                await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -978,7 +1006,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -997,13 +1025,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (data.FieldName != inputField.FieldName)
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
                 {
-                    await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    if (data.FieldName != inputField.FieldName)
+                    {
+                        await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    }
+                    await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
-
-                await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
                 _mapper.Map(data, inputField);
 
                 await _accountancyDBContext.SaveChangesAsync();
@@ -1019,7 +1048,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -1043,9 +1072,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Delete field
                 inputField.IsDeleted = true;
                 await _accountancyDBContext.SaveChangesAsync();
-
-                await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -1056,17 +1086,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 trans.Rollback();
                 _logger.LogError(ex, "Delete");
-                throw ex;
+                throw;
             }
         }
-
-
 
         #endregion
 
         private async Task UpdateInputValueView()
         {
-            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", new SqlParameter[0]);
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", Array.Empty<SqlParameter>());
         }
     }
 }

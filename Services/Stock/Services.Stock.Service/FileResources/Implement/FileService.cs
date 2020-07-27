@@ -43,6 +43,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".png"  , EnumFileType.Image },
 
             { ".doc" , EnumFileType.Document },
+            { ".pdf" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
             { ".xls", EnumFileType.Document },
             { ".xlsx" , EnumFileType.Document },
@@ -521,8 +522,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GetFileUrl(long fileId, string filePath, string contentType)
         {
+            var fileName = Path.GetFileName(filePath);
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
-            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/filestorage/preview?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
 
         private string GetPhysicalFilePath(string filePath)

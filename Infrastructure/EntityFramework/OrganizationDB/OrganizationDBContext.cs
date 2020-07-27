@@ -22,10 +22,12 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
+        public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
+        public virtual DbSet<UserData> UserData { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -198,6 +200,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_EmployeeDepartment_Employee");
             });
 
+            modelBuilder.Entity<ObjectProcessObject>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(512);
+            });
+
             modelBuilder.Entity<ObjectProcessStep>(entity =>
             {
                 entity.Property(e => e.ObjectProcessStepName)
@@ -255,6 +262,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .WithMany(p => p.InverseParentSubsidiary)
                     .HasForeignKey(d => d.ParentSubsidiaryId)
                     .HasConstraintName("FK_Subsidiary_Subsidiary");
+            });
+
+            modelBuilder.Entity<UserData>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.DataKey });
+
+                entity.Property(e => e.DataKey).HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

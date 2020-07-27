@@ -128,7 +128,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("confirmCode")]
-        public async Task<ServiceResult> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<bool> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.ConfirmCode(objectTypeId, objectId);
         }

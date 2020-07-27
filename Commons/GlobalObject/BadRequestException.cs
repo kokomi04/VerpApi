@@ -18,7 +18,7 @@ namespace VErp.Commons.GlobalObject
             this.Code = errorCode;
         }
 
-        public BadRequestException(Enum errorCode, string[] param) : base(string.Format(EnumExtensions.GetEnumDescription(errorCode), param))
+        public BadRequestException(Enum errorCode, object[] param) : base(string.Format(EnumExtensions.GetEnumDescription(errorCode), param))
         {
             this.Code = errorCode;
         }

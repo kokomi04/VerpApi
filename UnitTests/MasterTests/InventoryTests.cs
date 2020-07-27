@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -17,7 +18,7 @@ using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
 using Xunit;
-using static VErp.Services.Stock.Model.Product.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace MasterTests
 {
@@ -73,10 +74,10 @@ namespace MasterTests
 
                 await InitInventories(stockInfo.StockId, product1, product2);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
-                throw ex;
+                throw;
             }
 
 
@@ -604,7 +605,8 @@ namespace MasterTests
                             SecondaryUnitId = unitInfo.UnitId,
                             ProductUnitConversionName = "x2 " + unitInfo.UnitName,
                             FactorExpression = "2",
-                            ConversionDescription = ""
+                            ConversionDescription = "",
+                            IsDefault = false,
                         }
                     }
                 }

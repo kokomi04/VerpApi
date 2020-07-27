@@ -123,7 +123,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CustomerId = d.CustomerId,
 
                         TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney
+                        TaxInMoney = d.TaxInMoney,
+
+                        Description = d.Description
                     };
                 }
                 ).ToList()
@@ -235,7 +237,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             d.PrimaryUnitPrice,
                             d.TaxInPercent,
-                            d.TaxInMoney
+                            d.TaxInMoney,
+                            d.Description
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -321,6 +324,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
+
+                    Description = info.Description,
 
                     RequestDetail = requestDetailInfo
                 });
@@ -446,6 +451,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.TaxInPercent = item.TaxInPercent;
                                 detail.TaxInMoney = item.TaxInMoney;
+
+                                detail.Description = item.Description;
 
                                 break;
                             }
@@ -1472,7 +1479,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 TaxInMoney = d.TaxInMoney,
 
                 OrderCode = d.OrderCode,
-                ProductionOrderCode = d.ProductionOrderCode
+                ProductionOrderCode = d.ProductionOrderCode,
+
+                Description = d.Description
             };
         }
 
