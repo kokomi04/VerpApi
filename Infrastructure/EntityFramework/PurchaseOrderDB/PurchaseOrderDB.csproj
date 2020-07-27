@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>VErp.Infrastructure.EF.PurchaseOrderDB</AssemblyName>
     <RootNamespace>VErp.Infrastructure.EF.PurchaseOrderDB</RootNamespace>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

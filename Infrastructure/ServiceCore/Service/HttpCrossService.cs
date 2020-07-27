@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public interface IHttpCrossService
     {
         Task<T> Post<T>(string relativeUrl, object postData);
+        Task<T> Put<T>(string relativeUrl, object postData);
         Task<T> Get<T>(string relativeUrl);
     }
 
@@ -61,7 +62,23 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
+                  
+                    try
+                    {                        
+                        var result = response.JsonDeserialize<ServiceResult>();
+                        if (result != null)
+                        {
+                            _logger.LogError($"HttpCrossService:Post {uri} {{0}} Warning {data.StatusCode} {{1}}", body, response);
+                            
+                            throw new BadRequestException(result.Code, result.Message);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        
+                    }
                     _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
+
                     throw new BadRequestException(GeneralCode.InternalError, response);
                 }
 
@@ -70,6 +87,58 @@ namespace VErp.Infrastructure.ServiceCore.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "HttpCrossService:Post");
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+            }
+        }
+
+        public async Task<T> Put<T>(string relativeUrl, object postData)
+        {
+            try
+            {
+                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+                var body = postData.JsonSerialize();
+
+
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(uri),
+                    Method = HttpMethod.Put,
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                };
+
+                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
+                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
+                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+
+                var data = await _httpClient.SendAsync(request);
+
+                var response = await data.Content.ReadAsStringAsync();
+
+                if (!data.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var result = response.JsonDeserialize<ServiceResult>();
+                        if (result != null)
+                        {
+                            _logger.LogError($"HttpCrossService:Put {uri} {{0}} Warning {data.StatusCode} {{1}}", body, response);
+
+                            throw new BadRequestException(result.Code, result.Message);
+                        }
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
+                    throw new BadRequestException(GeneralCode.InternalError, response);
+                }
+
+                return response.JsonDeserialize<T>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "HttpCrossService:Put");
                 throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
@@ -96,6 +165,20 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
+                    try
+                    {
+                        var result = response.JsonDeserialize<ServiceResult>();
+                        if (result != null)
+                        {
+                            _logger.LogError($"HttpCrossService:Get {uri} Warning {data.StatusCode} {{0}}", response);
+
+                            throw new BadRequestException(result.Code, result.Message);
+                        }
+                    }
+                    catch (Exception)
+                    {
+
+                    }
                     _logger.LogError($"HttpCrossService:Get {uri} Error {data.StatusCode} {{0}}", response);
                     throw new BadRequestException(GeneralCode.InternalError, response);
                 }

@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -181,18 +183,13 @@ namespace VErpApi.Controllers.Stock.Products
                 }
 
                 var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
-                if (productTypeConfig.Code.IsSuccess())
-                {
-                    var code = await _customGenCodeService.GenerateCode(productTypeConfig.Data.CustomGenCodeId, 0, productTypeInfo.Data.IdentityCode).ConfigureAwait(true);
-                    if (!code.Code.IsSuccess())
-                    {
-                        return code.Code;
-                    }
 
-                    product.ProductCode = code.Data.CustomCode;
-                    // lastValue = code.Data.LastValue;
-                    isGenCode = true;
-                }
+                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.Data.IdentityCode).ConfigureAwait(true);
+
+                product.ProductCode = code.CustomCode;
+                // lastValue = code.Data.LastValue;
+                isGenCode = true;
+
             }
 
             ServiceResult<int> r;

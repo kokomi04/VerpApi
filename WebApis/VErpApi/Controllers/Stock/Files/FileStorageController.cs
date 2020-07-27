@@ -16,10 +16,12 @@ namespace VErpApi.Controllers.Stock.Files
         }
 
         [AllowAnonymous]
-        [Route("Preview")]
+        [Route("view/{fileName}")]
         [HttpGet]
-        public async Task<IActionResult> Preview([FromQuery] string fileKey)
+        public async Task<IActionResult> Preview([FromRoute] string fileName, [FromQuery] string fileKey)
         {
+            if (string.IsNullOrWhiteSpace(fileName)) return NotFound();
+
             var r = await _fileStoreService.GetFileStream(fileKey);
             if (!r.Code.IsSuccess())
             {

@@ -102,7 +102,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "ReportTypeViewUpdate");
-                throw ex;
+                throw;
             }
         }
 
@@ -185,7 +185,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 await trans.RollbackAsync();
                 _logger.LogError(ex, "ReportTypeViewCreate");
-                throw ex;
+                throw;
             }
 
         }
@@ -193,33 +193,33 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task ReportTypeViewFieldAddRange(int ReportTypeViewId, IList<ReportTypeViewFieldModel> fieldModels)
         {
-            var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
-            categoryFieldIds.Union(fieldModels.Where(f => f.ReferenceCategoryTitleFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList());
+            //var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
+            //categoryFieldIds.Union(fieldModels.Where(f => f.ReferenceCategoryTitleFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList());
 
-            if (categoryFieldIds.Count > 0)
-            {
+            //if (categoryFieldIds.Count > 0)
+            //{
 
-                //var categoryFields = (await _reportConfigContext.CategoryField
-                //    .Where(f => categoryFieldIds.Contains(f.CategoryFieldId))
-                //    .Select(f => new { f.CategoryFieldId, f.CategoryId })
-                //    .AsNoTracking()
-                //    .ToListAsync())
-                //    .ToDictionary(f => f.CategoryFieldId, f => f);
+            //var categoryFields = (await _reportConfigContext.CategoryField
+            //    .Where(f => categoryFieldIds.Contains(f.CategoryFieldId))
+            //    .Select(f => new { f.CategoryFieldId, f.CategoryId })
+            //    .AsNoTracking()
+            //    .ToListAsync())
+            //    .ToDictionary(f => f.CategoryFieldId, f => f);
 
-                //foreach (var f in fieldModels)
-                //{
-                //    if (f.ReferenceCategoryFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryFieldId.Value, out var cateField) && cateField.CategoryId != f.ReferenceCategoryId)
-                //    {
-                //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường dữ liệu của danh mục không thuộc danh mục");
-                //    }
+            //foreach (var f in fieldModels)
+            //{
+            //    if (f.ReferenceCategoryFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryFieldId.Value, out var cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường dữ liệu của danh mục không thuộc danh mục");
+            //    }
 
-                //    if (f.ReferenceCategoryTitleFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryTitleFieldId.Value, out cateField) && cateField.CategoryId != f.ReferenceCategoryId)
-                //    {
-                //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường hiển thị của danh mục không thuộc danh mục");
-                //    }
-                //}
+            //    if (f.ReferenceCategoryTitleFieldId.HasValue && categoryFields.TryGetValue(f.ReferenceCategoryTitleFieldId.Value, out cateField) && cateField.CategoryId != f.ReferenceCategoryId)
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Trường hiển thị của danh mục không thuộc danh mục");
+            //    }
+            //}
 
-            }
+            // }
 
             var fields = fieldModels.Select(f => _mapper.Map<ReportTypeViewField>(f)).ToList();
 
@@ -262,13 +262,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<ReportTypeModel> ReportType(int reportTypeId)
         {
             var reportType = await _reportConfigContext.ReportType
-                .ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
+                //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
             if (reportType == null)
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
-            return reportType;
+            return _mapper.Map<ReportTypeModel>(reportType);
         }
 
         public async Task<int> AddReportType(ReportTypeModel data)
@@ -323,10 +323,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
             {
-                report.ReportTypeName = data.ReportTypeName;
-                report.ReportPath = data.ReportPath;
-                report.SortOrder = data.SortOrder;
-                report.ReportTypeGroupId = data.ReportTypeGroupId;
+                _mapper.Map(data, report);
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
@@ -357,7 +354,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 report.IsDeleted = true;
                 // Xóa View
                 var reportTypeViews = _reportConfigContext.ReportTypeView.Where(v => v.ReportTypeId == reportTypeId).ToList();
-                foreach(var reportTypeView in reportTypeViews)
+                foreach (var reportTypeView in reportTypeViews)
                 {
                     reportTypeView.IsDeleted = true;
                 }

@@ -14,7 +14,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<int> AddInputType(InputTypeModel data);
         Task<bool> UpdateInputType(int inputTypeId, InputTypeModel data);
         Task<bool> DeleteInputType(int inputTypeId);
-        Task<int> CloneInputType(int inputTypeId);
+        Task<int> CloneInputType(int inputTypeId, InputTypeMenuStyle menuStyle);
 
 
         Task<int> InputTypeViewCreate(int inputTypeId, InputTypeViewModel model);

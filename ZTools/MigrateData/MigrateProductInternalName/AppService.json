@@ -1,0 +1,5 @@
+{
+  "ServiceName": "MigrateProductInternalName",
+  "ServiceId": 1,
+  "Port": 8002
+}

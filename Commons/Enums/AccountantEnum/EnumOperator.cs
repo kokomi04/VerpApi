@@ -46,6 +46,17 @@ namespace VErp.Commons.Enums.AccountantEnum
         [Description("LessThanOrEqual")]
         LessThanOrEqual = 11,
 
+        [ParamNumber(0)]
+        [Description("Is Null")]
+        IsNull = 12,
+        [ParamNumber(0)]
+        [Description("Is Empty")]
+        IsEmpty = 13,
+
+        [ParamNumber(0)]
+        [Description("Is Null Or Empty")]
+        IsNullOrEmpty = 14
+
     }
 
     public enum EnumLogicOperator

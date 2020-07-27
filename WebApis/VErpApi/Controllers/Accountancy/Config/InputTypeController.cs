@@ -96,10 +96,10 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpPost]
-        [Route("clone")]
-        public async Task<int> CloneInputType([FromBody] int inputTypeId)
+        [Route("{inputTypeId}/clone")]
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] InputTypeMenuStyle menuStyle)
         {
-            return await _inputConfigService.CloneInputType(inputTypeId).ConfigureAwait(true);
+            return await _inputConfigService.CloneInputType(inputTypeId, menuStyle).ConfigureAwait(true);
         }
 
         [HttpGet]

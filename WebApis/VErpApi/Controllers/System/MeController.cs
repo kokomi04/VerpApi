@@ -6,6 +6,8 @@ using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Services.Organization.Model.Employee;
+using Services.Organization.Service.Employee;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
@@ -26,14 +28,18 @@ namespace VErpApi.Controllers.System
         private readonly IUserService _userService;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IPersistedGrantService _persistedGrant;
+        private readonly IUserDataService _userDataService;
+
         public MeController(IUserService userService,
             IIdentityServerInteractionService interaction,
-            IPersistedGrantService persistedGrant
+            IPersistedGrantService persistedGrant,
+            IUserDataService userDataService
             )
         {
             _userService = userService;
             _interaction = interaction;
             _persistedGrant = persistedGrant;
+            _userDataService = userDataService;
         }
 
         [Route("info")]
@@ -85,6 +91,22 @@ namespace VErpApi.Controllers.System
         public async Task<ServiceResult> ChangePassword([FromBody] UserChangepasswordInput req)
         {
             return await _userService.ChangeUserPassword(UserId, req);
+        }
+
+        [Route("UserData/{key}")]
+        [HttpGet]
+        [GlobalApi]
+        public async Task<UserDataModel> GetUserData([FromRoute] string key)
+        {
+            return await _userDataService.GetUserData(key);
+        }
+
+        [Route("UserData/{key}")]
+        [HttpPut]
+        [GlobalApi]
+        public async Task<bool> UpdateUserData([FromRoute] string key, [FromBody] UserDataModel data)
+        {
+            return await _userDataService.UpdateUserData(key, data?.DataContent);
         }
     }
 }

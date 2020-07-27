@@ -36,6 +36,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
+        public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -310,6 +311,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.ProductInternalName)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasDefaultValueSql("('')");
+
                 entity.Property(e => e.ProductName)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -476,6 +482,23 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<VMappingOusideImportObject>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("vMappingOusideImportObject");
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.SourceId)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

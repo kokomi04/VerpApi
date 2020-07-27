@@ -47,7 +47,7 @@ namespace SynTool
             var tableOnly = "";
 
             var dbHelper = new DbHelper(cnn);
-            var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA],[TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE'");
+            var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA], [TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE' OR [TABLE_NAME] LIKE N'vMapping%' ");
             for (var i = 0; i < dataTable.Rows.Count; i++)
             {
                 var tblName = dataTable.Rows[i]["TABLE_NAME"].ToString();

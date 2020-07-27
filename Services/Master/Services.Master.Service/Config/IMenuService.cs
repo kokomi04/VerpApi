@@ -13,10 +13,10 @@ namespace VErp.Services.Master.Service.Config
     {
         Task<ICollection<MenuOutputModel>> GetList();
         
-        Task<Enum> Update(int updatedUserId, int menuId, MenuInputModel model);
+        Task<Enum> Update(int menuId, MenuInputModel model);
         
-        Task<Enum> Delete(int updatedUserId, int menuId);
+        Task<Enum> Delete(int menuId);
         
-        Task<ServiceResult<int>> Create(int updatedUserId, MenuInputModel model);
+        Task<ServiceResult<int>> Create(MenuInputModel model);
     }
 }

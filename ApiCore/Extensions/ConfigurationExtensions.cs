@@ -9,7 +9,6 @@ using System.Reflection;
 using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
-using VErp.Infrastructure.EF.AccountingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -50,16 +49,16 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             }, ServiceLifetime.Scoped);
         }
 
-        public static void ConfigAccountingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
-        {
-            services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
-            {
-                option.UseSqlServer(databaseConnections.AccountingDatabase, opt =>
-                {
-                    opt.CommandTimeout(600);
-                });
-            }, ServiceLifetime.Scoped);
-        }
+        //public static void ConfigAccountingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
+        //{
+        //    services.AddDbContext<AccountingDBContext, AccountingDBRestrictionContext>((option) =>
+        //    {
+        //        option.UseSqlServer(databaseConnections.AccountingDatabase, opt =>
+        //        {
+        //            opt.CommandTimeout(600);
+        //        });
+        //    }, ServiceLifetime.Scoped);
+        //}
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>
