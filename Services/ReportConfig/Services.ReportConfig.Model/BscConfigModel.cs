@@ -22,7 +22,30 @@ namespace Verp.Services.ReportConfig.Model
     {
         public int SortOrder { get; set; }
         public bool IsBold { get; set; }
-        public NonCamelCaseDictionary Value { get; set; }
+        public NonCamelCaseDictionary<string> Value { get; set; }
+
+        private NonCamelCaseDictionary<BscCellModel> rowData;
+        public NonCamelCaseDictionary<BscCellModel> RowData
+        {
+            get
+            {
+                if (rowData == null && Value != null)
+                {
+                    var dic = new NonCamelCaseDictionary<BscCellModel>();
+                    foreach (var (key, value) in Value)
+                    {
+                        dic.Add(key, new BscCellModel()
+                        {
+                            Value = value,
+                            Style = new NonCamelCaseDictionary()
+                        });
+                    }
+                    return dic;
+                }
+                return rowData;
+            }
+            set { rowData = value; }
+        }
 
         public static bool IsSqlSelect(object valueConfig)
         {
@@ -33,5 +56,11 @@ namespace Verp.Services.ReportConfig.Model
         {
             return IsSqlSelect(valueConfig) && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
         }
+    }
+
+    public class BscCellModel
+    {
+        public string Value { get; set; }
+        public NonCamelCaseDictionary Style { get; set; }
     }
 }

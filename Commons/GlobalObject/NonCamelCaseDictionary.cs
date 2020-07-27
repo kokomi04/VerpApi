@@ -15,6 +15,16 @@ namespace VErp.Commons.GlobalObject
         }
     }
 
+    public class NonCamelCaseDictionary<T> : Dictionary<string, T>
+    {
+        public bool TryGetValue(string key, out string value)
+        {
+            var isSuccess = base.TryGetValue(key, out var objValue);
+            value = objValue?.ToString();
+            return isSuccess;
+        }
+    }
+
     public static class NonCamelCaseDictionaryExtensions
     {
         public static NonCamelCaseDictionary ToNonCamelCaseDictionary<T>(this IEnumerable<T> source, Func<T, string> keySelector, Func<T, object> elementSelector)

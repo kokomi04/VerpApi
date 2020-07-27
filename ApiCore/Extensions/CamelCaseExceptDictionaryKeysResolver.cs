@@ -11,7 +11,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         protected override JsonDictionaryContract CreateDictionaryContract(Type objectType)
         {
             JsonDictionaryContract contract = base.CreateDictionaryContract(objectType);
-            if (objectType == typeof(NonCamelCaseDictionary))
+            if (objectType == typeof(NonCamelCaseDictionary) || (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(NonCamelCaseDictionary<>)))
             {
                 contract.DictionaryKeyResolver = propertyName => propertyName;
             }
