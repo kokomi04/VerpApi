@@ -5,7 +5,7 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.BusinessInfo;
-using VErp.Services.Organization.Model.BusinessInfo;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.System
 {

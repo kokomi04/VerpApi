@@ -21,6 +21,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {

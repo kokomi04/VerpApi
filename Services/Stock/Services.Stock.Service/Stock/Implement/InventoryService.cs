@@ -30,6 +30,13 @@ using VErp.Services.Stock.Service.FileResources;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 using VErp.Commons.GlobalObject;
 using Microsoft.Data.SqlClient;
+using NPOI.SS.UserModel;
+using System.IO;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using NPOI.SS.Util;
+using NPOI.XSSF.UserModel;
+using NPOI.HSSF.UserModel;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -46,6 +53,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IAsyncRunnerService _asyncRunner;
+        private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IStockHelperService _stockHelperService;
+        private readonly IProductHelperService _productHelperService;
 
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
@@ -56,6 +66,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
             , IAsyncRunnerService asyncRunner
+            , IOrganizationHelperService organizationHelperService
+            , IStockHelperService stockHelperService
+            , IProductHelperService productHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -67,6 +80,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
             _asyncRunner = asyncRunner;
+            _organizationHelperService = organizationHelperService;
+            _stockHelperService = stockHelperService;
+            _productHelperService = productHelperService;
         }
 
 
@@ -206,7 +222,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
-        public async Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId, IList<string> mappingFunctionKeys = null)
+        public async Task<ServiceResult<InventoryOutput>> InventoryInfo(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             try
             {
@@ -341,7 +357,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
 
-                    StockOutput = stockInfo == null ? null : new Model.Stock.StockOutput
+                    StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
                         StockName = stockInfo.StockName,
@@ -359,6 +375,219 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, "GetInventory");
                 return GeneralCode.InternalError;
             }
+        }
+
+        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
+        {
+            var info = await InventoryInfo(inventoryId, mappingFunctionKeys);
+
+            if (!info.IsSuccessCode())
+            {
+                throw new BadRequestException(info.Code, info.Message);
+            }
+
+            BaseCustomerModel customerInfo = null;
+
+            if (info.Data.CustomerId.HasValue)
+            {
+                customerInfo = await _organizationHelperService.CustomerInfo(info.Data.CustomerId.Value);
+            }
+
+            var bussinessInfo = await _organizationHelperService.BusinessInfo();
+
+
+            var stockInfo = await _stockHelperService.StockInfo(info.Data.StockId);
+
+            var stream = new MemoryStream();
+            var xssfwb = new XSSFWorkbook();
+
+            var sheet = xssfwb.CreateSheet();
+
+            var row1 = sheet.CreateRow(1);
+            row1.CreateCell(0).SetCellValue("Đơn vị:");
+            row1.CreateCell(1).SetCellValue(bussinessInfo?.CompanyName);
+
+            var row2 = sheet.CreateRow(2);
+            row2.CreateCell(0).SetCellValue("Địa chỉ:");
+            row2.CreateCell(1).SetCellValue(bussinessInfo?.Address);
+
+            sheet.AddMergedRegion(new CellRangeAddress(4, 4, 0, 8));
+
+            SetCellStyle(sheet, 4, 0, 16, true, false, VerticalAlignment.Center, HorizontalAlignment.Center)
+                .SetCellValue(info.Data.InventoryTypeId == (int)EnumInventoryType.Input ? "Phiếu nhập kho" : "Phiếu xuất kho");
+
+            sheet.AddMergedRegion(new CellRangeAddress(5, 5, 0, 8));
+            var date = info.Data.Date.UnixToDateTime().Value;
+            SetCellStyle(sheet, 5, 0, hAlign: HorizontalAlignment.Center).SetCellValue($"Ngày {date.Day} tháng {date.Month} năm {date.Year}");
+
+            sheet.AddMergedRegion(new CellRangeAddress(6, 6, 0, 8));
+            SetCellStyle(sheet, 6, 0, hAlign: HorizontalAlignment.Center).SetCellValue($"Mã phiếu {info.Data.InventoryCode}");
+
+            SetCellStyle(sheet, 7, 0).SetCellValue($"Họ tên người bàn giao: {info.Data.Shipper}");
+            SetCellStyle(sheet, 7, 4).SetCellValue($"Khách hàng: {customerInfo?.CustomerName}");
+
+            SetCellStyle(sheet, 8, 0).SetCellValue($"Lý do nhập kho: {info.Data.Content}");
+            SetCellStyle(sheet, 8, 4).SetCellValue($"Địa chỉ: {customerInfo?.Address}");
+
+            SetCellStyle(sheet, 9, 0).SetCellValue($"Nhập vào kho: {stockInfo.StockName}");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 0, 0));
+            SetCellStyle(sheet, 10, 0, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"STT");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 1, 1));
+            SetCellStyle(sheet, 10, 1, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Mã mặt hàng");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 2, 2));
+            SetCellStyle(sheet, 10, 2, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Mặt hàng, quy cách");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 3, 3));
+            SetCellStyle(sheet, 10, 3, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"ĐVT");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 10, 4, 5));
+            SetCellStyle(sheet, 10, 4, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Số lượng");
+
+            SetCellStyle(sheet, 11, 4, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Yêu cầu");
+            SetCellStyle(sheet, 11, 5, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Thực nhập");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 6, 6));
+            SetCellStyle(sheet, 10, 6, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"ĐVCĐ");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 7, 7));
+            SetCellStyle(sheet, 10, 7, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Số lượng");
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 11, 8, 8));
+            SetCellStyle(sheet, 10, 8, 12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true).SetCellValue($"Ghi chú");
+
+
+            var productIds = info.Data.InventoryDetailOutputList.Select(p => p.ProductId).ToList();
+            var productInfos = (await _productHelperService.GetListProducts(productIds)).ToDictionary(p => p.ProductId, p => p);
+            var startRow = 12;
+            var stt = 1;
+            foreach (var item in info.Data.InventoryDetailOutputList)
+            {
+                EnsureCell(sheet, startRow, 0).SetCellValue(stt);
+
+                productInfos.TryGetValue(item.ProductId, out var productInfo);
+
+                EnsureCell(sheet, startRow, 1).SetCellValue(productInfo?.ProductCode);
+                EnsureCell(sheet, startRow, 2).SetCellValue(productInfo?.ProductName);
+                EnsureCell(sheet, startRow, 3).SetCellValue(productInfo?.StockInfo?.UnitConversions?.FirstOrDefault(u => u.IsDefault)?.ProductUnitConversionName);
+
+
+                if (item.RequestPrimaryQuantity.HasValue)
+                {
+                    EnsureCell(sheet, startRow, 4).SetCellValue(Convert.ToDouble(item.RequestPrimaryQuantity));
+                }
+                else
+                {
+                    EnsureCell(sheet, startRow, 4);
+                }
+
+                EnsureCell(sheet, startRow, 5).SetCellValue(Convert.ToDouble(item.PrimaryQuantity));
+                EnsureCell(sheet, startRow, 6).SetCellValue(productInfo?.StockInfo?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == item.ProductUnitConversionId)?.ProductUnitConversionName);
+
+                if (item.ProductUnitConversionQuantity.HasValue)
+                {
+                    EnsureCell(sheet, startRow, 7).SetCellValue(Convert.ToDouble(item.ProductUnitConversionQuantity));
+                }
+                else
+                {
+                    EnsureCell(sheet, startRow, 7);
+                }
+
+                EnsureCell(sheet, startRow, 8).SetCellValue(item.Description);
+
+                for (var i = 0; i <= 8; i++)
+                {
+                    sheet.GetRow(startRow).GetCell(i).CellStyle = GetCellStyle(sheet, isBorder: true);
+                }
+
+                startRow++;
+                stt++;
+            }
+
+            for (var i = 0; i <= 8; i++)
+            {
+                sheet.AutoSizeColumn(i);
+            }
+
+            xssfwb.Write(stream, true);
+            stream.Seek(0, SeekOrigin.Begin);
+
+            var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            var fileName = $"{info.Data?.InventoryCode}.xlsx";
+            return (stream, fileName, contentType);
+
+            //     IWorkbook hssfwb;
+            //private DataFormatter dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
+
+            //public ExcelReader(string filePath) : this(new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            //{
+
+            //}
+
+            //public ExcelReader(Stream file)
+            //{
+            //    //hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
+            //    hssfwb = new XSSFWorkbook(file);
+            //    file.Close();
+            //}
+
+        }
+
+        private ICell SetCellStyle(ISheet sheet, int row, int column, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false)
+        {
+            var cell = EnsureCell(sheet, row, column);
+
+            cell.CellStyle = GetCellStyle(sheet, fontSize, isBold, isItalic, vAlign, hAlign, isBorder);
+
+            return cell;
+        }
+
+        private ICell EnsureCell(ISheet sheet, int row, int column)
+        {
+            var excelRow = sheet.GetRow(row);
+            if (excelRow == null)
+            {
+                excelRow = sheet.CreateRow(row);
+            }
+
+            var cell = excelRow.GetCell(column);
+            if (cell == null)
+            {
+                cell = excelRow.CreateCell(column);
+            }
+
+            return cell;
+        }
+
+        private ICellStyle GetCellStyle(ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false)
+        {
+            var style = sheet.Workbook.CreateCellStyle();
+            if (vAlign.HasValue)
+            {
+                style.VerticalAlignment = vAlign.Value;
+            }
+            if (hAlign.HasValue)
+            {
+                style.Alignment = hAlign.Value;
+            }
+
+            var font = sheet.Workbook.CreateFont();
+            font.FontHeightInPoints = fontSize;
+            font.IsBold = isBold;
+            font.IsItalic = isItalic;
+            style.SetFont(font);
+
+            if (isBorder)
+            {
+                style.BorderTop = BorderStyle.Thick;
+                style.BorderRight = BorderStyle.Thick;
+                style.BorderBottom = BorderStyle.Thick;
+                style.BorderLeft = BorderStyle.Thick;
+            }
+
+            return style;
         }
 
         /// <summary>

@@ -181,7 +181,7 @@ namespace MasterTests
             //Test change date and quantity input
             var inventory23Id = inv23.Data;
             var inventory23Code = "TEST-INV-2-3";
-            var inventory23Info = await inventoryService.GetInventory(inventory23Id);
+            var inventory23Info = await inventoryService.InventoryInfo(inventory23Id);
             var affect23From = new DateTime(2011, 1, 1).GetUnix();
             var affect23To = new DateTime(2022, 1, 1).GetUnix();
             var oldP1Quantity = 2;
@@ -219,7 +219,7 @@ namespace MasterTests
             //TEST-OUV-2-1
             var inventory21Id = outv21.Data;
             var inventory21Code = "TEST-OUV-2-1";
-            var inventory21Info = await inventoryService.GetInventory(inventory23Id);
+            var inventory21Info = await inventoryService.InventoryInfo(inventory23Id);
             var out21_oldP1Quantity = 5;
             var out21_newP1Quantity = 6;
 

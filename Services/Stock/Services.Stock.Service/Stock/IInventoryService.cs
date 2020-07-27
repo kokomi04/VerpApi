@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -36,7 +37,10 @@ namespace VErp.Services.Stock.Service.Stock
         /// </summary>
         /// <param name="inventoryId">Mã phiếu</param>
         /// <returns></returns>
-        Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId, IList<string> mappingFunctionKeys = null);
+        Task<ServiceResult<InventoryOutput>> InventoryInfo(long inventoryId, IList<string> mappingFunctionKeys = null);
+
+
+        Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null);
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
