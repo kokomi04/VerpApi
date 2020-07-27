@@ -155,7 +155,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var row = bscConfig.Rows[i];
                 foreach (var column in bscConfig.BscColumns)
                 {
-                    var valueConfig = row.Value.ContainsKey(column.Name) ? row.Value[column.Name] : null;
+                    var valueConfig = row.RowData.ContainsKey(column.Name) ? row.RowData[column.Name]?.Value : null;
                     var keyValue = string.Empty;
                     var configStr = (valueConfig?.ToString()?.Trim()) ?? "";
                     if (configStr.StartsWith("["))
