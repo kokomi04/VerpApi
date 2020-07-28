@@ -131,7 +131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     f.FieldName
                 };
 
-                if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)
+                if (((EnumFormType)f.FormTypeId).IsSelectForm()
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle)
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle))
                 {
@@ -333,7 +333,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Validate info
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
             // Check field required
             await CheckRequired(checkInfo, checkRows, requiredFields, inputAreaFields);
@@ -826,7 +826,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 return;
             }
-            if ((AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId)) || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+            if (((EnumFormType)field.FormTypeId).IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
             {
                 return;
             }
@@ -908,7 +908,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Lấy thông tin field
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
             var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)f.FormTypeId)).ToList();
+            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
             // Check field required
             await CheckRequired(checkInfo, checkRows, requiredFields, inputAreaFields);
@@ -1543,10 +1543,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
 
                         // Validate refer
-                        if (string.IsNullOrEmpty(field.RefTableCode))
+                        if (!((EnumFormType)field.FormTypeId).IsSelectForm())
                         {
                             // Validate value
-                            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) && !field.IsAutoIncrement && !string.IsNullOrEmpty(value))
+                            if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
                             {
                                 string regex = ((EnumDataType)field.DataTypeId).GetRegex();
                                 if ((field.DataSize > 0 && value.Length > field.DataSize)
@@ -1561,7 +1561,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             int suffix = 0;
                             var paramName = $"@{mappingField.RefTableField}_{suffix}";
-                            var referField = referFields.First(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                            if(referField == null)
+                            {
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
+                            }
                             var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
                             var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
                             suffix++;

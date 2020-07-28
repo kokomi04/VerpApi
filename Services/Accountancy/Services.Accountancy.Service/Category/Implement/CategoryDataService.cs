@@ -521,7 +521,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
-                if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) 
+                if (((EnumFormType)field.FormTypeId).IsSelectForm()
                     && !string.IsNullOrEmpty(field.RefTableCode)
                     && !string.IsNullOrEmpty(field.RefTableTitle))
                 {
@@ -737,7 +737,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
                         var values = groupByField.Select(v => v.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
-                        if(values.Count() > 0)
+                        if (values.Count() > 0)
                         {
                             if (suffix > 0)
                             {
@@ -773,7 +773,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var item in groupByFilter)
                     {
                         var referObject = lst.FirstOrDefault(o => o[item.CategoryFieldName].ToString() == item.Value);
-                        if(referObject != null)
+                        if (referObject != null)
                         {
                             titles.Add(new MapObjectOutputModel
                             {
@@ -1035,7 +1035,7 @@ namespace VErp.Services.Accountancy.Service.Category
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"{category.Title} cha {row.Value.ParentValue} không tìm thấy");
                             }
-                            if((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
+                            if ((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
                             {
                                 sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key} ;");
                             }
