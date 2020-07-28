@@ -153,7 +153,7 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            // if (unixTime == 0) return null;
+            if (unixTime == 0) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
