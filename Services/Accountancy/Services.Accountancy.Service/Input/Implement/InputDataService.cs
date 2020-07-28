@@ -463,10 +463,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         switch (singleClause.Operator)
                         {
                             case EnumOperator.Equal:
-                                isRequire = value == singleClause.Value;
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) == 0;
                                 break;
                             case EnumOperator.NotEqual:
-                                isRequire = value != singleClause.Value;
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) != 0;
                                 break;
                             case EnumOperator.Contains:
                                 isRequire = value != null && value.ToString().Contains(singleClause.Value.ToString());
@@ -498,6 +498,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.IsNullOrEmpty:
                                 isRequire = value == null || string.IsNullOrEmpty(value.ToString());
                                 break;
+                            case EnumOperator.Greater:
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) > 0;
+                                break;
+                            case EnumOperator.GreaterOrEqual:
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) >= 0;
+                                break;
+                            case EnumOperator.LessThan:
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) < 0;
+                                break;
+                            case EnumOperator.LessThanOrEqual:
+                                isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) <= 0;
+                                break;
                             default:
                                 isRequire = true;
                                 break;
@@ -517,7 +529,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                 }
             }
-            return true;
+            return isRequire.Value;
         }
 
 
