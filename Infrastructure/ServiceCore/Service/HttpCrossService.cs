@@ -62,24 +62,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                  
-                    try
-                    {                        
-                        var result = response.JsonDeserialize<ServiceResult>();
-                        if (result != null)
-                        {
-                            _logger.LogError($"HttpCrossService:Post {uri} {{0}} Warning {data.StatusCode} {{1}}", body, response);
-                            
-                            throw new BadRequestException(result.Code, result.Message);
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        
-                    }
-                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {data.ReasonPhrase} {{1}}", body, response);
-
-                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
+                    ThrowErrorResponse("POST", uri, postData, data, response);
                 }
 
                 return response.JsonDeserialize<T>();
@@ -90,6 +73,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 throw;
             }
         }
+
 
         public async Task<T> Put<T>(string relativeUrl, object postData)
         {
@@ -116,22 +100,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    try
-                    {
-                        var result = response.JsonDeserialize<ServiceResult>();
-                        if (result != null)
-                        {
-                            _logger.LogError($"HttpCrossService:Put {uri} {{0}} Warning {data.StatusCode} {{1}}", body, response);
-
-                            throw new BadRequestException(result.Code, result.Message);
-                        }
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {data.ReasonPhrase} {{1}}", body, response);
-                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
+                    ThrowErrorResponse("POST", uri, postData, data, response);
                 }
 
                 return response.JsonDeserialize<T>();
@@ -148,7 +117,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             try
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
-                
+
                 var request = new HttpRequestMessage
                 {
                     RequestUri = new Uri(uri),
@@ -165,22 +134,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    try
-                    {
-                        var result = response.JsonDeserialize<ServiceResult>();
-                        if (result != null)
-                        {
-                            _logger.LogError($"HttpCrossService:Get {uri} Warning {data.StatusCode} {{0}}", response);
-
-                            throw new BadRequestException(result.Code, result.Message);
-                        }
-                    }
-                    catch (Exception)
-                    {
-
-                    }
-                    _logger.LogError($"HttpCrossService:Get {uri} Error {data.StatusCode} {data.ReasonPhrase} {{0}}", response);
-                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
+                    ThrowErrorResponse("GET", uri, null, data, response);
                 }
 
                 return response.JsonDeserialize<T>();
@@ -190,6 +144,38 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _logger.LogError(ex, "HttpCrossService:Get");
                 throw;
             }
+        }
+
+
+        private void ThrowErrorResponse(string method, string uri, object body, HttpResponseMessage responseMessage, string response)
+        {
+            ApiErrorResponse result = null;
+            try
+            {
+                result = response.JsonDeserialize<ApiErrorResponse>();
+            }
+            catch (Exception)
+            {
+
+            }
+
+            if (result != null)
+            {
+                _logger.LogError($"HttpCrossService:{method} {uri} {{0}} Warning {responseMessage.StatusCode} {{1}}", body, response);
+
+                if (responseMessage.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, result.Message);
+                }
+                else
+                {
+                    throw new Exception(result.Message);
+                }
+            }
+
+            _logger.LogError($"HttpCrossService:{method} {uri} {{0}} Error {(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {{1}}", body, response);
+
+            throw new Exception($"{(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {response}");
         }
     }
 }

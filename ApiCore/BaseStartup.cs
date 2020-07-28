@@ -73,6 +73,7 @@ namespace VErp.Infrastructure.ApiCore
                     .AllowAnyHeader()
                     //.AllowCredentials()
                     .AllowAnyOrigin()
+                    .WithExposedHeaders("Content-Disposition")
                     );
             })
               .AddHttpContextAccessor()
