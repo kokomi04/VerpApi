@@ -268,7 +268,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
-            return _mapper.Map<ReportTypeModel>(reportType);
+            var info = _mapper.Map<ReportTypeModel>(reportType);
+            if (info.BscConfig?.Rows != null)
+            {
+                foreach(var row in info.BscConfig.Rows)
+                {
+                    if (row.RowData == null)
+                    {
+                        row.RowData = row.Value?.ToNonCamelCaseDictionaryData(v => v.Key, v => new BscCellModel() { Value = v.Value, Style = new NonCamelCaseDictionary() });
+                    }
+                }
+            }
+            return info;
         }
 
         public async Task<int> AddReportType(ReportTypeModel data)
