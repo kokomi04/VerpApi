@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             inventoryTypeId = (EnumInventoryType)inventoryInfo.InventoryTypeId;
 
-            if (inventoryInfo.CustomerId.HasValue)
+            if (inventoryInfo.CustomerId > 0)
             {
                 customerInfo = await _organizationHelperService.CustomerInfo(inventoryInfo.CustomerId.Value);
             }
@@ -122,7 +122,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             sheet.SetCellStyle(1, 1, isBold: true, isItalic: true).SetCellValue($"{bussinessInfo?.CompanyName}");
 
             sheet.SetCellStyle(2, 0, isBold: true, isItalic: true).SetCellValue($"Địa chỉ:");
-            sheet.SetCellStyle(2, 1, isBold: true, isItalic: true).SetCellValue($"{bussinessInfo?.Address}");          
+            sheet.SetCellStyle(2, 1, isBold: true, isItalic: true).SetCellValue($"{bussinessInfo?.Address}");
 
             sheet.AddMergedRegion(new CellRangeAddress(4, 4, 0, maxColumnIndex));
 
