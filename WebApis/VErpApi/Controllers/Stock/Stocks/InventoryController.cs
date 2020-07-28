@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NPOI.XSSF.UserModel;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -66,9 +67,19 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns>InventoryOutput</returns>
         [HttpGet]
         [Route("{inventoryId}")]
-        public async Task<ServiceResult<InventoryOutput>> GetInventory([FromRoute] long inventoryId)
+        public async Task<ServiceResult<InventoryOutput>> InventoryInfo([FromRoute] long inventoryId)
         {
-            return await _inventoryService.GetInventory(inventoryId);
+            return await _inventoryService.InventoryInfo(inventoryId);
+        }
+
+        [HttpGet]
+        [Route("{inventoryId}/export")]
+        public async Task<FileStreamResult> InventoryInfoExport([FromRoute] long inventoryId)
+        {
+            var (stream, fileName, contentType) = await _inventoryService.InventoryInfoExport(inventoryId);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+
         }
 
         /// <summary>

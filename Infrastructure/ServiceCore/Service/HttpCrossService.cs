@@ -77,9 +77,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     {
                         
                     }
-                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
+                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {data.ReasonPhrase} {{1}}", body, response);
 
-                    throw new BadRequestException(GeneralCode.InternalError, response);
+                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
                 }
 
                 return response.JsonDeserialize<T>();
@@ -87,7 +87,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "HttpCrossService:Post");
-                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+                throw;
             }
         }
 
@@ -130,8 +130,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     {
 
                     }
-                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
-                    throw new BadRequestException(GeneralCode.InternalError, response);
+                    _logger.LogError($"HttpCrossService:Post {uri} {{0}} Error {data.StatusCode} {data.ReasonPhrase} {{1}}", body, response);
+                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
                 }
 
                 return response.JsonDeserialize<T>();
@@ -139,7 +139,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "HttpCrossService:Put");
-                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+                throw;
             }
         }
 
@@ -179,8 +179,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     {
 
                     }
-                    _logger.LogError($"HttpCrossService:Get {uri} Error {data.StatusCode} {{0}}", response);
-                    throw new BadRequestException(GeneralCode.InternalError, response);
+                    _logger.LogError($"HttpCrossService:Get {uri} Error {data.StatusCode} {data.ReasonPhrase} {{0}}", response);
+                    throw new BadRequestException(GeneralCode.InternalError, $"{data.StatusCode} {data.ReasonPhrase} {response}");
                 }
 
                 return response.JsonDeserialize<T>();
@@ -188,7 +188,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "HttpCrossService:Get");
-                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+                throw;
             }
         }
     }

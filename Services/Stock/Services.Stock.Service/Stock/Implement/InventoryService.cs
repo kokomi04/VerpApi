@@ -30,6 +30,14 @@ using VErp.Services.Stock.Service.FileResources;
 using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 using VErp.Commons.GlobalObject;
 using Microsoft.Data.SqlClient;
+using NPOI.SS.UserModel;
+using System.IO;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using NPOI.SS.Util;
+using NPOI.XSSF.UserModel;
+using NPOI.HSSF.UserModel;
+using VErp.Services.Stock.Service.Stock.Implement.InventoryFileData;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -46,6 +54,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IAsyncRunnerService _asyncRunner;
+        private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IStockHelperService _stockHelperService;
+        private readonly IProductHelperService _productHelperService;
 
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
@@ -56,6 +67,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
             , IAsyncRunnerService asyncRunner
+            , IOrganizationHelperService organizationHelperService
+            , IStockHelperService stockHelperService
+            , IProductHelperService productHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -67,6 +81,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
             _asyncRunner = asyncRunner;
+            _organizationHelperService = organizationHelperService;
+            _stockHelperService = stockHelperService;
+            _productHelperService = productHelperService;
         }
 
 
@@ -206,7 +223,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
-        public async Task<ServiceResult<InventoryOutput>> GetInventory(long inventoryId, IList<string> mappingFunctionKeys = null)
+        public async Task<ServiceResult<InventoryOutput>> InventoryInfo(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             try
             {
@@ -335,13 +352,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
                     BillCode = inventoryObj.BillCode,
                     BillSerial = inventoryObj.BillSerial,
-                    BillDate = inventoryObj.BillDate != null ? ((DateTime)inventoryObj.BillDate).GetUnix() : 0,
+                    BillDate = inventoryObj.BillDate.GetUnix(),
                     TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
 
-                    StockOutput = stockInfo == null ? null : new Model.Stock.StockOutput
+                    StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
                         StockName = stockInfo.StockName,
@@ -360,6 +377,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return GeneralCode.InternalError;
             }
         }
+
+        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
+        {
+            var inventoryExport = new InventoryExportFacade();
+            inventoryExport.SetInventoryService(this);
+            inventoryExport.SetOrganizationHelperService(_organizationHelperService);
+            inventoryExport.SetProductHelperService(_productHelperService);
+            inventoryExport.SetStockHelperService(_stockHelperService);
+            return await inventoryExport.InventoryInfoExport(inventoryId, mappingFunctionKeys);
+        }
+
+
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
