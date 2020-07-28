@@ -710,13 +710,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputAreaNotFound);
             }
 
-
             await _accountancyDBContext.ExecuteStoreProcedure("asp_InputArea_Delete", new[] {
                     new SqlParameter("@InputTypeId",inputTypeId ),
                     new SqlParameter("@InputAreaId",inputAreaId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
+            inputArea.IsDeleted = true;
+            await _accountancyDBContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
             return true;
         }
