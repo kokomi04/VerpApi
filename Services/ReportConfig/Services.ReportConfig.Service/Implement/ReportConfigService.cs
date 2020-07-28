@@ -127,7 +127,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Nhóm báo cáo không tồn tại");
 
             _mapper.Map(model, info);
-
+            
             await _reportConfigContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Cập nhật nhóm báo cáo {info.ReportTypeGroupName}", model.JsonSerialize());
