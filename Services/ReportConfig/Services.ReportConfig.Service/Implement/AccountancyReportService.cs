@@ -153,6 +153,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 keyValueRows[i] = new Dictionary<string, string>();
 
                 var row = bscConfig.Rows[i];
+
+                if (row.RowData == null && row.Value != null)
+                {
+                    row.RowData = row.Value.ToNonCamelCaseDictionaryData(v => v.Key, v => new BscCellModel() { Value = v.Value, Style = new NonCamelCaseDictionary() });
+                }
+
                 foreach (var column in bscConfig.BscColumns)
                 {
                     var valueConfig = row.RowData.ContainsKey(column.Name) ? row.RowData[column.Name]?.Value : null;
