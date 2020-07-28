@@ -22,30 +22,11 @@ namespace Verp.Services.ReportConfig.Model
     {
         public int SortOrder { get; set; }
         public bool IsBold { get; set; }
-        public NonCamelCaseDictionary<string> Value { get; set; }
 
-        private NonCamelCaseDictionary<BscCellModel> rowData;
-        public NonCamelCaseDictionary<BscCellModel> RowData
-        {
-            get
-            {
-                if (rowData == null && Value != null)
-                {
-                    var dic = new NonCamelCaseDictionary<BscCellModel>();
-                    foreach (var (key, value) in Value)
-                    {
-                        dic.Add(key, new BscCellModel()
-                        {
-                            Value = value,
-                            Style = new NonCamelCaseDictionary()
-                        });
-                    }
-                    return dic;
-                }
-                return rowData;
-            }
-            set { rowData = value; }
-        }
+        public NonCamelCaseDictionary<BscCellModel> RowData { get; set; }
+
+        public NonCamelCaseDictionary<string> Value { get; set; }
+        
 
         public static bool IsSqlSelect(object valueConfig)
         {

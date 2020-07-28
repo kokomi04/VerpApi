@@ -38,5 +38,17 @@ namespace VErp.Commons.GlobalObject
             }
             return data;
         }
+
+        public static NonCamelCaseDictionary<TEntity> ToNonCamelCaseDictionaryData<T, TEntity>(this IEnumerable<T> source, Func<T, string> keySelector, Func<T, TEntity> elementSelector)
+        {
+            var data = new NonCamelCaseDictionary<TEntity>();
+            foreach (var item in source)
+            {
+                var key = keySelector(item);
+                var value = elementSelector(item);
+                data.Add(key, value);
+            }
+            return data;
+        }
     }
 }
