@@ -680,7 +680,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 data.DataSize = -1;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
+            if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
                 data.RefTableCode = null;
                 data.RefTableField = null;

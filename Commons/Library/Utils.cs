@@ -515,6 +515,11 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static bool IsSelectForm(this EnumFormType formType)
+        {
+            return AccountantConstants.SELECT_FORM_TYPES.Contains(formType);
+        }
+
         public static int CompareValue(this EnumDataType dataType, object value1, object value2)
         {
             if (value1.IsNullObject() && value2.IsNullObject()) return 0;
@@ -545,13 +550,13 @@ namespace VErp.Commons.Library
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu logic");
                     }
-                    return boolValue1.CompareTo(boolValue2); 
+                    return boolValue1.CompareTo(boolValue2);
                 case EnumDataType.Percentage:
                     if (!short.TryParse(value1.ToString(), out short percentValue1) || !short.TryParse(value2.ToString(), out short percentValue2))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu phần trăm");
                     }
-                    return percentValue1.CompareTo(percentValue2); 
+                    return percentValue1.CompareTo(percentValue2);
                 case EnumDataType.BigInt:
                     if (!long.TryParse(value1.ToString(), out long longValue1) || !long.TryParse(value2.ToString(), out long longValue2))
                     {
