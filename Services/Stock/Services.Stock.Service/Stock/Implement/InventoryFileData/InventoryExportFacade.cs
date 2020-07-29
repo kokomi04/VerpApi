@@ -59,14 +59,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
-            var data = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
-
-            if (!data.IsSuccessCode())
-            {
-                throw new BadRequestException(data.Code, data.Message);
-            }
-            inventoryInfo = data.Data;
-
+            inventoryInfo = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
+                      
             inventoryTypeId = (EnumInventoryType)inventoryInfo.InventoryTypeId;
 
             if (inventoryInfo.CustomerId > 0)
