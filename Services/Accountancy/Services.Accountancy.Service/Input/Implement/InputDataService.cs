@@ -1523,11 +1523,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var mappingField in mapping.MappingFields)
                     {
                         var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
-                        if (!field.IsMultiRow && rowIndx > 0) continue;
-                        
+
                         // Validate mapping required
-                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {field.FieldName} không tìm thấy");
-                        
+                        if (field == null && mappingField.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
+                        if (field == null) continue;
+                        if (!field.IsMultiRow && rowIndx > 0) continue;
+                       
                         string value = null;
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
