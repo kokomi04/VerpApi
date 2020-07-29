@@ -74,7 +74,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            if (inventoryInfo.InventoryTypeId == (int)EnumInventoryType.Input)
+            if (inventoryInfo.InventoryTypeId != (int)EnumInventoryType.Input)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -219,6 +219,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryInfo.CustomerId = req.Inventory.CustomerId;
                 inventoryInfo.Department = req.Inventory.Department;
                 inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
+                inventoryInfo.BillForm = req.Inventory.BillForm;
                 inventoryInfo.BillCode = req.Inventory.BillCode;
                 inventoryInfo.BillSerial = req.Inventory.BillSerial;
                 inventoryInfo.BillDate = billDate;

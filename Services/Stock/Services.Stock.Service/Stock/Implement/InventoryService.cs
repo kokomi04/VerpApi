@@ -317,6 +317,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var fileIds = await _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryObj.InventoryId).Select(q => q.FileId).ToListAsync();
                 var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
+                if (attachedFiles == null)
+                {
+                    attachedFiles = new List<FileToDownloadInfo>();
+                }
                 #endregion
 
                 var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == inventoryObj.StockId);
