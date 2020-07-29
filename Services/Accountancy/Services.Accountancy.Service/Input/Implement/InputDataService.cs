@@ -1520,13 +1520,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var mapRow = new NonCamelCaseDictionary();
                     var row = bill.ElementAt(rowIndx);
-                    foreach (var field in fields)
+                    foreach (var mappingField in mapping.MappingFields)
                     {
+                        var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
                         if (!field.IsMultiRow && rowIndx > 0) continue;
-                        var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
+                        
                         // Validate mapping required
-                        if (mappingField == null && field.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {field.FieldName} không tìm thấy");
-                        if (mappingField == null) continue;
+                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {field.FieldName} không tìm thấy");
+                        
                         string value = null;
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
