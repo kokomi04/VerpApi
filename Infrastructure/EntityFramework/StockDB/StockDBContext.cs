@@ -67,6 +67,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
+                entity.Property(e => e.BillForm).HasMaxLength(128);
+
                 entity.Property(e => e.BillSerial)
                     .HasMaxLength(64)
                     .IsUnicode(false);

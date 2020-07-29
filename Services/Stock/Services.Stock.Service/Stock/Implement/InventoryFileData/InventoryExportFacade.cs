@@ -59,14 +59,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
-            var data = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
-
-            if (!data.IsSuccessCode())
-            {
-                throw new BadRequestException(data.Code, data.Message);
-            }
-            inventoryInfo = data.Data;
-
+            inventoryInfo = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
+                      
             inventoryTypeId = (EnumInventoryType)inventoryInfo.InventoryTypeId;
 
             if (inventoryInfo.CustomerId > 0)
@@ -124,86 +118,94 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             sheet.SetCellStyle(2, 0, isBold: true, isItalic: true).SetCellValue($"Địa chỉ:");
             sheet.SetCellStyle(2, 1, isBold: true, isItalic: true).SetCellValue($"{bussinessInfo?.Address}");
 
-            sheet.AddMergedRegion(new CellRangeAddress(4, 4, 0, maxColumnIndex));
+            sheet.AddMergedRegion(new CellRangeAddress(5, 5, 0, maxColumnIndex));
 
-            sheet.SetCellStyle(4, 0, 16, true, false, VerticalAlignment.Center, HorizontalAlignment.Center)
+            sheet.SetCellStyle(5, 0, 16, true, false, VerticalAlignment.Center, HorizontalAlignment.Center)
                 .SetCellValue(inventoryTypeId == EnumInventoryType.Input ? "PHIẾU NHẬP KHO" : "PHIẾU XUẤT KHO");
 
-            sheet.AddMergedRegion(new CellRangeAddress(5, 5, 0, maxColumnIndex));
-            var date = inventoryInfo.Date.UnixToDateTime().Value;
-            sheet.SetCellStyle(5, 0, hAlign: HorizontalAlignment.Center, isItalic: true).SetCellValue($"Ngày {date.Day} tháng {date.Month} năm {date.Year}");
-
             sheet.AddMergedRegion(new CellRangeAddress(6, 6, 0, maxColumnIndex));
-            sheet.SetCellStyle(6, 0, hAlign: HorizontalAlignment.Center).SetCellValue($"Mã phiếu: {inventoryInfo.InventoryCode}");
+            var date = inventoryInfo.Date.UnixToDateTime().Value;
+            sheet.SetCellStyle(6, 0, hAlign: HorizontalAlignment.Center, isItalic: true).SetCellValue($"Ngày {date.Day} tháng {date.Month} năm {date.Year}");
+
+            sheet.AddMergedRegion(new CellRangeAddress(7, 7, 0, maxColumnIndex));
+            sheet.SetCellStyle(7, 0, hAlign: HorizontalAlignment.Center).SetCellValue($"Mã phiếu: {inventoryInfo.InventoryCode}");
 
 
             var orderStartColumn = 8;
 
 
-            sheet.AddMergedRegion(new CellRangeAddress(8, 8, 0, 1));
-            sheet.SetCellStyle(8, 0).SetCellValue($"Họ tên người bàn giao:");
-            sheet.SetCellStyle(8, 2).SetCellValue($"{inventoryInfo.Shipper}");
-
-            sheet.AddMergedRegion(new CellRangeAddress(8, 8, orderStartColumn, orderStartColumn + 1));
-            sheet.SetCellStyle(8, orderStartColumn).SetCellValue($"Khách hàng:");
-            sheet.SetCellStyle(8, orderStartColumn + 2).SetCellValue($"{customerInfo?.CustomerName}");
-
-
             sheet.AddMergedRegion(new CellRangeAddress(9, 9, 0, 1));
-            if (inventoryTypeId == EnumInventoryType.Input)
-            {
-                sheet.SetCellStyle(9, 0).SetCellValue($"Lý do nhập kho:");
-            }
-            else
-            {
-                sheet.SetCellStyle(9, 0).SetCellValue($"Lý do xuất kho:");
-            }
-            sheet.SetCellStyle(9, 2).SetCellValue($"{inventoryInfo.Content}");
-
+            sheet.SetCellStyle(9, 0).SetCellValue($"Họ tên người bàn giao:");
+            sheet.SetCellStyle(9, 2).SetCellValue($"{inventoryInfo.Shipper}");
 
             sheet.AddMergedRegion(new CellRangeAddress(9, 9, orderStartColumn, orderStartColumn + 1));
-            sheet.SetCellStyle(9, orderStartColumn).SetCellValue($"Địa chỉ:");
-            sheet.SetCellStyle(9, orderStartColumn + 2).SetCellValue($"{customerInfo?.Address}");
+            sheet.SetCellStyle(9, orderStartColumn).SetCellValue($"Khách hàng:");
+            sheet.SetCellStyle(9, orderStartColumn + 2).SetCellValue($"{customerInfo?.CustomerName}");
 
 
             sheet.AddMergedRegion(new CellRangeAddress(10, 10, 0, 1));
             if (inventoryTypeId == EnumInventoryType.Input)
             {
-                sheet.SetCellStyle(10, 0).SetCellValue($"Nhập vào kho:");
+                sheet.SetCellStyle(10, 0).SetCellValue($"Lý do nhập kho:");
             }
             else
             {
-                sheet.SetCellStyle(10, 0).SetCellValue($"Xuất từ kho:");
+                sheet.SetCellStyle(10, 0).SetCellValue($"Lý do xuất kho:");
             }
-            sheet.SetCellStyle(10, 2).SetCellValue($"{stockInfo.StockName}");
+            sheet.SetCellStyle(10, 2).SetCellValue($"{inventoryInfo.Content}");
+
+
+            sheet.AddMergedRegion(new CellRangeAddress(10, 10, orderStartColumn, orderStartColumn + 1));
+            sheet.SetCellStyle(10, orderStartColumn).SetCellValue($"Địa chỉ:");
+            sheet.SetCellStyle(10, orderStartColumn + 2).SetCellValue($"{customerInfo?.Address}");
+
+
+            sheet.AddMergedRegion(new CellRangeAddress(11, 11, 0, 1));
+            if (inventoryTypeId == EnumInventoryType.Input)
+            {
+                sheet.SetCellStyle(11, 0).SetCellValue($"Nhập vào kho:");
+            }
+            else
+            {
+                sheet.SetCellStyle(11, 0).SetCellValue($"Xuất từ kho:");
+            }
+            sheet.SetCellStyle(11, 2).SetCellValue($"{stockInfo.StockName}");
+
 
             sheet.AddMergedRegion(new CellRangeAddress(1, 1, 12, 13));
-            sheet.SetCellStyle(1, 12, isItalic: true).SetCellValue($"Ký hiệu hóa đơn:");
+            sheet.SetCellStyle(1, 12, isItalic: true).SetCellValue($"Mẫu hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(1, 1, 14, 15));
-            sheet.SetCellStyle(1, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillSerial}");
+            sheet.SetCellStyle(1, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillForm}");
 
 
             sheet.AddMergedRegion(new CellRangeAddress(2, 2, 12, 13));
-            sheet.SetCellStyle(2, 12, isItalic: true).SetCellValue($"Mã hóa đơn:");
+            sheet.SetCellStyle(2, 12, isItalic: true).SetCellValue($"Serial hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(2, 2, 14, 15));
-            sheet.SetCellStyle(2, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillCode}");
+            sheet.SetCellStyle(2, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillSerial}");
 
 
             sheet.AddMergedRegion(new CellRangeAddress(3, 3, 12, 13));
-            sheet.SetCellStyle(3, 12, isItalic: true).SetCellValue($"Ngày hóa đơn:");
+            sheet.SetCellStyle(3, 12, isItalic: true).SetCellValue($"Mã hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(3, 3, 14, 15));
-            sheet.SetCellStyle(3, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime()?.ToString("dd/MM/yyyy")}");
+            sheet.SetCellStyle(3, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillCode}");
 
-            currentRow = 11;
+
+            sheet.AddMergedRegion(new CellRangeAddress(4, 4, 12, 13));
+            sheet.SetCellStyle(4, 12, isItalic: true).SetCellValue($"Ngày hóa đơn:");
+
+            sheet.AddMergedRegion(new CellRangeAddress(4, 4, 14, 15));
+            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime()?.ToString("dd/MM/yyyy")}");
+
+            currentRow = 12;
         }
 
 
         private async Task WriteTable()
         {
-            currentRow = 11;
+            currentRow = 12;
 
             var fRow = currentRow;
             var sRow = currentRow + 1;
