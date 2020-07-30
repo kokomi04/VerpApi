@@ -21,10 +21,14 @@ namespace VErp.Commons.Library
             hssfwb = new XSSFWorkbook();
         }
 
-        public void WriteToSheet(List<(string, byte[])[]> dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
+        public void WriteToSheet((string, byte[])[][] dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
         {
-            ISheet sheet = hssfwb.CreateSheet(sheetName);
-
+            var sheet = hssfwb.GetSheet(sheetName);
+            if(sheet == null)
+            {
+                sheet = hssfwb.CreateSheet(sheetName);
+            }
+            
             int addedRow = 0;
             foreach ((string, byte[])[] row in dataInRows)
             {
