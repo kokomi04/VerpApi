@@ -251,9 +251,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-               select f.FieldName
-          ).ToListAsync()
-          ).ToHashSet();
+               select f.FieldName).ToListAsync()).ToHashSet();
 
             var result = new BillInfoModel();
 
@@ -350,9 +348,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Before saving action (SQL)
                 var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Add);
 
-                if (result != 0)
+                if (result.Code != 0)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Thông tin chứng từ không hợp lệ. Mã lỗi {result}");
+                    throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message)? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
 
                 var billInfo = new InputBill()
@@ -392,7 +390,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task<bool> CheckRequireFilter(Clause clause, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> inputAreaFields, int? rowIndex, bool not = false)
+        private async Task<bool> CheckRequireFilter(Clause clause, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> inputAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, int? rowIndex, bool not = false)
         {
             bool? isRequire = null;
             if (clause != null)
@@ -404,7 +402,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     // Data check nằm trong thông tin chung và data điều kiện nằm trong thông tin chi tiết
                     if (!rowIndex.HasValue && field.IsMultiRow)
                     {
-                        var rowValues = rows.Select(r => r.Data.ContainsKey(field.FieldName) ? r.Data[field.FieldName] : null).ToList();
+                        var rowValues = rows.Select(r => r.Data.ContainsKey(field.FieldName)
+                        ? sfValues.ContainsKey(field.FieldName)
+                        ? sfValues[field.FieldName].ContainsKey(r.Data[field.FieldName])
+                        ? sfValues[field.FieldName][r.Data[field.FieldName]]
+                        : null
+                        : r.Data[field.FieldName]
+                        : null).ToList();
                         switch (singleClause.Operator)
                         {
                             case EnumOperator.Equal:
@@ -459,7 +463,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             rows[rowIndex.Value].Data.TryGetValue(field.FieldName, out value);
                         }
-
+                        if (sfValues.ContainsKey(field.FieldName))
+                        {
+                            value = sfValues[field.FieldName].ContainsKey(value) ? sfValues[field.FieldName][value] : null;
+                        }
                         switch (singleClause.Operator)
                         {
                             case EnumOperator.Equal:
@@ -524,7 +531,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
-                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), info, rows, inputAreaFields, rowIndex, isNot);
+                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), info, rows, inputAreaFields, sfValues, rowIndex, isNot);
                         isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
                     }
                 }
@@ -533,14 +540,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        private async Task<int> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
+        private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
+            var messageParam = new SqlParameter("@Message", 0) { DbType = DbType.String, Direction = ParameterDirection.Output };
             if (!string.IsNullOrEmpty(script))
             {
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
-                    resultParam
+                    resultParam,
+                    messageParam
                 };
                 var pattern = @"@{(?<word>\w+)}";
                 Regex rx = new Regex(pattern);
@@ -573,11 +582,76 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
             }
-            return (resultParam.Value as int?).GetValueOrDefault();
+            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string);
+        }
+
+        private string[] GetFieldInFilter(Clause[] clauses)
+        {
+            List<string> fields = new List<string>();
+            foreach (var clause in clauses)
+            {
+                if (clause == null) continue;
+
+                if (clause is SingleClause)
+                {
+                    fields.Add((clause as SingleClause).FieldName);
+                }
+                else if (clause is ArrayClause)
+                {
+                    fields.AddRange(GetFieldInFilter((clause as ArrayClause).Rules.ToArray()));
+                }
+            }
+
+            return fields.Distinct().ToArray();
         }
 
         private async Task CheckRequired(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> requiredFields, List<ValidateField> inputAreaFields)
         {
+            var filters = requiredFields
+                .Where(f => !string.IsNullOrEmpty(f.RequireFilters))
+                .ToDictionary(f => f.FieldName, f => JsonConvert.DeserializeObject<Clause>(f.RequireFilters));
+
+            string[] filterFieldNames = GetFieldInFilter(filters.Select(f => f.Value).ToArray());
+            var sfFields = inputAreaFields.Where(f => ((EnumFormType)f.FormTypeId).IsSelectForm() && filterFieldNames.Contains(f.FieldName)).ToList();
+            var sfValues = new Dictionary<string, Dictionary<object, object>>();
+
+            foreach (var field in sfFields)
+            {
+                var values = new List<object>();
+                if (field.IsMultiRow)
+                {
+                    values.AddRange(rows.Where(r => r.Data.ContainsKey(field.FieldName)).Select(r => r.Data[field.FieldName]));
+                }
+                else
+                {
+                    if (info.Data.ContainsKey(field.FieldName)) values.Add(info.Data[field.FieldName]);
+                }
+                if (values.Count > 0)
+                {
+                    Dictionary<object, object> mapTitles = new Dictionary<object, object>(new ObjectEqualityComparer((EnumDataType)field.DataTypeId));
+                    var sqlParams = new List<SqlParameter>();
+                    var sql = new StringBuilder($"SELECT DISTINCT {field.RefTableField}, {field.RefTableTitle} FROM v{field.RefTableCode} WHERE {field.RefTableField} IN (");
+                    var suffix = 0;
+                    foreach (var value in values)
+                    {
+                        var paramName = $"@{field.RefTableField}_{suffix}";
+                        if (suffix > 0) sql.Append(",");
+                        sql.Append(paramName);
+                        sqlParams.Add(new SqlParameter(paramName, value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                        suffix++;
+                    }
+
+                    sql.Append(")");
+                    var data = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                    for (int indx = 0; indx < data.Rows.Count; indx++)
+                    {
+                        mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][field.RefTableTitle]);
+                    }
+                    sfValues.Add(field.FieldName, mapTitles);
+                }
+            }
+
+
             foreach (var field in requiredFields)
             {
                 // Validate info
@@ -590,8 +664,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
-                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, null)))
+                        Clause filterClause = filters[field.FieldName];
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null)))
                         {
                             continue;
                         }
@@ -617,7 +691,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, rowIndx - 1)))
+                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1)))
                             {
                                 continue;
                             }
@@ -1528,7 +1602,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (field == null && mappingField.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
                         if (field == null) continue;
                         if (!field.IsMultiRow && rowIndx > 0) continue;
-                       
+
                         string value = null;
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
@@ -1564,7 +1638,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             int suffix = 0;
                             var paramName = $"@{mappingField.RefTableField}_{suffix}";
                             var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
-                            if(referField == null)
+                            if (referField == null)
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
                             }
@@ -1677,6 +1751,92 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
+        public async Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId)
+        {
+
+            var dataSql = @$"
+                SELECT     r.*
+                FROM {INPUTVALUEROW_VIEW} r 
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+            ";
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+
+            var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
+            var rows = data.ConvertData();
+
+            var areas = _accountancyDBContext.InputArea
+                .Include(a => a.InputAreaField)
+                .ThenInclude(f => f.InputField)
+                .Where(a => a.InputTypeId == inputTypeId)
+                .OrderBy(a => a.SortOrder)
+                .ToList();
+
+            var writer = new ExcelWriter();
+            byte[] titleRgb = new byte[3] { 60, 120, 216 };
+            // Write area
+            foreach (var area in areas)
+            {
+                DataTable table = new DataTable();
+
+                if (!area.IsMultiRow)
+                {
+                    // Write info
+                    for (int collumIndx = 0; collumIndx < area.Columns; collumIndx++)
+                    {
+                        table.Columns.Add();
+                        table.Columns.Add();
+                        int rowIndx = 0;
+                        foreach (var field in area.InputAreaField.Where(f => f.Column == (collumIndx + 1)).OrderBy(f => f.SortOrder))
+                        {
+                            DataRow row;
+                            if (table.Rows.Count <= rowIndx)
+                            {
+                                row = table.NewRow();
+                                table.Rows.Add(row);
+                            }
+                            else
+                            {
+                                row = table.Rows[rowIndx];
+                            }
+                            row[collumIndx * 2] = field.Title;
+                            row[collumIndx * 2 + 1] = info[field.InputField.FieldName];
+                        }
+                    }
+                }
+                else
+                {
+
+                }
+            }
+
+
+
+            MemoryStream stream = await writer.WriteToStream();
+            return stream;
+        }
+
+
+        protected class ObjectEqualityComparer : IEqualityComparer<object>
+        {
+            private readonly EnumDataType dataType;
+
+            public ObjectEqualityComparer(EnumDataType dataType)
+            {
+                this.dataType = dataType;
+            }
+
+            public bool Equals(object x, object y)
+            {
+                return dataType.CompareValue(x, y) == 0;
+            }
+
+            public int GetHashCode(object obj)
+            {
+                return obj.GetHashCode();
+            }
+        }
 
         protected class ValidateRowModel
         {

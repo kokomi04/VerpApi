@@ -27,5 +27,8 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+
+        Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId);
+
     }
 }
