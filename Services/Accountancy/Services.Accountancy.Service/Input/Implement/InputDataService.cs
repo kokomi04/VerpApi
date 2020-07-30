@@ -350,7 +350,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (result.Code != 0)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message)? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
+                    throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
 
                 var billInfo = new InputBill()
@@ -543,7 +543,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
-            var messageParam = new SqlParameter("@Message", 0) { DbType = DbType.String, Direction = ParameterDirection.Output };
+            var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(script))
             {
                 var parammeters = new List<SqlParameter>() {
@@ -997,8 +997,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Update);
-
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Update);
+                if (result.Code != 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
+                }
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
