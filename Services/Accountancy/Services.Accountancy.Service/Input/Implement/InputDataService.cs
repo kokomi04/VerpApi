@@ -628,7 +628,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 if (values.Count > 0)
                 {
-                    Dictionary<object, object> mapTitles = new Dictionary<object, object>(new ObjectEqualityComparer((EnumDataType)field.DataTypeId));
+                    Dictionary<object, object> mapTitles = new Dictionary<object, object>(new DataEqualityComparer((EnumDataType)field.DataTypeId));
                     var sqlParams = new List<SqlParameter>();
                     var sql = new StringBuilder($"SELECT DISTINCT {field.RefTableField}, {field.RefTableTitle} FROM v{field.RefTableCode} WHERE {field.RefTableField} IN (");
                     var suffix = 0;
@@ -1776,6 +1776,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 .OrderBy(a => a.SortOrder)
                 .ToList();
 
+            var refDataTypes = (from iaf in _accountancyDBContext.InputAreaField.Where(iaf => iaf.InputTypeId == inputTypeId)
+                                join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
+                                join c in _accountancyDBContext.Category on itf.RefTableCode equals c.CategoryCode
+                                join f in _accountancyDBContext.CategoryField on c.CategoryId equals f.CategoryId
+                                where itf.RefTableTitle.StartsWith(f.CategoryFieldName) && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                select new { 
+                                    f.CategoryFieldName,
+                                    f.DataTypeId,
+                                    c.CategoryCode
+                                }).Distinct()
+                                .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode}, f => (EnumDataType)f.DataTypeId);
+
             var writer = new ExcelWriter();
             int endRow = 0;
             // Write area
@@ -1804,8 +1816,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             row[collumIndx * 2] = $"{field.Title}:";
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode}] : (EnumDataType)field.InputField.DataTypeId;
                             if (info.ContainsKey(fieldName))
-                                row[collumIndx * 2 + 1] = info[fieldName];
+                                row[collumIndx * 2 + 1] = dataType.GetSqlValue(info[fieldName]);
                             rowIndx++;
                         }
                     }
@@ -1823,14 +1836,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
                         {
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (row.ContainsKey(fieldName))
-                                tbRow[columnIndx] = row[fieldName];
+                                tbRow[columnIndx] = dataType.GetSqlValue(row[fieldName]);
                             columnIndx++;
                         }
                         table.Rows.Add(tbRow);
                     }
                 }
-            
+
                 byte[] headerRgb = new byte[3] { 60, 120, 216 };
                 writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
@@ -1840,11 +1854,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        protected class ObjectEqualityComparer : IEqualityComparer<object>
+        protected class DataEqualityComparer : IEqualityComparer<object>
         {
             private readonly EnumDataType dataType;
 
-            public ObjectEqualityComparer(EnumDataType dataType)
+            public DataEqualityComparer(EnumDataType dataType)
             {
                 this.dataType = dataType;
             }
