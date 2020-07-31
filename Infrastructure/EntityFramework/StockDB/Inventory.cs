@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
+        public string BillForm { get; set; }
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public DateTime? BillDate { get; set; }

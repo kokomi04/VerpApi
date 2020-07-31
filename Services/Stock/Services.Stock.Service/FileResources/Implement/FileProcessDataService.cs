@@ -72,23 +72,23 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
 
                 var ret = await _fileService.GetFileAndPath(fileId);
-                if (ret.Data.info == null)
+                if (ret.info == null)
                     return GeneralCode.InternalError;
 
                 var fileExtension = string.Empty;
-                var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                 if (checkExt)
                     fileExtension = "xls";
                 else
                 {
-                    checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                    checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                     if (checkExt)
                         fileExtension = "xlsx";
                 }
                 IWorkbook wb = null;
                 var sheetList = new List<ISheet>(4);
 
-                using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                 {
                     if (fs != null)
                     {
@@ -162,21 +162,21 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 foreach (var fileId in model.FileIdList)
                 {
                     var ret = await _fileService.GetFileAndPath(fileId);
-                    if (ret.Data.info == null)
+                    if (ret.info == null)
                         continue;
                     var fileExtension = string.Empty;
-                    var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                    var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                     if (checkExt)
                         fileExtension = "xls";
                     else
                     {
-                        checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                        checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                         if (checkExt)
                             fileExtension = "xlsx";
                     }
                     IWorkbook wb = null;
                     var sheetList = new List<ISheet>(4);
-                    using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                    using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                     {
                         if (fs != null)
                         {
@@ -250,21 +250,21 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 foreach (var fileId in model.FileIdList)
                 {
                     var ret = await _fileService.GetFileAndPath(fileId);
-                    if (ret.Data.info == null)
+                    if (ret.info == null)
                         continue;
                     var fileExtension = string.Empty;
-                    var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                    var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                     if (checkExt)
                         fileExtension = "xls";
                     else
                     {
-                        checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                        checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                         if (checkExt)
                             fileExtension = "xlsx";
                     }
                     IWorkbook wb = null;
                     var sheetList = new List<ISheet>(4);
-                    using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                    using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                     {
                         if (fs != null)
                         {
@@ -895,8 +895,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item);
-                            if (ret.Data > 0)
+                            var ret = await _inventoryService.AddInventoryInput(item);
+                            if (ret > 0)
                             {
                                 // Duyệt phiếu nhập kho
                                 //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
@@ -1114,8 +1114,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             foreach (var item in inventoryOutputList)
                             {
-                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item);
-                                if (ret.Data > 0)
+                                var ret = await _inventoryService.AddInventoryOutput(item);
+                                if (ret > 0)
                                 {
                                     // Duyệt phiếu xuất kho
                                     //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
@@ -1140,7 +1140,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ProcessInventoryOutputExcelSheet");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
         #endregion

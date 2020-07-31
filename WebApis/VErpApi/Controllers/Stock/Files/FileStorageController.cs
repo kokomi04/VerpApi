@@ -28,7 +28,8 @@ namespace VErpApi.Controllers.Stock.Files
                 return new JsonResult(r);
             }
 
-            return new FileStreamResult(r.Data.file, !string.IsNullOrWhiteSpace(r.Data.contentType) ? r.Data.contentType : "application/octet-stream");
+
+            return new FileStreamResult(r.Data.file, !string.IsNullOrWhiteSpace(r.Data.contentType) ? r.Data.contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }
 }
