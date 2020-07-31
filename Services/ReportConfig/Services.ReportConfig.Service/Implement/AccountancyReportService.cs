@@ -386,7 +386,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value));
+            var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => c.Value));
 
             selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
 
