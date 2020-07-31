@@ -174,7 +174,10 @@ namespace VErp.Infrastructure.ApiCore
         {
 
 #if !DEBUG
-            app.UseAllElasticApm(Configuration);
+            if (AppSetting.ElasticApm?.IsEnabled == true)
+            {
+                app.UseAllElasticApm(Configuration);
+            }
 #endif
 
             loggerFactory.AddSerilog();

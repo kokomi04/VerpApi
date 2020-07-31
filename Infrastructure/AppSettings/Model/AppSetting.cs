@@ -20,5 +20,7 @@ namespace VErp.Infrastructure.AppSettings.Model
         public LoggingSetting Logging { get; set; }
 
         public RedisSetting Redis { get; set; }
+
+        public ElasticApmSetting ElasticApm { get; set; }
     }
 }
