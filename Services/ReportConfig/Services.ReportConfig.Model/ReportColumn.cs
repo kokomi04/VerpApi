@@ -15,5 +15,9 @@ namespace Verp.Services.ReportConfig.Model
         public int? DataTypeId { get; set; }
         public int? DecimalPlace { get; set; }
         public bool IsCalcSum { get; set; }
+        public bool IsHidden { get; set; }
+        public string RowSpan { get; set; }
+        public string ColSpan { get; set; }
+
     }
 }
