@@ -9,6 +9,7 @@ using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using VErp.Infrastructure.AppSettings.Model;
+using System.Data;
 
 namespace VErp.Commons.Library
 {
@@ -24,11 +25,11 @@ namespace VErp.Commons.Library
         public void WriteToSheet((string, byte[])[][] dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
         {
             var sheet = hssfwb.GetSheet(sheetName);
-            if(sheet == null)
+            if (sheet == null)
             {
                 sheet = hssfwb.CreateSheet(sheetName);
             }
-            
+
             int addedRow = 0;
             foreach ((string, byte[])[] row in dataInRows)
             {
@@ -53,6 +54,53 @@ namespace VErp.Commons.Library
                 }
                 addedRow++;
             }
+        }
+
+        public void WriteToSheet(DataTable table, string sheetName, out int endRow, bool isHeader = false, byte[] headerRgb = null, int startCollumn = 0, int startRow = 0)
+        {
+            var sheet = hssfwb.GetSheet(sheetName);
+            if (sheet == null)
+            {
+                sheet = hssfwb.CreateSheet(sheetName);
+            }
+
+            int addedRow = 0;
+            if (isHeader)
+            {
+                // Write header
+                IRow newRow = sheet.CreateRow(startRow);
+                int addCollumn = 0;
+                foreach (var collumn in table.Columns)
+                {
+                    int curCollumn = addCollumn + startCollumn;
+                    ICell cell = newRow.CreateCell(curCollumn);
+                    cell.SetCellValue(collumn.ToString());
+                    if (headerRgb != null)
+                    {
+                        XSSFCellStyle cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
+                        cellStyle.SetFillForegroundColor(new XSSFColor(headerRgb));
+                        cellStyle.FillPattern = FillPattern.SolidForeground;
+                        cell.CellStyle = cellStyle;
+                    }
+                    addCollumn++;
+                }
+                addedRow++;
+            }
+            int columnLength = table.Columns.Count;
+
+            foreach (DataRow row in table.Rows)
+            {
+                int curRow = startRow + addedRow;
+                IRow newRow = sheet.CreateRow(curRow);
+                for (int indx = 0; indx < columnLength; indx++)
+                {
+                    int curCollumn = indx + startCollumn;
+                    ICell cell = newRow.CreateCell(curCollumn);
+                    cell.SetCellValue(row[indx]?.ToString() ?? null);
+                }
+                addedRow++;
+            }
+            endRow = startRow + addedRow - 1;
         }
 
         public async Task<MemoryStream> WriteToStream()

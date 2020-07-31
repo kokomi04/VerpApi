@@ -1777,12 +1777,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 .ToList();
 
             var writer = new ExcelWriter();
-            byte[] titleRgb = new byte[3] { 60, 120, 216 };
+            int endRow = 0;
             // Write area
             foreach (var area in areas)
             {
                 DataTable table = new DataTable();
-
                 if (!area.IsMultiRow)
                 {
                     // Write info
@@ -1803,18 +1802,38 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             {
                                 row = table.Rows[rowIndx];
                             }
-                            row[collumIndx * 2] = field.Title;
-                            row[collumIndx * 2 + 1] = info[field.InputField.FieldName];
+                            row[collumIndx * 2] = $"{field.Title}:";
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            if (info.ContainsKey(fieldName))
+                                row[collumIndx * 2 + 1] = info[fieldName];
+                            rowIndx++;
                         }
                     }
                 }
                 else
                 {
-
+                    foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
+                    {
+                        table.Columns.Add(field.Title);
+                    }
+                    foreach (var row in rows)
+                    {
+                        DataRow tbRow = table.NewRow();
+                        int columnIndx = 0;
+                        foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
+                        {
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            if (row.ContainsKey(fieldName))
+                                tbRow[columnIndx] = row[fieldName];
+                            columnIndx++;
+                        }
+                        table.Rows.Add(tbRow);
+                    }
                 }
+            
+                byte[] headerRgb = new byte[3] { 60, 120, 216 };
+                writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
-
-
 
             MemoryStream stream = await writer.WriteToStream();
             return stream;
