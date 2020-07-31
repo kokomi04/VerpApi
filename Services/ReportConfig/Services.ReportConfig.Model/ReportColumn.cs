@@ -19,5 +19,7 @@ namespace Verp.Services.ReportConfig.Model
         public string RowSpan { get; set; }
         public string ColSpan { get; set; }
 
+        public bool IsGroup { get; set; }
+
     }
 }

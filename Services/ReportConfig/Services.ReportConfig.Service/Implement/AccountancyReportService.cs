@@ -473,7 +473,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            var view = $"(SELECT {SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value))} FROM {viewSql}) AS v";
+            var view = $"(SELECT {SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => c.Value))} FROM {viewSql}) AS v";
 
             var whereColumn = new List<string>();
             foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
