@@ -598,6 +598,31 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static object ConvertValueByType(this string value, Type type)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                type = type.GetGenericArguments()[0];
+                if (string.IsNullOrWhiteSpace(value)) return null;
+            }
+
+            if (type == typeof(bool))
+                return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+            if (type == typeof(DateTime))
+                return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
+            if (type == typeof(double))
+                return string.IsNullOrWhiteSpace(value) ? default : double.Parse(value);
+            if (type == typeof(decimal))
+                return string.IsNullOrWhiteSpace(value) ? default : decimal.Parse(value);
+            if (type == typeof(int))
+                return string.IsNullOrWhiteSpace(value) ? default : int.Parse(value);
+            if (type == typeof(long))
+                return string.IsNullOrWhiteSpace(value) ? default : long.Parse(value);
+
+            return value;
+        }
+
 
         private static Hashtable dbTypeTable;
 

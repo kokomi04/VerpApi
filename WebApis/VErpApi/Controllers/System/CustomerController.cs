@@ -14,6 +14,8 @@ using VErp.Services.Organization.Model.Customer;
 using System.Collections.Generic;
 using VErp.Infrastructure.ApiCore.Attributes;
 using System.Linq;
+using VErp.Commons.GlobalObject;
+using Newtonsoft.Json;
 
 namespace VErpApi.Controllers.System
 {
@@ -153,6 +155,18 @@ namespace VErpApi.Controllers.System
         {
             var currentUserId = UserId;
             return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);
+        }
+
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _customerService.ImportCustomerFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

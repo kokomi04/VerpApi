@@ -24,6 +24,6 @@ namespace VErp.Services.Accountancy.Service.Category
 
         Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues);
 
-        Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream);
+        Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExelMapping mapping, Stream stream);
     }
 }

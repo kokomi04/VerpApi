@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -16,5 +17,6 @@ namespace VErp.Services.Organization.Service.Customer
         Task<ServiceResult<CustomerModel>> GetCustomerInfo(int customerId);
         Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
         Task<Enum> DeleteCustomer(int customerId);
+        Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }
