@@ -23,15 +23,15 @@ namespace VErp.Services.Accountancy.Model.Category
         public CategoryNameModel RefCategory { get; set; }
     }
 
-    public class ImportExelMapping
+    public class CategoryImportExelMapping
     {
         public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }
-        public IList<ImportExcelMappingField> MappingFields { get; set; }
+        public IList<CategoryImportExcelMappingField> MappingFields { get; set; }
     }
 
-    public class ImportExcelMappingField
+    public class CategoryImportExcelMappingField
     {
         public string FieldName { get; set; }
         public string Column { get; set; }
@@ -40,9 +40,9 @@ namespace VErp.Services.Accountancy.Model.Category
         public string RefFieldName { get; set; }
     }
 
-    public class ImportExcelRowData
+    public class CategoryImportExcelRowData
     {
-        public ImportExcelMappingField FieldMapping { get; set; }
+        public CategoryImportExcelMappingField FieldMapping { get; set; }
         public CategoryField FieldConfig { get; set; }
         public string CellValue { get; set; }
     }    

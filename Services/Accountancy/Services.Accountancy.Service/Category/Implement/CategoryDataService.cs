@@ -791,7 +791,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return titles;
         }
 
-        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream)
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExelMapping mapping, Stream stream)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
@@ -841,14 +841,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            var rowDatas = new List<List<ImportExcelRowData>>();
+            var rowDatas = new List<List<CategoryImportExcelRowData>>();
 
             var refCategoryDatasToQuery = new List<CategoryQueryRequest>();
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
                 var row = data.Rows[rowIndx];
 
-                var rowData = new List<ImportExcelRowData>();
+                var rowData = new List<CategoryImportExcelRowData>();
                 bool isIgnoreRow = false;
                 for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
                 {
@@ -868,7 +868,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     if (field == null && mappingField.FieldName != AccountantConstants.PARENT_ID_FIELD_NAME && !string.IsNullOrWhiteSpace(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
 
-                    rowData.Add(new ImportExcelRowData()
+                    rowData.Add(new CategoryImportExcelRowData()
                     {
                         FieldMapping = mappingField,
                         FieldConfig = field,
