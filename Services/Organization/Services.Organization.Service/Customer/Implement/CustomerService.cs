@@ -20,6 +20,8 @@ using System.IO;
 using VErp.Commons.GlobalObject;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using AutoMapper;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -28,12 +30,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
 
         public CustomerService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<CustomerService> logger
+            , IMapper mapper
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
             )
@@ -41,6 +45,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             _organizationContext = organizationContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _mapper = mapper;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
         }
@@ -416,14 +421,29 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
         }
 
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "Customer",
+                CategoryTitle = "Đối tác",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<BaseCustomerImportModel>();
+            result.Fields = fields;
+            return result;
+        }
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
-            var lstData = reader.ReadSheetEntity<CustomerModel>(mapping, (entity, propertyName, value) =>
+            var lstData = reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
             {
-                if (propertyName == nameof(CustomerModel.CustomerTypeId))
+                if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
                     {
@@ -445,11 +465,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 try
                 {
-                    var insertedData = new Dictionary<int, CustomerModel>();
+                    var insertedData = new Dictionary<int, BaseCustomerImportModel>();
 
                     // Insert data
-                    foreach (var customerInfo in lstData)
+                    foreach (var customerModel in lstData)
                     {
+                        var customerInfo = _mapper.Map<CustomerModel>(customerModel);
+
                         customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
                         var customerId = await AddCustomerToDb(customerInfo);

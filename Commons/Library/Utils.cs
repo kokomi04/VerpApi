@@ -17,6 +17,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Commons.Library
 {
@@ -765,5 +766,32 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>()
+        {
+            var fields = new List<CategoryFieldNameModel>();
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+
+                var title = string.Empty;
+                if (attrs != null && attrs.Count() > 0)
+                {
+                    title = attrs.First().Name;
+                }
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    title = prop.Name;
+                }
+                fields.Add(new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = prop.Name.GetHashCode(),
+                    FieldName = prop.Name,
+                    FieldTitle = title,
+                    RefCategory = null
+                });
+            }
+
+            return fields;
+        }
     }
 }

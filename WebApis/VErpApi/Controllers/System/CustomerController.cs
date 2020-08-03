@@ -128,7 +128,7 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("GenerateCustomerCode")]
         public async Task<ServiceResult<string>> GenerateCustomerCode()
-        {           
+        {
             return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
         }
 
@@ -158,6 +158,12 @@ namespace VErpApi.Controllers.System
             return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);
         }
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            return _customerService.GetCustomerFieldDataForMapping();
+        }
 
         [HttpPost]
         [Route("importFromMapping")]
