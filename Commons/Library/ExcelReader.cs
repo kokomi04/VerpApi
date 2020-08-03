@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using NPOI.SS.Formula;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 
@@ -269,6 +271,118 @@ namespace VErp.Commons.Library
             }
 
             return sheetDatas;
+        }
+
+        public List<List<ImportExcelRowData>> ReadSheetData<T>(ImportExcelMapping mapping)
+        {
+            var fields = typeof(T).GetProperties();
+
+            var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var rowDatas = new List<List<ImportExcelRowData>>();
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                var rowData = new List<ImportExcelRowData>();
+                bool isIgnoreRow = false;
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingFields[fieldIndx];
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    {
+                        isIgnoreRow = true;
+                        continue;
+                    }
+
+                    var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+
+                    if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+
+                    rowData.Add(new ImportExcelRowData()
+                    {
+                        FieldMapping = mappingField,
+                        PropertyInfo = field,
+                        CellValue = value
+                    });
+                }
+
+                if (!isIgnoreRow)
+                    rowDatas.Add(rowData);
+            }
+
+            return rowDatas;
+        }
+
+        public delegate bool AssignPropertyEvent<T>(T entity, string propertyName, string value);
+        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyEvent<T> OnAssignProperty)
+        {
+            var fields = typeof(T).GetProperties();
+
+            var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var lstData = new List<T>();
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                bool isIgnoreRow = false;
+                var entityInfo = Activator.CreateInstance<T>();
+
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingFields[fieldIndx];
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    {
+                        isIgnoreRow = true;
+                        continue;
+                    }
+
+                    var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+
+                    if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+
+                    if (string.IsNullOrWhiteSpace(mappingField.FieldName) || string.IsNullOrWhiteSpace(value)) continue;
+
+                    if (OnAssignProperty != null)
+                    {
+                        if (!OnAssignProperty(entityInfo, field.Name, value))
+                        {
+                            field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                        }
+                    }
+                    else
+                    {
+                        field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                    }
+
+                }
+
+                var context = new ValidationContext(entityInfo);
+                ICollection<ValidationResult> results = new List<ValidationResult>();
+                bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
+                if (!isValid)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
+                }
+
+                if (!isIgnoreRow)
+                    lstData.Add(entityInfo);
+            }
+
+            return lstData;
         }
 
         private string GetCellString(ICell cell)

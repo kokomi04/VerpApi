@@ -19,6 +19,7 @@ using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 using System.IO;
 using VErp.Commons.GlobalObject;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -420,49 +421,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         {
             var reader = new ExcelReader(stream);
 
-            var fields = typeof(CustomerModel).GetProperties();
-
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-            var rowDatas = new List<List<ImportExcelRowData>>();
-
-            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            var lstData = reader.ReadSheetEntity<CustomerModel>(mapping, (entity, propertyName, value) =>
             {
-                var row = data.Rows[rowIndx];
-
-                var rowData = new List<ImportExcelRowData>();
-                bool isIgnoreRow = false;
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                if (propertyName == nameof(CustomerModel.CustomerTypeId))
                 {
-                    var mappingField = mapping.MappingFields[fieldIndx];
-
-                    string value = null;
-                    if (row.ContainsKey(mappingField.Column))
-                        value = row[mappingField.Column]?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
                     {
-                        isIgnoreRow = true;
-                        continue;
+                        entity.CustomerTypeId = EnumCustomerType.Personal;
+                    }
+                    else
+                    {
+                        entity.CustomerTypeId = EnumCustomerType.Organization;
                     }
 
-                    var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
-
-                    if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
-
-
-
-                    rowData.Add(new ImportExcelRowData()
-                    {
-                        FieldMapping = mappingField,
-                        PropertyInfo = field,
-                        CellValue = value
-                    });
+                    return true;
                 }
 
-                if (!isIgnoreRow)
-                    rowDatas.Add(rowData);
-            }
+                return false;
+            });
 
 
             using (var trans = await _organizationContext.Database.BeginTransactionAsync())
@@ -472,43 +448,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     var insertedData = new Dictionary<int, CustomerModel>();
 
                     // Insert data
-                    foreach (var rowData in rowDatas)
+                    foreach (var customerInfo in lstData)
                     {
-                        var rowInput = new Dictionary<string, string>();
-
-                        var customerInfo = new CustomerModel()
-                        {
-                            CustomerStatusId = EnumCustomerStatus.Actived
-                        };
-
-                        foreach (var cellData in rowData)
-                        {
-                            if (string.IsNullOrWhiteSpace(cellData.FieldMapping.FieldName) || string.IsNullOrWhiteSpace(cellData.CellValue)) continue;
-
-                            if (cellData.PropertyInfo.Name == nameof(CustomerModel.CustomerTypeId))
-                            {
-                                if (cellData.CellValue.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
-                                {
-                                    customerInfo.CustomerTypeId = EnumCustomerType.Personal;
-                                }
-                                else
-                                {
-                                    customerInfo.CustomerTypeId = EnumCustomerType.Organization;
-                                }
-                            }
-                            else
-                            {
-                                cellData.PropertyInfo.SetValue(customerInfo, cellData.CellValue.ConvertValueByType(cellData.PropertyInfo.PropertyType));
-                            }
-                        }
-
-                        var context = new ValidationContext(customerInfo);
-                        ICollection<ValidationResult> results = new List<ValidationResult>();
-                        bool isValid = Validator.TryValidateObject(customerInfo, context, results, true);
-                        if (!isValid)
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
-                        }
+                        customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
                         var customerId = await AddCustomerToDb(customerInfo);
 
