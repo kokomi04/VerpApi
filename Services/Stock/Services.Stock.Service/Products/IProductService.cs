@@ -16,6 +16,8 @@ namespace VErp.Services.Stock.Service.Products
         Task<IList<ProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req);
 
         Task<ServiceResult<int>> AddProduct(ProductModel req);
+        Task<int> AddProductToDb(ProductModel req);
+
         Task<ServiceResult<ProductModel>> ProductInfo(int productId);
         Task<Enum> UpdateProduct(int productId, ProductModel req);
         Task<Enum> DeleteProduct(int productId);
