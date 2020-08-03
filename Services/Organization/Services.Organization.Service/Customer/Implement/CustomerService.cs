@@ -70,10 +70,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{data.CustomerCode}\" đã tồn tại");
                 }
 
-                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted);
+                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{data.CustomerName}\" đã tồn tại");
             }
 
             var customer = new CustomerEntity()
