@@ -18,6 +18,7 @@ namespace VErp.Services.Organization.Service.Customer
         Task<ServiceResult<CustomerModel>> GetCustomerInfo(int customerId);
         Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
         Task<Enum> DeleteCustomer(int customerId);
+        CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }

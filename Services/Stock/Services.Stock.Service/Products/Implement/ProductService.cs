@@ -64,164 +64,155 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ServiceResult<int>> AddProduct(ProductModel req)
         {
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                var productId = await AddProductToDb(req);
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
+                return productId;
+            }
+        }
+
+        public async Task<int> AddProductToDb(ProductModel req)
+        {
             req.ProductCode = (req.ProductCode ?? "").Trim();
             Enum validate;
             if (!(validate = ValidateProduct(req)).IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate, req.ProductCode + " " + req.ProductName + " " + validate.GetEnumDescription());
             }
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
             if (productExisted != null)
             {
                 if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
-                    return ProductErrorCode.ProductCodeAlreadyExisted;
-                return ProductErrorCode.ProductNameAlreadyExisted;
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductCode}\" đã tồn tại");
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
             {
-                return ProductErrorCode.ProductCateInvalid;
+                throw new BadRequestException(ProductErrorCode.ProductCateInvalid, $"Danh mục mặt hàng không đúng");
             }
 
             if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
             {
-                return ProductErrorCode.ProductTypeInvalid;
+                throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
             }
 
-            int productId = 0;
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            var productInfo = new Product()
             {
-                try
-                {
-                    var productInfo = new Product()
-                    {
-                        ProductCode = req.ProductCode,
-                        ProductName = req.ProductName,
-                        ProductInternalName = req.ProductName.NormalizeAsInternalName(),
-                        IsCanBuy = req.IsCanBuy,
-                        IsCanSell = req.IsCanSell,
-                        MainImageFileId = req.MainImageFileId,
-                        ProductTypeId = req.ProductTypeId,
-                        ProductCateId = req.ProductCateId,
-                        BarcodeConfigId = req.BarcodeConfigId,
-                        BarcodeStandardId = (int?)req.BarcodeStandardId,
-                        Barcode = req.Barcode,
-                        UnitId = req.UnitId,
-                        EstimatePrice = req.EstimatePrice,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow,
-                        IsDeleted = false
-                    };
+                ProductCode = req.ProductCode,
+                ProductName = req.ProductName,
+                ProductInternalName = req.ProductName.NormalizeAsInternalName(),
+                IsCanBuy = req.IsCanBuy,
+                IsCanSell = req.IsCanSell,
+                MainImageFileId = req.MainImageFileId,
+                ProductTypeId = req.ProductTypeId,
+                ProductCateId = req.ProductCateId,
+                BarcodeConfigId = req.BarcodeConfigId,
+                BarcodeStandardId = (int?)req.BarcodeStandardId,
+                Barcode = req.Barcode,
+                UnitId = req.UnitId,
+                EstimatePrice = req.EstimatePrice,
+                CreatedDatetimeUtc = DateTime.UtcNow,
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                IsDeleted = false
+            };
 
-                    await _stockContext.AddAsync(productInfo);
+            await _stockContext.AddAsync(productInfo);
 
-                    await _stockContext.SaveChangesAsync();
+            await _stockContext.SaveChangesAsync();
 
-                    var productExtra = new ProductExtraInfo()
-                    {
-                        ProductId = productInfo.ProductId,
-                        Specification = req.Extra?.Specification,
-                        Description = req.Extra?.Description,
-                        IsDeleted = false
-                    };
+            var productExtra = new ProductExtraInfo()
+            {
+                ProductId = productInfo.ProductId,
+                Specification = req.Extra?.Specification,
+                Description = req.Extra?.Description,
+                IsDeleted = false
+            };
 
-                    await _stockContext.AddAsync(productExtra);
+            await _stockContext.AddAsync(productExtra);
 
-                    var productStockInfo = new ProductStockInfo()
-                    {
-                        ProductId = productInfo.ProductId,
-                        StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId,
-                        AmountWarningMin = req.StockInfo?.AmountWarningMin,
-                        AmountWarningMax = req.StockInfo?.AmountWarningMax,
-                        TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,
-                        TimeWarningAmount = req.StockInfo?.TimeWarningAmount,
-                        DescriptionToStock = req.StockInfo?.DescriptionToStock,
-                        ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId,
-                        ExpireTimeAmount = req.StockInfo?.ExpireTimeAmount,
-                        IsDeleted = false
-                    };
+            var productStockInfo = new ProductStockInfo()
+            {
+                ProductId = productInfo.ProductId,
+                StockOutputRuleId = (int?)req.StockInfo?.StockOutputRuleId,
+                AmountWarningMin = req.StockInfo?.AmountWarningMin,
+                AmountWarningMax = req.StockInfo?.AmountWarningMax,
+                TimeWarningTimeTypeId = (int?)req.StockInfo?.TimeWarningTimeTypeId,
+                TimeWarningAmount = req.StockInfo?.TimeWarningAmount,
+                DescriptionToStock = req.StockInfo?.DescriptionToStock,
+                ExpireTimeTypeId = (int?)req.StockInfo?.ExpireTimeTypeId,
+                ExpireTimeAmount = req.StockInfo?.ExpireTimeAmount,
+                IsDeleted = false
+            };
 
-                    await _stockContext.AddAsync(productStockInfo);
+            await _stockContext.AddAsync(productStockInfo);
 
-                    var lstStockValidations = req.StockInfo?.StockIds?.Select(s => new ProductStockValidation()
-                    {
-                        ProductId = productInfo.ProductId,
-                        StockId = s
-                    });
+            var lstStockValidations = req.StockInfo?.StockIds?.Select(s => new ProductStockValidation()
+            {
+                ProductId = productInfo.ProductId,
+                StockId = s
+            });
 
-                    if (lstStockValidations != null)
-                    {
-                        await _stockContext.AddRangeAsync(lstStockValidations);
-                    }
-
-                    var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
-                    if (unitInfo == null)
-                    {
-                        return UnitErrorCode.UnitNotFound;
-                    }
-
-                    var lstUnitConverions = req.StockInfo?.UnitConversions?
-                        .Where(u => !u.IsDefault)?
-                        .Select(u => new ProductUnitConversion()
-                        {
-                            ProductId = productInfo.ProductId,
-                            ProductUnitConversionName = u.ProductUnitConversionName,
-                            SecondaryUnitId = u.SecondaryUnitId,
-                            FactorExpression = u.FactorExpression,
-                            ConversionDescription = u.ConversionDescription,
-                            IsDefault = false,
-                            IsFreeStyle = u.IsFreeStyle
-                        })
-                    .ToList();
-
-                    if (lstUnitConverions == null)
-                    {
-                        lstUnitConverions = new List<ProductUnitConversion>();
-                    }
-
-                    lstUnitConverions.Add(
-                        new ProductUnitConversion()
-                        {
-                            ProductId = productInfo.ProductId,
-                            ProductUnitConversionName = unitInfo.Data.UnitName,
-                            SecondaryUnitId = req.UnitId,
-                            FactorExpression = "1",
-                            ConversionDescription = "Mặc định",
-                            IsDefault = true,
-                            IsFreeStyle = false
-                        }
-                    );
-
-                    if (lstUnitConverions != null)
-                    {
-                        await _stockContext.AddRangeAsync(lstUnitConverions);
-                    }
-
-                    await _stockContext.SaveChangesAsync();
-                    trans.Commit();
-
-
-                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {productInfo.ProductName}", req.JsonSerialize());
-
-                    productId = productInfo.ProductId;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "AddProduct");
-                    return GeneralCode.InternalError;
-                }
+            if (lstStockValidations != null)
+            {
+                await _stockContext.AddRangeAsync(lstStockValidations);
             }
+
+            var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
+            if (unitInfo == null)
+            {
+                throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Sản phẩm {req.ProductCode}, đơn vị tính không tìm thấy ");
+            }
+
+            var lstUnitConverions = req.StockInfo?.UnitConversions?
+                .Where(u => !u.IsDefault)?
+                .Select(u => new ProductUnitConversion()
+                {
+                    ProductId = productInfo.ProductId,
+                    ProductUnitConversionName = u.ProductUnitConversionName,
+                    SecondaryUnitId = u.SecondaryUnitId,
+                    FactorExpression = u.FactorExpression,
+                    ConversionDescription = u.ConversionDescription,
+                    IsDefault = false,
+                    IsFreeStyle = u.IsFreeStyle
+                })
+            .ToList();
+
+            if (lstUnitConverions == null)
+            {
+                lstUnitConverions = new List<ProductUnitConversion>();
+            }
+
+            lstUnitConverions.Add(
+                new ProductUnitConversion()
+                {
+                    ProductId = productInfo.ProductId,
+                    ProductUnitConversionName = unitInfo.Data.UnitName,
+                    SecondaryUnitId = req.UnitId,
+                    FactorExpression = "1",
+                    ConversionDescription = "Mặc định",
+                    IsDefault = true,
+                    IsFreeStyle = false
+                }
+            );
+
+            if (lstUnitConverions != null)
+            {
+                await _stockContext.ProductUnitConversion.AddRangeAsync(lstUnitConverions);
+            }
+
+            await _stockContext.SaveChangesAsync();
 
             if (req.MainImageFileId.HasValue)
             {
-                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Product, productId, req.MainImageFileId.Value));
+                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Product, productInfo.ProductId, req.MainImageFileId.Value));
             }
 
-            return productId;
+            return productInfo.ProductId;
         }
-
 
         public async Task<ServiceResult<ProductModel>> ProductInfo(int productId)
         {

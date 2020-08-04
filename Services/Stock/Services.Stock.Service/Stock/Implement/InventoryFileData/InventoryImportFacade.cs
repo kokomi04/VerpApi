@@ -1,4 +1,6 @@
-﻿//using NPOI.SS.UserModel;
+﻿//using EFCore.BulkExtensions;
+//using Microsoft.EntityFrameworkCore;
+//using NPOI.SS.UserModel;
 //using System;
 //using System.Collections.Generic;
 //using System.IO;
@@ -8,33 +10,58 @@
 //using VErp.Commons.Enums.MasterEnum;
 //using VErp.Commons.Enums.StandardEnum;
 //using VErp.Commons.GlobalObject;
+//using VErp.Commons.GlobalObject.InternalDataInterface;
 //using VErp.Commons.Library;
 //using VErp.Commons.Library.Model;
+//using VErp.Infrastructure.EF.MasterDB;
 //using VErp.Infrastructure.EF.StockDB;
 //using VErp.Infrastructure.ServiceCore.Model;
 //using VErp.Services.Stock.Model.Inventory;
 //using VErp.Services.Stock.Model.Inventory.OpeningBalance;
+//using VErp.Services.Stock.Service.Products;
 
 //namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 //{
 //    public class InventoryImportFacade
 //    {
+//        private Dictionary<string, ProductCate> _productCates = null;
+//        private Dictionary<string, ProductType> _productTypes = null;
+//        private Dictionary<string, Unit> _units = null;
+
+//        private Dictionary<string, Product> _productsByCode = null;
+//        private Dictionary<string, Product> _productsByName = null;
+
+//        private Dictionary<int, List<ProductUnitConversion>> _productUnits = null;
+
+
 //        private StockDBContext _stockDbContext;
+//        private MasterDBContext _masterDBContext;
+//        private IProductService _productService;
 //        public InventoryImportFacade SetStockDBContext(StockDBContext stockDbContext)
 //        {
 //            _stockDbContext = stockDbContext;
 //            return this;
 //        }
 
+//        public InventoryImportFacade SetMasterDBContext(MasterDBContext masterDBContext)
+//        {
+//            _masterDBContext = masterDBContext;
+//            return this;
+//        }
+
+//        public InventoryImportFacade SetProductService(IProductService productService)
+//        {
+//            _productService = productService;
+//            return this;
+//        }
 
 
 //        public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
 //        {
 //            var reader = new ExcelReader(stream);
 
-//            var fields = typeof(CustomerModel).GetProperties();
 
-//            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+//            var data = reader.ReadSheetEntity<OpeningBalanceModel>(mapping, null);
 
 //            var rowDatas = new List<List<ImportExcelRowData>>();
 
@@ -151,161 +178,52 @@
 //        {
 //            var reader = new ExcelReader(stream);
 
+//            var currentCateName = string.Empty;
+//            var currentCatePrefixCode = string.Empty;
 
-//            var rowDatas = reader.ReadSheetData<OpeningBalanceModel>(mapping);
+//            var excelModel = reader.ReadSheetEntity<OpeningBalanceModel>(mapping, (entity, propertyName, value) =>
+//            {
+//                if (propertyName == nameof(OpeningBalanceModel.CateName))
+//                {
+//                    if (!string.IsNullOrWhiteSpace(value))
+//                    {
+//                        currentCateName = value;
+//                    }
 
+//                    entity.CateName = currentCateName;
+
+//                    return true;
+//                }
+
+//                if (propertyName == nameof(OpeningBalanceModel.CatePrefixCode))
+//                {
+//                    if (!string.IsNullOrWhiteSpace(value))
+//                    {
+//                        currentCatePrefixCode = value;
+//                    }
+
+//                    entity.CatePrefixCode = currentCatePrefixCode;
+
+//                    return true;
+//                }
+
+//                return false;
+//            });
+
+//            await AddMissingProductCates(excelModel);
+//            await AddMissingProductTypes(excelModel);
+//            await AddMissingUnit(excelModel);
+//            await AddMissingProducts(excelModel);
 
 //            var inventoryInputList = new List<InventoryInModel>();
-//            InventoryInModel inventoryInputModel = new InventoryInModel
+//            var inventoryInputModel = new InventoryInModel
 //            {
 //                InProducts = new List<InventoryInProductModel>(32)
 //            };
-//            var totalRowCount = rowDatas.Count;
-
-//            var excelModel = new List<OpeningBalanceModel>(totalRowCount);
+//            var totalRowCount = excelModel.Count;
 
 //            var productDataList = new List<Product>(totalRowCount);
 //            var newInventoryInputModel = new List<InventoryInProductExtendModel>(totalRowCount);
-
-//            var currentCateName = string.Empty;
-//            var currentCatePrefixCode = string.Empty;
-//            var cateName = string.Empty;
-//            var catePrefixCode = string.Empty;
-
-
-//            foreach (var row in rowDatas)
-//            {
-//                if (row == null) continue;
-
-//                var cellCateName = row. row.GetCell(0);
-//                var cellCatePreifxCode = row.GetCell(1);
-//                cateName = cellCateName != null ? HelperCellGetStringValue(cellCateName) : string.Empty;
-//                catePrefixCode = cellCatePreifxCode != null ? HelperCellGetStringValue(cellCatePreifxCode) : string.Empty;
-//                if (!string.IsNullOrEmpty(cateName))
-//                {
-//                    currentCateName = cateName;
-//                }
-//                if (!string.IsNullOrEmpty(catePrefixCode))
-//                {
-//                    currentCatePrefixCode = catePrefixCode;
-//                }
-//                var cellProductCode = row.GetCell(2);
-//                if (cellProductCode == null)
-//                    continue;
-//                var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
-//                if (string.IsNullOrEmpty(productCode))
-//                    continue;
-//                #region Get All Cell value
-//                var productName = row.GetCell(3) != null ? HelperCellGetStringValue(row.GetCell(3)) : string.Empty;
-//                var cellUnit = row.GetCell(4);
-
-//                var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
-//                if (string.IsNullOrEmpty(unitName))
-//                    continue;
-
-//                var cellUnitAlt = row.GetCell(9);
-//                var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
-//                var qTy = row.GetCell(5) != null ? HelperCellGetNumericValue(row.GetCell(5)) : 0;
-//                var unitPrice = row.GetCell(6) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(6)) : 0;
-//                var qTy2 = row.GetCell(11) != null ? HelperCellGetNumericValue(row.GetCell(11)) : 0;
-//                var factor = row.GetCell(10) != null ? HelperCellGetNumericValue(row.GetCell(10)) : 0;
-//                var specification = row.GetCell(8) != null ? HelperCellGetStringValue(row.GetCell(8)) : string.Empty;
-//                var heightSize = row.GetCell(13) != null ? HelperCellGetNumericValue(row.GetCell(13)) : 0;
-//                var widthSize = row.GetCell(14) != null ? HelperCellGetNumericValue(row.GetCell(14)) : 0;
-//                var longSize = row.GetCell(15) != null ? HelperCellGetNumericValue(row.GetCell(15)) : 0;
-
-//                var cellItem = new OpeningBalanceModel
-//                {
-//                    CateName = currentCateName,
-//                    CatePrefixCode = currentCatePrefixCode,
-//                    ProductCode = productCode,
-//                    ProductName = productName,
-//                    Unit1 = unitName.ToLower(),
-//                    Qty1 = qTy,
-//                    UnitPrice = unitPrice,
-//                    Specification = specification,
-//                    Unit2 = unitAltName.ToLower(),
-//                    Qty2 = qTy2,
-//                    Factor = factor,
-//                    Height = heightSize,
-//                    Width = widthSize,
-//                    Long = longSize
-//                };
-//                excelModel.Add(cellItem);
-//                #endregion
-//            } // end for loop
-
-
-//            #region Cập nhật ProductCate && ProductType
-//            var productCateNameModelList = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
-//            var productCateEntities = new List<ProductCate>(productCateNameModelList.Count);
-//            foreach (var item in productCateNameModelList)
-//            {
-//                var exists = _stockDbContext.ProductCate.Any(q => q.ProductCateName == item);
-//                if (!exists)
-//                {
-//                    var newCate = new ProductCate
-//                    {
-//                        ProductCateName = item,
-//                        ParentProductCateId = null,
-//                        CreatedDatetimeUtc = DateTime.UtcNow,
-//                        UpdatedDatetimeUtc = DateTime.UtcNow,
-//                        IsDeleted = false
-//                    };
-//                    _stockDbContext.ProductCate.Add(newCate);
-//                }
-//            }
-//            _stockDbContext.SaveChanges();
-//            productCateEntities = _stockDbContext.ProductCate.AsNoTracking().ToList();
-
-//            // Thêm Cate prefix ProductType
-//            var productTypeModelList = excelModel.GroupBy(g => g.CatePrefixCode).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CatePrefixCode)).Select(q => q.CatePrefixCode).ToList();
-//            var productTypeEntities = new List<ProductType>(productTypeModelList.Count);
-
-//            foreach (var item in productTypeModelList)
-//            {
-//                var exists = _stockDbContext.ProductType.Any(q => q.ProductTypeName == item);
-//                if (!exists)
-//                {
-//                    var newProductType = new ProductType
-//                    {
-//                        ProductTypeName = item,
-//                        ParentProductTypeId = null,
-//                        IdentityCode = item,
-//                        CreatedDatetimeUtc = DateTime.UtcNow,
-//                        UpdatedDatetimeUtc = DateTime.UtcNow,
-//                        IsDeleted = false
-//                    };
-//                    _stockDbContext.ProductType.Add(newProductType);
-//                }
-//            }
-//            _stockDbContext.SaveChanges();
-//            productTypeEntities = _stockDbContext.ProductType.AsNoTracking().ToList();
-
-//            #endregion
-
-//            #region Cập nhật đơn vị tính chính & phụ
-//            var unit1ModelList = excelModel.GroupBy(g => g.Unit1).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit1)).Select(q => q.Unit1).ToList();
-//            var unit2ModelList = excelModel.GroupBy(g => g.Unit2).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.Unit2)).Select(q => q.Unit2).ToList();
-//            var unitModelList = unit1ModelList.Union(unit2ModelList).GroupBy(g => g.ToLower()).Select(q => q.First());
-//            foreach (var u in unitModelList)
-//            {
-//                var exists = _masterDBContext.Unit.Any(q => q.UnitName == u);
-//                if (!exists)
-//                {
-//                    var newUnit = new Unit
-//                    {
-//                        UnitName = u,
-//                        IsDeleted = false,
-//                        CreatedDatetimeUtc = DateTime.UtcNow,
-//                        UpdatedDatetimeUtc = DateTime.UtcNow
-//                    };
-//                    _masterDBContext.Unit.Add(newUnit);
-//                }
-//            }
-//            _masterDBContext.SaveChanges();
-//            var unitDataList = _masterDBContext.Unit.AsNoTracking().ToList();
-//            #endregion
 
 //            #region Cập nhật sản phẩm & các thông tin bổ sung
 //            foreach (var item in excelModel)
@@ -576,6 +494,245 @@
 //            return GeneralCode.Success;
 
 //        }
+
+
+
+//        private async Task AddMissingProductCates(IList<OpeningBalanceModel> excelModel)
+//        {
+//            var productCates = await _stockDbContext.ProductCate.AsNoTracking().ToListAsync();
+
+//            var existedProductCateNormalizeNames = productCates.Select(c => c.ProductCateName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+//            var importProductCates = excelModel.Select(p => p.CateName).Distinct().ToList();
+
+//            var newProductCates = importProductCates
+//                .Where(c => !existedProductCateNormalizeNames.Contains(c.NormalizeAsInternalName()))
+//                .Select(c => new ProductCate()
+//                {
+//                    ProductCateName = c,
+//                    ParentProductCateId = null,
+//                    CreatedDatetimeUtc = DateTime.UtcNow,
+//                    UpdatedDatetimeUtc = DateTime.UtcNow,
+//                    IsDeleted = false
+//                });
+
+//            await _stockDbContext.ProductCate.AddRangeAsync(newProductCates);
+//            await _stockDbContext.SaveChangesAsync();
+
+//            productCates.AddRange(newProductCates);
+
+//            _productCates = new Dictionary<string, ProductCate>();
+//            foreach (var productCate in productCates)
+//            {
+//                var internalName = productCate.ProductCateName.NormalizeAsInternalName();
+//                if (!_productTypes.ContainsKey(internalName))
+//                {
+//                    _productCates.Add(internalName, productCate);
+//                }
+//            }
+//        }
+
+//        private async Task AddMissingProductTypes(IList<OpeningBalanceModel> excelModel)
+//        {
+//            var productTypes = await _stockDbContext.ProductType.AsNoTracking().ToListAsync();
+
+//            var existedProductTypeNormalizeNames = productTypes.Select(c => c.ProductTypeName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+//            var importProductTypes = excelModel.Select(p => p.CatePrefixCode).Distinct().ToList();
+
+//            var newProductTypes = importProductTypes
+//                .Where(c => !existedProductTypeNormalizeNames.Contains(c.NormalizeAsInternalName()))
+//                .Select(c => new ProductType()
+//                {
+//                    ProductTypeName = c,
+//                    IdentityCode = c,
+//                    ParentProductTypeId = null,
+//                    CreatedDatetimeUtc = DateTime.UtcNow,
+//                    UpdatedDatetimeUtc = DateTime.UtcNow,
+//                    IsDeleted = false
+//                });
+
+//            await _stockDbContext.ProductType.AddRangeAsync(newProductTypes);
+//            await _stockDbContext.SaveChangesAsync();
+
+//            productTypes.AddRange(newProductTypes);
+
+//            _productTypes = new Dictionary<string, ProductType>();
+//            foreach (var productType in productTypes)
+//            {
+//                var internalName = productType.ProductTypeName.NormalizeAsInternalName();
+//                if (!_productTypes.ContainsKey(internalName))
+//                {
+//                    _productTypes.Add(internalName, productType);
+//                }
+//            }
+//        }
+
+
+//        private async Task AddMissingProducts(IList<OpeningBalanceModel> excelModel)
+//        {
+//            var products = await _stockDbContext.Product.AsNoTracking().ToListAsync();
+
+//            _productUnits = (await _stockDbContext.ProductUnitConversion.AsNoTracking().ToListAsync()).GroupBy(pu => pu.ProductId).ToDictionary(pu => pu.Key, pu => pu.ToList());
+
+//            var existedProductNormalizeCodes = products.Select(c => c.ProductCode.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+//            var existedProductNormalizeNames = products.Select(c => c.ProductName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+
+//            var importedProductsByCode = excelModel.GroupBy(p => p.ProductCode).ToDictionary(p => p.Key, p => p.ToList());
+
+//            foreach (var productByCode in importedProductsByCode)
+//            {
+//                if (!existedProductNormalizeCodes.Contains(productByCode.Key.NormalizeAsInternalName()))
+//                {
+//                    var info = productByCode.Value.First();
+
+//                    await AddProduct(info, products, existedProductNormalizeCodes, existedProductNormalizeNames);
+//                }
+//            }
+
+
+//            var importedProductsByName = excelModel.GroupBy(p => p.ProductName).ToDictionary(p => p.Key, p => p.ToList());
+//            foreach (var productByName in importedProductsByName)
+//            {
+//                if (!existedProductNormalizeNames.Contains(productByName.Key.NormalizeAsInternalName()))
+//                {
+//                    var info = productByName.Value.First();
+//                    await AddProduct(info, products, existedProductNormalizeCodes, existedProductNormalizeNames);
+//                }
+//            }
+
+//            var productByCodeNormalize = products.ToDictionary(p => p.ProductCode.NormalizeAsInternalName(), p => p);
+
+//            foreach (var productByCode in importedProductsByCode)
+//            {
+//                var productInfo = productByCodeNormalize[productByCode.Key.NormalizeAsInternalName()];
+
+//                var productUnits = productByCode.Value
+//                    .GroupBy(u => u.Unit2)
+//                    .Select(u => new
+//                    {
+//                        UnitName = u.Key,
+//                        u.First().Factor
+//                    }).ToList();
+
+//                var dbPus = _productUnits[productInfo.ProductId].Select(pu => pu.ProductUnitConversionName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+//                var newPus = productUnits.Where(pu => !dbPus.Contains(pu.UnitName.NormalizeAsInternalName()))
+//                    .Select(pu =>
+//                    {
+//                        _units.TryGetValue(pu.UnitName, out var secoundUnit);
+
+//                        return new ProductUnitConversion()
+//                        {
+//                            ProductUnitConversionName = pu.UnitName,
+//                            ProductId = productInfo.ProductId,
+//                            SecondaryUnitId = secoundUnit.UnitId,
+//                            FactorExpression = pu.Factor.ToString(),
+//                            ConversionDescription = pu.UnitName,
+//                            IsFreeStyle = false,
+//                            IsDefault = false
+//                        };
+//                    });
+
+//                await _stockDbContext.ProductUnitConversion.AddRangeAsync(newPus);
+//                await _stockDbContext.SaveChangesAsync();
+//                _productUnits[productInfo.ProductId].AddRange(newPus);
+//            }
+
+
+//            _productsByCode = products.GroupBy(c => c.ProductCode).ToDictionary(c => c.Key.NormalizeAsInternalName(), c => c.First());
+
+//            _productsByName = products.GroupBy(c => c.ProductName).ToDictionary(c => c.Key.NormalizeAsInternalName(), c => c.First());
+
+//        }
+
+//        private async Task AddProduct(OpeningBalanceModel info, IList<Product> products, HashSet<string> existedProductNormalizeCodes, HashSet<string> existedProductNormalizeNames)
+//        {
+//            var p = CreateProductModel(info);
+//            _units.TryGetValue(info.Unit1, out var unitInfo);
+//            p.UnitId = unitInfo.UnitId;
+
+//            p.Extra.Specification = info.Specification;
+
+//            var productId = await _productService.AddProductToDb(p);
+
+//            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(t => t.ProductId == productId);
+
+//            existedProductNormalizeCodes.Add(productInfo.ProductCode.NormalizeAsInternalName());
+//            existedProductNormalizeNames.Add(productInfo.ProductName.NormalizeAsInternalName());
+
+//            products.Add(productInfo);
+//        }
+
+//        private ProductModel CreateProductModel(OpeningBalanceModel p)
+//        {
+//            _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
+
+//            _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
+
+//            return new ProductModel()
+//            {
+
+//                ProductCode = p.ProductCode,
+//                ProductName = p.ProductName,
+//                IsCanBuy = true,
+//                IsCanSell = true,
+//                MainImageFileId = null,
+//                ProductTypeId = productType.ProductTypeId,
+//                ProductCateId = productCate.ProductCateId,
+//                BarcodeConfigId = null,
+//                BarcodeStandardId = null,
+//                Barcode = null,
+//                UnitId = 0,
+//                EstimatePrice = null,
+
+//                Extra = new ProductModel.ProductModelExtra()
+//                {
+
+//                },
+//                StockInfo = new ProductModel.ProductModelStock() { },
+
+//            };
+//        }
+
+//        private async Task AddMissingUnit(IList<OpeningBalanceModel> excelModel)
+//        {
+//            var units = await _masterDBContext.Unit.AsNoTracking().ToListAsync();
+
+//            var existedUnitNames = units.Select(c => c.UnitName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+//            var importUnits = excelModel.SelectMany(p => new[] { p.Unit1, p.Unit2 }).Distinct().ToList();
+
+//            var newUnits = importUnits
+//                .Where(c => !existedUnitNames.Contains(c.NormalizeAsInternalName()))
+//                .Select(c => new Unit()
+//                {
+//                    UnitName = c,
+//                    CreatedDatetimeUtc = DateTime.UtcNow,
+//                    UpdatedDatetimeUtc = DateTime.UtcNow,
+//                    IsDeleted = false,
+//                    UnitStatusId = (int)EnumUnitStatus.Using
+//                });
+
+//            await _masterDBContext.Unit.AddRangeAsync(newUnits);
+//            await _masterDBContext.SaveChangesAsync();
+
+//            units.AddRange(newUnits);
+
+//            _units = new Dictionary<string, Unit>();
+//            foreach (var unit in units)
+//            {
+//                var internalName = unit.UnitName.NormalizeAsInternalName();
+//                if (!_units.ContainsKey(internalName))
+//                {
+//                    _units.Add(internalName, unit);
+//                }
+//            }
+//        }
+
+
 
 //    }
 

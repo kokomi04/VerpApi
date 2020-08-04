@@ -20,6 +20,8 @@ using System.IO;
 using VErp.Commons.GlobalObject;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using AutoMapper;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -28,12 +30,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
 
         public CustomerService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<CustomerService> logger
+            , IMapper mapper
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
             )
@@ -41,96 +45,142 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             _organizationContext = organizationContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _mapper = mapper;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
         }
 
         public async Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data)
         {
-            using (var trans = await _organizationContext.Database.BeginTransactionAsync())
-            {
-                var customerId = await AddCustomerToDb(data);
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Customer, customerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
-                return customerId;
-            }
+            var result = await AddBatchCustomers(new[] { data });
+
+            await _activityLogService.CreateLog(EnumObjectType.Customer, result.First().Key.CustomerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
+
+            return result.First().Key.CustomerId;
+
+            //using (var trans = await _organizationContext.Database.BeginTransactionAsync())
+            //{
+            //    var customerId = await AddCustomerToDb(data);
+            //    trans.Commit();
+            //    await _activityLogService.CreateLog(EnumObjectType.Customer, customerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
+            //    return customerId;
+            //}
         }
 
 
-        public async Task<int> AddCustomerToDb(CustomerModel data)
-        {
-            var existedCustomer = await _organizationContext.Customer.FirstOrDefaultAsync(s => s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
+        //public async Task<int> AddCustomerToDb(CustomerModel data)
+        //{
+        //    var existedCustomer = await _organizationContext.Customer.FirstOrDefaultAsync(s => s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
-            if (existedCustomer != null)
+        //    if (existedCustomer != null)
+        //    {
+        //        if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+        //        {
+        //            throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{data.CustomerCode}\" đã tồn tại");
+        //        }
+
+        //        throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{data.CustomerName}\" đã tồn tại");
+        //    }
+
+        //    var customer = new CustomerEntity()
+        //    {
+        //        CustomerCode = data.CustomerCode,
+        //        CustomerName = data.CustomerName,
+        //        CustomerTypeId = (int)data.CustomerTypeId,
+        //        Address = data.Address,
+        //        TaxIdNo = data.TaxIdNo,
+        //        PhoneNumber = data.PhoneNumber,
+        //        Website = data.Website,
+        //        Email = data.Email,
+        //        Description = data.Description,
+        //        IsActived = data.IsActived,
+        //        IsDeleted = false,
+        //        LegalRepresentative = data.LegalRepresentative,
+        //        CreatedDatetimeUtc = DateTime.UtcNow,
+        //        UpdatedDatetimeUtc = DateTime.UtcNow,
+        //        CustomerStatusId = (int)data.CustomerStatusId,
+        //        Identify = data.Identify
+        //    };
+
+        //    await _organizationContext.Customer.AddAsync(customer);
+        //    await _organizationContext.SaveChangesAsync();
+
+        //    if (data.Contacts != null && data.Contacts.Count > 0)
+        //    {
+        //        await _organizationContext.CustomerContact.AddRangeAsync(data.Contacts.Select(c => new CustomerContact()
+        //        {
+        //            CustomerId = customer.CustomerId,
+        //            FullName = c.FullName,
+        //            GenderId = (int?)c.GenderId,
+        //            Position = c.Position,
+        //            PhoneNumber = c.PhoneNumber,
+        //            Email = c.Email,
+        //            IsDeleted = false,
+        //            CreatedDatetimeUtc = DateTime.UtcNow,
+        //            UpdatedDatetimeUtc = DateTime.UtcNow
+        //        }));
+
+        //        await _organizationContext.SaveChangesAsync();
+        //    }
+
+        //    if (data.BankAccounts != null && data.BankAccounts.Count > 0)
+        //    {
+        //        await _organizationContext.CustomerBankAccount.AddRangeAsync(data.BankAccounts.Select(ba => new CustomerBankAccount()
+        //        {
+        //            CustomerId = customer.CustomerId,
+        //            BankName = ba.BankName,
+        //            AccountNumber = ba.AccountNumber,
+        //            SwiffCode = ba.SwiffCode,
+        //            UpdatedUserId = _currentContextService.UserId,
+        //            IsDeleted = false,
+        //            CreatedDatetimeUtc = DateTime.UtcNow,
+        //            UpdatedDatetimeUtc = DateTime.UtcNow
+        //        }));
+
+        //        await _organizationContext.SaveChangesAsync();
+        //    }
+        //    return customer.CustomerId;
+
+        //}
+
+        private async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers)
+        {
+            await ValidateCustomerModels(customers);
+
+            var (customerEntities, originData, contacts, bankAccounts) = ConvertToCustomerEntities(customers);
+
+            using (var transaction = _organizationContext.Database.BeginTransaction())
             {
-                if (string.Compare(existedCustomer.CustomerCode, data.CustomerCode, StringComparison.OrdinalIgnoreCase) == 0)
+                await _organizationContext.BatchInsert(customerEntities);
+
+                var contactEntities = new List<CustomerContact>();
+                var bankAccountEntities = new List<CustomerBankAccount>();
+
+                foreach (var entity in customerEntities)
                 {
-                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+                    foreach (var contact in contacts[entity])
+                    {
+                        contact.CustomerId = entity.CustomerId;
+                    }
+
+                    foreach (var bacnkAcc in bankAccounts[entity])
+                    {
+                        bacnkAcc.CustomerId = entity.CustomerId;
+                    }
+
+                    contactEntities.AddRange(contacts[entity]);
+                    bankAccountEntities.AddRange(bankAccounts[entity]);
                 }
 
-                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted);
+                await _organizationContext.BatchInsert(contactEntities, false);
+                await _organizationContext.BatchInsert(bankAccountEntities, false);
+
+                transaction.Commit();
             }
 
-            var customer = new CustomerEntity()
-            {
-                CustomerCode = data.CustomerCode,
-                CustomerName = data.CustomerName,
-                CustomerTypeId = (int)data.CustomerTypeId,
-                Address = data.Address,
-                TaxIdNo = data.TaxIdNo,
-                PhoneNumber = data.PhoneNumber,
-                Website = data.Website,
-                Email = data.Email,
-                Description = data.Description,
-                IsActived = data.IsActived,
-                IsDeleted = false,
-                LegalRepresentative = data.LegalRepresentative,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow,
-                CustomerStatusId = (int)data.CustomerStatusId,
-                Identify = data.Identify
-            };
-
-            await _organizationContext.Customer.AddAsync(customer);
-            await _organizationContext.SaveChangesAsync();
-
-            if (data.Contacts != null && data.Contacts.Count > 0)
-            {
-                await _organizationContext.CustomerContact.AddRangeAsync(data.Contacts.Select(c => new CustomerContact()
-                {
-                    CustomerId = customer.CustomerId,
-                    FullName = c.FullName,
-                    GenderId = (int?)c.GenderId,
-                    Position = c.Position,
-                    PhoneNumber = c.PhoneNumber,
-                    Email = c.Email,
-                    IsDeleted = false,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
-                }));
-
-                await _organizationContext.SaveChangesAsync();
-            }
-
-            if (data.BankAccounts != null && data.BankAccounts.Count > 0)
-            {
-                await _organizationContext.CustomerBankAccount.AddRangeAsync(data.BankAccounts.Select(ba => new CustomerBankAccount()
-                {
-                    CustomerId = customer.CustomerId,
-                    BankName = ba.BankName,
-                    AccountNumber = ba.AccountNumber,
-                    SwiffCode = ba.SwiffCode,
-                    UpdatedUserId = _currentContextService.UserId,
-                    IsDeleted = false,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
-                }));
-
-                await _organizationContext.SaveChangesAsync();
-            }
-            return customer.CustomerId;
-
+            return originData;
         }
+
 
         public async Task<Enum> DeleteCustomer(int customerId)
         {
@@ -416,14 +466,28 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
         }
 
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "Customer",
+                CategoryTitle = "Đối tác",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<BaseCustomerImportModel>();
+            result.Fields = fields;
+            return result;
+        }
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
-            var lstData = reader.ReadSheetEntity<CustomerModel>(mapping, (entity, propertyName, value) =>
+            var lstData = reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
             {
-               
                 if (propertyName == nameof(CustomerModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
@@ -441,41 +505,157 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 return false;
             });
 
+            var customerModels = new List<CustomerModel>();
 
-            using (var trans = await _organizationContext.Database.BeginTransactionAsync())
+            foreach (var customerModel in lstData)
             {
-                try
-                {
-                    var insertedData = new Dictionary<int, CustomerModel>();
+                var customerInfo = _mapper.Map<CustomerModel>(customerModel);
 
-                    // Insert data
-                    foreach (var customerInfo in lstData)
-                    {
-                        customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
+                customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
-                        var customerId = await AddCustomerToDb(customerInfo);
+                customerModels.Add(customerInfo);
+            }
 
-                        insertedData.Add(customerId, customerInfo);
-                    }
+            var insertedData = await AddBatchCustomers(customerModels);
 
-                    trans.Commit();
 
-                    foreach (var item in insertedData)
-                    {
-                        await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
-                    }
-
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError(ex, "ImportCustomerFromMapping");
-                    throw;
-                }
+            foreach (var item in insertedData)
+            {
+                await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key.CustomerId, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
             }
 
             return true;
 
+            //using (var trans = await _organizationContext.Database.BeginTransactionAsync())
+            //{
+            //    try
+            //    {
+            //        var insertedData = new Dictionary<int, BaseCustomerImportModel>();
+
+            //        // Insert data
+            //        foreach (var customerModel in lstData)
+            //        {
+            //            var customerInfo = _mapper.Map<CustomerModel>(customerModel);
+
+            //            customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
+
+            //            var customerId = await AddCustomerToDb(customerInfo);
+
+            //            insertedData.Add(customerId, customerInfo);
+            //        }
+
+            //        trans.Commit();
+
+            //        foreach (var item in insertedData)
+            //        {
+            //            await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
+            //        }
+
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        trans.Rollback();
+            //        _logger.LogError(ex, "ImportCustomerFromMapping");
+            //        throw;
+            //    }
+            //}
+
+            //return true;
+
+        }
+
+
+        private async Task ValidateCustomerModels(IList<CustomerModel> customers)
+        {
+            var customerCodes = customers.Select(c => c.CustomerCode).ToList();
+
+            var customerNames = customers.Select(c => c.CustomerName).ToList();
+
+            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName)).ToListAsync();
+
+            if (existedCustomers != null && existedCustomers.Count > 0)
+            {
+                var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
+                var existingCodes = existedCodes.Intersect(customerCodes, StringComparer.OrdinalIgnoreCase);
+
+                if (existingCodes.Count() > 0)
+                {
+                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                }
+
+                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+            }
+        }
+
+        private (IList<CustomerEntity> customerEntities,
+            Dictionary<CustomerEntity, CustomerModel> originData,
+            Dictionary<CustomerEntity, List<CustomerContact>> contacts,
+            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts)
+            ConvertToCustomerEntities(IList<CustomerModel> customers)
+        {
+            var customerEntities = new List<CustomerEntity>();
+            var originData = new Dictionary<CustomerEntity, CustomerModel>();
+            var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
+            var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
+
+            foreach (var data in customers)
+            {
+                var customer = new CustomerEntity()
+                {
+                    CustomerCode = data.CustomerCode,
+                    CustomerName = data.CustomerName,
+                    CustomerTypeId = (int)data.CustomerTypeId,
+                    Address = data.Address,
+                    TaxIdNo = data.TaxIdNo,
+                    PhoneNumber = data.PhoneNumber,
+                    Website = data.Website,
+                    Email = data.Email,
+                    Description = data.Description,
+                    IsActived = data.IsActived,
+                    IsDeleted = false,
+                    LegalRepresentative = data.LegalRepresentative,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    CustomerStatusId = (int)data.CustomerStatusId,
+                    Identify = data.Identify
+                };
+                customerEntities.Add(customer);
+                contacts.Add(customer, new List<CustomerContact>());
+                bankAccounts.Add(customer, new List<CustomerBankAccount>());
+
+                if (data.Contacts != null && data.Contacts.Count > 0)
+                {
+                    contacts[customer].AddRange(data.Contacts.Select(c => new CustomerContact()
+                    {
+                        //CustomerId = customer.CustomerId,
+                        FullName = c.FullName,
+                        GenderId = (int?)c.GenderId,
+                        Position = c.Position,
+                        PhoneNumber = c.PhoneNumber,
+                        Email = c.Email,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    }));
+                }
+
+                if (data.BankAccounts != null && data.BankAccounts.Count > 0)
+                {
+                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => new CustomerBankAccount()
+                    {
+                        // CustomerId = customer.CustomerId,
+                        BankName = ba.BankName,
+                        AccountNumber = ba.AccountNumber,
+                        SwiffCode = ba.SwiffCode,
+                        UpdatedUserId = _currentContextService.UserId,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    }));
+                }
+            }
+
+            return (customerEntities, originData, contacts, bankAccounts);
         }
 
     }

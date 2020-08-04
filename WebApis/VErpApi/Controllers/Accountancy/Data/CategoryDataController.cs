@@ -20,6 +20,7 @@ using VErp.Services.Accountancy.Service.Category;
 using VErp.Services.Accountancy.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
