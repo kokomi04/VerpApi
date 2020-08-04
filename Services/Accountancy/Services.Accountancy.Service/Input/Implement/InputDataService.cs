@@ -620,11 +620,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var values = new List<object>();
                 if (field.IsMultiRow)
                 {
-                    values.AddRange(rows.Where(r => r.Data.ContainsKey(field.FieldName)).Select(r => r.Data[field.FieldName]));
+                    values.AddRange(rows.Where(r => r.Data.ContainsKey(field.FieldName) && r.Data[field.FieldName] != null).Select(r => r.Data[field.FieldName]));
                 }
                 else
                 {
-                    if (info.Data.ContainsKey(field.FieldName)) values.Add(info.Data[field.FieldName]);
+                    if (info.Data.ContainsKey(field.FieldName) && info.Data[field.FieldName] != null) values.Add(info.Data[field.FieldName]);
                 }
                 if (values.Count > 0)
                 {

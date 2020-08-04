@@ -423,6 +423,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var lstData = reader.ReadSheetEntity<CustomerModel>(mapping, (entity, propertyName, value) =>
             {
+               
                 if (propertyName == nameof(CustomerModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))

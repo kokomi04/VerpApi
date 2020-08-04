@@ -5,6 +5,8 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
+using System.IO;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Service.Products
 {
@@ -21,5 +23,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<Enum> DeleteProduct(int productId);
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
+        Task<List<EntityField>> GetFields(Type type);
+        Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }
