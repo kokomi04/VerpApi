@@ -11,6 +11,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
@@ -21,13 +22,18 @@ using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using System.IO;
+using System.Reflection;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
+using System.ComponentModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductService : IProductService
     {
         private readonly StockDBContext _stockContext;
+        private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
@@ -37,6 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public ProductService(
             StockDBContext stockContext
+            , MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductService> logger
             , IUnitService unitService
@@ -45,6 +52,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IAsyncRunnerService asyncRunner
             )
         {
+            _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -842,6 +850,162 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
+        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            var reader = new ExcelReader(stream);
+
+            // Lấy thông tin field
+            var fields = typeof(Product).GetProperties(BindingFlags.Public);
+
+            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.ProductTypeName }).ToList();
+            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToList();
+            var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToList();
+            var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToList();
+
+            var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
+            {
+                switch (propertyName)
+                {
+                    case nameof(ProductImportModel.ProductTypeId):
+                        var productType = productTypes.FirstOrDefault(t => t.ProductTypeName == value);
+                        if (productType != null)
+                        {
+                            entity.ProductTypeId = productType.ProductTypeId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.ProductCateId):
+                        var productCate = productCates.FirstOrDefault(c => c.ProductCateName == value);
+                        if (productCate != null)
+                        {
+                            entity.ProductCateId = productCate.ProductCateId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.BarcodeConfigId):
+                        var barcodeConfig = barcodeConfigs.FirstOrDefault(c => c.Name == value);
+                        if (barcodeConfig != null)
+                        {
+                            entity.BarcodeConfigId = barcodeConfig.BarcodeConfigId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.StockOutputRuleId):
+                        var rule = EnumExtensions.GetEnumMembers<EnumStockOutputRule>().FirstOrDefault(r => r.Description == value);
+                        if (rule != null)
+                        {
+                            entity.StockOutputRuleId = rule.Enum;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.ExpireTimeTypeId):
+                        var timeType = EnumExtensions.GetEnumMembers<EnumTimeType>().FirstOrDefault(r => r.Description == value);
+                        if (timeType != null)
+                        {
+                            entity.ExpireTimeTypeId = timeType.Enum;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.SecondaryUnitId01):
+                        var unit = units.FirstOrDefault(u => u.UnitName == value);
+                        if (unit != null)
+                        {
+                            entity.SecondaryUnitId01 = unit.UnitId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.SecondaryUnitId02):
+                        unit = units.FirstOrDefault(u => u.UnitName == value);
+                        if (unit != null)
+                        {
+                            entity.SecondaryUnitId02 = unit.UnitId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.SecondaryUnitId03):
+                        unit = units.FirstOrDefault(u => u.UnitName == value);
+                        if (unit != null)
+                        {
+                            entity.SecondaryUnitId03 = unit.UnitId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.SecondaryUnitId04):
+                        unit = units.FirstOrDefault(u => u.UnitName == value);
+                        if (unit != null)
+                        {
+                            entity.SecondaryUnitId04 = unit.UnitId;
+                        }
+                        return true;
+                    case nameof(ProductImportModel.SecondaryUnitId05):
+                        unit = units.FirstOrDefault(u => u.UnitName == value);
+                        if (unit != null)
+                        {
+                            entity.SecondaryUnitId05 = unit.UnitId;
+                        }
+                        return true;
+                    default:
+                        return false;
+                }
+            });
+
+
+            // Validate unique product code
+            var productCodes = data.Select(p => p.ProductCode).ToList();
+            if (productCodes.Count != productCodes.Distinct().Count() || _stockContext.Product.Any(p => productCodes.Contains(p.ProductCode)))
+            {
+                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+            }
+
+            // Validate required product name
+            if (data.Any(p => string.IsNullOrEmpty(p.ProductName)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập tên sản phẩm");
+            }
+            var productNames = data.Select(r => r.ProductName).ToList();
+
+            // Validate unique product name
+            if (productNames.Count != productNames.Distinct().Count() || _stockContext.Product.Any(p => productNames.Contains(p.ProductName)))
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
+            }
+
+            int count = data.Count();
+            for (int rowIndx = 0; rowIndx < count; rowIndx++)
+            {
+
+                //        ProductCode = req.ProductCode,
+                //        ProductName = req.ProductName,
+                //        ProductInternalName = req.ProductName.NormalizeAsInternalName(),
+                //        IsCanBuy = req.IsCanBuy,
+                //        IsCanSell = req.IsCanSell,
+                //        MainImageFileId = req.MainImageFileId,
+                //        ProductTypeId = req.ProductTypeId,
+                //        ProductCateId = req.ProductCateId,
+                //        BarcodeConfigId = req.BarcodeConfigId,
+                //        BarcodeStandardId = (int?)req.BarcodeStandardId,
+                //        Barcode = req.Barcode,
+                //        UnitId = req.UnitId,
+                //        EstimatePrice = req.EstimatePrice,
+                //        CreatedDatetimeUtc = DateTime.UtcNow,
+                //        UpdatedDatetimeUtc = DateTime.UtcNow,
+                //        IsDeleted = false
+
+            }
+
+
+            return true;
+        }
+
+        public async Task<List<EntityField>> GetFields(Type type)
+        {
+            var fields = new List<EntityField>();
+
+            foreach (var prop in type.GetProperties())
+            {
+                EntityField field = new EntityField
+                {
+                    FieldName = prop.Name,
+                    Title = prop.GetCustomAttributes<DisplayNameAttribute>().FirstOrDefault()?.DisplayName?? prop.Name
+                };
+                fields.Add(field);
+            }
+
+            return fields;
+        }
+
         private Enum ValidateProduct(ProductModel req)
         {
             if (string.IsNullOrWhiteSpace(req?.ProductCode))
@@ -871,5 +1035,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             return GeneralCode.Success;
         }
+
     }
 }

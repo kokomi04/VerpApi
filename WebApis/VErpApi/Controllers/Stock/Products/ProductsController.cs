@@ -64,6 +64,13 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
         }
 
+        [HttpPost]
+        [Route("/fields")]
+        public async Task<ServiceResult<List<EntityField>>> GetFields()
+        {
+            return await _productService.GetFields(typeof(ProductImportModel));
+        }
+
         /// <summary>
         /// Lấy danh sách sản phẩm theo ids
         /// </summary>
