@@ -16,7 +16,7 @@ namespace VErp.Commons.Enums.StandardEnum
         ProductCodeAlreadyExisted = 3,
         [Description("Danh mục mặt hàng không đúng")]
         ProductCateInvalid = 4,
-        [Description("Loại sinh mã mặt hàng không đún")]
+        [Description("Loại sinh mã mặt hàng không đúng")]
         ProductTypeInvalid = 5,
         [Description("Đơn vị chuyển đổi đang được sử dụng")]
         SomeProductUnitConversionInUsed = 6,
