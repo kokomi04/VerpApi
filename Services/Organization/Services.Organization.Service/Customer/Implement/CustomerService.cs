@@ -22,7 +22,6 @@ using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using AutoMapper;
-using EFCore.BulkExtensions;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -54,7 +53,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         public async Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data)
         {
             var result = await AddBatchCustomers(new[] { data });
-            
+
             await _activityLogService.CreateLog(EnumObjectType.Customer, result.First().Key.CustomerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
 
             return result.First().Key.CustomerId;
@@ -152,8 +151,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
-                var bulkConfig = new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = true };
-                _organizationContext.BulkInsert(customerEntities, bulkConfig);
+                await _organizationContext.BatchInsert(customerEntities);
 
                 var contactEntities = new List<CustomerContact>();
                 var bankAccountEntities = new List<CustomerBankAccount>();
@@ -174,107 +172,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     bankAccountEntities.AddRange(bankAccounts[entity]);
                 }
 
-                _organizationContext.BulkInsert(contactEntities);
-                _organizationContext.BulkInsert(bankAccountEntities);
+                await _organizationContext.BatchInsert(contactEntities, false);
+                await _organizationContext.BatchInsert(bankAccountEntities, false);
 
                 transaction.Commit();
             }
 
             return originData;
-        }
-
-
-        private async Task ValidateCustomerModels(IList<CustomerModel> customers)
-        {
-            var customerCodes = customers.Select(c => c.CustomerCode).ToList();
-
-            var customerNames = customers.Select(c => c.CustomerName).ToList();
-
-            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName)).ToListAsync();
-
-            if (existedCustomers != null && existedCustomers.Count > 0)
-            {
-                var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
-                var existingCodes = existedCodes.Intersect(customerCodes, StringComparer.OrdinalIgnoreCase);
-
-                if (existingCodes.Count() > 0)
-                {
-                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
-                }
-
-                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
-            }
-        }
-
-        private (IList<CustomerEntity> customerEntities, 
-            Dictionary<CustomerEntity, CustomerModel> originData, 
-            Dictionary<CustomerEntity, List<CustomerContact>> contacts, 
-            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts) 
-            ConvertToCustomerEntities(IList<CustomerModel> customers)
-        {
-            var customerEntities = new List<CustomerEntity>();
-            var originData = new Dictionary<CustomerEntity, CustomerModel>();
-            var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
-            var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
-
-            foreach (var data in customers)
-            {
-                var customer = new CustomerEntity()
-                {
-                    CustomerCode = data.CustomerCode,
-                    CustomerName = data.CustomerName,
-                    CustomerTypeId = (int)data.CustomerTypeId,
-                    Address = data.Address,
-                    TaxIdNo = data.TaxIdNo,
-                    PhoneNumber = data.PhoneNumber,
-                    Website = data.Website,
-                    Email = data.Email,
-                    Description = data.Description,
-                    IsActived = data.IsActived,
-                    IsDeleted = false,
-                    LegalRepresentative = data.LegalRepresentative,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    CustomerStatusId = (int)data.CustomerStatusId,
-                    Identify = data.Identify
-                };
-                customerEntities.Add(customer);
-                contacts.Add(customer, new List<CustomerContact>());
-                bankAccounts.Add(customer, new List<CustomerBankAccount>());
-
-                if (data.Contacts != null && data.Contacts.Count > 0)
-                {
-                    contacts[customer].AddRange(data.Contacts.Select(c => new CustomerContact()
-                    {
-                        //CustomerId = customer.CustomerId,
-                        FullName = c.FullName,
-                        GenderId = (int?)c.GenderId,
-                        Position = c.Position,
-                        PhoneNumber = c.PhoneNumber,
-                        Email = c.Email,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    }));
-                }
-
-                if (data.BankAccounts != null && data.BankAccounts.Count > 0)
-                {
-                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => new CustomerBankAccount()
-                    {
-                        // CustomerId = customer.CustomerId,
-                        BankName = ba.BankName,
-                        AccountNumber = ba.AccountNumber,
-                        SwiffCode = ba.SwiffCode,
-                        UpdatedUserId = _currentContextService.UserId,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    }));
-                }
-            }
-
-            return (customerEntities, originData, contacts, bankAccounts);
         }
 
 
@@ -658,6 +562,100 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             //return true;
 
+        }
+
+
+        private async Task ValidateCustomerModels(IList<CustomerModel> customers)
+        {
+            var customerCodes = customers.Select(c => c.CustomerCode).ToList();
+
+            var customerNames = customers.Select(c => c.CustomerName).ToList();
+
+            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName)).ToListAsync();
+
+            if (existedCustomers != null && existedCustomers.Count > 0)
+            {
+                var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
+                var existingCodes = existedCodes.Intersect(customerCodes, StringComparer.OrdinalIgnoreCase);
+
+                if (existingCodes.Count() > 0)
+                {
+                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                }
+
+                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+            }
+        }
+
+        private (IList<CustomerEntity> customerEntities,
+            Dictionary<CustomerEntity, CustomerModel> originData,
+            Dictionary<CustomerEntity, List<CustomerContact>> contacts,
+            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts)
+            ConvertToCustomerEntities(IList<CustomerModel> customers)
+        {
+            var customerEntities = new List<CustomerEntity>();
+            var originData = new Dictionary<CustomerEntity, CustomerModel>();
+            var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
+            var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
+
+            foreach (var data in customers)
+            {
+                var customer = new CustomerEntity()
+                {
+                    CustomerCode = data.CustomerCode,
+                    CustomerName = data.CustomerName,
+                    CustomerTypeId = (int)data.CustomerTypeId,
+                    Address = data.Address,
+                    TaxIdNo = data.TaxIdNo,
+                    PhoneNumber = data.PhoneNumber,
+                    Website = data.Website,
+                    Email = data.Email,
+                    Description = data.Description,
+                    IsActived = data.IsActived,
+                    IsDeleted = false,
+                    LegalRepresentative = data.LegalRepresentative,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    CustomerStatusId = (int)data.CustomerStatusId,
+                    Identify = data.Identify
+                };
+                customerEntities.Add(customer);
+                contacts.Add(customer, new List<CustomerContact>());
+                bankAccounts.Add(customer, new List<CustomerBankAccount>());
+
+                if (data.Contacts != null && data.Contacts.Count > 0)
+                {
+                    contacts[customer].AddRange(data.Contacts.Select(c => new CustomerContact()
+                    {
+                        //CustomerId = customer.CustomerId,
+                        FullName = c.FullName,
+                        GenderId = (int?)c.GenderId,
+                        Position = c.Position,
+                        PhoneNumber = c.PhoneNumber,
+                        Email = c.Email,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    }));
+                }
+
+                if (data.BankAccounts != null && data.BankAccounts.Count > 0)
+                {
+                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => new CustomerBankAccount()
+                    {
+                        // CustomerId = customer.CustomerId,
+                        BankName = ba.BankName,
+                        AccountNumber = ba.AccountNumber,
+                        SwiffCode = ba.SwiffCode,
+                        UpdatedUserId = _currentContextService.UserId,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow
+                    }));
+                }
+            }
+
+            return (customerEntities, originData, contacts, bankAccounts);
         }
 
     }
