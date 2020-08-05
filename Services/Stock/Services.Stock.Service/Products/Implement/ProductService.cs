@@ -26,7 +26,7 @@ using System.IO;
 using System.Reflection;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
-using System.ComponentModel;
+using System.Text;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -850,97 +850,70 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        public async Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
             // Lấy thông tin field
             var fields = typeof(Product).GetProperties(BindingFlags.Public);
 
-            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.ProductTypeName }).ToList();
-            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToList();
-            var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToList();
-            var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToList();
-
+            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.ProductTypeName }).ToDictionary(t => t.ProductTypeName, t => t.ProductTypeId);
+            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToDictionary(c => c.ProductCateName, c => c.ProductCateId);
+            var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name, c => c.BarcodeConfigId);
+            var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToDictionary(u => u.UnitName, u => u.UnitId);
+            var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 switch (propertyName)
                 {
                     case nameof(ProductImportModel.ProductTypeId):
-                        var productType = productTypes.FirstOrDefault(t => t.ProductTypeName == value);
-                        if (productType != null)
-                        {
-                            entity.ProductTypeId = productType.ProductTypeId;
-                        }
+                        if (!productTypes.ContainsKey(value)) throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng {value} không đúng");
+                        entity.ProductTypeId = productTypes[value];
                         return true;
                     case nameof(ProductImportModel.ProductCateId):
-                        var productCate = productCates.FirstOrDefault(c => c.ProductCateName == value);
-                        if (productCate != null)
-                        {
-                            entity.ProductCateId = productCate.ProductCateId;
-                        }
+                        if (!productCates.ContainsKey(value)) throw new BadRequestException(ProductErrorCode.ProductCateInvalid, $"Danh mục mặt hàng {value} không đúng");
+                        entity.ProductCateId = productCates[value];
                         return true;
                     case nameof(ProductImportModel.BarcodeConfigId):
-                        var barcodeConfig = barcodeConfigs.FirstOrDefault(c => c.Name == value);
-                        if (barcodeConfig != null)
-                        {
-                            entity.BarcodeConfigId = barcodeConfig.BarcodeConfigId;
-                        }
+                        if (barcodeConfigs.ContainsKey(value)) entity.BarcodeConfigId = barcodeConfigs[value];
+                        return true;
+                    case nameof(ProductImportModel.UnitId):
+                        if (!units.ContainsKey(value)) throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn vị chính {value} không đúng");
+                        entity.UnitId = units[value];
                         return true;
                     case nameof(ProductImportModel.StockOutputRuleId):
                         var rule = EnumExtensions.GetEnumMembers<EnumStockOutputRule>().FirstOrDefault(r => r.Description == value);
-                        if (rule != null)
-                        {
-                            entity.StockOutputRuleId = rule.Enum;
-                        }
+                        if (rule != null) entity.StockOutputRuleId = rule.Enum;
                         return true;
                     case nameof(ProductImportModel.ExpireTimeTypeId):
                         var timeType = EnumExtensions.GetEnumMembers<EnumTimeType>().FirstOrDefault(r => r.Description == value);
-                        if (timeType != null)
-                        {
-                            entity.ExpireTimeTypeId = timeType.Enum;
-                        }
+                        if (timeType != null) entity.ExpireTimeTypeId = timeType.Enum;
+                        return true;
+                    case nameof(ProductImportModel.StockIds):
+                        var stockNames = value.Split(",");
+                        var stockIds = stockNames.Where(s => stocks.ContainsKey(s)).Select(s => stocks[s]).ToList();
+                        if (stockIds.Count != stockNames.Length) throw new BadRequestException(GeneralCode.InvalidParams, $"Danh sách kho {value} không đúng");
+                        if (stockIds.Count > 0) entity.StockIds = stockIds;
                         return true;
                     case nameof(ProductImportModel.SecondaryUnitId01):
-                        var unit = units.FirstOrDefault(u => u.UnitName == value);
-                        if (unit != null)
-                        {
-                            entity.SecondaryUnitId01 = unit.UnitId;
-                        }
+                        if (units.ContainsKey(value)) entity.SecondaryUnitId01 = units[value];
                         return true;
                     case nameof(ProductImportModel.SecondaryUnitId02):
-                        unit = units.FirstOrDefault(u => u.UnitName == value);
-                        if (unit != null)
-                        {
-                            entity.SecondaryUnitId02 = unit.UnitId;
-                        }
+                        if (units.ContainsKey(value)) entity.SecondaryUnitId02 = units[value];
                         return true;
                     case nameof(ProductImportModel.SecondaryUnitId03):
-                        unit = units.FirstOrDefault(u => u.UnitName == value);
-                        if (unit != null)
-                        {
-                            entity.SecondaryUnitId03 = unit.UnitId;
-                        }
+                        if (units.ContainsKey(value)) entity.SecondaryUnitId03 = units[value];
                         return true;
                     case nameof(ProductImportModel.SecondaryUnitId04):
-                        unit = units.FirstOrDefault(u => u.UnitName == value);
-                        if (unit != null)
-                        {
-                            entity.SecondaryUnitId04 = unit.UnitId;
-                        }
+                        if (units.ContainsKey(value)) entity.SecondaryUnitId04 = units[value];
                         return true;
                     case nameof(ProductImportModel.SecondaryUnitId05):
-                        unit = units.FirstOrDefault(u => u.UnitName == value);
-                        if (unit != null)
-                        {
-                            entity.SecondaryUnitId05 = unit.UnitId;
-                        }
+                        if (units.ContainsKey(value)) entity.SecondaryUnitId05 = units[value];
                         return true;
                     default:
                         return false;
                 }
             });
-
 
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
@@ -962,31 +935,126 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
-            int count = data.Count();
-            for (int rowIndx = 0; rowIndx < count; rowIndx++)
+            var name01Text = nameof(ProductImportModel.ProductUnitConversionName01);
+            var unit01Text = nameof(ProductImportModel.SecondaryUnitId01);
+            var exp01Text = nameof(ProductImportModel.FactorExpression01);
+            var desc01Text = nameof(ProductImportModel.ConversionDescription01);
+            Type typeInfo = typeof(ProductImportModel);
+
+            using var trans = await _stockContext.Database.BeginTransactionAsync();
+            try
             {
+                foreach (var row in data)
+                {
+                    var productInfo = new Product()
+                    {
+                        ProductCode = row.ProductCode,
+                        ProductName = row.ProductName,
+                        ProductInternalName = row.ProductName.NormalizeAsInternalName(),
+                        IsCanBuy = row.IsCanBuy ?? true,
+                        IsCanSell = row.IsCanSell ?? true,
+                        MainImageFileId = null,
+                        ProductTypeId = row.ProductTypeId,
+                        ProductCateId = row.ProductCateId,
+                        BarcodeConfigId = row.BarcodeConfigId,
+                        BarcodeStandardId = null,
+                        Barcode = row.Barcode,
+                        UnitId = row.UnitId,
+                        EstimatePrice = row.EstimatePrice,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        IsDeleted = false,
+                        ProductExtraInfo = new ProductExtraInfo()
+                        {
+                            Specification = row.Specification,
+                            Description = row.Description,
+                            IsDeleted = false
+                        },
+                        ProductStockInfo = new ProductStockInfo()
+                        {
+                            StockOutputRuleId = (int?)row.StockOutputRuleId,
+                            AmountWarningMin = row.AmountWarningMin,
+                            AmountWarningMax = row.AmountWarningMax,
+                            TimeWarningTimeTypeId = null,
+                            TimeWarningAmount = null,
+                            DescriptionToStock = row.DescriptionToStock,
+                            ExpireTimeTypeId = (int?)row.ExpireTimeTypeId,
+                            ExpireTimeAmount = row.ExpireTimeAmount,
+                            IsDeleted = false
+                        },
+                        ProductStockValidation = row.StockIds.Select(s => new ProductStockValidation
+                        {
+                            StockId = s
+                        }).ToList()
+                    };
 
-                //        ProductCode = req.ProductCode,
-                //        ProductName = req.ProductName,
-                //        ProductInternalName = req.ProductName.NormalizeAsInternalName(),
-                //        IsCanBuy = req.IsCanBuy,
-                //        IsCanSell = req.IsCanSell,
-                //        MainImageFileId = req.MainImageFileId,
-                //        ProductTypeId = req.ProductTypeId,
-                //        ProductCateId = req.ProductCateId,
-                //        BarcodeConfigId = req.BarcodeConfigId,
-                //        BarcodeStandardId = (int?)req.BarcodeStandardId,
-                //        Barcode = req.Barcode,
-                //        UnitId = req.UnitId,
-                //        EstimatePrice = req.EstimatePrice,
-                //        CreatedDatetimeUtc = DateTime.UtcNow,
-                //        UpdatedDatetimeUtc = DateTime.UtcNow,
-                //        IsDeleted = false
+                    var unitByIds = units.ToDictionary(u => u.Value, u => u.Key);
+                    var lstUnitConverions = new List<ProductUnitConversion>(){
+                            new ProductUnitConversion()
+                            {
+                                ProductUnitConversionName = unitByIds[row.UnitId],
+                                SecondaryUnitId = row.UnitId,
+                                FactorExpression = "1",
+                                ConversionDescription = "Mặc định",
+                                IsDefault = true,
+                                IsFreeStyle = false
+                            }
+                        };
 
+                    for (int suffix = 1; suffix <= 5; suffix++)
+                    {
+                        var nameText = suffix > 1 ? new StringBuilder(name01Text).Remove(name01Text.Length - 2, 2).Append($"0{suffix}").ToString() : name01Text;
+                        var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
+                        var expText = suffix > 1 ? new StringBuilder(exp01Text).Remove(exp01Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp01Text;
+                        var descText = suffix > 1 ? new StringBuilder(desc01Text).Remove(desc01Text.Length - 2, 2).Append($"0{suffix}").ToString() : desc01Text;
+
+                        var name = typeInfo.GetProperty(nameText).GetValue(row) as string;
+                        var unitId = typeInfo.GetProperty(unitText).GetValue(row) as int?;
+                        var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
+                        var desc = typeInfo.GetProperty(descText).GetValue(row) as string;
+                        if (name != null && unitId != null)
+                        {
+                            try
+                            {
+                                var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
+                                if (!(eval > 0))
+                                {
+                                    throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Biểu thức chuyển đổi {exp} của sản phẩm {row.ProductCode} không đúng");
+                                }
+                            }
+                            catch (Exception)
+                            {
+
+                                throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Lỗi không thể tính toán biểu thức đơn vị chuyển đổi {exp}  của sản phẩm {row.ProductCode}");
+                            }
+
+                            lstUnitConverions.Add(new ProductUnitConversion()
+                            {
+                                ProductUnitConversionName = name,
+                                SecondaryUnitId = unitId.Value,
+                                FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
+                                ConversionDescription = typeInfo.GetProperty(descText).GetValue(row) as string,
+                                IsDefault = false,
+                                IsFreeStyle = false
+                            });
+                        }
+                    }
+
+                    productInfo.ProductUnitConversion = lstUnitConverions;
+
+                    _stockContext.Product.Add(productInfo);
+                }
+
+                _stockContext.SaveChanges();
+                trans.Commit();
+                return data.Count;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                throw ex;
             }
 
-
-            return true;
         }
 
         public async Task<List<EntityField>> GetFields(Type type)
@@ -998,7 +1066,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 EntityField field = new EntityField
                 {
                     FieldName = prop.Name,
-                    Title = prop.GetCustomAttributes<DisplayNameAttribute>().FirstOrDefault()?.DisplayName?? prop.Name
+                    Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name
                 };
                 fields.Add(field);
             }

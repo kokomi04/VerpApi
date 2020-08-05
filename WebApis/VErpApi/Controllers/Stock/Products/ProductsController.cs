@@ -20,6 +20,9 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
+using VErp.Commons.GlobalObject;
+using Newtonsoft.Json;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -64,11 +67,22 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
         }
 
-        [HttpPost]
-        [Route("/fields")]
+        [HttpGet]
+        [Route("fields")]
         public async Task<ServiceResult<List<EntityField>>> GetFields()
         {
             return await _productService.GetFields(typeof(ProductImportModel));
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _productService.ImportProductFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
 
         /// <summary>

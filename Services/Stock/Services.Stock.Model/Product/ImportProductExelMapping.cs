@@ -59,7 +59,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Ghi chú kho")]
         public string DescriptionToStock { get; set; }
         [Display(Name = "Danh sách kho")]
-        public string Stocks { get; set; }
+        public ICollection<int> StockIds { get; set; }
 
         // Unit conversion
         [Display(Name = "Quy cách đơn vị chuyển đổi 01")]
@@ -114,6 +114,7 @@ namespace VErp.Services.Stock.Model.Product
 
         public ProductImportModel()
         {
+            StockIds = new List<int>();
         }
     }
 }
