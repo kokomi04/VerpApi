@@ -38,6 +38,9 @@ using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using NPOI.HSSF.UserModel;
 using VErp.Services.Stock.Service.Stock.Implement.InventoryFileData;
+using VErp.Services.Stock.Service.Products;
+using VErp.Commons.Library.Model;
+using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -58,6 +61,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IStockHelperService _stockHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IProductService _productService;
 
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
@@ -72,6 +76,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IStockHelperService stockHelperService
             , IProductHelperService productHelperService
             , ICurrentContextService currentContextService
+            , IProductService productService
             )
         {
             _masterDBContext = masterDBContext;
@@ -87,6 +92,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _stockHelperService = stockHelperService;
             _productHelperService = productHelperService;
             _currentContextService = currentContextService;
+            _productService = productService;
         }
 
 
@@ -393,6 +399,51 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
+        public CategoryNameModel GetInventoryDetailFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "Inventory",
+                CategoryTitle = "Xuất/Nhập kho",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<OpeningBalanceModel>();
+            result.Fields = fields;
+            return result;
+        }
+
+
+        public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
+        {
+            var inventoryExport = new InventoryImportFacade();
+            inventoryExport.SetProductService(_productService);
+            inventoryExport.SetMasterDBContext(_masterDBContext);
+            inventoryExport.SetStockDBContext(_stockDbContext);
+            var inventoryData = await inventoryExport.ReadInventoryInputExcelSheet(mapping, stream, model);
+
+            long inventoryId = 0;
+            var insertedData = new Dictionary<long, InventoryInModel>();
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                foreach (var item in inventoryData)
+                {
+                    inventoryId = await AddInventoryInputDB(item);
+                    insertedData.Add(inventoryId, item);
+                }
+
+                await trans.CommitAsync();
+            }
+
+            foreach (var item in insertedData)
+            {
+                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Import phiếu nhập {item.Value.InventoryCode}", item.Value.JsonSerialize());
+            }
+            return inventoryId;
+        }
+
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
@@ -400,6 +451,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="req"></param>
         /// <returns></returns>
         public async Task<long> AddInventoryInput(InventoryInModel req)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var inventoryId = await AddInventoryInputDB(req);
+                await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
+                return inventoryId;
+            }
+        }
+
+        private async Task<long> AddInventoryInputDB(InventoryInModel req)
         {
             if (req == null || req.InProducts.Count == 0)
             {
@@ -424,80 +485,63 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new BadRequestException(validInventoryDetails.Code);
                 }
 
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
+
+                var inventoryObj = new Inventory
                 {
-                    try
+                    StockId = req.StockId,
+                    InventoryCode = req.InventoryCode,
+                    InventoryTypeId = (int)EnumInventoryType.Input,
+                    Shipper = req.Shipper,
+                    Content = req.Content,
+                    Date = issuedDate,
+                    CustomerId = req.CustomerId,
+                    Department = req.Department,
+                    StockKeeperUserId = req.StockKeeperUserId,
+                    BillForm = req.BillForm,
+                    BillCode = req.BillCode,
+                    BillSerial = req.BillSerial,
+                    BillDate = req.BillDate?.UnixToDateTime(),
+                    TotalMoney = totalMoney,
+                    CreatedByUserId = _currentContextService.UserId,
+                    UpdatedByUserId = _currentContextService.UserId,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    IsApproved = false
+                };
+                await _stockDbContext.AddAsync(inventoryObj);
+                await _stockDbContext.SaveChangesAsync();
+
+                // Thêm danh sách file đính kèm vào phiếu nhập | xuất
+                if (req.FileIdList != null && req.FileIdList.Count > 0)
+                {
+                    var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
+                    attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
+                    await _stockDbContext.AddRangeAsync(attachedFiles);
+                    await _stockDbContext.SaveChangesAsync();
+                }
+
+                foreach (var item in validInventoryDetails.Data)
+                {
+                    item.InventoryId = inventoryObj.InventoryId;
+                }
+                inventoryObj.TotalMoney = totalMoney;
+
+                await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
+                await _stockDbContext.SaveChangesAsync();
+
+                //Move file from tmp folder
+                if (req.FileIdList != null)
+                {
+                    foreach (var fileId in req.FileIdList)
                     {
-                        var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
-
-                        var inventoryObj = new Inventory
-                        {
-                            StockId = req.StockId,
-                            InventoryCode = req.InventoryCode,
-                            InventoryTypeId = (int)EnumInventoryType.Input,
-                            Shipper = req.Shipper,
-                            Content = req.Content,
-                            Date = issuedDate,
-                            CustomerId = req.CustomerId,
-                            Department = req.Department,
-                            StockKeeperUserId = req.StockKeeperUserId,
-                            BillForm = req.BillForm,
-                            BillCode = req.BillCode,
-                            BillSerial = req.BillSerial,
-                            BillDate = req.BillDate?.UnixToDateTime(),
-                            TotalMoney = totalMoney,
-                            CreatedByUserId = _currentContextService.UserId,
-                            UpdatedByUserId = _currentContextService.UserId,
-                            CreatedDatetimeUtc = DateTime.UtcNow,
-                            UpdatedDatetimeUtc = DateTime.UtcNow,
-                            IsDeleted = false,
-                            IsApproved = false
-                        };
-                        await _stockDbContext.AddAsync(inventoryObj);
-                        await _stockDbContext.SaveChangesAsync();
-
-                        // Thêm danh sách file đính kèm vào phiếu nhập | xuất
-                        if (req.FileIdList != null && req.FileIdList.Count > 0)
-                        {
-                            var attachedFiles = new List<InventoryFile>(req.FileIdList.Count);
-                            attachedFiles.AddRange(req.FileIdList.Select(fileId => new InventoryFile() { FileId = fileId, InventoryId = inventoryObj.InventoryId }));
-                            await _stockDbContext.AddRangeAsync(attachedFiles);
-                            await _stockDbContext.SaveChangesAsync();
-                        }
-
-
-                        foreach (var item in validInventoryDetails.Data)
-                        {
-                            item.InventoryId = inventoryObj.InventoryId;
-                        }
-                        inventoryObj.TotalMoney = totalMoney;
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
-                        await _stockDbContext.SaveChangesAsync();
-
-                        trans.Commit();
-
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, $"Thêm mới phiếu nhập kho, mã: {inventoryObj.InventoryCode}", req.JsonSerialize());
-
-                        //Move file from tmp folder
-                        if (req.FileIdList != null)
-                        {
-                            foreach (var fileId in req.FileIdList)
-                            {
-                                _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
-                            }
-                        }
-                        return inventoryObj.InventoryId;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.Rollback();
-                        _logger.LogError(ex, "AddInventoryInput");
-                        throw;
+                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
                     }
                 }
+                return inventoryObj.InventoryId;
             }
         }
-
 
 
         /// <summary>
@@ -1073,7 +1117,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
             }
-         
+
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {

@@ -749,7 +749,7 @@ namespace VErp.Commons.Library
 
             s = s.ConvertToUnSign2();
             s = s.ToLower().Trim();
-            return Regex.Replace(s, "[^a-zA-Z0-9]", "");
+            return Regex.Replace(s, "[^a-zA-Z0-9\\.\\-]", "");
         }
 
         public static bool IsVndColumn(this string columnName)
