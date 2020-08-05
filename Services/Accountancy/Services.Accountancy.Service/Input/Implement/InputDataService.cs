@@ -340,7 +340,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check unique
             await CheckUniqueAsync(inputTypeId, checkInfo, checkRows, uniqueFields);
             // Check value
-            await CheckValue(checkInfo, checkRows, inputAreaFields);
+            CheckValue(checkInfo, checkRows, inputAreaFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -867,14 +867,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task CheckValue(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> categoryFields)
+        private void CheckValue(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
                 // Validate info
                 if (!field.IsMultiRow)
                 {
-                    await ValidValueAsync(info, field, null);
+                    ValidValueAsync(info, field, null);
                 }
                 else // Validate rows
                 {
@@ -882,13 +882,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var row in rows)
                     {
                         rowIndx++;
-                        await ValidValueAsync(row, field, rowIndx);
+                        ValidValueAsync(row, field, rowIndx);
                     }
                 }
             }
         }
 
-        private async Task ValidValueAsync(ValidateRowModel checkData, ValidateField field, int? rowIndex)
+        private void ValidValueAsync(ValidateRowModel checkData, ValidateField field, int? rowIndex)
         {
             if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
             {
@@ -991,7 +991,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Check unique
             await CheckUniqueAsync(inputTypeId, checkInfo, checkRows, uniqueFields, inputValueBillId);
             // Check value
-            await CheckValue(checkInfo, checkRows, inputAreaFields);
+            CheckValue(checkInfo, checkRows, inputAreaFields);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1863,7 +1863,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 this.dataType = dataType;
             }
 
-            public bool Equals(object x, object y)
+            public new bool Equals(object x, object y)
             {
                 return dataType.CompareValue(x, y) == 0;
             }

@@ -114,7 +114,7 @@ namespace VErp.Commons.Library
             {
                 BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -423,14 +423,15 @@ namespace VErp.Commons.Library
                 case CellType.Numeric:
                     if (DateUtil.IsCellDateFormatted(cell))
                     {
-                        try
-                        {
-                            return cell.DateCellValue.ToString();
-                        }
-                        catch
-                        {
-                            return DateTime.FromOADate(cell.NumericCellValue).ToString();
-                        }
+                        return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        //try
+                        //{
+                        //    return cell.DateCellValue.ToString();
+                        //}
+                        //catch
+                        //{
+                        //    return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        //}
                     }
                     else
                     {
