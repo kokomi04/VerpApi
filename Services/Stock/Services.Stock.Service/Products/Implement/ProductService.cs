@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
                     throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductCode}\" đã tồn tại");
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
