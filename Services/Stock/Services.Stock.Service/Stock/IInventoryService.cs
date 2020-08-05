@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Package;
@@ -42,12 +43,17 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null);
 
+        CategoryNameModel GetInventoryDetailFieldDataForMapping();
+
+        Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model);
+
         /// <summary>
         /// Thêm mới phiếu nhập kho
         /// </summary>      
         /// <param name="req"></param>        
         /// <returns></returns>
         Task<long> AddInventoryInput(InventoryInModel req);
+
 
         /// <summary>
         /// Thêm mới phiếu xuất kho

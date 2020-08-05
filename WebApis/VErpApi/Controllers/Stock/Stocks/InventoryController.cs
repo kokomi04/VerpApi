@@ -2,11 +2,13 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using NPOI.XSSF.UserModel;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -286,5 +288,22 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);
         }
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetInventoryDetailFieldDataForMapping()
+        {
+            return _inventoryService.GetInventoryDetailFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<long> ImportFromMapping([FromForm] string mapping, [FromForm] string info, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _inventoryService.InventoryImport(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), JsonConvert.DeserializeObject<InventoryOpeningBalanceModel>(info)).ConfigureAwait(true);
+        }
     }
 }
