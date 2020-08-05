@@ -131,7 +131,7 @@ namespace VErp.Commons.Library
 
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
-
+           
             for (int i = 0; i < hssfwb.NumberOfSheets; i++)
             {
 
@@ -140,15 +140,16 @@ namespace VErp.Commons.Library
                 if (!string.IsNullOrWhiteSpace(sheetName) && sheet.SheetName != sheetName)
                     continue;
 
-                if (!maxrows.HasValue)
+                var maxrowsCount = maxrows;
+                if (!maxrowsCount.HasValue)
                 {
-                    maxrows = sheet.LastRowNum + 1;
+                    maxrowsCount = sheet.LastRowNum + 1;
                 }
                 else
                 {
-                    if (maxrows > sheet.LastRowNum)
+                    if (maxrowsCount > sheet.LastRowNum)
                     {
-                        maxrows = sheet.LastRowNum + 1;
+                        maxrowsCount = sheet.LastRowNum + 1;
                     }
                 }
 
@@ -199,7 +200,7 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousEmpty = 0;
-                for (int row = fromRowIndex; row < maxrows && (!toRowIndex.HasValue || row <= toRowIndex); row++)
+                for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
                     var rowData = new NonCamelCaseDictionary();
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
@@ -354,18 +355,20 @@ namespace VErp.Commons.Library
 
                     if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
 
-                    if (string.IsNullOrWhiteSpace(mappingField.FieldName) || string.IsNullOrWhiteSpace(value)) continue;
+                    if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
 
                     if (OnAssignProperty != null)
                     {
                         if (!OnAssignProperty(entityInfo, field.Name, value))
                         {
-                            field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                            if (!string.IsNullOrWhiteSpace(value))
+                                field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
                         }
                     }
                     else
                     {
-                        field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                        if (!string.IsNullOrWhiteSpace(value))
+                            field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
                     }
 
                 }
