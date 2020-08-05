@@ -1564,7 +1564,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                     }
 
-                    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                    if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
                     {
                         // primaryQty = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
                         //details.ProductUnitConversionQuantity = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression);
@@ -1695,7 +1695,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
                 //{
-                if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
                 {
                     var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, details.ProductUnitConversionQuantity);
                     if (isSuccess)
@@ -1722,7 +1722,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 //if (primaryQualtity <= 0 && details.ProductUnitConversionQuantity > 0)
                 //{
-                //    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                //    if (productUnitConversionInfo.IsFreeStyle ?? false) == false)
                 //    {
                 //        //   primaryQualtity = details.ProductUnitConversionQuantity * fromPackageInfo.PrimaryQuantityRemaining / fromPackageInfo.ProductUnitConversionRemaining;
                 //        var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(details.ProductUnitConversionQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, primaryQualtity);

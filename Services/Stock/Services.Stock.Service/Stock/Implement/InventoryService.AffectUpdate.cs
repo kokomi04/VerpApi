@@ -358,7 +358,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         foreach (var c in obj.Children)
                         {
-                            if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                            if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
                             {
                                 if (c.NewTransferPrimaryQuantity >= 0)
                                 {
