@@ -26,6 +26,6 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
         Task<List<EntityField>> GetFields(Type type);
-        Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
+        Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }

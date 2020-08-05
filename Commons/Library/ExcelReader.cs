@@ -347,7 +347,7 @@ namespace VErp.Commons.Library
                     if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
                     {
                         isIgnoreRow = true;
-                        continue;
+                        break;
                     }
 
                     var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
@@ -369,17 +369,19 @@ namespace VErp.Commons.Library
                     }
 
                 }
-
-                var context = new ValidationContext(entityInfo);
-                ICollection<ValidationResult> results = new List<ValidationResult>();
-                bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
-                if (!isValid)
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
-                }
-
                 if (!isIgnoreRow)
+                {
+                    var context = new ValidationContext(entityInfo);
+                    ICollection<ValidationResult> results = new List<ValidationResult>();
+                    bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
+                    if (!isValid)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
+                    }
+
                     lstData.Add(entityInfo);
+                }
+                    
             }
 
             return lstData;
