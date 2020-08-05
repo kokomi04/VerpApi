@@ -1546,7 +1546,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 Data = r,
                 Index = i + mapping.FromRow
-            }).Where(r => r.Data[columnKey.Column] != null).GroupBy(r => r.Data[columnKey.Column]);
+            }).Where(r => r.Data[columnKey.Column] != null && !string.IsNullOrEmpty(r.Data[columnKey.Column].ToString())).GroupBy(r => r.Data[columnKey.Column]);
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
             // Validate unique single field
