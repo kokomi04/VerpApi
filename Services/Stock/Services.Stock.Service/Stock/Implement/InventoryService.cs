@@ -1671,7 +1671,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                     }
 
-                    if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                    if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
                     {
                         var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression, details.ProductUnitConversionQuantity);
                         if (isSuccess)
@@ -1795,13 +1795,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (fromPackageInfo.PrimaryQuantityRemaining == 0 || fromPackageInfo.ProductUnitConversionRemaining == 0)
                 {
-                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , packageId: {fromPackageInfo.PackageId} PrimaryQuantityRemaining: {fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , packageId: {fromPackageInfo.PackageId} PrimaryQuantityRemaining: {fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}, req: {req.JsonSerialize()} ");
                     return InventoryErrorCode.NotEnoughQuantity;
                 }
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
                 //{
-                if (productUnitConversionInfo.IsFreeStyle ?? false == false)
+                if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
                 {
                     var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, details.ProductUnitConversionQuantity);
                     if (isSuccess)
@@ -1818,7 +1818,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!(details.ProductUnitConversionQuantity > 0))
                 {
-                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}");
+                    _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {details.ProductId} , FromPackageId: {details.FromPackageId}, ProductUnitConversionId: {details.ProductUnitConversionId}, FactorExpression: {productUnitConversionInfo.FactorExpression}, PrimaryQuantity: {details.PrimaryQuantity}, ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}");
                     return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
                 }
 
