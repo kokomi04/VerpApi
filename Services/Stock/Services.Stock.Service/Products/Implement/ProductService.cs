@@ -864,6 +864,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
+                if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
                     case nameof(ProductImportModel.ProductTypeId):
