@@ -18,6 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -155,7 +156,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return code;
         }
 
-        public async Task<int> CloneInputType(int inputTypeId, InputTypeMenuStyle menuStyle)
+        public async Task<int> CloneInputType(int inputTypeId, MenuStyleModel menuStyle)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var sourceInput = await _accountancyDBContext.InputType

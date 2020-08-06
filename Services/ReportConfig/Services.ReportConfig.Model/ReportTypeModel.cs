@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ReportConfigDB;
 
@@ -46,6 +47,8 @@ namespace Verp.Services.ReportConfig.Model
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
         public BscConfigModel BscConfig { get; set; }
+
+        public MenuStyleModel MenuStyle { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonDeserialize<List<ReportColumnModel>>()))
