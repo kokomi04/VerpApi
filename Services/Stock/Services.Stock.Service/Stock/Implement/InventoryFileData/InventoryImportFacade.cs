@@ -1,6 +1,7 @@
 ﻿using EFCore.BulkExtensions;
 using Microsoft.EntityFrameworkCore;
 using NPOI.SS.UserModel;
+using NPOI.XSSF.Model;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -133,10 +134,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productObj = _productsByName[item.ProductName.NormalizeAsInternalName()];
                 }
 
-                var productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
-                if (string.IsNullOrWhiteSpace(item.Unit2))
+                ProductUnitConversion productUnitConversionObj = null;
+
+                if (!string.IsNullOrWhiteSpace(item.Unit2))
+                {
+                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
+                    if (productUnitConversionObj == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.Unit2} sản phẩm {item.ProductCode}");
+                    }
+                }
+                else
                 {
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
+                    if (productUnitConversionObj == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính {item.Unit2} sản phẩm {item.ProductCode}");
+                    }
                 }
 
                 newInventoryInputModel.Add(new InventoryInProductModel
@@ -250,11 +264,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productObj = _productsByName[item.ProductName.NormalizeAsInternalName()];
                 }
 
-                var productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
-                if (string.IsNullOrWhiteSpace(item.Unit2))
+                ProductUnitConversion productUnitConversionObj = null;
+
+                if (!string.IsNullOrWhiteSpace(item.Unit2))
+                {
+                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
+                    if (productUnitConversionObj == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.Unit2} sản phẩm {item.ProductCode}");
+                    }
+                }
+                else
                 {
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
+                    if (productUnitConversionObj == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính {item.Unit2} sản phẩm {item.ProductCode}");
+                    }
                 }
+
 
                 productUnitConversionIds.Add(productUnitConversionObj.ProductUnitConversionId);
                 productIds.Add(productObj.ProductId);
@@ -469,12 +497,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 var productInfo = _productsByCode[productByCode.Key.NormalizeAsInternalName()];
 
                 var productUnits = productByCode.Value
-                    .Where(u => !string.IsNullOrWhiteSpace(u.Unit2))
+                    .Where(u => !string.IsNullOrWhiteSpace(u.Unit2) && u.Qty1 > 0)
+                    .Where(u => u.Qty2 > 0 || u.Factor > 0)
                     .GroupBy(u => u.Unit2)
-                    .Select(u => new
+                    .Select(u =>
                     {
-                        UnitName = u.Key,
-                        u.First().Factor
+                        var item = u.First();
+                        var factor = item.Factor;
+                        if (!(factor > 0))
+                        {
+                            factor = item.Qty2 / item.Qty1;
+                        }
+                        return new
+                        {
+                            UnitName = u.Key,
+                            Factor = factor
+                        };
                     }).ToList();
 
                 var dbPus = _productUnitsByProduct[productInfo.ProductId].Select(pu => pu.ProductUnitConversionName.NormalizeAsInternalName()).Distinct().ToHashSet();
