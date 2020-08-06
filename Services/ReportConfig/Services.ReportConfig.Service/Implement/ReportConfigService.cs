@@ -16,6 +16,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -27,17 +28,20 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
+        private readonly IMenuHelperService _menuHelperService;
         public ReportConfigService(ReportConfigDBContext reportConfigContext
             , IOptions<AppSetting> appSetting
             , ILogger<ReportConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IMenuHelperService menuHelperService
             )
         {
             _reportConfigContext = reportConfigContext;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _logger = logger;
+            _menuHelperService = menuHelperService;
         }
 
 
@@ -299,6 +303,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
+
+                if (data.MenuStyle != null)
+                {
+                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, string.Empty, report.ReportTypeId);
+                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, string.Empty, report.ReportTypeId);
+                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                }
+
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
                 return report.ReportTypeId;
             }

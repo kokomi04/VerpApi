@@ -3,6 +3,7 @@ using AutoMapper;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Input
@@ -32,7 +33,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
 
-        public InputTypeMenuStyle MenuStyle { get; set; }
+        public MenuStyleModel MenuStyle { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel
@@ -47,17 +48,5 @@ namespace VErp.Services.Accountancy.Model.Input
             profile.CreateMap<InputType, InputTypeFullModel>()
                 .ForMember(dest => dest.InputAreas, opt => opt.MapFrom(src => src.InputArea));
         }
-    }
-
-    public class InputTypeMenuStyle
-    {
-        public int? ParentId { get; set; }
-        public int ModuleId { get; set; }
-        public string MenuName { get; set; }
-        public string UrlFormat { get; set; }
-        public string ParamFormat { get; set; }
-        public string Icon { get; set; }
-        public int SortOrder { get; set; }
-        public bool IsDisabled { get; set; }
     }
 }
