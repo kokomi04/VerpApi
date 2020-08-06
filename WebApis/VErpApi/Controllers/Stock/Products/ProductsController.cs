@@ -84,7 +84,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddProduct([FromBody] ProductModel product)
+        public async Task<int> AddProduct([FromBody] ProductModel product)
         {
             return await UpdateOrAddProduct(null, product);
         }
@@ -111,7 +111,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return (await UpdateOrAddProduct(productId, product)).Code.IsSuccess();
+            return (await UpdateOrAddProduct(productId, product)) > 0;
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
 
-        private async Task<ServiceResult<int>> UpdateOrAddProduct(int? productId, ProductModel product)
+        private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
         {
             // var lastValue = 0;
             var isGenCode = false;
@@ -179,7 +179,7 @@ namespace VErpApi.Controllers.Stock.Products
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
                 if (!productTypeInfo.Code.IsSuccess())
                 {
-                    return productTypeInfo.Code;
+                    throw new BadRequestException(productTypeInfo.Code);
                 }
 
                 var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
@@ -200,13 +200,19 @@ namespace VErpApi.Controllers.Stock.Products
             else
             {
                 r = await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+                if (r.IsSuccessCode())
+                    r.Data = productId.Value;
             }
 
             if (isGenCode && r.Code.IsSuccess())
             {
                 await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
             }
-            return r;
+            if (!r.IsSuccessCode())
+            {
+                throw new BadRequestException(r.Code);
+            }
+            return r.Data;
         }
     }
 }
