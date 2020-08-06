@@ -77,7 +77,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var currentCateName = string.Empty;
             var currentCatePrefixCode = string.Empty;
 
-            var _excelModel = reader.ReadSheetEntity<OpeningBalanceModel>(mapping, (entity, propertyName, value) =>
+            _excelModel = reader.ReadSheetEntity<OpeningBalanceModel>(mapping, (entity, propertyName, value) =>
             {
                 if (propertyName == nameof(OpeningBalanceModel.CateName))
                 {
