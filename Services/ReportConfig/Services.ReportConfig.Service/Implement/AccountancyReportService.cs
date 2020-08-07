@@ -289,7 +289,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (colData != null)
+                        if (!colData.IsNullObject())
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -386,20 +386,20 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => c.Value));
+            var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
             selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
 
-            var whereColumn = new List<string>();
-            foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
-            {
-                whereColumn.Add($"{column.Alias} {column.Where}");
-            }
+            //var whereColumn = new List<string>();
+            //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+            //{
+            //    whereColumn.Add($"{column.Alias} {column.Where}");
+            //}
 
-            if (whereColumn.Count > 0)
-            {
-                selectAliasSql += " WHERE " + string.Join(",", whereColumn);
-            }
+            //if (whereColumn.Count > 0)
+            //{
+            //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+            //}
 
 
             var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
@@ -423,7 +423,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (colData != null)
+                        if (!colData.IsNullObject())
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -473,18 +473,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            var view = $"(SELECT {SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => c.Value))} FROM {viewSql}) AS v";
+            var view = $"(SELECT {SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"))} FROM {viewSql}) as v";
 
-            var whereColumn = new List<string>();
-            foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
-            {
-                whereColumn.Add($"{column.Alias} {column.Where}");
-            }
+            //var whereColumn = new List<string>();
+            //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+            //{
+            //    whereColumn.Add($"{column.Alias} {column.Where}");
+            //}
 
-            if (whereColumn.Count > 0)
-            {
-                view += " WHERE " + string.Join(",", whereColumn);
-            }
+            //if (whereColumn.Count > 0)
+            //{
+            //    view += " WHERE " + string.Join(",", whereColumn);
+            //}
 
             var totalSql = new StringBuilder();
 
@@ -553,20 +553,20 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var rowParams = sqlParams.Select(p => p.CloneSqlParam()).ToList();
                 rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value ?? DBNull.Value)));
 
-                var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => c.Value));
+                var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
                 selectAliasSql = $"SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v";
 
-                var whereColumn = new List<string>();
-                foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
-                {
-                    whereColumn.Add($"{column.Alias} {column.Where}");
-                }
+                //var whereColumn = new List<string>();
+                //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+                //{
+                //    whereColumn.Add($"{column.Alias} {column.Where}");
+                //}
 
-                if (whereColumn.Count > 0)
-                {
-                    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
-                }
+                //if (whereColumn.Count > 0)
+                //{
+                //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+                //}
 
                 var rowData = await _accountancyDBContext.QueryDataTable(selectAliasSql, rowParams.ToArray());
                 if (rowData.Rows.Count > 0)
