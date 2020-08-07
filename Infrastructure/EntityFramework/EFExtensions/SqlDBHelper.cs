@@ -55,7 +55,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
