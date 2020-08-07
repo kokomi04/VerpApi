@@ -339,6 +339,9 @@ namespace VErp.Commons.Library
                     valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
                     valueInNumber = (long)(double.Parse(value));
                     break;
                 case EnumDataType.Text:
@@ -383,6 +386,9 @@ namespace VErp.Commons.Library
 
                     break;
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
                     long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
@@ -422,7 +428,12 @@ namespace VErp.Commons.Library
                 case EnumDataType.Text:
                     return typeof(string);
                 case EnumDataType.Int: return typeof(int);
-                case EnumDataType.Date: return typeof(DateTime);
+
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear: return typeof(DateTime);
+
                 case EnumDataType.PhoneNumber: return typeof(string);
                 case EnumDataType.Email: return typeof(string);
                 case EnumDataType.Boolean: return typeof(bool);
@@ -475,6 +486,9 @@ namespace VErp.Commons.Library
                     return intValue;
 
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
                     if (!long.TryParse(value.ToString(), out long dateValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
@@ -541,6 +555,9 @@ namespace VErp.Commons.Library
                     return intValue1.CompareTo(intValue2);
 
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
                     if (!long.TryParse(value1.ToString(), out long dateValue1) || !long.TryParse(value2.ToString(), out long dateValue2))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu ngày tháng");
@@ -582,6 +599,9 @@ namespace VErp.Commons.Library
                 case EnumDataType.Boolean:
                     return value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
                     return DateTime.Parse(value);
                 case EnumDataType.Percentage:
                     return double.Parse(value);

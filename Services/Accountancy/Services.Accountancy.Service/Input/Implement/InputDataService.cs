@@ -102,7 +102,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (value.IsNullObject()) continue;
 
-                    if ((EnumDataType)viewField.DataTypeId == EnumDataType.Date)
+                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
                         value = Convert.ToInt64(value);
                     }
@@ -1614,7 +1614,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
-                        if (field.DataTypeId == (int)EnumDataType.Date)
+                        if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
