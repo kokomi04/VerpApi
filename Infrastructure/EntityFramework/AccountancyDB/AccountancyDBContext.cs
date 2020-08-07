@@ -67,10 +67,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Filters).HasMaxLength(512);
 
-                entity.Property(e => e.IsShowList).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.IsShowSearchTable).HasDefaultValueSql("((1))");
-
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
                     .IsUnicode(false);
