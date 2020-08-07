@@ -109,9 +109,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CalcExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate([FromQuery] long toDate, [FromQuery] int exchangeRate)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
         {
-            return await _inputDataService.CalcExchangeRate(toDate, exchangeRate);
+            return await _inputDataService.CalcExchangeRate(toDate, currency, exchangeRate);
         }
     }
 }
