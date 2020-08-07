@@ -17,11 +17,11 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string FootTable { get; set; }
         public bool? StickyFootTable { get; set; }
         public bool? StickyHeadTable { get; set; }
-        public int? CreatedByUserId { get; set; }
-        public DateTime? CreatedDatetimeUtc { get; set; }
-        public int? UpdatedByUserId { get; set; }
-        public DateTime? UpdatedDatetimeUtc { get; set; }
-        public bool? IsDeleted { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
     }
 }
