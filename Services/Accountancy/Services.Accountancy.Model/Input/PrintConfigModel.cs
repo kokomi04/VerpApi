@@ -22,6 +22,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string FootTable { get; set; }
         public bool? StickyFootTable { get; set; }
         public bool? StickyHeadTable { get; set; }
-
+        public bool? HasTable { get; set; }
+        public string Background { get; set; }
     }
 }

@@ -129,7 +129,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 config.FootTable = data.FootTable;
                 config.StickyFootTable = data.StickyFootTable;
                 config.StickyHeadTable = data.StickyHeadTable;
-
+                config.HasTable = data.HasTable;
+                config.Background = data.Background;
                 await _accountancyDBContext.SaveChangesAsync();
 
 

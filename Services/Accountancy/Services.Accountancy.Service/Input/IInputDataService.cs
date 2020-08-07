@@ -32,5 +32,6 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate(long toDate, int currency, int exchangeRate);
 
+        Task<bool> CheckExistedExchangeRate(long fromDate, long toDate);
     }
 }
