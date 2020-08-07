@@ -1781,12 +1781,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 join c in _accountancyDBContext.Category on itf.RefTableCode equals c.CategoryCode
                                 join f in _accountancyDBContext.CategoryField on c.CategoryId equals f.CategoryId
                                 where itf.RefTableTitle.StartsWith(f.CategoryFieldName) && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
-                                select new { 
+                                select new
+                                {
                                     f.CategoryFieldName,
                                     f.DataTypeId,
                                     c.CategoryCode
                                 }).Distinct()
-                                .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode}, f => (EnumDataType)f.DataTypeId);
+                                .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var writer = new ExcelWriter();
             int endRow = 0;
@@ -1816,7 +1817,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             row[collumIndx * 2] = $"{field.Title}:";
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
-                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode}] : (EnumDataType)field.InputField.DataTypeId;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (info.ContainsKey(fieldName))
                                 row[collumIndx * 2 + 1] = dataType.GetSqlValue(info[fieldName]);
                             rowIndx++;
@@ -1852,6 +1853,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             MemoryStream stream = await writer.WriteToStream();
             return stream;
         }
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate(long toDate, int currency, int exchangeRate)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@TyGia", exchangeRate),
+                new SqlParameter("@Currency", currency),
+            };
+            var data = await _accountancyDBContext.QueryDataTable("EXEC CalcExchangeRate @ToDate = @ToDate, @TyGia = @TyGia, @Currency = @Currency", sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
 
 
         protected class DataEqualityComparer : IEqualityComparer<object>

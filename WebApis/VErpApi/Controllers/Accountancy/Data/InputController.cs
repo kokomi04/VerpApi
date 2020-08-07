@@ -106,5 +106,12 @@ namespace VErpApi.Controllers.Accountancy.Data
             var r = await _inputDataService.ExportBill(inputTypeId, fId);
             return r;
         }
+
+        [HttpGet]
+        [Route("CalcExchangeRate")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate([FromQuery] long toDate, [FromQuery] int exchangeRate)
+        {
+            return await _inputDataService.CalcExchangeRate(toDate, exchangeRate);
+        }
     }
 }

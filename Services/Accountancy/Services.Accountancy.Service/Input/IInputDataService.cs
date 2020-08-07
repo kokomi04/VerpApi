@@ -30,5 +30,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId);
 
+        Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate(long toDate, int currency, int exchangeRate);
+
     }
 }
