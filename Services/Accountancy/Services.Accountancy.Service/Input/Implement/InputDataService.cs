@@ -1867,7 +1867,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
-
+        public async  Task<bool> CheckExistedExchangeRate(long fromDate, long toDate)
+        {
+            throw new NotImplementedException();
+        }
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
