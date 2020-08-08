@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using NPOI.SS.Formula;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 
@@ -112,7 +114,7 @@ namespace VErp.Commons.Library
             {
                 BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -138,15 +140,16 @@ namespace VErp.Commons.Library
                 if (!string.IsNullOrWhiteSpace(sheetName) && sheet.SheetName != sheetName)
                     continue;
 
-                if (!maxrows.HasValue)
+                var maxrowsCount = maxrows;
+                if (!maxrowsCount.HasValue)
                 {
-                    maxrows = sheet.LastRowNum + 1;
+                    maxrowsCount = sheet.LastRowNum + 1;
                 }
                 else
                 {
-                    if (maxrows > sheet.LastRowNum)
+                    if (maxrowsCount > sheet.LastRowNum)
                     {
-                        maxrows = sheet.LastRowNum + 1;
+                        maxrowsCount = sheet.LastRowNum + 1;
                     }
                 }
 
@@ -197,7 +200,7 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousEmpty = 0;
-                for (int row = fromRowIndex; row < maxrows && (!toRowIndex.HasValue || row <= toRowIndex); row++)
+                for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
                     var rowData = new NonCamelCaseDictionary();
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
@@ -271,6 +274,131 @@ namespace VErp.Commons.Library
             return sheetDatas;
         }
 
+        public List<List<ImportExcelRowData>> ReadSheetData<T>(ImportExcelMapping mapping)
+        {
+            var fields = typeof(T).GetProperties();
+
+            var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var rowDatas = new List<List<ImportExcelRowData>>();
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+                var row = data.Rows[rowIndx];
+
+                var rowData = new List<ImportExcelRowData>();
+                bool isIgnoreRow = false;
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                {
+                    var mappingField = mapping.MappingFields[fieldIndx];
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    {
+                        isIgnoreRow = true;
+                        continue;
+                    }
+
+                    var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+
+                    if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+
+                    rowData.Add(new ImportExcelRowData()
+                    {
+                        FieldMapping = mappingField,
+                        PropertyInfo = field,
+                        CellValue = value
+                    });
+                }
+
+                if (!isIgnoreRow)
+                    rowDatas.Add(rowData);
+            }
+
+            return rowDatas;
+        }
+
+        public delegate bool AssignPropertyEvent<T>(T entity, string propertyName, string value);
+        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyEvent<T> OnAssignProperty)
+        {
+            var fields = typeof(T).GetProperties();
+
+            var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var lstData = new List<T>();
+
+            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            {
+
+                var row = data.Rows[rowIndx];
+
+                bool isIgnoreRow = false;
+                var entityInfo = Activator.CreateInstance<T>();
+
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                {
+
+                    var mappingField = mapping.MappingFields[fieldIndx];
+
+                    try
+                    {
+                        string value = null;
+                        if (row.ContainsKey(mappingField.Column))
+                            value = row[mappingField.Column]?.ToString();
+
+                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                        {
+                            isIgnoreRow = true;
+                            break;
+                        }
+
+                        var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+
+                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+
+                        if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
+
+                        if (OnAssignProperty != null)
+                        {
+                            if (!OnAssignProperty(entityInfo, field.Name, value))
+                            {
+                                if (!string.IsNullOrWhiteSpace(value))
+                                    field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                            }
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(value))
+                                field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Lỗi dòng {mapping.FromRow + rowIndx} cột {mappingField.Column} {ex.Message}", ex);
+                    }
+
+                }
+                if (!isIgnoreRow)
+                {
+                    var context = new ValidationContext(entityInfo);
+                    ICollection<ValidationResult> results = new List<ValidationResult>();
+                    bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
+                    if (!isValid)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
+                    }
+
+                    lstData.Add(entityInfo);
+                }
+
+            }
+
+            return lstData;
+        }
+
         private string GetCellString(ICell cell)
         {
             if (cell == null) return null;
@@ -304,14 +432,15 @@ namespace VErp.Commons.Library
                 case CellType.Numeric:
                     if (DateUtil.IsCellDateFormatted(cell))
                     {
-                        try
-                        {
-                            return cell.DateCellValue.ToString();
-                        }
-                        catch
-                        {
-                            return DateTime.FromOADate(cell.NumericCellValue).ToString();
-                        }
+                        return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        //try
+                        //{
+                        //    return cell.DateCellValue.ToString();
+                        //}
+                        //catch
+                        //{
+                        //    return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        //}
                     }
                     else
                     {

@@ -64,6 +64,12 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.GetListByCodeAndInternalNames(req);
         }
 
+        [HttpPost]
+        [Route("GetListProductsByIds")]
+        public async Task<IList<ProductModel>> GetListProducts([FromBody] IList<int> productIds)
+        {
+            return await _productService.GetListProductsByIds(productIds);
+        }
 
     }
 }

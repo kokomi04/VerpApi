@@ -16,6 +16,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -27,17 +28,20 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
+        private readonly IMenuHelperService _menuHelperService;
         public ReportConfigService(ReportConfigDBContext reportConfigContext
             , IOptions<AppSetting> appSetting
             , ILogger<ReportConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IMenuHelperService menuHelperService
             )
         {
             _reportConfigContext = reportConfigContext;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _logger = logger;
+            _menuHelperService = menuHelperService;
         }
 
 
@@ -127,7 +131,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Nhóm báo cáo không tồn tại");
 
             _mapper.Map(model, info);
-
+            
             await _reportConfigContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Cập nhật nhóm báo cáo {info.ReportTypeGroupName}", model.JsonSerialize());
@@ -268,7 +272,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
-            return _mapper.Map<ReportTypeModel>(reportType);
+            var info = _mapper.Map<ReportTypeModel>(reportType);
+            if (info.BscConfig?.Rows != null)
+            {
+                foreach(var row in info.BscConfig.Rows)
+                {
+                    if (row.RowData == null)
+                    {
+                        row.RowData = row.Value?.ToNonCamelCaseDictionaryData(v => v.Key, v => new BscCellModel() { Value = v.Value, Style = new NonCamelCaseDictionary() });
+                    }
+                }
+            }
+            return info;
         }
 
         public async Task<int> AddReportType(ReportTypeModel data)
@@ -288,6 +303,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
+
+                if (data.MenuStyle != null)
+                {
+                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, string.Empty, report.ReportTypeId);
+                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, string.Empty, report.ReportTypeId);
+                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                }
+
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
                 return report.ReportTypeId;
             }

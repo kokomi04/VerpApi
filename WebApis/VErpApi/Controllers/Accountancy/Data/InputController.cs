@@ -14,6 +14,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
+using System.IO;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -96,6 +97,35 @@ namespace VErpApi.Controllers.Accountancy.Data
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             return await _inputDataService.ImportBillFromMapping(inputTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/{fId}/datafile")]
+        public async Task<ServiceResult<MemoryStream>> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
+        {
+            var r = await _inputDataService.ExportBill(inputTypeId, fId);
+            return r;
+        }
+
+        [HttpGet]
+        [Route("CalcFixExchangeRate")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
+        {
+            return await _inputDataService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedFixExchangeRate")]
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.CheckExistedFixExchangeRate(fromDate, toDate);
+        }
+
+        [HttpDelete]
+        [Route("DeletedFixExchangeRate")]
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.DeletedFixExchangeRate(fromDate, toDate);
         }
     }
 }

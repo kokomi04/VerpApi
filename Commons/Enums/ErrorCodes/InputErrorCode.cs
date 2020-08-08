@@ -69,6 +69,11 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Vùng dữ liệu dạng bảng đã tồn tại")]
         MultiRowAreaAlreadyExisted = 34,
         [Description("Thông tin dữ liệu dạng bảng không được để trống")]
-        MultiRowAreaEmpty = 35
+        MultiRowAreaEmpty = 35,
+
+        [Description("Không tìm thấy cấu hình phiếu in")]
+        PrintConfigNotFound = 36,
+        [Description("Tên cấu hình phiếu in đã tồn tại")]
+        PrintConfigNameAlreadyExisted = 37
     }
 }

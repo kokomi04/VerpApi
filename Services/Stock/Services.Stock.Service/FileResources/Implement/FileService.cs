@@ -71,26 +71,26 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId, EnumThumbnailSize? thumb)
+        public async Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             return GetFileUrl(fileInfo, thumb, true);
         }
 
-        public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
+        public async Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
             if (fileIds == null || fileIds.Count == 0)
             {
-                return GeneralCode.Success;
+                return new List<FileThumbnailInfo>();
             }
             var fileInfos = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
             if (fileInfos.Count == 0)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
 
             var lstData = new List<FileThumbnailInfo>();
@@ -103,12 +103,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public async Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId)
+        public async Task<(FileEnity info, string physicalPath)> GetFileAndPath(long fileId)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             var filePath = GetPhysicalFilePath(fileInfo.FilePath);
             try
@@ -118,7 +118,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (FileNotFoundException ex)
             {
                 _logger.LogDebug(ex, $"GetFileAndPath(long fileId={fileId})");
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             catch (Exception ex)
             {
@@ -156,107 +156,100 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName).ToLower();
 
             if (!FileTypeExtensions.ContainsKey(fileTypeId))
             {
-                return FileErrorCode.InvalidFileType;
+                throw new BadRequestException(FileErrorCode.InvalidFileType);
             }
 
             if (!FileTypeExtensions[fileTypeId].Contains(ext))
             {
-                return FileErrorCode.InvalidFileExtension;
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
             }
 
             return await Upload(objectTypeId, fileName, file);
         }
 
 
-        public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
+        public async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
         {
-            try
+
+            //var fileType = EnumFileType.Image;
+
+            //switch (objectTypeId)
+            //{
+            //    case EnumObjectType.UserAndEmployee:
+            //    case EnumObjectType.BusinessInfo:
+            //        fileType = EnumFileType.Image;
+            //        break;
+
+            //    case EnumObjectType.PurchasingSuggest:
+            //    case EnumObjectType.PurchaseOrder:
+            //        fileType = EnumFileType.Document;
+            //        break;
+
+            //    default:
+            //        return null;
+            //}
+
+
+            var (validate, fileTypeId) = ValidateUploadFile(file);
+            if (!validate.IsSuccess())
             {
+                throw new BadRequestException(validate);
+            }
 
-                //var fileType = EnumFileType.Image;
+            string filePath = GenerateTempFilePath(file.FileName);
 
-                //switch (objectTypeId)
-                //{
-                //    case EnumObjectType.UserAndEmployee:
-                //    case EnumObjectType.BusinessInfo:
-                //        fileType = EnumFileType.Image;
-                //        break;
+            using (var stream = File.Create(filePath.GetPhysicalFilePath(_appSetting)))
+            {
+                await file.CopyToAsync(stream);
+            }
 
-                //    case EnumObjectType.PurchasingSuggest:
-                //    case EnumObjectType.PurchaseOrder:
-                //        fileType = EnumFileType.Document;
-                //        break;
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = file.FileName;
+            }
 
-                //    default:
-                //        return null;
-                //}
-
-
-                var (validate, fileTypeId) = ValidateUploadFile(file);
-                if (!validate.IsSuccess())
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    return validate;
-                }
-
-                string filePath = GenerateTempFilePath(file.FileName);
-
-                using (var stream = File.Create(filePath.GetPhysicalFilePath(_appSetting)))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    fileName = file.FileName;
-                }
-
-                using (var trans = await _stockContext.Database.BeginTransactionAsync())
-                {
-                    try
+                    var fileRes = new FileEnity
                     {
-                        var fileRes = new FileEnity
-                        {
-                            FileTypeId = (int)fileTypeId,
-                            FilePath = filePath,
-                            FileName = fileName,
-                            ContentType = file.ContentType,
-                            FileLength = file.Length,
-                            ObjectTypeId = (int)objectTypeId,
-                            ObjectId = null,
-                            CreatedDatetimeUtc = DateTime.UtcNow,
-                            UpdatedDatetimeUtc = DateTime.UtcNow,
-                            FileStatusId = (int)EnumFileStatus.Temp,
-                            IsDeleted = false
-                        };
+                        FileTypeId = (int)fileTypeId,
+                        FilePath = filePath,
+                        FileName = fileName,
+                        ContentType = file.ContentType,
+                        FileLength = file.Length,
+                        ObjectTypeId = (int)objectTypeId,
+                        ObjectId = null,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        FileStatusId = (int)EnumFileStatus.Temp,
+                        IsDeleted = false
+                    };
 
-                        await _stockContext.File.AddAsync(fileRes);
-                        await _stockContext.SaveChangesAsync();
-                        trans.Commit();
+                    await _stockContext.File.AddAsync(fileRes);
+                    await _stockContext.SaveChangesAsync();
+                    trans.Commit();
 
-                        await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
 
-                        return fileRes.FileId;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.Rollback();
-                        File.Delete(filePath);
-                        _logger.LogError(ex, "Upload");
-                        return GeneralCode.InternalError;
-                    }
+                    return fileRes.FileId;
+                }
+                catch (Exception ex)
+                {
+                    trans.Rollback();
+                    File.Delete(filePath);
+                    _logger.LogError(ex, "Upload");
+                    throw;
                 }
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Upload");
-                return GeneralCode.InternalError;
-            }
+
         }
 
 
@@ -334,18 +327,16 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         }
 
-        public List<FileToDownloadInfo> GetListFileUrl(long[] arrayFileId, EnumThumbnailSize? thumb)
+        public async Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
-            if (arrayFileId.Length < 1)
+            if (fileIds.Count == 0)
                 return null;
-            var fileList = new List<FileToDownloadInfo>(arrayFileId.Length);
+            var fileList = new List<FileToDownloadInfo>(fileIds.Count);
 
-            foreach (var id in arrayFileId)
+            var files = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
+            foreach (var fileInfo in files)
             {
-                var fileInfo = _stockContext.File.AsNoTracking().FirstOrDefault(f => f.FileId == id);
-                if (fileInfo == null) continue;
                 var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
-                fileToDownloadInfo.FileId = id;
                 fileList.Add(fileToDownloadInfo);
             }
             return fileList;
@@ -513,6 +504,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GetFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
             return new FileToDownloadInfo()
             {
+                FileId = fileInfo.FileId,
                 FileName = fileInfo.FileName,
                 FileUrl = fileUrl,
                 ThumbnailUrl = thumbUrl,

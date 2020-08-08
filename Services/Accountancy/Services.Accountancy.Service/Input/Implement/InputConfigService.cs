@@ -18,6 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -155,7 +156,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return code;
         }
 
-        public async Task<int> CloneInputType(int inputTypeId, InputTypeMenuStyle menuStyle)
+        public async Task<int> CloneInputType(int inputTypeId, MenuStyleModel menuStyle)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var sourceInput = await _accountancyDBContext.InputType
@@ -710,13 +711,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputAreaNotFound);
             }
 
-
             await _accountancyDBContext.ExecuteStoreProcedure("asp_InputArea_Delete", new[] {
                     new SqlParameter("@InputTypeId",inputTypeId ),
                     new SqlParameter("@InputAreaId",inputAreaId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
+            inputArea.IsDeleted = true;
+            await _accountancyDBContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
             return true;
         }

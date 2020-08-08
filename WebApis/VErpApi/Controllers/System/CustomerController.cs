@@ -14,6 +14,9 @@ using VErp.Services.Organization.Model.Customer;
 using System.Collections.Generic;
 using VErp.Infrastructure.ApiCore.Attributes;
 using System.Linq;
+using VErp.Commons.GlobalObject;
+using Newtonsoft.Json;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.System
 {
@@ -125,7 +128,7 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("GenerateCustomerCode")]
         public async Task<ServiceResult<string>> GenerateCustomerCode()
-        {           
+        {
             return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
         }
 
@@ -153,6 +156,24 @@ namespace VErpApi.Controllers.System
         {
             var currentUserId = UserId;
             return await _fileProcessDataService.ImportCustomerData(currentUserId, fileId);
+        }
+
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            return _customerService.GetCustomerFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _customerService.ImportCustomerFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

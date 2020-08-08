@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
@@ -97,7 +98,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("{inputTypeId}/clone")]
-        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] InputTypeMenuStyle menuStyle)
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] MenuStyleModel menuStyle)
         {
             return await _inputConfigService.CloneInputType(inputTypeId, menuStyle).ConfigureAwait(true);
         }

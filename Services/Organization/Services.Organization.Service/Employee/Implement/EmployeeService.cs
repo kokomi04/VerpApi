@@ -73,7 +73,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                     trans.Commit();
                     return userId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
                     throw;
@@ -241,7 +241,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                     }
                     trans.Commit();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
                     throw;

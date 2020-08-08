@@ -27,5 +27,13 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+
+        Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId);
+
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
+
+        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
+
+        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
     }
 }

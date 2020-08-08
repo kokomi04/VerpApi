@@ -42,6 +42,21 @@ namespace VErp.Commons.Enums.AccountantEnum
         [Description("Decimal")]
         [DataSize(-1)]
         [Regex("^[0-9]*(?:\\.[0-9]*)?$")]
-        Decimal = 9
+        Decimal = 9,
+
+        [Description("Month")]
+        [DataSize(-1)]
+        [Regex("")]
+        Month = 10,
+
+        [Description("QuarterOfYear")]
+        [DataSize(-1)]
+        [Regex("")]
+        QuarterOfYear = 11,
+
+        [Description("Year")]
+        [DataSize(-1)]
+        [Regex("")]
+        Year = 12
     }
 }

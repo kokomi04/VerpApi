@@ -20,6 +20,9 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
+using VErp.Commons.GlobalObject;
+using Newtonsoft.Json;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -64,6 +67,24 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
         }
 
+        [HttpGet]
+        [Route("fields")]
+        public async Task<ServiceResult<List<EntityField>>> GetFields()
+        {
+            return await _productService.GetFields(typeof(ProductImportModel));
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _productService.ImportProductFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Lấy danh sách sản phẩm theo ids
         /// </summary>
@@ -84,7 +105,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddProduct([FromBody] ProductModel product)
+        public async Task<int> AddProduct([FromBody] ProductModel product)
         {
             return await UpdateOrAddProduct(null, product);
         }
@@ -111,7 +132,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return (await UpdateOrAddProduct(productId, product)).Code.IsSuccess();
+            return (await UpdateOrAddProduct(productId, product)) > 0;
         }
 
         /// <summary>
@@ -170,7 +191,7 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
 
-        private async Task<ServiceResult<int>> UpdateOrAddProduct(int? productId, ProductModel product)
+        private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
         {
             // var lastValue = 0;
             var isGenCode = false;
@@ -179,7 +200,7 @@ namespace VErpApi.Controllers.Stock.Products
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
                 if (!productTypeInfo.Code.IsSuccess())
                 {
-                    return productTypeInfo.Code;
+                    throw new BadRequestException(productTypeInfo.Code);
                 }
 
                 var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
@@ -200,13 +221,19 @@ namespace VErpApi.Controllers.Stock.Products
             else
             {
                 r = await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+                if (r.IsSuccessCode())
+                    r.Data = productId.Value;
             }
 
             if (isGenCode && r.Code.IsSuccess())
             {
                 await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
             }
-            return r;
+            if (!r.IsSuccessCode())
+            {
+                throw new BadRequestException(r.Code);
+            }
+            return r.Data;
         }
     }
 }

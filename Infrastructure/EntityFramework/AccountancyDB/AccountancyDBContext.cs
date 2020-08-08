@@ -30,6 +30,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
+        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -65,14 +66,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.Filters).HasMaxLength(512);
-
-                entity.Property(e => e.IsShowList)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.IsShowSearchTable)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
@@ -346,6 +339,17 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey(d => d.OutsideImportMappingFunctionId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<PrintConfig>(entity =>
+            {
+                entity.Property(e => e.PrintConfigName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
             });
 
             modelBuilder.Entity<ProgramingFunction>(entity =>

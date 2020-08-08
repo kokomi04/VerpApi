@@ -15,8 +15,13 @@ namespace VErp.Services.Stock.Model.Inventory
         public long Date { get; set; }
         public int? CustomerId { get; set; }
         public string Department { get; set; }
-        public int? StockKeeperUserId { get; set; }      
-        
+        public int? StockKeeperUserId { get; set; }
+
+        public string BillForm { set; get; }
+        public string BillCode { set; get; }
+        public string BillSerial { set; get; }
+        public long? BillDate { set; get; }
+
         /// <summary>
         /// Id file đính kèm
         /// </summary>

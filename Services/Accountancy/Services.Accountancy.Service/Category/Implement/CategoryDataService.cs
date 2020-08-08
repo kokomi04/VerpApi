@@ -521,7 +521,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
-                if (AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)field.FormTypeId) 
+                if (((EnumFormType)field.FormTypeId).IsSelectForm()
                     && !string.IsNullOrEmpty(field.RefTableCode)
                     && !string.IsNullOrEmpty(field.RefTableTitle))
                 {
@@ -737,7 +737,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
                         var values = groupByField.Select(v => v.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
-                        if(values.Count() > 0)
+                        if (values.Count() > 0)
                         {
                             if (suffix > 0)
                             {
@@ -773,7 +773,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var item in groupByFilter)
                     {
                         var referObject = lst.FirstOrDefault(o => o[item.CategoryFieldName].ToString() == item.Value);
-                        if(referObject != null)
+                        if (referObject != null)
                         {
                             titles.Add(new MapObjectOutputModel
                             {
@@ -791,7 +791,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return titles;
         }
 
-        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExelMapping mapping, Stream stream)
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExelMapping mapping, Stream stream)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
@@ -841,14 +841,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            var rowDatas = new List<List<ImportExcelRowData>>();
+            var rowDatas = new List<List<CategoryImportExcelRowData>>();
 
             var refCategoryDatasToQuery = new List<CategoryQueryRequest>();
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
                 var row = data.Rows[rowIndx];
 
-                var rowData = new List<ImportExcelRowData>();
+                var rowData = new List<CategoryImportExcelRowData>();
                 bool isIgnoreRow = false;
                 for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
                 {
@@ -868,7 +868,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     if (field == null && mappingField.FieldName != AccountantConstants.PARENT_ID_FIELD_NAME && !string.IsNullOrWhiteSpace(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
 
-                    rowData.Add(new ImportExcelRowData()
+                    rowData.Add(new CategoryImportExcelRowData()
                     {
                         FieldMapping = mappingField,
                         FieldConfig = field,
@@ -1035,7 +1035,7 @@ namespace VErp.Services.Accountancy.Service.Category
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"{category.Title} cha {row.Value.ParentValue} không tìm thấy");
                             }
-                            if((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
+                            if ((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
                             {
                                 sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key} ;");
                             }

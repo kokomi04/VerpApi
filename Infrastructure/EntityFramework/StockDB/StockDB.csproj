@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EFCore.BulkExtensions" Version="3.1.1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\EFExtensions\EFExtensions.csproj" />
   </ItemGroup>
