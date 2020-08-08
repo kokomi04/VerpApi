@@ -34,6 +34,7 @@ using System.IO;
 using System.Text.Json;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
+using VErp.Infrastructure.ApiCore.Middleware;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using static IdentityModel.OidcConstants;
@@ -173,7 +174,7 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
-
+            app.UseMiddleware<RequestLogMiddleware>();
 #if !DEBUG
             if (AppSetting.ElasticApm?.IsEnabled == true)
             {
@@ -243,12 +244,14 @@ namespace VErp.Infrastructure.ApiCore
                 await context.Response.WriteAsync(result);
             }));
 
+            app.UseMiddleware<ResponseLogMiddleware>();
+
             app.UseEndpoints(config =>
             {
                 config.MapControllers();
             });
 
-
+           
         }
 
         private void ConfigureAuthService(IServiceCollection services)
