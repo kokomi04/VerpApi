@@ -121,11 +121,22 @@ namespace VErp.Commons.Library
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             PreserveReferencesHandling = PreserveReferencesHandling.None
         };
-        public static string JsonSerialize(this object obj)
+
+        public static string JsonSerialize(this object obj, bool isIgnoreSensitiveData)
         {
             try
             {
-                return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+                var cfg = settings;
+                if (isIgnoreSensitiveData)
+                {
+                    cfg.ContractResolver = new SensitiveDataResolver();
+                }
+                else
+                {
+                    cfg.ContractResolver = null;
+                }
+
+                return JsonConvert.SerializeObject(obj, cfg);
             }
             catch (Exception)
             {
@@ -134,6 +145,14 @@ namespace VErp.Commons.Library
             }
 
         }
+
+        public static string JsonSerialize(this object obj)
+        {
+            return obj.JsonSerialize(false);
+
+        }
+
+
 
         public static T JsonDeserialize<T>(this string obj)
         {
@@ -621,27 +640,35 @@ namespace VErp.Commons.Library
 
         public static object ConvertValueByType(this string value, Type type)
         {
-            if (string.IsNullOrWhiteSpace(value)) return null;
-            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            try
             {
-                type = type.GetGenericArguments()[0];
                 if (string.IsNullOrWhiteSpace(value)) return null;
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    type = type.GetGenericArguments()[0];
+                    if (string.IsNullOrWhiteSpace(value)) return null;
+                }
+
+                if (type == typeof(bool))
+                    return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                if (type == typeof(DateTime))
+                    return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
+                if (type == typeof(double))
+                    return string.IsNullOrWhiteSpace(value) ? default : double.Parse(value);
+                if (type == typeof(decimal))
+                    return string.IsNullOrWhiteSpace(value) ? default : decimal.Parse(value);
+                if (type == typeof(int))
+                    return string.IsNullOrWhiteSpace(value) ? default : int.Parse(value);
+                if (type == typeof(long))
+                    return string.IsNullOrWhiteSpace(value) ? default : long.Parse(value);
+
+                return value;
             }
+            catch (Exception ex)
+            {
 
-            if (type == typeof(bool))
-                return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
-            if (type == typeof(DateTime))
-                return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
-            if (type == typeof(double))
-                return string.IsNullOrWhiteSpace(value) ? default : double.Parse(value);
-            if (type == typeof(decimal))
-                return string.IsNullOrWhiteSpace(value) ? default : decimal.Parse(value);
-            if (type == typeof(int))
-                return string.IsNullOrWhiteSpace(value) ? default : int.Parse(value);
-            if (type == typeof(long))
-                return string.IsNullOrWhiteSpace(value) ? default : long.Parse(value);
-
-            return value;
+                throw new Exception($"Lỗi convert dữ liệu {value} sang kiểu {type.Name}: {ex.Message}", ex);
+            }
         }
 
 

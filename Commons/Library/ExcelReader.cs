@@ -131,7 +131,7 @@ namespace VErp.Commons.Library
 
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
-           
+
             for (int i = 0; i < hssfwb.NumberOfSheets; i++)
             {
 
@@ -332,6 +332,7 @@ namespace VErp.Commons.Library
 
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
+
                 var row = data.Rows[rowIndx];
 
                 bool isIgnoreRow = false;
@@ -339,36 +340,44 @@ namespace VErp.Commons.Library
 
                 for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
                 {
+
                     var mappingField = mapping.MappingFields[fieldIndx];
 
-                    string value = null;
-                    if (row.ContainsKey(mappingField.Column))
-                        value = row[mappingField.Column]?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    try
                     {
-                        isIgnoreRow = true;
-                        break;
-                    }
+                        string value = null;
+                        if (row.ContainsKey(mappingField.Column))
+                            value = row[mappingField.Column]?.ToString();
 
-                    var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                        {
+                            isIgnoreRow = true;
+                            break;
+                        }
 
-                    if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+                        var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
 
-                    if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
+                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
 
-                    if (OnAssignProperty != null)
-                    {
-                        if (!OnAssignProperty(entityInfo, field.Name, value))
+                        if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
+
+                        if (OnAssignProperty != null)
+                        {
+                            if (!OnAssignProperty(entityInfo, field.Name, value))
+                            {
+                                if (!string.IsNullOrWhiteSpace(value))
+                                    field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                            }
+                        }
+                        else
                         {
                             if (!string.IsNullOrWhiteSpace(value))
                                 field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
                         }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        if (!string.IsNullOrWhiteSpace(value))
-                            field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                        throw new Exception($"Lỗi dòng {mapping.FromRow + rowIndx} cột {mappingField.Column} {ex.Message}", ex);
                     }
 
                 }
@@ -384,7 +393,7 @@ namespace VErp.Commons.Library
 
                     lstData.Add(entityInfo);
                 }
-                    
+
             }
 
             return lstData;

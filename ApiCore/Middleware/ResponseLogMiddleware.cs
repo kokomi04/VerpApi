@@ -34,7 +34,7 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
                     await _next(context);
 
-                    if (context.Response.ContentType != null && context.Response.ContentType.Contains("json") && (context.Request.Method == "POST" || context.Request.Method == "PUT" || context.Request.Method == "DELETE"))
+                    if (context.Response.ContentType != null && context.Response.ContentType.Contains("json") && !context.Request.Path.ToString().Contains("connect/introspect") && new[] { "POST", "PUT", "DELETE" }.Contains(context.Request.Method))
                     {
                         memStream.Position = 0;
                         var responseBody = new StreamReader(memStream).ReadToEnd();

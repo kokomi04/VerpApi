@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +25,7 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            if (context.Request.Method == "POST" || context.Request.Method == "PUT" || context.Request.Method == "DELETE")
+            if (!context.Request.Path.ToString().Contains("connect/introspect") && new[] { "POST", "PUT", "DELETE" }.Contains(context.Request.Method))
             {
                 context.Request.EnableBuffering();
 
@@ -32,17 +33,21 @@ namespace VErp.Infrastructure.ApiCore.Middleware
                 if (context.Request.HasFormContentType)
                 {
                     var value = new NonCamelCaseDictionary();
-                    value.Add("Form", context.Request.Form.JsonSerialize());
+                    value.Add("Form",
+                        context.Request.Form
+                        .GroupBy(f => f.Key)
+                        .ToNonCamelCaseDictionaryData(f => f.Key, f => new StringValues(f.SelectMany(v => v.Value.ToArray()).ToArray()))
+                        .JsonSerialize()
+                        );
                     value.Add("Files", context.Request.Form.Files.Select(f => new { f.FileName, f.ContentType, f.Length, f.ContentDisposition }).JsonSerialize());
                     body = value.JsonSerialize();
                 }
                 else
                 {
-                    body = await new StreamReader(context.Request.Body)
-                                                        .ReadToEndAsync();
+                    body = await new StreamReader(context.Request.Body).ReadToEndAsync();
                 }
                 context.Request.Body.Position = 0;
-               
+
                 var log = new
                 {
                     context.Request.Path,
