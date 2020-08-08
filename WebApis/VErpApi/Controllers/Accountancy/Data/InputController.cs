@@ -108,10 +108,24 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpGet]
-        [Route("CalcExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
+        [Route("CalcFixExchangeRate")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
         {
-            return await _inputDataService.CalcExchangeRate(toDate, currency, exchangeRate);
+            return await _inputDataService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedFixExchangeRate")]
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.CheckExistedFixExchangeRate(fromDate, toDate);
+        }
+
+        [HttpDelete]
+        [Route("DeletedFixExchangeRate")]
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.DeletedFixExchangeRate(fromDate, toDate);
         }
     }
 }

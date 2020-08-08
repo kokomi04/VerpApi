@@ -1854,7 +1854,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return stream;
         }
 
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate(long toDate, int currency, int exchangeRate)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate)
         {
             SqlParameter[] sqlParams = new SqlParameter[]
             {
@@ -1862,14 +1862,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@TyGia", exchangeRate),
                 new SqlParameter("@Currency", currency),
             };
-            var data = await _accountancyDBContext.QueryDataTable("EXEC CalcExchangeRate @ToDate = @ToDate, @TyGia = @TyGia, @Currency = @Currency", sqlParams);
+            var data = await _accountancyDBContext.QueryDataTable("EXEC ufn_TK_CalcFixExchangeRate @ToDate = @ToDate, @TyGia = @TyGia, @Currency = @Currency", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
 
-        public async  Task<bool> CheckExistedExchangeRate(long fromDate, long toDate)
+        public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {
-            throw new NotImplementedException();
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault(); 
+        }
+
+        public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
         }
 
         protected class DataEqualityComparer : IEqualityComparer<object>

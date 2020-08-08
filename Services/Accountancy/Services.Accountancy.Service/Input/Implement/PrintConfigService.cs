@@ -67,11 +67,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int inputTypeId)
         {
-            var lst = await _accountancyDBContext.PrintConfig
-                .Where(p => p.InputTypeId == inputTypeId)
-                .OrderBy(p => p.Title)
+            var query =  _accountancyDBContext.PrintConfig.AsQueryable();
+            if(inputTypeId > 0)
+            {
+                query = query.Where(p => p.InputTypeId == inputTypeId);
+            }
+            var lst = await query.OrderBy(p => p.Title)
                 .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
             return lst;
         }
 

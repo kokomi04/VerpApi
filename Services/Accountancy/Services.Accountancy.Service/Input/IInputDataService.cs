@@ -30,8 +30,10 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId);
 
-        Task<ICollection<NonCamelCaseDictionary>> CalcExchangeRate(long toDate, int currency, int exchangeRate);
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
 
-        Task<bool> CheckExistedExchangeRate(long fromDate, long toDate);
+        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
+
+        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
     }
 }
