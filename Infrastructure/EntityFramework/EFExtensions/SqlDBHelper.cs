@@ -55,7 +55,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} Parametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -225,6 +225,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
             EnumDataType.Text => SqlDbType.NVarChar,
             EnumDataType.Int => SqlDbType.Int,
             EnumDataType.Date => SqlDbType.DateTime2,
+            EnumDataType.Year => SqlDbType.DateTime2,
+            EnumDataType.QuarterOfYear => SqlDbType.DateTime2,
+            EnumDataType.Month => SqlDbType.DateTime2,
             EnumDataType.PhoneNumber => SqlDbType.NVarChar,
             EnumDataType.Email => SqlDbType.NVarChar,
             EnumDataType.Boolean => SqlDbType.Bit,

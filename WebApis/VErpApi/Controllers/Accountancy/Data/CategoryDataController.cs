@@ -20,6 +20,7 @@ using VErp.Services.Accountancy.Service.Category;
 using VErp.Services.Accountancy.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
@@ -93,7 +94,7 @@ namespace VErpApi.Controllers.Accountancy.Config
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<ImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<CategoryImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

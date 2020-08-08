@@ -56,9 +56,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<TimeType> TimeType { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<UnitStatus> UnitStatus { get; set; }
-        public virtual DbSet<User> User { get; set; }
-        public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
-        public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
+        public virtual DbSet<User> User { get; set; }      
         public virtual DbSet<UserStatus> UserStatus { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -586,20 +584,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(64);
             });
-
-            modelBuilder.Entity<UserActivityLog>(entity =>
-            {
-                entity.Property(e => e.Message).HasMaxLength(512);
-
-                entity.Property(e => e.MessageTypeId).HasDefaultValueSql("((1))");
-            });
-
-            modelBuilder.Entity<UserActivityLogChange>(entity =>
-            {
-                entity.HasKey(e => e.UserActivityLogId);
-
-                entity.Property(e => e.UserActivityLogId).ValueGeneratedNever();
-            });
+            
 
             modelBuilder.Entity<UserStatus>(entity =>
             {

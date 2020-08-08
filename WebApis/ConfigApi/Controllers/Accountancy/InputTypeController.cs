@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
@@ -95,7 +96,7 @@ namespace ConfigApi.Controllers.Accountancy
 
         [HttpPost]
         [Route("{inputTypeId}/clone")]
-        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] InputTypeMenuStyle menuStyle)
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] MenuStyleModel menuStyle)
         {
             return await _inputConfigService.CloneInputType(inputTypeId, menuStyle).ConfigureAwait(true);
         }

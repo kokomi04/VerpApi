@@ -1,22 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Model.Stock
-
 {
-    public class SimpleStockInfo
-    {
-        /// <summary>
-        /// Mã kho
-        /// </summary>
-        public int StockId { get; set; }
-
-        /// <summary>
-        /// Tên kho
-        /// </summary>
-        public string StockName { get; set; }
-    }
 
     public class StockOutput : SimpleStockInfo
     {

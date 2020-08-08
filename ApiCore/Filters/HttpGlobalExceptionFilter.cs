@@ -57,32 +57,30 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     context.Result = new InternalServerErrorObjectResult(response);
                 }
             }
-
            
-
             context.HttpContext.Response.StatusCode = (int)statusCode;
             context.ExceptionHandled = true;
         }
 
-        public static (ServiceResult<Exception> response, HttpStatusCode statusCode) Handler(Exception exception)
+        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception)
         {
-            ServiceResult<Exception> response;
+            ApiErrorResponse<Exception> response;
             HttpStatusCode statusCode;
 
             if (exception is BadRequestException badRequest)
             {
-                response = new ServiceResult<Exception>
+                response = new ApiErrorResponse<Exception>
                 {
-                    Code = badRequest.Code,
+                    Code = badRequest.Code.GetErrorCodeString(),
                     Message = badRequest.Message
                 };
                 statusCode = HttpStatusCode.BadRequest;
-            }
+            }           
             else if (exception is VerpException)
             {
-                response = new ServiceResult<Exception>
+                response = new ApiErrorResponse<Exception>
                 {
-                    Code = GeneralCode.InternalError,
+                    Code = GeneralCode.InternalError.GetErrorCodeString(),
                     Message = exception.Message
                 };
 
@@ -92,9 +90,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
             {
                 if (exception is DistributedLockExeption)
                 {
-                    response = new ServiceResult<Exception>
+                    response = new ApiErrorResponse<Exception>
                     {
-                        Code = GeneralCode.DistributedLockExeption,
+                        Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
                     };
 
@@ -103,9 +101,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 }
                 else
                 {
-                    response = new ServiceResult<Exception>
+                    response = new ApiErrorResponse<Exception>
                     {
-                        Code = GeneralCode.InternalError,
+                        Code = GeneralCode.InternalError.GetErrorCodeString(),
                         Message = exception.Message
                     };
 

@@ -44,11 +44,11 @@
   </ItemGroup>
   
   <ItemGroup>    
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />    
-    <PackageReference Include="IdentityServer4" Version="4.0.0" />    
-    <PackageReference Include="IdentityServer4.EntityFramework" Version="4.0.0" />    
-    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="4.0.0" />    
-    <PackageReference Include="IdentityServer4.Storage" Version="4.0.0" />    
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.0.1" />    
+    <PackageReference Include="IdentityServer4" Version="4.0.4" />    
+    <PackageReference Include="IdentityServer4.EntityFramework" Version="4.0.4" />    
+    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="4.0.4" />    
+    <PackageReference Include="IdentityServer4.Storage" Version="4.0.4" />    
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

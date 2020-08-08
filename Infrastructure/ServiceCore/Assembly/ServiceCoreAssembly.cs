@@ -18,7 +18,12 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddHttpClient<IActivityLogService, ActivityLogService>();
             services.AddHttpClient<IPhysicalFileService, PhysicalFileService>();
             services.AddHttpClient<IHttpCrossService, HttpCrossService>();
+
+
+            services.AddScoped<IStockHelperService, StockHelperService>();
             services.AddScoped<IProductHelperService, ProductHelperService>();
+            services.AddScoped<IOrganizationHelperService, OrganizationHelperService>();
+
             services.AddScoped<IMenuHelperService, MenuHelperService>();
 
             services.AddScoped<HttpCurrentContextService>();

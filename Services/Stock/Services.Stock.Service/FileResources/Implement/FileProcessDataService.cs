@@ -72,23 +72,23 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
 
                 var ret = await _fileService.GetFileAndPath(fileId);
-                if (ret.Data.info == null)
+                if (ret.info == null)
                     return GeneralCode.InternalError;
 
                 var fileExtension = string.Empty;
-                var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                 if (checkExt)
                     fileExtension = "xls";
                 else
                 {
-                    checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                    checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                     if (checkExt)
                         fileExtension = "xlsx";
                 }
                 IWorkbook wb = null;
                 var sheetList = new List<ISheet>(4);
 
-                using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                 {
                     if (fs != null)
                     {
@@ -162,21 +162,21 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 foreach (var fileId in model.FileIdList)
                 {
                     var ret = await _fileService.GetFileAndPath(fileId);
-                    if (ret.Data.info == null)
+                    if (ret.info == null)
                         continue;
                     var fileExtension = string.Empty;
-                    var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                    var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                     if (checkExt)
                         fileExtension = "xls";
                     else
                     {
-                        checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                        checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                         if (checkExt)
                             fileExtension = "xlsx";
                     }
                     IWorkbook wb = null;
                     var sheetList = new List<ISheet>(4);
-                    using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                    using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                     {
                         if (fs != null)
                         {
@@ -250,21 +250,21 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 foreach (var fileId in model.FileIdList)
                 {
                     var ret = await _fileService.GetFileAndPath(fileId);
-                    if (ret.Data.info == null)
+                    if (ret.info == null)
                         continue;
                     var fileExtension = string.Empty;
-                    var checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxls\b");
+                    var checkExt = Regex.IsMatch(ret.info.FileName, @"\bxls\b");
                     if (checkExt)
                         fileExtension = "xls";
                     else
                     {
-                        checkExt = Regex.IsMatch(ret.Data.info.FileName, @"\bxlsx\b");
+                        checkExt = Regex.IsMatch(ret.info.FileName, @"\bxlsx\b");
                         if (checkExt)
                             fileExtension = "xlsx";
                     }
                     IWorkbook wb = null;
                     var sheetList = new List<ISheet>(4);
-                    using (var fs = new FileStream(ret.Data.physicalPath, FileMode.Open, FileAccess.Read))
+                    using (var fs = new FileStream(ret.physicalPath, FileMode.Open, FileAccess.Read))
                     {
                         if (fs != null)
                         {
@@ -386,90 +386,78 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     var description = string.Empty;
                     ExcelCustomerModel cellItem = null;
 
-                    try
+
+
+                    for (int i = (sheet.FirstRowNum + 3); i <= sheet.LastRowNum; i++)
                     {
-                        try
+                        var row = sheet.GetRow(i);
+                        if (row == null) continue;
+
+                        cateName = HelperCellGetStringValue(row.GetCell(0));
+                        if (!string.IsNullOrEmpty(cateName))
                         {
-                            for (int i = (sheet.FirstRowNum + 3); i <= sheet.LastRowNum; i++)
-                            {
-                                var row = sheet.GetRow(i);
-                                if (row == null) continue;
-
-                                cateName = HelperCellGetStringValue(row.GetCell(0));
-                                if (!string.IsNullOrEmpty(cateName))
-                                {
-                                    currentCateName = cateName;
-                                }
-                                code = HelperCellGetStringValue(row.GetCell(1));
-                                name = HelperCellGetStringValue(row.GetCell(2));
-
-                                if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(name))
-                                    continue;
-
-                                #region read all cell values
-                                address = HelperCellGetStringValue(row.GetCell(3));
-                                taxCode = HelperCellGetStringValue(row.GetCell(4));
-                                phoneNumber = HelperCellGetStringValue(row.GetCell(5));
-                                webSite = HelperCellGetStringValue(row.GetCell(6));
-                                eMail = HelperCellGetStringValue(row.GetCell(7));
-                                description = HelperCellGetStringValue(row.GetCell(8));
-
-                                cellItem = new ExcelCustomerModel
-                                {
-                                    CategoryName = currentCateName,
-                                    Code = code,
-                                    Name = name,
-                                    Address = address,
-                                    TaxCode = taxCode,
-                                    PhoneNumber = phoneNumber,
-                                    WebSite = webSite,
-                                    Email = eMail,
-                                    Description = description
-                                };
-                                customerExcelModelList.Add(cellItem);
-                                #endregion
-                            }
+                            currentCateName = cateName;
                         }
-                        catch (Exception ex)
+                        code = HelperCellGetStringValue(row.GetCell(1));
+                        name = HelperCellGetStringValue(row.GetCell(2));
+
+                        if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(name))
+                            continue;
+
+                        #region read all cell values
+                        address = HelperCellGetStringValue(row.GetCell(3));
+                        taxCode = HelperCellGetStringValue(row.GetCell(4));
+                        phoneNumber = HelperCellGetStringValue(row.GetCell(5));
+                        webSite = HelperCellGetStringValue(row.GetCell(6));
+                        eMail = HelperCellGetStringValue(row.GetCell(7));
+                        description = HelperCellGetStringValue(row.GetCell(8));
+
+                        cellItem = new ExcelCustomerModel
                         {
-                            return GeneralCode.InternalError;
-                            throw;
-                        }
-                        if (customerExcelModelList != null && customerExcelModelList.Count > 0)
-                        {
-                            var customerDataList = new List<Customer>(customerExcelModelList.Count);
-                            foreach (var item in customerExcelModelList)
-                            {
-                                if (customerDataList.Any(q => q.CustomerCode == item.Code))
-                                    continue;
-                                customerDataList.Add(new Customer
-                                {
-                                    CustomerCode = item.Code,
-                                    CustomerName = item.Name,
-                                    CustomerTypeId = (item.Code.Contains("NV") || item.Code.Contains("nv")) ? 2 : 1,
-                                    Address = item.Address,
-                                    TaxIdNo = item.TaxCode,
-                                    PhoneNumber = item.PhoneNumber,
-                                    Website = item.WebSite,
-                                    Email = item.Email,
-                                    Description = item.Description,
-                                    IsActived = true,
-                                    IsDeleted = false,
-                                    CreatedDatetimeUtc = DateTime.UtcNow,
-                                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                                });
-                            }
-                            var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
-                            await _organizationDBContext.BulkReadAsync(customerDataList, readCustomerBulkConfig);
-                            await _organizationDBContext.BulkInsertOrUpdateAsync(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
-                            return GeneralCode.Success;
-                        }
+                            CategoryName = currentCateName,
+                            Code = code,
+                            Name = name,
+                            Address = address,
+                            TaxCode = taxCode,
+                            PhoneNumber = phoneNumber,
+                            WebSite = webSite,
+                            Email = eMail,
+                            Description = description
+                        };
+                        customerExcelModelList.Add(cellItem);
+                        #endregion
                     }
-                    catch (Exception ex)
+
+                    if (customerExcelModelList != null && customerExcelModelList.Count > 0)
                     {
-                        return GeneralCode.InternalError;
-                        throw;
+                        var customerDataList = new List<Customer>(customerExcelModelList.Count);
+                        foreach (var item in customerExcelModelList)
+                        {
+                            if (customerDataList.Any(q => q.CustomerCode == item.Code))
+                                continue;
+                            customerDataList.Add(new Customer
+                            {
+                                CustomerCode = item.Code,
+                                CustomerName = item.Name,
+                                CustomerTypeId = (item.Code.Contains("NV") || item.Code.Contains("nv")) ? 2 : 1,
+                                Address = item.Address,
+                                TaxIdNo = item.TaxCode,
+                                PhoneNumber = item.PhoneNumber,
+                                Website = item.WebSite,
+                                Email = item.Email,
+                                Description = item.Description,
+                                IsActived = true,
+                                IsDeleted = false,
+                                CreatedDatetimeUtc = DateTime.UtcNow,
+                                UpdatedDatetimeUtc = DateTime.UtcNow,
+                            });
+                        }
+                        var readCustomerBulkConfig = new BulkConfig { UpdateByProperties = new List<string> { nameof(Customer.CustomerCode) } };
+                        await _organizationDBContext.BulkReadAsync(customerDataList, readCustomerBulkConfig);
+                        await _organizationDBContext.BulkInsertOrUpdateAsync(customerDataList, new BulkConfig { PreserveInsertOrder = false, SetOutputIdentity = false, PropertiesToExclude = new List<string> { nameof(Customer.CustomerStatusId) } });
+                        return GeneralCode.Success;
                     }
+
                 }
                 return GeneralCode.InternalError;
             }
@@ -502,76 +490,70 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     var cateName = string.Empty;
                     var catePrefixCode = string.Empty;
 
-                    try
+
+                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
                     {
-                        for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                        var row = sheet.GetRow(i);
+                        if (row == null) continue;
+
+                        var cellCateName = row.GetCell(0);
+                        var cellCatePreifxCode = row.GetCell(1);
+                        cateName = cellCateName != null ? HelperCellGetStringValue(cellCateName) : string.Empty;
+                        catePrefixCode = cellCatePreifxCode != null ? HelperCellGetStringValue(cellCatePreifxCode) : string.Empty;
+                        if (!string.IsNullOrEmpty(cateName))
                         {
-                            var row = sheet.GetRow(i);
-                            if (row == null) continue;
+                            currentCateName = cateName;
+                        }
+                        if (!string.IsNullOrEmpty(catePrefixCode))
+                        {
+                            currentCatePrefixCode = catePrefixCode;
+                        }
+                        var cellProductCode = row.GetCell(2);
+                        if (cellProductCode == null)
+                            continue;
+                        var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
+                        if (string.IsNullOrEmpty(productCode))
+                            continue;
+                        #region Get All Cell value
+                        var productName = row.GetCell(3) != null ? HelperCellGetStringValue(row.GetCell(3)) : string.Empty;
+                        var cellUnit = row.GetCell(4);
 
-                            var cellCateName = row.GetCell(0);
-                            var cellCatePreifxCode = row.GetCell(1);
-                            cateName = cellCateName != null ? HelperCellGetStringValue(cellCateName) : string.Empty;
-                            catePrefixCode = cellCatePreifxCode != null ? HelperCellGetStringValue(cellCatePreifxCode) : string.Empty;
-                            if (!string.IsNullOrEmpty(cateName))
-                            {
-                                currentCateName = cateName;
-                            }
-                            if (!string.IsNullOrEmpty(catePrefixCode))
-                            {
-                                currentCatePrefixCode = catePrefixCode;
-                            }
-                            var cellProductCode = row.GetCell(2);
-                            if (cellProductCode == null)
-                                continue;
-                            var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
-                            if (string.IsNullOrEmpty(productCode))
-                                continue;
-                            #region Get All Cell value
-                            var productName = row.GetCell(3) != null ? HelperCellGetStringValue(row.GetCell(3)) : string.Empty;
-                            var cellUnit = row.GetCell(4);
+                        var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
+                        if (string.IsNullOrEmpty(unitName))
+                            continue;
 
-                            var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
-                            if (string.IsNullOrEmpty(unitName))
-                                continue;
+                        var cellUnitAlt = row.GetCell(9);
+                        var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
+                        var qTy = row.GetCell(5) != null ? HelperCellGetNumericValue(row.GetCell(5)) : 0;
+                        var unitPrice = row.GetCell(6) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(6)) : 0;
+                        var qTy2 = row.GetCell(11) != null ? HelperCellGetNumericValue(row.GetCell(11)) : 0;
+                        var factor = row.GetCell(10) != null ? HelperCellGetNumericValue(row.GetCell(10)) : 0;
+                        var specification = row.GetCell(8) != null ? HelperCellGetStringValue(row.GetCell(8)) : string.Empty;
+                        var heightSize = row.GetCell(13) != null ? HelperCellGetNumericValue(row.GetCell(13)) : 0;
+                        var widthSize = row.GetCell(14) != null ? HelperCellGetNumericValue(row.GetCell(14)) : 0;
+                        var longSize = row.GetCell(15) != null ? HelperCellGetNumericValue(row.GetCell(15)) : 0;
 
-                            var cellUnitAlt = row.GetCell(9);
-                            var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
-                            var qTy = row.GetCell(5) != null ? HelperCellGetNumericValue(row.GetCell(5)) : 0;
-                            var unitPrice = row.GetCell(6) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(6)) : 0;
-                            var qTy2 = row.GetCell(11) != null ? HelperCellGetNumericValue(row.GetCell(11)) : 0;
-                            var factor = row.GetCell(10) != null ? HelperCellGetNumericValue(row.GetCell(10)) : 0;
-                            var specification = row.GetCell(8) != null ? HelperCellGetStringValue(row.GetCell(8)) : string.Empty;
-                            var heightSize = row.GetCell(13) != null ? HelperCellGetNumericValue(row.GetCell(13)) : 0;
-                            var widthSize = row.GetCell(14) != null ? HelperCellGetNumericValue(row.GetCell(14)) : 0;
-                            var longSize = row.GetCell(15) != null ? HelperCellGetNumericValue(row.GetCell(15)) : 0;
+                        var cellItem = new OpeningBalanceModel
+                        {
+                            CateName = currentCateName,
+                            CatePrefixCode = currentCatePrefixCode,
+                            ProductCode = productCode,
+                            ProductName = productName,
+                            Unit1 = unitName.ToLower(),
+                            Qty1 = qTy,
+                            UnitPrice = unitPrice,
+                            Specification = specification,
+                            Unit2 = unitAltName.ToLower(),
+                            Qty2 = qTy2,
+                            Factor = factor,
+                            Height = heightSize,
+                            Width = widthSize,
+                            Long = longSize
+                        };
+                        excelModel.Add(cellItem);
+                        #endregion
+                    } // end for loop
 
-                            var cellItem = new OpeningBalanceModel
-                            {
-                                CateName = currentCateName,
-                                CatePrefixCode = currentCatePrefixCode,
-                                ProductCode = productCode,
-                                ProductName = productName,
-                                Unit1 = unitName.ToLower(),
-                                Qty1 = qTy,
-                                UnitPrice = unitPrice,
-                                Specification = specification,
-                                Unit2 = unitAltName.ToLower(),
-                                Qty2 = qTy2,
-                                Factor = factor,
-                                Height = heightSize,
-                                Width = widthSize,
-                                Long = longSize
-                            };
-                            excelModel.Add(cellItem);
-                            #endregion
-                        } // end for loop
-                    }
-                    catch (Exception ex)
-                    {
-                        return GeneralCode.InternalError;
-                        throw;
-                    }
 
                     #region Cập nhật ProductCate && ProductType
                     var productCateNameModelList = excelModel.GroupBy(g => g.CateName).Select(q => q.First()).Where(q => !string.IsNullOrEmpty(q.CateName)).Select(q => q.CateName).ToList();
@@ -895,8 +877,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryInputList)
                         {
-                            var ret = await _inventoryService.AddInventoryInput(currentUserId, item);
-                            if (ret.Data > 0)
+                            var ret = await _inventoryService.AddInventoryInput(item);
+                            if (ret > 0)
                             {
                                 // Duyệt phiếu nhập kho
                                 //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
@@ -927,59 +909,53 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 {
                     var totalRowCount = sheet.LastRowNum + 1;
                     var excelModel = new List<OpeningBalanceModel>(totalRowCount);
-                    try
+
+                    for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
                     {
-                        for (int i = (sheet.FirstRowNum + 1); i <= sheet.LastRowNum; i++)
+                        var row = sheet.GetRow(i);
+                        if (row == null) continue;
+
+                        var cellProductCode = row.GetCell(0);
+                        if (cellProductCode == null)
+                            continue;
+                        var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
+                        if (string.IsNullOrEmpty(productCode))
+                            continue;
+
+                        #region Get All Cell value
+                        var cellUnit = row.GetCell(2);
+                        var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
+
+                        var cellUnitAlt = row.GetCell(7);
+                        var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
+
+                        var qTy = row.GetCell(3) != null ? HelperCellGetNumericValue(row.GetCell(3)) : 0;
+                        var unitPrice = row.GetCell(4) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(4)) : 0;
+
+                        var qTy2 = row.GetCell(9) != null ? HelperCellGetNumericValue(row.GetCell(9)) : 0;
+                        var factor = row.GetCell(8) != null ? HelperCellGetNumericValue(row.GetCell(8)) : 0;
+
+                        var cellItem = new OpeningBalanceModel
                         {
-                            var row = sheet.GetRow(i);
-                            if (row == null) continue;
+                            CateName = string.Empty,
+                            CatePrefixCode = string.Empty,
+                            ProductCode = productCode,
+                            ProductName = string.Empty,
+                            Unit1 = unitName.ToLower(),
+                            Qty1 = qTy,
+                            UnitPrice = unitPrice,
+                            Specification = string.Empty,
+                            Unit2 = unitAltName.ToLower(),
+                            Qty2 = qTy2,
+                            Factor = factor,
+                            Height = 0,
+                            Width = 0,
+                            Long = 0
+                        };
+                        excelModel.Add(cellItem);
+                        #endregion
+                    } // end for loop
 
-                            var cellProductCode = row.GetCell(0);
-                            if (cellProductCode == null)
-                                continue;
-                            var productCode = cellProductCode != null ? HelperCellGetStringValue(cellProductCode) : string.Empty;
-                            if (string.IsNullOrEmpty(productCode))
-                                continue;
-
-                            #region Get All Cell value
-                            var cellUnit = row.GetCell(2);
-                            var unitName = cellUnit != null ? HelperCellGetStringValue(cellUnit) : string.Empty;
-
-                            var cellUnitAlt = row.GetCell(7);
-                            var unitAltName = cellUnitAlt != null ? HelperCellGetStringValue(cellUnitAlt) : string.Empty;
-
-                            var qTy = row.GetCell(3) != null ? HelperCellGetNumericValue(row.GetCell(3)) : 0;
-                            var unitPrice = row.GetCell(4) != null ? (decimal)HelperCellGetNumericValue(row.GetCell(4)) : 0;
-
-                            var qTy2 = row.GetCell(9) != null ? HelperCellGetNumericValue(row.GetCell(9)) : 0;
-                            var factor = row.GetCell(8) != null ? HelperCellGetNumericValue(row.GetCell(8)) : 0;
-
-                            var cellItem = new OpeningBalanceModel
-                            {
-                                CateName = string.Empty,
-                                CatePrefixCode = string.Empty,
-                                ProductCode = productCode,
-                                ProductName = string.Empty,
-                                Unit1 = unitName.ToLower(),
-                                Qty1 = qTy,
-                                UnitPrice = unitPrice,
-                                Specification = string.Empty,
-                                Unit2 = unitAltName.ToLower(),
-                                Qty2 = qTy2,
-                                Factor = factor,
-                                Height = 0,
-                                Width = 0,
-                                Long = 0
-                            };
-                            excelModel.Add(cellItem);
-                            #endregion
-                        } // end for loop
-                    }
-                    catch (Exception ex)
-                    {
-                        return GeneralCode.InternalError;
-                        throw;
-                    }
 
                     #region Thông tin sản phẩm
                     var productDataList = new List<Product>(excelModel.Count);
@@ -1114,8 +1090,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                         {
                             foreach (var item in inventoryOutputList)
                             {
-                                var ret = await _inventoryService.AddInventoryOutput(currentUserId, item);
-                                if (ret.Data > 0)
+                                var ret = await _inventoryService.AddInventoryOutput(item);
+                                if (ret > 0)
                                 {
                                     // Duyệt phiếu xuất kho
                                     //await _inventoryService.ApproveInventoryInput(ret.Data, currentUserId); 
@@ -1140,7 +1116,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ProcessInventoryOutputExcelSheet");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
         #endregion

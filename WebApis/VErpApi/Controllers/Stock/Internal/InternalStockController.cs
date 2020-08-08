@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpGet]
         [Route("{stockId}")]
-        public async Task<ServiceResult<StockOutput>> GetStocks([FromRoute] int stockId)
+        public async Task<ServiceResult<StockOutput>> StockInfo([FromRoute] int stockId)
         {
             return await _stockService.StockInfo(stockId);
         }

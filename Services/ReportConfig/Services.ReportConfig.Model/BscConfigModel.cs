@@ -22,7 +22,11 @@ namespace Verp.Services.ReportConfig.Model
     {
         public int SortOrder { get; set; }
         public bool IsBold { get; set; }
-        public NonCamelCaseDictionary Value { get; set; }
+
+        public NonCamelCaseDictionary<BscCellModel> RowData { get; set; }
+
+        public NonCamelCaseDictionary<string> Value { get; set; }
+        
 
         public static bool IsSqlSelect(object valueConfig)
         {
@@ -33,5 +37,11 @@ namespace Verp.Services.ReportConfig.Model
         {
             return IsSqlSelect(valueConfig) && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
         }
+    }
+
+    public class BscCellModel
+    {
+        public string Value { get; set; }
+        public NonCamelCaseDictionary Style { get; set; }
     }
 }
