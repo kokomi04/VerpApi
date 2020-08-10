@@ -481,6 +481,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var inventoryId = await AddInventoryInputDB(req);
+                await trans.CommitAsync();
+
                 await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
                 return inventoryId;
             }
@@ -580,6 +582,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var inventoryId = await AddInventoryOutputDb(req);
+                await trans.CommitAsync();
+
                 await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryId, $"Thêm mới phiếu xuất kho, mã: {req.InventoryCode}", req.JsonSerialize());
                 return inventoryId;
             }
