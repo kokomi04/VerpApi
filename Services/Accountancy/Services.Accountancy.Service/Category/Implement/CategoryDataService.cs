@@ -352,6 +352,9 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             foreach (var field in requiredFields)
             {
+                // ignore auto generate field
+                if (field.FormTypeId == (int)EnumFormType.Generate) continue;
+
                 if (!data.Any(v => v.Key == field.CategoryFieldName && !string.IsNullOrEmpty(v.Value)))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });

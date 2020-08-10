@@ -654,6 +654,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var field in requiredFields)
             {
+                // ignore auto generate field
+                if (field.FormTypeId == (int)EnumFormType.Generate) continue;
+
                 // Validate info
                 if (!field.IsMultiRow)
                 {
