@@ -107,6 +107,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         ReportTypeView = 44,
         ReportType = 45,
-        Menu = 46
+        Menu = 46,
+
+        ObjectCustomGenCodeMapping = 47
     }
 }

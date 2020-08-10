@@ -178,7 +178,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _masterDbContext.SaveChangesAsync();
                 await UpdateSortOrder();
 
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -226,6 +226,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 if (obj == null)
                 {
                     _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
+                    obj = model;
                 }
                 else
                 {
@@ -233,6 +234,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                     obj.UpdatedUserId = currentUserId;
                 }
                 await _masterDbContext.SaveChangesAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
+
                 return GeneralCode.Success;
             }
             catch (Exception ex)
@@ -245,6 +249,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             try
             {
+                var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
+
                 foreach (var mapConfig in data)
                 {
                     var config = await _masterDbContext.CustomGenCode
@@ -271,8 +277,19 @@ namespace VErp.Services.Master.Service.Config.Implement
                     {
                         curMapConfig.CustomGenCodeId = mapConfig.Value;
                     }
+
+                    if (!dic.ContainsKey(curMapConfig))
+                    {
+                        dic.Add(curMapConfig, config);
+                    }
                 }
                 await _masterDbContext.SaveChangesAsync();
+
+                foreach(var item in dic)
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
+                }
+
                 return GeneralCode.Success;
             }
             catch (Exception ex)
