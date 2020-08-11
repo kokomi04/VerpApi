@@ -55,80 +55,61 @@ namespace VErp.Services.Master.Service.Users.Implement
             _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<ServiceResult<int>> CreateUser(UserInfoInput req, int updatedUserId)
+        public async Task<int> CreateUser(UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(-1, req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
             try
             {
-                var user = await CreateUserAuthen(req);
-                if (!user.Code.IsSuccess())
-                {
-                    await trans.RollbackAsync();
-
-                    return user.Code;
-                }
-
-                var r = await CreateEmployee(user.Data, req);
-
-                if (!r.IsSuccess())
-                {
-                    await trans.RollbackAsync();
-                    return r;
-                }
+                var userId = await CreateUserAuthen(req);
+                
+                await CreateEmployee(userId, req);               
 
                 // Gắn phòng ban cho nhân sự
                 if (req.DepartmentId.HasValue)
                 {
-                    var r2 = await EmployeeDepartmentMapping(user.Data, req.DepartmentId.Value, updatedUserId);
-                    if (!r2.IsSuccess())
-                    {
-                        await trans.RollbackAsync();
-
-                        return r2;
-                    }
+                    await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);                    
                 }
 
 
                 trans.Commit();
 
-                var info = await GetUserFullInfo(user.Data);
+                var info = await GetUserFullInfo(userId);
 
-                await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, user.Data, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
 
-                _logger.LogInformation("CreateUser({0}) successful!", user.Data);
+                _logger.LogInformation("CreateUser({0}) successful!", userId);
 
                 if (req.AvatarFileId.HasValue)
                 {
-                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, user.Data));
+                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, userId));
                 }
 
-                return user.Data;
+                return userId;
             }
 
-            catch (Exception ex)
+            catch (Exception)
             {
                 await trans.RollbackAsync();
-                _logger.LogError(ex, "CreateUser");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
 
-        private async Task<Enum> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
+        private async Task<bool> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
-                return DepartmentErrorCode.DepartmentNotFound;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
             }
             if (!department.IsActived)
             {
-                return DepartmentErrorCode.DepartmentInActived;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentInActived);
             }
             var EmployeeDepartmentMapping = _organizationContext.EmployeeDepartmentMapping
                 .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
@@ -171,16 +152,16 @@ namespace VErp.Services.Master.Service.Users.Implement
                 });
             }
             await _masterContext.SaveChangesAsync();
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<UserInfoOutput>> GetInfo(int userId)
+        public async Task<UserInfoOutput> GetInfo(int userId)
         {
             var ur = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
             var em = await _organizationContext.Employee.FirstOrDefaultAsync(e => e.UserId == userId);
             if (ur == null || em == null)
             {
-                return UserErrorCode.UserNotFound;
+                throw new BadRequestException(UserErrorCode.UserNotFound);
             }
             var user = new UserInfoOutput
             {
@@ -216,7 +197,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user;
         }
 
-        public async Task<Enum> DeleteUser(int userId)
+        public async Task<bool> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
             long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
@@ -229,14 +210,14 @@ namespace VErp.Services.Master.Service.Users.Implement
                     if (!user.IsSuccess())
                     {
                         trans.Rollback();
-                        return user;
+                        throw new BadRequestException(user);
                     }
                     var r = await DeleteEmployee(userId);
 
                     if (!r.IsSuccess())
                     {
                         trans.Rollback();
-                        return r;
+                        throw new BadRequestException(r);
                     }
                     trans.Commit();
 
@@ -244,11 +225,10 @@ namespace VErp.Services.Master.Service.Users.Implement
 
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "DeleteUser");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
 
             }
@@ -258,10 +238,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
             }
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<PageData<UserInfoOutput>> GetList( string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             IQueryable<Employee> employees = _organizationContext.Employee;
@@ -330,12 +310,12 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         }
 
-        public async Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
+        public async Task<bool> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
         {
             var validate = await ValidateUserInfoInput(userId, req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             var userInfo = await GetUserFullInfo(userId);
@@ -349,14 +329,14 @@ namespace VErp.Services.Master.Service.Users.Implement
                     if (!r1.IsSuccess())
                     {
                         trans.Rollback();
-                        return r1;
+                        throw new BadRequestException(r1);
                     }
 
                     var r2 = await UpdateEmployee(userId, req);
                     if (!r2.IsSuccess())
                     {
                         trans.Rollback();
-                        return r2;
+                        throw new BadRequestException(r2);
                     }
 
                     // Lấy thông tin bộ phận hiện tại
@@ -368,12 +348,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     // Nếu khác update lại thông tin
                     if (departmentId != req.DepartmentId && req.DepartmentId.HasValue)
                     {
-                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);
-                        if (!r3.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return r3;
-                        }
+                        await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);                        
                     }
 
                     trans.Commit();
@@ -383,11 +358,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", req.JsonSerialize());
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "UpdateUser");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
 
             }
@@ -401,26 +375,26 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
             }
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req)
+        public async Task<bool> ChangeUserPassword(int userId, UserChangepasswordInput req)
         {
             req.NewPassword = req.NewPassword ?? "";
             if (req.NewPassword.Length < 4)
             {
-                return UserErrorCode.PasswordTooShort;
+                throw new BadRequestException(UserErrorCode.PasswordTooShort);
             }
 
             var userLoginInfo = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
             if (userLoginInfo == null)
             {
-                return UserErrorCode.UserNotFound;
+                throw new BadRequestException(UserErrorCode.UserNotFound);
             }
 
             if (!Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, userLoginInfo.PasswordSalt, req.OldPassword, userLoginInfo.PasswordHash))
             {
-                return UserErrorCode.OldPasswordIncorrect;
+                throw new BadRequestException(UserErrorCode.OldPasswordIncorrect);
             }
 
             var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.NewPassword);
@@ -428,7 +402,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             userLoginInfo.PasswordHash = passwordHash;
             await _masterContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            return true;
         }
 
         public async Task<IList<RolePermissionModel>> GetMePermission()
@@ -536,7 +510,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             //}
             return GeneralCode.Success;
         }
-        private async Task<ServiceResult<int>> CreateUserAuthen(UserInfoInput req)
+        private async Task<int> CreateUserAuthen(UserInfoInput req)
         {
             var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.Password);
             req.UserName = (req.UserName ?? "").Trim().ToLower();
@@ -548,7 +522,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
                 if (user != null)
                 {
-                    return UserErrorCode.UserNameExisted;
+                    throw new BadRequestException(UserErrorCode.UserNameExisted);
                 }
             }
 
@@ -574,7 +548,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user.UserId;
         }
 
-        private async Task<Enum> CreateEmployee(int userId, UserInfoInput req)
+        private async Task<bool> CreateEmployee(int userId, UserInfoInput req)
         {
             var employee = new Employee()
             {
@@ -592,7 +566,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             await _organizationContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            return true;
         }
 
         private async Task<Enum> UpdateUserAuthen(int userId, UserInfoInput req)

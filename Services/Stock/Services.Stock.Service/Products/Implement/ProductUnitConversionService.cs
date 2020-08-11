@@ -86,46 +86,40 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public async Task<ServiceResult<PageData<ProductUnitConversionByProductOutput>>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0)
+        public async Task<PageData<ProductUnitConversionByProductOutput>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0)
         {
-            try
+
+            if (productIds == null || productIds.Count == 0)
+                return (new List<ProductUnitConversionByProductOutput>(), 0);
+
+            var query = from c in _stockDbContext.ProductUnitConversion
+                        where productIds.Contains(c.ProductId)
+                        select new ProductUnitConversionByProductOutput()
+                        {
+                            ProductUnitConversionId = c.ProductUnitConversionId,
+                            ProductUnitConversionName = c.ProductUnitConversionName,
+                            ProductId = c.ProductId,
+                            SecondaryUnitId = c.SecondaryUnitId,
+                            FactorExpression = c.FactorExpression,
+                            ConversionDescription = c.ConversionDescription,
+                            IsFreeStyle = c.IsFreeStyle,
+                            IsDefault = c.IsDefault,
+                        };
+
+            var total = query.Count();
+
+            IList<ProductUnitConversionByProductOutput> pagedData;
+            if (size <= 0)
             {
-                if (productIds == null || productIds.Count == 0)
-                    return (PageData<ProductUnitConversionByProductOutput>)(new List<ProductUnitConversionByProductOutput>(), 0);
-
-                var query = from c in _stockDbContext.ProductUnitConversion
-                            where productIds.Contains(c.ProductId)
-                            select new ProductUnitConversionByProductOutput()
-                            {
-                                ProductUnitConversionId = c.ProductUnitConversionId,
-                                ProductUnitConversionName = c.ProductUnitConversionName,
-                                ProductId = c.ProductId,
-                                SecondaryUnitId = c.SecondaryUnitId,
-                                FactorExpression = c.FactorExpression,
-                                ConversionDescription = c.ConversionDescription,
-                                IsFreeStyle = c.IsFreeStyle,
-                                IsDefault = c.IsDefault,
-                            };
-
-                var total = query.Count();
-
-                IList<ProductUnitConversionByProductOutput> pagedData;
-                if (size <= 0)
-                {
-                    pagedData = await query.ToListAsync();
-                }
-                else
-                {
-                    pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
-                }
-
-                return (PageData<ProductUnitConversionByProductOutput>)(pagedData, total);
+                pagedData = await query.ToListAsync();
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "GetListByProducts");
-                return GeneralCode.InternalError;
+                pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
             }
+
+            return (pagedData, total);
+
         }
     }
 }

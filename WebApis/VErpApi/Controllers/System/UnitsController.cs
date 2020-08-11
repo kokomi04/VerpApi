@@ -28,7 +28,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<UnitOutput>>> Get([FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UnitOutput>> Get([FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _unitService.GetList(keyword, unitStatusId, page, size);
         }
@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddUnit([FromBody] UnitInput unit)
+        public async Task<int> AddUnit([FromBody] UnitInput unit)
         {
             return await _unitService.AddUnit(unit);
         }
@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{unitId}")]
-        public async Task<ServiceResult<UnitOutput>> GetUnitInfo([FromRoute] int unitId)
+        public async Task<UnitOutput> GetUnitInfo([FromRoute] int unitId)
         {
             return await _unitService.GetUnitInfo(unitId);
         }
@@ -64,7 +64,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{unitId}")]
-        public async Task<ServiceResult> UpdateUnit([FromRoute] int unitId, [FromBody] UnitInput unit)
+        public async Task<bool> UpdateUnit([FromRoute] int unitId, [FromBody] UnitInput unit)
         {
             return await _unitService.UpdateUnit(unitId, unit);
         }
@@ -76,7 +76,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{unitId}")]
-        public async Task<ServiceResult> DeleteUnit([FromRoute] int unitId)
+        public async Task<bool> DeleteUnit([FromRoute] int unitId)
         {
             return await _unitService.DeleteUnit(unitId);
         }

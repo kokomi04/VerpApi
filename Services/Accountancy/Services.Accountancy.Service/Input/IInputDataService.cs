@@ -28,7 +28,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
 
-        Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId);
+        Task<MemoryStream> ExportBill(int inputTypeId, long fId);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
 

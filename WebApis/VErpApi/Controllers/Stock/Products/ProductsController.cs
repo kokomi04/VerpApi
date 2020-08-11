@@ -62,16 +62,16 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
         }
 
         [HttpGet]
         [Route("fields")]
-        public async Task<ServiceResult<List<EntityField>>> GetFields()
+        public List<EntityField> GetFields()
         {
-            return await _productService.GetFields(typeof(ProductImportModel));
+            return _productService.GetFields(typeof(ProductImportModel));
         }
 
         [HttpPost]
@@ -93,7 +93,7 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [Route("GetByIds")]
         [VErpAction(EnumAction.View)]
-        public async Task<ServiceResult<IList<ProductListOutput>>> GetByIds([FromBody] IList<int> productIds)
+        public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
         {
             return (await _productService.GetListByIds(productIds)).ToList();
         }
@@ -117,7 +117,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("{productId}")]
-        public async Task<ServiceResult<ProductModel>> GetProduct([FromRoute] int productId)
+        public async Task<ProductModel> GetProduct([FromRoute] int productId)
         {
             return await _productService.ProductInfo(productId);
         }
@@ -142,7 +142,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("{productId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int productId)
+        public async Task<bool> Delete([FromRoute] int productId)
         {
             return await _productService.DeleteProduct(productId);
         }
@@ -155,7 +155,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ServiceResult<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
         }
@@ -167,27 +167,19 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateProductCode")]
-        public async Task<ServiceResult<string>> GenerateProductCode([FromQuery] int? productTypeId)
+        public async Task<string> GenerateProductCode([FromQuery] int? productTypeId)
         {
             var typeCode = "";
             if (productTypeId.HasValue)
             {
                 var typeInfo = await _productTypeService.GetInfoProductType(productTypeId.Value);
-                if (!typeInfo.Code.IsSuccess())
-                {
-                    return typeInfo.Code;
-                }
-                typeCode = typeInfo.Data.IdentityCode;
+
+                typeCode = typeInfo.IdentityCode;
             }
             var objectCode = await _objectGenCodeService.GenerateCode(EnumObjectType.Product);
-            if (!objectCode.Code.IsSuccess())
-            {
-                return objectCode;
-            }
 
-            objectCode.Data = string.IsNullOrWhiteSpace(typeCode) ? objectCode.Data : typeCode + objectCode.Data;
 
-            return objectCode;
+            return string.IsNullOrWhiteSpace(typeCode) ? objectCode : typeCode + objectCode;
         }
 
 
@@ -198,14 +190,10 @@ namespace VErpApi.Controllers.Stock.Products
             if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
             {
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
-                if (!productTypeInfo.Code.IsSuccess())
-                {
-                    throw new BadRequestException(productTypeInfo.Code);
-                }
 
                 var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
 
-                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.Data.IdentityCode).ConfigureAwait(true);
+                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.IdentityCode).ConfigureAwait(true);
 
                 product.ProductCode = code.CustomCode;
                 // lastValue = code.Data.LastValue;
@@ -213,27 +201,23 @@ namespace VErpApi.Controllers.Stock.Products
 
             }
 
-            ServiceResult<int> r;
+            int r;
             if (!productId.HasValue)
             {
                 r = await _productService.AddProduct(product).ConfigureAwait(true);
             }
             else
             {
-                r = await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
-                if (r.IsSuccessCode())
-                    r.Data = productId.Value;
+                await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+                r = productId.Value;
             }
 
-            if (isGenCode && r.Code.IsSuccess())
+            if (isGenCode)
             {
                 await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
             }
-            if (!r.IsSuccessCode())
-            {
-                throw new BadRequestException(r.Code);
-            }
-            return r.Data;
+
+            return r;
         }
     }
 }

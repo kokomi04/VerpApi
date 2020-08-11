@@ -15,7 +15,7 @@ namespace VErp.Services.PurchaseOrder.Service
 {
     public interface IPurchasingRequestService
     {
-        Task<ServiceResult<PurchasingRequestOutput>> GetInfo(long purchasingRequestId);
+        Task<PurchasingRequestOutput> GetInfo(long purchasingRequestId);
 
         Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
 
@@ -27,16 +27,16 @@ namespace VErp.Services.PurchaseOrder.Service
 
         IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream);
 
-        Task<Enum> Update(long purchasingRequestId, PurchasingRequestInput model);              
+        Task<bool> Update(long purchasingRequestId, PurchasingRequestInput model);              
 
-        Task<Enum> Delete(long purchasingRequestId);
+        Task<bool> Delete(long purchasingRequestId);
 
-        Task<Enum> SendToCensor(long purchasingRequestId);
+        Task<bool> SendToCensor(long purchasingRequestId);
 
-        Task<Enum> Approve(long purchasingRequestId);
+        Task<bool> Approve(long purchasingRequestId);
 
-        Task<Enum> Reject(long purchasingRequestId);
-        Task<Enum> UpdatePoProcessStatus(long purchasingRequestId, EnumPoProcessStatus poProcessStatusId);
+        Task<bool> Reject(long purchasingRequestId);
+        Task<bool> UpdatePoProcessStatus(long purchasingRequestId, EnumPoProcessStatus poProcessStatusId);
 
     }
 }

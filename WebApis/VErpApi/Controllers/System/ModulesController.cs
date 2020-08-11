@@ -28,7 +28,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("moduleGroups")]
-        public async Task<ServiceResult<IList<ModuleGroupOutput>>> ModuleGroups()
+        public async Task<IList<ModuleGroupOutput>> ModuleGroups()
         {
             return (await _moduleService.GetModuleGroups()).ToList();
         }
@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<IList<ModuleOutput>>> Modules()
+        public async Task<IList<ModuleOutput>> Modules()
         {
             return (await _moduleService.GetList()).ToList();
         }

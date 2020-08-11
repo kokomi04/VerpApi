@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<StockOutput>>> GetStocks([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockOutput>> GetStocks([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetList(keyword, page, size, filters);
         }
 
         [HttpGet]
         [Route("{stockId}")]
-        public async Task<ServiceResult<StockOutput>> StockInfo([FromRoute] int stockId)
+        public async Task<StockOutput> StockInfo([FromRoute] int stockId)
         {
             return await _stockService.StockInfo(stockId);
         }

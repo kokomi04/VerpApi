@@ -20,6 +20,6 @@ namespace VErp.Services.Stock.Service.Products
         Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0);
 
 
-        Task<ServiceResult<PageData<ProductUnitConversionByProductOutput>>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0);
+        Task<PageData<ProductUnitConversionByProductOutput>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0);
     }
 }

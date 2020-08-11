@@ -101,10 +101,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}/datafile")]
-        public async Task<ServiceResult<MemoryStream>> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
+        public async Task<MemoryStream> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
-            var r = await _inputDataService.ExportBill(inputTypeId, fId);
-            return r;
+            return await _inputDataService.ExportBill(inputTypeId, fId);            
         }
 
         [HttpGet]

@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size, filters);
         }
@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpGet]
         [Route("{productId}")]
-        public async Task<ServiceResult<ProductModel>> GetProduct([FromRoute] int productId)
+        public async Task<ProductModel> GetProduct([FromRoute] int productId)
         {
             return await _productService.ProductInfo(productId);
         }

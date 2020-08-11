@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<UnitOutput>>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UnitOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _unitService.GetList(keyword, unitStatusId, page, size, filters);
         }
 
         [HttpGet]
         [Route("{unitId}")]
-        public async Task<ServiceResult<UnitOutput>> GetUnitInfo([FromRoute] int unitId)
+        public async Task<UnitOutput> GetUnitInfo([FromRoute] int unitId)
         {
             return await _unitService.GetUnitInfo(unitId);
         }

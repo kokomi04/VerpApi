@@ -1757,7 +1757,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
-        public async Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId)
+        public async Task<MemoryStream> ExportBill(int inputTypeId, long fId)
         {
 
             var dataSql = @$"

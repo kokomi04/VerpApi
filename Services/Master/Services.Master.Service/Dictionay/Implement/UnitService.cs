@@ -18,6 +18,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.Library;
 using System.Linq.Expressions;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
@@ -40,18 +41,18 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddUnit(UnitInput data)
+        public async Task<int> AddUnit(UnitInput data)
         {
             var validate = ValidateUnitInput(data);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             var info = await _masterContext.Unit.FirstOrDefaultAsync(u => u.UnitName == data.UnitName);
             if (info != null)
             {
-                return UnitErrorCode.UnitNameAlreadyExisted;
+                throw new BadRequestException(UnitErrorCode.UnitNameAlreadyExisted);
             }
 
             var unit = new Unit()
@@ -109,7 +110,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<UnitOutput>> GetUnitInfo(int unitId)
+        public async Task<UnitOutput> GetUnitInfo(int unitId)
         {
             var roleInfo = await _masterContext.Unit.Select(u => new UnitOutput()
             {
@@ -120,46 +121,47 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
 
             if (roleInfo == null)
             {
-                return UnitErrorCode.UnitNotFound;
+                throw new BadRequestException(UnitErrorCode.UnitNotFound);
             }
 
             return roleInfo;
         }
 
-        public async Task<Enum> UpdateUnit(int unitId, UnitInput data)
+        public async Task<bool> UpdateUnit(int unitId, UnitInput data)
         {
             var validate = ValidateUnitInput(data);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             var unitInfo = await _masterContext.Unit.FirstOrDefaultAsync(r => r.UnitId == unitId);
             if (unitInfo == null)
             {
-                return UnitErrorCode.UnitNotFound;
+                throw new BadRequestException(UnitErrorCode.UnitNotFound);
             }
-           
+
             unitInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             unitInfo.UnitName = data.UnitName;
             unitInfo.UnitStatusId = (int)data.UnitStatusId;
             await _masterContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", data.JsonSerialize());
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<Enum> DeleteUnit(int unitId)
+        public async Task<bool> DeleteUnit(int unitId)
         {
             var unitInfo = await _masterContext.Unit.FirstOrDefaultAsync(r => r.UnitId == unitId);
             if (unitInfo == null)
             {
-                return UnitErrorCode.UnitNotFound;
+                throw new BadRequestException(UnitErrorCode.UnitNotFound);
             }
             unitInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Unit, unitId, $"Xóa đơn vị tính {unitInfo.UnitName}", unitInfo.JsonSerialize());
-            return GeneralCode.Success;
+
+            return true;
         }
 
 
