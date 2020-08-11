@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -43,7 +44,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey)
+        public async Task<(Stream file, string contentType)> GetFileStream(string fileKey)
         {
             await Task.CompletedTask;
             var rawString = fileKey.DecryptFileKey(_dataProtectionProvider, _appSetting);
@@ -56,7 +57,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             if (long.Parse(timeUnix) < DateTime.UtcNow.AddDays(-1).GetUnix())
             {
-                return FileErrorCode.FileUrlExpired;
+                throw new BadRequestException(FileErrorCode.FileUrlExpired);
             }
 
             var filePath = relativeFilePath.GetPhysicalFilePath(_appSetting);
@@ -67,12 +68,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (FileNotFoundException ex)
             {
                 _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             catch (DirectoryNotFoundException ex)
             {
                 _logger.LogDebug(ex, $"GetFileStream(string fileKey={fileKey})");
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             catch (Exception ex)
             {

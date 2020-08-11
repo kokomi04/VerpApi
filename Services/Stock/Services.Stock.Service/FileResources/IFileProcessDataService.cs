@@ -26,7 +26,7 @@ namespace VErp.Services.Stock.Service.FileResources
         /// <param name="currentUserId"></param>
         /// <param name="fileId"></param>
         /// <returns></returns>
-        Task<Enum> ImportCustomerData(int currentUserId, long fileId);
+        Task<bool> ImportCustomerData(int currentUserId, long fileId);
 
         /// <summary>
         /// Nhập dữ liệu tồn kho (nhập kho) đầu kỳ
@@ -34,7 +34,7 @@ namespace VErp.Services.Stock.Service.FileResources
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<ServiceResult> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model);
+        Task<bool> ImportInventoryInputOpeningBalance(int currentUserId, InventoryOpeningBalanceModel model);
 
         /// <summary>
         /// Nhập dữ liệu xuất kho đầu kỳ
@@ -42,6 +42,6 @@ namespace VErp.Services.Stock.Service.FileResources
         /// <param name="currentUserId"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        Task<ServiceResult> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model);
+        Task<bool> ImportInventoryOutput(int currentUserId, InventoryOpeningBalanceModel model);
     }
 }

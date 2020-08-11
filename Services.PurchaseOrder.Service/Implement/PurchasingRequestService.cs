@@ -62,14 +62,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult<PurchasingRequestOutput>> GetInfo(long purchasingRequestId)
+        public async Task<PurchasingRequestOutput> GetInfo(long purchasingRequestId)
         {
             var info = await _purchaseOrderDBContext
                 .PurchasingRequest
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingRequestId == purchasingRequestId);
 
-            if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+            if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
             var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
                 .Where(d => d.PurchasingRequestId == purchasingRequestId)
@@ -332,7 +332,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<Enum> Update(long purchasingRequestId, PurchasingRequestInput model)
+        public async Task<bool> Update(long purchasingRequestId, PurchasingRequestInput model)
         {
             await ValidateProductUnitConversion(model);
 
@@ -340,14 +340,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestId != purchasingRequestId && r.PurchasingRequestCode == model.PurchasingRequestCode);
-                if (existedItem != null) return PurchasingRequestErrorCode.RequestCodeAlreadyExisted;
+                if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
             }
 
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
                 _mapper.Map(model, info);
 
@@ -382,16 +382,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> Delete(long purchasingRequestId)
+        public async Task<bool> Delete(long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
 
                 info.IsDeleted = true;
@@ -412,7 +412,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
@@ -552,7 +552,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     try
                     {
-                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);                        
+                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
                     }
                     catch (Exception ex)
                     {
@@ -580,7 +580,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     try
                     {
-                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);                      
+                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
                     }
                     catch (Exception ex)
                     {
@@ -626,16 +626,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<Enum> SendToCensor(long purchasingRequestId)
+        public async Task<bool> SendToCensor(long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Draff)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
@@ -649,23 +649,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> Approve(long purchasingRequestId)
+        public async Task<bool> Approve(long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
                     && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
                     )
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.IsApproved = true;
@@ -679,22 +679,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> Reject(long purchasingRequestId)
+        public async Task<bool> Reject(long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
                     && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
                     )
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.IsApproved = false;
@@ -710,16 +710,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Từ chối yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> UpdatePoProcessStatus(long purchasingRequestId, EnumPoProcessStatus poProcessStatusId)
+        public async Task<bool> UpdatePoProcessStatus(long purchasingRequestId, EnumPoProcessStatus poProcessStatusId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) return PurchasingRequestErrorCode.RequestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -729,7 +729,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 

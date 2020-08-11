@@ -28,14 +28,14 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<CustomerListOutput>>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomerListOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customerService.GetList(keyword, customerStatusId, page, size, filters);
         }
 
         [HttpGet]
         [Route("businessInfo")]
-        public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
+        public async Task<BusinessInfoModel> GetBusinessInfo()
         {
             return await _businessInfoService.GetBusinessInfo();
         }

@@ -9,6 +9,6 @@ namespace VErp.Services.Stock.Service.FileResources
 {
     public interface IFileStoreService
     {
-        Task<ServiceResult<(Stream file, string contentType)>> GetFileStream(string fileKey);
+        Task<(Stream file, string contentType)> GetFileStream(string fileKey);
     }
 }

@@ -39,42 +39,42 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<PageData<NonCamelCaseDictionary>>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryDataService.GetCategoryRows(categoryId, keyword, filters, page, size);
         }
 
         [HttpGet]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
-        public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
+        public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
         {
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
 
         [HttpPost]
         [Route("{categoryId}/categoryrows")]
-        public async Task<ServiceResult<int>> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
+        public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
         {
             return await _categoryDataService.AddCategoryRow(categoryId, data);
         }
 
         [HttpPut]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
-        public async Task<ServiceResult<int>> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] Dictionary<string, string> data)
+        public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] Dictionary<string, string> data)
         {
             return await _categoryDataService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
-        public async Task<ServiceResult<int>> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
+        public async Task<int> DeleteCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
         {
             return await _categoryDataService.DeleteCategoryRow(categoryId, categoryRowId);
         }
 
         [HttpPost]
         [Route("mapToObject")]
-        public async Task<ServiceResult<List<MapObjectOutputModel>>> MapToObject([FromBody] MapObjectInputModel[] data)
+        public async Task<List<MapObjectOutputModel>> MapToObject([FromBody] MapObjectInputModel[] data)
         {
             return await _categoryDataService.MapToObject(data);
         }

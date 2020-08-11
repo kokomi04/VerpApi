@@ -33,7 +33,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
+        public async Task<BusinessInfoModel> GetBusinessInfo()
         {
             return await _businessInfoService.GetBusinessInfo();
         }
@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("")]
-        public async Task<ServiceResult> UpdateCustomer([FromBody] BusinessInfoModel businessInfo)
+        public async Task<bool> UpdateCustomer([FromBody] BusinessInfoModel businessInfo)
         {
             var currentUserId = UserId;
             return await _businessInfoService.UpdateBusinessInfo(currentUserId, businessInfo);

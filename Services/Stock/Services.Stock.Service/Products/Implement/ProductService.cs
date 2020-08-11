@@ -62,7 +62,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _asyncRunner = asyncRunner;
         }
 
-        public async Task<ServiceResult<int>> AddProduct(ProductModel req)
+        public async Task<int> AddProduct(ProductModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -190,7 +190,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 new ProductUnitConversion()
                 {
                     ProductId = productInfo.ProductId,
-                    ProductUnitConversionName = unitInfo.Data.UnitName,
+                    ProductUnitConversionName = unitInfo.UnitName,
                     SecondaryUnitId = req.UnitId,
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
@@ -214,12 +214,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return productInfo.ProductId;
         }
 
-        public async Task<ServiceResult<ProductModel>> ProductInfo(int productId)
+        public async Task<ProductModel> ProductInfo(int productId)
         {
             var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
-                return ProductErrorCode.ProductNotFound;
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
             var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -274,12 +274,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<Enum> UpdateProduct(int productId, ProductModel req)
+        public async Task<bool> UpdateProduct(int productId, ProductModel req)
         {
             Enum validate;
             if (!(validate = ValidateProduct(req)).IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
@@ -288,8 +288,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (productExisted != null)
             {
                 if (productExisted.ProductCode == req.ProductCode)
-                    return ProductErrorCode.ProductCodeAlreadyExisted;
-                return ProductErrorCode.ProductNameAlreadyExisted;
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
 
@@ -303,7 +303,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                     if (productInfo == null)
                     {
-                        return ProductErrorCode.ProductNotFound;
+                        throw new BadRequestException(ProductErrorCode.ProductNotFound);
                     }
 
 
@@ -321,7 +321,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         if (usedUnitConvertion != null)
                         {
                             trans.Rollback();
-                            return ProductErrorCode.SomeProductUnitConversionInUsed;
+                            throw new BadRequestException(ProductErrorCode.SomeProductUnitConversionInUsed);
                         }
 
                         _stockContext.RemoveRange(toRemoveUnitConversions);
@@ -384,7 +384,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
                     if (unitInfo == null)
                     {
-                        return UnitErrorCode.UnitNotFound;
+                        throw new BadRequestException(UnitErrorCode.UnitNotFound);
                     }
 
                     var lstNewUnitConverions = req.StockInfo?.UnitConversions?
@@ -425,7 +425,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.SecondaryUnitId = req.UnitId;
                         defaultUnitConversion.IsDefault = true;
                         defaultUnitConversion.IsFreeStyle = false;
-                        defaultUnitConversion.ProductUnitConversionName = unitInfo.Data.UnitName;
+                        defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
                     }
 
                     await _stockContext.SaveChangesAsync();
@@ -435,11 +435,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "UpdateProduct");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
 
@@ -451,17 +450,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     _asyncRunner.RunAsync<IFileService>(f => f.DeleteFile(oldMainImageFileId.Value));
                 }
             }
-            return GeneralCode.Success;
+            return true;
         }
 
 
-        public async Task<Enum> DeleteProduct(int productId)
+        public async Task<bool> DeleteProduct(int productId)
         {
             var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
 
             if (productInfo == null)
             {
-                return ProductErrorCode.ProductNotFound;
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
             var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -493,13 +492,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa sản phẩm {productInfo.ProductName}", productInfo.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.Rollback();
-                    _logger.LogError(ex, "DeleteProduct");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
         }
@@ -1058,7 +1056,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public async Task<List<EntityField>> GetFields(Type type)
+        public List<EntityField> GetFields(Type type)
         {
             var fields = new List<EntityField>();
 

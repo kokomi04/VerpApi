@@ -38,12 +38,12 @@ namespace VErp.Services.Organization.Service.Employee.Implement
             _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<ServiceResult<int>> CreateEmployee(int userId, EmployeeModel req, int updatedUserId)
+        public async Task<int> CreateEmployee(int userId, EmployeeModel req, int updatedUserId)
         {
             var validate = await ValidateEmployee(-1, req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
             using (var trans = await _organizationContext.Database.BeginTransactionAsync())
             {
@@ -64,12 +64,8 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                     await _organizationContext.SaveChangesAsync();
 
                     // Gắn phòng ban cho nhân sự
-                    var r = await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
-                    if (!r.IsSuccess())
-                    {
-                        trans.Rollback();
-                        return r;
-                    }
+                    await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
+
                     trans.Commit();
                     return userId;
                 }
@@ -81,16 +77,16 @@ namespace VErp.Services.Organization.Service.Employee.Implement
             }
         }
 
-        private async Task<Enum> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
+        private async Task<bool> EmployeeDepartmentMapping(int userId, int departmentId, int updatedUserId)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
-                return DepartmentErrorCode.DepartmentNotFound;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
             }
             if (!department.IsActived)
             {
-                return DepartmentErrorCode.DepartmentInActived;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentInActived);
             }
             var userDepartmentMapping = _organizationContext.EmployeeDepartmentMapping
                 .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
@@ -133,10 +129,10 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 });
             }
             await _organizationContext.SaveChangesAsync();
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<EmployeeModel>> GetInfo(int userId)
+        public async Task<EmployeeModel> GetInfo(int userId)
         {
             var user = await (
                  from em in _organizationContext.Employee
@@ -157,7 +153,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
 
             if (user == null)
             {
-                return UserErrorCode.UserNotFound;
+                throw new BadRequestException(UserErrorCode.UserNotFound);
             }
             // Thêm thông tin phòng ban cho nhân viên
             DateTime currentDate = DateTime.UtcNow.Date;
@@ -178,13 +174,13 @@ namespace VErp.Services.Organization.Service.Employee.Implement
             return user;
         }
 
-        public async Task<Enum> DeleteEmployee(int userId)
+        public async Task<bool> DeleteEmployee(int userId)
         {
             var employee = await _organizationContext.Employee.FirstOrDefaultAsync(e => e.UserId == userId);
             long? oldAvatarFileId = employee.AvatarFileId;
             if (employee == null)
             {
-                return EmployeeErrorCode.EmployeeNotFound;
+                throw new BadRequestException(EmployeeErrorCode.EmployeeNotFound);
             }
             employee.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
@@ -194,20 +190,20 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
             }
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<Enum> UpdateEmployee(int userId, EmployeeModel req, int updatedUserId)
+        public async Task<bool> UpdateEmployee(int userId, EmployeeModel req, int updatedUserId)
         {
             var validate = await ValidateEmployee(userId, req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
             var employee = await _organizationContext.Employee.FirstOrDefaultAsync(u => u.UserId == userId);
             if (employee == null)
             {
-                return UserErrorCode.UserNotFound;
+                throw new BadRequestException(UserErrorCode.UserNotFound);
             }
             long? oldAvatarFileId = employee.AvatarFileId;
             using (var trans = await _organizationContext.Database.BeginTransactionAsync())
@@ -232,12 +228,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                     // Nếu khác update lại thông tin
                     if (departmentId != req.DepartmentId)
                     {
-                        var r3 = await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);
-                        if (!r3.IsSuccess())
-                        {
-                            trans.Rollback();
-                            return r3;
-                        }
+                        await EmployeeDepartmentMapping(userId, req.DepartmentId, updatedUserId);                       
                     }
                     trans.Commit();
                 }
@@ -256,7 +247,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                     _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.DeleteFile(oldAvatarFileId.Value));
                 }
             }
-            return GeneralCode.Success;
+            return true;
         }
 
         private async Task<Enum> ValidateEmployee(int currentUserId, EmployeeModel req)

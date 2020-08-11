@@ -14,9 +14,9 @@ namespace VErp.Services.Accountancy.Service.Category
     {
         Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size);
 
-        Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(int categoryId, int fId);
+        Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId);
 
-        Task<ServiceResult<int>> AddCategoryRow(int categoryId, Dictionary<string, string> data);
+        Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data);
 
         Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data);
 

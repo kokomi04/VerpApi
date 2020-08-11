@@ -14,6 +14,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
@@ -37,12 +38,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddProductCate(ProductCateInput req)
+        public async Task<int> AddProductCate(ProductCateInput req)
         {
             var validate = ValidateProductCate(req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             if (req.ParentProductCateId.HasValue)
@@ -50,14 +51,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 var parent = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId == req.ParentProductCateId);
                 if (parent == null)
                 {
-                    return ProductCateErrorCode.ParentProductCateNotfound;
+                    throw new BadRequestException(ProductCateErrorCode.ParentProductCateNotfound);
                 }
             }
 
             var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateName == req.ProductCateName);
             if (sameName != null)
             {
-                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateNameAlreadyExisted);
             }
 
             var productCate = new ProductCate()
@@ -81,23 +82,23 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate.ProductCateId;
         }
 
-        public async Task<Enum> DeleteProductCate(int productCateId)
+        public async Task<bool> DeleteProductCate(int productCateId)
         {
             var productCate = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId == productCateId);
             if (productCate == null)
             {
-                return ProductCateErrorCode.ProductCateNotfound;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateNotfound);
             }
 
             var childrenCount = await _stockContext.ProductCate.CountAsync(c => c.ParentProductCateId == productCateId);
             if (childrenCount > 0)
             {
-                return ProductCateErrorCode.CanNotDeletedParentProductCate;
+                throw new BadRequestException(ProductCateErrorCode.CanNotDeletedParentProductCate);
             }
 
             if (await _stockContext.Product.AnyAsync(p => p.ProductCateId == productCateId))
             {
-                return ProductCateErrorCode.ProductCateInUsed;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateInUsed);
             }
 
             productCate.IsDeleted = true;
@@ -109,10 +110,10 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<ProductCateOutput>> GetInfoProductCate(int productCateId)
+        public async Task<ProductCateOutput> GetInfoProductCate(int productCateId)
         {
             var productCate = await _stockContext.ProductCate.Where(c => c.ProductCateId == productCateId)
                 .Select(c => new ProductCateOutput
@@ -126,7 +127,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             if (productCate == null)
             {
-                return ProductCateErrorCode.ProductCateNotfound;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateNotfound);
             }
 
             return productCate;
@@ -160,18 +161,18 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return (await lst.ToListAsync(), total);
         }
 
-        public async Task<Enum> UpdateProductCate(int productCateId, ProductCateInput req)
+        public async Task<bool> UpdateProductCate(int productCateId, ProductCateInput req)
         {
             var productCate = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId == productCateId);
             if (productCate == null)
             {
-                return ProductCateErrorCode.ProductCateNotfound;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateNotfound);
             }
 
             var sameName = await _stockContext.ProductCate.FirstOrDefaultAsync(c => c.ProductCateId != productCateId && c.ProductCateName == req.ProductCateName);
             if (sameName != null)
             {
-                return ProductCateErrorCode.ProductCateNameAlreadyExisted;
+                throw new BadRequestException(ProductCateErrorCode.ProductCateNameAlreadyExisted);
             }
 
             productCate.ProductCateName = req.ProductCateName;
@@ -185,7 +186,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
         #region private
