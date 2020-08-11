@@ -1873,13 +1873,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            SqlParameter[] sqlParams = new SqlParameter[]
+            var sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
+           
             return (result.Value as bool?).GetValueOrDefault(); 
         }
 

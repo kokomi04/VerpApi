@@ -21,11 +21,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
     {
         public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters)
         {
+            var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var p in parammeters)
             {
-                procedureName += $" {p.ParameterName} = {p.ParameterName},";
+                sql.Append($" {p.ParameterName} = {p.ParameterName}");
+                if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
+                sql.Append(",");
             }
-            await dbContext.Database.ExecuteSqlRawAsync($"EXEC {procedureName.TrimEnd(',')}", parammeters);
+            
+            await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters)
