@@ -681,11 +681,14 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 data.DataSize = -1;
             }
+
+            //allow suggestion set  RefTableField = null
+
             if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
-                data.RefTableCode = null;
+                //data.RefTableCode = null;
                 data.RefTableField = null;
-                data.RefTableTitle = null;
+                //data.RefTableTitle = null;
             }
         }
 
