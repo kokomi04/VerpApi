@@ -32,12 +32,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text)
         {
             try
             {
                 using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
+                    command.CommandType = cmdType;
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
                     command.Parameters.AddRange(parammeters);
@@ -374,6 +375,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 suffix++;
             }
+        }
+
+        public static SqlParameter ToNValueSqlParameter(this IList<string> values, string parameterName)
+        {
+            var type = "_NVALUES";
+            var valueColumn = "NValue";
+            var table = new DataTable(type);
+            table.Columns.Add(new DataColumn(valueColumn, typeof(string)));
+            foreach(var item in values)
+            {
+                var row = table.NewRow();
+                row[valueColumn] = item;
+                table.Rows.Add(row);
+            }
+            return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
         }
     }
 }
