@@ -260,14 +260,14 @@ namespace VErp.Services.Accountancy.Service.Category
                         // Drop ParentId Field
                         await _accountancyContext.DeleteColumn(data.CategoryCode, "ParentId");
                     }
-                
+
                 }
                 category.IsTreeView = data.IsTreeView;
 
                 // Update other info
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
-                
+
                 await _accountancyContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -294,16 +294,16 @@ namespace VErp.Services.Accountancy.Service.Category
                         var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
                         var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
                         var updatedFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId != 0).ToList();
-                        foreach(var deletedField in deletedFields)
+                        foreach (var deletedField in deletedFields)
                         {
                             deletedField.IsDeleted = true;
                         }
-                        foreach(var newField in newFields)
+                        foreach (var newField in newFields)
                         {
                             var field = _mapper.Map<OutsideDataFieldConfig>(newField);
                             config.OutsideDataFieldConfig.Add(field);
                         }
-                        foreach(var updatedField in updatedFields)
+                        foreach (var updatedField in updatedFields)
                         {
                             var curField = config.OutsideDataFieldConfig.FirstOrDefault(f => f.OutsideDataFieldConfigId == updatedField.OutsideDataFieldConfigId);
                             if (curField == null) continue;
@@ -642,7 +642,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
             }
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsSelectForm())
             {
                 string refTable = data.RefTableCode;
                 string refField = data.RefTableField;
