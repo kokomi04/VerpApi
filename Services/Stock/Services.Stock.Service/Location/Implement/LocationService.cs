@@ -17,6 +17,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {
@@ -75,7 +76,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
@@ -109,7 +110,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
@@ -222,7 +223,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }

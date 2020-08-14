@@ -384,7 +384,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "CreateBill");
                 throw;
             }
@@ -1033,7 +1033,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "UpdateBill");
                 throw;
             }
@@ -1136,7 +1136,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "DeleteBill");
                 throw;
             }
@@ -1749,7 +1749,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "Import");
                     throw;
                 }

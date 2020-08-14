@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using Verp.Cache.RedisCache;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {

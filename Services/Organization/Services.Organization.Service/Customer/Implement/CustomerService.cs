@@ -459,7 +459,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }

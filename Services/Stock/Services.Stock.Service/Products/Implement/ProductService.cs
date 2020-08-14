@@ -437,7 +437,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
@@ -496,7 +496,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
@@ -1050,7 +1050,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 throw ex;
             }
 

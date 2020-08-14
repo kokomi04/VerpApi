@@ -95,7 +95,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             catch (Exception)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 throw;
             }
         }
@@ -227,7 +227,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
 

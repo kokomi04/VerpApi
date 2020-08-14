@@ -15,6 +15,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -104,7 +105,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "ReportTypeViewUpdate");
                 throw;
             }
@@ -187,7 +188,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "ReportTypeViewCreate");
                 throw;
             }
@@ -316,7 +317,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw new BadRequestException(GeneralCode.InternalError);
             }
@@ -355,7 +356,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 throw new BadRequestException(GeneralCode.InternalError);
             }
@@ -395,7 +396,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Delete");
                 throw new BadRequestException(GeneralCode.InternalError);
             }

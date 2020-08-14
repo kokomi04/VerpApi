@@ -172,7 +172,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
@@ -331,7 +331,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
@@ -383,7 +383,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
@@ -809,7 +809,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.Rollback();              
+                trans.TryRollbackTransaction();              
                 throw;
             }
         }
@@ -861,7 +861,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.Rollback();                
+                trans.TryRollbackTransaction();                
                 throw;
             }
         }

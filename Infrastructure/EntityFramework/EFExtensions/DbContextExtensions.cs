@@ -35,6 +35,29 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         .Options;
         }
 
+        public static void TryRollbackTransaction(this IDbContextTransaction trans)
+        {
+            try
+            {
+                trans.Rollback();
+            }
+            catch (Exception)
+            {
+              
+            }
+        }
+        public static async Task TryRollbackTransactionAsync(this IDbContextTransaction trans)
+        {
+            try
+            {
+                await trans.RollbackAsync();
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
         public static void RollbackEntities(this DbContext context)
         {
             var changedEntries = context.ChangeTracker.Entries()
