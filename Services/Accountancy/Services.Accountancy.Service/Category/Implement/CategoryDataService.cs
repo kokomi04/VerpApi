@@ -1053,7 +1053,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "Import");
                     throw;
                 }

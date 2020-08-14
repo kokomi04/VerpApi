@@ -113,7 +113,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "CreateUser");
                 return GeneralCode.InternalError;
             }
@@ -246,7 +246,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "DeleteUser");
                     return GeneralCode.InternalError;
                 }
@@ -385,7 +385,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "UpdateUser");
                     return GeneralCode.InternalError;
                 }

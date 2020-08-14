@@ -785,7 +785,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _logger.LogError(ex, "UpdateInventoryInput");
                         throw;
                     }
@@ -905,7 +905,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _stockDbContext.RollbackEntities();
                         _logger.LogError(ex, "UpdateInventoryOutput");
                         throw;
@@ -977,7 +977,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _logger.LogError(ex, "DeleteInventoryInput");
                         throw;
                     }
@@ -1036,7 +1036,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _stockDbContext.RollbackEntities();
                         _logger.LogError(ex, "DeleteInventoryOutput");
 
@@ -1114,7 +1114,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _logger.LogError(ex, "ApproveInventoryInput");
                         throw;
                     }
@@ -1263,7 +1263,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _logger.LogError(ex, "ApproveInventoryOutput");
                         throw;
                     }

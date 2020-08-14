@@ -9,6 +9,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -49,7 +50,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         _logger.LogError(ex, "ApprovedInputDataUpdate");
                         throw;
                     }

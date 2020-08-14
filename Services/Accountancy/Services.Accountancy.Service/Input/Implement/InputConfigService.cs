@@ -138,7 +138,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw;
             }
@@ -248,7 +248,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw;
             }
@@ -300,7 +300,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 throw;
             }
@@ -417,7 +417,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "InputTypeViewCreate");
                 throw;
             }
@@ -455,7 +455,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "InputTypeViewUpdate");
                 throw;
             }
@@ -646,7 +646,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw;
             }
@@ -696,7 +696,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 throw;
             }
@@ -957,7 +957,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (!result)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
                 }
 
@@ -969,7 +969,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw;
             }
@@ -1006,7 +1006,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 throw;
             }
@@ -1048,7 +1048,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 throw;
             }
@@ -1086,7 +1086,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Delete");
                 throw;
             }

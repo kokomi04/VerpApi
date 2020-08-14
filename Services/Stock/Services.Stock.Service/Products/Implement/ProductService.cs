@@ -436,9 +436,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
                 }
                 catch (Exception ex)
-                {
-                    trans.Rollback();
+                {                   
                     _logger.LogError(ex, "UpdateProduct");
+                    trans.TryRollbackTransaction();
                     return GeneralCode.InternalError;
                 }
             }
@@ -497,8 +497,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
                     _logger.LogError(ex, "DeleteProduct");
+                    trans.TryRollbackTransaction();                    
                     return GeneralCode.InternalError;
                 }
             }
@@ -1052,7 +1052,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 throw ex;
             }
 

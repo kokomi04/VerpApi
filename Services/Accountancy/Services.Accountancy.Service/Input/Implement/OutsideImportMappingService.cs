@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.OutsideMapping;
 
@@ -78,7 +79,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 catch (Exception)
                 {
-                    await trans.RollbackAsync();
+                    await trans.TryRollbackTransactionAsync();
                     throw;
                 }
             }
@@ -155,7 +156,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 catch (Exception)
                 {
-                    await trans.RollbackAsync();
+                    await trans.TryRollbackTransactionAsync();
                     throw;
                 }
             }
@@ -187,7 +188,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 catch (Exception)
                 {
-                    await trans.RollbackAsync();
+                    await trans.TryRollbackTransactionAsync();
                     throw;
                 }
             }

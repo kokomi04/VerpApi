@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using Verp.Cache.RedisCache;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -277,7 +278,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                         }
                         catch (Exception ex)
                         {
-                            trans.Rollback();
+                            trans.TryRollbackTransaction();
                             _logger.LogError(ex, "GenerateCode");
                             return GeneralCode.InternalError;
                         }

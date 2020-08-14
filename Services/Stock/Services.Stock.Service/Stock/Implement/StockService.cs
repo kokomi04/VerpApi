@@ -91,7 +91,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "AddStock");
                     return GeneralCode.InternalError;
                 }
@@ -158,7 +158,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "UpdateStock");
                     return GeneralCode.InternalError;
                 }
@@ -191,7 +191,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "DeleteStock");
                     return GeneralCode.InternalError;
                 }

@@ -172,7 +172,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
                 return GeneralCode.InternalError;
             }
@@ -332,7 +332,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 return GeneralCode.InternalError;
             }
@@ -385,7 +385,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Delete");
                 return GeneralCode.InternalError;
             }
@@ -809,7 +809,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
                 throw;
             }
@@ -862,7 +862,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Delete");
                 throw;
             }
