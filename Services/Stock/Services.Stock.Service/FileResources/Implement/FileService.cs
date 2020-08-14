@@ -16,6 +16,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.FileResources;
@@ -243,7 +244,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     File.Delete(filePath);
                     _logger.LogError(ex, "Upload");
                     throw;
@@ -401,7 +402,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     }
                     catch (Exception ex)
                     {
-                        trans.Rollback();
+                        trans.TryRollbackTransaction();
                         File.Delete(filePath);
                         _logger.LogError(ex, "FileAssignToObject");
                         return GeneralCode.InternalError;

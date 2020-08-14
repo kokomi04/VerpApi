@@ -16,6 +16,7 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {
@@ -74,7 +75,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "AddLocation");
                     return GeneralCode.InternalError;
                 }
@@ -111,7 +112,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "DeleteLocation");
                     return GeneralCode.InternalError;
                 }
@@ -225,7 +226,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                 }
                 catch (Exception ex)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     _logger.LogError(ex, "UpdateLocation");
                     return GeneralCode.InternalError;
                 }

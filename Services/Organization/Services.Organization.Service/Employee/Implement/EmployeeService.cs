@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -75,7 +76,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
@@ -243,7 +244,7 @@ namespace VErp.Services.Organization.Service.Employee.Implement
                 }
                 catch (Exception)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw;
                 }
             }
