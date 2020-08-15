@@ -463,7 +463,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             rows[rowIndex.Value].Data.TryGetValue(field.FieldName, out value);
                         }
-                        if (sfValues.ContainsKey(field.FieldName))
+                        if (sfValues.ContainsKey(field.FieldName) && value != null)
                         {
                             value = sfValues[field.FieldName].ContainsKey(value) ? sfValues[field.FieldName][value] : null;
                         }
@@ -1880,8 +1880,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
-           
-            return (result.Value as bool?).GetValueOrDefault(); 
+
+            return (result.Value as bool?).GetValueOrDefault();
         }
 
         public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate)
