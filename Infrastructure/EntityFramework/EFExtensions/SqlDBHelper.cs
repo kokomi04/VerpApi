@@ -383,11 +383,36 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var valueColumn = "NValue";
             var table = new DataTable(type);
             table.Columns.Add(new DataColumn(valueColumn, typeof(string)));
-            foreach(var item in values)
+            if (values != null)
             {
-                var row = table.NewRow();
-                row[valueColumn] = item;
-                table.Rows.Add(row);
+                foreach (var item in values)
+                {
+                    var row = table.NewRow();
+                    row[valueColumn] = item;
+                    table.Rows.Add(row);
+                }
+            }
+
+            return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
+        }
+
+        public static SqlParameter ToDecimalKeyValueSqlParameter(this NonCamelCaseDictionary<decimal> values, string parameterName)
+        {
+            var type = "_DECIMAL_KEY_VALUES";
+            var keyColumn = "Key";
+            var valueColumn = "Value";
+            var table = new DataTable(type);
+            table.Columns.Add(new DataColumn(keyColumn, typeof(string)));
+            table.Columns.Add(new DataColumn(valueColumn, typeof(decimal)));
+            if (values != null)
+            {
+                foreach (var item in values)
+                {
+                    var row = table.NewRow();
+                    row[keyColumn] = item.Key;
+                    row[valueColumn] = item.Value;
+                    table.Rows.Add(row);
+                }
             }
             return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
         }
