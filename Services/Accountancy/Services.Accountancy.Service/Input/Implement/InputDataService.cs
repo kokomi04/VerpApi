@@ -131,7 +131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     f.FieldName
                 };
 
-                if (((EnumFormType)f.FormTypeId).IsSelectForm()
+                if (((EnumFormType)f.FormTypeId).IsJoinForm()
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle)
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle))
                 {
@@ -1819,8 +1819,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 row = table.Rows[rowIndx];
                             }
                             row[collumIndx * 2] = $"{field.Title}:";
-                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
-                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (info.ContainsKey(fieldName))
                                 row[collumIndx * 2 + 1] = dataType.GetSqlValue(info[fieldName]);
                             rowIndx++;
@@ -1839,8 +1839,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         int columnIndx = 0;
                         foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
                         {
-                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
-                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (row.ContainsKey(fieldName))
                                 tbRow[columnIndx] = dataType.GetSqlValue(row[fieldName]);
                             columnIndx++;

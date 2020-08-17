@@ -524,7 +524,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
-                if (((EnumFormType)field.FormTypeId).IsSelectForm()
+                if (((EnumFormType)field.FormTypeId).IsJoinForm()
                     && !string.IsNullOrEmpty(field.RefTableCode)
                     && !string.IsNullOrEmpty(field.RefTableTitle))
                 {

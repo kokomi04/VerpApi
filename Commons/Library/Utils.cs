@@ -554,6 +554,11 @@ namespace VErp.Commons.Library
             return AccountantConstants.SELECT_FORM_TYPES.Contains(formType);
         }
 
+        public static bool IsJoinForm(this EnumFormType formType)
+        {
+            return AccountantConstants.JOIN_FORM_TYPES.Contains(formType);
+        }
+
         public static int CompareValue(this EnumDataType dataType, object value1, object value2)
         {
             if (value1.IsNullObject() && value2.IsNullObject()) return 0;
