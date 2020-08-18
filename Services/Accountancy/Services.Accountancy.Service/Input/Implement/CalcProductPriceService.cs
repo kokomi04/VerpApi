@@ -49,22 +49,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _outsideImportMappingService = outsideImportMappingService;
         }
 
-        public async Task<IList<NonCamelCaseDictionary>> GetCalcProductPriceTable(CalcProductPriceGetTableInput req)
+        public async Task<CalcProductPriceGetTableOutput> GetCalcProductPriceTable(CalcProductPriceGetTableInput req)
         {
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
-            return (await _accountancyDBContext.QueryDataTable(
+
+            var indirectMaterialFeeSum = new SqlParameter("@IndirectMaterialFeeSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+            var indirectLaborFeeSum = new SqlParameter("@IndirectLaborFeeSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+            var generalManufacturingSum = new SqlParameter("@GeneralManufacturingSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+
+            var data = (await _accountancyDBContext.QueryDataTable(
                 "sp_CalcProductPrice",
                     new[] {
                     new SqlParameter("@FromDate", SqlDbType.DateTime2){ Value = fDate},
                     new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
                     req.GroupColumns.ToNValueSqlParameter("@GroupColumns"),
                     req.OtherFee.ToDecimalKeyValueSqlParameter("@OtherFee"),
-                    new SqlParameter("@CP_NVL_GT_TCPB_ID", SqlDbType.Int){ Value = req.CP_NVL_GT_TCPB_ID},
-                    new SqlParameter("@CP_NHANC_GT_TCPB_ID", SqlDbType.Int){ Value = req.CP_NHANC_GT_TCPB_ID},
-                    new SqlParameter("@CP_SXCHUNG_TCPB_ID", SqlDbType.Int){ Value = req.CP_SXCHUNG_TCPB_ID},
+                    req.CustomPrice.ToDecimalKeyValueSqlParameter("@CustomPrice"),
+                    new SqlParameter("@IndirectMaterialFeeAllocationTypeId", SqlDbType.Int){ Value = req.IndirectMaterialFeeAllocationTypeId},
+                    new SqlParameter("@IndirectMaterialFeeSumCustom", SqlDbType.Decimal){ Value = req.IndirectMaterialFeeSumCustom},
+                    indirectMaterialFeeSum,
+
+                    new SqlParameter("@IndirectLaborFeeAllocationTypeId", SqlDbType.Int){ Value = req.IndirectLaborFeeAllocationTypeId},
+                    new SqlParameter("@IndirectLaborFeeSumCustom", SqlDbType.Decimal){ Value = req.IndirectLaborFeeSumCustom},
+                    indirectLaborFeeSum,
+
+                    new SqlParameter("@GeneralManufacturingAllocationTypeId", SqlDbType.Int){ Value = req.GeneralManufacturingAllocationTypeId},
+                    new SqlParameter("@GeneralManufacturingSumCustom", SqlDbType.Decimal){ Value = req.GeneralManufacturingSumCustom},
+                    generalManufacturingSum
+
                 }, CommandType.StoredProcedure)
                 ).ConvertData();
+
+            return new CalcProductPriceGetTableOutput()
+            {
+                Data = data,
+                IndirectMaterialFeeSum = indirectMaterialFeeSum.Value as decimal?,
+                IndirectLaborFeeSum = indirectLaborFeeSum.Value as decimal?,
+                GeneralManufacturingSum = generalManufacturingSum.Value as decimal?
+            };
         }
     }
 }

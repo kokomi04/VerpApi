@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [VErpAction(EnumAction.View)]
         [GlobalApi]
         [Route("GetCalcProductPriceTable")]
-        public async Task<IList<NonCamelCaseDictionary>> GetCalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
+        public async Task<CalcProductPriceGetTableOutput> GetCalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
         {
             return await _calcProductPriceService.GetCalcProductPriceTable(req).ConfigureAwait(true);
         }       
