@@ -64,6 +64,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@FromDate", SqlDbType.DateTime2){ Value = fDate},
                     new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
                     req.GroupColumns.ToNValueSqlParameter("@GroupColumns"),
+                    req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
+                    req.DirectLaborFee.ToDecimalKeyValueSqlParameter("@DirectLaborFee"),
                     req.OtherFee.ToDecimalKeyValueSqlParameter("@OtherFee"),
                     req.CustomPrice.ToDecimalKeyValueSqlParameter("@CustomPrice"),
                     new SqlParameter("@IndirectMaterialFeeAllocationTypeId", SqlDbType.Int){ Value = req.IndirectMaterialFeeAllocationTypeId},
