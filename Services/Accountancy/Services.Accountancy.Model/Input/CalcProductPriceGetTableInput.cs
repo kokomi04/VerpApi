@@ -8,12 +8,26 @@ namespace VErp.Services.Accountancy.Model.Input
 {
     public class CalcProductPriceGetTableInput
     {
-        public long FromDate { get; set; } 
+        public long FromDate { get; set; }
         public long ToDate { get; set; }
         public IList<string> GroupColumns { get; set; }
         public NonCamelCaseDictionary<decimal> OtherFee { get; set; }
-        public EnumCalcProductPriceAllocationCriteria CP_NVL_GT_TCPB_ID { get; set; }
-        public EnumCalcProductPriceAllocationCriteria CP_NHANC_GT_TCPB_ID { get; set; }
-        public EnumCalcProductPriceAllocationCriteria CP_SXCHUNG_TCPB_ID { get; set; }
+        public NonCamelCaseDictionary<decimal> CustomPrice { get; set; }
+        public EnumCalcProductPriceAllocationType IndirectMaterialFeeAllocationTypeId { get; set; }
+        public decimal IndirectMaterialFeeSumCustom { get; set; }
+
+        public EnumCalcProductPriceAllocationType IndirectLaborFeeAllocationTypeId { get; set; }
+        public decimal IndirectLaborFeeSumCustom { get; set; }
+
+        public EnumCalcProductPriceAllocationType GeneralManufacturingAllocationTypeId { get; set; }
+        public decimal GeneralManufacturingSumCustom { get; set; }
+    }
+
+    public class CalcProductPriceGetTableOutput
+    {
+        public IList<NonCamelCaseDictionary> Data { get; set; }
+        public decimal? IndirectMaterialFeeSum { get; set; }
+        public decimal? IndirectLaborFeeSum { get; set; }
+        public decimal? GeneralManufacturingSum { get; set; }
     }
 }
