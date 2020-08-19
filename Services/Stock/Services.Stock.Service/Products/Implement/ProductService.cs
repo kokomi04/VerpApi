@@ -934,10 +934,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
-            var name01Text = nameof(ProductImportModel.ProductUnitConversionName01);
+            //var name01Text = nameof(ProductImportModel.ProductUnitConversionName01);
             var unit01Text = nameof(ProductImportModel.SecondaryUnitId01);
             var exp01Text = nameof(ProductImportModel.FactorExpression01);
-            var desc01Text = nameof(ProductImportModel.ConversionDescription01);
+            //var desc01Text = nameof(ProductImportModel.ConversionDescription01);
             Type typeInfo = typeof(ProductImportModel);
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -966,7 +966,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         ProductExtraInfo = new ProductExtraInfo()
                         {
                             Specification = row.Specification,
-                            Description = row.Description,
+                            //Description = row.Description,
                             IsDeleted = false
                         },
                         ProductStockInfo = new ProductStockInfo()
@@ -976,7 +976,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             AmountWarningMax = row.AmountWarningMax,
                             TimeWarningTimeTypeId = null,
                             TimeWarningAmount = null,
-                            DescriptionToStock = row.DescriptionToStock,
+                            //DescriptionToStock = row.DescriptionToStock,
                             ExpireTimeTypeId = (int?)row.ExpireTimeTypeId,
                             ExpireTimeAmount = row.ExpireTimeAmount,
                             IsDeleted = false
@@ -1002,16 +1002,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     for (int suffix = 1; suffix <= 5; suffix++)
                     {
-                        var nameText = suffix > 1 ? new StringBuilder(name01Text).Remove(name01Text.Length - 2, 2).Append($"0{suffix}").ToString() : name01Text;
+                        //var nameText = suffix > 1 ? new StringBuilder(name01Text).Remove(name01Text.Length - 2, 2).Append($"0{suffix}").ToString() : name01Text;
                         var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
                         var expText = suffix > 1 ? new StringBuilder(exp01Text).Remove(exp01Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp01Text;
-                        var descText = suffix > 1 ? new StringBuilder(desc01Text).Remove(desc01Text.Length - 2, 2).Append($"0{suffix}").ToString() : desc01Text;
+                        //var descText = suffix > 1 ? new StringBuilder(desc01Text).Remove(desc01Text.Length - 2, 2).Append($"0{suffix}").ToString() : desc01Text;
 
-                        var name = typeInfo.GetProperty(nameText).GetValue(row) as string;
+                        //var name = typeInfo.GetProperty(nameText).GetValue(row) as string;
                         var unitId = typeInfo.GetProperty(unitText).GetValue(row) as int?;
                         var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
-                        var desc = typeInfo.GetProperty(descText).GetValue(row) as string;
-                        if (name != null && unitId != null)
+                        //var desc = typeInfo.GetProperty(descText).GetValue(row) as string;
+                        if (unitId != null)
                         {
                             try
                             {
@@ -1029,10 +1029,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                             lstUnitConverions.Add(new ProductUnitConversion()
                             {
-                                ProductUnitConversionName = name,
+                                ProductUnitConversionName = unitText,
                                 SecondaryUnitId = unitId.Value,
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
-                                ConversionDescription = typeInfo.GetProperty(descText).GetValue(row) as string,
+                                //ConversionDescription = typeInfo.GetProperty(descText).GetValue(row) as string,
                                 IsDefault = false,
                                 IsFreeStyle = false
                             });
@@ -1065,7 +1065,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 EntityField field = new EntityField
                 {
                     FieldName = prop.Name,
-                    Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name
+                    Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name,
+                    Group = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.GroupName 
                 };
                 fields.Add(field);
             }
