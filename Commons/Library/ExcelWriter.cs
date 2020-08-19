@@ -103,22 +103,20 @@ namespace VErp.Commons.Library
             endRow = startRow + addedRow - 1;
         }
 
-        public async Task<MemoryStream> WriteToStream()
+        public async Task<MemoryStream> WriteToStream(string fileName = "NewFile")
         {
-            string tempFilePath = @"TempFile";
-
-            using (FileStream file = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
+            using (FileStream file = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
                 hssfwb.Write(file);
                 file.Close();
             }
             var memory = new MemoryStream();
-            using (var stream = new FileStream(tempFilePath, FileMode.Open))
+            using (var stream = new FileStream(fileName, FileMode.Open))
             {
                 await stream.CopyToAsync(memory);
                 stream.Close();
             }
-            File.Delete(tempFilePath);
+            File.Delete(fileName);
             memory.Position = 0;
             return memory;
         }

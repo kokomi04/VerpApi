@@ -724,7 +724,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var tableName = $"v{category.CategoryCode}";
                 var fields = (from f in _accountancyContext.CategoryField
                               join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                              where c.CategoryCode == category.CategoryCode && f.FormTypeId != (int)EnumFormType.ViewOnly
+                              where c.CategoryCode == category.CategoryCode
                               select f).ToList();
 
                 var selectCondition = $"{GetSelect(tableName, fields, category.IsTreeView)} FROM {tableName} ";

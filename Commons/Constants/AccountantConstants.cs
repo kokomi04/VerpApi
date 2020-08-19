@@ -33,5 +33,8 @@ namespace VErp.Commons.Constants
 
         public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
         public const string REPORT_BSC_VALUE_PARAM_PREFIX = "BSC_VALUE_";
+
+
+        public const string BILL_CODE = "so_ct";
     }
 }

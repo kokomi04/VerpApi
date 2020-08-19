@@ -1772,12 +1772,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
             var rows = data.ConvertData();
 
-            var areas = _accountancyDBContext.InputArea
-                .Include(a => a.InputAreaField)
+            var inputType = _accountancyDBContext.InputType
+                .Include(i => i.InputArea)
+                .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.InputField)
-                .Where(a => a.InputTypeId == inputTypeId)
-                .OrderBy(a => a.SortOrder)
-                .ToList();
+                .Where(i => i.InputTypeId == inputTypeId)
+                .FirstOrDefault();
+
+            if (inputType == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
 
             var refDataTypes = (from iaf in _accountancyDBContext.InputAreaField.Where(iaf => iaf.InputTypeId == inputTypeId)
                                 join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
@@ -1794,8 +1796,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var writer = new ExcelWriter();
             int endRow = 0;
+
+            Dictionary<int, long> sumValues = new Dictionary<int, long>();
+            var billCode = string.Empty;
             // Write area
-            foreach (var area in areas)
+            foreach (var area in inputType.InputArea.OrderBy(a => a.SortOrder))
             {
                 DataTable table = new DataTable();
                 if (!area.IsMultiRow)
@@ -1826,6 +1831,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             rowIndx++;
                         }
                     }
+
+                    var uniqField = area.InputAreaField.FirstOrDefault(f => f.IsUnique)?.InputField.FieldName ?? AccountantConstants.BILL_CODE;
+                    info.TryGetValue(uniqField, out billCode);
+
                 }
                 else
                 {
@@ -1839,6 +1848,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         int columnIndx = 0;
                         foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
                         {
+                            if (field.IsCalcSum)
+                            {
+
+                            }
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
                             var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (row.ContainsKey(fieldName))
@@ -1850,10 +1863,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 byte[] headerRgb = new byte[3] { 60, 120, 216 };
+                
                 writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
 
-            MemoryStream stream = await writer.WriteToStream();
+            var fileName = $"{inputType.InputTypeCode}_{billCode}";
+
+            MemoryStream stream = await writer.WriteToStream(fileName);
             return stream;
         }
 
