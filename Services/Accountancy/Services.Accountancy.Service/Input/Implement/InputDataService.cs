@@ -1873,10 +1873,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         ExcelRow sumRow = table.NewRow();
                         foreach (int columnIndx in sumCalc)
                         {
-                            var columnName = columnIndx.GetExcelColumnName();
+                            var columnName = (columnIndx + 1).GetExcelColumnName();
                             sumRow[columnIndx] = new ExcelCell
                             {
-                                Value = $"SUM({columnName}{endRow + 1}:{columnName}{endRow + rows.Count + 1})",
+                                Value = $"SUM({columnName}{endRow + 3}:{columnName}{endRow + rows.Count + 2})",
                                 Type = EnumExcelType.Formula
                             };
                         }
