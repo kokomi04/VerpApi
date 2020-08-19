@@ -549,6 +549,47 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static EnumExcelType GetExcelType(this EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    return EnumExcelType.Boolean;
+                case EnumDataType.Int:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.Percentage:
+                case EnumDataType.BigInt:
+                case EnumDataType.Decimal:
+                    return EnumExcelType.Number;
+                case EnumDataType.Date:
+                    return EnumExcelType.DateTime;
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    return EnumExcelType.String;
+            }
+        }
+
+
+        public static string GetExcelColumnName(this int columnNumber)
+        {
+            int dividend = columnNumber;
+            string columnName = String.Empty;
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
+        }
+
         public static bool IsSelectForm(this EnumFormType formType)
         {
             return AccountantConstants.SELECT_FORM_TYPES.Contains(formType);

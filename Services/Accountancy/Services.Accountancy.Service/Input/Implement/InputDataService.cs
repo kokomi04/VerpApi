@@ -1757,7 +1757,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
-        public async Task<MemoryStream> ExportBill(int inputTypeId, long fId)
+        public async Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId)
         {
 
             var dataSql = @$"
@@ -1797,23 +1797,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var writer = new ExcelWriter();
             int endRow = 0;
 
-            Dictionary<int, long> sumValues = new Dictionary<int, long>();
             var billCode = string.Empty;
             // Write area
             foreach (var area in inputType.InputArea.OrderBy(a => a.SortOrder))
             {
-                DataTable table = new DataTable();
+                ExcelData table = new ExcelData();
                 if (!area.IsMultiRow)
                 {
                     // Write info
                     for (int collumIndx = 0; collumIndx < area.Columns; collumIndx++)
                     {
-                        table.Columns.Add();
-                        table.Columns.Add();
+                        table.AddColumn();
+                        table.AddColumn();
                         int rowIndx = 0;
                         foreach (var field in area.InputAreaField.Where(f => f.Column == (collumIndx + 1)).OrderBy(f => f.SortOrder))
                         {
-                            DataRow row;
+                            ExcelRow row;
                             if (table.Rows.Count <= rowIndx)
                             {
                                 row = table.NewRow();
@@ -1823,18 +1822,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             {
                                 row = table.Rows[rowIndx];
                             }
-                            row[collumIndx * 2] = $"{field.Title}:";
+                            row[collumIndx * 2] = new ExcelCell
+                            {
+                                Value = $"{field.Title}:",
+                                Type = EnumExcelType.String
+                            };
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
                             var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (info.ContainsKey(fieldName))
-                                row[collumIndx * 2 + 1] = dataType.GetSqlValue(info[fieldName]);
+                                row[collumIndx * 2 + 1] = new ExcelCell
+                                {
+                                    Value = dataType.GetSqlValue(info[fieldName]),
+                                    Type = dataType.GetExcelType()
+                                };
                             rowIndx++;
                         }
                     }
 
                     var uniqField = area.InputAreaField.FirstOrDefault(f => f.IsUnique)?.InputField.FieldName ?? AccountantConstants.BILL_CODE;
                     info.TryGetValue(uniqField, out billCode);
-
                 }
                 else
                 {
@@ -1842,35 +1848,51 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         table.Columns.Add(field.Title);
                     }
+                    var sumCalc = new List<int>();
                     foreach (var row in rows)
                     {
-                        DataRow tbRow = table.NewRow();
+                        ExcelRow tbRow = table.NewRow();
                         int columnIndx = 0;
                         foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
                         {
-                            if (field.IsCalcSum)
-                            {
-
-                            }
+                            if (field.IsCalcSum) sumCalc.Add(columnIndx);
                             var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
                             var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (row.ContainsKey(fieldName))
-                                tbRow[columnIndx] = dataType.GetSqlValue(row[fieldName]);
+                                tbRow[columnIndx] = new ExcelCell
+                                {
+                                    Value = dataType.GetSqlValue(row[fieldName]),
+                                    Type = dataType.GetExcelType()
+                                };
                             columnIndx++;
                         }
                         table.Rows.Add(tbRow);
                     }
+                    if (sumCalc.Count > 0)
+                    {
+                        ExcelRow sumRow = table.NewRow();
+                        foreach (int columnIndx in sumCalc)
+                        {
+                            var columnName = columnIndx.GetExcelColumnName();
+                            sumRow[columnIndx] = new ExcelCell
+                            {
+                                Value = $"SUM({columnName}{endRow + 1}:{columnName}{endRow + rows.Count + 1})",
+                                Type = EnumExcelType.Formula
+                            };
+                        }
+                        table.Rows.Add(sumRow);
+                    }
                 }
 
                 byte[] headerRgb = new byte[3] { 60, 120, 216 };
-                
+
                 writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
 
-            var fileName = $"{inputType.InputTypeCode}_{billCode}";
+            var fileName = $"{inputType.InputTypeCode}_{billCode}.xlsx";
 
-            MemoryStream stream = await writer.WriteToStream(fileName);
-            return stream;
+            MemoryStream stream = await writer.WriteToStream();
+            return (stream, fileName);
         }
 
         public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate)
