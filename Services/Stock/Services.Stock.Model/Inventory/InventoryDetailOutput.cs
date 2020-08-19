@@ -11,7 +11,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long InventoryDetailId { get; set; }
         public long InventoryId { get; set; }
         public int ProductId { get; set; }
-        
+
         public int? PrimaryUnitId { get; set; }
         public decimal? RequestPrimaryQuantity { get; set; }
         public decimal PrimaryQuantity { get; set; }
@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? FromPackageId { set; get; }
 
         public long? ToPackageId { set; get; }
-
+        public string FromPackageCode { get; set; }
         public int? PackageOptionId { set; get; }
 
         public int? RefObjectTypeId { get; set; }
