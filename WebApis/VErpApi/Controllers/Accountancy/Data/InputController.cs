@@ -15,6 +15,7 @@ using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using System.IO;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -103,10 +104,10 @@ namespace VErpApi.Controllers.Accountancy.Data
         [Route("{inputTypeId}/{fId}/datafile")]
         public async Task<FileStreamResult> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
-            
+
             var result = await _inputDataService.ExportBill(inputTypeId, fId);
             return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
-                      
+
         }
 
         [HttpGet]
@@ -114,6 +115,20 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
         {
             return await _inputDataService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+        }
+
+        [HttpGet]
+        [Route("CalcCostTransfer")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer([FromQuery] long toDate, [FromQuery] EnumCostTransfer type, [FromQuery] bool byDepartment, [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock)
+        {
+            return await _inputDataService.CalcCostTransfer(toDate, type, byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock);
+        }
+
+        [HttpGet]
+        [Route("CostTransferType")]
+        public List<CostTransferTypeModel> GetCostTransferTypes()
+        {
+            return _inputDataService.GetCostTransferTypes();
         }
 
         [HttpGet]

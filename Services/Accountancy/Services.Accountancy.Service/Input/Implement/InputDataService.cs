@@ -1908,6 +1908,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
+            bool byExpenseItem, bool byFactory, bool byProduct, bool byStock)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                new SqlParameter("@by_bo_phan", byDepartment),
+                new SqlParameter("@by_kh", byCustomer),
+                new SqlParameter("@by_tscd", byFixedAsset),
+                new SqlParameter("@by_khoan_muc_cp", byExpenseItem),
+                new SqlParameter("@by_phan_xuong", byFactory),
+                new SqlParameter("@by_vthhtp", byProduct),
+                new SqlParameter("@by_kho", byStock),
+            };
+
+            var sql = new StringBuilder("EXEC ufn_TK_CalcFixExchangeRate");
+            foreach (var param in sqlParams)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+
         public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
@@ -1933,6 +1962,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             };
             await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams);
             return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public List<CostTransferTypeModel> GetCostTransferTypes()
+        {
+            var types = EnumExtensions.GetEnumMembers<EnumCostTransfer>().Select(m => new CostTransferTypeModel
+            {
+                Title = m.Description,
+                Value = (int)m.Enum
+            }).ToList();
+            return types;
         }
 
         protected class DataEqualityComparer : IEqualityComparer<object>
