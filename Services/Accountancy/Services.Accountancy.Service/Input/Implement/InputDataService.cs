@@ -1964,7 +1964,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
-        public List<CostTransferTypeModel> GetCostTransferTypes()
+        public ICollection<CostTransferTypeModel> GetCostTransferTypes()
         {
             var types = EnumExtensions.GetEnumMembers<EnumCostTransfer>().Select(m => new CostTransferTypeModel
             {
