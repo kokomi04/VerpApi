@@ -79,7 +79,7 @@ namespace VErp.Commons.Library
                     cell.SetCellValue(collumn.ToString());
                     if (headerRgb != null)
                     {
-                        XSSFCellStyle cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
+                        var cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
                         cellStyle.SetFillForegroundColor(new XSSFColor(headerRgb));
                         cellStyle.FillPattern = FillPattern.SolidForeground;
                         cell.CellStyle = cellStyle;
@@ -89,6 +89,10 @@ namespace VErp.Commons.Library
                 addedRow++;
             }
             int columnLength = table.Columns.Count;
+
+            var dateStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
+            var createHelper = hssfwb.GetCreationHelper();
+            dateStyle.SetDataFormat(createHelper.CreateDataFormat().GetFormat("dd/mm/yyyy"));
 
             foreach (ExcelRow row in table.Rows)
             {
@@ -109,6 +113,7 @@ namespace VErp.Commons.Library
                             break;
                         case EnumExcelType.DateTime:
                             cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
+                            cell.CellStyle = dateStyle;
                             break;
                         case EnumExcelType.Number:
                             cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));

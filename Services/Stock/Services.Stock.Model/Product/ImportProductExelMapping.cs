@@ -64,7 +64,7 @@ namespace VErp.Services.Stock.Model.Product
         // Unit conversion
         //[Display(Name = "Quy cách đơn vị chuyển đổi 01")]
         //[MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi 01 quá dài")]
-        //public string ProductUnitConversionName01 { get; set; }
+        //public string ProductUnitConversionName01 { get; set; }D:\VERP\verp-api\Services\Stock\Services.Stock.Model\Inventory\
         [Display(Name = "ĐVT1 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public int? SecondaryUnitId01 { get; set; }
         [Display(Name = "ĐVT1 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
