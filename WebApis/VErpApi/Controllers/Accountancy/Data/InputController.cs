@@ -126,7 +126,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CostTransferType")]
-        public List<CostTransferTypeModel> GetCostTransferTypes()
+        public ICollection<CostTransferTypeModel> GetCostTransferTypes()
         {
             return _inputDataService.GetCostTransferTypes();
         }
