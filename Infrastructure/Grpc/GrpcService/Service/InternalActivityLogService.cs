@@ -1,10 +1,6 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
+﻿using Grpc.Core;
 using GrpcProto.Protos;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Service.Activity;
     
 namespace GrpcService.Service

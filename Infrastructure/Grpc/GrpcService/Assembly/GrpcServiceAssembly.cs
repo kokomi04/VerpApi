@@ -11,30 +11,5 @@ namespace GrpcService.Assembly
     public static class GrpcServiceAssembly
     {
         public static System.Reflection.Assembly Assembly => typeof(GrpcServiceAssembly).Assembly;
-
-        public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app)
-        {
-            app.UseEndpoints(opt =>{
-                opt.MapGrpcService<InternalActivityLogService>();
-            });
-
-            return app;
-        }
-
-        public static IServiceCollection AddCustomGrpcClient(this IServiceCollection services, Uri address)
-        {
-            services.AddGrpc(options =>{
-                    
-            });
-
-            services.AddGrpcClient<InternalActivityLog.InternalActivityLogClient>(opt =>{
-                opt.Address = address;
-            })
-                .EnableCallContextPropagation(opts => opts.SuppressContextNotFoundErrors = true);
-
-            return services;
-        }
-
-        
     }
 }

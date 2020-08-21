@@ -1,16 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.31.0" />
     <PackageReference Include="Grpc.Core" Version="2.31.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ApiCore\ApiCore.csproj" />
     <ProjectReference Include="..\..\..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
   </ItemGroup>
 
