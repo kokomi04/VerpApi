@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Net.Http;
@@ -26,19 +27,40 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
         private readonly ICurrentContextService _currentContext;
+        private readonly GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient _internalActivityLogClient;
 
-        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
+        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext, GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient internalActivityLogClient)
         {
             _httpClient = httpClient;
             _logger = logger;
             _appSetting = appSetting.Value;
             _currentContext = currentContext;
+            _internalActivityLogClient = internalActivityLogClient;
         }
 
         public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData)
         {
             try
             {
+                if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
+                {
+                    var headers = new Metadata();
+                    headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
+
+                    var reulst = await _internalActivityLogClient.LogAsync(new GrpcProto.Protos.ActivityInput
+                    {
+                        UserId = _currentContext.UserId,
+                        ActionId = (GrpcProto.Protos.EnumAction)_currentContext.Action,
+                        ObjectTypeId = (GrpcProto.Protos.EnumObjectType)objectTypeId,
+                        ObjectId = objectId,
+                        MessageTypeId = (GrpcProto.Protos.EnumMessageType)EnumMessageType.ActivityLog,
+                        Message = message,
+                        Data = jsonData
+                    }, headers);
+
+                    return reulst.IsSuccess;
+                }
+
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
                 var body = new ActivityInput
                 {
@@ -50,7 +72,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Message = message,
                     Data = jsonData
                 }.JsonSerialize();
-              
+
 
                 var request = new HttpRequestMessage
                 {
@@ -77,5 +99,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return false;
             }
         }
+        
     }
 }

@@ -45,6 +45,7 @@
   
   <ItemGroup>    
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.0.1" />    
+    <PackageReference Include="Grpc.AspNetCore" Version="2.31.0" />    
     <PackageReference Include="IdentityServer4" Version="4.0.4" />    
     <PackageReference Include="IdentityServer4.EntityFramework" Version="4.0.4" />    
     <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="4.0.4" />    
@@ -61,6 +62,7 @@
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Grpc\GrpcService\GrpcService.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj" />
