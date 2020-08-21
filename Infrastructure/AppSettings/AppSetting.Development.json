@@ -21,5 +21,8 @@
     "SecretToken": "",
     "ServerUrls": "http://localhost:8200",
     "ServiceName": "Verp-Api"
+  },
+  "GrpcInternal": {
+    "Address": "http://103.21.149.106:8001"
   }
 }

@@ -16,5 +16,10 @@
     "FileService": {
       "Endpoint": "http://103.21.149.106:8001"
     }
+  },
+  "GrpcInternal": {
+    "Address": "http://103.21.149.106:8001"
   }
+
+
 }
