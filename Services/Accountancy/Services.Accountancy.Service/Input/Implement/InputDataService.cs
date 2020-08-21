@@ -1925,7 +1925,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@by_kho", byStock),
             };
 
-            var sql = new StringBuilder("EXEC ufn_TK_CalcFixExchangeRate");
+            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransfer");
             foreach (var param in sqlParams)
             {
                 sql.Append($" {param.ParameterName} = {param.ParameterName},");

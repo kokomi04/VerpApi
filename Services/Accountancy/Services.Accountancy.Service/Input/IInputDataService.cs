@@ -38,7 +38,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
-        
-        List<CostTransferTypeModel> GetCostTransferTypes();
+
+        ICollection<CostTransferTypeModel> GetCostTransferTypes();
     }
 }
