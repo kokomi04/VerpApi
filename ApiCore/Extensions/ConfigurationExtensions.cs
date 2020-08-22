@@ -1,15 +1,14 @@
 ﻿using ActivityLogDB;
-using GrpcProto.Protos;
-using GrpcService.Service;
+using Grpc.AspNetCore.ClientFactory;
+using Grpc.Net.ClientFactory;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
+using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.MasterDB;
@@ -110,27 +109,53 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             return services;
         }
 
-        public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app)
+        public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app, Assembly assembly)
         {
-            app.UseEndpoints(opt => {
-                opt.MapGrpcService<InternalActivityLogService>();
+            app.UseEndpoints(opt =>
+            {
+                AddEndpointsGrpcService(opt, assembly, "Service");
             });
 
             return app;
         }
 
-        public static IServiceCollection AddCustomGrpcClient(this IServiceCollection services, Uri address)
+        public static void AddEndpointsGrpcService(IEndpointRouteBuilder builder, Assembly assembly, string surfix)
         {
-            services.AddGrpc(options => {
+            var types = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(surfix))
+            .ToArray();
 
-            });
+            foreach (var type in types)
+            {
+                var method = typeof(GrpcEndpointRouteBuilderExtensions).GetMethod("MapGrpcService")
+                    .MakeGenericMethod(type);
+                method?.Invoke(null, new[] { builder });
+            }
+        }
 
-            services.AddGrpcClient<InternalActivityLog.InternalActivityLogClient>(opt => {
-                opt.Address = address;
-            })
-                .EnableCallContextPropagation(opts => opts.SuppressContextNotFoundErrors = true);
+        public static IServiceCollection AddCustomGrpcClient(IServiceCollection services, Assembly assembly,
+            Action<GrpcClientFactoryOptions> configureClient, Action<GrpcContextPropagationOptions> configureOptions, string surfix)
+        {
+            var types = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(surfix))
+            .Select(t => t.BaseType)
+            .ToArray();
+
+            foreach (var type in types)
+            {
+                var method = typeof(GrpcClientServiceExtensions).GetMethod("AddGrpcClient", new[] { typeof(IServiceCollection), typeof(Action<GrpcClientFactoryOptions>) })
+                    .MakeGenericMethod(type);
+                (method?.Invoke(null, new object[] { services, configureClient }) as IHttpClientBuilder)?
+                    .EnableCallContextPropagation(configureOptions);
+            }
 
             return services;
+        }
+
+        public static IServiceCollection AddCustomGrpcClient(this IServiceCollection services, Assembly assembly,
+            Action<GrpcClientFactoryOptions> configureClient, Action<GrpcContextPropagationOptions> configureOptions)
+        {
+            return AddCustomGrpcClient(services, assembly, configureClient, configureOptions, "Client");
         }
     }
 }

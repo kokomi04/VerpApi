@@ -58,7 +58,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         Data = jsonData
                     }, headers);
 
-                    return reulst.IsSuccess;
+                    return (bool)(reulst?.IsSuccess);
                 }
 
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
