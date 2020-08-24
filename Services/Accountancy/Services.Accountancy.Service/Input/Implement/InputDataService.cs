@@ -1974,6 +1974,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return types;
         }
 
+        public async Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
             private readonly EnumDataType dataType;

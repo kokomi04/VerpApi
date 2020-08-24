@@ -40,5 +40,9 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
 
         ICollection<CostTransferTypeModel> GetCostTransferTypes();
+
+        Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
+
+        Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
     }
 }
