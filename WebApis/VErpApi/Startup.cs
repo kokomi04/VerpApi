@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using GrpcService.Assembly;
 using IdentityServer4.EntityFramework.Stores;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -28,6 +27,7 @@ using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
+using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
@@ -49,9 +49,12 @@ namespace VErp.WebApis.VErpApi
 
             ConfigReadWriteDBContext(services);
 
-            
-
-            services.AddCustomGrpcClient(new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/')?? "http://0.0.0.0:9999/"));
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly ,
+                configureClient => {
+                    configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
+                }, configureOptions => {
+                    configureOptions.SuppressContextNotFoundErrors = true;
+                });
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -132,7 +135,7 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureBase(app, env, loggerFactory, true);
 
-            app.UseEndpointsGrpcService();
+            app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>
