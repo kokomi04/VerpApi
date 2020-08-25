@@ -17,15 +17,15 @@ namespace VErp.Services.Stock.Service.Products
         Task<IList<ProductModel>> GetListProductsByIds(IList<int> productIds);
         Task<IList<ProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req);
 
-        Task<ServiceResult<int>> AddProduct(ProductModel req);
+        Task<int> AddProduct(ProductModel req);
         Task<int> AddProductToDb(ProductModel req);
 
-        Task<ServiceResult<ProductModel>> ProductInfo(int productId);
-        Task<Enum> UpdateProduct(int productId, ProductModel req);
-        Task<Enum> DeleteProduct(int productId);
+        Task<ProductModel> ProductInfo(int productId);
+        Task<bool> UpdateProduct(int productId, ProductModel req);
+        Task<bool> DeleteProduct(int productId);
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
-        Task<List<EntityField>> GetFields(Type type);
+        List<EntityField> GetFields(Type type);
         Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }

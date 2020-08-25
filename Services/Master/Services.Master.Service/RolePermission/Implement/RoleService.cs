@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
@@ -38,7 +39,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddRole(RoleInput role)
+        public async Task<int> AddRole(RoleInput role)
         {
             if (role.ParentRoleId == 0)
                 role.ParentRoleId = null;
@@ -48,11 +49,11 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var validate = ValidateRoleInput(null, role);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             Role parentInfo = null;
-           
+
             var roleInfo = new Role()
             {
                 RoleName = role.RoleName,
@@ -72,7 +73,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             if (role.ParentRoleId.HasValue)
             {
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
-                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+                if (parentInfo == null) throw new BadRequestException(RoleErrorCode.ParentRoleNotFound);
             }
 
             using (var trans = _masterContext.Database.BeginTransaction())
@@ -129,7 +130,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return (lst, total);
         }
 
-        public async Task<ServiceResult<RoleOutput>> GetRoleInfo(int roleId)
+        public async Task<RoleOutput> GetRoleInfo(int roleId)
         {
             var roleInfo = await _masterContext.Role.Select(r => new RoleOutput()
             {
@@ -146,13 +147,13 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             if (roleInfo == null)
             {
-                return RoleErrorCode.RoleNotFound;
+                throw new BadRequestException(RoleErrorCode.RoleNotFound);
             }
 
             return roleInfo;
         }
 
-        public async Task<Enum> UpdateRole(int roleId, RoleInput role)
+        public async Task<bool> UpdateRole(int roleId, RoleInput role)
         {
             if (role.ParentRoleId == 0)
                 role.ParentRoleId = null;
@@ -162,26 +163,26 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var validate = ValidateRoleInput(roleId, role);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
             if (roleInfo == null)
             {
-                return RoleErrorCode.RoleNotFound;
+                throw new BadRequestException(RoleErrorCode.RoleNotFound);
             }
 
             if (!roleInfo.IsEditable)
             {
-                return RoleErrorCode.RoleIsReadonly;
+                throw new BadRequestException(RoleErrorCode.RoleIsReadonly);
             }
 
-            Role parentInfo = null;          
+            Role parentInfo = null;
 
             if (role.ParentRoleId.HasValue)
             {
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
-                if (parentInfo == null) return RoleErrorCode.ParentRoleNotFound;
+                if (parentInfo == null) throw new BadRequestException(RoleErrorCode.ParentRoleNotFound);
             }
 
             using (var trans = _masterContext.Database.BeginTransaction())
@@ -205,23 +206,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<Enum> DeleteRole(int roleId)
+        public async Task<bool> DeleteRole(int roleId)
         {
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
             if (roleInfo == null)
             {
-                return RoleErrorCode.RoleNotFound;
+                throw new BadRequestException(RoleErrorCode.RoleNotFound);
             }
             if (!roleInfo.IsEditable)
             {
-                return RoleErrorCode.RoleIsReadonly;
+                throw new BadRequestException(RoleErrorCode.RoleIsReadonly);
             }
             if (_masterContext.Role.Any(r => r.ParentRoleId == roleId))
             {
-                return RoleErrorCode.ExistedChildrenRoles;
+                throw new BadRequestException(RoleErrorCode.ExistedChildrenRoles);
             }
 
             using (var trans = _masterContext.Database.BeginTransaction())
@@ -236,22 +237,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<Enum> UpdateRolePermission(int roleId, IList<RolePermissionModel> permissions)
+        public async Task<bool> UpdateRolePermission(int roleId, IList<RolePermissionModel> permissions)
         {
             permissions = permissions.Where(p => p.Permission > 0).ToList();
 
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == roleId);
             if (roleInfo == null)
             {
-                return RoleErrorCode.RoleNotFound;
+                throw new BadRequestException(RoleErrorCode.RoleNotFound);
             }
 
             if (!roleInfo.IsEditable)
             {
-                return RoleErrorCode.RoleIsReadonly;
+                throw new BadRequestException(RoleErrorCode.RoleIsReadonly);
             }
 
             using (var trans = await _masterContext.Database.BeginTransactionAsync())
@@ -280,7 +281,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", permissions.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
@@ -312,7 +313,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             .ToList();
         }
 
-        public async Task<Enum> UpdateStockPermission(IList<StockPemissionOutput> req)
+        public async Task<bool> UpdateStockPermission(IList<StockPemissionOutput> req)
         {
             if (req == null) req = new List<StockPemissionOutput>();
 
@@ -326,7 +327,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 RoleId = d.RoleId
             }));
             await _masterContext.SaveChangesAsync();
-            return GeneralCode.Success;
+            return true;
         }
         #region private
 
@@ -395,7 +396,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
             _masterContext.SaveChanges();
         }
-       
+
         #endregion
     }
 }

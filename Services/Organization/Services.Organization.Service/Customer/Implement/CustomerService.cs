@@ -50,7 +50,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             _currentContextService = currentContextService;
         }
 
-        public async Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data)
+        public async Task<int> AddCustomer(int updatedUserId, CustomerModel data)
         {
             var result = await AddBatchCustomers(new[] { data });
 
@@ -182,12 +182,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         }
 
 
-        public async Task<Enum> DeleteCustomer(int customerId)
+        public async Task<bool> DeleteCustomer(int customerId)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
             {
-                return CustomerErrorCode.CustomerNotFound;
+                throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
@@ -203,15 +203,15 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Xóa đối tác {customerInfo.CustomerName}", customerInfo.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<CustomerModel>> GetCustomerInfo(int customerId)
+        public async Task<CustomerModel> GetCustomerInfo(int customerId)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
             {
-                return CustomerErrorCode.CustomerNotFound;
+                throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var bankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
@@ -331,17 +331,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             ).ToListAsync();
         }
 
-        public async Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
             {
-                return CustomerErrorCode.CustomerNotFound;
+                throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
             var checkExisted = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
             if (checkExisted)
-                return CustomerErrorCode.CustomerCodeAlreadyExisted;
+                throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
             //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
             //if (existedCustomer != null)
@@ -455,13 +455,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     await _organizationContext.SaveChangesAsync();
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
-                    return GeneralCode.Success;
+                    return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "Update");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
         }

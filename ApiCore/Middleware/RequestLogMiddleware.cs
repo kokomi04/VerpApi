@@ -25,6 +25,12 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            if (context.Request.ContentType?.Contains("grpc") == true)
+            {
+                await _next(context);
+                return;
+            }
+
             if (!context.Request.Path.ToString().Contains("connect/introspect") && new[] { "POST", "PUT", "DELETE" }.Contains(context.Request.Method))
             {
                 context.Request.EnableBuffering();

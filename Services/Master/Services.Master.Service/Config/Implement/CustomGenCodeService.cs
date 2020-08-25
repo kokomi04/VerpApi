@@ -82,13 +82,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (pagedData, total);
         }
 
-        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetInfo(int customGenCodeId)
+        public async Task<CustomGenCodeOutputModel> GetInfo(int customGenCodeId)
         {
 
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
             if (obj == null)
             {
-                return CustomGenCodeErrorCode.CustomConfigNotFound;
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
             var info = new CustomGenCodeOutputModel()
             {
@@ -131,7 +131,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted);
             }
 
-            var info = new CustomGenCodeOutputModel()
+            return new CustomGenCodeOutputModel()
             {
                 CustomGenCodeId = obj.CustomGenCodeId,
                 ParentId = obj.ParentId,
@@ -149,43 +149,36 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
                 SortOrder = obj.SortOrder
             };
-            return info;
         }
 
-        public async Task<Enum> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model)
+        public async Task<bool> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model)
         {
-            try
+
+            var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
+
+            if (obj == null)
             {
-                var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
-
-                if (obj == null)
-                {
-                    return CustomGenCodeErrorCode.CustomConfigNotFound;
-                }
-                obj.ParentId = model.ParentId;
-                obj.CustomGenCodeName = model.CustomGenCodeName;
-                obj.CodeLength = model.CodeLength;
-                obj.Prefix = model.Prefix;
-                obj.Suffix = model.Suffix;
-                obj.Seperator = model.Seperator;
-                obj.Description = model.Description;
-                obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.UtcNow;
-
-                obj.LastValue = model.LastValue;
-                obj.SortOrder = model.SortOrder;
-
-                await _masterDbContext.SaveChangesAsync();
-                await UpdateSortOrder();
-
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
-                return GeneralCode.Success;
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+            obj.ParentId = model.ParentId;
+            obj.CustomGenCodeName = model.CustomGenCodeName;
+            obj.CodeLength = model.CodeLength;
+            obj.Prefix = model.Prefix;
+            obj.Suffix = model.Suffix;
+            obj.Seperator = model.Seperator;
+            obj.Description = model.Description;
+            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedTime = DateTime.UtcNow;
+
+            obj.LastValue = model.LastValue;
+            obj.SortOrder = model.SortOrder;
+
+            await _masterDbContext.SaveChangesAsync();
+            await UpdateSortOrder();
+
+            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
+            return true;
+
         }
 
 
@@ -213,226 +206,195 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterDbContext.SaveChangesAsync();
         }
 
-        public async Task<Enum> MapObjectCustomGenCode(int currentUserId, ObjectCustomGenCodeMapping model)
+        public async Task<bool> MapObjectCustomGenCode(int currentUserId, ObjectCustomGenCodeMapping model)
         {
-            try
+
+            var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && !c.IsDeleted && c.CustomGenCodeId == model.CustomGenCodeId);
+            if (config == null)
             {
-                var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && !c.IsDeleted && c.CustomGenCodeId == model.CustomGenCodeId);
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+            }
+            var obj = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == model.ObjectTypeId && m.ObjectId == model.ObjectId);
+            if (obj == null)
+            {
+                _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
+                obj = model;
+            }
+            else
+            {
+                obj.CustomGenCodeId = model.CustomGenCodeId;
+                obj.UpdatedUserId = currentUserId;
+            }
+            await _masterDbContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
+
+            return true;
+
+        }
+        public async Task<bool> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data)
+        {
+
+            var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
+
+            foreach (var mapConfig in data)
+            {
+                var config = await _masterDbContext.CustomGenCode
+                    .Where(c => c.IsActived)
+                    .Where(c => c.CustomGenCodeId == mapConfig.Value)
+                    .FirstOrDefaultAsync();
                 if (config == null)
                 {
-                    return CustomGenCodeErrorCode.CustomConfigNotFound;
+                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                 }
-                var obj = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == model.ObjectTypeId && m.ObjectId == model.ObjectId);
-                if (obj == null)
+                var curMapConfig = await _masterDbContext.ObjectCustomGenCodeMapping
+                    .FirstOrDefaultAsync(m => m.ObjectTypeId == objectTypeId && m.ObjectId == mapConfig.Key);
+                if (curMapConfig == null)
                 {
-                    _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
-                    obj = model;
+                    curMapConfig = new ObjectCustomGenCodeMapping
+                    {
+                        ObjectTypeId = objectTypeId,
+                        ObjectId = mapConfig.Key,
+                        CustomGenCodeId = mapConfig.Value,
+                    };
+                    _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
                 }
-                else
+                else if (curMapConfig.CustomGenCodeId != mapConfig.Value)
                 {
-                    obj.CustomGenCodeId = model.CustomGenCodeId;
-                    obj.UpdatedUserId = currentUserId;
+                    curMapConfig.CustomGenCodeId = mapConfig.Value;
                 }
-                await _masterDbContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
-
-                return GeneralCode.Success;
+                if (!dic.ContainsKey(curMapConfig))
+                {
+                    dic.Add(curMapConfig, config);
+                }
             }
-            catch (Exception ex)
+            await _masterDbContext.SaveChangesAsync();
+
+            foreach (var item in dic)
             {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
+                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
             }
-        }
-        public async Task<Enum> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data)
-        {
-            try
-            {
-                var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
 
-                foreach (var mapConfig in data)
-                {
-                    var config = await _masterDbContext.CustomGenCode
-                        .Where(c => c.IsActived)
-                        .Where(c => c.CustomGenCodeId == mapConfig.Value)
-                        .FirstOrDefaultAsync();
-                    if (config == null)
-                    {
-                        return CustomGenCodeErrorCode.CustomConfigNotFound;
-                    }
-                    var curMapConfig = await _masterDbContext.ObjectCustomGenCodeMapping
-                        .FirstOrDefaultAsync(m => m.ObjectTypeId == objectTypeId && m.ObjectId == mapConfig.Key);
-                    if (curMapConfig == null)
-                    {
-                        curMapConfig = new ObjectCustomGenCodeMapping
-                        {
-                            ObjectTypeId = objectTypeId,
-                            ObjectId = mapConfig.Key,
-                            CustomGenCodeId = mapConfig.Value,
-                        };
-                        _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
-                    }
-                    else if (curMapConfig.CustomGenCodeId != mapConfig.Value)
-                    {
-                        curMapConfig.CustomGenCodeId = mapConfig.Value;
-                    }
+            return true;
 
-                    if (!dic.ContainsKey(curMapConfig))
-                    {
-                        dic.Add(curMapConfig, config);
-                    }
-                }
-                await _masterDbContext.SaveChangesAsync();
-
-                foreach(var item in dic)
-                {
-                    await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
-                }
-
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
         }
 
-        public async Task<Enum> Delete(int currentUserId, int customGenCodeId)
+        public async Task<bool> Delete(int currentUserId, int customGenCodeId)
         {
-            try
+
+            var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
+            if (obj == null)
             {
-                var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
-                if (obj == null)
-                {
-                    return ObjectGenCodeErrorCode.ConfigNotFound;
-                }
-                obj.IsDeleted = true;
-                obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.UtcNow;
-
-
-                await _masterDbContext.SaveChangesAsync();
-                await UpdateSortOrder();
-
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
-
-
-                return GeneralCode.Success;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+            obj.IsDeleted = true;
+            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedTime = DateTime.UtcNow;
+
+
+            await _masterDbContext.SaveChangesAsync();
+            await UpdateSortOrder();
+
+            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
+
+
+            return true;
+
         }
 
-        public async Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model)
+        public async Task<int> Create(int currentUserId, CustomGenCodeInputModel model)
         {
-            try
+
+            if (_masterDbContext.CustomGenCode.Any(q => q.CustomGenCodeName == model.CustomGenCodeName))
             {
-                if (_masterDbContext.CustomGenCode.Any(q => q.CustomGenCodeName == model.CustomGenCodeName))
-                {
-                    return ObjectGenCodeErrorCode.ConfigAlreadyExisted;
-                }
-
-                var entity = new CustomGenCode()
-                {
-                    CustomGenCodeName = model.CustomGenCodeName,
-                    CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
-                    Prefix = model.Prefix ?? string.Empty,
-                    Suffix = model.Suffix ?? string.Empty,
-                    Seperator = model.Seperator ?? string.Empty,
-                    Description = model.Description,
-                    DateFormat = string.Empty,
-                    LastValue = model.LastValue,
-                    LastCode = string.Empty,
-                    IsActived = true,
-                    IsDeleted = false,
-                    UpdatedUserId = currentUserId,
-                    ResetDate = DateTime.UtcNow,
-                    CreatedTime = DateTime.UtcNow,
-                    UpdatedTime = DateTime.UtcNow
-                };
-                _masterDbContext.CustomGenCode.Add(entity);
-
-                await _masterDbContext.SaveChangesAsync();
-                await UpdateSortOrder();
-
-                await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
-
-                return entity.CustomGenCodeId;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigAlreadyExisted);
             }
-            catch (Exception ex)
+
+            var entity = new CustomGenCode()
             {
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
-            }
+                CustomGenCodeName = model.CustomGenCodeName,
+                CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
+                Prefix = model.Prefix ?? string.Empty,
+                Suffix = model.Suffix ?? string.Empty,
+                Seperator = model.Seperator ?? string.Empty,
+                Description = model.Description,
+                DateFormat = string.Empty,
+                LastValue = model.LastValue,
+                LastCode = string.Empty,
+                IsActived = true,
+                IsDeleted = false,
+                UpdatedUserId = currentUserId,
+                ResetDate = DateTime.UtcNow,
+                CreatedTime = DateTime.UtcNow,
+                UpdatedTime = DateTime.UtcNow
+            };
+            _masterDbContext.CustomGenCode.Add(entity);
+
+            await _masterDbContext.SaveChangesAsync();
+            await UpdateSortOrder();
+
+            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
+
+            return entity.CustomGenCodeId;
+
         }
 
         public async Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "")
         {
             CustomCodeModel result;
-            try
+
+            using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
             {
-                using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
+                var config = _masterDbContext.CustomGenCode
+                    .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
+
+                if (config == null)
                 {
-                    var config = _masterDbContext.CustomGenCode
-                        .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
-
-                    if (config == null)
-                    {
-                        trans.Rollback();
-                        throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-                    }
-                    string newCode = string.Empty;
-                    var newId = 0;
-                    var maxId = (int)Math.Pow(10, config.CodeLength);
-                    var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
-
-                    lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
-
-                    if (lastValue < 1)
-                    {
-                        newId = 1;
-                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                    }
-                    else
-                    {
-                        newId = lastValue + 1;
-                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                    }
-
-                    newCode = Utils.FormatStyle(newCode, code, null);
-
-                    if (!(newId < maxId))
-                    {
-                        config.CodeLength += 1;
-                        config.ResetDate = DateTime.UtcNow;
-                    }
-                    config.TempValue = newId;
-                    config.TempCode = newCode;
-
-                    _masterDbContext.SaveChanges();
-                    trans.Commit();
-
-                    result = new CustomCodeModel
-                    {
-                        CustomCode = newCode,
-                        LastValue = newId,
-                        CustomGenCodeId = config.CustomGenCodeId,
-                    };
+                    trans.Rollback();
+                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GenerateCode");
+                string newCode = string.Empty;
+                var newId = 0;
+                var maxId = (int)Math.Pow(10, config.CodeLength);
+                var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
 
-                throw;
+                lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
+
+                if (lastValue < 1)
+                {
+                    newId = 1;
+                    var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                    newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                }
+                else
+                {
+                    newId = lastValue + 1;
+                    var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                    newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                }
+
+                newCode = Utils.FormatStyle(newCode, code, null);
+
+                if (!(newId < maxId))
+                {
+                    config.CodeLength += 1;
+                    config.ResetDate = DateTime.UtcNow;
+                }
+                config.TempValue = newId;
+                config.TempCode = newCode;
+
+                _masterDbContext.SaveChanges();
+                trans.Commit();
+
+                result = new CustomCodeModel
+                {
+                    CustomCode = newCode,
+                    LastValue = newId,
+                    CustomGenCodeId = config.CustomGenCodeId,
+                };
             }
+
             return result;
         }
 
@@ -448,35 +410,29 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<bool> ConfirmCode(int objectTypeId, int objectId)
         {
-            try
-            {
-                var config = await _masterDbContext.CustomGenCode
-                    .Join(_masterDbContext.ObjectCustomGenCodeMapping, c => c.CustomGenCodeId, m => m.CustomGenCodeId, (c, m) => new
-                    {
-                        CustomGenCode = c,
-                        m.ObjectId,
-                        m.ObjectTypeId
-                    })
-                    .Where(cm => cm.ObjectId == objectId && cm.ObjectTypeId == objectTypeId)
-                    .Select(cm => cm.CustomGenCode)
-                    .FirstOrDefaultAsync();
-                if (config == null)
+
+            var config = await _masterDbContext.CustomGenCode
+                .Join(_masterDbContext.ObjectCustomGenCodeMapping, c => c.CustomGenCodeId, m => m.CustomGenCodeId, (c, m) => new
                 {
-                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-                }
-                if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
-                {
-                    config.LastValue = config.TempValue.Value;
-                    config.LastCode = config.TempCode;
-                    await _masterDbContext.SaveChangesAsync();
-                }
-                return true;
-            }
-            catch (Exception ex)
+                    CustomGenCode = c,
+                    m.ObjectId,
+                    m.ObjectTypeId
+                })
+                .Where(cm => cm.ObjectId == objectId && cm.ObjectTypeId == objectTypeId)
+                .Select(cm => cm.CustomGenCode)
+                .FirstOrDefaultAsync();
+            if (config == null)
             {
-                _logger.LogError(ex, "ConfirmCode");
-                throw;
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
+            if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
+            {
+                config.LastValue = config.TempValue.Value;
+                config.LastCode = config.TempCode;
+                await _masterDbContext.SaveChangesAsync();
+            }
+            return true;
+
         }
     }
 }

@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpPost]
         [Route("{objectTypeId}/multiconfigs")]
-        public async Task<ServiceResult> MapObjectCustomGenCode([FromRoute] int objectTypeId,[FromBody] Dictionary<int,int> data)
+        public async Task<bool> MapObjectCustomGenCode([FromRoute] int objectTypeId,[FromBody] Dictionary<int,int> data)
         {
             return await _customGenCodeService.UpdateMultiConfig(objectTypeId, data).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
         }

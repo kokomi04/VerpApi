@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("")]
-        public async Task<ServiceResult<PageData<UserInfoOutput>>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UserInfoOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _userService.GetList(keyword, page, size, filters).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{userId}")]
-        public async Task<ServiceResult<UserInfoOutput>> UserInfo([FromRoute] int userId)
+        public async Task<UserInfoOutput> UserInfo([FromRoute] int userId)
         {
             return await _userService.GetInfo(userId).ConfigureAwait(true);
         }

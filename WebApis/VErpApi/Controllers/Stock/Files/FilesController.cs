@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
-        public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
+        public async Task<FileToDownloadInfo> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
         {
             return await _fileService.GetFileUrl(fileId, thumb).ConfigureAwait(true);
         }
@@ -64,7 +64,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpPost]
         [Route("{objectTypeId}/upload")]
-        public async Task<ServiceResult<long>> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
+        public async Task<long> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
         {
 
             return await _fileService.Upload(objectTypeId, string.Empty, file).ConfigureAwait(true);

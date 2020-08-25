@@ -15,6 +15,7 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -36,7 +37,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<ProductBomOutput>> Get(long productBomId)
+        public async Task<ProductBomOutput> Get(long productBomId)
         {
             var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == productBomId);
             if (entity != null)
@@ -66,7 +67,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<PageData<ProductBomOutput>> GetAll(int productId)
         {
-            
+
             var BomData = new List<ProductBom>();
             GetAllBom(productId, BomData);
             var resultList = new List<ProductBomOutput>(BomData.Count);
@@ -129,94 +130,76 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return (resultList, totalRecord);
         }
 
-        public async Task<ServiceResult<long>> Add(ProductBomInput req)
+        public async Task<long> Add(ProductBomInput req)
         {
-            try
-            {
-                var checkExists = _stockDbContext.ProductBom.Any(q =>q.RootProductId == req.RootProductId && q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
-                if (checkExists)
-                    return GeneralCode.InvalidParams;
-                var entity = new ProductBom
-                {
-                    Level = 0,
-                    RootProductId = req.RootProductId,
-                    ProductId = req.ProductId,
-                    ParentProductId = req.ParentProductId,
-                    Quantity = req.Quantity,
-                    Wastage = req.Wastage,
-                    Description = req.Description,
-                    IsDeleted = false,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                };
-                await _stockDbContext.ProductBom.AddAsync(entity);
-                await _stockDbContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
-
-                return entity.ProductBomId;
-            }
-            catch (Exception ex)
+            var checkExists = _stockDbContext.ProductBom.Any(q => q.RootProductId == req.RootProductId && q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
+            if (checkExists)
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            var entity = new ProductBom
             {
-                _logger.LogError(ex, "Add");
-                return GeneralCode.InternalError;
-            }
+                Level = 0,
+                RootProductId = req.RootProductId,
+                ProductId = req.ProductId,
+                ParentProductId = req.ParentProductId,
+                Quantity = req.Quantity,
+                Wastage = req.Wastage,
+                Description = req.Description,
+                IsDeleted = false,
+                CreatedDatetimeUtc = DateTime.UtcNow,
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+            };
+            await _stockDbContext.ProductBom.AddAsync(entity);
+            await _stockDbContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
+
+            return entity.ProductBomId;
+
         }
 
-        public async Task<Enum> Update(long productBomId, ProductBomInput req)
+        public async Task<bool> Update(long productBomId, ProductBomInput req)
         {
-            try
-            {
-                if(productBomId <= 0)
-                    return GeneralCode.InvalidParams;
-                var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
-                if (entity == null)
-                    return GeneralCode.InvalidParams;
 
-                //entity.ProductId = req.ProductId;
-                //entity.ParentProductId = req.ParentProductId;
-                entity.Quantity = req.Quantity;
-                entity.Wastage = req.Wastage;
-                entity.Description = req.Description;
-                entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-                await _stockDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+            if (productBomId <= 0)
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
+            if (entity == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            //entity.ProductId = req.ProductId;
+            //entity.ParentProductId = req.ParentProductId;
+            entity.Quantity = req.Quantity;
+            entity.Wastage = req.Wastage;
+            entity.Description = req.Description;
+            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
+            await _stockDbContext.SaveChangesAsync();
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
+            return true;
+
         }
 
 
-        public async Task<Enum> Delete(long productBomId,int rootProductId)
+        public async Task<bool> Delete(long productBomId, int rootProductId)
         {
-            try
-            {
-                var entity = _stockDbContext.ProductBom.FirstOrDefault(q =>q.RootProductId == rootProductId && q.ProductBomId == productBomId);
-                if (entity == null)
-                    return GeneralCode.InvalidParams;
-                entity.IsDeleted = true;
-                entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-                var childList = new List<ProductBom>();
-                GetAllBom(entity.ProductId, childList);                
-                foreach (var item in childList)
-                {
-                    item.IsDeleted = true;
-                    item.UpdatedDatetimeUtc = DateTime.UtcNow;
-                }
-                await _stockDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
 
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
+            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.RootProductId == rootProductId && q.ProductBomId == productBomId);
+            if (entity == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            entity.IsDeleted = true;
+            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
+            var childList = new List<ProductBom>();
+            GetAllBom(entity.ProductId, childList);
+            foreach (var item in childList)
             {
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
+                item.IsDeleted = true;
+                item.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
+            await _stockDbContext.SaveChangesAsync();
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
+
+            return true;
+
         }
 
         #region Private methods

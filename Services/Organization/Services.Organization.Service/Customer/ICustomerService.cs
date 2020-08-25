@@ -12,12 +12,12 @@ namespace VErp.Services.Organization.Service.Customer
 {
     public interface ICustomerService
     {
-        Task<ServiceResult<int>> AddCustomer(int updatedUserId, CustomerModel data);
+        Task<int> AddCustomer(int updatedUserId, CustomerModel data);
         Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null);
         Task<IList<CustomerListOutput>> GetListByIds(IList<int> customerIds);
-        Task<ServiceResult<CustomerModel>> GetCustomerInfo(int customerId);
-        Task<Enum> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
-        Task<Enum> DeleteCustomer(int customerId);
+        Task<CustomerModel> GetCustomerInfo(int customerId);
+        Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
+        Task<bool> DeleteCustomer(int customerId);
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
     }

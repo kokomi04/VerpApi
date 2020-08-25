@@ -136,6 +136,11 @@ namespace VErp.Infrastructure.ApiCore
            .AddControllersAsServices();
 
             ConfigureAuthService(services);
+
+            services.AddGrpc(options =>
+            {
+                options.Interceptors.Add<GrpcServerLoggerInterceptor>();
+            });
         }
 
         protected void ConfigReadWriteDBContext(IServiceCollection services)

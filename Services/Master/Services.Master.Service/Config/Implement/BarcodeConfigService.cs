@@ -15,6 +15,7 @@ using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Service.Activity;
 using System.Linq;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -37,13 +38,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             _logger = logger;
             _activityLogService = activityLogService;
         }
-        public async Task<ServiceResult<int>> AddBarcodeConfig(BarcodeConfigModel data)
+        public async Task<int> AddBarcodeConfig(BarcodeConfigModel data)
         {
             var (status, config) = ExtractBarcodeConfig(data);
 
             if (!status.IsSuccess())
             {
-                return status;
+                throw new BadRequestException(status);
             }
 
             //if (data.IsActived)
@@ -74,36 +75,36 @@ namespace VErp.Services.Master.Service.Config.Implement
             return model.BarcodeConfigId;
         }
 
-        public async Task<Enum> DeleteBarcodeConfig(int barcodeConfigId)
+        public async Task<bool> DeleteBarcodeConfig(int barcodeConfigId)
         {
             var model = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeConfigId == barcodeConfigId);
             if (model == null)
             {
-                return BarcodeConfigErrorCode.BarcodeNotFound;
+                throw new BadRequestException(BarcodeConfigErrorCode.BarcodeNotFound);
             }
-            
+
 
             model.IsDeleted = true;
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", model.JsonSerialize());
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<string>> Make(int barcodeConfigId)
+        public async Task<string> Make(int barcodeConfigId)
         {
 
 
             var activedConfig = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeConfigId == barcodeConfigId);
             if (activedConfig == null)
             {
-                return BarcodeConfigErrorCode.BarcodeNotFound;
+                throw new BadRequestException(BarcodeConfigErrorCode.BarcodeNotFound);
             }
 
             if (!activedConfig.IsActived)
             {
-                return BarcodeConfigErrorCode.BarcodeConfigHasBeenDisabled;
+                throw new BadRequestException(BarcodeConfigErrorCode.BarcodeConfigHasBeenDisabled);
             }
 
             var model = ExtractBarcodeModel(activedConfig);
@@ -137,17 +138,17 @@ namespace VErp.Services.Master.Service.Config.Implement
                     var num = total % 10;
                     return $"{barcode}{(num == 0 ? 0 : 10 - num)}";
                 default:
-                    return BarcodeConfigErrorCode.BarcodeStandardNotSupportedYet;
+                    throw new BadRequestException(BarcodeConfigErrorCode.BarcodeStandardNotSupportedYet);
             }
         }
 
 
-        public async Task<ServiceResult<BarcodeConfigModel>> GetInfo(int barcodeConfigId)
+        public async Task<BarcodeConfigModel> GetInfo(int barcodeConfigId)
         {
             var model = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeConfigId == barcodeConfigId);
             if (model == null)
             {
-                return BarcodeConfigErrorCode.BarcodeNotFound;
+                throw new BadRequestException(BarcodeConfigErrorCode.BarcodeNotFound);
             }
 
             return ExtractBarcodeModel(model);
@@ -193,19 +194,20 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
                 ).ToListAsync();
         }
-        public async Task<Enum> UpdateBarcodeConfig(int barcodeConfigId, BarcodeConfigModel data)
+        public async Task<bool> UpdateBarcodeConfig(int barcodeConfigId, BarcodeConfigModel data)
         {
             var (status, config) = ExtractBarcodeConfig(data);
 
             if (!status.IsSuccess())
             {
-                return status;
+                throw new BadRequestException(status);
             }
 
             var model = await _masterContext.BarcodeConfig.FirstOrDefaultAsync(c => c.BarcodeConfigId == barcodeConfigId);
             if (model == null)
             {
-                return BarcodeConfigErrorCode.BarcodeNotFound;
+                throw new BadRequestException(BarcodeConfigErrorCode.BarcodeNotFound);
+
             }
 
             //if (data.IsActived)
@@ -217,7 +219,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             //    }
             //}
 
-           
+
             model.Name = data.Name;
             model.IsActived = data.IsActived;
             model.ConfigurationJson = config;
@@ -226,7 +228,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", model.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
 

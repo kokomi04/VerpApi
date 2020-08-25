@@ -24,6 +24,12 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            if (context.Request.ContentType?.Contains("grpc") == true)
+            {
+                await _next(context);
+                return;
+            }
+
             var originalBody = context.Response.Body;
 
             try
@@ -59,5 +65,7 @@ namespace VErp.Infrastructure.ApiCore.Middleware
             }
 
         }
+
+
     }
 }

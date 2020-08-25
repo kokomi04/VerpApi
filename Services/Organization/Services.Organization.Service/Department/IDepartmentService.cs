@@ -9,10 +9,10 @@ namespace VErp.Services.Organization.Service.Department
 {
     public interface IDepartmentService
     {
-        Task<ServiceResult<int>> AddDepartment(int updatedUserId, DepartmentModel data);
+        Task<int> AddDepartment(int updatedUserId, DepartmentModel data);
         Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Clause filters = null);
-        Task<ServiceResult<DepartmentModel>> GetDepartmentInfo(int departmentId);
-        Task<Enum> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data);
-        Task<Enum> DeleteDepartment(int updatedUserId, int departmentId);
+        Task<DepartmentModel> GetDepartmentInfo(int departmentId);
+        Task<bool> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data);
+        Task<bool> DeleteDepartment(int updatedUserId, int departmentId);
     }
 }

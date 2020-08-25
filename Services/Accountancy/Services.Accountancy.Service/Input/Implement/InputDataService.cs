@@ -131,7 +131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     f.FieldName
                 };
 
-                if (((EnumFormType)f.FormTypeId).IsSelectForm()
+                if (((EnumFormType)f.FormTypeId).IsJoinForm()
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle)
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle))
                 {
@@ -463,7 +463,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             rows[rowIndex.Value].Data.TryGetValue(field.FieldName, out value);
                         }
-                        if (sfValues.ContainsKey(field.FieldName))
+                        if (sfValues.ContainsKey(field.FieldName) && value != null)
                         {
                             value = sfValues[field.FieldName].ContainsKey(value) ? sfValues[field.FieldName][value] : null;
                         }
@@ -654,6 +654,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var field in requiredFields)
             {
+                // ignore auto generate field
+                if (field.FormTypeId == (int)EnumFormType.Generate) continue;
+
                 // Validate info
                 if (!field.IsMultiRow)
                 {
@@ -1754,7 +1757,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
-        public async Task<ServiceResult<MemoryStream>> ExportBill(int inputTypeId, long fId)
+        public async Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId)
         {
 
             var dataSql = @$"
@@ -1769,12 +1772,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
             var rows = data.ConvertData();
 
-            var areas = _accountancyDBContext.InputArea
-                .Include(a => a.InputAreaField)
+            var inputType = _accountancyDBContext.InputType
+                .Include(i => i.InputArea)
+                .ThenInclude(a => a.InputAreaField)
                 .ThenInclude(f => f.InputField)
-                .Where(a => a.InputTypeId == inputTypeId)
-                .OrderBy(a => a.SortOrder)
-                .ToList();
+                .Where(i => i.InputTypeId == inputTypeId)
+                .FirstOrDefault();
+
+            if (inputType == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
 
             var refDataTypes = (from iaf in _accountancyDBContext.InputAreaField.Where(iaf => iaf.InputTypeId == inputTypeId)
                                 join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
@@ -1791,21 +1796,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var writer = new ExcelWriter();
             int endRow = 0;
+
+            var billCode = string.Empty;
             // Write area
-            foreach (var area in areas)
+            foreach (var area in inputType.InputArea.OrderBy(a => a.SortOrder))
             {
-                DataTable table = new DataTable();
+                ExcelData table = new ExcelData();
                 if (!area.IsMultiRow)
                 {
                     // Write info
                     for (int collumIndx = 0; collumIndx < area.Columns; collumIndx++)
                     {
-                        table.Columns.Add();
-                        table.Columns.Add();
+                        table.AddColumn();
+                        table.AddColumn();
                         int rowIndx = 0;
                         foreach (var field in area.InputAreaField.Where(f => f.Column == (collumIndx + 1)).OrderBy(f => f.SortOrder))
                         {
-                            DataRow row;
+                            ExcelRow row;
                             if (table.Rows.Count <= rowIndx)
                             {
                                 row = table.NewRow();
@@ -1815,14 +1822,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             {
                                 row = table.Rows[rowIndx];
                             }
-                            row[collumIndx * 2] = $"{field.Title}:";
-                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
-                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
+                            row[collumIndx * 2] = new ExcelCell
+                            {
+                                Value = $"{field.Title}:",
+                                Type = EnumExcelType.String
+                            };
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (info.ContainsKey(fieldName))
-                                row[collumIndx * 2 + 1] = dataType.GetSqlValue(info[fieldName]);
+                                row[collumIndx * 2 + 1] = new ExcelCell
+                                {
+                                    Value = dataType.GetSqlValue(info[fieldName]),
+                                    Type = dataType.GetExcelType()
+                                };
                             rowIndx++;
                         }
                     }
+
+                    var uniqField = area.InputAreaField.FirstOrDefault(f => f.IsUnique)?.InputField.FieldName ?? AccountantConstants.BILL_CODE;
+                    info.TryGetValue(uniqField, out billCode);
                 }
                 else
                 {
@@ -1830,28 +1848,51 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         table.Columns.Add(field.Title);
                     }
+                    var sumCalc = new List<int>();
                     foreach (var row in rows)
                     {
-                        DataRow tbRow = table.NewRow();
+                        ExcelRow tbRow = table.NewRow();
                         int columnIndx = 0;
                         foreach (var field in area.InputAreaField.OrderBy(f => f.SortOrder))
                         {
-                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
-                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsSelectForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
+                            if (field.IsCalcSum) sumCalc.Add(columnIndx);
+                            var fieldName = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? $"{field.InputField.FieldName}_{field.InputField.RefTableTitle.Split(",")[0]}" : field.InputField.FieldName;
+                            var dataType = ((EnumFormType)field.InputField.FormTypeId).IsJoinForm() ? refDataTypes[new { CategoryFieldName = field.InputField.RefTableTitle.Split(",")[0], CategoryCode = field.InputField.RefTableCode }] : (EnumDataType)field.InputField.DataTypeId;
                             if (row.ContainsKey(fieldName))
-                                tbRow[columnIndx] = dataType.GetSqlValue(row[fieldName]);
+                                tbRow[columnIndx] = new ExcelCell
+                                {
+                                    Value = dataType.GetSqlValue(row[fieldName]),
+                                    Type = dataType.GetExcelType()
+                                };
                             columnIndx++;
                         }
                         table.Rows.Add(tbRow);
                     }
+                    if (sumCalc.Count > 0)
+                    {
+                        ExcelRow sumRow = table.NewRow();
+                        foreach (int columnIndx in sumCalc)
+                        {
+                            var columnName = (columnIndx + 1).GetExcelColumnName();
+                            sumRow[columnIndx] = new ExcelCell
+                            {
+                                Value = $"SUM({columnName}{endRow + 3}:{columnName}{endRow + rows.Count + 2})",
+                                Type = EnumExcelType.Formula
+                            };
+                        }
+                        table.Rows.Add(sumRow);
+                    }
                 }
 
                 byte[] headerRgb = new byte[3] { 60, 120, 216 };
+
                 writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
 
+            var fileName = $"{inputType.InputTypeCode}_{billCode}.xlsx";
+
             MemoryStream stream = await writer.WriteToStream();
-            return stream;
+            return (stream, fileName);
         }
 
         public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate)
@@ -1867,17 +1908,47 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
+            bool byExpenseItem, bool byFactory, bool byProduct, bool byStock)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                new SqlParameter("@by_bo_phan", byDepartment),
+                new SqlParameter("@by_kh", byCustomer),
+                new SqlParameter("@by_tscd", byFixedAsset),
+                new SqlParameter("@by_khoan_muc_cp", byExpenseItem),
+                new SqlParameter("@by_phan_xuong", byFactory),
+                new SqlParameter("@by_vthhtp", byProduct),
+                new SqlParameter("@by_kho", byStock),
+            };
+
+            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransfer");
+            foreach (var param in sqlParams)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+
         public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            SqlParameter[] sqlParams = new SqlParameter[]
+            var sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
-            return (result.Value as bool?).GetValueOrDefault(); 
+
+            return (result.Value as bool?).GetValueOrDefault();
         }
 
         public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate)
@@ -1892,6 +1963,64 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams);
             return (result.Value as bool?).GetValueOrDefault();
         }
+
+        public ICollection<CostTransferTypeModel> GetCostTransferTypes()
+        {
+            var types = EnumExtensions.GetEnumMembers<EnumCostTransfer>().Select(m => new CostTransferTypeModel
+            {
+                Title = m.Description,
+                Value = (int)m.Enum
+            }).ToList();
+            return types;
+        }
+
+        public async Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Type", (int)type),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+            };
+
+            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransferBalanceZero");
+            foreach (var param in sqlParams)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

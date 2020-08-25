@@ -128,12 +128,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
         }
 
-        public async Task<Enum> DeleteFile(long fileId)
+        public async Task<bool> DeleteFile(long fileId)
         {
             var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
 
             var beforeJson = fileInfo.JsonSerialize();
@@ -154,7 +154,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             await _activityLogService.CreateLog(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson);
-            return GeneralCode.Success;
+            return true;
         }
 
         public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
@@ -275,56 +275,50 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return reader.ReadSheets(sheetName, fromRow, toRow, maxrows);
         }
 
-        public async Task<Enum> GenerateThumbnail(long fileId)
+        public async Task<bool> GenerateThumbnail(long fileId)
         {
-            try
+
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
             {
-                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-                if (fileInfo == null)
-                {
-                    return FileErrorCode.FileNotFound;
-                }
-
-                var filePath = GetPhysicalFilePath(fileInfo.FilePath);
-                var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
-                relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";
-
-                var smallThumb = relDirectory + "/" + fileName + "_small.jpg";
-                var largeThumb = relDirectory + "/" + fileName + "_large.jpg";
-
-                var physicalFolder = GetPhysicalFilePath(relDirectory);
-                if (!Directory.Exists(physicalFolder))
-                {
-                    Directory.CreateDirectory(physicalFolder);
-                }
-
-                const int quality = 75;
-
-                using (var image = new MagickImage(filePath))
-                {
-                    image.Resize((int)(image.Width * 500.0 / image.Height), 500);
-                    image.Strip();
-                    image.Quality = quality;
-                    image.Write(GetPhysicalFilePath(largeThumb));
-
-                    image.Resize((int)(image.Width * 100.0 / image.Height), 100);
-                    image.Strip();
-
-                    image.Write(GetPhysicalFilePath(smallThumb));
-                }
-
-                fileInfo.SmallThumb = smallThumb;
-                fileInfo.LargeThumb = largeThumb;
-                _stockContext.SaveChanges();
-                return GeneralCode.Success;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
-            catch (Exception ex)
+
+            var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+            var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
+            relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";
+
+            var smallThumb = relDirectory + "/" + fileName + "_small.jpg";
+            var largeThumb = relDirectory + "/" + fileName + "_large.jpg";
+
+            var physicalFolder = GetPhysicalFilePath(relDirectory);
+            if (!Directory.Exists(physicalFolder))
             {
-                _logger.LogError(ex, "GenerateThumbnail");
-                return GeneralCode.InternalError;
+                Directory.CreateDirectory(physicalFolder);
             }
+
+            const int quality = 75;
+
+            using (var image = new MagickImage(filePath))
+            {
+                image.Resize((int)(image.Width * 500.0 / image.Height), 500);
+                image.Strip();
+                image.Quality = quality;
+                image.Write(GetPhysicalFilePath(largeThumb));
+
+                image.Resize((int)(image.Width * 100.0 / image.Height), 100);
+                image.Strip();
+
+                image.Write(GetPhysicalFilePath(smallThumb));
+            }
+
+            fileInfo.SmallThumb = smallThumb;
+            fileInfo.LargeThumb = largeThumb;
+            _stockContext.SaveChanges();
+            return true;
+
 
         }
 
@@ -345,75 +339,68 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         #region private
 
-        public async Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
+        public async Task<bool> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
         {
+
+
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+
+            if (fileInfo.FileStatusId != (int)EnumFileStatus.Temp)
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileStatus);
+            }
+
+            if (fileInfo.ObjectTypeId != (int)objectTypeId)
+            {
+                throw new BadRequestException(FileErrorCode.InvalidObjectType);
+            }
+
+            string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
+
+            File.Move(GetPhysicalFilePath(fileInfo.FilePath), GetPhysicalFilePath(filePath));
 
             try
             {
-                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-                if (fileInfo == null)
-                {
-                    return FileErrorCode.FileNotFound;
-                }
+                var tmpFolder = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
+                Directory.Delete(GetPhysicalFilePath(tmpFolder), true);
+            }
+            catch (Exception mov)
+            {
+                _logger.LogError(mov, "Directory.Delete");
+            }
 
-                if (fileInfo.FileStatusId != (int)EnumFileStatus.Temp)
-                {
-                    return FileErrorCode.InvalidFileStatus;
-                }
 
-                if (fileInfo.ObjectTypeId != (int)objectTypeId)
-                {
-                    return FileErrorCode.InvalidObjectType;
-                }
 
-                string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
-
-                File.Move(GetPhysicalFilePath(fileInfo.FilePath), GetPhysicalFilePath(filePath));
-
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
                 try
                 {
-                    var tmpFolder = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
-                    Directory.Delete(GetPhysicalFilePath(tmpFolder), true);
+                    fileInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    fileInfo.ObjectId = objectId;
+                    fileInfo.FilePath = filePath;
+                    fileInfo.FileStatusId = (int)EnumFileStatus.Ok;
+
+                    await _stockContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
+
+                    _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
+
+                    return true;
                 }
-                catch (Exception mov)
+                catch (Exception)
                 {
-                    _logger.LogError(mov, "Directory.Delete");
-                }
-
-
-
-                using (var trans = await _stockContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        fileInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        fileInfo.ObjectId = objectId;
-                        fileInfo.FilePath = filePath;
-                        fileInfo.FileStatusId = (int)EnumFileStatus.Ok;
-
-                        await _stockContext.SaveChangesAsync();
-                        trans.Commit();
-
-                        await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
-
-                        _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
-
-                        return GeneralCode.Success;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.TryRollbackTransaction();
-                        File.Delete(filePath);
-                        _logger.LogError(ex, "FileAssignToObject");
-                        return GeneralCode.InternalError;
-                    }
+                    trans.TryRollbackTransaction();
+                    File.Delete(filePath);
+                    throw;
                 }
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "FileAssignToObject");
-                return GeneralCode.InternalError;
-            }
+
         }
 
         private string GenerateFilePathWithObject(EnumObjectType objectTypeId, long objectId, string uploadFileName)

@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<BarcodeConfigListOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<BarcodeConfigListOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _barcodeConfigService.GetList(keyword, page, size);
         }
@@ -49,7 +49,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> Post([FromBody] BarcodeConfigModel req)
+        public async Task<int> Post([FromBody] BarcodeConfigModel req)
         {
             return await _barcodeConfigService.AddBarcodeConfig(req);
         }
@@ -63,7 +63,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{barcodeConfigId}")]
-        public async Task<ServiceResult<BarcodeConfigModel>> Info([FromRoute] int barcodeConfigId)
+        public async Task<BarcodeConfigModel> Info([FromRoute] int barcodeConfigId)
         {
             return await _barcodeConfigService.GetInfo(barcodeConfigId);
         }
@@ -77,7 +77,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{barcodeConfigId}")]
-        public async Task<ServiceResult> Update([FromRoute] int barcodeConfigId, [FromBody] BarcodeConfigModel req)
+        public async Task<bool> Update([FromRoute] int barcodeConfigId, [FromBody] BarcodeConfigModel req)
         {
             return await _barcodeConfigService.UpdateBarcodeConfig(barcodeConfigId, req);
         }
@@ -90,7 +90,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{barcodeConfigId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int barcodeConfigId)
+        public async Task<bool> Delete([FromRoute] int barcodeConfigId)
         {
             return await _barcodeConfigService.DeleteBarcodeConfig(barcodeConfigId);
         }
@@ -102,7 +102,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("{barcodeConfigId}/Generate")]
-        public async Task<ServiceResult<string>> Make([FromRoute] int barcodeConfigId)
+        public async Task<string> Make([FromRoute] int barcodeConfigId)
         {
             return await _barcodeConfigService.Make(barcodeConfigId);
         }

@@ -1580,26 +1580,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         case EnumPackageOption.Create:
 
-                            var createNewPackageResult = await CreateNewPackage(stockId, date, item);
-                            if (!createNewPackageResult.Code.IsSuccess())
-                            {
-                                return createNewPackageResult.Code;
-                            }
-
-                            item.ToPackageId = createNewPackageResult.Data.PackageId;
+                            var newPackage = await CreateNewPackage(stockId, date, item);                           
+                            item.ToPackageId = newPackage.PackageId;
                             break;
                         default:
                             return GeneralCode.NotYetSupported;
                     }
                 else
                 {
-                    var createNewPackageResult = await CreateNewPackage(stockId, date, item);
-                    if (!createNewPackageResult.Code.IsSuccess())
-                    {
-                        return createNewPackageResult.Code;
-                    }
+                    var newPackage = await CreateNewPackage(stockId, date, item);                    
 
-                    item.ToPackageId = createNewPackageResult.Data.PackageId;
+                    item.ToPackageId = newPackage.PackageId;
                 }
 
                 inputTransfer.Add(new InventoryDetailToPackage()
@@ -2034,17 +2025,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return ensureDefaultPackage;
         }
 
-        private async Task<ServiceResult<PackageEntity>> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
+        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
             var newPackageCodeResult = await _objectGenCodeService.GenerateCode(EnumObjectType.Package);
-            if (!newPackageCodeResult.Code.IsSuccess())
-            {
-                return newPackageCodeResult.Code;
-            }
-            var newPackage = new Infrastructure.EF.StockDB.Package()
+           
+            var newPackage = new Package()
             {
                 PackageTypeId = (int)EnumPackageType.Custom,
-                PackageCode = newPackageCodeResult.Data,
+                PackageCode = newPackageCodeResult,
                 LocationId = null,
                 StockId = stockId,
                 ProductId = detail.ProductId,

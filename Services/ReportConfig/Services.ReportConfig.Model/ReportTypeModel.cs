@@ -2,6 +2,7 @@
 using NPOI.HPSF;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
@@ -50,8 +51,13 @@ namespace Verp.Services.ReportConfig.Model
 
         public MenuStyleModel MenuStyle { get; set; }
 
+        public List<ReportColumnModel> ParseColumns(string column)
+        {
+            return column.JsonDeserialize<List<ReportColumnModel>>()?.OrderBy(c => c.SortOrder)?.ToList();
+        }
+
         public void Mapping(Profile profile) => profile.CreateMap<ReportType, ReportTypeModel>()
-       .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonDeserialize<List<ReportColumnModel>>()))
+       .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonDeserialize<BscConfigModel>()))
        .ReverseMap()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))

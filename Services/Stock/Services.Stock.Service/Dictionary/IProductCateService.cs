@@ -11,9 +11,9 @@ namespace VErp.Services.Stock.Service.Dictionary
     public interface IProductCateService
     {
         Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null);
-        Task<ServiceResult<int>> AddProductCate(ProductCateInput req);
-        Task<Enum> UpdateProductCate(int productCateId, ProductCateInput req);
-        Task<Enum> DeleteProductCate(int productCateId);
-        Task<ServiceResult<ProductCateOutput>> GetInfoProductCate(int productCateId);
+        Task<int> AddProductCate(ProductCateInput req);
+        Task<bool> UpdateProductCate(int productCateId, ProductCateInput req);
+        Task<bool> DeleteProductCate(int productCateId);
+        Task<ProductCateOutput> GetInfoProductCate(int productCateId);
     }
 }

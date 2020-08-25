@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using Verp.Cache.RedisCache;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Master.Service.Config.Implement
@@ -83,13 +84,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (pagedData, total);
         }
 
-        public async Task<ServiceResult<ObjectGenCodeOutputModel>> GetInfo(int objectGenCodeId)
+        public async Task<ObjectGenCodeOutputModel> GetInfo(int objectGenCodeId)
         {
 
             var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
             if (obj == null)
             {
-                return ObjectGenCodeErrorCode.ConfigNotFound;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
             }
             var info = new ObjectGenCodeOutputModel()
             {
@@ -110,189 +111,143 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<Enum> Update(int objectGenCodeId, int currentUserId, ObjectGenCodeInputModel model)
+        public async Task<bool> Update(int objectGenCodeId, int currentUserId, ObjectGenCodeInputModel model)
         {
-            try
+
+            var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
+
+            if (obj == null)
             {
-                var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-
-                if (obj == null)
-                {
-                    return ObjectGenCodeErrorCode.ConfigNotFound;
-                }
-
-                obj.CodeLength = model.CodeLength;
-                obj.Prefix = model.Prefix;
-                obj.Suffix = model.Suffix;
-                obj.Seperator = model.Seperator;
-                obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.Now;
-
-                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Cập nhật cấu hình gen code cho {obj.ObjectTypeName} ", model.JsonSerialize());
-
-                await _masterDbContext.SaveChangesAsync();
-                return GeneralCode.Success;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+
+            obj.CodeLength = model.CodeLength;
+            obj.Prefix = model.Prefix;
+            obj.Suffix = model.Suffix;
+            obj.Seperator = model.Seperator;
+            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedTime = DateTime.Now;
+
+            await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Cập nhật cấu hình gen code cho {obj.ObjectTypeName} ", model.JsonSerialize());
+
+            await _masterDbContext.SaveChangesAsync();
+            return true;
+
         }
 
 
-        public async Task<Enum> Delete(int currentUserId, int objectGenCodeId)
+        public async Task<bool> Delete(int currentUserId, int objectGenCodeId)
         {
-            try
+
+            var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
+            if (obj == null)
             {
-                var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-                if (obj == null)
-                {
-                    return ObjectGenCodeErrorCode.ConfigNotFound;
-                }
-                obj.IsDeleted = true;
-                obj.UpdatedUserId = currentUserId;
-                obj.UpdatedTime = DateTime.Now;
-
-                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Xoá cấu hình gen code cho {obj.ObjectTypeName} ", obj.JsonSerialize());
-
-                await _masterDbContext.SaveChangesAsync();
-
-                return GeneralCode.Success;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+            obj.IsDeleted = true;
+            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedTime = DateTime.Now;
+
+            await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Xoá cấu hình gen code cho {obj.ObjectTypeName} ", obj.JsonSerialize());
+
+            await _masterDbContext.SaveChangesAsync();
+
+            return true;
         }
 
-        public async Task<ServiceResult<int>> Create(EnumObjectType objectType, int currentUserId, ObjectGenCodeInputModel model)
+        public async Task<int> Create(EnumObjectType objectType, int currentUserId, ObjectGenCodeInputModel model)
         {
-            var result = new ServiceResult<int>() { Data = 0 };
-            try
+            if (await _masterDbContext.ObjectGenCode.AnyAsync(q => q.ObjectTypeId == (int)objectType))
             {
-                if (Enum.IsDefined(typeof(EnumObjectType), objectType) == false)
-                {
-                    return GeneralCode.InvalidParams;
-                }
-
-                if (_masterDbContext.ObjectGenCode.Any(q => q.ObjectTypeId == (int)objectType))
-                {
-                    return ObjectGenCodeErrorCode.ConfigAlreadyExisted;
-                }
-                // Lấy thông tin tên loại đối tượng tương ứng
-                var objType = _masterDbContext.ObjectType.FirstOrDefault(q => q.ObjectTypeId == (int)objectType);
-                if (objType == null)
-                {
-                    return GeneralCode.InvalidParams;
-                }
-                var entity = new ObjectGenCode()
-                {
-                    ObjectTypeId = (int)objectType,
-                    ObjectTypeName = objType.ObjectTypeName,
-                    CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
-                    Prefix = model.Prefix ?? string.Empty,
-                    Suffix = model.Suffix ?? string.Empty,
-                    Seperator = model.Seperator ?? string.Empty,
-                    DateFormat = string.Empty,
-                    LastValue = 0,
-                    LastCode = string.Empty,
-                    IsActived = true,
-                    IsDeleted = false,
-                    UpdatedUserId = currentUserId,
-                    ResetDate = DateTime.Now,
-                    CreatedTime = DateTime.Now,
-                    UpdatedTime = DateTime.Now
-                };
-                _masterDbContext.ObjectGenCode.Add(entity);
-                await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, entity.ObjectGenCodeId, $"Thêm mới cấu hình gen code cho {entity.ObjectTypeName} ", model.JsonSerialize());
-
-                await _masterDbContext.SaveChangesAsync();
-
-                result.Code = GeneralCode.Success;
-                result.Data = entity.ObjectGenCodeId;
+                throw new BadRequestException(ObjectGenCodeErrorCode.ConfigAlreadyExisted);
             }
-            catch (Exception ex)
+            // Lấy thông tin tên loại đối tượng tương ứng
+            var objType = await _masterDbContext.ObjectType.FirstOrDefaultAsync(q => q.ObjectTypeId == (int)objectType);
+            if (objType == null)
             {
-                _logger.LogError(ex, "Create");
-                result.Message = ex.Message;
-                result.Code = GeneralCode.InternalError;
+                throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return result;
+            var entity = new ObjectGenCode()
+            {
+                ObjectTypeId = (int)objectType,
+                ObjectTypeName = objType.ObjectTypeName,
+                CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
+                Prefix = model.Prefix ?? string.Empty,
+                Suffix = model.Suffix ?? string.Empty,
+                Seperator = model.Seperator ?? string.Empty,
+                DateFormat = string.Empty,
+                LastValue = 0,
+                LastCode = string.Empty,
+                IsActived = true,
+                IsDeleted = false,
+                UpdatedUserId = currentUserId,
+                ResetDate = DateTime.Now,
+                CreatedTime = DateTime.Now,
+                UpdatedTime = DateTime.Now
+            };
+            _masterDbContext.ObjectGenCode.Add(entity);
+            await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, entity.ObjectGenCodeId, $"Thêm mới cấu hình gen code cho {entity.ObjectTypeName} ", model.JsonSerialize());
+
+            await _masterDbContext.SaveChangesAsync();
+
+            return entity.ObjectGenCodeId;
+
         }
 
-        public async Task<ServiceResult<string>> GenerateCode(EnumObjectType objectType)
+        public async Task<string> GenerateCode(EnumObjectType objectType)
         {
-            var result = new ServiceResult<string>() { Data = string.Empty };
-            try
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
             {
-                if (Enum.IsDefined(typeof(EnumObjectType), objectType) == false)
+                using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
-                    return GeneralCode.InvalidParams;
-                }
-
-                using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
-                {
-                    using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
+                    try
                     {
-                        try
+                        var config = _masterDbContext.ObjectGenCode.FirstOrDefault(q => q.ObjectTypeId == (int)objectType && q.IsActived && !q.IsDeleted);
+                        if (config == null)
                         {
-                            var config = _masterDbContext.ObjectGenCode.FirstOrDefault(q => q.ObjectTypeId == (int)objectType && q.IsActived && !q.IsDeleted);
-                            if (config == null)
-                            {
-                                trans.Rollback();
-                                return ObjectGenCodeErrorCode.ConfigNotFound;
-                            }
-                            string newCode = string.Empty;
-                            var newId = 0;
-                            var maxId = (int)Math.Pow(10, config.CodeLength);
-                            var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
-
-                            if (config.LastValue < 1)
-                            {
-                                newId = 1;
-                                var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                                newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                            }
-                            else
-                            {
-                                newId = config.LastValue + 1;
-                                var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                                newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                            }
-
-                            if (!(newId < maxId))
-                            {
-                                config.CodeLength += 1;
-                                config.ResetDate = DateTime.Now;
-                            }
-                            config.LastValue = newId;
-                            config.LastCode = newCode;
-
-                            _masterDbContext.SaveChanges();
-                            trans.Commit();
-
-                            result.Data = newCode;
-                            result.Code = GeneralCode.Success;
+                            trans.Rollback();
+                            throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
                         }
-                        catch (Exception ex)
+                        string newCode = string.Empty;
+                        var newId = 0;
+                        var maxId = (int)Math.Pow(10, config.CodeLength);
+                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
+
+                        if (config.LastValue < 1)
                         {
-                            trans.TryRollbackTransaction();
-                            _logger.LogError(ex, "GenerateCode");
-                            return GeneralCode.InternalError;
+                            newId = 1;
+                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                         }
+                        else
+                        {
+                            newId = config.LastValue + 1;
+                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                        }
+
+                        if (!(newId < maxId))
+                        {
+                            config.CodeLength += 1;
+                            config.ResetDate = DateTime.Now;
+                        }
+                        config.LastValue = newId;
+                        config.LastCode = newCode;
+
+                        _masterDbContext.SaveChanges();
+                        trans.Commit();
+
+                        return newCode;
+
+                    }
+                    catch (Exception ex)
+                    {
+                        trans.Rollback();
+                        throw;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GenerateCode");
-                result.Message = ex.Message;
-                result.Code = GeneralCode.InternalError;
 
-            }
-            return result;
         }
 
         public async Task<PageData<ObjectType>> GetAllObjectType()

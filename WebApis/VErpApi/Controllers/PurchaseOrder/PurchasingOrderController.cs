@@ -86,7 +86,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("{purchaseOrderId}")]
-        public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo([FromRoute] long purchaseOrderId)
+        public async Task<PurchaseOrderOutput> GetInfo([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .GetInfo(purchaseOrderId)
@@ -100,7 +100,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<long>> Create([FromBody] PurchaseOrderInput req)
+        public async Task<long> Create([FromBody] PurchaseOrderInput req)
         {
             return await _purchaseOrderService
                 .Create(req)

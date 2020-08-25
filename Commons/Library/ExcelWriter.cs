@@ -10,6 +10,8 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using VErp.Infrastructure.AppSettings.Model;
 using System.Data;
+using VErp.Commons.Enums.AccountantEnum;
+using System.Collections;
 
 namespace VErp.Commons.Library
 {
@@ -56,7 +58,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public void WriteToSheet(DataTable table, string sheetName, out int endRow, bool isHeader = false, byte[] headerRgb = null, int startCollumn = 0, int startRow = 0)
+        public void WriteToSheet(ExcelData table, string sheetName, out int endRow, bool isHeader = false, byte[] headerRgb = null, int startCollumn = 0, int startRow = 0)
         {
             var sheet = hssfwb.GetSheet(sheetName);
             if (sheet == null)
@@ -77,7 +79,7 @@ namespace VErp.Commons.Library
                     cell.SetCellValue(collumn.ToString());
                     if (headerRgb != null)
                     {
-                        XSSFCellStyle cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
+                        var cellStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
                         cellStyle.SetFillForegroundColor(new XSSFColor(headerRgb));
                         cellStyle.FillPattern = FillPattern.SolidForeground;
                         cell.CellStyle = cellStyle;
@@ -88,7 +90,11 @@ namespace VErp.Commons.Library
             }
             int columnLength = table.Columns.Count;
 
-            foreach (DataRow row in table.Rows)
+            var dateStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
+            var createHelper = hssfwb.GetCreationHelper();
+            dateStyle.SetDataFormat(createHelper.CreateDataFormat().GetFormat("dd/mm/yyyy"));
+
+            foreach (ExcelRow row in table.Rows)
             {
                 int curRow = startRow + addedRow;
                 IRow newRow = sheet.CreateRow(curRow);
@@ -96,7 +102,29 @@ namespace VErp.Commons.Library
                 {
                     int curCollumn = indx + startCollumn;
                     ICell cell = newRow.CreateCell(curCollumn);
-                    cell.SetCellValue(row[indx]?.ToString() ?? null);
+                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value) continue;
+                    switch ((row[indx] as ExcelCell).Type)
+                    {
+                        case EnumExcelType.String:
+                            cell.SetCellValue((row[indx] as ExcelCell).Value.ToString());
+                            break;
+                        case EnumExcelType.Boolean:
+                            cell.SetCellValue((bool)(row[indx] as ExcelCell).Value);
+                            break;
+                        case EnumExcelType.DateTime:
+                            cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
+                            cell.CellStyle = dateStyle;
+                            break;
+                        case EnumExcelType.Number:
+                            cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
+                            break;
+                        case EnumExcelType.Formula:
+                            cell.SetCellFormula((row[indx] as ExcelCell).Value.ToString());
+                            break;
+                        default:
+                            break;
+                    }
+
                 }
                 addedRow++;
             }
@@ -105,22 +133,87 @@ namespace VErp.Commons.Library
 
         public async Task<MemoryStream> WriteToStream()
         {
-            string tempFilePath = @"TempFile";
-
-            using (FileStream file = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
+            string fileName = @"TempFile";
+            using (FileStream file = new FileStream(fileName, FileMode.Create, FileAccess.Write))
             {
                 hssfwb.Write(file);
                 file.Close();
             }
             var memory = new MemoryStream();
-            using (var stream = new FileStream(tempFilePath, FileMode.Open))
+            using (var stream = new FileStream(fileName, FileMode.Open))
             {
                 await stream.CopyToAsync(memory);
                 stream.Close();
             }
-            File.Delete(tempFilePath);
+            File.Delete(fileName);
             memory.Position = 0;
             return memory;
         }
+    }
+
+    public class ExcelData
+    {
+        public HashSet<string> Columns { get; }
+        public List<ExcelRow> Rows { get; }
+
+        public ExcelData()
+        {
+            Columns = new HashSet<string>();
+            Rows = new List<ExcelRow>();
+        }
+
+        public void AddColumn(string columnName = null)
+        {
+            if (string.IsNullOrWhiteSpace(columnName))
+            {
+                int indx = 0;
+                do
+                {
+                    indx++;
+                    columnName = $"column{indx}";
+                }
+                while (Columns.Contains(columnName));
+            }
+            Columns.Add(columnName);
+            foreach (var row in Rows)
+            {
+                row.Add();
+            }
+        }
+
+        public ExcelRow NewRow()
+        {
+            ExcelRow row = new ExcelRow();
+            for (int indx = 0; indx < Columns.Count; indx++)
+            {
+                row.Add();
+            }
+            return row;
+        }
+    }
+
+    public class ExcelRow
+    {
+        private List<ExcelCell> row;
+
+        public int Count => row.Count;
+
+        public ExcelCell this[int index] { get => row[index]; set => row[index] = value; }
+
+        public ExcelRow()
+        {
+            row = new List<ExcelCell>();
+        }
+
+        public void Add(ExcelCell value = null)
+        {
+            row.Add(value);
+        }
+    }
+
+    public class ExcelCell
+    {
+        public object Value { get; set; }
+        public EnumExcelType Type { get; set; }
     }
 }

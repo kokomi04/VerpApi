@@ -8,6 +8,8 @@ namespace VErp.Commons.Constants
     public static class AccountantConstants
     {
         public static readonly List<EnumFormType> SELECT_FORM_TYPES = new List<EnumFormType>() { EnumFormType.Select, EnumFormType.SearchTable, EnumFormType.MultiSelect };
+        public static readonly List<EnumFormType> JOIN_FORM_TYPES = new List<EnumFormType>() { EnumFormType.Select, EnumFormType.SearchTable };
+
         public const int INPUT_TYPE_FIELD_NUMBER = 101;
         public const int CONVERT_VALUE_TO_NUMBER_FACTOR = 100000;
         public const string INPUT_TYPE_FIELDNAME_FORMAT = "Field{0}";
@@ -31,5 +33,8 @@ namespace VErp.Commons.Constants
 
         public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
         public const string REPORT_BSC_VALUE_PARAM_PREFIX = "BSC_VALUE_";
+
+
+        public const string BILL_CODE = "so_ct";
     }
 }

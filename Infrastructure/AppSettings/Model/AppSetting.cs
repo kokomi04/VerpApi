@@ -22,5 +22,6 @@ namespace VErp.Infrastructure.AppSettings.Model
         public RedisSetting Redis { get; set; }
 
         public ElasticApmSetting ElasticApm { get; set; }
+        public GrpcInternalSetting GrpcInternal { get; set; }
     }
 }

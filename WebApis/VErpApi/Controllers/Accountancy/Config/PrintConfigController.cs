@@ -41,7 +41,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("{printConfigId}")]
-        public async Task<ServiceResult<PrintConfigModel>> GetPrintConfig([FromRoute] int printConfigId)
+        public async Task<PrintConfigModel> GetPrintConfig([FromRoute] int printConfigId)
         {
             return await _printConfigService.GetPrintConfig(printConfigId);
         }

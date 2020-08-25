@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<ProductCateOutput>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductCateOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _productCateService.GetList(keyword, page, size).ConfigureAwait(true);
         }
@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddProductCate([FromBody] ProductCateInput productCate)
+        public async Task<int> AddProductCate([FromBody] ProductCateInput productCate)
         {
             return await _productCateService.AddProductCate(productCate).ConfigureAwait(true);
         }
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("{productCateId}")]
-        public async Task<ServiceResult<ProductCateOutput>> GetProductCateInfo([FromRoute] int productCateId)
+        public async Task<ProductCateOutput> GetProductCateInfo([FromRoute] int productCateId)
         {
             return await _productCateService.GetInfoProductCate(productCateId).ConfigureAwait(true);
         }
@@ -61,7 +61,7 @@ namespace VErpApi.Controllers.Stock.Products
        /// <returns></returns>
         [HttpPut]
         [Route("{productCateId}")]
-        public async Task<ServiceResult> UpdateProductCate([FromRoute] int productCateId, [FromBody] ProductCateInput productCate)
+        public async Task<bool> UpdateProductCate([FromRoute] int productCateId, [FromBody] ProductCateInput productCate)
         {
             return await _productCateService.UpdateProductCate(productCateId, productCate).ConfigureAwait(true);
         }
@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("{productCateId}")]
-        public async Task<ServiceResult> DeleteProductCate([FromRoute] int productCateId)
+        public async Task<bool> DeleteProductCate([FromRoute] int productCateId)
         {
             return await _productCateService.DeleteProductCate(productCateId).ConfigureAwait(true);
         }       

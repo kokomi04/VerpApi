@@ -51,7 +51,7 @@ namespace VErp.Services.Accountancy.Service.Category
         }
 
         #region Category
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)
+        public async Task<CategoryFullModel> GetCategory(int categoryId)
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
@@ -61,12 +61,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             return category;
         }
 
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory(string categoryCode)
+        public async Task<CategoryFullModel> GetCategory(string categoryCode)
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
@@ -76,7 +76,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 .FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             return category;
         }
@@ -102,7 +102,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddCategory(CategoryModel data)
+        public async Task<int> AddCategory(CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             var existedCategory = await _accountancyContext.Category
@@ -111,10 +111,10 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.CategoryCodeAlreadyExisted);
                 }
 
-                return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                throw new BadRequestException(CategoryErrorCode.CategoryTitleAlreadyExisted);
             }
 
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
@@ -170,21 +170,20 @@ namespace VErp.Services.Accountancy.Service.Category
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
                 return category.CategoryId;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
 
-        public async Task<Enum> UpdateCategory(int categoryId, CategoryModel data)
+        public async Task<bool> UpdateCategory(int categoryId, CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             if (category.CategoryCode != data.CategoryCode || category.Title != data.Title)
             {
@@ -194,10 +193,10 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                        throw new BadRequestException(CategoryErrorCode.CategoryCodeAlreadyExisted);
                     }
 
-                    return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.CategoryTitleAlreadyExisted);
                 }
             }
 
@@ -260,14 +259,14 @@ namespace VErp.Services.Accountancy.Service.Category
                         // Drop ParentId Field
                         await _accountancyContext.DeleteColumn(data.CategoryCode, "ParentId");
                     }
-                
+
                 }
                 category.IsTreeView = data.IsTreeView;
 
                 // Update other info
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
-                
+
                 await _accountancyContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -294,16 +293,16 @@ namespace VErp.Services.Accountancy.Service.Category
                         var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
                         var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
                         var updatedFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId != 0).ToList();
-                        foreach(var deletedField in deletedFields)
+                        foreach (var deletedField in deletedFields)
                         {
                             deletedField.IsDeleted = true;
                         }
-                        foreach(var newField in newFields)
+                        foreach (var newField in newFields)
                         {
                             var field = _mapper.Map<OutsideDataFieldConfig>(newField);
                             config.OutsideDataFieldConfig.Add(field);
                         }
-                        foreach(var updatedField in updatedFields)
+                        foreach (var updatedField in updatedFields)
                         {
                             var curField = config.OutsideDataFieldConfig.FirstOrDefault(f => f.OutsideDataFieldConfigId == updatedField.OutsideDataFieldConfigId);
                             if (curField == null) continue;
@@ -328,23 +327,22 @@ namespace VErp.Services.Accountancy.Service.Category
                     });
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
 
-        public async Task<Enum> DeleteCategory(int categoryId)
+        public async Task<bool> DeleteCategory(int categoryId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
 
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
@@ -381,13 +379,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 await _accountancyContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
+                throw;
             }
         }
 
@@ -586,7 +583,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return lst;
         }
 
-        public async Task<ServiceResult<CategoryFieldModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        public async Task<CategoryFieldModel> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountancyContext.CategoryField
                 //.Include(f => f.ReferenceCategoryField)
@@ -642,7 +639,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
             }
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsSelectForm())
             {
                 string refTable = data.RefTableCode;
                 string refField = data.RefTableField;
@@ -681,11 +678,14 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 data.DataSize = -1;
             }
+
+            //allow suggestion set  RefTableField = null
+
             if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
-                data.RefTableCode = null;
+                //data.RefTableCode = null;
                 data.RefTableField = null;
-                data.RefTableTitle = null;
+                //data.RefTableTitle = null;
             }
         }
 
@@ -732,7 +732,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields)
+        public async Task<bool> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields)
         {
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
             try
@@ -805,17 +805,16 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
-                return categoryId;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Update");
+                trans.TryRollbackTransaction();              
                 throw;
             }
         }
 
-        public async Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId)
+        public async Task<bool> DeleteCategoryField(int categoryId, int categoryFieldId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var categoryField = await _accountancyContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
@@ -858,12 +857,11 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Delete");
+                trans.TryRollbackTransaction();                
                 throw;
             }
         }

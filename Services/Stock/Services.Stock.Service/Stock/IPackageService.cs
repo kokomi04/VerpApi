@@ -24,7 +24,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// </summary>
         /// <param name="packageId">Mã kiện</param>
         /// <returns></returns>
-        Task<ServiceResult<PackageOutputModel>> GetInfo(long packageId);
+        Task<PackageOutputModel> GetInfo(long packageId);
 
         ///// <summary>
         ///// Thêm mới thông tin kiện
@@ -39,7 +39,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="packageId">Mã kiện</param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> UpdatePackage(long packageId, PackageInputModel req);
+        Task<bool> UpdatePackage(long packageId, PackageInputModel req);
 
         ///// <summary>
         ///// Xóa thông tin kiện (đánh dấu xóa)
@@ -54,13 +54,13 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="packageId"></param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> SplitPackage(long packageId, PackageSplitInput req);
+        Task<bool> SplitPackage(long packageId, PackageSplitInput req);
 
         /// <summary>
         /// Gộp kiện
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> JoinPackage(PackageJoinInput req);
+        Task<long> JoinPackage(PackageJoinInput req);
     }
 }
