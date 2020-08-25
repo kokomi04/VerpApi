@@ -260,11 +260,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     .ToListAsync())
                     .ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
 
+                var packetIds = inventoryDetails.SelectMany(d => new[] { d.FromPackageId, d.ToPackageId }).Where(d => d.HasValue).Select(d => d.Value).Distinct().ToList();
+                var packgeInfos = (await _stockDbContext.Package.AsNoTracking()
+                    .Where(p => packetIds.Contains(p.PackageId))
+                    .ToListAsync())
+                    .ToDictionary(p => p.PackageId, p => p);
 
                 var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
                 foreach (var details in inventoryDetails)
                 {
                     ProductListOutput productOutput = null;
+
+                    PackageEntity packageInfo = null;
+
+                    if (details.FromPackageId > 0)
+                    {
+                        packgeInfos.TryGetValue(details.FromPackageId.Value, out packageInfo);
+                    }
+
+                    if (details.ToPackageId > 0)
+                    {
+                        packgeInfos.TryGetValue(details.ToPackageId.Value, out packageInfo);
+                    }
 
                     if (productInfos.TryGetValue(details.ProductId, out var productInfo))
                     {
@@ -302,6 +319,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversionPrice = details.ProductUnitConversionPrice,
                         FromPackageId = details.FromPackageId,
                         ToPackageId = details.ToPackageId,
+                        FromPackageCode = packageInfo?.PackageCode,
                         PackageOptionId = details.PackageOptionId,
 
                         RefObjectTypeId = details.RefObjectTypeId,
