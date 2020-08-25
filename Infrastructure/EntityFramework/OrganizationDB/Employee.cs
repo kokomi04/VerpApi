@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public Employee()
         {
             EmployeeDepartmentMapping = new HashSet<EmployeeDepartmentMapping>();
+            EmployeeSubsidiary = new HashSet<EmployeeSubsidiary>();
         }
 
         public int UserId { get; set; }
@@ -21,5 +22,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public long? AvatarFileId { get; set; }
 
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
+        public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
     }
 }

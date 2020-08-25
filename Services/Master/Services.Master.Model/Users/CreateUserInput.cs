@@ -23,6 +23,7 @@ namespace VErp.Services.Master.Model.Users
         public int? RoleId { get; set; }
 
         public int? DepartmentId { get; set; }
+        public IList<int> SubsidiaryIds { get; set; }
     }
 
     public class UserChangepasswordInput
