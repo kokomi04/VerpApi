@@ -195,7 +195,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ServiceResult<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
         }
@@ -255,7 +255,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPost]
         [Route("ProcessOpeningBalance")]
-        public async Task<ServiceResult> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceModel model)
+        public async Task<bool> ProcessOpeningBalance([FromBody] InventoryOpeningBalanceModel model)
         {
             if (model == null)
             {
@@ -268,7 +268,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             else if (model.Type == EnumInventoryType.Output)
                 return await _fileProcessDataService.ImportInventoryOutput(currentUserId, model);
             else
-                return new ServiceResult { Code = GeneralCode.InvalidParams };
+                throw new BadRequestException(GeneralCode.InvalidParams);
 
         }
 

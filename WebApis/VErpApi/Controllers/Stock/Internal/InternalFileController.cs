@@ -26,7 +26,7 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [Route("{fileId}/FileAssignToObject")]
         [HttpPut]
-        public async Task<ServiceResult> FileAssignToObject([FromRoute] long fileId, [FromBody] FileAssignToObjectInput req)
+        public async Task<bool> FileAssignToObject([FromRoute] long fileId, [FromBody] FileAssignToObjectInput req)
         {
             if (req == null)
             {
@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [Route("{fileId}")]
         [HttpDelete]
-        public async Task<ServiceResult> DeleteFile([FromRoute] long fileId)
+        public async Task<bool> DeleteFile([FromRoute] long fileId)
         {
             return await _fileService.DeleteFile(fileId);
         }

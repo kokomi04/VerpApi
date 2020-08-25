@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
@@ -36,12 +37,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddProductType(ProductTypeInput req)
+        public async Task<int> AddProductType(ProductTypeInput req)
         {
             var validate = ValidateProductType(req);
             if (!validate.IsSuccess())
             {
-                return validate;
+                throw new BadRequestException(validate);
             }
 
             if (req.ParentProductTypeId.HasValue)
@@ -49,14 +50,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 var parent = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId == req.ParentProductTypeId);
                 if (parent == null)
                 {
-                    return ProductTypeErrorCode.ParentProductTypeNotfound;
+                    throw new BadRequestException(ProductTypeErrorCode.ParentProductTypeNotfound);
                 }
             }
 
             var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeName == req.ProductTypeName);
             if (sameName != null)
             {
-                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeNameAlreadyExisted);
             }
 
             var productType = new ProductType()
@@ -81,22 +82,22 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productType.ProductTypeId;
         }
 
-        public async Task<Enum> DeleteProductType(int productTypeId)
+        public async Task<bool> DeleteProductType(int productTypeId)
         {
             var productType = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId == productTypeId);
             if (productType == null)
             {
-                return ProductTypeErrorCode.ProductTypeNotfound;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeNotfound);
             }
             var childrenCount = await _stockContext.ProductType.CountAsync(c => c.ParentProductTypeId == productTypeId);
             if (childrenCount > 0)
             {
-                return ProductTypeErrorCode.CanNotDeletedParentProductType;
+                throw new BadRequestException(ProductTypeErrorCode.CanNotDeletedParentProductType);
             }
 
             if (await _stockContext.Product.AnyAsync(p => p.ProductTypeId == productTypeId))
             {
-                return ProductTypeErrorCode.ProductTypeInUsed;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeInUsed);
             }
 
             productType.IsDeleted = true;
@@ -108,10 +109,10 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<ProductTypeOutput>> GetInfoProductType(int productTypeId)
+        public async Task<ProductTypeOutput> GetInfoProductType(int productTypeId)
         {
             var productType = await _stockContext.ProductType.Where(c => c.ProductTypeId == productTypeId)
                 .Select(c => new ProductTypeOutput
@@ -126,7 +127,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             if (productType == null)
             {
-                return ProductTypeErrorCode.ProductTypeNotfound;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeNotfound);
             }
 
             return productType;
@@ -161,18 +162,18 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return (lst, total);
         }
 
-        public async Task<Enum> UpdateProductType(int productTypeId, ProductTypeInput req)
+        public async Task<bool> UpdateProductType(int productTypeId, ProductTypeInput req)
         {
             var productType = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId == productTypeId);
             if (productType == null)
             {
-                return ProductTypeErrorCode.ProductTypeNotfound;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeNotfound);
             }
 
             var sameName = await _stockContext.ProductType.FirstOrDefaultAsync(c => c.ProductTypeId != productTypeId && c.ProductTypeName == req.ProductTypeName);
             if (sameName != null)
             {
-                return ProductTypeErrorCode.ProductTypeNameAlreadyExisted;
+                throw new BadRequestException(ProductTypeErrorCode.ProductTypeNameAlreadyExisted);
             }
 
 
@@ -189,7 +190,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
-            return GeneralCode.Success;
+            return true;
         }
 
         #region private

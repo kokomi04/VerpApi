@@ -13,11 +13,11 @@ namespace VErp.Services.Master.Service.Users
 {
     public interface IUserService
     {
-        Task<ServiceResult<UserInfoOutput>> GetInfo(int userId);
-        Task<ServiceResult<int>> CreateUser(UserInfoInput req, int updatedUserId);
-        Task<Enum> UpdateUser(int userId, UserInfoInput req, int updatedUserId);
-        Task<Enum> ChangeUserPassword(int userId, UserChangepasswordInput req);
-        Task<Enum> DeleteUser(int userId);
+        Task<UserInfoOutput> GetInfo(int userId);
+        Task<int> CreateUser(UserInfoInput req, int updatedUserId);
+        Task<bool> UpdateUser(int userId, UserInfoInput req, int updatedUserId);
+        Task<bool> ChangeUserPassword(int userId, UserChangepasswordInput req);
+        Task<bool> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
 

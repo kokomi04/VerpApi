@@ -19,8 +19,8 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
         Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file);
 
-        Task<Enum> DeleteFile(long fileId);
-        Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
+        Task<bool> DeleteFile(long fileId);
+        Task<bool> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
 
         Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
 
@@ -28,7 +28,7 @@ namespace VErp.Services.Stock.Service.FileResources
 
         Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
 
-        Task<Enum> GenerateThumbnail(long fileId);
+        Task<bool> GenerateThumbnail(long fileId);
         
 
         Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);

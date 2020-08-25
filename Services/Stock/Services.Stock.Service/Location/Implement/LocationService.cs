@@ -16,6 +16,7 @@ using VErp.Services.Master.Service.Activity;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Stock.Service.Location.Implement
@@ -42,13 +43,13 @@ namespace VErp.Services.Stock.Service.Location.Implement
         }
 
 
-        public async Task<ServiceResult<int>> AddLocation(LocationInput req)
+        public async Task<int> AddLocation(LocationInput req)
         {
             var checkExisted = _stockDbContext.Location.Any(q =>
                 q.StockId == req.StockId && q.Name == req.Name);
 
             if (checkExisted)
-                return LocationErrorCode.LocationAlreadyExisted;
+                throw new BadRequestException(LocationErrorCode.LocationAlreadyExisted);
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -73,28 +74,25 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     return locationInfo.StockId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "AddLocation");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
         }
 
-        public async Task<Enum> DeleteLocation(int locationId)
+        public async Task<bool> DeleteLocation(int locationId)
         {
             var locationInfo = await _stockDbContext.Location.FirstOrDefaultAsync(p => p.LocationId == locationId);
 
             if (locationInfo == null)
             {
-                return LocationErrorCode.LocationNotFound;
+                throw new BadRequestException(LocationErrorCode.LocationNotFound);
             }
 
             locationInfo.IsDeleted = true;
             locationInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
-
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -108,13 +106,12 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", locationInfo.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "DeleteLocation");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
         }
@@ -168,13 +165,13 @@ namespace VErp.Services.Stock.Service.Location.Implement
             return (pageData, total);
         }
 
-        public async Task<ServiceResult<LocationOutput>> GetLocationInfo(int locationId)
+        public async Task<LocationOutput> GetLocationInfo(int locationId)
         {
             var locationInfo = await _stockDbContext.Location.FirstOrDefaultAsync(p => p.LocationId == locationId);
 
             if (locationInfo == null)
             {
-                return LocationErrorCode.LocationNotFound;
+                throw new BadRequestException(LocationErrorCode.LocationNotFound);
             }
             var stockInfo = await _stockDbContext.Stock.FirstOrDefaultAsync(p => p.StockId == locationInfo.StockId);
             return new LocationOutput()
@@ -188,14 +185,14 @@ namespace VErp.Services.Stock.Service.Location.Implement
             };
         }
 
-        public async Task<Enum> UpdateLocation(int locationId, LocationInput req)
+        public async Task<bool> UpdateLocation(int locationId, LocationInput req)
         {
             req.Name = (req.Name ?? "").Trim();
 
             var checkExistsName = await _stockDbContext.Location.AnyAsync(p => locationId != p.LocationId && p.Name == req.Name && p.StockId == req.StockId);
             if (checkExistsName)
             {
-                return LocationErrorCode.LocationAlreadyExisted;
+                throw new BadRequestException(LocationErrorCode.LocationAlreadyExisted);
             }
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -206,7 +203,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     var locationInfo = await _stockDbContext.Location.FirstOrDefaultAsync(p => p.LocationId == locationId);
                     if (locationInfo == null)
                     {
-                        return LocationErrorCode.LocationNotFound;
+                        throw new BadRequestException(LocationErrorCode.LocationNotFound);
                     }
 
                     //Update
@@ -222,13 +219,12 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", req.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "UpdateLocation");
-                    return GeneralCode.InternalError;
+                    throw;
                 }
             }
         }

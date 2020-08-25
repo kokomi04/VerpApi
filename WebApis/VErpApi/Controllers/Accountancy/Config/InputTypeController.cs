@@ -63,14 +63,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("fields")]
-        public async Task<ServiceResult<PageData<InputFieldOutputModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InputFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputFields(keyword, page, size).ConfigureAwait(true);
         }
 
         [HttpPost]
         [Route("fields")]
-        public async Task<ServiceResult<int>> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        public async Task<int> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
             return await _inputConfigService.AddInputField(inputAreaField).ConfigureAwait(true);
         }
@@ -184,7 +184,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("{inputTypeId}/inputareas")]
-        public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
+        public async Task<int> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
         {
             return await _inputConfigService.AddInputArea(inputTypeId, inputArea).ConfigureAwait(true);
         }

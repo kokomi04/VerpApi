@@ -22,14 +22,9 @@ namespace VErpApi.Controllers.Stock.Files
         {
             if (string.IsNullOrWhiteSpace(fileName)) return NotFound();
 
-            var r = await _fileStoreService.GetFileStream(fileKey);
-            if (!r.Code.IsSuccess())
-            {
-                return new JsonResult(r);
-            }
+            var r = await _fileStoreService.GetFileStream(fileKey);           
 
-
-            return new FileStreamResult(r.Data.file, !string.IsNullOrWhiteSpace(r.Data.contentType) ? r.Data.contentType : "application/octet-stream") { FileDownloadName = fileName };
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }
 }

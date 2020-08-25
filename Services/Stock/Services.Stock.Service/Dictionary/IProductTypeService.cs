@@ -10,9 +10,9 @@ namespace VErp.Services.Stock.Service.Dictionary
     public interface IProductTypeService
     {
         Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size);
-        Task<ServiceResult<int>> AddProductType(ProductTypeInput req);
-        Task<Enum> UpdateProductType(int productTypeId, ProductTypeInput req);
-        Task<Enum> DeleteProductType(int productTypeId);
-        Task<ServiceResult<ProductTypeOutput>> GetInfoProductType(int productTypeId);
+        Task<int> AddProductType(ProductTypeInput req);
+        Task<bool> UpdateProductType(int productTypeId, ProductTypeInput req);
+        Task<bool> DeleteProductType(int productTypeId);
+        Task<ProductTypeOutput> GetInfoProductType(int productTypeId);
     }
 }

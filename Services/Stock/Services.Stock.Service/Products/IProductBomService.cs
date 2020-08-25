@@ -34,14 +34,14 @@ namespace VErp.Services.Stock.Service.Products
         /// </summary>
         /// <param name="productBomId">Mã Id BOM</param>        
         /// <returns></returns>
-        Task<ServiceResult<ProductBomOutput>> Get(long productBomId);
+        Task<ProductBomOutput> Get(long productBomId);
 
         /// <summary>
         /// Thêm mới thông tin BOM
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<long>> Add(ProductBomInput req);
+        Task<long> Add(ProductBomInput req);
 
         /// <summary>
         /// Cập nhật thông tin BOM
@@ -49,7 +49,7 @@ namespace VErp.Services.Stock.Service.Products
         /// <param name="productBomId">Mã Id BOM</param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> Update(long productBomId, ProductBomInput req);
+        Task<bool> Update(long productBomId, ProductBomInput req);
 
         /// <summary>
         /// Xóa thông tin BOM (đánh dấu xóa)
@@ -57,6 +57,6 @@ namespace VErp.Services.Stock.Service.Products
         /// <param name="productBomId">Mã BOM</param>
         /// <param name="rootProductId">Mã id sản phẩm gốc</param>
         /// <returns></returns>
-        Task<Enum> Delete(long productBomId, int rootProductId);
+        Task<bool> Delete(long productBomId, int rootProductId);
     }
 }

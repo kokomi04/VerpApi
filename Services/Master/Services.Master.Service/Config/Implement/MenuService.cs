@@ -55,105 +55,83 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Icon = item.Icon,
                     Param = item.Param,
                     SortOrder = item.SortOrder,
-                    IsGroup =item.IsGroup
+                    IsGroup = item.IsGroup
                 };
                 lstMenu.Add(info);
             }
             return lstMenu;
         }
 
-        public async Task<Enum> Update(int menuId, MenuInputModel model)
+        public async Task<bool> Update(int menuId, MenuInputModel model)
         {
-            try
-            {
-                var obj = await _masterDbContext.Menu.FirstOrDefaultAsync(m => m.MenuId == menuId);
 
-                if (obj == null)
-                {
-                    return GeneralCode.ItemNotFound;
-                }
-                obj.ParentId = model.ParentId;
-                obj.IsDisabled = model.IsDisabled;
-                obj.ModuleId = model.ModuleId;
-                obj.MenuName = model.MenuName;
-                obj.Url = model.Url;
-                obj.Icon = model.Icon;
-                obj.Param = model.Param;
-                obj.UpdatedByUserId = _currentContextService.UserId;
-                obj.SortOrder = model.SortOrder;
-                obj.IsGroup = model.IsGroup;
-                obj.UpdatedDatetimeUtc = DateTime.UtcNow;
-                await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
+            var obj = await _masterDbContext.Menu.FirstOrDefaultAsync(m => m.MenuId == menuId);
 
-                await _masterDbContext.SaveChangesAsync();
-                return GeneralCode.Success;
-            }
-            catch (Exception ex)
+            if (obj == null)
             {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
+                throw new BadRequestException(GeneralCode.ItemNotFound);
             }
+            obj.ParentId = model.ParentId;
+            obj.IsDisabled = model.IsDisabled;
+            obj.ModuleId = model.ModuleId;
+            obj.MenuName = model.MenuName;
+            obj.Url = model.Url;
+            obj.Icon = model.Icon;
+            obj.Param = model.Param;
+            obj.UpdatedByUserId = _currentContextService.UserId;
+            obj.SortOrder = model.SortOrder;
+            obj.IsGroup = model.IsGroup;
+            obj.UpdatedDatetimeUtc = DateTime.UtcNow;
+            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
+
+            await _masterDbContext.SaveChangesAsync();
+            return true;
+
         }
 
-       
-        public async Task<Enum> Delete(int menuId)
+
+        public async Task<bool> Delete(int menuId)
         {
-            try
+
+            var obj = await _masterDbContext.Menu.FirstOrDefaultAsync(m => m.MenuId == menuId);
+            if (obj == null)
             {
-                var obj = await _masterDbContext.Menu.FirstOrDefaultAsync(m => m.MenuId == menuId);
-                if (obj == null)
-                {
-                    return GeneralCode.ItemNotFound;
-                }
-                obj.IsDeleted = true;
-                obj.UpdatedByUserId = _currentContextService.UserId;
-                obj.DeletedDatetimeUtc = DateTime.UtcNow;
-                await _masterDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
-                return GeneralCode.Success;
+                throw new BadRequestException(GeneralCode.ItemNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
-            }
+            obj.IsDeleted = true;
+            obj.UpdatedByUserId = _currentContextService.UserId;
+            obj.DeletedDatetimeUtc = DateTime.UtcNow;
+            await _masterDbContext.SaveChangesAsync();
+            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
+            return true;
         }
 
-        public async Task<ServiceResult<int>> Create(MenuInputModel model)
+        public async Task<int> Create(MenuInputModel model)
         {
-            var result = new ServiceResult<int>() { Data = 0 };
-            try
+
+            var entity = new Menu()
             {
-                var entity = new Menu()
-                {
-                    ParentId = model.ParentId,
-                    IsDisabled = model.IsDisabled,
-                    ModuleId = model.ModuleId,
-                    MenuName = model.MenuName,
-                    Url = model.Url,
-                    Icon = model.Icon,
-                    Param = model.Param,
-                    CreatedByUserId = _currentContextService.UserId,
-                    UpdatedByUserId = _currentContextService.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
-                    SortOrder = model.SortOrder,
-                    IsGroup = model.IsGroup
-                };
-                _masterDbContext.Menu.Add(entity);
-                await _masterDbContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
-                result.Code = GeneralCode.Success;
-                result.Data = entity.MenuId;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Create");
-                result.Message = ex.Message;
-                result.Code = GeneralCode.InternalError;
-            }
-            return result;
+                ParentId = model.ParentId,
+                IsDisabled = model.IsDisabled,
+                ModuleId = model.ModuleId,
+                MenuName = model.MenuName,
+                Url = model.Url,
+                Icon = model.Icon,
+                Param = model.Param,
+                CreatedByUserId = _currentContextService.UserId,
+                UpdatedByUserId = _currentContextService.UserId,
+                CreatedDatetimeUtc = DateTime.UtcNow,
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                IsDeleted = false,
+                SortOrder = model.SortOrder,
+                IsGroup = model.IsGroup
+            };
+            _masterDbContext.Menu.Add(entity);
+            await _masterDbContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
+
+            return entity.MenuId;
         }
     }
 }

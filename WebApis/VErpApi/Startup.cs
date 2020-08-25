@@ -27,6 +27,7 @@ using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
+using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
@@ -47,6 +48,13 @@ namespace VErp.WebApis.VErpApi
             ConfigureStandardServices(services, true);
 
             ConfigReadWriteDBContext(services);
+
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly ,
+                configureClient => {
+                    configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
+                }, configureOptions => {
+                    configureOptions.SuppressContextNotFoundErrors = true;
+                });
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -126,6 +134,8 @@ namespace VErp.WebApis.VErpApi
 
 
             ConfigureBase(app, env, loggerFactory, true);
+
+            app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>

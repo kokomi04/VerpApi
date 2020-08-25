@@ -25,9 +25,9 @@ namespace VErpApi.Controllers.System.Internal
 
         [Route("")]
         [HttpPost]
-        public async Task<ServiceResult> Create([FromBody] MenuInputModel req)
+        public async Task<int> Create([FromBody] MenuInputModel req)
         {
-            return (await _menuService.Create(req)).Code;
+            return await _menuService.Create(req);
         }
     }
 }

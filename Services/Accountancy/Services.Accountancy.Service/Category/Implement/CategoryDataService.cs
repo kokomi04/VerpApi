@@ -53,7 +53,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _currentContextService = currentContextService;
         }
 
-        public async Task<ServiceResult<int>> AddCategoryRow(int categoryId, Dictionary<string, string> data)
+        public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
@@ -352,6 +352,9 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             foreach (var field in requiredFields)
             {
+                // ignore auto generate field
+                if (field.FormTypeId == (int)EnumFormType.Generate) continue;
+
                 if (!data.Any(v => v.Key == field.CategoryFieldName && !string.IsNullOrEmpty(v.Value)))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
@@ -483,7 +486,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        public async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(int categoryId, int fId)
+        public async Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -493,7 +496,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return await GetCategoryRow(category, fId);
         }
 
-        private async Task<ServiceResult<NonCamelCaseDictionary>> GetCategoryRow(CategoryEntity category, int fId)
+        private async Task<NonCamelCaseDictionary> GetCategoryRow(CategoryEntity category, int fId)
         {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
@@ -521,7 +524,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
-                if (((EnumFormType)field.FormTypeId).IsSelectForm()
+                if (((EnumFormType)field.FormTypeId).IsJoinForm()
                     && !string.IsNullOrEmpty(field.RefTableCode)
                     && !string.IsNullOrEmpty(field.RefTableTitle))
                 {
@@ -721,7 +724,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var tableName = $"v{category.CategoryCode}";
                 var fields = (from f in _accountancyContext.CategoryField
                               join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                              where c.CategoryCode == category.CategoryCode && f.FormTypeId != (int)EnumFormType.ViewOnly
+                              where c.CategoryCode == category.CategoryCode
                               select f).ToList();
 
                 var selectCondition = $"{GetSelect(tableName, fields, category.IsTreeView)} FROM {tableName} ";
@@ -992,7 +995,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                         if (!string.IsNullOrWhiteSpace(parentValue))
                         {
-                            parentMappingData.Add(result.Data, new CategoryParentData()
+                            parentMappingData.Add(result, new CategoryParentData()
                             {
                                 ParentFieldName = parentRefFieldName,
                                 ParentValue = parentValue

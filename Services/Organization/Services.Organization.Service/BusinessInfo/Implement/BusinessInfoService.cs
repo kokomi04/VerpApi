@@ -34,7 +34,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
+        public async Task<BusinessInfoModel> GetBusinessInfo()
         {
             var businessInfo = await _organizationContext.BusinessInfo.FirstOrDefaultAsync();
             BusinessInfoModel result = new BusinessInfoModel(); ;
@@ -56,7 +56,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
             return result;
         }
 
-        public async Task<Enum> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data)
+        public async Task<bool> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data)
         {
             var businessInfo = await _organizationContext.BusinessInfo.FirstOrDefaultAsync();
             if (businessInfo == null)
@@ -94,7 +94,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
             }
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.BusinessInfo, businessInfo.BusinessInfoId, $"Cập nhật thông tin doanh nghiệp {businessInfo.CompanyName}", data.JsonSerialize());
-            return GeneralCode.Success;
+            return true;
         }
     }
 }
