@@ -164,5 +164,19 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             return await _inputDataService.CalcCostTransferBalanceZero(toDate);
         }
+
+        [HttpGet]
+        [Route("CheckExistedCostTransferBalanceZero")]
+        public async Task<bool> CheckExistedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.CheckExistedCostTransferBalanceZero(fromDate, toDate);
+        }
+
+        [HttpDelete]
+        [Route("DeletedCostTransferBalanceZero")]
+        public async Task<bool> DeletedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.DeletedCostTransferBalanceZero(fromDate, toDate);
+        }
     }
 }

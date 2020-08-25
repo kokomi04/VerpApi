@@ -46,5 +46,9 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate);
+
+        Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate);
+
+        Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate);
     }
 }
