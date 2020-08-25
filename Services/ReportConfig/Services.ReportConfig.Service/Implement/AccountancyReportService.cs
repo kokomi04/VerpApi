@@ -72,7 +72,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         value = filters[paramName];
                         if (!value.IsNullObject())
                         {
-                            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(filterFiled.DataTypeId))
+                            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year, EnumDataType.DateRange }.Contains(filterFiled.DataTypeId))
                             {
                                 value = Convert.ToInt64(value);
                             }
