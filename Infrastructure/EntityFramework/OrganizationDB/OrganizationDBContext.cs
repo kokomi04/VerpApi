@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
+        public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -198,6 +199,21 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_EmployeeDepartment_Employee");
+            });
+
+            modelBuilder.Entity<EmployeeSubsidiary>(entity =>
+            {
+                entity.HasOne(d => d.Subsidiary)
+                    .WithMany(p => p.EmployeeSubsidiary)
+                    .HasForeignKey(d => d.SubsidiaryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_EmployeeSubsidiary_Subsidiary");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.EmployeeSubsidiary)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_EmployeeSubsidiary_Employee");
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>
