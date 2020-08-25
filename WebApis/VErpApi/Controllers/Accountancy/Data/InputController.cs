@@ -157,5 +157,12 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             return await _inputDataService.DeletedCostTransfer(type, fromDate, toDate);
         }
+
+        [HttpGet]
+        [Route("CalcCostTransferBalanceZero")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero([FromQuery] long toDate)
+        {
+            return await _inputDataService.CalcCostTransferBalanceZero(toDate);
+        }
     }
 }

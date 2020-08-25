@@ -2003,6 +2003,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+            };
+
+            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransferBalanceZero");
+            foreach (var param in sqlParams)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
             private readonly EnumDataType dataType;
