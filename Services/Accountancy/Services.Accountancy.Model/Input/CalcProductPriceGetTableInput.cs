@@ -25,6 +25,9 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public EnumCalcProductPriceAllocationType GeneralManufacturingAllocationTypeId { get; set; }
         public decimal GeneralManufacturingSumCustom { get; set; }
+
+        public bool IsReviewUpdate { get; set; }
+        public bool IsUpdate { get; set; }
     }
 
     public class CalcProductPriceGetTableOutput

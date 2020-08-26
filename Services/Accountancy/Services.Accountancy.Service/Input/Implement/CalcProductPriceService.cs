@@ -81,7 +81,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     new SqlParameter("@GeneralManufacturingAllocationTypeId", SqlDbType.Int){ Value = req.GeneralManufacturingAllocationTypeId},
                     new SqlParameter("@GeneralManufacturingSumCustom", SqlDbType.Decimal){ Value = req.GeneralManufacturingSumCustom},
-                    generalManufacturingSum
+                    generalManufacturingSum,
+
+                    new SqlParameter("@IsReviewUpdate", SqlDbType.Decimal){ Value = req.IsReviewUpdate},
+                    new SqlParameter("@IsUpdate", SqlDbType.Decimal){ Value = req.IsUpdate}
 
                 }, CommandType.StoredProcedure)
                 ).ConvertData();
