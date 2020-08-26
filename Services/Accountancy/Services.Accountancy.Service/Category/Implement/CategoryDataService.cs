@@ -739,7 +739,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var groupByField in groupByFields)
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
-                        var values = groupByField.Select(v => v.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
+                        var values = groupByField.Select(v => ((EnumDataType)inputField.DataTypeId).GetSqlValue(v.Value)).ToList();
                         if (values.Count() > 0)
                         {
                             if (suffix > 0)
@@ -1125,7 +1125,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     var field = categoryInfo.Fields.FirstOrDefault(f => f.CategoryFieldName == fieldFilter.Key);
 
-                    var queryValues = fieldFilter.Value.Select(v => v.ConvertValueByType((EnumDataType)field.DataTypeId)).ToList();
+                    var queryValues = fieldFilter.Value.Select(v => ((EnumDataType)field.DataTypeId).GetSqlValue(v)).ToList();
 
                     if (queryValues.Count > 0)
                     {
