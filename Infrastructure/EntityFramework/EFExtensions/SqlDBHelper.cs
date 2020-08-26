@@ -28,7 +28,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
                 sql.Append(",");
             }
-            
+
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
@@ -280,6 +280,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot, value);
                     }
                 }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin lọc không sai định dạng");
+                }
                 condition.Append(" )");
             }
         }
@@ -337,7 +341,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             }
                             var inParamName = $"{paramName}_{inSuffix}";
                             condition.Append($"{inParamName}");
-                            sqlParams.Add(new SqlParameter(inParamName, value.ConvertValueByType(clause.DataType)));
+                            sqlParams.Add(new SqlParameter(inParamName, clause.DataType.GetSqlValue(value)));
                             inSuffix++;
                         }
                         condition.Append(")");
@@ -356,6 +360,26 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "NOT LIKE" : "LIKE";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        break;
+                    case EnumOperator.Greater:
+                        ope = not ? ">" : "<=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.GreaterOrEqual:
+                        ope = not ? ">=" : "<";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThan:
+                        ope = not ? "<" : ">=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThanOrEqual:
+                        ope = not ? "<=" : ">";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
                         ope = not ? "IS NOT NULL" : "IS NULL";

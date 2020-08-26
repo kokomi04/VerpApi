@@ -64,7 +64,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             var viewInfo = await _accountancyDBContext.InputTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
 
@@ -90,7 +90,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             whereCondition.Append($"r.InputTypeId = {inputTypeId}");
 
             var sqlParams = new List<SqlParameter>();
-
+            int suffix = 0;
             if (filters != null)
             {
                 foreach (var filter in filters)
@@ -117,11 +117,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 whereCondition.Append(" AND ");
                             }
 
-                            int suffix = 0;
                             filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, ((EnumDataType)viewField.DataTypeId).GetSqlValue(value));
                         }
                     }
                 }
+            }
+
+            if(columnsFilters != null)
+            {
+                if (whereCondition.Length > 0)
+                {
+                    whereCondition.Append(" AND ");
+                }
+
+                columnsFilters.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
             var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
@@ -564,7 +573,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var paramName = $"@{match[i]}";
                         script = script.Replace($"@{{{match[i]}}}", paramName);
                         data.Info.TryGetValue(fieldName, out string value);
-                        parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                     }
                     else
                     {
@@ -574,7 +583,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var paramName = $"@{match[i]}_{rowIndx}";
                             paramNames.Add($"({paramName})");
                             data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                            parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                         }
                         var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
                         script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
@@ -725,7 +734,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     info.Data.TryGetValue(field.FieldName, out object value);
                     // Checkin unique trong db
                     if (value != null)
-                        await ValidUniqueAsync(inputTypeId, new List<object>() { value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId) }, field, inputValueBillId);
+                        await ValidUniqueAsync(inputTypeId, new List<object>() { ((EnumDataType)field.DataTypeId).GetSqlValue(value) }, field, inputValueBillId);
                 }
                 else // Validate rows
                 {
@@ -742,7 +751,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         row.Data.TryGetValue(field.FieldName, out object value);
                         if (value != null)
                         {
-                            values.Add(value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId));
+                            values.Add(((EnumDataType)field.DataTypeId).GetSqlValue(value));
                         }
                         // Check unique trong danh sách values thêm mới/sửa
                         if (values.Count != values.Distinct().Count())
@@ -825,7 +834,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 return;
             }
-            var value = textValue.ConvertValueByType((EnumDataType)field.DataTypeId);
+            var value = ((EnumDataType)field.DataTypeId).GetSqlValue(textValue);
             var whereCondition = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
 
@@ -1649,7 +1658,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
                             }
                             var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
-                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
+                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                             suffix++;
                             if (!string.IsNullOrEmpty(field.Filters))
                             {

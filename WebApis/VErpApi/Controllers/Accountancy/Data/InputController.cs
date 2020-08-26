@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]
