@@ -110,6 +110,13 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _inputConfigService.GetInputType(inputTypeId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("{inputTypeCode}")]
+        public async Task<InputTypeFullModel> GetInputType([FromRoute] string inputTypeCode)
+        {
+            return await _inputConfigService.GetInputType(inputTypeCode).ConfigureAwait(true);
+        }
+
         [HttpPut]
         [Route("{inputTypeId}")]
         public async Task<bool> UpdateInputType([FromRoute] int inputTypeId, [FromBody] InputTypeModel inputType)

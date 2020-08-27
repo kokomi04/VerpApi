@@ -664,6 +664,24 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static bool Contains(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().Contains(value2.ToString());
+        }
+
+        public static bool StartsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().StartsWith(value2.ToString());
+        }
+
+        public static bool EndsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().EndsWith(value2.ToString());
+        }
+
         public static object ConvertValueByType(this string value, EnumDataType dataType)
         {
             if (string.IsNullOrEmpty(value)) return null;

@@ -82,6 +82,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return inputType;
         }
 
+        public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
+        {
+            var inputType = await _accountancyDBContext.InputType
+           .Where(i => i.InputTypeCode == inputTypeCode)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
+            if (inputType == null)
+            {
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            }
+            return inputType;
+        }
+
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
