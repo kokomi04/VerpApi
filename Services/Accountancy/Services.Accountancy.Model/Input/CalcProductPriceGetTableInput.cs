@@ -18,13 +18,13 @@ namespace VErp.Services.Accountancy.Model.Input
         public NonCamelCaseDictionary<decimal> OtherFee { get; set; }
         
         public EnumCalcProductPriceAllocationType IndirectMaterialFeeAllocationTypeId { get; set; }
-        public decimal IndirectMaterialFeeSumCustom { get; set; }
+        public decimal? IndirectMaterialFeeSumCustom { get; set; }
 
         public EnumCalcProductPriceAllocationType IndirectLaborFeeAllocationTypeId { get; set; }
-        public decimal IndirectLaborFeeSumCustom { get; set; }
+        public decimal? IndirectLaborFeeSumCustom { get; set; }
 
         public EnumCalcProductPriceAllocationType GeneralManufacturingAllocationTypeId { get; set; }
-        public decimal GeneralManufacturingSumCustom { get; set; }
+        public decimal? GeneralManufacturingSumCustom { get; set; }
 
         public bool IsReviewUpdate { get; set; }
         public bool IsUpdate { get; set; }

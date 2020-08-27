@@ -441,5 +441,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
         }
+
+        public static SqlParameter ToSqlParameterValue(this decimal? value, string parameterName)
+        {
+            return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
+        }
     }
 }
