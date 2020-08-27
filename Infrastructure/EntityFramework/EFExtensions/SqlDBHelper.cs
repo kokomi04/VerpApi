@@ -32,7 +32,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try
             {
@@ -42,6 +42,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
                     command.Parameters.AddRange(parammeters);
+                    if (timeout.HasValue)
+                    {
+                        command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
+                    }
 
                     var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
                     if (trans != null)
@@ -231,7 +235,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             EnumDataType.Int => SqlDbType.Int,
             EnumDataType.Date => SqlDbType.DateTime2,
             EnumDataType.Month => SqlDbType.DateTime2,
-            EnumDataType.Year => SqlDbType.DateTime2,            
+            EnumDataType.Year => SqlDbType.DateTime2,
             EnumDataType.QuarterOfYear => SqlDbType.DateTime2,
             EnumDataType.DateRange => SqlDbType.DateTime2,
             EnumDataType.PhoneNumber => SqlDbType.NVarChar,

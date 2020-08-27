@@ -80,7 +80,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     indirectLaborFeeSum,
 
-                    new SqlParameter("@GeneralManufacturingAllocationTypeId", SqlDbType.Int){ Value = req.GeneralManufacturingAllocationTypeId},                    
+                    new SqlParameter("@GeneralManufacturingAllocationTypeId", SqlDbType.Int){ Value = req.GeneralManufacturingAllocationTypeId},
                     req.GeneralManufacturingSumCustom.ToSqlParameterValue("@GeneralManufacturingSumCustom"),
 
                     generalManufacturingSum,
@@ -88,7 +88,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@IsReviewUpdate", SqlDbType.Decimal){ Value = req.IsReviewUpdate},
                     new SqlParameter("@IsUpdate", SqlDbType.Decimal){ Value = req.IsUpdate}
 
-                }, CommandType.StoredProcedure)
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
             return new CalcProductPriceGetTableOutput()
