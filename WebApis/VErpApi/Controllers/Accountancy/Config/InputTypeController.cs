@@ -105,14 +105,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("{inputTypeId}")]
-        public async Task<InputTypeFullModel> GetInputType([FromRoute] int inputTypeId)
+        public async Task<InputTypeFullModel> GetInputTypeById([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.GetInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeCode}")]
-        public async Task<InputTypeFullModel> GetInputType([FromRoute] string inputTypeCode)
+        [Route("getByCode")]
+        public async Task<InputTypeFullModel> GetInputTypeByCode([FromQuery] string inputTypeCode)
         {
             return await _inputConfigService.GetInputType(inputTypeCode).ConfigureAwait(true);
         }
