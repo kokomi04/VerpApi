@@ -197,8 +197,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f.FieldName
-          ).ToListAsync()
-          ).ToHashSet();
+            ).ToListAsync()
+            ).ToHashSet();
 
             var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
 
@@ -227,11 +227,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             if (billEntryInfo.Rows.Count > 0)
             {
@@ -248,6 +248,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                 }
             }
+            
 
             return (data, total);
         }
@@ -271,11 +272,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
             ";
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
 
@@ -427,7 +428,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = rowValues.Any(v => v != singleClause.Value);
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().Contains(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.Contains(singleClause.Value));
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -442,10 +443,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().StartsWith(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.StartsWith(singleClause.Value));
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().EndsWith(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.EndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -485,7 +486,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) != 0;
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = value != null && value.ToString().Contains(singleClause.Value.ToString());
+                                isRequire = value.Contains(singleClause.Value);
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -500,10 +501,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = value != null && value.ToString().StartsWith(singleClause.Value.ToString());
+                                isRequire = value.StartsWith(singleClause.Value);
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = value != null && value.ToString().EndsWith(singleClause.Value.ToString());
+                                isRequire = value.EndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
