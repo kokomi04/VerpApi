@@ -361,22 +361,22 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;
                     case EnumOperator.Greater:
-                        ope = not ? ">" : "<=";
+                        ope = not ? "<=" : ">";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        ope = not ? ">=" : "<";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
-                        break;
-                    case EnumOperator.LessThan:
                         ope = not ? "<" : ">=";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
+                    case EnumOperator.LessThan:
+                        ope = not ? ">=" : "<";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
                     case EnumOperator.LessThanOrEqual:
-                        ope = not ? "<=" : ">";
+                        ope = not ? ">" : "<=";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
