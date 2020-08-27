@@ -270,6 +270,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     var arrClause = clause as ArrayClause;
                     bool isNot = not ^ arrClause.Not;
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    if(arrClause.Rules.Count == 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống");
+                    }
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
                         if (indx != 0)
