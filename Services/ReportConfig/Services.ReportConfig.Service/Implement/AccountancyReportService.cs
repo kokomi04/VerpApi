@@ -85,7 +85,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
-                var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
                 foreach (var head in result.Head)
                 {
@@ -124,7 +124,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
-                var data = await _accountancyDBContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                var data = await _accountancyDBContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
@@ -241,7 +241,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (sql.Length > 0)
             {
-                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} OPTION(RECOMPILE)", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -261,7 +261,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 foreach (var item in cacls)
                 {
-                    var data = await _accountancyDBContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+                    var data = await _accountancyDBContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                     selectValue = data.ConvertFirstRowData();
                     BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
                 }
@@ -496,7 +496,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             totalSql.Append($" FROM {view}");
 
-            var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray());
+            var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
             if (table != null && table.Rows.Count > 0)
@@ -534,7 +534,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 FETCH NEXT {size} ROWS ONLY
                 ";
 
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             return ((data, totalRows), totals);
         }
@@ -568,7 +568,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
                 //}
 
-                var rowData = await _accountancyDBContext.QueryDataTable(selectAliasSql, rowParams.ToArray());
+                var rowData = await _accountancyDBContext.QueryDataTable(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 if (rowData.Rows.Count > 0)
                     data.Add(rowData.ConvertFirstRowData().ToNonCamelCaseDictionary());
             }
