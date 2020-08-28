@@ -1,0 +1,63 @@
+﻿syntax = "proto3";
+
+import "Protos/ValueType/ValueType.proto";
+import "Protos/Enums/MasterEnum.proto";
+
+option csharp_namespace = "VErp.Grpc.Protos";
+
+package Product;
+
+
+message GetListProductRequest {
+    int32 productId = 1;
+}
+
+message ProductModel {
+    int32 ProductId = 1;
+    string ProductCode = 2;
+    string ProductName = 3;
+    bool IsCanBuy = 4;
+    bool IsCanSell = 5;
+    int64 MainImageFileId = 6;
+    int32 ProductTypeId = 8;
+    int32 ProductCateId = 9;
+    int32 BarcodeConfigId  = 10;
+    Enums.EnumBarcodeStandard BarcodeStandardId = 11;
+    string Barcode = 12;
+    int32 UnitId = 13;
+    ValueTypes.DecimalValue EstimatePrice = 14;
+    ProductModelExtra Extra  = 15;
+    ProductModelStock StockInfo = 16;
+}
+
+message ProductModelExtra {
+    string Specification  = 1;
+    string Description = 2;
+}
+
+message ProductModelStock {
+    Enums.EnumStockOutputRule StockOutputRuleId  = 1;
+    int64 AmountWarningMin  = 2;
+    int64 AmountWarningMax = 3;
+    double TimeWarningAmount  = 4;
+    Enums.EnumTimeType TimeWarningTimeTypeId  = 5;
+    double ExpireTimeAmount  = 6;
+    Enums.EnumTimeType ExpireTimeTypeId  = 7;
+    string DescriptionToStock  = 8;
+    repeated int32 StockIds  = 9;
+    repeated ProductModelUnitConversion UnitConversions = 10;
+}
+
+message ProductModelUnitConversion {
+    int32 ProductUnitConversionId  = 1;
+    string ProductUnitConversionName  = 2;
+    int32 SecondaryUnitId  = 3;
+    bool IsDefault = 4;
+    bool IsFreeStyle  = 5;
+    string FactorExpression = 6;
+    string ConversionDescription = 7;
+}
+
+service Product {
+    rpc GetListProducts (stream GetListProductRequest) returns (stream ProductModel);
+}

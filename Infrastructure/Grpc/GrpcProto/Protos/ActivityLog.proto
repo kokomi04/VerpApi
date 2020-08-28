@@ -78,10 +78,10 @@ message ActivityInput {
     string Data = 7;
 }
 
-message ActivityReponse {
+message ActivityResponses {
 	bool IsSuccess = 1;
 }
 
 service InternalActivityLog {
-    rpc Log (ActivityInput) returns (ActivityReponse);
+    rpc Log (ActivityInput) returns (ActivityResponses);
 }

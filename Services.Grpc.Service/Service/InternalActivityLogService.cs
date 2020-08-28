@@ -21,7 +21,7 @@ namespace VErp.Services.Grpc.Service
             _logger = logger;
         }
 
-        public override async Task<ActivityReponse> Log(ActivityInput request, ServerCallContext context)
+        public override async Task<ActivityResponses> Log(ActivityInput request, ServerCallContext context)
         {
             using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
@@ -54,7 +54,7 @@ namespace VErp.Services.Grpc.Service
                 trans.Commit();
             }
 
-            return await Task.FromResult(new ActivityReponse { IsSuccess = true });
+            return await Task.FromResult(new ActivityResponses { IsSuccess = true });
         }
     }
 }
