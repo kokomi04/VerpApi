@@ -341,17 +341,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "NOT IN" : "IN";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
                         int inSuffix = 0;
+                        var paramNames = new StringBuilder();
                         foreach (var value in (clause.Value as string).Split(","))
                         {
-                            if (suffix > 0)
-                            {
-                                condition.Append(",");
-                            }
                             var inParamName = $"{paramName}_{inSuffix}";
-                            condition.Append($"{inParamName}");
+                            paramNames.Append(inParamName);
+                            paramNames.Append(",");
                             sqlParams.Add(new SqlParameter(inParamName, clause.DataType.GetSqlValue(value)));
                             inSuffix++;
                         }
+                        condition.Append(paramNames.ToString().TrimEnd(','));
                         condition.Append(")");
                         break;
                     case EnumOperator.IsLeafNode:
