@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
@@ -29,6 +30,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
+        public virtual DbSet<SystemParameter> SystemParameter { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -285,6 +287,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<SystemParameter>(entity =>
+            {
+                entity.HasKey(e => e.SystemParameterId);
+
+                entity.Property(e => e.Fieldname)
+                .HasMaxLength(64)
+                .IsRequired();
+
             });
 
             OnModelCreatingPartial(modelBuilder);
