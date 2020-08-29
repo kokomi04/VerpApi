@@ -100,7 +100,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (bscConfig != null)
                 {
-                    var (data, totals) = await GetRowsByBsc(reportInfo, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByBsc(reportInfo, orderByFieldName, asc, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
@@ -131,7 +131,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return result;
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, bool asc, IList<SqlParameter> sqlParams)
         {
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
@@ -269,7 +269,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            bscRows = await CastBscAlias(columns, bscRows, sqlParams);
+            bscRows = await CastBscAlias(reportInfo, columns, bscRows, sqlParams, orderByFieldName, asc);
 
             //Totals
             var totals = new NonCamelCaseDictionary();
@@ -390,6 +390,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
 
+            string orderBy = reportInfo?.OrderBy;
+
+            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+            {
+                orderBy = reportInfo.OrderBy;
+            }
+
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+            }
+
+            if (!string.IsNullOrWhiteSpace(orderBy))
+            {
+                selectAliasSql += " ORDER BY " + orderBy;
+            }
+
             //var whereColumn = new List<string>();
             //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
             //{
@@ -402,7 +420,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             //}
 
 
-            var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary();
 
@@ -510,15 +528,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             string orderBy = "";
-            if (!string.IsNullOrWhiteSpace(orderByFieldName))
-            {
-                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
-            }
 
             if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
             {
                 orderBy = reportInfo.OrderBy;
             }
+
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+            }
+
             if (string.IsNullOrWhiteSpace(orderBy))
             {
                 orderBy = "1";
@@ -540,7 +561,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams)
+        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams, string orderByFieldName, bool asc)
         {
             var data = new List<NonCamelCaseDictionary>();
 
@@ -556,6 +577,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
                 selectAliasSql = $"SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v";
+
+                string orderBy = reportInfo?.OrderBy;
+
+                if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+                {
+                    orderBy = reportInfo.OrderBy;
+                }
+
+                if (!string.IsNullOrWhiteSpace(orderByFieldName))
+                {
+                    if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+                    orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+                }
+
+                if (!string.IsNullOrWhiteSpace(orderBy))
+                {
+                    selectAliasSql += " ORDER BY " + orderBy;
+                }
 
                 //var whereColumn = new List<string>();
                 //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
