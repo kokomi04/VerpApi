@@ -9,12 +9,15 @@
   "Identity": {
     "Endpoint": "http://localhost:8001"
   },
-  "ServiceUrls": {    
+  "ServiceUrls": {
     "ApiService": {
       "Endpoint": "http://localhost:8001"
     },
     "FileService": {
       "Endpoint": "http://localhost:8001"
     }
+  },
+  "GrpcInternal": {
+    "Address": "http://localhost:8001"
   }
 }

@@ -36,7 +36,7 @@ namespace Services.Organization.Service.Parameter.Implement
         }
         public async Task<int> CreateSystemParameter(SystemParameterModel spm)
         {
-            var checkExistsFieldName = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).AnyAsync(x => x.Fieldname.Equals(spm.Fieldname.Trim()));
+            var checkExistsFieldName = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).AnyAsync(x => x.FieldName.Equals(spm.Fieldname.Trim()));
             if (checkExistsFieldName)
             {
                 throw new BadRequestException(SystemParameterErrorCode.SystemParameterAlreadyExisted);
@@ -47,9 +47,9 @@ namespace Services.Organization.Service.Parameter.Implement
                 {
                     var sParameterInfo = new SystemParameter
                     {
-                        Fieldname = spm.Fieldname,
+                        FieldName = spm.Fieldname,
                         Name = spm.Name,
-                        DateTypeId = (int)spm.DateTypeId,
+                        DataTypeId = (int)spm.DateTypeId,
                         Value = spm.Value,
                         UpdatedByUserId = _currentContextService.UserId,
                         UpdatedDateTimeUtc = DateTime.UtcNow,
@@ -92,7 +92,7 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Stock, keyId, $"Xóa thông số hệ thống {sParameterInfo.Fieldname}", sParameterInfo.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.Stock, keyId, $"Xóa thông số hệ thống {sParameterInfo.FieldName}", sParameterInfo.JsonSerialize());
 
                     return true;
                 }
@@ -112,7 +112,7 @@ namespace Services.Organization.Service.Parameter.Implement
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(x => x.Fieldname.Contains(keyword)
+                query = query.Where(x => x.FieldName.Contains(keyword)
                 || x.Name.Contains(keyword));
             }
 
@@ -123,8 +123,8 @@ namespace Services.Organization.Service.Parameter.Implement
                 .Select(x => new SystemParameterModel
                 {
                     SystemParameterId = x.SystemParameterId,
-                    Fieldname = x.Fieldname,
-                    DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)x.DateTypeId,
+                    Fieldname = x.FieldName,
+                    DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)x.DataTypeId,
                     Name = x.Name,
                     Value = x.Value
                 })
@@ -144,8 +144,8 @@ namespace Services.Organization.Service.Parameter.Implement
             return new SystemParameterModel()
             {
                 SystemParameterId = stockInfo.SystemParameterId,
-                Fieldname = stockInfo.Fieldname,
-                DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)stockInfo.DateTypeId,
+                Fieldname = stockInfo.FieldName,
+                DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)stockInfo.DataTypeId,
                 Name = stockInfo.Name,
                 Value = stockInfo.Value
             };
@@ -153,7 +153,7 @@ namespace Services.Organization.Service.Parameter.Implement
 
         public async Task<bool> UpdateSystemParameter(int keyId, SystemParameterModel spm)
         {
-            var checkExistsFieldName = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).AnyAsync(x => x.Fieldname.Equals(spm.Fieldname.Trim()));
+            var checkExistsFieldName = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).AnyAsync(x => x.FieldName.Equals(spm.Fieldname.Trim()));
             if(checkExistsFieldName)
             {
                 throw new BadRequestException(SystemParameterErrorCode.SystemParameterAlreadyExisted);
@@ -165,9 +165,9 @@ namespace Services.Organization.Service.Parameter.Implement
                     var sParameterInfo = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).FirstOrDefaultAsync(x => x.SystemParameterId.Equals(keyId));
                     if(sParameterInfo == null)
                         throw new BadRequestException(SystemParameterErrorCode.SystemParameterNotFound);
-                    sParameterInfo.Fieldname = spm.Fieldname;
+                    sParameterInfo.FieldName = spm.Fieldname;
                     sParameterInfo.Name = spm.Name;
-                    sParameterInfo.DateTypeId = (int)spm.DateTypeId;
+                    sParameterInfo.DataTypeId = (int)spm.DateTypeId;
                     sParameterInfo.Value = spm.Value;
                     sParameterInfo.UpdatedByUserId = _currentContextService.UserId;
                     sParameterInfo.UpdatedDateTimeUtc = DateTime.UtcNow;

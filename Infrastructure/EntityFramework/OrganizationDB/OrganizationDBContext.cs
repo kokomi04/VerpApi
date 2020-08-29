@@ -1,7 +1,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
@@ -29,8 +28,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
-        public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
+        public virtual DbSet<UserData> UserData { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -282,21 +281,26 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_Subsidiary_Subsidiary");
             });
 
+            modelBuilder.Entity<SystemParameter>(entity =>
+            {
+                entity.Property(e => e.CreatedDateTimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDateTimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Value).HasMaxLength(512);
+            });
+
             modelBuilder.Entity<UserData>(entity =>
             {
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<SystemParameter>(entity =>
-            {
-                entity.HasKey(e => e.SystemParameterId);
-
-                entity.Property(e => e.Fieldname)
-                .HasMaxLength(64)
-                .IsRequired();
-
             });
 
             OnModelCreatingPartial(modelBuilder);
