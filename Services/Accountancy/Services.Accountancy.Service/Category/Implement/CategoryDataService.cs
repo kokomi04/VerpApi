@@ -295,7 +295,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
 
             // Get row
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
@@ -308,9 +308,14 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             NonCamelCaseDictionary categoryRow = lst[0];
             var fieldNames = categoryFields.Select(f => f.CategoryFieldName).ToList();
+
+            // Category refer fields
             var referToFields = _accountancyContext.CategoryField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
             var referToCategoryIds = referToFields.Select(f => f.CategoryId).Distinct().ToList();
             var referToCategories = _accountancyContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
+
+            // Bill refer fields
+            var inputReferToFields = _accountancyContext.InputField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
 
             // Check reference
             foreach (var field in categoryFields)
@@ -322,7 +327,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
                     var referToTable = $"v{referToCategory.CategoryCode}";
 
-                    var existSql = $"SELECT [{referToTable}].F_Id FROM {referToTable} WHERE [{referToTable}].IsDeleted = 0 AND [{referToTable}].{referToField.CategoryFieldName} = {value.ToString()};";
+                    var existSql = $"SELECT F_Id FROM [dbo].v{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
@@ -330,6 +335,19 @@ namespace VErp.Services.Accountancy.Service.Category
                         throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
                     }
                 }
+
+                // check bill refer
+                foreach(var referToField in inputReferToFields.Where(f => f.RefTableField == field.CategoryFieldName))
+                {
+                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
+                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (isExisted)
+                    {
+                        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                    }
+                }
+
             }
             // Delete data
             var dataTable = new DataTable(category.CategoryCode);
@@ -501,7 +519,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var dataSql = new StringBuilder();
@@ -521,7 +539,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
-            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
+            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id" && f.CategoryFieldName != "ParentId"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
                 if (((EnumFormType)field.FormTypeId).IsJoinForm()
