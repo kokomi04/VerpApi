@@ -42,12 +42,9 @@ namespace CreateNewVersionsOfBills.Services
                     }
                     catch (Exception)
                     {
-
                         throw;
                     }
-                    
                 }
-
             }
         }
     }
