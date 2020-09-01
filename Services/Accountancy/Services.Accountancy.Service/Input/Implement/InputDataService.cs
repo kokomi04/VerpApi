@@ -2071,7 +2071,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new SqlParameter[]
                 {
-                    new SqlParameter("@@BillDate", billDate),
+                    new SqlParameter("@BillDate", billDate),
                     result
                 };
                 await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams);
