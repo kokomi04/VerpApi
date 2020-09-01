@@ -319,7 +319,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
-            ValidateAccountantConfig(data);
+            await ValidateAccountantConfig(data);
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
             // Validate multiRow existed
@@ -947,7 +947,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-            ValidateAccountantConfig(data);
+            await ValidateAccountantConfig(data);
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -1125,7 +1125,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-                ValidateAccountantConfig(data);
+                await ValidateAccountantConfig(data);
                 // Before saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
@@ -1714,7 +1714,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     Info = info,
                     Rows = rows.ToArray()
                 };
-                ValidateAccountantConfig(billInfo);
+                await ValidateAccountantConfig(billInfo);
                 bills.Add(billInfo);
             }
 
@@ -2061,17 +2061,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
-        private void ValidateAccountantConfig(BillInfoModel data)
+        private async Task ValidateAccountantConfig(BillInfoModel data)
         {
-            var config = _accountancyDBContext.AccountantConfig.FirstOrDefault();
-            if(config != null)
+            data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
+            if (value != null)
             {
-                data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
-                if(value != null)
+                var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
+
+                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+                var sqlParams = new SqlParameter[]
                 {
-                    var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
-                    if (billDate < config.ClosingDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
-                }
+                    new SqlParameter("@@BillDate", billDate),
+                    result
+                };
+                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams);
+
+                if (!(result.Value as bool?).GetValueOrDefault())
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
             }
         }
 
