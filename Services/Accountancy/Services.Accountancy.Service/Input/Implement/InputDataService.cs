@@ -102,7 +102,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (value.IsNullObject()) continue;
 
-                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year, EnumDataType.DateRange }.Contains((EnumDataType)viewField.DataTypeId))
+                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
                         value = Convert.ToInt64(value);
                     }
@@ -319,18 +319,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
+            ValidateAccountantConfig(data);
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
-
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, null);
@@ -949,9 +946,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-
+            ValidateAccountantConfig(data);
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -1129,7 +1125,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-
+                ValidateAccountantConfig(data);
                 // Before saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
@@ -1634,7 +1630,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
-                        if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year , EnumDataType.DateRange }.Contains((EnumDataType)field.DataTypeId))
+                        if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
@@ -1713,12 +1709,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                     rows.Add(mapRow);
                 }
-
-                bills.Add(new BillInfoModel
+                var billInfo = new BillInfoModel
                 {
                     Info = info,
                     Rows = rows.ToArray()
-                });
+                };
+                ValidateAccountantConfig(billInfo);
+                bills.Add(billInfo);
             }
 
             using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
@@ -2065,6 +2062,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
+        private void ValidateAccountantConfig(BillInfoModel data)
+        {
+            var config = _accountancyDBContext.AccountantConfig.LastOrDefault();
+            if(config != null)
+            {
+                data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
+                if(value != null)
+                {
+                    var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
+                    if (billDate < config.ClosingDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
+                }
+            }
+        }
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
