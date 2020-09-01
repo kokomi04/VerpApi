@@ -659,14 +659,17 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             string refTable = data.RefTableCode;
             string refField = data.RefTableField;
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsJoinForm())
             {
                 //int referId = data.ReferenceCategoryFieldId.Value;
                 var sourceCategoryField = (from f in _accountancyContext.CategoryField
                                            join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                                            where f.CategoryFieldName == refField && c.CategoryCode == refTable
                                            select f).FirstOrDefault();
-
+                if (sourceCategoryField == null)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu liên kết {refTable}.{refField}");
+                }
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
             }
@@ -809,7 +812,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.TryRollbackTransaction();              
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
@@ -861,7 +864,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.TryRollbackTransaction();                
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
