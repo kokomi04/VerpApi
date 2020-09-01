@@ -1922,7 +1922,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
-
         public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
             bool byExpenseItem, bool byFactory, bool byProduct, bool byStock)
         {
@@ -2064,7 +2063,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private void ValidateAccountantConfig(BillInfoModel data)
         {
-            var config = _accountancyDBContext.AccountantConfig.LastOrDefault();
+            var config = _accountancyDBContext.AccountantConfig.FirstOrDefault();
             if(config != null)
             {
                 data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
