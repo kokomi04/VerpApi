@@ -63,6 +63,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var fields = await _reportConfigContext.ReportTypeViewField.AsNoTracking()
                 .Where(t => t.ReportTypeViewId == info.ReportTypeViewId)
+                .OrderBy(f => f.SortOrder)
                 .ProjectTo<ReportTypeViewFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
