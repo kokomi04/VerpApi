@@ -275,7 +275,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     var arrClause = clause as ArrayClause;
                     bool isNot = not ^ arrClause.Not;
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
-                    if(arrClause.Rules.Count == 0)
+                    if (arrClause.Rules.Count == 0)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống");
                     }
@@ -309,28 +309,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")}");
                         }
                         else
                         {
                             condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
-
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
-
                         break;
                     case EnumOperator.NotEqual:
                         ope = not ? "=" : "!=";
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")}");
                         }
                         else
                         {
                             condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
-
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
                         break;
                     case EnumOperator.Contains:
                         ope = not ? "NOT LIKE" : "LIKE";
