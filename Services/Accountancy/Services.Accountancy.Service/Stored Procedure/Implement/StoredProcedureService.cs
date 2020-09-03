@@ -1,5 +1,6 @@
 ﻿using Elasticsearch.Net;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -34,43 +36,42 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList()
         {
-            var dataSql = @"
-                select o.name, o.type, o.type_desc, m.definition
+            var query = @"
+                select o.name, o.type_desc, m.definition
                 from sys.objects o
                 join sys.sql_modules m on m.object_id = o.object_id
                 where o.name not like ('asp%') and o.name not like ('v%') and o.name not like ('afn%')
             ";
 
-            var result = (await _accountancyDBContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+            var result = (await _accountancyDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
 
             var data = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
 
-            foreach(var type in new []{EnumStoreProcedureType.View, 
-                EnumStoreProcedureType.Procedure, 
+            foreach (var type in new[]{EnumStoreProcedureType.View,
+                EnumStoreProcedureType.Procedure,
                 EnumStoreProcedureType.Function })
             {
                 var ls = result
                     .Where(x => x.Any(y => y.Key.Equals("type_desc") && y.Value.ToString().Contains(type.GetEnumDescription()))).ToList();
-
+                
                 data.Add(type.GetEnumDescription(), ls);
             }
 
             return data;
         }
 
-        public Task<bool> UpdateFunction(string type, StoredProcedureModel storedProcedureModel)
+        public async Task<bool> Modify(int type, StoredProcedureModel storedProcedureModel)
         {
-            throw new NotImplementedException();
+            await _accountancyDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition.Replace("CREATE", "CREATE OR ALTER"));
+            return true;
         }
 
-        public Task<bool> UpdateProcedure(string type, StoredProcedureModel storedProcedureModel)
+        public async Task<bool> Drop(int type, StoredProcedureModel storedProcedureModel)
         {
-            throw new NotImplementedException();
+            var query = $"DROP {storedProcedureModel.Type.GetEnumDescription()} {storedProcedureModel.Name}";
+            await _accountancyDBContext.Database.ExecuteSqlRawAsync(query);
+            return true;
         }
 
-        public Task<bool> UpdateView(string type, StoredProcedureModel storedProcedureModel)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

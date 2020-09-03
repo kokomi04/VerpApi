@@ -7,25 +7,41 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Services.Accountancy.Model.StoredProcedure;
 using VErp.Services.Accountancy.Service.StoredProcedure;
 
 namespace VErpApi.Controllers.Accountancy
 {
     [Route("api/Accountancy/[controller]")]
-    public class StoredProcudureController : VErpBaseController
+    public class StoredProcuduresController : VErpBaseController
     {
         private readonly IStoredProcedureService _storedProcedureService;
 
-        public StoredProcudureController(IStoredProcedureService storedProcedureService)
+        public StoredProcuduresController(IStoredProcedureService storedProcedureService)
         {
             _storedProcedureService = storedProcedureService;
         }
 
-        [HttpGet("List")]
-        [AllowAnonymous]
+        [HttpGet()]
+        [Route("")]
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList()
         {
             return await _storedProcedureService.GetList();
+        }
+
+        [HttpPost]
+        [Route("{type}")]
+        public async Task<bool> Modify([FromRoute] int type, [FromBody] StoredProcedureModel model)
+        {
+            return await _storedProcedureService.Modify(type, model);
+        }
+
+        [HttpDelete]
+        [Route("{type}")]
+        [AllowAnonymous]
+        public async Task<bool> Drop([FromRoute] int type, [FromBody] StoredProcedureModel model)
+        {
+            return await _storedProcedureService.Drop(type, model);
         }
     }
 }
