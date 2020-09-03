@@ -110,6 +110,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Menu = 46,
 
         ObjectCustomGenCodeMapping = 47,
-        SystemParameter = 48
+        SystemParameter = 48,
+        AccountantConfig = 49
     }
 }
