@@ -63,7 +63,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _outsideImportMappingService = outsideImportMappingService;
         }
 
-
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             var viewInfo = await _accountancyDBContext.InputTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
@@ -181,7 +180,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
 
-            if(size >= 0)
+            if (size >= 0)
             {
                 dataSql += @$" OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT { size}
@@ -192,7 +191,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             return (data, total);
         }
-
 
         public async Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
@@ -258,7 +256,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
-
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             var singleFields = (await (
@@ -309,7 +306,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             return result;
         }
-
 
         public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
         {
@@ -550,7 +546,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             return isRequire.Value;
         }
-
 
         private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
         {
@@ -947,7 +942,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
@@ -1047,6 +1041,94 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateBill");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+            if (fIds.Length == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại chứng từ cần thay đổi");
+
+            // Get field
+            var field = _accountancyDBContext.InputField.FirstOrDefault(f => f.FieldName == fieldName);
+            if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy trường dữ liệu");
+
+            var oldSqlValue = ((EnumDataType)field.DataTypeId).GetSqlValue(oldValue);
+            var newSqlValue = ((EnumDataType)field.DataTypeId).GetSqlValue(newValue);
+
+            var singleFields = (await (
+             from af in _accountancyDBContext.InputAreaField
+             join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+             join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+             where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+             select f.FieldName).ToListAsync()).ToHashSet();
+
+            // Get bills by old value
+            var sqlParams = new List<SqlParameter>();
+            var dataSql = new StringBuilder(@$"
+
+                SELECT     r.*
+                FROM {INPUTVALUEROW_VIEW} r 
+
+                WHERE r.InputTypeId = {inputTypeId} AND r.InputBill_F_Id IN ({string.Join(',', fIds)})");
+
+
+            if (oldValue == null)
+            {
+                dataSql.Append($" AND r.{fieldName} IS NULL");
+            }
+            else
+            {
+                var paramName = $"@{fieldName}";
+                dataSql.Append($" AND r.{fieldName} = {paramName}");
+                sqlParams.Add(new SqlParameter(paramName, oldSqlValue));
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray()); ;
+            var updateIds = new HashSet<long>();
+
+            // Update new value
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                data.Rows[i][fieldName] = newSqlValue;
+                data.Rows[i]["BillVersion"] = (int)data.Rows[i]["BillVersion"] + 1;
+                data.Rows[i]["CreatedByUserId"] = _currentContextService.UserId;
+                data.Rows[i]["CreatedDatetimeUtc"] = DateTime.UtcNow;
+                data.Rows[i]["UpdatedByUserId"] = _currentContextService.UserId;
+                data.Rows[i]["UpdatedDatetimeUtc"] = DateTime.UtcNow;
+
+                var fId = (long)data.Rows[i]["F_Id"];
+                if (updateIds.Contains(fId)) updateIds.Add(fId);
+            }
+
+            var bills = _accountancyDBContext.InputBill.Where(b => updateIds.Contains(b.FId)).ToList();
+            using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                // Created bill version
+                await _accountancyDBContext.InsertDataTable(data);
+
+                foreach (var bill in bills)
+                {
+                    // Delete bill version
+                    await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
+
+                    // Update last bill version
+                    bill.LatestBillVersion++;
+                }
+
+                await _accountancyDBContext.SaveChangesAsync();
+                trans.Commit();
                 return true;
             }
             catch (Exception ex)
@@ -1159,7 +1241,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw;
             }
         }
-
 
         private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
         {
@@ -1502,7 +1583,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
                 });
         }
-
 
         private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
         {
@@ -1953,7 +2033,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rows = data.ConvertData();
             return rows;
         }
-
 
         public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {

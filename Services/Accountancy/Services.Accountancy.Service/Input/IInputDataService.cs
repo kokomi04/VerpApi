@@ -51,5 +51,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate);
 
         Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate);
+
+        Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
     }
 }

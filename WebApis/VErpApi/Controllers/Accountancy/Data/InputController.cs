@@ -82,6 +82,13 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _inputDataService.UpdateBill(inputTypeId, fId, data).ConfigureAwait(true);
         }
 
+        [HttpPut]
+        [Route("{inputTypeId}/multiple")]
+        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
+        {
+            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
+        }
+
         [HttpDelete]
         [Route("{inputTypeId}/{fId}")]
         public async Task<bool> DeleteBill([FromRoute] int inputTypeId, [FromRoute] long fId)
