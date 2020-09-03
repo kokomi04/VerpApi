@@ -1078,9 +1078,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var dataSql = new StringBuilder(@$"
 
                 SELECT     r.*
-                FROM {INPUTVALUEROW_VIEW} r 
+                FROM {INPUTVALUEROW_TABLE} r 
 
-                WHERE r.InputTypeId = {inputTypeId} AND r.InputBill_F_Id IN ({string.Join(',', fIds)})");
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)})");
 
 
             if (oldValue == null)
@@ -1095,28 +1095,58 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray()); ;
-            var updateIds = new HashSet<long>();
+            var updateBillIds = new HashSet<long>();
 
             // Update new value
-            for (var i = 0; i < data.Rows.Count; i++)
+            var dataTable = new DataTable(INPUTVALUEROW_TABLE);
+            foreach (DataColumn column in data.Columns)
             {
-                data.Rows[i][fieldName] = newSqlValue;
-                data.Rows[i]["BillVersion"] = (int)data.Rows[i]["BillVersion"] + 1;
-                data.Rows[i]["CreatedByUserId"] = _currentContextService.UserId;
-                data.Rows[i]["CreatedDatetimeUtc"] = DateTime.UtcNow;
-                data.Rows[i]["UpdatedByUserId"] = _currentContextService.UserId;
-                data.Rows[i]["UpdatedDatetimeUtc"] = DateTime.UtcNow;
-
-                var fId = (long)data.Rows[i]["F_Id"];
-                if (updateIds.Contains(fId)) updateIds.Add(fId);
+                if (column.ColumnName != "F_Id")
+                    dataTable.Columns.Add(column.ColumnName, column.DataType);
             }
 
-            var bills = _accountancyDBContext.InputBill.Where(b => updateIds.Contains(b.FId)).ToList();
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+
+                var billId = (long)row["InputBill_F_Id"];
+                if (!updateBillIds.Contains(billId)) updateBillIds.Add(billId);
+
+                var newRow = dataTable.NewRow();
+                foreach (DataColumn column in data.Columns)
+                {
+                    var v = row[column];
+                    switch (column.ColumnName)
+                    {
+                        case "F_Id":
+                            continue;
+                        case "BillVersion":
+                            newRow[column.ColumnName] = (int)v + 1;
+                            break;
+                        case "CreatedByUserId":
+                        case "UpdatedByUserId":
+                            newRow[column.ColumnName] = _currentContextService.UserId;
+                            break;
+                        case "CreatedDatetimeUtc":
+                        case "UpdatedDatetimeUtc":
+                            newRow[column.ColumnName] = DateTime.UtcNow;
+                            break;
+                        default:
+                            newRow[column.ColumnName] = v;
+                            break;
+                    }
+                }
+                newRow[fieldName] = newSqlValue;
+                dataTable.Rows.Add(newRow);
+            }
+
+            
+            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId)).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
                 // Created bill version
-                await _accountancyDBContext.InsertDataTable(data);
+                await _accountancyDBContext.InsertDataTable(dataTable);
 
                 foreach (var bill in bills)
                 {
