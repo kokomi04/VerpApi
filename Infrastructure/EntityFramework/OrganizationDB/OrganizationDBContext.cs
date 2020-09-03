@@ -28,6 +28,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
+        public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -278,6 +279,21 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .WithMany(p => p.InverseParentSubsidiary)
                     .HasForeignKey(d => d.ParentSubsidiaryId)
                     .HasConstraintName("FK_Subsidiary_Subsidiary");
+            });
+
+            modelBuilder.Entity<SystemParameter>(entity =>
+            {
+                entity.Property(e => e.CreatedDateTimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDateTimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Value).HasMaxLength(512);
             });
 
             modelBuilder.Entity<UserData>(entity =>
