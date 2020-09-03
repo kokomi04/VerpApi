@@ -179,10 +179,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
-
-                OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT {size} ROWS ONLY
                 ";
+
+            if(size >= 0)
+            {
+                dataSql += @$" OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT { size}
+                ROWS ONLY";
+            }
+
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             return (data, total);
