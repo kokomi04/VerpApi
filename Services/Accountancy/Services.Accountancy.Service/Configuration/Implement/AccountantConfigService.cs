@@ -13,6 +13,7 @@ using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Config;
+using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Configuration.Implement
 {
@@ -38,10 +39,12 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
         {
             var config = await _accountancyContext.AccountantConfig
                 .OrderByDescending(x => x.Id)
-                .ProjectTo<AccountantConfigModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
-            return config;
+            return new AccountantConfigModel {
+                Id = config.Id,
+                ClosingDate = config.ClosingDate.Value.GetUnix()
+            };
         }
 
         public async Task<bool> UpdateAccountantConfig(int keyId, AccountantConfigModel accountantConfigModel)
@@ -50,7 +53,8 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
             {
                 try
                 {
-                    var config = _mapper.Map<AccountantConfig>(accountantConfigModel);
+                    var config = _accountancyContext.AccountantConfig.FirstOrDefault(x => x.Id == accountantConfigModel.Id);
+                    config.ClosingDate = Utils.UnixToDateTime(accountantConfigModel.ClosingDate);
                     _accountancyContext.AccountantConfig.Update(config);
 
                     await _accountancyContext.SaveChangesAsync();
