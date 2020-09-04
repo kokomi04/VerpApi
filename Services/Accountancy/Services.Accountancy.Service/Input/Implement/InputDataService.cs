@@ -1060,11 +1060,49 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (fIds.Length == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại chứng từ cần thay đổi");
 
             // Get field
-            var field = _accountancyDBContext.InputField.FirstOrDefault(f => f.FieldName == fieldName);
+            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).FirstOrDefault(f => f.InputField.FieldName == fieldName);
             if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy trường dữ liệu");
 
-            var oldSqlValue = ((EnumDataType)field.DataTypeId).GetSqlValue(oldValue);
-            var newSqlValue = ((EnumDataType)field.DataTypeId).GetSqlValue(newValue);
+            var oldSqlValue = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(oldValue);
+            object newSqlValue;
+            if (((EnumFormType)field.InputField.FormTypeId).IsSelectForm())
+            {
+                var refTableTitle = field.InputField.RefTableTitle.Split(',')[0];
+                var categoryFields = (from f in _accountancyDBContext.CategoryField
+                                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
+                                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
+                                      select new
+                                      {
+                                          f.CategoryFieldName,
+                                          f.DataTypeId
+                                      }).ToList();
+                var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.InputField.RefTableField);
+                var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
+
+                if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
+
+
+                var valueParamName = $"@{field.InputField.RefTableField}";
+                var selectSQL = $"SELECT TOP 1 {field.InputField.RefTableField} FROM v{field.InputField.RefTableCode} WHERE {refTableTitle} = {valueParamName}";
+                var selectParams = new List<SqlParameter>()
+                {
+                    new SqlParameter(valueParamName, ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue))
+                };
+
+                var result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), selectParams.ToArray());
+                if (result != null && result.Rows.Count > 0)
+                {
+                    newSqlValue = result.Rows[0][0];
+                }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
+                }
+            }
+            else
+            {
+                newSqlValue = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(newValue);
+            }
 
             var singleFields = (await (
              from af in _accountancyDBContext.InputAreaField
@@ -1094,7 +1132,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 sqlParams.Add(new SqlParameter(paramName, oldSqlValue));
             }
 
-            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray()); ;
+            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
             var updateBillIds = new HashSet<long>();
 
             // Update new value
@@ -1140,7 +1178,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataTable.Rows.Add(newRow);
             }
 
-            
+
             var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId)).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
