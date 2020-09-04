@@ -82,7 +82,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
                 var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
@@ -93,6 +92,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            var suffix = 0;
+            var filterCondition = new StringBuilder();
+            if (model.ColumnsFilters != null)
+            {
+                model.ColumnsFilters.FilterClauseProcess("v", ref filterCondition, ref sqlParams, ref suffix);
+            }
 
             if (reportInfo.IsBsc)
             {
@@ -100,7 +105,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (bscConfig != null)
                 {
-                    var (data, totals) = await GetRowsByBsc(reportInfo, orderByFieldName, asc, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByBsc(reportInfo, orderByFieldName, filterCondition.ToString(), asc, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
@@ -109,13 +114,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 if (string.IsNullOrWhiteSpace(reportInfo.BodySql))
                 {
-                    var (data, totals) = await GetRowsByView(reportInfo, orderByFieldName, asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByView(reportInfo, orderByFieldName, filterCondition.ToString(), asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
                 else
                 {
-                    var (data, totals) = await GetRowsByQuery(reportInfo, orderByFieldName, asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByQuery(reportInfo, orderByFieldName, filterCondition.ToString(), asc, page, size, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
@@ -131,7 +136,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return result;
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, bool asc, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)
         {
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
@@ -269,7 +274,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            bscRows = await CastBscAlias(reportInfo, columns, bscRows, sqlParams, orderByFieldName, asc);
+            bscRows = await CastBscAlias(reportInfo, filterCondition, columns, bscRows, sqlParams, orderByFieldName, asc);
 
             //Totals
             var totals = new NonCamelCaseDictionary();
@@ -382,14 +387,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
             var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
             selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
-
+            if (!string.IsNullOrEmpty(filterCondition))
+                selectAliasSql += $" WHERE {filterCondition}";
             string orderBy = reportInfo?.OrderBy;
 
             if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
@@ -462,7 +468,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var totals = new NonCamelCaseDictionary();
             if (string.IsNullOrWhiteSpace(reportInfo.MainView))
@@ -513,7 +519,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
             }
             totalSql.Append($" FROM {view}");
-
+            if (!string.IsNullOrEmpty(filterCondition))
+                totalSql.Append($" WHERE {filterCondition}");
             var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
@@ -545,23 +552,27 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 orderBy = "1";
             }
 
-            var dataSql = @$"                 
+            var dataSql = new StringBuilder(@$"                 
                 SELECT 
                     *
                 FROM {view}
+                ");
+            if (!string.IsNullOrEmpty(filterCondition))
+                dataSql.Append($"WHERE {filterCondition}");
+            dataSql.Append(@$"
                 ORDER BY {orderBy}
 
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
-                ";
+                ");
 
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             return ((data, totalRows), totals);
         }
 
 
-        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams, string orderByFieldName, bool asc)
+        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, string filterCondition, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams, string orderByFieldName, bool asc)
         {
             var data = new List<NonCamelCaseDictionary>();
 
@@ -577,7 +588,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
                 selectAliasSql = $"SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v";
-
+                if (!string.IsNullOrEmpty(filterCondition)) selectAliasSql += $" WHERE {filterCondition}";
                 string orderBy = reportInfo?.OrderBy;
 
                 if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
