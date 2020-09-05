@@ -1,6 +1,7 @@
 ﻿using ActivityLogDB;
 using Grpc.Core;
 using GrpcProto.Protos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace VErp.Services.Grpc.Service
 {
-    class InternalActivityLogService : InternalActivityLog.InternalActivityLogBase
+    [AllowAnonymous]
+    public class InternalActivityLogService : InternalActivityLog.InternalActivityLogBase
     {
         private readonly ActivityLogDBContext _activityLogContext;
         private readonly ILogger<InternalActivityLogService> _logger;
