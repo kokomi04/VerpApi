@@ -37,11 +37,12 @@ namespace VErpApi.Controllers.Accountancy.Config
             _categoryConfigService = categoryConfigService;
         }
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
         [Route("{categoryId}/categoryrows")]
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery]string extraFilter, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromBody] CategoryFilterModel request)
         {
-            return await _categoryDataService.GetCategoryRows(categoryId, keyword, filters, extraFilter, page, size);
+            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.Page, request.Size);
         }
 
         [HttpGet]
