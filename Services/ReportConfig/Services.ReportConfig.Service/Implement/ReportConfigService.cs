@@ -54,7 +54,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 return new ReportTypeViewModel()
                 {
-                    Columns = 1,
                     Fields = new List<ReportTypeViewFieldModel>(),
                     IsDefault = true,
                     ReportTypeViewName = "Lọc dữ liệu"

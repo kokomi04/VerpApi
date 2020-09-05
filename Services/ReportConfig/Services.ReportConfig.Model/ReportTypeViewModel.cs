@@ -16,7 +16,7 @@ namespace Verp.Services.ReportConfig.Model
         public int ReportTypeViewId { get; set; }
         public string ReportTypeViewName { get; set; }
         public bool IsDefault { get; set; }
-        public int Columns { get; set; }
+        public int SortOrder { get; set; }
         public IList<ReportTypeViewFieldModel> Fields { get; set; }
 
         public void Mapping(Profile profile)
@@ -35,7 +35,6 @@ namespace Verp.Services.ReportConfig.Model
         public int ReportTypeViewFieldId { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Vui lòng nhập tham số báo cáo")]
         public string ParamerterName { get; set; }
-        public int Column { get; set; }
         public int SortOrder { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
