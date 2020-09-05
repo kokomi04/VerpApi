@@ -39,9 +39,9 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("{categoryId}/categoryrows")]
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRowsByCode([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery]string filters, [FromQuery]string extraFilter, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _categoryDataService.GetCategoryRows(categoryId, keyword, filters, page, size);
+            return await _categoryDataService.GetCategoryRows(categoryId, keyword, filters, extraFilter, page, size);
         }
 
         [HttpGet]
