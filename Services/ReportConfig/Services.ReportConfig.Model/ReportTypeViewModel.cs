@@ -50,6 +50,7 @@ namespace Verp.Services.ReportConfig.Model
 
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
+        public string ExtraFilter { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<ReportTypeViewField, ReportTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))

@@ -337,7 +337,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
 
                 // check bill refer
-                foreach(var referToField in inputReferToFields.Where(f => f.RefTableField == field.CategoryFieldName))
+                foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field.CategoryFieldName))
                 {
                     var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
@@ -561,17 +561,17 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, int page, int size)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, page, size);
+            return await GetCategoryRows(category, keyword, filters, extraFilter, page, size);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, int page, int size)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, int page, int size)
         {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
@@ -624,14 +624,16 @@ namespace VErp.Services.Accountancy.Service.Category
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    if (whereCondition.Length > 0)
-                    {
-                        whereCondition.Append(" AND ");
-                    }
-
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                     int suffix = 0;
                     filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
                 }
+            }
+
+            if (!string.IsNullOrEmpty(extraFilter))
+            {
+                if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                whereCondition.Append(extraFilter);
             }
 
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
