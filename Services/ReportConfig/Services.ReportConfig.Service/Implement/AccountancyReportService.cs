@@ -587,7 +587,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
-                selectAliasSql = $"SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v";
+                selectAliasSql = $"SELECT * FROM (SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v1) AS v";
                 if (!string.IsNullOrEmpty(filterCondition)) selectAliasSql += $" WHERE {filterCondition}";
                 string orderBy = reportInfo?.OrderBy;
 
