@@ -19,11 +19,13 @@
     <Protobuf Include="Protos/*.proto" GrpcServices="Both" />
     <Protobuf Include="Protos/ValueType/*.proto" />
     <Protobuf Include="Protos/Enums/*.proto" />
+    <Protobuf Include="Protos/Message/*.proto" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Protos\ProductCate.proto" />
-    <None Remove="Protos\Stock.proto" />
+    <None Remove="Protos\CustomGenCodeService.proto" />
+    <None Remove="Protos\Message\CustomGenCodeMessage.proto" />
   </ItemGroup>
+
  
 </Project>

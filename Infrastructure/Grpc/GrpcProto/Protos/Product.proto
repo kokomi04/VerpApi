@@ -1,7 +1,6 @@
 ﻿syntax = "proto3";
 
 import "Protos/ValueType/ValueType.proto";
-import "Protos/Enums/MasterEnum.proto";
 
 option csharp_namespace = "VErp.Grpc.Protos";
 
@@ -22,7 +21,7 @@ message ProductModel {
     int32 ProductTypeId = 8;
     int32 ProductCateId = 9;
     int32 BarcodeConfigId  = 10;
-    Enums.EnumBarcodeStandard BarcodeStandardId = 11;
+    int32 BarcodeStandardId = 11;
     string Barcode = 12;
     int32 UnitId = 13;
     ValueTypes.DecimalValue EstimatePrice = 14;
@@ -36,13 +35,13 @@ message ProductModelExtra {
 }
 
 message ProductModelStock {
-    Enums.EnumStockOutputRule StockOutputRuleId  = 1;
+    int32 StockOutputRuleId  = 1;
     int64 AmountWarningMin  = 2;
     int64 AmountWarningMax = 3;
     double TimeWarningAmount  = 4;
-    Enums.EnumTimeType TimeWarningTimeTypeId  = 5;
+    int32 TimeWarningTimeTypeId  = 5;
     double ExpireTimeAmount  = 6;
-    Enums.EnumTimeType ExpireTimeTypeId  = 7;
+    int32 ExpireTimeTypeId  = 7;
     string DescriptionToStock  = 8;
     repeated int32 StockIds  = 9;
     repeated ProductModelUnitConversion UnitConversions = 10;
@@ -58,6 +57,21 @@ message ProductModelUnitConversion {
     string ConversionDescription = 7;
 }
 
+message ValidateProductRequest {
+    map<int32, int32> productUnitConvertsionProduct = 1;
+}
+
+message ValidateProductResponses{
+    bool result = 1;
+}
+
+message GetListByCodeAndInternalNamesRequest{
+    repeated string productCodes = 1;
+    repeated string productInternalNames = 2;
+}
+
 service Product {
     rpc GetListProducts (stream GetListProductRequest) returns (stream ProductModel);
+    rpc ValidateProductUnitConversions(ValidateProductRequest) returns (ValidateProductResponses);
+    rpc GetListByCodeAndInternalNames(GetListByCodeAndInternalNamesRequest) returns (stream ProductModel);
 }
