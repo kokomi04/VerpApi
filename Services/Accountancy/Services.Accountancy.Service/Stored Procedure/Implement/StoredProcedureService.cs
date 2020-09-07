@@ -40,7 +40,7 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
                 select o.name, o.type_desc, m.definition
                 from sys.objects o
                 join sys.sql_modules m on m.object_id = o.object_id
-                where o.name not like ('asp%') and o.name not like ('v%') and o.name not like ('afn%')
+                where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%')
             ";
 
             var result = (await _accountancyDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
@@ -52,7 +52,9 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
                 EnumStoreProcedureType.Function })
             {
                 var ls = result
-                    .Where(x => x.Any(y => y.Key.Equals("type_desc") && y.Value.ToString().Contains(type.GetEnumDescription()))).ToList();
+                    .Where(x => x.Any(y => y.Key.Equals("type_desc") 
+                    && y.Value.ToString().Contains(type.GetEnumDescription())))
+                    .ToList();
                 
                 data.Add(type.GetEnumDescription(), ls);
             }
