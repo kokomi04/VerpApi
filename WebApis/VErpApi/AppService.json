@@ -1,5 +1,6 @@
 {
   "ServiceName": "VErpApi",
   "ServiceId": 0,
-  "Port": 8001
+  "Port": 8001,
+  "HttpsPort": 8002
 }
