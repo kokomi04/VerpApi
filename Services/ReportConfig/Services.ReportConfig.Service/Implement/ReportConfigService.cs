@@ -66,7 +66,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 .ProjectTo<ReportTypeViewFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            info.Fields = fields;
+            info.Fields = fields.OrderBy(f=>f.SortOrder).ToList();
 
             return info;
         }
