@@ -26,6 +26,8 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Category;
 using VErp.Services.Accountancy.Model.Data;
+using Microsoft.AspNetCore.DataProtection;
+
 using CategoryEntity = VErp.Infrastructure.EF.AccountancyDB.Category;
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -37,12 +39,14 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IDataProtectionProvider _protectionProvider;
         public CategoryDataService(AccountancyDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICurrentContextService currentContextService
+            , IDataProtectionProvider protectionProvider
             )
         {
             _logger = logger;
@@ -51,6 +55,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _currentContextService = currentContextService;
+            _protectionProvider = protectionProvider;
         }
 
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
@@ -561,17 +566,17 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, int page, int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, page, size);
+            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, int page, int size)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
         {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
@@ -633,7 +638,14 @@ namespace VErp.Services.Accountancy.Service.Category
             if (!string.IsNullOrEmpty(extraFilter))
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+                extraFilter = protector.Unprotect(extraFilter);
                 whereCondition.Append(extraFilter);
+                foreach(var param in extraFilterParams)
+                {
+                    var paramName = $"@{param.ParamName}";
+                    sqlParams.Add(new SqlParameter(paramName, param.DataType.GetSqlValue(param.Value)));
+                }
             }
 
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {tableName}");
