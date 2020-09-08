@@ -111,6 +111,7 @@ namespace VErp.Commons.Enums.MasterEnum
 
         ObjectCustomGenCodeMapping = 47,
         SystemParameter = 48,
-        AccountantConfig = 49
+        AccountantConfig = 49,
+        PrintConfig = 50
     }
 }

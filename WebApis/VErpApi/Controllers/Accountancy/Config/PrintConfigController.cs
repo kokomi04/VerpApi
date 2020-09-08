@@ -26,10 +26,12 @@ namespace VErpApi.Controllers.Accountancy.Config
     public class PrintConfigController : VErpBaseController
     {
         private readonly IPrintConfigService _printConfigService;
- 
-        public PrintConfigController(IPrintConfigService printConfigService)
+        private readonly IFileService _fileService;
+
+        public PrintConfigController(IPrintConfigService printConfigService, IFileService fileService)
         {
             _printConfigService = printConfigService;
+            _fileService = fileService;
         }
 
         [HttpGet]
@@ -65,6 +67,13 @@ namespace VErpApi.Controllers.Accountancy.Config
         public async Task<bool> DeletePrintConfig([FromRoute] int printConfigId)
         {
             return await _printConfigService.DeletePrintConfig(printConfigId);
+        }
+
+        [HttpPost]
+        [Route("printTemplate")]
+        public async Task<long> UploadPrintTemplate(IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
         }
     }
 }
