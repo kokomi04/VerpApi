@@ -25,5 +25,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool? HasTable { get; set; }
         public string Background { get; set; }
+        public long? TemplateFileId { get; set; }
     }
 }

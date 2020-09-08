@@ -43,7 +43,7 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
 
             return new AccountantConfigModel {
                 Id = config.Id,
-                ClosingDate = config.ClosingDate.Value.GetUnix()
+                ClosingDate = config.ClosingDate.GetUnix()
             };
         }
 
@@ -54,7 +54,7 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
                 try
                 {
                     var config = _accountancyContext.AccountantConfig.FirstOrDefault(x => x.Id == accountantConfigModel.Id);
-                    config.ClosingDate = Utils.UnixToDateTime(accountantConfigModel.ClosingDate);
+                    config.ClosingDate = Utils.UnixToDateTime(accountantConfigModel.ClosingDate).Value;
                     _accountancyContext.AccountantConfig.Update(config);
 
                     await _accountancyContext.SaveChangesAsync();
