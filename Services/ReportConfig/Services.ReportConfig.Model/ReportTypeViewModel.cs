@@ -7,10 +7,10 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Commons.Library;
 
 namespace Verp.Services.ReportConfig.Model
 {
-
     public class ReportTypeViewModel : IMapFrom<ReportTypeView>
     {
         public int ReportTypeViewId { get; set; }
@@ -46,10 +46,9 @@ namespace Verp.Services.ReportConfig.Model
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
         public string RefFilters { get; set; }
-
+        public string ExtraFilter { get; set; }
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
-        public string ExtraFilter { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<ReportTypeViewField, ReportTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))

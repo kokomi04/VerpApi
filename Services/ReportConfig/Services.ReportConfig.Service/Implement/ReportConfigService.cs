@@ -20,22 +20,27 @@ using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class ReportConfigService : IReportConfigService
     {
         private readonly ReportConfigDBContext _reportConfigContext;
+        private readonly AppSetting _appSetting;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IMenuHelperService _menuHelperService;
+        private readonly IDataProtectionProvider _protectionProvider;
+
         public ReportConfigService(ReportConfigDBContext reportConfigContext
             , IOptions<AppSetting> appSetting
             , ILogger<ReportConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , IMenuHelperService menuHelperService
+            , IDataProtectionProvider protectionProvider
             )
         {
             _reportConfigContext = reportConfigContext;
@@ -43,8 +48,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _mapper = mapper;
             _logger = logger;
             _menuHelperService = menuHelperService;
+            _protectionProvider = protectionProvider;
+            _appSetting = appSetting.Value;
         }
-
 
         public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId)
         {
@@ -69,6 +75,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             info.Fields = fields;
 
             return info;
+        }
+
+        public string DecryptExtraFilter(string cipherFilter)
+        {
+            var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+            return protector.Unprotect(cipherFilter);
         }
 
         public async Task<bool> ReportTypeViewUpdate(int reportTypeId, ReportTypeViewModel model)
@@ -132,7 +144,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Nhóm báo cáo không tồn tại");
 
             _mapper.Map(model, info);
-            
+
             await _reportConfigContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Cập nhật nhóm báo cáo {info.ReportTypeGroupName}", model.JsonSerialize());
@@ -195,7 +207,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-
         private async Task ReportTypeViewFieldAddRange(int ReportTypeViewId, IList<ReportTypeViewFieldModel> fieldModels)
         {
             //var categoryFieldIds = fieldModels.Where(f => f.ReferenceCategoryFieldId.HasValue).Select(f => f.ReferenceCategoryFieldId.Value).ToList();
@@ -227,10 +238,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             // }
 
             var fields = fieldModels.Select(f => _mapper.Map<ReportTypeViewField>(f)).ToList();
+            var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
 
             foreach (var f in fields)
             {
                 f.ReportTypeViewId = ReportTypeViewId;
+                if (!string.IsNullOrEmpty(f.ExtraFilter)) f.ExtraFilter = protector.Protect(f.ExtraFilter);
             }
 
             await _reportConfigContext.ReportTypeViewField.AddRangeAsync(fields);
@@ -276,7 +289,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var info = _mapper.Map<ReportTypeModel>(reportType);
             if (info.BscConfig?.Rows != null)
             {
-                foreach(var row in info.BscConfig.Rows)
+                foreach (var row in info.BscConfig.Rows)
                 {
                     if (row.RowData == null)
                     {

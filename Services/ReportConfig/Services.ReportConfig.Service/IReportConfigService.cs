@@ -29,5 +29,7 @@ namespace Verp.Services.ReportConfig.Service
         Task<int> UpdateReportType(int reportTypeId, ReportTypeModel data);
 
         Task<int> DeleteReportType(int reportTypeId);
+
+        string DecryptExtraFilter(string cipherFilter);
     }
 }

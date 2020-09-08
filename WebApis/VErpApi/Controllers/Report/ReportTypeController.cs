@@ -38,6 +38,13 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
+        [HttpPost]
+        [Route("DecryptExtraFilter")]
+        public async Task<string> DecryptExtraFilter([FromBody] string cipherFilter)
+        {
+            return _reportConfigService.DecryptExtraFilter(cipherFilter);
+        }
+
         [HttpPut]
         [Route("Groups/{reportTypeGroupId}")]
         public async Task<bool> GroupsUpdate([FromRoute] int reportTypeGroupId, [FromBody] ReportTypeGroupModel model)
