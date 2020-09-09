@@ -30,6 +30,6 @@ namespace Verp.Services.ReportConfig.Service
 
         Task<int> DeleteReportType(int reportTypeId);
 
-        string DecryptExtraFilter(string cipherFilter);
+        CipherFilterModel DecryptExtraFilter(CipherFilterModel cipherFilter);
     }
 }
