@@ -40,7 +40,7 @@ namespace VErpApi.Controllers.Report
 
         [HttpPost]
         [Route("DecryptExtraFilter")]
-        public async Task<string> DecryptExtraFilter([FromBody] string cipherFilter)
+        public async Task<CipherFilterModel> DecryptExtraFilter([FromBody] CipherFilterModel cipherFilter)
         {
             return _reportConfigService.DecryptExtraFilter(cipherFilter);
         }

@@ -77,10 +77,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return info;
         }
 
-        public string DecryptExtraFilter(string cipherFilter)
+        public CipherFilterModel DecryptExtraFilter(CipherFilterModel cipherFilter)
         {
             var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
-            return protector.Unprotect(cipherFilter);
+            cipherFilter.Content = protector.Unprotect(cipherFilter.CipherContent);
+            return cipherFilter;
         }
 
         public async Task<bool> ReportTypeViewUpdate(int reportTypeId, ReportTypeViewModel model)
