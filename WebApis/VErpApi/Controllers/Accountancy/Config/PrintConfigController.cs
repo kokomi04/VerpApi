@@ -18,6 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Stock.Model.FileResources;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
@@ -74,6 +75,15 @@ namespace VErpApi.Controllers.Accountancy.Config
         public async Task<long> UploadPrintTemplate(IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{printConfigId}/generatePrintTemplate/{fileId}")]
+        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromRoute] int fileId, PrintTemplateInput templateModel)
+        {
+            var r = await _fileService.GeneratePrintTemplate(fileId, templateModel);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }
     }
 }

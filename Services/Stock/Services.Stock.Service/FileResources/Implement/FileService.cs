@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Spire.Doc;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,6 +50,13 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".xls", EnumFileType.Document },
             { ".xlsx" , EnumFileType.Document },
             { ".csv" , EnumFileType.Document },
+        };
+
+        private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
+        {
+            { ".doc" , "application/msword" },
+            { ".pdf" , "application/pdf" },
+            { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
         };
 
         private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
@@ -510,6 +518,55 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private string GetPhysicalFilePath(string filePath)
         {
             return filePath.GetPhysicalFilePath(_appSetting);
+        }
+
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel)
+        {
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+
+            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
+
+            var document = new DocumentReader(physicalFilePath).document;
+
+            //find and replace in document
+            foreach (var data in templateModel.dataReplace)
+            {
+                document.Replace(data.Key, data.Value, false, true);
+            }
+
+            //insert and set value to table in document
+            int indexTable = 0;
+            var section = document.LastSection;
+            foreach (var data in templateModel.dataTable)
+            {
+                if (indexTable < section.Tables.Count)
+                {
+                    var table = section.Tables[indexTable];
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        var rowData = data[i];
+                        TableRow row = table.Rows[1].Clone();
+                        for (int j = 0; i < rowData.Length; j++)
+                        {
+                            if (j < row.Cells.Count)
+                                row.Cells[j].LastParagraph.Text = rowData[j];
+                        }
+                        table.Rows.Insert(i + 1, row);
+                    }
+                    table.Rows.RemoveAt(data.Length + 1);
+                }
+                indexTable++;
+            }
+
+            string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
+
+            document.SaveToFile(filePath, FileFormat.Auto);
+
+            return (File.OpenRead(filePath), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
         }
         #endregion
     }
