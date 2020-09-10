@@ -33,7 +33,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
 
-        public MenuStyleModel MenuStyle { get; set; }
+        //public MenuStyleModel MenuStyle { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel
