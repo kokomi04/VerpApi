@@ -8,6 +8,6 @@ namespace VErp.Services.Stock.Model.FileResources
     {
         public string Extension { get; set; }
         public Dictionary<string, string> dataReplace { get; set; }
-        public IList<string[][]> dataTable { get; set; }
+        public IList<string[]> dataTable { get; set; }
     }
 }

@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -530,37 +531,37 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
 
-            using (var document = new DocumentReader(physicalFilePath).document){
+            using (var document = new DocumentReader(physicalFilePath).document)
+            {
 
                 //find and replace in document
                 foreach (var data in templateModel.dataReplace)
                 {
-                    document.Replace(data.Key, data.Value, false, true);
+                    document.Replace($"#{{{data.Key}}}", data.Value ?? "", false, true);
                 }
 
                 //insert and set value to table in document
-                int indexTable = 0;
-                var section = document.LastSection;
-                foreach (var data in templateModel.dataTable)
+                if (document.LastSection.Tables.Count > 0)
                 {
-                    if (indexTable < section.Tables.Count)
+                    var table = document.LastSection.Tables[0];
+                    for (int i = 0; i < templateModel.dataTable.Count; i++)
                     {
-                        var table = section.Tables[indexTable];
-                        for (int i = 0; i < data.Length; i++)
+                        var rowData = templateModel.dataTable[i];
+                        if (table.Rows.Count <= 1)
+                            throw new BadRequestException(FileErrorCode.InvalidTabeInDocument,"Table trong document không hợp lệ");
+                        TableRow row = table.Rows[1].Clone();
+
+                        for (int j = 0; j < rowData.Length; j++)
                         {
-                            var rowData = data[i];
-                            TableRow row = table.Rows[1].Clone();
-                            for (int j = 0; i < rowData.Length; j++)
-                            {
-                                if (j < row.Cells.Count)
-                                    row.Cells[j].LastParagraph.Text = rowData[j];
-                            }
-                            table.Rows.Insert(i + 1, row);
+                            if (j < row.Cells.Count)
+                                row.Cells[j].LastParagraph.Text = rowData[j];
                         }
-                        table.Rows.RemoveAt(data.Length + 1);
+                        table.Rows.Insert(i + 2, row);
                     }
-                    indexTable++;
+                    table.Rows.RemoveAt(1);
                 }
+
+                document.Replace(new Regex(@"^#{.*}$"), string.Empty);
 
                 string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
 
