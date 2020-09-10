@@ -52,7 +52,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _appSetting = appSetting.Value;
         }
 
-        public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId)
+        public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId, bool isConfig = false)
         {
             var info = await _reportConfigContext.ReportTypeView.AsNoTracking().Where(t => t.ReportTypeId == reportTypeId).ProjectTo<ReportTypeViewModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
@@ -71,6 +71,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 .OrderBy(f => f.SortOrder)
                 .ProjectTo<ReportTypeViewFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            if (isConfig)
+            {
+                var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+                
+                foreach (var field in fields)
+                {
+                    if (!string.IsNullOrEmpty(field.ExtraFilter))
+                    {
+                        field.ExtraFilter = protector.Unprotect(field.ExtraFilter);
+                    }
+                }
+            }
 
             info.Fields = fields.OrderBy(f=>f.SortOrder).ToList();
 
