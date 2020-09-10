@@ -530,43 +530,44 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
 
-            var document = new DocumentReader(physicalFilePath).document;
+            using (var document = new DocumentReader(physicalFilePath).document){
 
-            //find and replace in document
-            foreach (var data in templateModel.dataReplace)
-            {
-                document.Replace(data.Key, data.Value, false, true);
-            }
-
-            //insert and set value to table in document
-            int indexTable = 0;
-            var section = document.LastSection;
-            foreach (var data in templateModel.dataTable)
-            {
-                if (indexTable < section.Tables.Count)
+                //find and replace in document
+                foreach (var data in templateModel.dataReplace)
                 {
-                    var table = section.Tables[indexTable];
-                    for (int i = 0; i < data.Length; i++)
-                    {
-                        var rowData = data[i];
-                        TableRow row = table.Rows[1].Clone();
-                        for (int j = 0; i < rowData.Length; j++)
-                        {
-                            if (j < row.Cells.Count)
-                                row.Cells[j].LastParagraph.Text = rowData[j];
-                        }
-                        table.Rows.Insert(i + 1, row);
-                    }
-                    table.Rows.RemoveAt(data.Length + 1);
+                    document.Replace(data.Key, data.Value, false, true);
                 }
-                indexTable++;
+
+                //insert and set value to table in document
+                int indexTable = 0;
+                var section = document.LastSection;
+                foreach (var data in templateModel.dataTable)
+                {
+                    if (indexTable < section.Tables.Count)
+                    {
+                        var table = section.Tables[indexTable];
+                        for (int i = 0; i < data.Length; i++)
+                        {
+                            var rowData = data[i];
+                            TableRow row = table.Rows[1].Clone();
+                            for (int j = 0; i < rowData.Length; j++)
+                            {
+                                if (j < row.Cells.Count)
+                                    row.Cells[j].LastParagraph.Text = rowData[j];
+                            }
+                            table.Rows.Insert(i + 1, row);
+                        }
+                        table.Rows.RemoveAt(data.Length + 1);
+                    }
+                    indexTable++;
+                }
+
+                string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
+
+                document.SaveToFile(GetPhysicalFilePath(filePath), FileFormat.Auto);
+
+                return (File.OpenRead(GetPhysicalFilePath(filePath)), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
             }
-
-            string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
-
-            document.SaveToFile(filePath, FileFormat.Auto);
-
-            return (File.OpenRead(filePath), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
         }
         #endregion
     }
