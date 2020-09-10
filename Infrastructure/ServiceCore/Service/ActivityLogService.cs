@@ -50,10 +50,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     var reulst = await _internalActivityLogClient.LogAsync(new GrpcProto.Protos.ActivityInput
                     {
                         UserId = _currentContext.UserId,
-                        ActionId = (GrpcProto.Protos.EnumAction)_currentContext.Action,
-                        ObjectTypeId = (GrpcProto.Protos.EnumObjectType)objectTypeId,
+                        ActionId = (int)_currentContext.Action,
+                        ObjectTypeId = (int)objectTypeId,
                         ObjectId = objectId,
-                        MessageTypeId = (GrpcProto.Protos.EnumMessageType)EnumMessageType.ActivityLog,
+                        MessageTypeId = (int)EnumMessageType.ActivityLog,
                         Message = message,
                         Data = jsonData
                     }, headers);

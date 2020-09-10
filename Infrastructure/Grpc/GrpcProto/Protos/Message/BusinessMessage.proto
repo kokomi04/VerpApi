@@ -1,0 +1,16 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos.Message";
+
+package BusinessMessage;
+
+message BusinessInfoModel{
+	string CompanyName = 1;
+	string LegalRepresentative = 2;
+	string Address = 3;
+	string TaxIdNo = 4;
+	string PhoneNumber = 5;
+	string Website = 6;
+	string Email = 7;
+	int32 LogoFileId = 8;
+}

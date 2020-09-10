@@ -109,6 +109,9 @@ namespace VErp.Commons.Enums.MasterEnum
         ReportType = 45,
         Menu = 46,
 
-        ObjectCustomGenCodeMapping = 47
+        ObjectCustomGenCodeMapping = 47,
+        SystemParameter = 48,
+        AccountantConfig = 49,
+        PrintConfig = 50
     }
 }

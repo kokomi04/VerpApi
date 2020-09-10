@@ -4,75 +4,11 @@ option csharp_namespace = "GrpcProto.Protos";
 
 package ActivityLog;
 
-enum EnumAction {
-        ENUM_ACTION_UNKNOWN = 0;
-        View = 1;
-        Add = 2;
-        Update = 4;
-        Delete = 8;
-        Censor = 16;
-        Check = 3;
-}
-
-enum EnumObjectType {
-        ENUM_OBJECT_TYPE_UNKNOWN = 0;
-        UserAndEmployee = 1;
-        Role = 2;
-        RolePermission = 3;
-        ProductCate = 4;
-        ProductType = 5;
-        Product = 6;
-        Unit = 7;
-        BarcodeConfig = 8;
-        Stock = 9;
-        File = 10;
-        Location = 11;
-        Inventory = 12;
-        InventoryDetail = 13;
-        Package = 14;
-        StockProduct = 15;
-        GenCodeConfig = 16;
-        Customer = 17;
-        ProductBom = 18;
-        PurchasingRequest = 19;
-        PurchasingRequestDetail = 20;
-        PurchasingSuggest = 21;
-        PurchasingSuggestDetail = 22;
-        PoAssignment = 23;
-        PoAssignmentDetail = 24;
-        PurchaseOrder = 25;
-        PurchaseOrderDetail = 26;
-        CustomGenCodeConfig = 27;
-        BusinessInfo = 28;
-        Department = 29;
-        InventoryInput = 30;
-        InventoryOutput = 31;
-        Category = 32;
-        AccountingAccount = 33;
-        InputType = 34;
-        InputTypeGroup = 35;
-        InputTypeView = 36;
-        InputTypeRow = 37;
-        Subsidiary = 41;
-        ObjectProcessStep = 42;
-        ReportTypeGroup = 43;
-        ReportTypeView = 44;
-        ReportType = 45;
-        Menu = 46;
-        ObjectCustomGenCodeMapping = 47;
-}
-
-enum EnumMessageType {
-        None = 0;
-        ActivityLog = 1;
-        Comment = 2;
-}
-
 message ActivityInput {
 	int32 UserId = 1;
-    EnumAction ActionId = 2;
-    EnumObjectType ObjectTypeId = 3;
-    EnumMessageType MessageTypeId = 4;
+    int32 ActionId = 2;
+    int32 ObjectTypeId = 3;
+    int32 MessageTypeId = 4;
     int64 ObjectId = 5;
     string Message = 6;
     string Data = 7;

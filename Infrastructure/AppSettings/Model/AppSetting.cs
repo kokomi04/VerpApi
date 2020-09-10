@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.AppSettings.Model
         public string ServiceName { get; set; }
         public int ServiceId { get; set; }
         public int Port { get; set; }
+        public int HttpsPort { get; set; }
         public string PathBase { get; set; }
         public ConfigurationSetting Configuration { get; set; }
         public DatabaseConnectionSetting DatabaseConnections { get; set; }

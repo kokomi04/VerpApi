@@ -62,6 +62,11 @@ namespace VErp.Commons.Enums.AccountantEnum
         [Description("Khoảng ngày")]
         [DataSize(-1)]
         [Regex("")]
-        DateRange = 13
+        DateRange = 13,
+
+        [Description("Horizontal bar relative")]
+        [DataSize(-1)]
+        [Regex("^[0-9]*(?:\\.[0-9]*)?$")]
+        HBarRelative = 14
     }
 }
