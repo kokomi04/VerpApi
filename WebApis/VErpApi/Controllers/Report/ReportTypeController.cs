@@ -118,6 +118,15 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("config/{reportTypeId}/ViewInfo")]
+        public async Task<ReportTypeViewModel> ReportTypeViewInfoConfig([FromRoute] int reportTypeId)
+        {
+            return await _reportConfigService
+                .ReportTypeViewGetInfo(reportTypeId, true)
+                .ConfigureAwait(true);
+        }
+
         [HttpPut]
         [Route("{reportTypeId}/ViewInfo")]
         public async Task<bool> ViewInfoUpdate([FromRoute] int reportTypeId, [FromBody] ReportTypeViewModel model)
