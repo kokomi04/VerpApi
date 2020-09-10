@@ -21,6 +21,7 @@ namespace VErpApi.Controllers
             
         }
         [Route("")]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             await Task.CompletedTask;
@@ -28,6 +29,7 @@ namespace VErpApi.Controllers
         }
 
         [Route("Error")]
+        [HttpGet]
         public async Task<IActionResult> Error(string errorId)
         {
             var message = await _interaction.GetErrorContextAsync(errorId);
