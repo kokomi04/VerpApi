@@ -77,7 +77,7 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _fileService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("{printConfigId}/generatePrintTemplate/{fileId}")]
         public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromRoute] int fileId, PrintTemplateInput templateModel)
         {
