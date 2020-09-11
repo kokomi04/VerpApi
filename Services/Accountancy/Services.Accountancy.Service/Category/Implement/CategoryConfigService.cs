@@ -599,6 +599,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void UpdateField(ref CategoryField categoryField, CategoryFieldModel data)
         {
+            if (!((EnumDataType)categoryField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)categoryField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
+            }
             categoryField.CategoryFieldName = data.CategoryFieldName;
             //categoryField.CategoryAreaId = data.CategoryAreaId;
             categoryField.Title = data.Title;

@@ -492,6 +492,22 @@ namespace VErp.Commons.Library
 
             return false;
         }
+
+        public static bool IsTimeType(this EnumDataType type)
+        {
+            return AccountantConstants.TIME_TYPES.Contains(type);
+        }
+      
+        public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
+        {
+            if (oldType.IsTimeType() && !newType.IsTimeType() && newType != EnumDataType.Text)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static object GetSqlValue(this EnumDataType dataType, object value)
         {
             if (value.IsNullObject()) return DBNull.Value;
