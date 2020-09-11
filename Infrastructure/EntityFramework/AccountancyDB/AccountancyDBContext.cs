@@ -349,6 +349,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<PrintConfig>(entity =>
             {
+                entity.Property(e => e.GenerateToString).HasComment("");
+
                 entity.Property(e => e.PrintConfigName)
                     .IsRequired()
                     .HasMaxLength(255);
