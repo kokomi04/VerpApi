@@ -1308,7 +1308,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw;
             }
         }
-      
+
         private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
         {
             for (var i = 0; i < rows.Count; i++)
@@ -1485,6 +1485,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
 
+            var ignoreCopyInfoValues = new HashSet<string>();
             //Create rows
             foreach (var row in data.Rows)
             {
@@ -1492,9 +1493,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 foreach (var item in data.Info)
                 {
+                    if (ignoreCopyInfoValues.Contains(item.Key))
+                        continue;
+
                     if (item.Key.IsVndColumn() || item.Key.IsNgoaiTeColumn())
                     {
+                        ignoreCopyInfoValues.Add(item.Key);
                         continue;
+                    }
+
+                    if (item.Key.IsTkCoColumn())
+                    {
+                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_CO_PREFIX.Length);
+                        var tkNo = AccountantConstants.TAI_KHOAN_NO_PREFIX + butToan;
+                        if (data.Info.Keys.Any(k => k.Equals(tkNo, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ignoreCopyInfoValues.Add(item.Key);
+                            continue;
+                        }
+                    }
+
+                    if (item.Key.IsTkNoColumn())
+                    {
+                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_NO_PREFIX.Length);
+                        var tkCo = AccountantConstants.TAI_KHOAN_CO_PREFIX + butToan;
+                        if (data.Info.Keys.Any(k => k.Equals(tkCo, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ignoreCopyInfoValues.Add(item.Key);
+                            continue;
+                        }
                     }
 
                     var field = fields[item.Key];
