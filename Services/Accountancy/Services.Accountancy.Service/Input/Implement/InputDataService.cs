@@ -1513,7 +1513,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var colName = item.Key.VndSumName();
 
                         sumReciprocals[colName] += deValue;
-                        dataRow[colName] = deValue;
+
+                        //ignore sum_vnd on detail row
+                        //dataRow[colName] = deValue;
+                        dataRow[colName] = null;
                     }
 
                 }
