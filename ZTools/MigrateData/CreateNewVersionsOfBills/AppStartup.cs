@@ -15,6 +15,7 @@ using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
+using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
@@ -34,6 +35,12 @@ namespace CreateNewVersionsOfBills
 
             ConfigReadWriteDBContext(services);
 
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly,
+                configureClient => {
+                    configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
+                }, configureOptions => {
+                    configureOptions.SuppressContextNotFoundErrors = true;
+                });
 
             ConfigureBussinessService(services);
 
