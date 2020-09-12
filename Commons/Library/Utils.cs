@@ -877,6 +877,15 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower());
         }
 
+        public static bool IsTkCoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_CO_PREFIX.ToLower());
+        }
+        public static bool IsTkNoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_NO_PREFIX.ToLower());
+        }
+
         public static string VndSumName(this string columnName)
         {
             return $"{AccountantConstants.SUM_RECIPROCAL_PREFIX}{columnName}";
