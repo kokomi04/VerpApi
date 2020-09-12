@@ -1543,7 +1543,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         //ignore sum_vnd on detail row
                         //dataRow[colName] = deValue;
-                        dataRow[colName] = null;
+                        dataRow[colName] = DBNull.Value;
                     }
 
                 }
