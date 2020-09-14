@@ -135,6 +135,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 config.StickyHeadTable = data.StickyHeadTable;
                 config.HasTable = data.HasTable;
                 config.Background = data.Background;
+                config.TemplateFileId = data.TemplateFileId;
+                config.GenerateToString = data.GenerateToString;
+
                 await _accountancyDBContext.SaveChangesAsync();
 
 

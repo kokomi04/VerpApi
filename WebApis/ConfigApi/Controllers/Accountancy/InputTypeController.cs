@@ -96,9 +96,9 @@ namespace ConfigApi.Controllers.Accountancy
 
         [HttpPost]
         [Route("{inputTypeId}/clone")]
-        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] MenuStyleModel menuStyle)
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId)
         {
-            return await _inputConfigService.CloneInputType(inputTypeId, menuStyle).ConfigureAwait(true);
+            return await _inputConfigService.CloneInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]

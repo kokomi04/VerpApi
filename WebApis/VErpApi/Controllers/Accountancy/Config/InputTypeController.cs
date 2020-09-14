@@ -98,16 +98,23 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("{inputTypeId}/clone")]
-        public async Task<int> CloneInputType([FromRoute] int inputTypeId, [FromBody] MenuStyleModel menuStyle)
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId)
         {
-            return await _inputConfigService.CloneInputType(inputTypeId, menuStyle).ConfigureAwait(true);
+            return await _inputConfigService.CloneInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{inputTypeId}")]
-        public async Task<InputTypeFullModel> GetInputType([FromRoute] int inputTypeId)
+        public async Task<InputTypeFullModel> GetInputTypeById([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.GetInputType(inputTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("getByCode")]
+        public async Task<InputTypeFullModel> GetInputTypeByCode([FromQuery] string inputTypeCode)
+        {
+            return await _inputConfigService.GetInputType(inputTypeCode).ConfigureAwait(true);
         }
 
         [HttpPut]

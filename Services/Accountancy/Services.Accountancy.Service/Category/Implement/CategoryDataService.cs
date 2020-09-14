@@ -26,6 +26,8 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Category;
 using VErp.Services.Accountancy.Model.Data;
+using Microsoft.AspNetCore.DataProtection;
+
 using CategoryEntity = VErp.Infrastructure.EF.AccountancyDB.Category;
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -37,12 +39,14 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IDataProtectionProvider _protectionProvider;
         public CategoryDataService(AccountancyDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICurrentContextService currentContextService
+            , IDataProtectionProvider protectionProvider
             )
         {
             _logger = logger;
@@ -51,6 +55,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _currentContextService = currentContextService;
+            _protectionProvider = protectionProvider;
         }
 
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
@@ -295,7 +300,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
 
             // Get row
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
@@ -308,9 +313,14 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             NonCamelCaseDictionary categoryRow = lst[0];
             var fieldNames = categoryFields.Select(f => f.CategoryFieldName).ToList();
+
+            // Category refer fields
             var referToFields = _accountancyContext.CategoryField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
             var referToCategoryIds = referToFields.Select(f => f.CategoryId).Distinct().ToList();
             var referToCategories = _accountancyContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
+
+            // Bill refer fields
+            var inputReferToFields = _accountancyContext.InputField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
 
             // Check reference
             foreach (var field in categoryFields)
@@ -322,7 +332,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
                     var referToTable = $"v{referToCategory.CategoryCode}";
 
-                    var existSql = $"SELECT [{referToTable}].F_Id FROM {referToTable} WHERE [{referToTable}].IsDeleted = 0 AND [{referToTable}].{referToField.CategoryFieldName} = {value.ToString()};";
+                    var existSql = $"SELECT F_Id FROM [dbo].v{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
@@ -330,6 +340,19 @@ namespace VErp.Services.Accountancy.Service.Category
                         throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
                     }
                 }
+
+                // check bill refer
+                foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field.CategoryFieldName))
+                {
+                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
+                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (isExisted)
+                    {
+                        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                    }
+                }
+
             }
             // Delete data
             var dataTable = new DataTable(category.CategoryCode);
@@ -501,7 +524,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.CategoryFieldName != "F_Id" && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var dataSql = new StringBuilder();
@@ -521,7 +544,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
-            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id"))
+            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id" && f.CategoryFieldName != "ParentId"))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
                 if (((EnumFormType)field.FormTypeId).IsJoinForm()
@@ -543,17 +566,17 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, page, size);
+            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, int page, int size)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
         {
             var tableName = $"v{category.CategoryCode}";
             var fields = (from f in _accountancyContext.CategoryField
@@ -606,13 +629,29 @@ namespace VErp.Services.Accountancy.Service.Category
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    if (whereCondition.Length > 0)
-                    {
-                        whereCondition.Append(" AND ");
-                    }
-
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                     int suffix = 0;
                     filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(extraFilter))
+            {
+                if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+                extraFilter = protector.Unprotect(extraFilter);
+                whereCondition.Append(extraFilter);
+                var pattern = @"@(?<word>\w+)";
+                Regex rx = new Regex(pattern);
+                MatchCollection match = rx.Matches(extraFilter);
+                for (int i = 0; i < match.Count; i++)
+                {
+                    var word = match[i].Groups["word"].Value;
+                    var paramName = $"@{word}";
+                    if (sqlParams.Any(p => p.ParameterName == paramName)) continue;
+                    var param = extraFilterParams.FirstOrDefault(p => p.ParamName == word);
+                    object value = param != null ? param.DataType.GetSqlValue(param.Value) : DBNull.Value;
+                    sqlParams.Add(new SqlParameter(paramName, value));
                 }
             }
 
@@ -739,7 +778,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var groupByField in groupByFields)
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
-                        var values = groupByField.Select(v => v.Value.ConvertValueByType((EnumDataType)inputField.DataTypeId)).ToList();
+                        var values = groupByField.Select(v => ((EnumDataType)inputField.DataTypeId).GetSqlValue(v.Value)).ToList();
                         if (values.Count() > 0)
                         {
                             if (suffix > 0)
@@ -1125,7 +1164,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     var field = categoryInfo.Fields.FirstOrDefault(f => f.CategoryFieldName == fieldFilter.Key);
 
-                    var queryValues = fieldFilter.Value.Select(v => v.ConvertValueByType((EnumDataType)field.DataTypeId)).ToList();
+                    var queryValues = fieldFilter.Value.Select(v => ((EnumDataType)field.DataTypeId).GetSqlValue(v)).ToList();
 
                     if (queryValues.Count > 0)
                     {

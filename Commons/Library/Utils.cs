@@ -361,6 +361,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     valueInNumber = (long)(double.Parse(value));
                     break;
                 case EnumDataType.Text:
@@ -408,6 +409,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
@@ -451,7 +453,9 @@ namespace VErp.Commons.Library
                 case EnumDataType.Date:
                 case EnumDataType.Year:
                 case EnumDataType.Month:
-                case EnumDataType.QuarterOfYear: return typeof(DateTime);
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    return typeof(DateTime);
 
                 case EnumDataType.PhoneNumber: return typeof(string);
                 case EnumDataType.Email: return typeof(string);
@@ -488,6 +492,22 @@ namespace VErp.Commons.Library
 
             return false;
         }
+
+        public static bool IsTimeType(this EnumDataType type)
+        {
+            return AccountantConstants.TIME_TYPES.Contains(type);
+        }
+      
+        public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
+        {
+            if (oldType.IsTimeType() && !newType.IsTimeType() && newType != EnumDataType.Text)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static object GetSqlValue(this EnumDataType dataType, object value)
         {
             if (value.IsNullObject()) return DBNull.Value;
@@ -508,6 +528,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     if (!long.TryParse(value.ToString(), out long dateValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
@@ -559,6 +580,8 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+
                 case EnumDataType.Percentage:
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
@@ -623,6 +646,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     if (!long.TryParse(value1.ToString(), out long dateValue1) || !long.TryParse(value2.ToString(), out long dateValue2))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu ngày tháng");
@@ -656,6 +680,24 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static bool Contains(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().Contains(value2.ToString());
+        }
+
+        public static bool StartsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().StartsWith(value2.ToString());
+        }
+
+        public static bool EndsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().EndsWith(value2.ToString());
+        }
+
         public static object ConvertValueByType(this string value, EnumDataType dataType)
         {
             if (string.IsNullOrEmpty(value)) return null;
@@ -667,6 +709,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     return DateTime.Parse(value);
                 case EnumDataType.Percentage:
                     return double.Parse(value);
@@ -848,6 +891,15 @@ namespace VErp.Commons.Library
         public static bool IsVndColumn(this string columnName)
         {
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower());
+        }
+
+        public static bool IsTkCoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_CO_PREFIX.ToLower());
+        }
+        public static bool IsTkNoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_NO_PREFIX.ToLower());
         }
 
         public static string VndSumName(this string columnName)

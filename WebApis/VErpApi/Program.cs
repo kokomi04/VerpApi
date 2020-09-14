@@ -28,7 +28,7 @@ namespace VErp.WebApis.VErpApi
                     s.AddSingleton(appSetting);
                 })
                 .UseKestrel()
-                .UseUrls($"http://0.0.0.0:{appSetting.AppSetting.Port}")
+                .UseUrls($"http://0.0.0.0:{appSetting.AppSetting.Port};https://0.0.0.0:{appSetting.AppSetting.HttpsPort}")
                 .UseStartup<Startup>();
         }
     }

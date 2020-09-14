@@ -599,6 +599,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void UpdateField(ref CategoryField categoryField, CategoryFieldModel data)
         {
+            if (!((EnumDataType)categoryField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)categoryField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
+            }
             categoryField.CategoryFieldName = data.CategoryFieldName;
             //categoryField.CategoryAreaId = data.CategoryAreaId;
             categoryField.Title = data.Title;
@@ -659,14 +663,17 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             string refTable = data.RefTableCode;
             string refField = data.RefTableField;
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsJoinForm())
             {
                 //int referId = data.ReferenceCategoryFieldId.Value;
                 var sourceCategoryField = (from f in _accountancyContext.CategoryField
                                            join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                                            where f.CategoryFieldName == refField && c.CategoryCode == refTable
                                            select f).FirstOrDefault();
-
+                if (sourceCategoryField == null)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu liên kết {refTable}.{refField}");
+                }
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
             }
@@ -809,7 +816,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.TryRollbackTransaction();              
+                trans.TryRollbackTransaction();
                 throw;
             }
         }
@@ -861,7 +868,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             catch (Exception)
             {
-                trans.TryRollbackTransaction();                
+                trans.TryRollbackTransaction();
                 throw;
             }
         }

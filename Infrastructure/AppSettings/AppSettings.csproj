@@ -12,9 +12,13 @@
     <None Remove="AppSetting.json" />
     <None Remove="AppSetting.Local.json" />
     <None Remove="AppSetting.Production.json" />
+    <None Remove="AppSetting.Test.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="AppSetting.Test.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="AppSetting.Development.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

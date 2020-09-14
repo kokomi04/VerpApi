@@ -1,0 +1,39 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos";
+
+import "Protos/Message/CustomGenCodeMessage.proto";
+
+package CustomGenCodeService;
+
+message MapObjectCustomGenCodeRequest{
+    int32 objectTypeId = 1;
+    map<int32, int32> data = 2;
+}
+
+message ConfirmCodeRequest{
+    int32 objectTypeId = 1;
+    int32 objectId = 2;
+}
+
+message CurrentConfigRequest{
+    int32 objectTypeId = 1;
+    int32 objectId = 2;
+}
+
+message GenerateCodeRequest{
+    int32 customGenCodeId = 1;
+    int32 lastValue = 2;
+    string code = 3;
+}
+
+message IsSuccessResponses{
+   bool IsSuccess = 1;
+}
+
+service CustomGenCodeProvider{
+    rpc MapObjectCustomGenCode(MapObjectCustomGenCodeRequest) returns (IsSuccessResponses);
+    rpc ConfirmCode(ConfirmCodeRequest) returns (IsSuccessResponses);
+    rpc GenerateCode(GenerateCodeRequest) returns (CustomGenCodeMessage.CustomCodeModelOutput);
+    rpc CurrentConfig(CurrentConfigRequest) returns (CustomGenCodeMessage.CustomGenCodeOutputModelOutput);
+}

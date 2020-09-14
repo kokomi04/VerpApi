@@ -11,11 +11,13 @@ namespace VErp.Services.Accountancy.Service.Input
     {
         // Input type
         Task<InputTypeFullModel> GetInputType(int inputTypeId);
+        Task<InputTypeFullModel> GetInputType(string inputTypeCode);
+
         Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size);
         Task<int> AddInputType(InputTypeModel data);
         Task<bool> UpdateInputType(int inputTypeId, InputTypeModel data);
         Task<bool> DeleteInputType(int inputTypeId);
-        Task<int> CloneInputType(int inputTypeId, MenuStyleModel menuStyle);
+        Task<int> CloneInputType(int inputTypeId);
 
 
         Task<int> InputTypeViewCreate(int inputTypeId, InputTypeViewModel model);

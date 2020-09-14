@@ -8,10 +8,13 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.Core" Version="2.31.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="3.1.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 

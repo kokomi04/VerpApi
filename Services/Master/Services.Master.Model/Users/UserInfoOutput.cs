@@ -14,6 +14,14 @@ namespace VErp.Services.Master.Model.Users
         public int? RoleId { get; set; }
 
         public DepartmentModel Department { get; set; }
+        public IList<SubsidiaryBasicInfo> Subsidiaries { get; set; }
     }
     
+
+    public class SubsidiaryBasicInfo
+    {
+        public int SubsidiaryId { get; set; }
+        public string SubsidiaryCode { get; set; }
+        public string SubsidiaryName { get; set; }
+    }
 }

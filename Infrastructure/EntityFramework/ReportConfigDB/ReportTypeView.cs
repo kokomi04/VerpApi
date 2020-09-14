@@ -14,7 +14,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string ReportTypeViewName { get; set; }
         public int ReportTypeId { get; set; }
         public bool IsDefault { get; set; }
-        public int? Columns { get; set; }
+        public int? SortOrder { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

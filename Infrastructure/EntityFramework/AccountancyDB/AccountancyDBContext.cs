@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
+        public virtual DbSet<AccountantConfig> AccountantConfig { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -38,6 +39,11 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AccountantConfig>(entity =>
+            {
+                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.Property(e => e.CategoryCode)
@@ -343,6 +349,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<PrintConfig>(entity =>
             {
+                entity.Property(e => e.GenerateToString).HasComment("");
+
                 entity.Property(e => e.PrintConfigName)
                     .IsRequired()
                     .HasMaxLength(255);
