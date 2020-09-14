@@ -29,7 +29,7 @@ namespace VErp.Commons.Enums.AccountantEnum
         Email = 5,
         [Description("Boolean")]
         [DataSize(-1)]
-        [Regex("^true|false$")]
+        [Regex("^true|false|True|False|1|0$")]
         Boolean = 6,
         [Description("Tỷ lệ phần trăm")]
         [DataSize(-1)]
@@ -42,6 +42,31 @@ namespace VErp.Commons.Enums.AccountantEnum
         [Description("Decimal")]
         [DataSize(-1)]
         [Regex("^[0-9]*(?:\\.[0-9]*)?$")]
-        Decimal = 9
+        Decimal = 9,
+
+        [Description("Tháng")]
+        [DataSize(-1)]
+        [Regex("")]
+        Month = 10,
+
+        [Description("Quý trong năm")]
+        [DataSize(-1)]
+        [Regex("")]
+        QuarterOfYear = 11,
+
+        [Description("Năm")]
+        [DataSize(-1)]
+        [Regex("")]
+        Year = 12,
+
+        [Description("Khoảng ngày")]
+        [DataSize(-1)]
+        [Regex("")]
+        DateRange = 13,
+
+        [Description("Horizontal bar relative")]
+        [DataSize(-1)]
+        [Regex("^[0-9]*(?:\\.[0-9]*)?$")]
+        HBarRelative = 14
     }
 }

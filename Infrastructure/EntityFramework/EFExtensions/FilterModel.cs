@@ -17,10 +17,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
     public class SingleClause : Clause
     {
-        public int Field { get; set; }
         public string FieldName { get; set; }
         public EnumOperator Operator { get; set; }
         public object Value { get; set; }
+        public EnumDataType DataType { get; set; }
     }
 
     public class ArrayClause : Clause
@@ -66,13 +66,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
             bool isArray = props.Any(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower());
             if (isSingle)
             {
-                var key = props.First(c => c.Name.ToLower() == nameof(SingleClause.Field).ToLower()).Value.ToString();
                 var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
                 var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
                 var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
+                var dataType = props.First(c => c.Name.ToLower() == nameof(SingleClause.DataType).ToLower()).Value.ToString();
                 resultClause = new SingleClause
                 {
-                    Field = int.Parse(key),
+                    DataType = (EnumDataType)int.Parse(dataType),
                     FieldName = fieldName,
                     Operator = (EnumOperator)int.Parse(ope),
                     Value = value.ToObject<object>()

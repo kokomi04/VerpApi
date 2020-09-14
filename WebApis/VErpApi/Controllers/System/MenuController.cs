@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -26,6 +27,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
+        [GlobalApi]
         [Route("")]
         public async Task<ICollection<MenuOutputModel>> Get()
         {
@@ -34,23 +36,23 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> Post([FromBody] MenuInputModel req)
+        public async Task<int> Post([FromBody] MenuInputModel req)
         {
-            return await _menuService.Create(UserId, req);
+            return await _menuService.Create(req);
         }
 
         [HttpPut]
         [Route("{menuId}")]
-        public async Task<ServiceResult> Update([FromRoute] int menuId, [FromBody] MenuInputModel req)
+        public async Task<bool> Update([FromRoute] int menuId, [FromBody] MenuInputModel req)
         {
-            return await _menuService.Update(UserId, menuId, req);
+            return await _menuService.Update(menuId, req);
         }
 
         [HttpDelete]
         [Route("{menuId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int menuId)
+        public async Task<bool> Delete([FromRoute] int menuId)
         {
-            return await _menuService.Delete(UserId, menuId);
+            return await _menuService.Delete(menuId);
         }
     }
 }

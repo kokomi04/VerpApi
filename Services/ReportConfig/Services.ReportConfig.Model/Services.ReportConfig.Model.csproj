@@ -4,12 +4,14 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Verp.Services.ReportConfig.Model</AssemblyName>
     <RootNamespace>Verp.Services.ReportConfig.Model</RootNamespace>
+    <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\ReportConfigDB\ReportConfigDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 
 </Project>

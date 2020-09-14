@@ -69,7 +69,7 @@ namespace MasterTests
                 UserStatusId = EnumUserStatus.Actived
             }, 0).GetAwaiter().GetResult();
 
-            Assert.Equal(1, result.Data);
+            Assert.Equal(1, result);
         }
 
         public static TContext SetupInMemoryDbContext<TContext>(ILoggerFactory loggerFactory)

@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<CustomGenCodeOutputModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomGenCodeOutputModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customGenCodeService.GetList(keyword, page, size);
         }
@@ -49,14 +49,14 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{customGenCodeId}")]
-        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetInfo([FromRoute] int customGenCodeId)
+        public async Task<CustomGenCodeOutputModel> GetInfo([FromRoute] int customGenCodeId)
         {
             return await _customGenCodeService.GetInfo(customGenCodeId);
         }
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
         }
@@ -68,7 +68,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> Post([FromBody] CustomGenCodeInputModel req)
+        public async Task<int> Post([FromBody] CustomGenCodeInputModel req)
         {
             var currentId = UserId;
             return await _customGenCodeService.Create(currentId, req);
@@ -82,7 +82,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("{customGenCodeId}")]
-        public async Task<ServiceResult> Update([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeInputModel req)
+        public async Task<bool> Update([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeInputModel req)
         {
             var currentId = UserId;
             return await _customGenCodeService.Update(customGenCodeId, currentId, req);
@@ -95,7 +95,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("objectCustomGenCode")]
-        public async Task<ServiceResult> MapObjectCustomGenCode([FromBody] ObjectCustomGenCodeMapping req)
+        public async Task<bool> MapObjectCustomGenCode([FromBody] ObjectCustomGenCodeMapping req)
         {
             var currentId = UserId;
             return await _customGenCodeService.MapObjectCustomGenCode(currentId, req);
@@ -108,7 +108,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpDelete]
         [Route("{customGenCodeId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int customGenCodeId)
+        public async Task<bool> Delete([FromRoute] int customGenCodeId)
         {
             var currentId = UserId;
             return await _customGenCodeService.Delete(currentId, customGenCodeId);
@@ -121,14 +121,14 @@ namespace VErpApi.Controllers.System
         /// <returns>string Code</returns>
         [HttpGet]
         [Route("generateCode")]
-        public async Task<ServiceResult<CustomCodeModel>> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue)
+        public async Task<CustomCodeModel> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue)
         {
             return await _customGenCodeService.GenerateCode(customGenCodeId, lastValue);
         }
 
         [HttpPut]
         [Route("confirmCode")]
-        public async Task<ServiceResult> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<bool> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.ConfirmCode(objectTypeId, objectId);
         }
@@ -139,7 +139,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("getAllObjectType")]
-        public async Task<ServiceResult<PageData<ObjectType>>> GetAllObjectType()
+        public async Task<PageData<ObjectType>> GetAllObjectType()
         {
             return await _customGenCodeService.GetAllObjectType();
         }

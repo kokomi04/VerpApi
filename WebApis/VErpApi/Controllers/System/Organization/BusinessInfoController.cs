@@ -5,7 +5,7 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.BusinessInfo;
-using VErp.Services.Organization.Model.BusinessInfo;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.System
 {
@@ -33,7 +33,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo()
+        public async Task<BusinessInfoModel> GetBusinessInfo()
         {
             return await _businessInfoService.GetBusinessInfo();
         }
@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("")]
-        public async Task<ServiceResult> UpdateCustomer([FromBody] BusinessInfoModel businessInfo)
+        public async Task<bool> UpdateCustomer([FromBody] BusinessInfoModel businessInfo)
         {
             var currentUserId = UserId;
             return await _businessInfoService.UpdateBusinessInfo(currentUserId, businessInfo);

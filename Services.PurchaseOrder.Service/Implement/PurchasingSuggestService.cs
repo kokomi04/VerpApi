@@ -63,12 +63,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult<PurchasingSuggestOutput>> GetInfo(long purchasingSuggestId)
+        public async Task<PurchasingSuggestOutput> GetInfo(long purchasingSuggestId)
         {
             var info = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingSuggestId == purchasingSuggestId);
 
-            if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+            if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
             var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.AsNoTracking()
                 .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
@@ -123,7 +123,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CustomerId = d.CustomerId,
 
                         TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney
+                        TaxInMoney = d.TaxInMoney,
+
+                        Description = d.Description
                     };
                 }
                 ).ToList()
@@ -235,7 +237,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             d.PrimaryUnitPrice,
                             d.TaxInPercent,
-                            d.TaxInMoney
+                            d.TaxInMoney,
+                            d.Description
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -322,6 +325,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     TaxInPercent = info.TaxInPercent,
                     TaxInMoney = info.TaxInMoney,
 
+                    Description = info.Description,
+
                     RequestDetail = requestDetailInfo
                 });
             }
@@ -330,7 +335,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        public async Task<ServiceResult<long>> Create(PurchasingSuggestInput model)
+        public async Task<long> Create(PurchasingSuggestInput model)
         {
             await ValidateProductUnitConversion(model);
 
@@ -340,7 +345,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
                 {
                     var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                    if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
+                    if (existedItem != null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted);
                 }
 
 
@@ -389,7 +394,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<Enum> Update(long purchasingSuggestId, PurchasingSuggestInput model)
+        public async Task<bool> Update(long purchasingSuggestId, PurchasingSuggestInput model)
         {
             await ValidateProductUnitConversion(model);
 
@@ -399,13 +404,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
                 {
                     var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                    if (existedItem != null) return PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted;
+                    if (existedItem != null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted);
                 }
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
                     var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                    if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                    if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
                     info.PurchasingSuggestCode = model.PurchasingSuggestCode;
                     info.Date = model.Date.UnixToDateTime().Value;
@@ -447,6 +452,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.TaxInPercent = item.TaxInPercent;
                                 detail.TaxInMoney = item.TaxInMoney;
 
+                                detail.Description = item.Description;
+
                                 break;
                             }
                         }
@@ -464,7 +471,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (!await ValidateInUsePurchasingSuggestDetail(deleteDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
                     {
                         trans.Rollback();
-                        return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty);
                     }
 
                     foreach (var detail in deleteDetails)
@@ -509,19 +516,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
             }
         }
 
-        public async Task<Enum> Delete(long purchasingSuggestId)
+        public async Task<bool> Delete(long purchasingSuggestId)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
                     var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                    if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                    if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
 
                     var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
@@ -529,7 +536,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (!await ValidateInUsePurchasingSuggestDetail(oldDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
                     {
                         trans.Rollback();
-                        return PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentDetailNotEmpty);
                     }
 
                     info.IsDeleted = true;
@@ -548,21 +555,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Xóa phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
             }
         }
 
-        public async Task<Enum> SendToCensor(long purchasingSuggestId)
+        public async Task<bool> SendToCensor(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
                 if (info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.Draff)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.WaitToCensor;
@@ -576,22 +583,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Gửi duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> Approve(long purchasingSuggestId)
+        public async Task<bool> Approve(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
                 if (info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.WaitToCensor
                     && info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.Censored
                     )
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.IsApproved = true;
@@ -605,16 +612,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> Reject(long purchasingSuggestId)
+        public async Task<bool> Reject(long purchasingSuggestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
                 if (info.PurchasingSuggestStatusId == (int)EnumPurchasingSuggestStatus.Censored)
                 {
@@ -622,16 +629,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var detailIds = details.Select(d => d.PurchasingSuggestDetailId).ToList();
                     if (!await ValidateInUsePurchasingSuggestDetail(detailIds))
                     {
-                        return PurchasingSuggestErrorCode.CanNotRejectSuggestInUse;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.CanNotRejectSuggestInUse);
                     }
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 if (info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.WaitToCensor
                   && info.PurchasingSuggestStatusId != (int)EnumPurchasingSuggestStatus.Censored
                   )
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.IsApproved = false;
@@ -647,16 +654,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Từ chối đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> UpdatePoProcessStatus(long purchasingSuggestId, EnumPoProcessStatus poProcessStatusId)
+        public async Task<bool> UpdatePoProcessStatus(long purchasingSuggestId, EnumPoProcessStatus poProcessStatusId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
-                if (info == null) return PurchasingSuggestErrorCode.SuggestNotFound;
+                if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -666,7 +673,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật tiến trình PO đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
@@ -940,14 +947,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        public async Task<ServiceResult<IList<PoAssignmentOutput>>> PoAssignmentListBySuggest(long purchasingSuggestId)
+        public async Task<IList<PoAssignmentOutput>> PoAssignmentListBySuggest(long purchasingSuggestId)
         {
 
             var suggestInfo = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().FirstOrDefaultAsync(s => s.PurchasingSuggestId == purchasingSuggestId);
 
             if (suggestInfo == null)
             {
-                return PurchasingSuggestErrorCode.SuggestNotFound;
+                throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
             }
 
             var assignments = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
@@ -1026,25 +1033,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return data;
         }
 
-        public async Task<ServiceResult<PoAssignmentOutput>> PoAssignmentInfo(long poAssignmentId, int? assigneeUserId)
+        public async Task<PoAssignmentOutput> PoAssignmentInfo(long poAssignmentId, int? assigneeUserId)
         {
             var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PoAssignmentId == poAssignmentId).FirstOrDefaultAsync();
 
             if (assignmentInfo == null)
             {
-                return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentNotfound);
             }
 
             if (assigneeUserId.HasValue && assignmentInfo.AssigneeUserId != assigneeUserId)
             {
-                return PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser;
+                throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser);
             }
 
             var suggestInfo = await _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().FirstOrDefaultAsync(s => s.PurchasingSuggestId == assignmentInfo.PurchasingSuggestId);
 
             if (suggestInfo == null)
             {
-                return PurchasingSuggestErrorCode.SuggestNotFound;
+                throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
             }
 
             var assignmentDetails = await (
@@ -1120,7 +1127,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult<long>> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
+        public async Task<long> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
@@ -1128,7 +1135,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (!validate.IsSuccess())
                 {
-                    return validate;
+                    throw new BadRequestException(validate);
                 }
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
@@ -1169,7 +1176,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        public async Task<ServiceResult> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model)
+        public async Task<bool> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
@@ -1180,14 +1187,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (!validate.IsSuccess())
                     {
                         trans.Rollback();
-                        return validate;
+                        throw new BadRequestException(validate);
                     }
 
                     var assignmentInfo = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentId == poAssignmentId);
 
                     if (assignmentInfo == null)
                     {
-                        return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentNotfound);
                     }
 
                     assignmentInfo.Date = null;
@@ -1245,12 +1252,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Cập nhật phân công mua hàng {assignmentInfo.PoAssignmentCode}", model.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
             }
         }
 
-        public async Task<ServiceResult> PoAssignmentSendToUser(long purchasingSuggestId, long poAssignmentId)
+        public async Task<bool> PoAssignmentSendToUser(long purchasingSuggestId, long poAssignmentId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -1259,25 +1266,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (assignmentInfo == null)
                 {
-                    return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                    throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentNotfound);
                 }
 
                 if (assignmentInfo.PurchasingSuggestId != purchasingSuggestId)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 if (assignmentInfo.PoAssignmentStatusId != (int)EnumPoAssignmentStatus.Draff)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 var code = await _objectGenCodeService.GenerateCode(EnumObjectType.PoAssignment);
-                if (!code.Code.IsSuccess())
-                {
-                    return code.Code;
-                }
-                assignmentInfo.PoAssignmentCode = code.Data;
+                
+                assignmentInfo.PoAssignmentCode = code;
                 assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.WaitToConfirm;
                 assignmentInfo.UpdatedByUserId = _currentContext.UserId;
                 assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -1288,11 +1292,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Phát lệnh phân công mua hàng {assignmentInfo.PoAssignmentCode}", poAssignmentId.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<ServiceResult> PoAssignmentUserConfirm(long poAssignmentId)
+        public async Task<bool> PoAssignmentUserConfirm(long poAssignmentId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -1300,18 +1304,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (assignmentInfo == null)
                 {
-                    return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                    throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentNotfound);
                 }
 
                 if (assignmentInfo.AssigneeUserId != _currentContext.UserId)
                 {
-                    return PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser;
+                    throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentConfirmInvalidCurrentUser);
                 }
 
 
                 if (assignmentInfo.PoAssignmentStatusId != (int)EnumPoAssignmentStatus.WaitToConfirm)
                 {
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
 
@@ -1325,12 +1329,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xác nhận phân công mua hàng {assignmentInfo.PoAssignmentCode}", poAssignmentId.JsonSerialize());
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
 
-        public async Task<ServiceResult> PoAssignmentDelete(long purchasingSuggestId, long poAssignmentId)
+        public async Task<bool> PoAssignmentDelete(long purchasingSuggestId, long poAssignmentId)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
             {
@@ -1340,12 +1344,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (assignmentInfo == null)
                     {
-                        return PurchasingSuggestErrorCode.PoAssignmentNotfound;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.PoAssignmentNotfound);
                     }
 
                     if (assignmentInfo.PurchasingSuggestId != purchasingSuggestId)
                     {
-                        return GeneralCode.InvalidParams;
+                        throw new BadRequestException(GeneralCode.InvalidParams);
                     }
 
                     var poAssignmentDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
@@ -1355,7 +1359,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
                     {
                         trans.Rollback();
-                        return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
+                        throw new BadRequestException(PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty);
                     }
 
                     assignmentInfo.IsDeleted = true;
@@ -1374,7 +1378,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xóa phân công mua hàng {assignmentInfo.PoAssignmentCode}", assignmentInfo.JsonSerialize());
 
-                    return GeneralCode.Success;
+                    return true;
                 }
             }
         }
@@ -1472,7 +1476,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 TaxInMoney = d.TaxInMoney,
 
                 OrderCode = d.OrderCode,
-                ProductionOrderCode = d.ProductionOrderCode
+                ProductionOrderCode = d.ProductionOrderCode,
+
+                Description = d.Description
             };
         }
 

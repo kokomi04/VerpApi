@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>VErp.Grpc.Protos</RootNamespace>
+    <AssemblyName>VErp.Grpc.Protos</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.12.2" />
+    <PackageReference Include="Grpc.Core" Version="2.31.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.31.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="Protos/*.proto" GrpcServices="Both" />
+    <Protobuf Include="Protos/ValueType/*.proto" />
+    <Protobuf Include="Protos/Enums/*.proto" />
+    <Protobuf Include="Protos/Message/*.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Protos\CustomGenCodeService.proto" />
+    <None Remove="Protos\Message\CustomGenCodeMessage.proto" />
+  </ItemGroup>
+
+ 
+</Project>

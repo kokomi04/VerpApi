@@ -1,0 +1,41 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos.Message";
+
+package CustomerMessage;
+
+message CustomerModel {
+    string CustomerCode = 1;
+    string CustomerName = 2;
+    int32 CustomerTypeId = 3;
+    string Address = 4;
+    string TaxIdNo = 5;
+    string PhoneNumber = 6;
+    string Website = 7;
+    string Email = 8;
+    string Description = 9;
+    string LegalRepresentative = 10;
+    string Identify = 11;
+    bool IsActived = 12;
+    int32 DebtDays = 13;
+    int32 CustomerStatusId = 14;
+    repeated CustomerContactModel Contacts = 15;
+    repeated CustomerBankAccountModel BankAccounts = 16;
+
+}
+
+message CustomerContactModel {
+    int32 CustomerContactId = 1;
+    string FullName = 2;
+    string Position = 3;
+    string PhoneNumber = 4;
+    string Email = 5;
+    int32 GenderId = 6;
+}
+
+message CustomerBankAccountModel {
+    int32 CustomerBankAccountId = 1;
+    string BankName = 2;
+    string AccountNumber = 3;
+    string SwiffCode = 4;
+}

@@ -17,6 +17,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -50,30 +51,32 @@ namespace VErp.Services.Accountancy.Service.Category
         }
 
         #region Category
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory(int categoryId)
+        public async Task<CategoryFullModel> GetCategory(int categoryId)
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             return category;
         }
 
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory(string categoryCode)
+        public async Task<CategoryFullModel> GetCategory(string categoryCode)
         {
             var category = await _accountancyContext.Category
                 .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             return category;
         }
@@ -99,7 +102,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> AddCategory(CategoryModel data)
+        public async Task<int> AddCategory(CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(0));
             var existedCategory = await _accountancyContext.Category
@@ -108,10 +111,10 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.CategoryCodeAlreadyExisted);
                 }
 
-                return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                throw new BadRequestException(CategoryErrorCode.CategoryTitleAlreadyExisted);
             }
 
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
@@ -138,6 +141,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     IsShowList = false,
                     IsReadOnly = true
                 };
+
                 await _accountancyContext.CategoryField.AddAsync(identityField);
                 await _accountancyContext.SaveChangesAsync();
 
@@ -145,8 +149,8 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     // Create table
                     await _accountancyContext.ExecuteStoreProcedure("asp_Category_Table_Add", new[] {
-                    new SqlParameter("@CategoryCode", category.CategoryCode ),
-                    new SqlParameter("@IsTreeView", category.IsTreeView),
+                        new SqlParameter("@CategoryCode", category.CategoryCode ),
+                        new SqlParameter("@IsTreeView", category.IsTreeView),
                     });
                 }
 
@@ -166,21 +170,20 @@ namespace VErp.Services.Accountancy.Service.Category
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
                 return category.CategoryId;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
+                trans.TryRollbackTransaction();
+                throw;
             }
         }
 
-        public async Task<Enum> UpdateCategory(int categoryId, CategoryModel data)
+        public async Task<bool> UpdateCategory(int categoryId, CategoryModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
             if (category.CategoryCode != data.CategoryCode || category.Title != data.Title)
             {
@@ -190,10 +193,10 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     if (string.Compare(existedCategory.CategoryCode, data.CategoryCode, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        return CategoryErrorCode.CategoryCodeAlreadyExisted;
+                        throw new BadRequestException(CategoryErrorCode.CategoryCodeAlreadyExisted);
                     }
 
-                    return CategoryErrorCode.CategoryTitleAlreadyExisted;
+                    throw new BadRequestException(CategoryErrorCode.CategoryTitleAlreadyExisted);
                 }
             }
 
@@ -219,18 +222,59 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@IsTable", false),
                     });
                 }
-
                 category.CategoryCode = data.CategoryCode;
+
+                // Change IsOutSideData
+                if (category.IsOutSideData != data.IsOutSideData)
+                {
+                    if (data.IsOutSideData)
+                    {
+                        // Delete category table
+                        await _accountancyContext.ExecuteStoreProcedure("asp_Category_Delete", new[] {
+                            new SqlParameter("@@CategoryCode", data.CategoryCode ),
+                            new SqlParameter("@IsTable", true),
+                        });
+                    }
+                    else
+                    {
+                        // Create category table
+                        await _accountancyContext.ExecuteStoreProcedure("asp_Category_Table_Add", new[] {
+                            new SqlParameter("@CategoryCode", data.CategoryCode ),
+                            new SqlParameter("@IsTreeView", category.IsTreeView),
+                        });
+                    }
+                }
+                category.IsOutSideData = data.IsOutSideData;
+
+                // Change IsTreeView
+                if (category.IsTreeView != data.IsTreeView)
+                {
+                    if (data.IsTreeView)
+                    {
+                        // Create ParentId Field
+                        await _accountancyContext.AddColumn(data.CategoryCode, "ParentId", EnumDataType.Int, -1, 0, null, true);
+                    }
+                    else
+                    {
+                        // Drop ParentId Field
+                        await _accountancyContext.DeleteColumn(data.CategoryCode, "ParentId");
+                    }
+
+                }
+                category.IsTreeView = data.IsTreeView;
+
+                // Update other info
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
-                category.IsTreeView = data.IsTreeView;
-                category.IsOutSideData = data.IsOutSideData;
+
                 await _accountancyContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
                 if (category.IsOutSideData)
                 {
-                    OutSideDataConfig config = _accountancyContext.OutSideDataConfig.FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
+                    OutSideDataConfig config = _accountancyContext.OutSideDataConfig
+                        .Include(o => o.OutsideDataFieldConfig)
+                        .FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
 
                     if (config == null)
                     {
@@ -244,8 +288,31 @@ namespace VErp.Services.Accountancy.Service.Category
                         config.Url = data.OutSideDataConfig.Url;
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
+                        config.Joins = data.OutSideDataConfig.Joins;
+                        // Update config fields
+                        var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
+                        var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
+                        var updatedFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId != 0).ToList();
+                        foreach (var deletedField in deletedFields)
+                        {
+                            deletedField.IsDeleted = true;
+                        }
+                        foreach (var newField in newFields)
+                        {
+                            var field = _mapper.Map<OutsideDataFieldConfig>(newField);
+                            config.OutsideDataFieldConfig.Add(field);
+                        }
+                        foreach (var updatedField in updatedFields)
+                        {
+                            var curField = config.OutsideDataFieldConfig.FirstOrDefault(f => f.OutsideDataFieldConfigId == updatedField.OutsideDataFieldConfigId);
+                            if (curField == null) continue;
+                            curField.Value = updatedField.Value;
+                            curField.Alias = updatedField.Alias;
+                        }
+
                     }
                 }
+                await _accountancyContext.SaveChangesAsync();
 
                 string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
 
@@ -258,27 +325,24 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
                     });
-
-                await _accountancyContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.Rollback();
-                _logger.LogError(ex, "Update");
-                return GeneralCode.InternalError;
+                trans.TryRollbackTransaction();
+                throw;
             }
         }
 
-        public async Task<Enum> DeleteCategory(int categoryId)
+        public async Task<bool> DeleteCategory(int categoryId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryId == categoryId);
             if (category == null)
             {
-                return CategoryErrorCode.CategoryNotFound;
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
 
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
@@ -315,13 +379,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 await _accountancyContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.Rollback();
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
+                trans.TryRollbackTransaction();
+                throw;
             }
         }
 
@@ -520,7 +583,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return lst;
         }
 
-        public async Task<ServiceResult<CategoryFieldModel>> GetCategoryField(int categoryId, int categoryFieldId)
+        public async Task<CategoryFieldModel> GetCategoryField(int categoryId, int categoryFieldId)
         {
             var categoryField = await _accountancyContext.CategoryField
                 //.Include(f => f.ReferenceCategoryField)
@@ -536,6 +599,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void UpdateField(ref CategoryField categoryField, CategoryFieldModel data)
         {
+            if (!((EnumDataType)categoryField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)categoryField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
+            }
             categoryField.CategoryFieldName = data.CategoryFieldName;
             //categoryField.CategoryAreaId = data.CategoryAreaId;
             categoryField.Title = data.Title;
@@ -552,6 +619,11 @@ namespace VErp.Services.Accountancy.Service.Category
             categoryField.IsTreeViewKey = data.IsTreeViewKey;
             categoryField.RegularExpression = data.RegularExpression;
             categoryField.Filters = data.Filters;
+            categoryField.DecimalPlace = data.DecimalPlace;
+            categoryField.DefaultValue = data.DefaultValue;
+            categoryField.RefTableCode = data.RefTableCode;
+            categoryField.RefTableField = data.RefTableField;
+            categoryField.RefTableTitle = data.RefTableTitle;
             //categoryField.ReferenceCategoryFieldId = data.ReferenceCategoryFieldId;
             //categoryField.ReferenceCategoryTitleFieldId = data.ReferenceCategoryTitleFieldId;
         }
@@ -571,7 +643,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
             }
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsSelectForm())
             {
                 string refTable = data.RefTableCode;
                 string refField = data.RefTableField;
@@ -591,27 +663,36 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             string refTable = data.RefTableCode;
             string refField = data.RefTableField;
-            if (!string.IsNullOrEmpty(data.RefTableCode))
+            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsJoinForm())
             {
                 //int referId = data.ReferenceCategoryFieldId.Value;
                 var sourceCategoryField = (from f in _accountancyContext.CategoryField
                                            join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                                            where f.CategoryFieldName == refField && c.CategoryCode == refTable
                                            select f).FirstOrDefault();
-
+                if (sourceCategoryField == null)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu liên kết {refTable}.{refField}");
+                }
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
             }
             if (data.FormTypeId == (int)EnumFormType.Generate)
             {
                 data.DataTypeId = (int)EnumDataType.Text;
-                data.DataSize = 0;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
+            if (data.DataTypeId != (int)EnumDataType.Text && data.DataTypeId != (int)EnumDataType.Decimal)
             {
-                data.RefTableCode = null;
+                data.DataSize = -1;
+            }
+
+            //allow suggestion set  RefTableField = null
+
+            if (!((EnumFormType)data.FormTypeId).IsSelectForm())
+            {
+                //data.RefTableCode = null;
                 data.RefTableField = null;
-                data.RefTableTitle = null;
+                //data.RefTableTitle = null;
             }
         }
 
@@ -658,7 +739,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (lst, total);
         }
 
-        public async Task<ServiceResult<int>> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields)
+        public async Task<bool> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields)
         {
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
             try
@@ -669,57 +750,58 @@ namespace VErp.Services.Accountancy.Service.Category
                     throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
                 }
 
-                var groups = fields.GroupBy(f => new { f.CategoryFieldName });
-                foreach (var group in groups)
+                var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
+
+                for (int indx = 0; indx < fields.Count; indx++)
                 {
-                    var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+                    var data = fields[indx];
                     if (category == null)
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
                     }
-                    for (int indx = 0; indx < group.Count(); indx++)
+
+                    var categoryAreaField = data.CategoryFieldId > 0 ? _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
+                    ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
+                    FieldDataProcess(ref data);
+
+                    int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : data.DataSize;
+
+                    if (data.CategoryFieldId > 0 && !data.Compare(categoryAreaField))
                     {
-                        var data = group.ElementAt(indx);
-                        var categoryAreaField = data.CategoryFieldId > 0 ? _accountancyContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
-                        ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
-
-                        FieldDataProcess(ref data);
-                        if (data.CategoryFieldId > 0)
+                        // rename field
+                        if (!category.IsOutSideData && categoryAreaField.CategoryFieldName != data.CategoryFieldName)
                         {
-                            // rename field
-                            if (categoryAreaField.CategoryFieldName != data.CategoryFieldName)
-                            {
-                                await _accountancyContext.RenameColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, data.CategoryFieldName);
-                            }
-                            // Update
-                            UpdateField(ref categoryAreaField, data);
-
-                            // update field 
-                            if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
-                            {
-                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
-                                await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, 0, "", !categoryAreaField.IsRequired);
-                            }
+                            await _accountancyContext.RenameColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, data.CategoryFieldName);
                         }
-                        else
+                        // Update
+                        UpdateField(ref categoryAreaField, data);
+                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
+                        // update field 
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            // Create new
-                            var categoryField = _mapper.Map<CategoryField>(data);
-                            categoryField.CategoryId = categoryId;
-                            await _accountancyContext.CategoryField.AddAsync(categoryField);
-                            await _accountancyContext.SaveChangesAsync();
-                            // Add field into table
-                            if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
-                            {
-                                int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : categoryAreaField.DataSize;
-                                await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, 0, "", !categoryField.IsRequired);
-                            }
+                            await _accountancyContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryAreaField.IsRequired);
                         }
                     }
-                    await _accountancyContext.SaveChangesAsync();
-                    // Update view
-                    string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
-                    await _accountancyContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
+                    else if (data.CategoryFieldId == 0)
+                    {
+                        // Create new
+                        var categoryField = _mapper.Map<CategoryField>(data);
+                        categoryField.CategoryId = categoryId;
+                        await _accountancyContext.CategoryField.AddAsync(categoryField);
+                        await _accountancyContext.SaveChangesAsync();
+                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
+                        // Add field into table
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        {
+                            await _accountancyContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryField.IsRequired);
+                        }
+                    }
+                }
+
+                await _accountancyContext.SaveChangesAsync();
+                // Update view
+                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
+                await _accountancyContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
                         new SqlParameter("@CategoryCode", category.CategoryCode ),
                         new SqlParameter("@TableName", tableName ),
                         new SqlParameter("@IsTreeView", category.IsTreeView),
@@ -727,21 +809,19 @@ namespace VErp.Services.Accountancy.Service.Category
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
                     });
-                }
+
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
-                return categoryId;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.Rollback();
-                _logger.LogError(ex, "Create");
-                return GeneralCode.InternalError;
+                trans.TryRollbackTransaction();
+                throw;
             }
         }
 
-
-        public async Task<Enum> DeleteCategoryField(int categoryId, int categoryFieldId)
+        public async Task<bool> DeleteCategoryField(int categoryId, int categoryFieldId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             var categoryField = await _accountancyContext.CategoryField.FirstOrDefaultAsync(c => c.CategoryFieldId == categoryFieldId && c.CategoryId == categoryId);
@@ -760,7 +840,7 @@ namespace VErp.Services.Accountancy.Service.Category
             using var trans = await _accountancyContext.Database.BeginTransactionAsync();
             try
             {
-                var category = _accountancyContext.Category.First(c => c.CategoryId == categoryField.CategoryId);
+                var category = _accountancyContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == categoryField.CategoryId);
                 // Delete field
                 categoryField.IsDeleted = true;
                 await _accountancyContext.SaveChangesAsync();
@@ -768,10 +848,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 //
                 if (!category.IsOutSideData)
                 {
-                    await _accountancyContext.ExecuteStoreProcedure("asp_Category_Delete", new[] {
-                        new SqlParameter("@CategoryCode", category.CategoryCode),
-                        new SqlParameter("@CategoryFieldName", categoryField.CategoryFieldName )
-                    });
+                    await _accountancyContext.DeleteColumn(category.CategoryCode, categoryField.CategoryFieldName);
                 }
 
                 // Update view
@@ -787,16 +864,124 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
-                return GeneralCode.Success;
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                trans.Rollback();
-                _logger.LogError(ex, "Delete");
-                return GeneralCode.InternalError;
+                trans.TryRollbackTransaction();
+                throw;
             }
         }
         #endregion
+
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)
+        {
+            var category = _accountancyContext.Category.AsNoTracking().FirstOrDefault(c => c.CategoryId == categoryId);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            //if (category.IsReadonly)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
+            //}
+            //if (category.IsOutSideData)
+            //{
+            //    throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
+            //}
+
+
+            var result = new CategoryNameModel()
+            {
+                CategoryId = category.CategoryId,
+                CategoryCode = category.CategoryCode,
+                CategoryTitle = category.Title,
+                IsTreeView = category.IsTreeView,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = await _accountancyContext.CategoryField
+                .AsNoTracking()
+                .Where(f => category.CategoryId == f.CategoryId && !f.IsHidden && !f.AutoIncrement && f.CategoryFieldName != AccountantConstants.F_IDENTITY)
+                .ToListAsync();
+
+            var refCategoryCodes = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
+                .Select(f => f.RefTableCode).Distinct().ToList();
+
+            var refCategoryFields = (await (
+                from f in _accountancyContext.CategoryField
+                join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                where refCategoryCodes.Contains(c.CategoryCode)
+                select new
+                {
+                    c.CategoryId,
+                    c.CategoryCode,
+                    CategoryTitle = c.Title,
+                    c.IsTreeView,
+                    Field = f
+                }).ToListAsync())
+                .GroupBy(c => c.CategoryCode)
+                .ToDictionary(
+                    c => c.Key,
+                    c => c.GroupBy(i => new { i.CategoryId, i.CategoryCode, i.CategoryTitle, i.IsTreeView })
+                    .Select(i => new
+                    {
+                        CategoryInfo = new
+                        {
+                            i.FirstOrDefault().CategoryId,
+                            i.FirstOrDefault().CategoryCode,
+                            i.FirstOrDefault().CategoryTitle,
+                            i.FirstOrDefault().IsTreeView
+                        },
+                        Fields = i.Select(f => f.Field).ToList()
+                    })
+                    .First()
+                );
+
+
+
+            foreach (var field in fields)
+            {
+                var fileData = new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = field.CategoryFieldId,
+                    FieldName = field.CategoryFieldName,
+                    FieldTitle = field.Title,
+                    RefCategory = null
+                };
+
+                if (!string.IsNullOrWhiteSpace(field.RefTableCode))
+                {
+                    if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                    }
+
+                    fileData.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryId = refCategory.CategoryInfo.CategoryId,
+                        CategoryCode = refCategory.CategoryInfo.CategoryCode,
+                        CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
+                        IsTreeView = refCategory.CategoryInfo.IsTreeView,
+
+                        Fields = refCategory.Fields
+                        .Select(f => new CategoryFieldNameModel()
+                        {
+                            CategoryFieldId = f.CategoryFieldId,
+                            FieldName = f.CategoryFieldName,
+                            FieldTitle = f.Title,
+                            RefCategory = null
+                        }).ToList()
+                    };
+                }
+
+                result.Fields.Add(fileData);
+            }
+
+            return result;
+        }
+
 
 
         public PageData<DataTypeModel> GetDataTypes(int page, int size)
@@ -879,6 +1064,16 @@ namespace VErp.Services.Accountancy.Service.Category
                 moduleTypes = moduleTypes.Skip((page - 1) * size).Take(size).ToList();
             }
             return (moduleTypes, total);
+        }
+
+        public async Task<int> GetCategoryIdByCode(string categoryCode)
+        {
+            var category = await _accountancyContext.Category.FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return category.CategoryId;
         }
     }
 }

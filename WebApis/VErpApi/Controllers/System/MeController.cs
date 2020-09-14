@@ -6,6 +6,8 @@ using IdentityServer4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Services.Organization.Model.Employee;
+using Services.Organization.Service.Employee;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
@@ -26,19 +28,23 @@ namespace VErpApi.Controllers.System
         private readonly IUserService _userService;
         private readonly IIdentityServerInteractionService _interaction;
         private readonly IPersistedGrantService _persistedGrant;
+        private readonly IUserDataService _userDataService;
+
         public MeController(IUserService userService,
             IIdentityServerInteractionService interaction,
-            IPersistedGrantService persistedGrant
+            IPersistedGrantService persistedGrant,
+            IUserDataService userDataService
             )
         {
             _userService = userService;
             _interaction = interaction;
             _persistedGrant = persistedGrant;
+            _userDataService = userDataService;
         }
 
         [Route("info")]
         [HttpGet]
-        public async Task<ServiceResult<UserInfoOutput>> GetInfo()
+        public async Task<UserInfoOutput> GetInfo()
         {
             return await _userService.GetInfo(UserId);
         }
@@ -46,7 +52,7 @@ namespace VErpApi.Controllers.System
         [Route("censor")]
         [HttpPost]
         [VErpAction(EnumAction.Censor)]
-        public async Task<ServiceResult<User>> TestAction()
+        public async Task<User> TestAction()
         {
             await Task.CompletedTask;
             throw new NotImplementedException("Test http post as censor!");
@@ -54,13 +60,13 @@ namespace VErpApi.Controllers.System
 
         [Route("logout")]
         [HttpPost]
-        public async Task<ServiceResult> Logout()
+        public async Task<bool> Logout()
         {
-            var asa = await _persistedGrant.GetAllGrantsAsync(Sub);
+            await _persistedGrant.GetAllGrantsAsync(Sub);
 
             await _persistedGrant.RemoveAllGrantsAsync(Sub, ClientId);
 
-            return GeneralCode.Success;
+            return true;
         }
 
         /// <summary>
@@ -69,7 +75,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [Route("permissions")]
         [HttpGet]
-        public async Task<ServiceResult<IList<RolePermissionModel>>> GetPermission()
+        public async Task<IList<RolePermissionModel>> GetPermission()
         {
             return (await _userService.GetMePermission()).ToList();
         }
@@ -82,9 +88,25 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [Route("changePassword")]
         [HttpPut]
-        public async Task<ServiceResult> ChangePassword([FromBody] UserChangepasswordInput req)
+        public async Task<bool> ChangePassword([FromBody] UserChangepasswordInput req)
         {
             return await _userService.ChangeUserPassword(UserId, req);
+        }
+
+        [Route("UserData/{key}")]
+        [HttpGet]
+        [GlobalApi]
+        public async Task<UserDataModel> GetUserData([FromRoute] string key)
+        {
+            return await _userDataService.GetUserData(key);
+        }
+
+        [Route("UserData/{key}")]
+        [HttpPut]
+        [GlobalApi]
+        public async Task<bool> UpdateUserData([FromRoute] string key, [FromBody] UserDataModel data)
+        {
+            return await _userDataService.UpdateUserData(key, data?.DataContent);
         }
     }
 }

@@ -48,7 +48,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
-        public async Task<Enum> CreateActivityTask(ActivityInput input)
+        public async Task<bool> CreateActivityTask(ActivityInput input)
         {
             using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
@@ -81,11 +81,11 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
                 trans.Commit();
 
-                return GeneralCode.Success;
+                return true;
             }
         }
 
-        public async Task<Enum> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message)
+        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message)
         {
             var activity = new UserActivityLog()
             {
@@ -101,7 +101,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             await _activityLogContext.UserActivityLog.AddAsync(activity);
             await _activityLogContext.SaveChangesAsync();
 
-            return GeneralCode.Success;
+            return true;
         }
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)

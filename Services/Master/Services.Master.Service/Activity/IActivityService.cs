@@ -12,9 +12,9 @@ namespace VErp.Services.Master.Service.Activity
     public interface IActivityService
     {
         void CreateActivityAsync(ActivityInput input);
-        Task<Enum> CreateActivityTask(ActivityInput input);
+        Task<bool> CreateActivityTask(ActivityInput input);
 
-        Task<Enum> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message);
+        Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message);
 
         Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20);
     }

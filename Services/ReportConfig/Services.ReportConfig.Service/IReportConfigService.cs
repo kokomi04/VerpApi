@@ -8,7 +8,7 @@ namespace Verp.Services.ReportConfig.Service
 {
     public interface IReportConfigService
     {
-        Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId);
+        Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId, bool isConfig = false);
 
         Task<bool> ReportTypeViewUpdate(int reportTypeId, ReportTypeViewModel model);
 
@@ -29,5 +29,7 @@ namespace Verp.Services.ReportConfig.Service
         Task<int> UpdateReportType(int reportTypeId, ReportTypeModel data);
 
         Task<int> DeleteReportType(int reportTypeId);
+
+        CipherFilterModel DecryptExtraFilter(CipherFilterModel cipherFilter);
     }
 }

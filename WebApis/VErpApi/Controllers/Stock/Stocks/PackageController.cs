@@ -33,7 +33,7 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns>List of PackageOutputModel</returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<PackageOutputModel>>> Get([FromQuery] int stockId = 0, [FromQuery] string keyword = "", [FromQuery] int page = 0, [FromQuery] int size = 0)
+        public async Task<PageData<PackageOutputModel>> Get([FromQuery] int stockId = 0, [FromQuery] string keyword = "", [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
             return await _packageService.GetList(stockId, keyword, page, size);
         }
@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns>PackageOutputModel</returns>
         [HttpGet]
         [Route("{packageId}")]
-        public async Task<ServiceResult<PackageOutputModel>> GetInfo([FromRoute] int packageId)
+        public async Task<PackageOutputModel> GetInfo([FromRoute] int packageId)
         {
             return await _packageService.GetInfo(packageId);
         }
@@ -71,7 +71,7 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns></returns>
         [HttpPut]
         [Route("{packageId}")]
-        public async Task<ServiceResult> UpdatePackage([FromRoute] int packageId, [FromBody] PackageInputModel packageInputModel)
+        public async Task<bool> UpdatePackage([FromRoute] int packageId, [FromBody] PackageInputModel packageInputModel)
         {
             return await _packageService.UpdatePackage(packageId, packageInputModel);
         }
@@ -96,7 +96,7 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns></returns>
         [HttpPost]
         [Route("{packageId}/Split")]
-        public async Task<ServiceResult> Split([FromRoute] int packageId, [FromBody] PackageSplitInput req)
+        public async Task<bool> Split([FromRoute] int packageId, [FromBody] PackageSplitInput req)
         {
             return await _packageService.SplitPackage(packageId, req);
         }
@@ -109,7 +109,7 @@ namespace VErpApi.Controllers.Stock.package
         /// <returns></returns>
         [HttpPost]
         [Route("Join")]
-        public async Task<ServiceResult<long>> Join([FromBody] PackageJoinInput req)
+        public async Task<long> Join([FromBody] PackageJoinInput req)
         {
             return await _packageService.JoinPackage(req);
         }

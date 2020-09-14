@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -18,6 +20,9 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
+using VErp.Commons.GlobalObject;
+using Newtonsoft.Json;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -57,9 +62,27 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<ProductListOutput>>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
             return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+        }
+
+        [HttpGet]
+        [Route("fields")]
+        public List<EntityField> GetFields()
+        {
+            return _productService.GetFields(typeof(ProductImportModel));
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _productService.ImportProductFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -70,7 +93,7 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [Route("GetByIds")]
         [VErpAction(EnumAction.View)]
-        public async Task<ServiceResult<IList<ProductListOutput>>> GetByIds([FromBody] IList<int> productIds)
+        public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
         {
             return (await _productService.GetListByIds(productIds)).ToList();
         }
@@ -82,7 +105,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddProduct([FromBody] ProductModel product)
+        public async Task<int> AddProduct([FromBody] ProductModel product)
         {
             return await UpdateOrAddProduct(null, product);
         }
@@ -94,7 +117,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("{productId}")]
-        public async Task<ServiceResult<ProductModel>> GetProduct([FromRoute] int productId)
+        public async Task<ProductModel> GetProduct([FromRoute] int productId)
         {
             return await _productService.ProductInfo(productId);
         }
@@ -107,9 +130,9 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPut]
         [Route("{productId}")]
-        public async Task<ServiceResult> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
+        public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return await UpdateOrAddProduct(productId, product);
+            return (await UpdateOrAddProduct(productId, product)) > 0;
         }
 
         /// <summary>
@@ -119,7 +142,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("{productId}")]
-        public async Task<ServiceResult> Delete([FromRoute] int productId)
+        public async Task<bool> Delete([FromRoute] int productId)
         {
             return await _productService.DeleteProduct(productId);
         }
@@ -132,7 +155,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<ServiceResult<long>> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
         }
@@ -144,71 +167,56 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateProductCode")]
-        public async Task<ServiceResult<string>> GenerateProductCode([FromQuery] int? productTypeId)
+        public async Task<string> GenerateProductCode([FromQuery] int? productTypeId)
         {
             var typeCode = "";
             if (productTypeId.HasValue)
             {
                 var typeInfo = await _productTypeService.GetInfoProductType(productTypeId.Value);
-                if (!typeInfo.Code.IsSuccess())
-                {
-                    return typeInfo.Code;
-                }
-                typeCode = typeInfo.Data.IdentityCode;
+
+                typeCode = typeInfo.IdentityCode;
             }
             var objectCode = await _objectGenCodeService.GenerateCode(EnumObjectType.Product);
-            if (!objectCode.Code.IsSuccess())
-            {
-                return objectCode;
-            }
 
-            objectCode.Data = string.IsNullOrWhiteSpace(typeCode) ? objectCode.Data : typeCode + objectCode.Data;
 
-            return objectCode;
+            return string.IsNullOrWhiteSpace(typeCode) ? objectCode : typeCode + objectCode;
         }
 
 
-        private async Task<ServiceResult<int>> UpdateOrAddProduct(int? productId, ProductModel product)
+        private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
         {
             // var lastValue = 0;
             var isGenCode = false;
             if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
             {
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
-                if (!productTypeInfo.Code.IsSuccess())
-                {
-                    return productTypeInfo.Code;
-                }
 
                 var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
-                if (productTypeConfig.Code.IsSuccess())
-                {
-                    var code = await _customGenCodeService.GenerateCode(productTypeConfig.Data.CustomGenCodeId, 0, productTypeInfo.Data.IdentityCode).ConfigureAwait(true);
-                    if (!code.Code.IsSuccess())
-                    {
-                        return code.Code;
-                    }
 
-                    product.ProductCode = code.Data.CustomCode;
-                    // lastValue = code.Data.LastValue;
-                    isGenCode = true;
-                }
+                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.IdentityCode).ConfigureAwait(true);
+
+                product.ProductCode = code.CustomCode;
+                // lastValue = code.Data.LastValue;
+                isGenCode = true;
+
             }
 
-            ServiceResult<int> r;
+            int r;
             if (!productId.HasValue)
             {
                 r = await _productService.AddProduct(product).ConfigureAwait(true);
             }
             else
             {
-                r = await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+                await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
+                r = productId.Value;
             }
 
-            if (isGenCode && r.Code.IsSuccess())
+            if (isGenCode)
             {
                 await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
             }
+
             return r;
         }
     }

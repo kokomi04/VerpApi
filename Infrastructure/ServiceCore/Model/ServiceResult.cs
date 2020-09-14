@@ -63,4 +63,16 @@ namespace VErp.Infrastructure.ServiceCore.Model
             return result.Code.IsSuccess();
         }
     }
+
+    public class ApiErrorResponse
+    {
+        public string Code { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class ApiErrorResponse<T> : ApiErrorResponse
+    {
+        public T Data { get; set; }
+    }
+
 }

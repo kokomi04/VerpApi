@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Spire.Doc;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -16,6 +18,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.FileResources;
@@ -43,10 +46,18 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".png"  , EnumFileType.Image },
 
             { ".doc" , EnumFileType.Document },
+            { ".pdf" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
             { ".xls", EnumFileType.Document },
             { ".xlsx" , EnumFileType.Document },
             { ".csv" , EnumFileType.Document },
+        };
+
+        private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
+        {
+            { ".doc" , "application/msword" },
+            { ".pdf" , "application/pdf" },
+            { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
         };
 
         private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
@@ -70,26 +81,26 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public async Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId, EnumThumbnailSize? thumb)
+        public async Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             return GetFileUrl(fileInfo, thumb, true);
         }
 
-        public async Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
+        public async Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
             if (fileIds == null || fileIds.Count == 0)
             {
-                return GeneralCode.Success;
+                return new List<FileThumbnailInfo>();
             }
             var fileInfos = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
             if (fileInfos.Count == 0)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
 
             var lstData = new List<FileThumbnailInfo>();
@@ -102,12 +113,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public async Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId)
+        public async Task<(FileEnity info, string physicalPath)> GetFileAndPath(long fileId)
         {
             var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             var filePath = GetPhysicalFilePath(fileInfo.FilePath);
             try
@@ -117,7 +128,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (FileNotFoundException ex)
             {
                 _logger.LogDebug(ex, $"GetFileAndPath(long fileId={fileId})");
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             catch (Exception ex)
             {
@@ -126,12 +137,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
         }
 
-        public async Task<Enum> DeleteFile(long fileId)
+        public async Task<bool> DeleteFile(long fileId)
         {
             var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
             if (fileInfo == null)
             {
-                return FileErrorCode.FileNotFound;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
 
             var beforeJson = fileInfo.JsonSerialize();
@@ -152,110 +163,103 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             await _activityLogService.CreateLog(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson);
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName).ToLower();
 
             if (!FileTypeExtensions.ContainsKey(fileTypeId))
             {
-                return FileErrorCode.InvalidFileType;
+                throw new BadRequestException(FileErrorCode.InvalidFileType);
             }
 
             if (!FileTypeExtensions[fileTypeId].Contains(ext))
             {
-                return FileErrorCode.InvalidFileExtension;
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
             }
 
             return await Upload(objectTypeId, fileName, file);
         }
 
 
-        public async Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
+        public async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
         {
-            try
+
+            //var fileType = EnumFileType.Image;
+
+            //switch (objectTypeId)
+            //{
+            //    case EnumObjectType.UserAndEmployee:
+            //    case EnumObjectType.BusinessInfo:
+            //        fileType = EnumFileType.Image;
+            //        break;
+
+            //    case EnumObjectType.PurchasingSuggest:
+            //    case EnumObjectType.PurchaseOrder:
+            //        fileType = EnumFileType.Document;
+            //        break;
+
+            //    default:
+            //        return null;
+            //}
+
+
+            var (validate, fileTypeId) = ValidateUploadFile(file);
+            if (!validate.IsSuccess())
             {
+                throw new BadRequestException(validate);
+            }
 
-                //var fileType = EnumFileType.Image;
+            string filePath = GenerateTempFilePath(file.FileName);
 
-                //switch (objectTypeId)
-                //{
-                //    case EnumObjectType.UserAndEmployee:
-                //    case EnumObjectType.BusinessInfo:
-                //        fileType = EnumFileType.Image;
-                //        break;
+            using (var stream = File.Create(filePath.GetPhysicalFilePath(_appSetting)))
+            {
+                await file.CopyToAsync(stream);
+            }
 
-                //    case EnumObjectType.PurchasingSuggest:
-                //    case EnumObjectType.PurchaseOrder:
-                //        fileType = EnumFileType.Document;
-                //        break;
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = file.FileName;
+            }
 
-                //    default:
-                //        return null;
-                //}
-
-
-                var (validate, fileTypeId) = ValidateUploadFile(file);
-                if (!validate.IsSuccess())
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    return validate;
-                }
-
-                string filePath = GenerateTempFilePath(file.FileName);
-
-                using (var stream = File.Create(filePath.GetPhysicalFilePath(_appSetting)))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                if (string.IsNullOrWhiteSpace(fileName))
-                {
-                    fileName = file.FileName;
-                }
-
-                using (var trans = await _stockContext.Database.BeginTransactionAsync())
-                {
-                    try
+                    var fileRes = new FileEnity
                     {
-                        var fileRes = new FileEnity
-                        {
-                            FileTypeId = (int)fileTypeId,
-                            FilePath = filePath,
-                            FileName = fileName,
-                            ContentType = file.ContentType,
-                            FileLength = file.Length,
-                            ObjectTypeId = (int)objectTypeId,
-                            ObjectId = null,
-                            CreatedDatetimeUtc = DateTime.UtcNow,
-                            UpdatedDatetimeUtc = DateTime.UtcNow,
-                            FileStatusId = (int)EnumFileStatus.Temp,
-                            IsDeleted = false
-                        };
+                        FileTypeId = (int)fileTypeId,
+                        FilePath = filePath,
+                        FileName = fileName,
+                        ContentType = file.ContentType,
+                        FileLength = file.Length,
+                        ObjectTypeId = (int)objectTypeId,
+                        ObjectId = null,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        FileStatusId = (int)EnumFileStatus.Temp,
+                        IsDeleted = false
+                    };
 
-                        await _stockContext.File.AddAsync(fileRes);
-                        await _stockContext.SaveChangesAsync();
-                        trans.Commit();
+                    await _stockContext.File.AddAsync(fileRes);
+                    await _stockContext.SaveChangesAsync();
+                    trans.Commit();
 
-                        await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
 
-                        return fileRes.FileId;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.Rollback();
-                        File.Delete(filePath);
-                        _logger.LogError(ex, "Upload");
-                        return GeneralCode.InternalError;
-                    }
+                    return fileRes.FileId;
+                }
+                catch (Exception ex)
+                {
+                    trans.TryRollbackTransaction();
+                    File.Delete(filePath);
+                    _logger.LogError(ex, "Upload");
+                    throw;
                 }
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Upload");
-                return GeneralCode.InternalError;
-            }
+
         }
 
 
@@ -280,71 +284,63 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return reader.ReadSheets(sheetName, fromRow, toRow, maxrows);
         }
 
-        public async Task<Enum> GenerateThumbnail(long fileId)
+        public async Task<bool> GenerateThumbnail(long fileId)
         {
-            try
+
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
             {
-                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-                if (fileInfo == null)
-                {
-                    return FileErrorCode.FileNotFound;
-                }
-
-                var filePath = GetPhysicalFilePath(fileInfo.FilePath);
-                var fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
-                relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";
-
-                var smallThumb = relDirectory + "/" + fileName + "_small.jpg";
-                var largeThumb = relDirectory + "/" + fileName + "_large.jpg";
-
-                var physicalFolder = GetPhysicalFilePath(relDirectory);
-                if (!Directory.Exists(physicalFolder))
-                {
-                    Directory.CreateDirectory(physicalFolder);
-                }
-
-                const int quality = 75;
-
-                using (var image = new MagickImage(filePath))
-                {
-                    image.Resize((int)(image.Width * 500.0 / image.Height), 500);
-                    image.Strip();
-                    image.Quality = quality;
-                    image.Write(GetPhysicalFilePath(largeThumb));
-
-                    image.Resize((int)(image.Width * 100.0 / image.Height), 100);
-                    image.Strip();
-
-                    image.Write(GetPhysicalFilePath(smallThumb));
-                }
-
-                fileInfo.SmallThumb = smallThumb;
-                fileInfo.LargeThumb = largeThumb;
-                _stockContext.SaveChanges();
-                return GeneralCode.Success;
+                throw new BadRequestException(FileErrorCode.FileNotFound);
             }
-            catch (Exception ex)
+
+            var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+
+            var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
+            relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";
+
+            var smallThumb = relDirectory + "/" + fileName + "_small.jpg";
+            var largeThumb = relDirectory + "/" + fileName + "_large.jpg";
+
+            var physicalFolder = GetPhysicalFilePath(relDirectory);
+            if (!Directory.Exists(physicalFolder))
             {
-                _logger.LogError(ex, "GenerateThumbnail");
-                return GeneralCode.InternalError;
+                Directory.CreateDirectory(physicalFolder);
             }
+
+            const int quality = 75;
+
+            using (var image = new MagickImage(filePath))
+            {
+                image.Resize((int)(image.Width * 500.0 / image.Height), 500);
+                image.Strip();
+                image.Quality = quality;
+                image.Write(GetPhysicalFilePath(largeThumb));
+
+                image.Resize((int)(image.Width * 100.0 / image.Height), 100);
+                image.Strip();
+
+                image.Write(GetPhysicalFilePath(smallThumb));
+            }
+
+            fileInfo.SmallThumb = smallThumb;
+            fileInfo.LargeThumb = largeThumb;
+            _stockContext.SaveChanges();
+            return true;
+
 
         }
 
-        public List<FileToDownloadInfo> GetListFileUrl(long[] arrayFileId, EnumThumbnailSize? thumb)
+        public async Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
-            if (arrayFileId.Length < 1)
+            if (fileIds.Count == 0)
                 return null;
-            var fileList = new List<FileToDownloadInfo>(arrayFileId.Length);
+            var fileList = new List<FileToDownloadInfo>(fileIds.Count);
 
-            foreach (var id in arrayFileId)
+            var files = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
+            foreach (var fileInfo in files)
             {
-                var fileInfo = _stockContext.File.AsNoTracking().FirstOrDefault(f => f.FileId == id);
-                if (fileInfo == null) continue;
                 var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
-                fileToDownloadInfo.FileId = id;
                 fileList.Add(fileToDownloadInfo);
             }
             return fileList;
@@ -352,75 +348,68 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         #region private
 
-        public async Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
+        public async Task<bool> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId)
         {
+
+
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+
+            if (fileInfo.FileStatusId != (int)EnumFileStatus.Temp)
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileStatus);
+            }
+
+            if (fileInfo.ObjectTypeId != (int)objectTypeId)
+            {
+                throw new BadRequestException(FileErrorCode.InvalidObjectType);
+            }
+
+            string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
+
+            File.Move(GetPhysicalFilePath(fileInfo.FilePath), GetPhysicalFilePath(filePath));
 
             try
             {
-                var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-                if (fileInfo == null)
-                {
-                    return FileErrorCode.FileNotFound;
-                }
+                var tmpFolder = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
+                Directory.Delete(GetPhysicalFilePath(tmpFolder), true);
+            }
+            catch (Exception mov)
+            {
+                _logger.LogError(mov, "Directory.Delete");
+            }
 
-                if (fileInfo.FileStatusId != (int)EnumFileStatus.Temp)
-                {
-                    return FileErrorCode.InvalidFileStatus;
-                }
 
-                if (fileInfo.ObjectTypeId != (int)objectTypeId)
-                {
-                    return FileErrorCode.InvalidObjectType;
-                }
 
-                string filePath = GenerateFilePathWithObject(objectTypeId, objectId, Path.GetFileName(fileInfo.FilePath));
-
-                File.Move(GetPhysicalFilePath(fileInfo.FilePath), GetPhysicalFilePath(filePath));
-
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
                 try
                 {
-                    var tmpFolder = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
-                    Directory.Delete(GetPhysicalFilePath(tmpFolder), true);
+                    fileInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    fileInfo.ObjectId = objectId;
+                    fileInfo.FilePath = filePath;
+                    fileInfo.FileStatusId = (int)EnumFileStatus.Ok;
+
+                    await _stockContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
+
+                    _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
+
+                    return true;
                 }
-                catch (Exception mov)
+                catch (Exception)
                 {
-                    _logger.LogError(mov, "Directory.Delete");
-                }
-
-
-
-                using (var trans = await _stockContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        fileInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        fileInfo.ObjectId = objectId;
-                        fileInfo.FilePath = filePath;
-                        fileInfo.FileStatusId = (int)EnumFileStatus.Ok;
-
-                        await _stockContext.SaveChangesAsync();
-                        trans.Commit();
-
-                        await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
-
-                        _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
-
-                        return GeneralCode.Success;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.Rollback();
-                        File.Delete(filePath);
-                        _logger.LogError(ex, "FileAssignToObject");
-                        return GeneralCode.InternalError;
-                    }
+                    trans.TryRollbackTransaction();
+                    File.Delete(filePath);
+                    throw;
                 }
             }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "FileAssignToObject");
-                return GeneralCode.InternalError;
-            }
+
         }
 
         private string GenerateFilePathWithObject(EnumObjectType objectTypeId, long objectId, string uploadFileName)
@@ -512,6 +501,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GetFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
             return new FileToDownloadInfo()
             {
+                FileId = fileInfo.FileId,
                 FileName = fileInfo.FileName,
                 FileUrl = fileUrl,
                 ThumbnailUrl = thumbUrl,
@@ -521,13 +511,64 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GetFileUrl(long fileId, string filePath, string contentType)
         {
+            var fileName = Path.GetFileName(filePath);
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
-            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + "/filestorage/preview?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
+            return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
 
         private string GetPhysicalFilePath(string filePath)
         {
             return filePath.GetPhysicalFilePath(_appSetting);
+        }
+
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel)
+        {
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+
+            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
+
+            using (var document = new DocumentReader(physicalFilePath).document)
+            {
+
+                //find and replace in document
+                foreach (var data in templateModel.dataReplace)
+                {
+                    document.Replace($"#{{{data.Key}}}", data.Value ?? "", false, true);
+                }
+
+                //insert and set value to table in document
+                if (document.LastSection.Tables.Count > 0)
+                {
+                    var table = document.LastSection.Tables[0];
+                    for (int i = 0; i < templateModel.dataTable.Count; i++)
+                    {
+                        var rowData = templateModel.dataTable[i];
+                        if (table.Rows.Count <= 1)
+                            throw new BadRequestException(FileErrorCode.InvalidTabeInDocument,"Table trong document không hợp lệ");
+                        TableRow row = table.Rows[1].Clone();
+
+                        for (int j = 0; j < rowData.Length; j++)
+                        {
+                            if (j < row.Cells.Count)
+                                row.Cells[j].LastParagraph.Text = rowData[j];
+                        }
+                        table.Rows.Insert(i + 2, row);
+                    }
+                    table.Rows.RemoveAt(1);
+                }
+
+                document.Replace(new Regex(@"^#{.*}$"), string.Empty);
+
+                string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
+
+                document.SaveToFile(GetPhysicalFilePath(filePath), FileFormat.Auto);
+
+                return (File.OpenRead(GetPhysicalFilePath(filePath)), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
+            }
         }
         #endregion
     }

@@ -26,8 +26,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
+        public string BillForm { set; get; }
         public string BillCode { set; get; }
-
         public string BillSerial { set; get; }
 
         //public DateTime? BillDate { set; get; }
@@ -49,8 +49,18 @@ namespace VErp.Services.Stock.Model.Inventory
         public bool IsApproved { set; get; }
 
         public StockOutput StockOutput { get; set; }
-        public List<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
+        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 
-        public List<FileToDownloadInfo> FileList { set; get; }
+        public IList<FileToDownloadInfo> FileList { set; get; }
+
+        public IList<MappingInputBillModel> InputBills { get; set; }
+    }
+
+    public class MappingInputBillModel
+    {
+        public string MappingFunctionKey { get; set; }
+        public int InputTypeId { get; set; }
+        public string SourceId { get; set; }
+        public long InputBillFId { get; set; }
     }
 }

@@ -1,0 +1,29 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos.Message";
+
+package CustomGenCodeMessage;
+
+message CustomGenCodeOutputModelOutput{
+    int32 CustomGenCodeId = 1;
+    int32 ParentId = 2;
+    string CustomGenCodeName = 3;
+    int32 CodeLength = 4;
+    string Prefix = 5;
+    string Suffix = 6;
+    string Seperator = 7;
+    int32 LastValue = 8;
+    string LastCode = 9;
+    bool IsActived = 10;
+    int32 UpdatedUserId = 11;
+    int64 CreatedTime = 12;
+    int64 UpdatedTime = 13;
+    string Description = 14;
+    int32 SortOrder = 15;
+}
+
+message CustomCodeModelOutput{
+    string CustomCode = 1;
+    int32 LastValue = 2;
+    int32 CustomGenCodeId = 3;
+}

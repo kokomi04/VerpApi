@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     if (statusCode == HttpStatusCode.OK)
                     {
                         var data = objectValue.GetType().GetProperty("Data")?.GetValue(objectValue) ?? true;
-                        if(data is MemoryStream)
+                        if (data is MemoryStream)
                         {
                             context.Result = new FileStreamResult(data as MemoryStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                             {
@@ -62,7 +62,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     }
                     else
                     {
-                        (context.Result as ObjectResult).Value = new
+                        (context.Result as ObjectResult).Value = new ApiErrorResponse
                         {
                             Code = code.GetErrorCodeString(),
                             Message = objectValue.Message ?? code.GetErrorCodeString()

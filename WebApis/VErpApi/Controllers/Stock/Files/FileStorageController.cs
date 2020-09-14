@@ -16,17 +16,15 @@ namespace VErpApi.Controllers.Stock.Files
         }
 
         [AllowAnonymous]
-        [Route("Preview")]
+        [Route("view/{fileName}")]
         [HttpGet]
-        public async Task<IActionResult> Preview([FromQuery] string fileKey)
+        public async Task<IActionResult> Preview([FromRoute] string fileName, [FromQuery] string fileKey)
         {
-            var r = await _fileStoreService.GetFileStream(fileKey);
-            if (!r.Code.IsSuccess())
-            {
-                return new JsonResult(r);
-            }
+            if (string.IsNullOrWhiteSpace(fileName)) return NotFound();
 
-            return new FileStreamResult(r.Data.file, !string.IsNullOrWhiteSpace(r.Data.contentType) ? r.Data.contentType : "application/octet-stream");
+            var r = await _fileStoreService.GetFileStream(fileKey);           
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }
 }

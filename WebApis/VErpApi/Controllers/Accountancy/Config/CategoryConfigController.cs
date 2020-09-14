@@ -34,29 +34,36 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpGet]
+        [Route("GetCategoryIdByCode/{categoryCode}")]
+        public async Task<int> GetCategoryIdByCode([FromRoute] string categoryCode)
+        {
+            return await _categoryConfigService.GetCategoryIdByCode(categoryCode);
+        }
+
+        [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<PageData<CategoryModel>>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CategoryModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategories(keyword, page, size);
         }
 
         [HttpPost]
         [Route("categoryFieldsByCodes")]
-        public async Task<ServiceResult<List<CategoryFieldReferModel>>> GetCategoryFieldsByCodes([FromBody] string[] categoryCodes)
+        public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes([FromBody] string[] categoryCodes)
         {
             return await _categoryConfigService.GetCategoryFieldsByCodes(categoryCodes);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<int>> AddCategory([FromBody] CategoryModel category)
+        public async Task<int> AddCategory([FromBody] CategoryModel category)
         {
             return await _categoryConfigService.AddCategory(category);
         }
 
         [HttpGet]
         [Route("{categoryId}")]
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory([FromRoute] int categoryId)
+        public async Task<CategoryFullModel> GetCategory([FromRoute] int categoryId)
         {
             return await _categoryConfigService.GetCategory(categoryId);
         }
@@ -64,35 +71,35 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("categoryByCode/{categoryCode}")]
-        public async Task<ServiceResult<CategoryFullModel>> GetCategory([FromRoute] string categoryCode)
+        public async Task<CategoryFullModel> GetCategory([FromRoute] string categoryCode)
         {
             return await _categoryConfigService.GetCategory(categoryCode);
         }
 
         [HttpPut]
         [Route("{categoryId}")]
-        public async Task<ServiceResult> UpdateCategory([FromRoute] int categoryId, [FromBody] CategoryModel category)
+        public async Task<bool> UpdateCategory([FromRoute] int categoryId, [FromBody] CategoryModel category)
         {
             return await _categoryConfigService.UpdateCategory(categoryId, category);
         }
 
         [HttpDelete]
         [Route("{categoryId}")]
-        public async Task<ServiceResult> DeleteCategory([FromRoute] int categoryId)
+        public async Task<bool> DeleteCategory([FromRoute] int categoryId)
         {
             return await _categoryConfigService.DeleteCategory(categoryId);
         }
 
         [HttpGet]
         [Route("{categoryId}/categoryfields")]
-        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CategoryFieldModel>> GetCategoryFields([FromRoute] int categoryId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFields(categoryId, keyword, page, size);
         }
 
         [HttpGet]
         [Route("categoryfieldsByCode")]
-        public async Task<ServiceResult<PageData<CategoryFieldModel>>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
         }
@@ -100,28 +107,28 @@ namespace VErpApi.Controllers.Accountancy.Config
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("categoryfields")]
-        public async Task<ServiceResult<List<CategoryFieldModel>>> GetCategoryFields([FromBody] IList<int> categoryIds)
+        public async Task<List<CategoryFieldModel>> GetCategoryFields([FromBody] IList<int> categoryIds)
         {
             return await _categoryConfigService.GetCategoryFields(categoryIds);
         }
 
         [HttpGet]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult<CategoryFieldModel>> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        public async Task<CategoryFieldModel> GetCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
             return await _categoryConfigService.GetCategoryField(categoryId, categoryFieldId);
         }
 
         [HttpPost]
         [Route("{categoryId}/multifields")]
-        public async Task<ServiceResult> UpdateMultiField([FromRoute] int categoryId, [FromBody] List<CategoryFieldModel> fields)
+        public async Task<bool> UpdateMultiField([FromRoute] int categoryId, [FromBody] List<CategoryFieldModel> fields)
         {
             return await _categoryConfigService.UpdateMultiField(categoryId, fields);
         }
 
         [HttpDelete]
         [Route("{categoryId}/categoryfields/{categoryFieldId}")]
-        public async Task<ServiceResult> DeleteCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
+        public async Task<bool> DeleteCategoryField([FromRoute] int categoryId, [FromRoute] int categoryFieldId)
         {
             return await _categoryConfigService.DeleteCategoryField(categoryId, categoryFieldId);
         }

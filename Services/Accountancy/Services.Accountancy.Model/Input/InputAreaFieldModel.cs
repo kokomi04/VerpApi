@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
@@ -78,11 +79,43 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnKeypress { get; set; }
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
-        public bool AutoFocus { get; set; }
+        public bool? AutoFocus { get; set; }
         public int Column { get; set; }
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
         public int? IdGencode { get; set; }
+        public string RequireFilters { get; set; }
+
+        public bool Compare(InputAreaField curField)
+        {
+            return !curField.IsDeleted &&
+                InputAreaId == curField.InputAreaId &&
+                InputFieldId == curField.InputFieldId &&
+                InputTypeId == curField.InputTypeId &&
+                Title == curField.Title &&
+                Placeholder == curField.Placeholder &&
+                SortOrder == curField.SortOrder &&
+                IsAutoIncrement == curField.IsAutoIncrement &&
+                IsRequire == curField.IsRequire &&
+                IsUnique == curField.IsUnique &&
+                IsHidden == curField.IsHidden &&
+                IsCalcSum == curField.IsCalcSum &&
+                RegularExpression == curField.RegularExpression &&
+                DefaultValue == curField.DefaultValue &&
+                Filters == curField.Filters &&
+                Width == curField.Width &&
+                Height == curField.Height &&
+                TitleStyleJson == curField.TitleStyleJson &&
+                InputStyleJson == curField.InputStyleJson &&
+                OnFocus == curField.OnFocus &&
+                OnKeydown == curField.OnKeydown &&
+                OnKeypress == curField.OnKeypress &&
+                OnBlur == curField.OnBlur &&
+                OnChange == curField.OnChange &&
+                AutoFocus == curField.AutoFocus &&
+                Column == curField.Column &&
+                RequireFilters == curField.RequireFilters;
+        }
     }
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel

@@ -11,7 +11,7 @@ namespace VErp.Services.Accountancy.Model.Category
     public class CategoryModel : IMapFrom<CategoryEntity>
     {
         public int CategoryId { get; set; }
-        public int? ParentId { get; set; }
+        //public int? ParentId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
         [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]
         public string Title { get; set; }

@@ -13,24 +13,24 @@ namespace VErp.Services.Master.Service.Config
     {
         Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword, int page, int size);
         
-        Task<ServiceResult<CustomGenCodeOutputModel>> GetInfo(int objectGenCodeId);
+        Task<CustomGenCodeOutputModel> GetInfo(int objectGenCodeId);
         
-        Task<Enum> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model);
+        Task<bool> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model);
         
-        Task<Enum> Delete(int currentUserId,int customGenCodeId);
+        Task<bool> Delete(int currentUserId,int customGenCodeId);
         
-        Task<ServiceResult<int>> Create(int currentUserId, CustomGenCodeInputModel model);
+        Task<int> Create(int currentUserId, CustomGenCodeInputModel model);
 
-        Task<ServiceResult<CustomCodeModel>> GenerateCode(int customGenCodeId, int lastValue, string code = "");
+        Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "");
 
         Task<PageData<ObjectType>> GetAllObjectType();
 
-        Task<ServiceResult<CustomGenCodeOutputModel>> GetCurrentConfig(int objectTypeId, int objectId);
+        Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId);
 
-        Task<Enum> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
+        Task<bool> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
-        Task<Enum> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
+        Task<bool> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
 
-        Task<Enum> ConfirmCode(int objectTypeId, int objectId);
+        Task<bool> ConfirmCode(int objectTypeId, int objectId);
     }
 }

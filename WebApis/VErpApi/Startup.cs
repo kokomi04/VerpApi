@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
-using Services.Accountant.Service;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
@@ -28,7 +27,7 @@ using VErp.Infrastructure.ServiceCore;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
-using VErp.Services.Accountant.Model;
+using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
@@ -49,6 +48,13 @@ namespace VErp.WebApis.VErpApi
             ConfigureStandardServices(services, true);
 
             ConfigReadWriteDBContext(services);
+
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly ,
+                configureClient => {
+                    configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
+                }, configureOptions => {
+                    configureOptions.SuppressContextNotFoundErrors = true;
+                });
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
@@ -94,7 +100,7 @@ namespace VErp.WebApis.VErpApi
         {
             services.AddScopedServices(ServiceCoreAssembly.Assembly);
             services.AddScopedServices(MasterServiceAssembly.Assembly);
-            services.AddScopedServices(AccountantServiceAssembly.Assembly);
+            //services.AddScopedServices(AccountantServiceAssembly.Assembly);
             services.AddScopedServices(AccountancyServiceAssembly.Assembly);
             services.AddScopedServices(StockServiceAssembly.Assembly);
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
@@ -109,7 +115,7 @@ namespace VErp.WebApis.VErpApi
 
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
-            profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+            //profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
@@ -128,6 +134,8 @@ namespace VErp.WebApis.VErpApi
 
 
             ConfigureBase(app, env, loggerFactory, true);
+
+            app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>

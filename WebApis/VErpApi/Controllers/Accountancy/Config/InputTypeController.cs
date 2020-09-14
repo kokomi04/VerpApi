@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
@@ -62,14 +63,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("fields")]
-        public async Task<ServiceResult<PageData<InputFieldOutputModel>>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InputFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputFields(keyword, page, size).ConfigureAwait(true);
         }
 
         [HttpPost]
         [Route("fields")]
-        public async Task<ServiceResult<int>> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        public async Task<int> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
             return await _inputConfigService.AddInputField(inputAreaField).ConfigureAwait(true);
         }
@@ -96,17 +97,24 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpPost]
-        [Route("clone")]
-        public async Task<int> CloneInputType([FromBody] int inputTypeId)
+        [Route("{inputTypeId}/clone")]
+        public async Task<int> CloneInputType([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.CloneInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{inputTypeId}")]
-        public async Task<InputTypeFullModel> GetInputType([FromRoute] int inputTypeId)
+        public async Task<InputTypeFullModel> GetInputTypeById([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.GetInputType(inputTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("getByCode")]
+        public async Task<InputTypeFullModel> GetInputTypeByCode([FromQuery] string inputTypeCode)
+        {
+            return await _inputConfigService.GetInputType(inputTypeCode).ConfigureAwait(true);
         }
 
         [HttpPut]
@@ -183,7 +191,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("{inputTypeId}/inputareas")]
-        public async Task<ServiceResult<int>> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
+        public async Task<int> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
         {
             return await _inputConfigService.AddInputArea(inputTypeId, inputArea).ConfigureAwait(true);
         }

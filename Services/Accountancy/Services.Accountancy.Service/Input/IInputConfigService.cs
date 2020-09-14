@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
 
@@ -10,6 +11,8 @@ namespace VErp.Services.Accountancy.Service.Input
     {
         // Input type
         Task<InputTypeFullModel> GetInputType(int inputTypeId);
+        Task<InputTypeFullModel> GetInputType(string inputTypeCode);
+
         Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size);
         Task<int> AddInputType(InputTypeModel data);
         Task<bool> UpdateInputType(int inputTypeId, InputTypeModel data);

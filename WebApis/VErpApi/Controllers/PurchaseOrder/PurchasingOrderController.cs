@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
@@ -14,6 +15,7 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
@@ -84,7 +86,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("{purchaseOrderId}")]
-        public async Task<ServiceResult<PurchaseOrderOutput>> GetInfo([FromRoute] long purchaseOrderId)
+        public async Task<PurchaseOrderOutput> GetInfo([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
                 .GetInfo(purchaseOrderId)
@@ -98,11 +100,22 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<long>> Create([FromBody] PurchaseOrderInput req)
+        public async Task<long> Create([FromBody] PurchaseOrderInput req)
         {
             return await _purchaseOrderService
                 .Create(req)
                 .ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("parseDetailsFromExcelMapping")]
+        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> parseDetailsFromExcelMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return _purchaseOrderService.ParseInvoiceDetails(JsonConvert.DeserializeObject<SingleInvoicePoExcelMappingModel>(mapping), file.OpenReadStream());
         }
 
         /// <summary>

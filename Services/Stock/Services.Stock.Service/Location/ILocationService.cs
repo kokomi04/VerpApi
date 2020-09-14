@@ -26,14 +26,14 @@ namespace VErp.Services.Stock.Service.Location
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<int>> AddLocation(LocationInput req);
+        Task<int> AddLocation(LocationInput req);
 
         /// <summary>
         /// Lấy thông tin của vị trí
         /// </summary>
         /// <param name="locationId">Mã vị trí</param>
         /// <returns></returns>
-        Task<ServiceResult<LocationOutput>> GetLocationInfo(int locationId);
+        Task<LocationOutput> GetLocationInfo(int locationId);
 
         /// <summary>
         /// Cập nhật thông tin vị trí
@@ -41,13 +41,13 @@ namespace VErp.Services.Stock.Service.Location
         /// <param name="locationId">Mã vị trí</param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> UpdateLocation(int locationId, LocationInput req);
+        Task<bool> UpdateLocation(int locationId, LocationInput req);
 
         /// <summary>
         /// Xóa thông tin vị trí (đánh dấu xóa)
         /// </summary>
         /// <param name="locationId">Mã vị trí</param>
         /// <returns></returns>
-        Task<Enum> DeleteLocation(int locationId);
+        Task<bool> DeleteLocation(int locationId);
     }
 }

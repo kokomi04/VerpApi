@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
@@ -39,67 +40,61 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<Enum> UpdatePackage(long packageId, PackageInputModel req)
+        public async Task<bool> UpdatePackage(long packageId, PackageInputModel req)
         {
-            try
+
+            var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
+
+            if (obj == null)
             {
-                var obj = _stockDbContext.Package.FirstOrDefault(q => q.PackageId == packageId);
-
-                if (obj == null)
-                {
-                    return PackageErrorCode.PackageNotFound;
-                }
-
-                //var expiredDate = DateTime.MinValue;
-
-                //if (!string.IsNullOrEmpty(req.ExpiryTime))
-                //    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
-                var expiredDate = req.ExpiryTime > 0 ? req.ExpiryTime.UnixToDateTime() : DateTime.MinValue;
-
-
-                obj.PackageCode = req.PackageCode;
-                obj.LocationId = req.LocationId;
-                obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
-                obj.UpdatedDatetimeUtc = DateTime.UtcNow;
-                obj.Description = req.Description;
-
-                await _stockDbContext.SaveChangesAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());
-
-                return GeneralCode.Success;
+                throw new BadRequestException(PackageErrorCode.PackageNotFound);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdatePackage");
-                return GeneralCode.InternalError;
-            }
+
+            //var expiredDate = DateTime.MinValue;
+
+            //if (!string.IsNullOrEmpty(req.ExpiryTime))
+            //    DateTime.TryParseExact(req.ExpiryTime, new string[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yyyy HH:mm:ss", "dd-MM-yyyy HH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out expiredDate);
+            var expiredDate = req.ExpiryTime > 0 ? req.ExpiryTime.UnixToDateTime() : DateTime.MinValue;
+
+
+            obj.PackageCode = req.PackageCode;
+            obj.LocationId = req.LocationId;
+            obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
+            obj.UpdatedDatetimeUtc = DateTime.UtcNow;
+            obj.Description = req.Description;
+
+            await _stockDbContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());
+
+            return true;
+
         }
 
 
 
-        public async Task<Enum> SplitPackage(long packageId, PackageSplitInput req)
+        public async Task<bool> SplitPackage(long packageId, PackageSplitInput req)
         {
             if (req == null || req.ToPackages == null || req.ToPackages.Count == 0 || req.ToPackages.Any(p => p.ProductUnitConversionQuantity <= 0))
-                return GeneralCode.InvalidParams;
+                throw new BadRequestException(GeneralCode.InvalidParams);
 
             var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
-            if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+            if (packageInfo == null) throw new BadRequestException(PackageErrorCode.PackageNotFound);
 
             if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
             {
-                return PackageErrorCode.HasSomeQualtityWaitingForApproved;
+                throw new BadRequestException(PackageErrorCode.HasSomeQualtityWaitingForApproved);
             }
 
             ProductUnitConversion unitConversionInfo = null;
 
             unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
 
-            if (unitConversionInfo == null) return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+            if (unitConversionInfo == null) throw new BadRequestException(ProductUnitConversionErrorCode.ProductUnitConversionNotFound);
 
 
             var totalSecondaryInput = req.ToPackages.Sum(p => p.ProductUnitConversionQuantity);
-            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining) return PackageErrorCode.QualtityOfProductInPackageNotEnough;
+            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining) throw new BadRequestException(PackageErrorCode.QualtityOfProductInPackageNotEnough);
 
             var newPackages = new List<PackageModel>();
 
@@ -108,13 +103,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 if (string.IsNullOrWhiteSpace(package.PackageCode))
                 {
-                    return PackageErrorCode.PackageCodeEmpty;
+                    throw new BadRequestException(PackageErrorCode.PackageCodeEmpty);
                 }
 
                 var packageExisted = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageCode == package.PackageCode);
                 if (packageExisted != null)
                 {
-                    return PackageErrorCode.PackageAlreadyExisted;
+                    throw new BadRequestException(PackageErrorCode.PackageAlreadyExisted);
                 }
 
                 decimal qualtityInPrimaryUnit = package.PrimaryQuantity;
@@ -130,17 +125,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     else
                     {
                         _logger.LogWarning($"Wrong priQuantity input data: PrimaryQuantity={package.PrimaryQuantity}, FactorExpression={packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={package.ProductUnitConversionQuantity}, evalData={priQuantity}");
-                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError);
                     }
 
                     if (!(qualtityInPrimaryUnit > 0))
                     {
-                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError);
                     }
                 }
 
                 if (qualtityInPrimaryUnit <= 0 || package.ProductUnitConversionQuantity <= 0)
-                    return GeneralCode.InvalidParams;
+                    throw new BadRequestException(GeneralCode.InvalidParams);
 
 
                 newPackages.Add(new PackageModel()
@@ -151,6 +146,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = packageInfo.ProductId,
                     Date = packageInfo.Date,
                     ExpiryTime = packageInfo.ExpiryTime,
+                    Description = packageInfo.Description,
                     ProductUnitConversionId = packageInfo.ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -191,23 +187,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
             }
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<long>> JoinPackage(PackageJoinInput req)
+        public async Task<long> JoinPackage(PackageJoinInput req)
         {
             if (req == null || req.FromPackageIds == null || req.FromPackageIds.Count == 0)
-                return GeneralCode.InvalidParams;
+                throw new BadRequestException(GeneralCode.InvalidParams);
 
             if (string.IsNullOrWhiteSpace(req.PackageCode))
             {
-                return PackageErrorCode.PackageCodeEmpty;
+                throw new BadRequestException(PackageErrorCode.PackageCodeEmpty);
             }
 
             var packageExisted = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageCode == req.PackageCode);
             if (packageExisted != null)
             {
-                return PackageErrorCode.PackageAlreadyExisted;
+                throw new BadRequestException(PackageErrorCode.PackageAlreadyExisted);
             }
 
             var fromPackages = await _stockDbContext.Package.Where(p => req.FromPackageIds.Contains(p.PackageId)).ToListAsync();
@@ -216,22 +212,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 .GroupBy(p => new { p.StockId, p.ProductId, p.ProductUnitConversionId })
                 .Count() > 1)
             {
-                return PackageErrorCode.PackagesToJoinMustBeSameProductAndUnit;
+                throw new BadRequestException(PackageErrorCode.PackagesToJoinMustBeSameProductAndUnit);
             }
+
             var defaultPackage = fromPackages.FirstOrDefault(p => p.PackageTypeId == (int)EnumPackageType.Default);
             if (defaultPackage != null)
             {
-                return PackageErrorCode.CanNotJoinDefaultPackage;
+                throw new BadRequestException(PackageErrorCode.CanNotJoinDefaultPackage);
             }
 
             foreach (var packageId in req.FromPackageIds)
             {
                 var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
-                if (packageInfo == null) return PackageErrorCode.PackageNotFound;
+                if (packageInfo == null) throw new BadRequestException(PackageErrorCode.PackageNotFound);
 
                 if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
                 {
-                    return PackageErrorCode.HasSomeQualtityWaitingForApproved;
+                    throw new BadRequestException(PackageErrorCode.HasSomeQualtityWaitingForApproved);
                 }
             }
 
@@ -245,6 +242,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = fromPackages[0].ProductId,
                     Date = fromPackages.Max(p => p.Date),
                     ExpiryTime = fromPackages.Min(p => p.ExpiryTime),
+                    Description = string.Join(", ", fromPackages.Select(f => f.Description)),
                     ProductUnitConversionId = fromPackages[0].ProductUnitConversionId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -280,62 +278,57 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
+                return newPackage.PackageId;
             }
-            return GeneralCode.Success;
         }
 
-        public async Task<ServiceResult<PackageOutputModel>> GetInfo(long packageId)
+        public async Task<PackageOutputModel> GetInfo(long packageId)
         {
-            try
+
+            var obj = await _stockDbContext.Package.FirstOrDefaultAsync(q => q.PackageId == packageId);
+
+            if (obj == null)
             {
-                var obj = await _stockDbContext.Package.FirstOrDefaultAsync(q => q.PackageId == packageId);
-
-                if (obj == null)
-                {
-                    return PackageErrorCode.PackageNotFound;
-                }
-
-                var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == obj.ProductId);
-
-                var locationObj = await _stockDbContext.Location.FirstOrDefaultAsync(q => q.LocationId == obj.LocationId);
-                var locationOutputModel = locationObj == null ? null : new LocationOutput
-                {
-                    LocationId = locationObj.LocationId,
-                    StockId = locationObj.StockId,
-                    StockName = string.Empty,
-                    Name = locationObj.Name,
-                    Description = locationObj.Description,
-                    Status = locationObj.Status,
-                };
-                var packageOutputModel = new PackageOutputModel()
-                {
-                    PackageId = obj.PackageId,
-                    PackageTypeId = obj.PackageTypeId,
-                    PackageCode = obj.PackageCode,
-                    LocationId = obj.LocationId ?? 0,
-                    StockId = obj.StockId,
-                    ProductId = obj.ProductId,
-                    Date = obj.Date != null ? ((DateTime)obj.Date).GetUnix() : 0,
-                    ExpiryTime = obj.ExpiryTime != null ? ((DateTime)obj.ExpiryTime).GetUnix() : 0,
-                    PrimaryUnitId = productInfo.UnitId,
-                    ProductUnitConversionId = obj.ProductUnitConversionId,
-                    PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
-                    PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
-                    ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
-                    ProductUnitConversionRemaining = obj.ProductUnitConversionRemaining,
-
-                    CreatedDatetimeUtc = obj.CreatedDatetimeUtc != null ? ((DateTime)obj.CreatedDatetimeUtc).GetUnix() : 0,
-                    UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc != null ? ((DateTime)obj.UpdatedDatetimeUtc).GetUnix() : 0,
-
-                    LocationOutputModel = locationOutputModel
-                };
-                return packageOutputModel;
+                throw new BadRequestException(PackageErrorCode.PackageNotFound);
             }
-            catch (Exception ex)
+
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == obj.ProductId);
+
+            var locationObj = await _stockDbContext.Location.FirstOrDefaultAsync(q => q.LocationId == obj.LocationId);
+            var locationOutputModel = locationObj == null ? null : new LocationOutput
             {
-                _logger.LogError(ex, "GetInfo");
-                return GeneralCode.InternalError;
-            }
+                LocationId = locationObj.LocationId,
+                StockId = locationObj.StockId,
+                StockName = string.Empty,
+                Name = locationObj.Name,
+                Description = locationObj.Description,
+                Status = locationObj.Status,
+            };
+            var packageOutputModel = new PackageOutputModel()
+            {
+                PackageId = obj.PackageId,
+                PackageTypeId = obj.PackageTypeId,
+                PackageCode = obj.PackageCode,
+                LocationId = obj.LocationId ?? 0,
+                StockId = obj.StockId,
+                ProductId = obj.ProductId,
+                Date = obj.Date != null ? ((DateTime)obj.Date).GetUnix() : 0,
+                ExpiryTime = obj.ExpiryTime != null ? ((DateTime)obj.ExpiryTime).GetUnix() : 0,
+                Description = obj.Description,
+                PrimaryUnitId = productInfo.UnitId,
+                ProductUnitConversionId = obj.ProductUnitConversionId,
+                PrimaryQuantityWaiting = obj.PrimaryQuantityWaiting,
+                PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
+                ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
+                ProductUnitConversionRemaining = obj.ProductUnitConversionRemaining,
+
+                CreatedDatetimeUtc = obj.CreatedDatetimeUtc != null ? ((DateTime)obj.CreatedDatetimeUtc).GetUnix() : 0,
+                UpdatedDatetimeUtc = obj.UpdatedDatetimeUtc != null ? ((DateTime)obj.UpdatedDatetimeUtc).GetUnix() : 0,
+
+                LocationOutputModel = locationOutputModel
+            };
+            return packageOutputModel;
+
         }
 
         public async Task<PageData<PackageOutputModel>> GetList(int stockId = 0, string keyword = "", int page = 1, int size = 10)
@@ -393,6 +386,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = item.Package.ProductId,
                     Date = item.Package.Date != null ? ((DateTime)item.Package.Date).GetUnix() : 0,
                     ExpiryTime = item.Package.ExpiryTime != null ? ((DateTime)item.Package.ExpiryTime).GetUnix() : 0,
+                    Description = item.Package.Description,
 
                     PrimaryUnitId = productUnitInfos[item.Package.ProductId].UnitId,
                     ProductUnitConversionId = item.Package.ProductUnitConversionId,

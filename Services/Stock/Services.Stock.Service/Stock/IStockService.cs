@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -41,14 +42,14 @@ namespace VErp.Services.Stock.Service.Stock
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<ServiceResult<int>> AddStock(StockModel req);
+        Task<int> AddStock(StockModel req);
 
         /// <summary>
         /// Lấy thông tin của kho
         /// </summary>
         /// <param name="stockId">Mã kho</param>
         /// <returns></returns>
-        Task<ServiceResult<StockOutput>> StockInfo(int stockId);
+        Task<StockOutput> StockInfo(int stockId);
 
         /// <summary>
         /// Cập nhật thông tin kho
@@ -56,14 +57,14 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="stockId">Mã kho</param>
         /// <param name="req"></param>
         /// <returns></returns>
-        Task<Enum> UpdateStock(int stockId, StockModel req);
+        Task<bool> UpdateStock(int stockId, StockModel req);
 
         /// <summary>
         /// Xóa thông tin kho (đánh dấu xóa)
         /// </summary>
         /// <param name="stockId">Mã kho</param>
         /// <returns></returns>
-        Task<Enum> DeleteStock(int stockId);
+        Task<bool> DeleteStock(int stockId);
 
         Task<IList<StockWarning>> StockWarnings();
 
@@ -99,7 +100,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<ServiceResult<StockProductDetailsReportOutput>> StockProductDetailsReport(int productId, IList<int> stockIds, long fromDate, long toDate);
+        Task<StockProductDetailsReportOutput> StockProductDetailsReport(int productId, IList<int> stockIds, long fromDate, long toDate);
 
         /// <summary>
         /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - mẫu báo cáo 03
@@ -111,7 +112,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<ServiceResult<PageData<StockSumaryReportForm03Output>>> StockSumaryReportForm03(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, int page, int size);
+        Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long fromDate, long toDate, int page, int size);
 
         /// <summary>
         /// Nhật ký nhập xuất kho - mẫu báo cáo 04
@@ -122,6 +123,6 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<ServiceResult<PageData<StockSumaryReportForm04Output>>> StockSumaryReportForm04(IList<int> stockIds, long beginTime, long endTime, int page, int size);
+        Task<PageData<StockSumaryReportForm04Output>> StockSumaryReportForm04(IList<int> stockIds, long beginTime, long endTime, int page, int size);
     }
 }

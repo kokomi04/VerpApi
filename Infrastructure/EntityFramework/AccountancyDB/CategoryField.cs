@@ -18,7 +18,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsDeleted { get; set; }
-        public bool? IsShowList { get; set; }
+        public bool IsShowList { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -26,12 +26,14 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public bool? IsShowSearchTable { get; set; }
+        public bool IsShowSearchTable { get; set; }
         public bool IsReadOnly { get; set; }
         public bool IsTreeViewKey { get; set; }
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public int DecimalPlace { get; set; }
+        public string DefaultValue { get; set; }
 
         public virtual Category Category { get; set; }
     }

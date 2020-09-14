@@ -18,6 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -38,12 +39,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IMenuHelperService _menuHelperService;
+        private readonly ICurrentContextService _currentContextService;
+
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IMenuHelperService menuHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -51,6 +57,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _menuHelperService = menuHelperService;
+            _currentContextService = currentContextService;
         }
 
         #region InputType
@@ -58,15 +66,34 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<InputTypeFullModel> GetInputType(int inputTypeId)
         {
             var inputType = await _accountancyDBContext.InputType
-                .Where(i => i.InputTypeId == inputTypeId)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(af => af.InputField)
-                .Include(t => t.InputArea)
-                .ThenInclude(a => a.InputAreaField)
-                .ThenInclude(af => af.InputField)
-                .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
+           .Where(i => i.InputTypeId == inputTypeId)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
+            if (inputType == null)
+            {
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            }
+            return inputType;
+        }
+
+        public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
+        {
+            var inputType = await _accountancyDBContext.InputType
+           .Where(i => i.InputTypeCode == inputTypeCode)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
             if (inputType == null)
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
@@ -119,13 +146,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
+
+                //if (data.MenuStyle != null)
+                //{
+                //    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, data.InputTypeCode, inputType.InputTypeId);
+                //    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
+                //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                //}
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -163,7 +197,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     InputTypeGroupId = sourceInput.InputTypeGroupId,
                     SortOrder = sourceInput.SortOrder,
                     PreLoadAction = sourceInput.PreLoadAction,
-                    PostLoadAction = sourceInput.PostLoadAction
+                    PostLoadAction = sourceInput.PostLoadAction,
+                    AfterLoadAction = sourceInput.AfterLoadAction,
+                    BeforeSubmitAction = sourceInput.BeforeSubmitAction,
+                    BeforeSaveAction = sourceInput.BeforeSaveAction,
+                    AfterSaveAction = sourceInput.AfterSaveAction
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -217,14 +255,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
 
+                //if (menuStyle != null)
+                //{
+                //    var url = Utils.FormatStyle(menuStyle.UrlFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                //    var param = Utils.FormatStyle(menuStyle.ParamFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                //    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
+                //}
+
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -260,6 +305,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.InputTypeGroupId = data.InputTypeGroupId;
                 inputType.PreLoadAction = data.PreLoadAction;
                 inputType.PostLoadAction = data.PostLoadAction;
+                inputType.AfterLoadAction = data.AfterLoadAction;
+                inputType.BeforeSubmitAction = data.BeforeSubmitAction;
+                inputType.BeforeSaveAction = data.BeforeSaveAction;
+                inputType.AfterSaveAction = data.AfterSaveAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -270,9 +319,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -326,7 +375,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
                     RefTableTitle = f.RefTableTitle
-                    
+
                 }).ToListAsync();
 
             var views = await _accountancyDBContext.InputTypeView.AsNoTracking().Where(t => t.InputTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<InputTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
@@ -387,11 +436,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "InputTypeViewCreate");
-                throw ex;
+                throw;
             }
-
         }
 
         public async Task<bool> InputTypeViewUpdate(int inputTypeViewId, InputTypeViewModel model)
@@ -426,9 +474,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                await trans.RollbackAsync();
+                await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "InputTypeViewUpdate");
-                throw ex;
+                throw;
             }
         }
 
@@ -617,9 +665,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -667,9 +715,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -682,13 +730,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputAreaNotFound);
             }
 
-
             await _accountancyDBContext.ExecuteStoreProcedure("asp_InputArea_Delete", new[] {
                     new SqlParameter("@InputTypeId",inputTypeId ),
                     new SqlParameter("@InputAreaId",inputAreaId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
+            inputArea.IsDeleted = true;
+            await _accountancyDBContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
             return true;
         }
@@ -751,17 +800,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return inputAreaField;
         }
 
-        private Enum ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
+        private void ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
         {
             if (inputFieldId.HasValue && inputFieldId.Value > 0)
             {
                 if (inputField == null)
                 {
-                    return InputErrorCode.InputFieldNotFound;
+                    throw new BadRequestException(InputErrorCode.InputFieldNotFound);
                 }
                 if (_accountancyDBContext.InputField.Any(f => f.InputFieldId != inputFieldId.Value && f.FieldName == data.FieldName))
                 {
-                    return InputErrorCode.InputFieldAlreadyExisted;
+                    throw new BadRequestException(InputErrorCode.InputFieldAlreadyExisted);
+                }
+                if (!((EnumDataType)inputField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)inputField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
                 }
             }
             //if (data.ReferenceCategoryFieldId.HasValue)
@@ -772,7 +825,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             //        return InputErrorCode.SourceCategoryFieldNotFound;
             //    }
             //}
-            return GeneralCode.Success;
         }
 
         private void FieldDataProcess(ref InputFieldInputModel data)
@@ -832,6 +884,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             var curFields = _accountancyDBContext.InputAreaField
+                .Include(af => af.InputField)
                 .IgnoreQueryFilters()
                 .Where(f => f.InputTypeId == inputTypeId)
                 .ToList();
@@ -876,7 +929,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         //    singleNewFieldIds.Add(curField.InputAreaFieldId);
                         //}
                     }
-                    else if (Comparer(field, curField))
+                    else if (!field.Compare(curField))
                     {
                         // update field
                         curField.InputAreaId = field.InputAreaId;
@@ -906,6 +959,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                        curField.RequireFilters = field.RequireFilters;
                     }
                 }
 
@@ -925,10 +979,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (!result)
                 {
-                    trans.Rollback();
+                    trans.TryRollbackTransaction();
                     throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
                 }
-
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}", fields.JsonSerialize());
@@ -937,49 +990,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
-                return false;
+                throw;
             }
-        }
-
-        private bool Comparer(InputAreaFieldInputModel updateField, InputAreaField curField)
-        {
-            return curField.IsDeleted ||
-                updateField.InputAreaId != curField.InputAreaId ||
-                updateField.InputFieldId != curField.InputFieldId ||
-                updateField.InputTypeId != curField.InputTypeId ||
-                updateField.Title != curField.Title ||
-                updateField.Placeholder != curField.Placeholder ||
-                updateField.SortOrder != curField.SortOrder ||
-                updateField.IsAutoIncrement != curField.IsAutoIncrement ||
-                updateField.IsRequire != curField.IsRequire ||
-                updateField.IsUnique != curField.IsUnique ||
-                updateField.IsHidden != curField.IsHidden ||
-                updateField.IsCalcSum != curField.IsCalcSum ||
-                updateField.RegularExpression != curField.RegularExpression ||
-                updateField.DefaultValue != curField.DefaultValue ||
-                updateField.Filters != curField.Filters ||
-                updateField.Width != curField.Width ||
-                updateField.Height != curField.Height ||
-                updateField.TitleStyleJson != curField.TitleStyleJson ||
-                updateField.InputStyleJson != curField.InputStyleJson ||
-                updateField.OnFocus != curField.OnFocus ||
-                updateField.OnKeydown != curField.OnKeydown ||
-                updateField.OnKeypress != curField.OnKeypress ||
-                updateField.OnBlur != curField.OnBlur ||
-                updateField.OnChange != curField.OnChange ||
-                updateField.AutoFocus != curField.AutoFocus ||
-                updateField.Column != curField.Column;
         }
 
         public async Task<int> AddInputField(InputFieldInputModel data)
         {
-            var r = ValidateInputField(data);
-            if (!r.IsSuccess())
-            {
-                throw new BadRequestException(r);
-            }
+            ValidateInputField(data);
 
             FieldDataProcess(ref data);
 
@@ -991,8 +1010,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.InputField.AddAsync(inputField);
                 await _accountancyDBContext.SaveChangesAsync();
 
-                await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -1002,9 +1023,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Create");
-                throw ex;
+                throw;
             }
         }
 
@@ -1012,24 +1033,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
 
-            var r = ValidateInputField(data, inputField, inputFieldId);
-            if (!r.IsSuccess())
-            {
-                throw new BadRequestException(r);
-            }
+            ValidateInputField(data, inputField, inputFieldId);
 
             //FieldDataProcess(ref data);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (data.FieldName != inputField.FieldName)
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
                 {
-                    await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    if (data.FieldName != inputField.FieldName)
+                    {
+                        await _accountancyDBContext.RenameColumn(INPUTVALUEROW_TABLE, inputField.FieldName, data.FieldName);
+                    }
+                    await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
-
-                await _accountancyDBContext.UpdateColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-
                 _mapper.Map(data, inputField);
 
                 await _accountancyDBContext.SaveChangesAsync();
@@ -1043,9 +1061,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Update");
-                throw ex;
+                throw;
             }
         }
 
@@ -1069,9 +1087,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Delete field
                 inputField.IsDeleted = true;
                 await _accountancyDBContext.SaveChangesAsync();
-
-                await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
-
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                {
+                    await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
+                }
                 await UpdateInputValueView();
 
                 trans.Commit();
@@ -1080,19 +1099,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             catch (Exception ex)
             {
-                trans.Rollback();
+                trans.TryRollbackTransaction();
                 _logger.LogError(ex, "Delete");
-                throw ex;
+                throw;
             }
         }
-
-
 
         #endregion
 
         private async Task UpdateInputValueView()
         {
-            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", new SqlParameter[0]);
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", Array.Empty<SqlParameter>());
         }
     }
 }

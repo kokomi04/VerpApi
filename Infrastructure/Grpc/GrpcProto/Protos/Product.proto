@@ -1,0 +1,77 @@
+﻿syntax = "proto3";
+
+import "Protos/ValueType/ValueType.proto";
+
+option csharp_namespace = "VErp.Grpc.Protos";
+
+package Product;
+
+
+message GetListProductRequest {
+    int32 productId = 1;
+}
+
+message ProductModel {
+    int32 ProductId = 1;
+    string ProductCode = 2;
+    string ProductName = 3;
+    bool IsCanBuy = 4;
+    bool IsCanSell = 5;
+    int64 MainImageFileId = 6;
+    int32 ProductTypeId = 8;
+    int32 ProductCateId = 9;
+    int32 BarcodeConfigId  = 10;
+    int32 BarcodeStandardId = 11;
+    string Barcode = 12;
+    int32 UnitId = 13;
+    ValueTypes.DecimalValue EstimatePrice = 14;
+    ProductModelExtra Extra  = 15;
+    ProductModelStock StockInfo = 16;
+}
+
+message ProductModelExtra {
+    string Specification  = 1;
+    string Description = 2;
+}
+
+message ProductModelStock {
+    int32 StockOutputRuleId  = 1;
+    int64 AmountWarningMin  = 2;
+    int64 AmountWarningMax = 3;
+    double TimeWarningAmount  = 4;
+    int32 TimeWarningTimeTypeId  = 5;
+    double ExpireTimeAmount  = 6;
+    int32 ExpireTimeTypeId  = 7;
+    string DescriptionToStock  = 8;
+    repeated int32 StockIds  = 9;
+    repeated ProductModelUnitConversion UnitConversions = 10;
+}
+
+message ProductModelUnitConversion {
+    int32 ProductUnitConversionId  = 1;
+    string ProductUnitConversionName  = 2;
+    int32 SecondaryUnitId  = 3;
+    bool IsDefault = 4;
+    bool IsFreeStyle  = 5;
+    string FactorExpression = 6;
+    string ConversionDescription = 7;
+}
+
+message ValidateProductRequest {
+    map<int32, int32> productUnitConvertsionProduct = 1;
+}
+
+message ValidateProductResponses{
+    bool result = 1;
+}
+
+message GetListByCodeAndInternalNamesRequest{
+    repeated string productCodes = 1;
+    repeated string productInternalNames = 2;
+}
+
+service Product {
+    rpc GetListProducts (stream GetListProductRequest) returns (stream ProductModel);
+    rpc ValidateProductUnitConversions(ValidateProductRequest) returns (ValidateProductResponses);
+    rpc GetListByCodeAndInternalNames(GetListByCodeAndInternalNamesRequest) returns (stream ProductModel);
+}

@@ -1,4 +1,5 @@
 ﻿using IdentityServer4.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
@@ -6,6 +7,8 @@ using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErpApi.Controllers
 {
+    [Route("")]
+    [AllowAnonymous]
     public class HomeController : Controller
     {
         private readonly IIdentityServerInteractionService _interaction;
@@ -17,12 +20,16 @@ namespace VErpApi.Controllers
             _settings = settings;
             
         }
-   
+        [Route("")]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             await Task.CompletedTask;
             return Content("Ok, I'm working!");
         }
+
+        [Route("Error")]
+        [HttpGet]
         public async Task<IActionResult> Error(string errorId)
         {
             var message = await _interaction.GetErrorContextAsync(errorId);

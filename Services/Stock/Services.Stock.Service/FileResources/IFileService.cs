@@ -16,23 +16,24 @@ namespace VErp.Services.Stock.Service.FileResources
 {
     public interface IFileService
     {
-        Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
-        Task<ServiceResult<long>> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file);
+        Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
+        Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file);
 
-        Task<Enum> DeleteFile(long fileId);
-        Task<Enum> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
+        Task<bool> DeleteFile(long fileId);
+        Task<bool> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
 
-        Task<ServiceResult<FileToDownloadInfo>> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
+        Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
 
-        Task<ServiceResult<(FileEnity info, string physicalPath)>> GetFileAndPath(long fileId);
+        Task<(FileEnity info, string physicalPath)> GetFileAndPath(long fileId);
 
-        Task<ServiceResult<IList<FileThumbnailInfo>>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
+        Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
 
-        Task<Enum> GenerateThumbnail(long fileId);
+        Task<bool> GenerateThumbnail(long fileId);
         
 
-        List<FileToDownloadInfo> GetListFileUrl(long[] arrayFileId, EnumThumbnailSize? thumb);
+        Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);
 
         IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null);
+        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -34,7 +35,36 @@ namespace VErp.Services.Accountancy.Model.Category
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public int DecimalPlace { get; set; }
+        public string DefaultValue { get; set; }
 
+        public bool Compare(CategoryField curField)
+        {
+            return !curField.IsDeleted &&
+                CategoryId == curField.CategoryId &&
+                CategoryFieldName == curField.CategoryFieldName &&
+                Title == curField.Title &&
+                SortOrder == curField.SortOrder &&
+                DataTypeId == curField.DataTypeId &&
+                DataSize == curField.DataSize &&
+                FormTypeId == curField.FormTypeId &&
+                AutoIncrement == curField.AutoIncrement &&
+                IsRequired == curField.IsRequired &&
+                IsUnique == curField.IsUnique &&
+                IsHidden == curField.IsHidden &&
+                IsShowList == curField.IsShowList &&
+                IsShowSearchTable == curField.IsShowSearchTable &&
+                RegularExpression == curField.RegularExpression &&
+                Filters == curField.Filters &&
+                IsTreeViewKey == curField.IsTreeViewKey &&
+                IsReadOnly == curField.IsReadOnly &&
+                RefTableCode == curField.RefTableCode &&
+                RefTableField == curField.RefTableField &&
+                RefTableTitle == curField.RefTableTitle &&
+                DecimalPlace == curField.DecimalPlace &&
+                DefaultValue == curField.DefaultValue;
+
+        }
     }
 
     public class CategoryFieldReferModel

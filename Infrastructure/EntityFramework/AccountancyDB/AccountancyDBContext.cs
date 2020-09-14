@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
+        public virtual DbSet<AccountantConfig> AccountantConfig { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
@@ -26,12 +27,23 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
+        public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
+        public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
+        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
+        public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<AccountantConfig>(entity =>
+            {
+                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<Category>(entity =>
             {
                 entity.Property(e => e.CategoryCode)
@@ -60,14 +72,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.Filters).HasMaxLength(512);
-
-                entity.Property(e => e.IsShowList)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.IsShowSearchTable)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
@@ -277,6 +281,92 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
+            {
+                entity.Property(e => e.Alias).HasMaxLength(512);
+
+                entity.Property(e => e.Value)
+                    .IsRequired()
+                    .HasMaxLength(512);
+
+                entity.HasOne(d => d.OutsideDataConfig)
+                    .WithMany(p => p.OutsideDataFieldConfig)
+                    .HasForeignKey(d => d.OutsideDataConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
+            });
+
+            modelBuilder.Entity<OutsideImportMapping>(entity =>
+            {
+                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMapping)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .HasConstraintName("FK_AccountancyOutsiteMapping_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
+            {
+                entity.HasIndex(e => e.FunctionName)
+                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.DestinationDetailsPropertyName).HasMaxLength(128);
+
+                entity.Property(e => e.FunctionName).HasMaxLength(128);
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ObjectIdFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<OutsideImportMappingObject>(entity =>
+            {
+                entity.HasKey(e => new { e.OutsideImportMappingFunctionId, e.SourceId, e.InputBillFId })
+                    .HasName("PK_AccountancyOutsiteMappingObject");
+
+                entity.Property(e => e.SourceId).HasMaxLength(128);
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMappingObject)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<PrintConfig>(entity =>
+            {
+                entity.Property(e => e.GenerateToString).HasComment("");
+
+                entity.Property(e => e.PrintConfigName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<ProgramingFunction>(entity =>
+            {
+                entity.Property(e => e.FunctionBody).IsRequired();
+
+                entity.Property(e => e.ProgramingFunctionName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

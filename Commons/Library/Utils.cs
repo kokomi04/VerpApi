@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -15,6 +17,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Commons.Library
 {
@@ -118,19 +121,38 @@ namespace VErp.Commons.Library
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             PreserveReferencesHandling = PreserveReferencesHandling.None
         };
-        public static string JsonSerialize(this object obj)
+
+        public static string JsonSerialize(this object obj, bool isIgnoreSensitiveData)
         {
             try
             {
-                return Newtonsoft.Json.JsonConvert.SerializeObject(obj, settings);
+                var cfg = settings;
+                if (isIgnoreSensitiveData)
+                {
+                    cfg.ContractResolver = new SensitiveDataResolver();
+                }
+                else
+                {
+                    cfg.ContractResolver = null;
+                }
+
+                return JsonConvert.SerializeObject(obj, cfg);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
-                throw ex;
+                throw;
             }
 
         }
+
+        public static string JsonSerialize(this object obj)
+        {
+            return obj.JsonSerialize(false);
+
+        }
+
+
 
         public static T JsonDeserialize<T>(this string obj)
         {
@@ -151,7 +173,7 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            // if (unixTime == 0) return null;
+            if (unixTime == 0) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
@@ -163,9 +185,9 @@ namespace VErp.Commons.Library
                 var result = Convert.ToDecimal(outPut);
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -336,6 +358,10 @@ namespace VErp.Commons.Library
                     valueInNumber = (long)(double.Parse(value) * AccountantConstants.CONVERT_VALUE_TO_NUMBER_FACTOR);
                     break;
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     valueInNumber = (long)(double.Parse(value));
                     break;
                 case EnumDataType.Text:
@@ -380,6 +406,10 @@ namespace VErp.Commons.Library
 
                     break;
                 case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
                     long valueInNumber = long.Parse(value);
                     value = valueInNumber.UnixToDateTime()?.ToString(DateFormats.DD_MM_YYYY);
                     break;
@@ -395,8 +425,22 @@ namespace VErp.Commons.Library
             return value;
         }
 
+        public static string FormatStyle(string template, string code, long? fId)
+        {
+            return FormatStyle(template, new Dictionary<string, object>{
+                { StringTemplateConstants.CODE, code },
+                { StringTemplateConstants.FID, fId },
+            });
+        }
 
-
+        public static string FormatStyle(string template, IDictionary<string, object> data)
+        {
+            foreach (var item in data)
+            {
+                template = template?.Replace(item.Key, item.Value?.ToString());
+            }
+            return template;
+        }
 
         public static Type GetColumnDataType(this EnumDataType dataType)
         {
@@ -405,7 +449,14 @@ namespace VErp.Commons.Library
                 case EnumDataType.Text:
                     return typeof(string);
                 case EnumDataType.Int: return typeof(int);
-                case EnumDataType.Date: return typeof(DateTime);
+
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    return typeof(DateTime);
+
                 case EnumDataType.PhoneNumber: return typeof(string);
                 case EnumDataType.Email: return typeof(string);
                 case EnumDataType.Boolean: return typeof(bool);
@@ -416,16 +467,50 @@ namespace VErp.Commons.Library
             }
         }
 
+        private static readonly HashSet<Type> NumericTypes = new HashSet<Type>
+        {
+            typeof(int),  typeof(double),  typeof(decimal),
+            typeof(long), typeof(short),   typeof(sbyte),
+            typeof(byte), typeof(ulong),   typeof(ushort),
+            typeof(uint), typeof(float)
+        };
+        public static bool IsNumber(this Type objectType)
+        {
+            return NumericTypes.Contains(objectType);
+        }
+
+        public static bool IsNullObject(this object obj)
+        {
+            if (obj == null || obj == DBNull.Value) return true;
+
+            if (obj.GetType() == typeof(string))
+            {
+                obj = (obj as string).Trim();
+
+                if (string.Empty.Equals(obj)) return true;
+            }
+
+            return false;
+        }
+
+        public static bool IsTimeType(this EnumDataType type)
+        {
+            return AccountantConstants.TIME_TYPES.Contains(type);
+        }
+      
+        public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
+        {
+            if (oldType.IsTimeType() && !newType.IsTimeType() && newType != EnumDataType.Text)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         public static object GetSqlValue(this EnumDataType dataType, object value)
         {
-            if (value == null) return DBNull.Value;
-
-            if (value.GetType() == typeof(string))
-            {
-                value = (value as string).Trim();
-
-                if (string.Empty.Equals(value)) return DBNull.Value;
-            }
+            if (value.IsNullObject()) return DBNull.Value;
 
             switch (dataType)
             {
@@ -440,12 +525,17 @@ namespace VErp.Commons.Library
                     return intValue;
 
                 case EnumDataType.Date:
-                    long dateValue;
-                    if (!long.TryParse(value.ToString(), out dateValue))
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    if (!long.TryParse(value.ToString(), out long dateValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                     }
-                    return dateValue.UnixToDateTime();
+                    if (dateValue == 0) return DBNull.Value;
+                    return dateValue.UnixToDateTime().Value;
+
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
@@ -457,7 +547,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     short percentValue;
-                    if (!short.TryParse(value.ToString(), out percentValue)|| percentValue < -100 || percentValue > 100)
+                    if (!short.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }
@@ -480,6 +570,373 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static EnumExcelType GetExcelType(this EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    return EnumExcelType.Boolean;
+                case EnumDataType.Int:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
 
+                case EnumDataType.Percentage:
+                case EnumDataType.BigInt:
+                case EnumDataType.Decimal:
+                    return EnumExcelType.Number;
+                case EnumDataType.Date:
+                    return EnumExcelType.DateTime;
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    return EnumExcelType.String;
+            }
+        }
+
+
+        public static string GetExcelColumnName(this int columnNumber)
+        {
+            int dividend = columnNumber;
+            string columnName = String.Empty;
+            int modulo;
+
+            while (dividend > 0)
+            {
+                modulo = (dividend - 1) % 26;
+                columnName = Convert.ToChar(65 + modulo).ToString() + columnName;
+                dividend = (int)((dividend - modulo) / 26);
+            }
+
+            return columnName;
+        }
+
+        public static bool IsSelectForm(this EnumFormType formType)
+        {
+            return AccountantConstants.SELECT_FORM_TYPES.Contains(formType);
+        }
+
+        public static bool IsJoinForm(this EnumFormType formType)
+        {
+            return AccountantConstants.JOIN_FORM_TYPES.Contains(formType);
+        }
+
+        public static int CompareValue(this EnumDataType dataType, object value1, object value2)
+        {
+            if (value1.IsNullObject() && value2.IsNullObject()) return 0;
+            if (value1.IsNullObject() && !value2.IsNullObject()) return -1;
+            if (!value1.IsNullObject() && value2.IsNullObject()) return 1;
+
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                    return string.Compare(value1.ToString(), value2.ToString());
+                case EnumDataType.Int:
+                    if (!int.TryParse(value1.ToString(), out int intValue1) || !int.TryParse(value2.ToString(), out int intValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu int");
+                    }
+                    return intValue1.CompareTo(intValue2);
+
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    if (!long.TryParse(value1.ToString(), out long dateValue1) || !long.TryParse(value2.ToString(), out long dateValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu ngày tháng");
+                    }
+                    return dateValue1.CompareTo(dateValue2);
+                case EnumDataType.Boolean:
+                    if (!bool.TryParse(value1.ToString(), out bool boolValue1) || !bool.TryParse(value2.ToString(), out bool boolValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu logic");
+                    }
+                    return boolValue1.CompareTo(boolValue2);
+                case EnumDataType.Percentage:
+                    if (!short.TryParse(value1.ToString(), out short percentValue1) || !short.TryParse(value2.ToString(), out short percentValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu phần trăm");
+                    }
+                    return percentValue1.CompareTo(percentValue2);
+                case EnumDataType.BigInt:
+                    if (!long.TryParse(value1.ToString(), out long longValue1) || !long.TryParse(value2.ToString(), out long longValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu long");
+                    }
+                    return longValue1.CompareTo(longValue2);
+                case EnumDataType.Decimal:
+                    if (!decimal.TryParse(value1.ToString(), out decimal decimalValue1) || !decimal.TryParse(value2.ToString(), out decimal decimalValue2))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu decimal");
+                    }
+                    return decimalValue1.CompareTo(decimalValue2);
+                default: return 0;
+            }
+        }
+
+        public static bool Contains(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().Contains(value2.ToString());
+        }
+
+        public static bool StartsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().StartsWith(value2.ToString());
+        }
+
+        public static bool EndsWith(this object value1, object value2)
+        {
+            if (value1 == null || value2 == null) return false;
+            return value1.ToString().EndsWith(value2.ToString());
+        }
+
+        public static object ConvertValueByType(this string value, EnumDataType dataType)
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+            switch (dataType)
+            {
+                case EnumDataType.Boolean:
+                    return value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    return DateTime.Parse(value);
+                case EnumDataType.Percentage:
+                    return double.Parse(value);
+                case EnumDataType.Decimal:
+                    return decimal.Parse(value);
+                case EnumDataType.Int:
+                    return int.Parse(value);
+                case EnumDataType.BigInt:
+                    return long.Parse(value);
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    return value;
+            }
+        }
+
+        public static object ConvertValueByType(this string value, Type type)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(value)) return null;
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    type = type.GetGenericArguments()[0];
+                    if (string.IsNullOrWhiteSpace(value)) return null;
+                }
+
+                if (type == typeof(bool))
+                    return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                if (type == typeof(DateTime))
+                    return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
+                if (type == typeof(double))
+                    return string.IsNullOrWhiteSpace(value) ? default : double.Parse(value);
+                if (type == typeof(decimal))
+                    return string.IsNullOrWhiteSpace(value) ? default : decimal.Parse(value);
+                if (type == typeof(int))
+                    return string.IsNullOrWhiteSpace(value) ? default : int.Parse(value);
+                if (type == typeof(long))
+                    return string.IsNullOrWhiteSpace(value) ? default : long.Parse(value);
+
+                return value;
+            }
+            catch (Exception ex)
+            {
+
+                throw new Exception($"Lỗi convert dữ liệu {value} sang kiểu {type.Name}: {ex.Message}", ex);
+            }
+        }
+
+
+        private static Hashtable dbTypeTable;
+
+        public static SqlDbType ConvertToDbType(this Type t)
+        {
+            if (dbTypeTable == null)
+            {
+                dbTypeTable = new Hashtable();
+                dbTypeTable.Add(typeof(bool), SqlDbType.Bit);
+                dbTypeTable.Add(typeof(short), SqlDbType.SmallInt);
+                dbTypeTable.Add(typeof(int), SqlDbType.Int);
+                dbTypeTable.Add(typeof(long), SqlDbType.BigInt);
+                dbTypeTable.Add(typeof(double), SqlDbType.Float);
+                dbTypeTable.Add(typeof(decimal), SqlDbType.Decimal);
+                dbTypeTable.Add(typeof(string), SqlDbType.NVarChar);
+                dbTypeTable.Add(typeof(DateTime), SqlDbType.DateTime);
+                dbTypeTable.Add(typeof(byte[]), SqlDbType.VarBinary);
+                dbTypeTable.Add(typeof(Guid), SqlDbType.UniqueIdentifier);
+            }
+            SqlDbType dbtype;
+            try
+            {
+                dbtype = (SqlDbType)dbTypeTable[t];
+            }
+            catch
+            {
+                dbtype = SqlDbType.Variant;
+            }
+            return dbtype;
+        }
+
+        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
+        {
+            var lst = new List<NonCamelCaseDictionary>();
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+                var dic = new NonCamelCaseDictionary();
+                foreach (DataColumn c in data.Columns)
+                {
+                    var v = row[c];
+                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    {
+                        var vInDateTime = (v as DateTime?).GetUnix();
+                        dic.Add(c.ColumnName, vInDateTime);
+                    }
+                    else
+                    {
+                        dic.Add(c.ColumnName, row[c]);
+                    }
+                }
+                lst.Add(dic);
+            }
+            return lst;
+        }
+
+        public static Dictionary<string, (object value, Type type)> ConvertFirstRowData(this DataTable data)
+        {
+            var result = new Dictionary<string, (object value, Type type)>();
+
+            DataRow row = null;
+            if (data.Rows.Count > 0)
+            {
+                row = data.Rows[0];
+            }
+
+            foreach (DataColumn c in data.Columns)
+            {
+
+                if (row == null)
+                {
+                    result.Add(c.ColumnName, (null, c.DataType));
+                    continue;
+                }
+
+                var v = row[c];
+
+                if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                {
+                    var vInDateTime = (v as DateTime?).GetUnix();
+                    result.Add(c.ColumnName, (vInDateTime, c.DataType));
+                }
+                else
+                {
+                    result.Add(c.ColumnName, (row[c], c.DataType));
+                }
+            }
+
+            return result;
+        }
+
+        public static NonCamelCaseDictionary ToNonCamelCaseDictionary(this Dictionary<string, (object value, Type type)> values)
+        {
+            var result = new NonCamelCaseDictionary();
+            foreach (var data in values)
+            {
+                result.Add(data.Key, data.Value.value);
+            }
+
+            return result;
+        }
+
+        public static string ConvertToUnSign2(this string s)
+        {
+            string stFormD = s.Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+            for (int ich = 0; ich < stFormD.Length; ich++)
+            {
+                UnicodeCategory uc = CharUnicodeInfo.GetUnicodeCategory(stFormD[ich]);
+                if (uc != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(stFormD[ich]);
+                }
+            }
+            sb = sb.Replace('Đ', 'D');
+            sb = sb.Replace('đ', 'd');
+            return (sb.ToString().Normalize(NormalizationForm.FormD));
+        }
+
+        public static string NormalizeAsInternalName(this string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            s = s.ConvertToUnSign2();
+            s = s.ToLower().Trim();
+            return Regex.Replace(s, "[^a-zA-Z0-9\\.\\-]", "");
+        }
+
+        public static bool IsVndColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_VND_PREFIX.ToLower());
+        }
+
+        public static bool IsTkCoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_CO_PREFIX.ToLower());
+        }
+        public static bool IsTkNoColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.TAI_KHOAN_NO_PREFIX.ToLower());
+        }
+
+        public static string VndSumName(this string columnName)
+        {
+            return $"{AccountantConstants.SUM_RECIPROCAL_PREFIX}{columnName}";
+        }
+        public static bool IsNgoaiTeColumn(this string columnName)
+        {
+            return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
+        }
+
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>()
+        {
+            var fields = new List<CategoryFieldNameModel>();
+            foreach (var prop in typeof(T).GetProperties())
+            {
+                var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+
+                var title = string.Empty;
+                if (attrs != null && attrs.Count() > 0)
+                {
+                    title = attrs.First().Name;
+                }
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    title = prop.Name;
+                }
+                fields.Add(new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = prop.Name.GetHashCode(),
+                    FieldName = prop.Name,
+                    FieldTitle = title,
+                    RefCategory = null
+                });
+            }
+
+            return fields;
+        }
     }
 }

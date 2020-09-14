@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -29,64 +31,86 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             _logger.LogError(context.Exception, context.Exception.Message);
 
-            if (context.Exception is BadRequestException badRequest)
-            {
-                var json = new ServiceResult
-                {
-                    Code = badRequest.Code,
-                    Message = badRequest.Message
-                };
+            var (response, statusCode) = Handler(context.Exception);
 
-                context.Result = new BadRequestObjectResult(json);
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            if (!_env.IsProduction())
+            {
+                response.Data = context.Exception;
+            }
+
+            if (context.Exception is BadRequestException)
+            {
+                context.Result = new BadRequestObjectResult(response);
             }
             else if (context.Exception.GetType() == typeof(VerpException))
             {
-                var json = new ServiceResult
-                {
-                    Code = GeneralCode.InternalError,
-                    Message = context.Exception.Message
-                };
-
-                context.Result = new BadRequestObjectResult(json);
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                context.Result = new BadRequestObjectResult(response);
             }
             else
             {
-                if (context.Exception.GetType() == typeof(DistributedLockExeption))
+                if (context.Exception is DistributedLockExeption)
                 {
-                    var json = new ServiceResult<Exception>
-                    {
-                        Code = GeneralCode.DistributedLockExeption,
-                        Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
-                    };
-
-                    if (_env.EnvironmentName != "Production")
-                    {
-                        json.Data = context.Exception;
-                    }
-
-                    context.Result = new InternalServerErrorObjectResult(json);
-                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadGateway;
+                    context.Result = new InternalServerErrorObjectResult(response);
                 }
                 else
                 {
-                    var json = new ServiceResult<Exception>
-                    {
-                        Code = GeneralCode.InternalError,
-                        Message = context.Exception.Message
-                    };
-
-                    if (_env.EnvironmentName != "Production")
-                    {
-                        json.Data = context.Exception;
-                    }
-
-                    context.Result = new InternalServerErrorObjectResult(json);
-                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    context.Result = new InternalServerErrorObjectResult(response);
                 }
             }
+           
+            context.HttpContext.Response.StatusCode = (int)statusCode;
             context.ExceptionHandled = true;
+        }
+
+        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception)
+        {
+            ApiErrorResponse<Exception> response;
+            HttpStatusCode statusCode;
+
+            if (exception is BadRequestException badRequest)
+            {
+                response = new ApiErrorResponse<Exception>
+                {
+                    Code = badRequest.Code.GetErrorCodeString(),
+                    Message = badRequest.Message
+                };
+                statusCode = HttpStatusCode.BadRequest;
+            }           
+            else if (exception is VerpException)
+            {
+                response = new ApiErrorResponse<Exception>
+                {
+                    Code = GeneralCode.InternalError.GetErrorCodeString(),
+                    Message = exception.Message
+                };
+
+                statusCode = HttpStatusCode.BadRequest;
+            }
+            else
+            {
+                if (exception is DistributedLockExeption)
+                {
+                    response = new ApiErrorResponse<Exception>
+                    {
+                        Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
+                        Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
+                    };
+
+                    statusCode = HttpStatusCode.BadGateway;
+
+                }
+                else
+                {
+                    response = new ApiErrorResponse<Exception>
+                    {
+                        Code = GeneralCode.InternalError.GetErrorCodeString(),
+                        Message = exception.Message
+                    };
+
+                    statusCode = HttpStatusCode.InternalServerError;
+                }
+            }
+            return (response, statusCode);
         }
     }
 }

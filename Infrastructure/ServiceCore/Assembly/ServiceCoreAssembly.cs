@@ -18,7 +18,14 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddHttpClient<IActivityLogService, ActivityLogService>();
             services.AddHttpClient<IPhysicalFileService, PhysicalFileService>();
             services.AddHttpClient<IHttpCrossService, HttpCrossService>();
-            services.AddScoped<IProductHelperService, ProductHelperService>();            
+
+
+            services.AddScoped<IStockHelperService, StockHelperService>();
+            services.AddScoped<IProductHelperService, ProductHelperService>();
+            services.AddScoped<IOrganizationHelperService, OrganizationHelperService>();
+
+            services.AddScoped<IMenuHelperService, MenuHelperService>();
+
             services.AddScoped<HttpCurrentContextService>();
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());

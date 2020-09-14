@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Model.BusinessInfo;
 
 namespace VErp.Services.Organization.Service.BusinessInfo
 {
     public interface IBusinessInfoService
     {
-        Task<ServiceResult<BusinessInfoModel>> GetBusinessInfo();
-        Task<Enum> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data);
+        Task<BusinessInfoModel> GetBusinessInfo();
+        Task<bool> UpdateBusinessInfo(int updatedUserId, BusinessInfoModel data);
     }
 }

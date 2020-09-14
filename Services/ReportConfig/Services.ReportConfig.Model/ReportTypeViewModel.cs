@@ -7,16 +7,16 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Commons.Library;
 
 namespace Verp.Services.ReportConfig.Model
 {
-
     public class ReportTypeViewModel : IMapFrom<ReportTypeView>
     {
         public int ReportTypeViewId { get; set; }
         public string ReportTypeViewName { get; set; }
         public bool IsDefault { get; set; }
-        public int Columns { get; set; }
+        public int SortOrder { get; set; }
         public IList<ReportTypeViewFieldModel> Fields { get; set; }
 
         public void Mapping(Profile profile)
@@ -35,7 +35,6 @@ namespace Verp.Services.ReportConfig.Model
         public int ReportTypeViewFieldId { get; set; }
         [Required(AllowEmptyStrings = false, ErrorMessage = "Vui lòng nhập tham số báo cáo")]
         public string ParamerterName { get; set; }
-        public int Column { get; set; }
         public int SortOrder { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
@@ -43,9 +42,11 @@ namespace Verp.Services.ReportConfig.Model
         public int DataSize { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public string DefaultValue { get; set; }
-        public int? ReferenceCategoryId { get; set; }
-        public int? ReferenceCategoryFieldId { get; set; }
-        public int? ReferenceCategoryTitleFieldId { get; set; }
+        public string RefTableCode { get; set; }
+        public string RefTableField { get; set; }
+        public string RefTableTitle { get; set; }
+        public string RefFilters { get; set; }
+        public string ExtraFilter { get; set; }
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 

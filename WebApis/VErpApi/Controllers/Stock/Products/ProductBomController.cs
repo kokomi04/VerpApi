@@ -30,7 +30,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<ServiceResult<ServiceResult<ProductBomOutput>>> Get([FromQuery] int productBomId)
+        public async Task<ProductBomOutput> Get([FromQuery] int productBomId)
         {
             return await _productBomService.Get(productBomId);
         }
@@ -42,7 +42,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("GetAll")]
-        public async Task<ServiceResult<PageData<ProductBomOutput>>> GetAll([FromQuery] int productId)
+        public async Task<PageData<ProductBomOutput>> GetAll([FromQuery] int productId)
         {
             return await _productBomService.GetAll(productId);
         }
@@ -54,7 +54,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("")]
-        public async Task<ServiceResult<long>> Add([FromBody] ProductBomInput model)
+        public async Task<long> Add([FromBody] ProductBomInput model)
         {
             return await _productBomService.Add(model);
         }
@@ -67,7 +67,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPut]
         [Route("")]
-        public async Task<ServiceResult> Update([FromQuery] long productBomId ,[FromBody] ProductBomInput model)
+        public async Task<bool> Update([FromQuery] long productBomId ,[FromBody] ProductBomInput model)
         {
             return await _productBomService.Update(productBomId, model);
         }
@@ -80,7 +80,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpDelete]
         [Route("")]
-        public async Task<ServiceResult> Delete([FromQuery] long productBomId,[FromQuery] int rootProductId)
+        public async Task<bool> Delete([FromQuery] long productBomId,[FromQuery] int rootProductId)
         {
             return await _productBomService.Delete(productBomId, rootProductId);
         }

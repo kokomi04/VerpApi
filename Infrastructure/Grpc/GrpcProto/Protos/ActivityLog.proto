@@ -1,0 +1,23 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos";
+
+package ActivityLog;
+
+message ActivityInput {
+	int32 UserId = 1;
+    int32 ActionId = 2;
+    int32 ObjectTypeId = 3;
+    int32 MessageTypeId = 4;
+    int64 ObjectId = 5;
+    string Message = 6;
+    string Data = 7;
+}
+
+message ActivityResponses {
+	bool IsSuccess = 1;
+}
+
+service InternalActivityLog {
+    rpc Log (ActivityInput) returns (ActivityResponses);
+}

@@ -16,6 +16,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Department;
 using VErp.Infrastructure.EF.EFExtensions;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Organization.Service.Department.Implement
 {
@@ -38,7 +39,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<ServiceResult<int>> AddDepartment(int updatedUserId, DepartmentModel data)
+        public async Task<int> AddDepartment(int updatedUserId, DepartmentModel data)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentCode == data.DepartmentCode || d.DepartmentName == data.DepartmentName);
 
@@ -46,21 +47,21 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 if (string.Compare(department.DepartmentCode, data.DepartmentCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return DepartmentErrorCode.DepartmentCodeAlreadyExisted;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentCodeAlreadyExisted);
                 }
 
-                return DepartmentErrorCode.DepartmentNameAlreadyExisted;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNameAlreadyExisted);
             }
             if (data.ParentId.HasValue)
             {
                 var parent = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == data.ParentId.Value);
                 if (parent == null)
                 {
-                    return DepartmentErrorCode.DepartmentParentNotFound;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentParentNotFound);
                 }
                 if (!parent.IsActived)
                 {
-                    return DepartmentErrorCode.DepartmentParentInActived;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentParentInActived);
                 }
             }
             department = new DepartmentEntity()
@@ -84,34 +85,34 @@ namespace VErp.Services.Organization.Service.Department.Implement
         }
 
 
-        public async Task<Enum> DeleteDepartment(int updatedUserId, int departmentId)
+        public async Task<bool> DeleteDepartment(int updatedUserId, int departmentId)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
-                return DepartmentErrorCode.DepartmentNotFound;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
             }
             if (department.IsActived)
             {
-                return DepartmentErrorCode.DepartmentActived;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentActived);
             }
             if (_organizationContext.Department.Any(d => d.ParentId == departmentId))
             {
-                return DepartmentErrorCode.DepartmentChildAlreadyExisted;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
             }
             department.IsDeleted = true;
             department.UpdatedTime = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Xóa bộ phận {department.DepartmentName}", department.JsonSerialize());
-            return GeneralCode.Success;
+            return true;
         }
 
-        public async Task<ServiceResult<DepartmentModel>> GetDepartmentInfo(int departmentId)
+        public async Task<DepartmentModel> GetDepartmentInfo(int departmentId)
         {
             var department = await _organizationContext.Department.Include(d => d.Parent).FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
-                return DepartmentErrorCode.DepartmentNotFound;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
             }
             return new DepartmentModel()
             {
@@ -154,23 +155,23 @@ namespace VErp.Services.Organization.Service.Department.Implement
             return (lst, total);
         }
 
-        public async Task<Enum> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data)
+        public async Task<bool> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
-                return DepartmentErrorCode.DepartmentNotFound;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
             }
             if (data.ParentId.HasValue && department.ParentId != data.ParentId)
             {
                 var parent = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == data.ParentId.Value);
                 if (parent == null)
                 {
-                    return DepartmentErrorCode.DepartmentParentNotFound;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentParentNotFound);
                 }
                 if (!parent.IsActived)
                 {
-                    return DepartmentErrorCode.DepartmentParentInActived;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentParentInActived);
                 }
             }
             // Kiểm tra nếu inActive bộ phận
@@ -179,7 +180,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 // Check còn phòng ban trực thuộc đang hoạt động
                 if (_organizationContext.Department.Any(d => d.ParentId == departmentId && d.IsActived))
                 {
-                    return DepartmentErrorCode.DepartmentChildActivedAlreadyExisted;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentChildActivedAlreadyExisted);
                 }
                 // Check nhân viên trực thuộc phòng ban đang hoạt động
                 bool isExisted = _organizationContext.EmployeeDepartmentMapping
@@ -188,7 +189,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                     .Any(e => !e.IsDeleted);
                 if (isExisted)
                 {
-                    return DepartmentErrorCode.DepartmentUserActivedAlreadyExisted;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentUserActivedAlreadyExisted);
                 }
             }
 
@@ -197,10 +198,10 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 if (string.Compare(department.DepartmentCode, data.DepartmentCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return DepartmentErrorCode.DepartmentCodeAlreadyExisted;
+                    throw new BadRequestException(DepartmentErrorCode.DepartmentCodeAlreadyExisted);
                 }
 
-                return DepartmentErrorCode.DepartmentNameAlreadyExisted;
+                throw new BadRequestException(DepartmentErrorCode.DepartmentNameAlreadyExisted);
             }
             department.DepartmentCode = data.DepartmentCode;
             department.DepartmentName = data.DepartmentName;
@@ -211,7 +212,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.UpdatedUserId = updatedUserId;
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Cập nhật bộ phận {department.DepartmentName}", data.JsonSerialize());
-            return GeneralCode.Success;
+            return true;
         }
     }
 }
