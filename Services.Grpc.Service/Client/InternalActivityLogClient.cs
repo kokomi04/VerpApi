@@ -5,7 +5,7 @@ using System.Text;
 
 namespace VErp.Services.Grpc.Client
 {
-    class InternalActivityLogClient: InternalActivityLog.InternalActivityLogClient
+    public class InternalActivityLogClient: InternalActivityLog.InternalActivityLogClient
     {
     }
 }

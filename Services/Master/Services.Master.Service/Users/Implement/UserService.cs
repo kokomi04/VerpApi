@@ -67,15 +67,16 @@ namespace VErp.Services.Master.Service.Users.Implement
             try
             {
                 var userId = await CreateUserAuthen(req);
-                
-                await CreateEmployee(userId, req);               
+
+                await CreateEmployee(userId, req);
 
                 // Gắn phòng ban cho nhân sự
                 if (req.DepartmentId.HasValue)
                 {
-                    await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);                    
+                    await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);
                 }
 
+                await UpdateEmployeeSubsidiary(userId, req.SubsidiaryIds);
 
                 trans.Commit();
 
@@ -194,6 +195,14 @@ namespace VErp.Services.Master.Service.Users.Implement
                 })
                 .FirstOrDefault();
             user.Department = department;
+
+
+            var userSubdiaries = await GetUserSubsidiaries(new[] { userId });
+
+            userSubdiaries.TryGetValue(userId, out var subdiaries);
+
+            user.Subsidiaries = subdiaries;
+
             return user;
         }
 
@@ -219,6 +228,9 @@ namespace VErp.Services.Master.Service.Users.Implement
                         trans.Rollback();
                         throw new BadRequestException(r);
                     }
+
+                    await DeleteEmployeeSubsidiary(userId);
+
                     trans.Commit();
 
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize());
@@ -280,6 +292,14 @@ namespace VErp.Services.Master.Service.Users.Implement
             .ToList();
 
 
+            var userSubdiaries = await GetUserSubsidiaries(selectedUserIds);
+
+            foreach (var user in lst)
+            {
+                userSubdiaries.TryGetValue(user.UserId, out var subdiaries);
+                user.Subsidiaries = subdiaries;
+            }
+
             return (lst, total);
         }
 
@@ -290,9 +310,12 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return new List<UserInfoOutput>();
 
             var userInfos = await _masterContext.User.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
+
             var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
-            return (from u in userInfos
+            var userSubdiaries = await GetUserSubsidiaries(userIds);
+           
+            var lst = (from u in userInfos
                     join e in employees on u.UserId equals e.UserId
                     select new UserInfoOutput
                     {
@@ -308,6 +331,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                         Phone = e.Phone
                     }).ToList();
 
+            foreach (var user in lst)
+            {
+                userSubdiaries.TryGetValue(user.UserId, out var subdiaries);
+                user.Subsidiaries = subdiaries;
+            }
+
+            return lst;
         }
 
         public async Task<bool> UpdateUser(int userId, UserInfoInput req, int updatedUserId)
@@ -348,8 +378,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                     // Nếu khác update lại thông tin
                     if (departmentId != req.DepartmentId && req.DepartmentId.HasValue)
                     {
-                        await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);                        
+                        await EmployeeDepartmentMapping(userId, req.DepartmentId.Value, updatedUserId);
                     }
+
+
+                    await UpdateEmployeeSubsidiary(userId, req.SubsidiaryIds);
 
                     trans.Commit();
 
@@ -504,6 +537,8 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 return UserErrorCode.EmployeeCodeAlreadyExisted;
             }
+
+
             //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
             //{
             //    return GeneralCode.InvalidParams;
@@ -564,6 +599,48 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             await _organizationContext.Employee.AddAsync(employee);
 
+            await _organizationContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        private async Task<bool> UpdateEmployeeSubsidiary(int userId, IList<int> subsidiaryIds)
+        {
+            if (subsidiaryIds == null) subsidiaryIds = new List<int>();
+
+            var subsidiaries = await _organizationContext.Subsidiary.Where(s => subsidiaryIds.Contains(s.SubsidiaryId)).ToListAsync();
+            if (subsidiaryIds.Distinct().Count() != subsidiaries.Count)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Công ty con/chi nhánh không tìm thấy");
+            }
+
+            await DeleteEmployeeSubsidiary(userId);
+
+            await _organizationContext.EmployeeSubsidiary.AddRangeAsync(subsidiaryIds.Select(s => new EmployeeSubsidiary()
+            {
+                UserId = userId,
+                SubsidiaryId = s,
+                CreatedByUserId = _currentContextService.UserId,
+                CreatedDateTimeUtc = DateTime.UtcNow,
+                UpdatedByUserId = _currentContextService.UserId,
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                IsDeleted = false,
+                DeletedDatetimeUtc = null
+            }));
+
+
+            await _organizationContext.SaveChangesAsync();
+
+            return true;
+        }
+        private async Task<bool> DeleteEmployeeSubsidiary(int userId)
+        {
+            var mappings = await _organizationContext.EmployeeSubsidiary.Where(s => s.UserId == userId).ToListAsync();
+            foreach (var m in mappings)
+            {
+                m.IsDeleted = true;
+                m.DeletedDatetimeUtc = DateTime.UtcNow;
+            }
             await _organizationContext.SaveChangesAsync();
 
             return true;
@@ -663,6 +740,30 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user;
         }
 
+
+        private async Task<IDictionary<int, List<SubsidiaryBasicInfo>>> GetUserSubsidiaries(IList<int> userIds)
+        {
+            return (
+                await (
+                from es in _organizationContext.EmployeeSubsidiary
+                join s in _organizationContext.Subsidiary on es.SubsidiaryId equals s.SubsidiaryId
+                where userIds.Contains(es.UserId)
+                select new
+                {
+                    es.UserId,
+                    s.SubsidiaryId,
+                    s.SubsidiaryCode,
+                    s.SubsidiaryName
+                })
+                .ToListAsync()
+               ).GroupBy(s => s.UserId)
+               .ToDictionary(s => s.Key, s => s.Select(m => new SubsidiaryBasicInfo()
+               {
+                   SubsidiaryId = m.SubsidiaryId,
+                   SubsidiaryCode = m.SubsidiaryCode,
+                   SubsidiaryName = m.SubsidiaryName
+               }).ToList());
+        }
 
 
         private class UserFullDbInfo

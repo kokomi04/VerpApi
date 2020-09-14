@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -13,5 +14,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool Asc { get; set; } = true;
         public int Page { get; set; }
         public int Size { get; set; }
+
+        public Clause ColumnsFilters { get; set; }
     }
 }

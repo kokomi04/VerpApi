@@ -12,7 +12,7 @@ namespace VErp.Services.Accountancy.Service.Category
 {
     public interface ICategoryDataService
     {
-        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, int page, int size);
+        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size);
 
         Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId);
 

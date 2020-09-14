@@ -63,8 +63,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _outsideImportMappingService = outsideImportMappingService;
         }
 
-
-        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             var viewInfo = await _accountancyDBContext.InputTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
 
@@ -90,7 +89,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             whereCondition.Append($"r.InputTypeId = {inputTypeId}");
 
             var sqlParams = new List<SqlParameter>();
-
+            int suffix = 0;
             if (filters != null)
             {
                 foreach (var filter in filters)
@@ -117,11 +116,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 whereCondition.Append(" AND ");
                             }
 
-                            int suffix = 0;
-                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, ((EnumDataType)viewField.DataTypeId).GetSqlValue(value));
+                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, value);
                         }
                     }
                 }
+            }
+
+            if (columnsFilters != null)
+            {
+                if (whereCondition.Length > 0)
+                {
+                    whereCondition.Append(" AND ");
+                }
+
+                columnsFilters.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
             var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
@@ -170,15 +178,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
-
-                OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT {size} ROWS ONLY
                 ";
+
+            if (size >= 0)
+            {
+                dataSql += @$" OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT { size}
+                ROWS ONLY";
+            }
+
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             return (data, total);
         }
-
 
         public async Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
         {
@@ -188,8 +200,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f.FieldName
-          ).ToListAsync()
-          ).ToHashSet();
+            ).ToListAsync()
+            ).ToHashSet();
 
             var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
 
@@ -218,11 +230,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             if (billEntryInfo.Rows.Count > 0)
             {
@@ -240,9 +252,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
 
+
             return (data, total);
         }
-
 
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
@@ -262,11 +274,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
             ";
-            var data = await _accountancyDBContext.QueryDataTable(dataSql, new SqlParameter[0]);
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, new SqlParameter[0]);
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
 
@@ -295,7 +307,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-
         public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
         {
             var mappingInfo = await _outsideImportMappingService.MappingObjectInfo(mappingFunctionKey, objectId);
@@ -309,18 +320,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
+            await ValidateAccountantConfig(data);
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
                 throw new BadRequestException(InputErrorCode.MultiRowAreaEmpty);
             }
-
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, null);
@@ -418,7 +426,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = rowValues.Any(v => v != singleClause.Value);
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().Contains(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.Contains(singleClause.Value));
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -433,10 +441,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().StartsWith(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.StartsWith(singleClause.Value));
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = rowValues.Any(v => v != null && v.ToString().EndsWith(singleClause.Value.ToString()));
+                                isRequire = rowValues.Any(v => v.EndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -476,7 +484,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) != 0;
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = value != null && value.ToString().Contains(singleClause.Value.ToString());
+                                isRequire = value.Contains(singleClause.Value);
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -491,10 +499,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = value != null && value.ToString().StartsWith(singleClause.Value.ToString());
+                                isRequire = value.StartsWith(singleClause.Value);
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = value != null && value.ToString().EndsWith(singleClause.Value.ToString());
+                                isRequire = value.EndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -539,7 +547,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-
         private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -564,7 +571,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var paramName = $"@{match[i]}";
                         script = script.Replace($"@{{{match[i]}}}", paramName);
                         data.Info.TryGetValue(fieldName, out string value);
-                        parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                     }
                     else
                     {
@@ -574,7 +581,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var paramName = $"@{match[i]}_{rowIndx}";
                             paramNames.Add($"({paramName})");
                             data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                            parammeters.Add(new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)field.DataTypeId) ?? DBNull.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
                         }
                         var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
                         script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
@@ -725,7 +732,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     info.Data.TryGetValue(field.FieldName, out object value);
                     // Checkin unique trong db
                     if (value != null)
-                        await ValidUniqueAsync(inputTypeId, new List<object>() { value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId) }, field, inputValueBillId);
+                        await ValidUniqueAsync(inputTypeId, new List<object>() { ((EnumDataType)field.DataTypeId).GetSqlValue(value) }, field, inputValueBillId);
                 }
                 else // Validate rows
                 {
@@ -742,7 +749,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         row.Data.TryGetValue(field.FieldName, out object value);
                         if (value != null)
                         {
-                            values.Add(value.ToString().ConvertValueByType((EnumDataType)field.DataTypeId));
+                            values.Add(((EnumDataType)field.DataTypeId).GetSqlValue(value));
                         }
                         // Check unique trong danh sách values thêm mới/sửa
                         if (values.Count != values.Distinct().Count())
@@ -825,7 +832,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 return;
             }
-            var value = textValue.ConvertValueByType((EnumDataType)field.DataTypeId);
+            var value = ((EnumDataType)field.DataTypeId).GetSqlValue(textValue);
             var whereCondition = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
 
@@ -836,17 +843,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (!string.IsNullOrEmpty(field.Filters))
             {
                 var filters = field.Filters;
-                var pattern = @"@{(?<word>\w+)}";
+                var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
                 Regex rx = new Regex(pattern);
                 MatchCollection match = rx.Matches(field.Filters);
                 for (int i = 0; i < match.Count; i++)
                 {
                     var fieldName = match[i].Groups["word"].Value;
+                    var startText = match[i].Groups["start"].Value;
+                    var lengthText = match[i].Groups["length"].Value;
                     checkData.Data.TryGetValue(fieldName, out string filterValue);
                     if (string.IsNullOrEmpty(filterValue))
                     {
                         info.Data.TryGetValue(fieldName, out filterValue);
                     }
+                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                    {
+                        filterValue = filterValue.Substring(start, length);
+                    }
+
                     filters = filters.Replace(match[i].Value, filterValue);
                 }
 
@@ -928,13 +942,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-
+            await ValidateAccountantConfig(data);
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -1039,6 +1051,162 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
+        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+            if (fIds.Length == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại chứng từ cần thay đổi");
+
+            // Get field
+            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).FirstOrDefault(f => f.InputField.FieldName == fieldName);
+            if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy trường dữ liệu");
+
+            var oldSqlValue = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(oldValue);
+            object newSqlValue;
+            if (((EnumFormType)field.InputField.FormTypeId).IsSelectForm())
+            {
+                var refTableTitle = field.InputField.RefTableTitle.Split(',')[0];
+                var categoryFields = (from f in _accountancyDBContext.CategoryField
+                                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
+                                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
+                                      select new
+                                      {
+                                          f.CategoryFieldName,
+                                          f.DataTypeId
+                                      }).ToList();
+                var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.InputField.RefTableField);
+                var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
+
+                if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
+
+
+                var valueParamName = $"@{field.InputField.RefTableField}";
+                var selectSQL = $"SELECT TOP 1 {field.InputField.RefTableField} FROM v{field.InputField.RefTableCode} WHERE {refTableTitle} = {valueParamName}";
+                var selectParams = new List<SqlParameter>()
+                {
+                    new SqlParameter(valueParamName, ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue))
+                };
+
+                var result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), selectParams.ToArray());
+                if (result != null && result.Rows.Count > 0)
+                {
+                    newSqlValue = result.Rows[0][0];
+                }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
+                }
+            }
+            else
+            {
+                newSqlValue = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(newValue);
+            }
+
+            var singleFields = (await (
+             from af in _accountancyDBContext.InputAreaField
+             join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+             join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+             where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+             select f.FieldName).ToListAsync()).ToHashSet();
+
+            // Get bills by old value
+            var sqlParams = new List<SqlParameter>();
+            var dataSql = new StringBuilder(@$"
+
+                SELECT     r.*
+                FROM {INPUTVALUEROW_TABLE} r 
+
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)})");
+
+
+            if (oldValue == null)
+            {
+                dataSql.Append($" AND r.{fieldName} IS NULL");
+            }
+            else
+            {
+                var paramName = $"@{fieldName}";
+                dataSql.Append($" AND r.{fieldName} = {paramName}");
+                sqlParams.Add(new SqlParameter(paramName, oldSqlValue));
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+            var updateBillIds = new HashSet<long>();
+
+            // Update new value
+            var dataTable = new DataTable(INPUTVALUEROW_TABLE);
+            foreach (DataColumn column in data.Columns)
+            {
+                if (column.ColumnName != "F_Id")
+                    dataTable.Columns.Add(column.ColumnName, column.DataType);
+            }
+
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+
+                var billId = (long)row["InputBill_F_Id"];
+                if (!updateBillIds.Contains(billId)) updateBillIds.Add(billId);
+
+                var newRow = dataTable.NewRow();
+                foreach (DataColumn column in data.Columns)
+                {
+                    var v = row[column];
+                    switch (column.ColumnName)
+                    {
+                        case "F_Id":
+                            continue;
+                        case "BillVersion":
+                            newRow[column.ColumnName] = (int)v + 1;
+                            break;
+                        case "CreatedByUserId":
+                        case "UpdatedByUserId":
+                            newRow[column.ColumnName] = _currentContextService.UserId;
+                            break;
+                        case "CreatedDatetimeUtc":
+                        case "UpdatedDatetimeUtc":
+                            newRow[column.ColumnName] = DateTime.UtcNow;
+                            break;
+                        default:
+                            newRow[column.ColumnName] = v;
+                            break;
+                    }
+                }
+                newRow[fieldName] = newSqlValue;
+                dataTable.Rows.Add(newRow);
+            }
+
+
+            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId)).ToList();
+            using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                // Created bill version
+                await _accountancyDBContext.InsertDataTable(dataTable);
+
+                foreach (var bill in bills)
+                {
+                    // Delete bill version
+                    await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
+
+                    // Update last bill version
+                    bill.LatestBillVersion++;
+                }
+
+                await _accountancyDBContext.SaveChangesAsync();
+                trans.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateBill");
+                throw;
+            }
+        }
+
         private string[] CompareRow(NonCamelCaseDictionary currentRow, NonCamelCaseDictionary futureRow, List<ValidateField> fields)
         {
             if (currentRow == null || futureRow == null)
@@ -1112,12 +1280,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-
+                await ValidateAccountantConfig(data);
                 // Before saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
-
 
                 billInfo.IsDeleted = true;
                 billInfo.DeletedDatetimeUtc = DateTime.UtcNow;
@@ -1141,7 +1308,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw;
             }
         }
-
 
         private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
         {
@@ -1319,6 +1485,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
 
+            var ignoreCopyInfoValues = new HashSet<string>();
             //Create rows
             foreach (var row in data.Rows)
             {
@@ -1326,9 +1493,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 foreach (var item in data.Info)
                 {
+                    if (ignoreCopyInfoValues.Contains(item.Key))
+                        continue;
+
                     if (item.Key.IsVndColumn() || item.Key.IsNgoaiTeColumn())
                     {
+                        ignoreCopyInfoValues.Add(item.Key);
                         continue;
+                    }
+
+                    if (item.Key.IsTkCoColumn())
+                    {
+                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_CO_PREFIX.Length);
+                        var tkNo = AccountantConstants.TAI_KHOAN_NO_PREFIX + butToan;
+                        if (data.Info.Keys.Any(k => k.Equals(tkNo, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ignoreCopyInfoValues.Add(item.Key);
+                            continue;
+                        }
+                    }
+
+                    if (item.Key.IsTkNoColumn())
+                    {
+                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_NO_PREFIX.Length);
+                        var tkCo = AccountantConstants.TAI_KHOAN_CO_PREFIX + butToan;
+                        if (data.Info.Keys.Any(k => k.Equals(tkCo, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            ignoreCopyInfoValues.Add(item.Key);
+                            continue;
+                        }
                     }
 
                     var field = fields[item.Key];
@@ -1347,7 +1540,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var colName = item.Key.VndSumName();
 
                         sumReciprocals[colName] += deValue;
-                        dataRow[colName] = deValue;
+
+                        //ignore sum_vnd on detail row
+                        //dataRow[colName] = deValue;
+                        dataRow[colName] = DBNull.Value;
                     }
 
                 }
@@ -1484,7 +1680,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
                 });
         }
-
 
         private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
         {
@@ -1649,7 +1844,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
                             }
                             var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
-                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, value.ConvertValueByType((EnumDataType)referField.DataTypeId)) };
+                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                             suffix++;
                             if (!string.IsNullOrEmpty(field.Filters))
                             {
@@ -1696,12 +1891,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                     rows.Add(mapRow);
                 }
-
-                bills.Add(new BillInfoModel
+                var billInfo = new BillInfoModel
                 {
                     Info = info,
                     Rows = rows.ToArray()
-                });
+                };
+                await ValidateAccountantConfig(billInfo);
+                bills.Add(billInfo);
             }
 
             using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
@@ -1908,7 +2104,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
-
         public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
             bool byExpenseItem, bool byFactory, bool byProduct, bool byStock)
         {
@@ -1935,7 +2130,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rows = data.ConvertData();
             return rows;
         }
-
 
         public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
         {
@@ -2021,6 +2215,52 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
+        public async Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransferBalanceZero", sqlParams);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransferBalanceZero", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        private async Task ValidateAccountantConfig(BillInfoModel data)
+        {
+            data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
+            if (value != null)
+            {
+                var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
+
+                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+                var sqlParams = new SqlParameter[]
+                {
+                    new SqlParameter("@BillDate", billDate),
+                    result
+                };
+                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams);
+
+                if (!(result.Value as bool?).GetValueOrDefault())
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
+            }
+        }
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

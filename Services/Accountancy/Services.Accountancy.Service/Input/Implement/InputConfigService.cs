@@ -82,6 +82,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return inputType;
         }
 
+        public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
+        {
+            var inputType = await _accountancyDBContext.InputType
+           .Where(i => i.InputTypeCode == inputTypeCode)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .FirstOrDefaultAsync();
+            if (inputType == null)
+            {
+                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            }
+            return inputType;
+        }
+
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
@@ -128,12 +147,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data.JsonSerialize());
 
-                if (data.MenuStyle != null)
-                {
-                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, data.InputTypeCode, inputType.InputTypeId);
-                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
-                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
-                }
+                //if (data.MenuStyle != null)
+                //{
+                //    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, data.InputTypeCode, inputType.InputTypeId);
+                //    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
+                //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
+                //}
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
@@ -156,7 +175,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return code;
         }
 
-        public async Task<int> CloneInputType(int inputTypeId, MenuStyleModel menuStyle)
+        public async Task<int> CloneInputType(int inputTypeId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
             var sourceInput = await _accountancyDBContext.InputType
@@ -236,12 +255,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                if (menuStyle != null)
-                {
-                    var url = Utils.FormatStyle(menuStyle.UrlFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
-                    var param = Utils.FormatStyle(menuStyle.ParamFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
-                    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
-                }
+                //if (menuStyle != null)
+                //{
+                //    var url = Utils.FormatStyle(menuStyle.UrlFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                //    var param = Utils.FormatStyle(menuStyle.ParamFormat, cloneType.InputTypeCode, cloneType.InputTypeId);
+                //    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
+                //}
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
                 return cloneType.InputTypeId;
@@ -781,17 +800,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return inputAreaField;
         }
 
-        private Enum ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
+        private void ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
         {
             if (inputFieldId.HasValue && inputFieldId.Value > 0)
             {
                 if (inputField == null)
                 {
-                    return InputErrorCode.InputFieldNotFound;
+                    throw new BadRequestException(InputErrorCode.InputFieldNotFound);
                 }
                 if (_accountancyDBContext.InputField.Any(f => f.InputFieldId != inputFieldId.Value && f.FieldName == data.FieldName))
                 {
-                    return InputErrorCode.InputFieldAlreadyExisted;
+                    throw new BadRequestException(InputErrorCode.InputFieldAlreadyExisted);
+                }
+                if (!((EnumDataType)inputField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)inputField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
                 }
             }
             //if (data.ReferenceCategoryFieldId.HasValue)
@@ -802,7 +825,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             //        return InputErrorCode.SourceCategoryFieldNotFound;
             //    }
             //}
-            return GeneralCode.Success;
         }
 
         private void FieldDataProcess(ref InputFieldInputModel data)
@@ -960,7 +982,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     trans.TryRollbackTransaction();
                     throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
                 }
-
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}", fields.JsonSerialize());
@@ -977,11 +998,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<int> AddInputField(InputFieldInputModel data)
         {
-            var r = ValidateInputField(data);
-            if (!r.IsSuccess())
-            {
-                throw new BadRequestException(r);
-            }
+            ValidateInputField(data);
 
             FieldDataProcess(ref data);
 
@@ -1016,11 +1033,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
 
-            var r = ValidateInputField(data, inputField, inputFieldId);
-            if (!r.IsSuccess())
-            {
-                throw new BadRequestException(r);
-            }
+            ValidateInputField(data, inputField, inputFieldId);
 
             //FieldDataProcess(ref data);
 

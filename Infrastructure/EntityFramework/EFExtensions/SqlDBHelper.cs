@@ -28,11 +28,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
                 sql.Append(",");
             }
-            
+
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try
             {
@@ -42,6 +42,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
                     command.Parameters.AddRange(parammeters);
+                    if (timeout.HasValue)
+                    {
+                        command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
+                    }
 
                     var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
                     if (trans != null)
@@ -230,9 +234,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             EnumDataType.Text => SqlDbType.NVarChar,
             EnumDataType.Int => SqlDbType.Int,
             EnumDataType.Date => SqlDbType.DateTime2,
+            EnumDataType.Month => SqlDbType.DateTime2,
             EnumDataType.Year => SqlDbType.DateTime2,
             EnumDataType.QuarterOfYear => SqlDbType.DateTime2,
-            EnumDataType.Month => SqlDbType.DateTime2,
+            EnumDataType.DateRange => SqlDbType.DateTime2,
             EnumDataType.PhoneNumber => SqlDbType.NVarChar,
             EnumDataType.Email => SqlDbType.NVarChar,
             EnumDataType.Boolean => SqlDbType.Bit,
@@ -270,6 +275,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     var arrClause = clause as ArrayClause;
                     bool isNot = not ^ arrClause.Not;
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    if (arrClause.Rules.Count == 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống");
+                    }
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
                         if (indx != 0)
@@ -278,6 +287,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
                         FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot, value);
                     }
+                }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin lọc không sai định dạng");
                 }
                 condition.Append(" )");
             }
@@ -296,28 +309,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")}");
                         }
                         else
                         {
                             condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
-
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
-
                         break;
                     case EnumOperator.NotEqual:
                         ope = not ? "=" : "!=";
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"([{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")} OR [{tableName}].{clause.FieldName} {ope} {paramName})");
+                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")}");
                         }
                         else
                         {
                             condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
-
-                        sqlParams.Add(new SqlParameter(paramName, clause.Value));
                         break;
                     case EnumOperator.Contains:
                         ope = not ? "NOT LIKE" : "LIKE";
@@ -328,17 +338,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "NOT IN" : "IN";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
                         int inSuffix = 0;
+                        var paramNames = new StringBuilder();
                         foreach (var value in (clause.Value as string).Split(","))
                         {
-                            if (suffix > 0)
-                            {
-                                condition.Append(",");
-                            }
                             var inParamName = $"{paramName}_{inSuffix}";
-                            condition.Append($"{inParamName}");
-                            sqlParams.Add(new SqlParameter(inParamName, value.ConvertValueByType(clause.DataType)));
+                            paramNames.Append(inParamName);
+                            paramNames.Append(",");
+                            sqlParams.Add(new SqlParameter(inParamName, clause.DataType.GetSqlValue(value)));
                             inSuffix++;
                         }
+                        condition.Append(paramNames.ToString().TrimEnd(','));
                         condition.Append(")");
                         break;
                     case EnumOperator.IsLeafNode:
@@ -355,6 +364,26 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "NOT LIKE" : "LIKE";
                         condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        break;
+                    case EnumOperator.Greater:
+                        ope = not ? "<=" : ">";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.GreaterOrEqual:
+                        ope = not ? "<" : ">=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThan:
+                        ope = not ? ">=" : "<";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThanOrEqual:
+                        ope = not ? ">" : "<=";
+                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
                         ope = not ? "IS NOT NULL" : "IS NULL";
@@ -415,6 +444,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
             }
             return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
+        }
+
+        public static SqlParameter ToSqlParameterValue(this decimal? value, string parameterName)
+        {
+            return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
         }
     }
 }

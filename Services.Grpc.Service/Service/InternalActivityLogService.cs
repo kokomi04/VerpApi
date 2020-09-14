@@ -1,6 +1,7 @@
 ﻿using ActivityLogDB;
 using Grpc.Core;
 using GrpcProto.Protos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace VErp.Services.Grpc.Service
 {
-    class InternalActivityLogService : InternalActivityLog.InternalActivityLogBase
+    [AllowAnonymous]
+    public class InternalActivityLogService : InternalActivityLog.InternalActivityLogBase
     {
         private readonly ActivityLogDBContext _activityLogContext;
         private readonly ILogger<InternalActivityLogService> _logger;
@@ -21,7 +23,7 @@ namespace VErp.Services.Grpc.Service
             _logger = logger;
         }
 
-        public override async Task<ActivityReponse> Log(ActivityInput request, ServerCallContext context)
+        public override async Task<ActivityResponses> Log(ActivityInput request, ServerCallContext context)
         {
             using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
@@ -54,7 +56,7 @@ namespace VErp.Services.Grpc.Service
                 trans.Commit();
             }
 
-            return await Task.FromResult(new ActivityReponse { IsSuccess = true });
+            return await Task.FromResult(new ActivityResponses { IsSuccess = true });
         }
     }
 }

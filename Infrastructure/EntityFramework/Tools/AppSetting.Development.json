@@ -9,12 +9,20 @@
   "Identity": {
     "Endpoint": "http://103.21.149.106:8001"
   },
-  "ServiceUrls": {   
+  "ServiceUrls": {
     "ApiService": {
       "Endpoint": "http://103.21.149.106:8001"
     },
     "FileService": {
       "Endpoint": "http://103.21.149.106:8001"
     }
+  },
+  "ElasticApm": {
+    "SecretToken": "",
+    "ServerUrls": "http://localhost:8200",
+    "ServiceName": "Verp-Api"
+  },
+  "GrpcInternal": {
+    "Address": "http://103.21.149.106:8001"
   }
 }

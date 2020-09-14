@@ -1,0 +1,20 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "VErp.Grpc.Protos";
+
+package ProductCate;
+
+message ProductCateResponses{
+	int32 ProductCateId = 1;
+	string ProductCateName = 2;
+	int32 ParentProductCateId = 3;
+	int32 SortOrder = 4;
+}
+
+message ProductCateRequest{
+	int32 productCateId = 1;
+}
+
+service ProductCate {
+    rpc GetProductCate (ProductCateRequest) returns (ProductCateResponses);
+}

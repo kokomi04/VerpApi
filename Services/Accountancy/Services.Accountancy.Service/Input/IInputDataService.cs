@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
@@ -13,7 +14,7 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface IInputDataService
     {
-        Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
@@ -46,5 +47,11 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate);
+
+        Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate);
+
+        Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate);
+
+        Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
     }
 }

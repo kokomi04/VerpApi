@@ -1,0 +1,28 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "VErp.Grpc.Protos";
+
+package Stock;
+
+message StockOutput {
+    int32 StockId = 1;
+    string StockName = 2;
+    string Description = 3;
+    int32 StockKeeperId = 4;
+    string StockKeeperName = 5;
+    int32 Type = 6;
+    int32 Status = 7;
+    int32 ObjectGenCodeId = 8;
+}
+
+message StockInfoRequest{
+    int32 stockId = 1;
+}
+
+message StockInfoResponses{
+        StockOutput stockOutPut = 1;
+}
+
+service Stock{
+    rpc StockInfo (StockInfoRequest) returns (StockInfoResponses);
+}

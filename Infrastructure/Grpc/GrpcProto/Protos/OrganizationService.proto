@@ -1,0 +1,18 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "GrpcProto.Protos";
+
+import "google/protobuf/empty.proto";
+import "Protos/Message/BusinessMessage.proto";
+import "Protos/Message/CustomerMessage.proto";
+
+package OrganizationService;
+
+message CustomerInfoRequest {
+    int32 customerId = 1;
+}
+
+service OrganizationProvider{
+    rpc CustomerInfo(CustomerInfoRequest) returns (CustomerMessage.CustomerModel);
+    rpc BusinessInfo(google.protobuf.Empty) returns (BusinessMessage.BusinessInfoModel);
+}

@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public int ReportTypeViewFieldId { get; set; }
         public int ReportTypeViewId { get; set; }
         public string ParamerterName { get; set; }
-        public int Column { get; set; }
         public int SortOrder { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
@@ -22,6 +21,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string RefFilters { get; set; }
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
+        public string ExtraFilter { get; set; }
 
         public virtual ReportTypeView ReportTypeView { get; set; }
     }

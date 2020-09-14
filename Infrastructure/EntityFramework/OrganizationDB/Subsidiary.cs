@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     {
         public Subsidiary()
         {
+            EmployeeSubsidiary = new HashSet<EmployeeSubsidiary>();
             InverseParentSubsidiary = new HashSet<Subsidiary>();
         }
 
@@ -28,6 +29,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual Subsidiary ParentSubsidiary { get; set; }
+        public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
         public virtual ICollection<Subsidiary> InverseParentSubsidiary { get; set; }
     }
 }

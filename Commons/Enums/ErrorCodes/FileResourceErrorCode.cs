@@ -11,6 +11,7 @@
         FileSizeExceededLimit = 6,
         InvalidFileStatus = 7,
         InvalidObjectType = 8,
-        FileUrlExpired = 9
+        FileUrlExpired = 9,
+        InvalidTabeInDocument = 10
     }
 }

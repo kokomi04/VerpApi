@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -80,6 +80,13 @@ namespace VErpApi.Controllers.Accountancy.Data
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
             return await _inputDataService.UpdateBill(inputTypeId, fId, data).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{inputTypeId}/multiple")]
+        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
+        {
+            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
         }
 
         [HttpDelete]
@@ -163,6 +170,20 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero([FromQuery] long toDate)
         {
             return await _inputDataService.CalcCostTransferBalanceZero(toDate);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedCostTransferBalanceZero")]
+        public async Task<bool> CheckExistedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.CheckExistedCostTransferBalanceZero(fromDate, toDate);
+        }
+
+        [HttpDelete]
+        [Route("DeletedCostTransferBalanceZero")]
+        public async Task<bool> DeletedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _inputDataService.DeletedCostTransferBalanceZero(fromDate, toDate);
         }
     }
 }

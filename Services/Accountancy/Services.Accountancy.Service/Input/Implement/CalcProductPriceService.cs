@@ -64,7 +64,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@FromDate", SqlDbType.DateTime2){ Value = fDate},
                     new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
 
-                    req.GroupColumns.ToNValueSqlParameter("@GroupColumns"),                    
+                    req.GroupColumns.ToNValueSqlParameter("@GroupColumns"),
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
                     req.DirectLaborFee.ToDecimalKeyValueSqlParameter("@DirectLaborFee"),
@@ -72,18 +72,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     req.CustomPrice.ToDecimalKeyValueSqlParameter("@CustomPrice"),
 
                     new SqlParameter("@IndirectMaterialFeeAllocationTypeId", SqlDbType.Int){ Value = req.IndirectMaterialFeeAllocationTypeId},
-                    new SqlParameter("@IndirectMaterialFeeSumCustom", SqlDbType.Decimal){ Value = req.IndirectMaterialFeeSumCustom},
+                    req.IndirectMaterialFeeSumCustom.ToSqlParameterValue("@IndirectMaterialFeeSumCustom"),
                     indirectMaterialFeeSum,
 
                     new SqlParameter("@IndirectLaborFeeAllocationTypeId", SqlDbType.Int){ Value = req.IndirectLaborFeeAllocationTypeId},
-                    new SqlParameter("@IndirectLaborFeeSumCustom", SqlDbType.Decimal){ Value = req.IndirectLaborFeeSumCustom},
+                    req.IndirectLaborFeeSumCustom.ToSqlParameterValue("@IndirectLaborFeeSumCustom"),
+
                     indirectLaborFeeSum,
 
                     new SqlParameter("@GeneralManufacturingAllocationTypeId", SqlDbType.Int){ Value = req.GeneralManufacturingAllocationTypeId},
-                    new SqlParameter("@GeneralManufacturingSumCustom", SqlDbType.Decimal){ Value = req.GeneralManufacturingSumCustom},
-                    generalManufacturingSum
+                    req.GeneralManufacturingSumCustom.ToSqlParameterValue("@GeneralManufacturingSumCustom"),
 
-                }, CommandType.StoredProcedure)
+                    generalManufacturingSum,
+
+                    new SqlParameter("@IsReviewUpdate", SqlDbType.Decimal){ Value = req.IsReviewUpdate},
+                    new SqlParameter("@IsUpdate", SqlDbType.Decimal){ Value = req.IsUpdate}
+
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
             return new CalcProductPriceGetTableOutput()

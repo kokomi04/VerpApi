@@ -31,7 +31,7 @@ namespace CreateNewVersionsOfBills.Services
             var billTypes = await _inputConfigService.GetInputTypes(string.Empty, 1, int.MaxValue);
             foreach (var type in billTypes.List)
             {
-                var bills = await _inputDataService.GetBills(type.InputTypeId, string.Empty, new Dictionary<int, object>(), string.Empty, true, 1, int.MaxValue);
+                var bills = await _inputDataService.GetBills(type.InputTypeId, string.Empty, new Dictionary<int, object>(), null, string.Empty, true, 1, int.MaxValue);
                 foreach (var bill in bills.List)
                 {
                     var fId = Convert.ToInt64(bill["F_Id"]);
@@ -42,12 +42,9 @@ namespace CreateNewVersionsOfBills.Services
                     }
                     catch (Exception)
                     {
-
                         throw;
                     }
-                    
                 }
-
             }
         }
     }
