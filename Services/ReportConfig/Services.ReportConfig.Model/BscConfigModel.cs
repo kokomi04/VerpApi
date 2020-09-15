@@ -42,6 +42,7 @@ namespace Verp.Services.ReportConfig.Model
     public class BscCellModel
     {
         public string Value { get; set; }
+        public bool CanEdit { get; set; }
         public NonCamelCaseDictionary Style { get; set; }
     }
 }
