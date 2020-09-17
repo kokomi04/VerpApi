@@ -51,7 +51,7 @@ namespace MasterTests
             var activityLogService = new Mock<IActivityLogService>();
             var asyncRunnerService = new Mock<IAsyncRunnerService>();
 
-            var currentContext = new ScopeCurrentContextService(1, EnumAction.Add, new RoleInfo(1, null, true, true), new List<int>());
+            var currentContext = new ScopeCurrentContextService(1, EnumAction.Add, new RoleInfo(1, null, true, true), new List<int>(), 0);
 
             IUserService user = new UserService(inMem, inMem1, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object);
 

@@ -179,5 +179,9 @@ namespace Services.Organization.Service.Department.Implement
             return true;
         }
 
+        public async Task<IList<SubsidiaryOutput>> GetList()
+        {
+            return await _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).ToListAsync();
+        }
     }
 }
