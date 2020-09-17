@@ -2267,7 +2267,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@BillDate", billDate),
                     result
                 };
-                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams);
+                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
