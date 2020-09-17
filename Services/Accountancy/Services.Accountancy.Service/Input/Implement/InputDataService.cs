@@ -86,7 +86,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {inputTypeId}");
+            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId}");
 
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
@@ -203,7 +203,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ).ToListAsync()
             ).ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
@@ -223,7 +223,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
@@ -232,7 +232,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -272,11 +272,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -1465,7 +1465,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataTable.Columns.Add("UpdatedDatetimeUtc", typeof(DateTime));
             dataTable.Columns.Add("IsDeleted", typeof(bool));
             dataTable.Columns.Add("DeletedDatetimeUtc", typeof(DateTime));
-
+            dataTable.Columns.Add("SubsidiaryId", typeof(int));
 
             var sumReciprocals = new Dictionary<string, decimal>();
             foreach (var column in insertColumns)
@@ -1613,7 +1613,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataRow["UpdatedDatetimeUtc"] = DateTime.UtcNow;
             dataRow["IsDeleted"] = false;
             dataRow["DeletedDatetimeUtc"] = DBNull.Value;
-
+            dataRow["SubsidiaryId"] = _currentContextService.SubsidiaryId;
             return dataRow;
         }
 

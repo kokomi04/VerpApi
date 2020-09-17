@@ -54,6 +54,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly MasterDBContext _masterDBContext;
 
         private int _userId = 0;
+        private int _subsidiaryId = 0;
+
         private EnumAction? _action;
 
         private IList<int> _stockIds;
@@ -89,6 +91,24 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     break;
                 }
                 return _userId;
+            }
+        }
+        public int SubsidiaryId
+        {
+            get
+            {
+                if (_subsidiaryId > 0)
+                    return _userId;
+
+                foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
+                {
+                    if (claim.Type != "subsidiaryId")
+                        continue;
+
+                    int.TryParse(claim.Value, out _subsidiaryId);
+                    break;
+                }
+                return _subsidiaryId;
             }
         }
 
@@ -191,15 +211,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
-        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds)
+        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId)
         {
             UserId = userId;
+            SubsidiaryId = subsidiaryId;
             Action = action;
             RoleInfo = roleInfo;
             StockIds = stockIds;
         }
 
         public int UserId { get; } = 0;
+        public int SubsidiaryId { get; } = 0;
 
         public EnumAction Action { get; }
 
