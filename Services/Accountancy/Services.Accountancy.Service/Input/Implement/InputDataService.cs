@@ -2109,9 +2109,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 new SqlParameter("@TyGia", exchangeRate),
-                new SqlParameter("@Currency", currency),
+                new SqlParameter("@Currency", currency)
             };
-            var data = await _accountancyDBContext.QueryDataTable("EXEC ufn_TK_CalcFixExchangeRate @ToDate = @ToDate, @TyGia = @TyGia, @Currency = @Currency", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcFixExchangeRate", sqlParams, true);
             var rows = data.ConvertData();
             return rows;
         }
@@ -2129,16 +2129,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@by_khoan_muc_cp", byExpenseItem),
                 new SqlParameter("@by_phan_xuong", byFactory),
                 new SqlParameter("@by_vthhtp", byProduct),
-                new SqlParameter("@by_kho", byStock),
+                new SqlParameter("@by_kho", byStock)
             };
-
-            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransfer");
-            foreach (var param in sqlParams)
-            {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
-            }
-
-            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransfer", sqlParams, true);
             var rows = data.ConvertData();
             return rows;
         }
@@ -2152,7 +2145,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -2166,7 +2159,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
 
@@ -2190,7 +2183,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@Type", (int)type),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -2205,7 +2198,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@Type", (int)type),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
 
@@ -2216,13 +2209,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime())
             };
 
-            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransferBalanceZero");
-            foreach (var param in sqlParams)
-            {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
-            }
-
-            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransferBalanceZero", sqlParams, true);
             var rows = data.ConvertData();
             return rows;
         }
@@ -2236,7 +2223,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransferBalanceZero", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransferBalanceZero", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -2250,7 +2237,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransferBalanceZero", sqlParams);
+            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransferBalanceZero", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
 

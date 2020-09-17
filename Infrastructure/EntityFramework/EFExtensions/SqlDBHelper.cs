@@ -48,6 +48,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, bool includeSubId = false, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        {
+            var sql = new StringBuilder($"EXEC {procedureName}");
+            foreach (var param in parammeters)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+            if(includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+            {
+                parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
+                sql.Append($" {SubIdParam} = {SubIdParam},");
+            }
+            return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
+        }
+
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try
