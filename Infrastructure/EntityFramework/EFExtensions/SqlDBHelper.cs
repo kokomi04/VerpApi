@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
         }
 
-        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, bool appendSubIdParam = true)
+        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, bool includeSubId = false)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var p in parammeters)
@@ -37,7 +37,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
-            if (appendSubIdParam && dbContext is ICurrentRequestDbContext requestDbContext)
+            if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
             {
                 parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
 
