@@ -92,6 +92,24 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _userId;
             }
         }
+        public int SubsidiaryId
+        {
+            get
+            {
+                if (_subsidiaryId > 0)
+                    return _userId;
+
+                foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
+                {
+                    if (claim.Type != "subsidiaryId")
+                        continue;
+
+                    int.TryParse(claim.Value, out _subsidiaryId);
+                    break;
+                }
+                return _subsidiaryId;
+            }
+        }
 
         public EnumAction Action
         {
@@ -188,26 +206,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _stockIds;
             }
         }
-
-        public int SubsidiaryId
-        {
-            get
-            {
-                if (_subsidiaryId > 0)
-                    return _subsidiaryId;
-
-                foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
-                {
-                    if (claim.Type != "subsidiaryId")
-                        continue;
-
-                    int.TryParse(claim.Value, out _subsidiaryId);
-                    break;
-                }
-                return _subsidiaryId;
-
-            }
-        }
     }
 
     public class ScopeCurrentContextService : ICurrentContextService
@@ -215,19 +213,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId)
         {
             UserId = userId;
+            SubsidiaryId = subsidiaryId;
             Action = action;
             RoleInfo = roleInfo;
             StockIds = stockIds;
-            SubsidiaryId = subsidiaryId;
         }
 
         public int UserId { get; } = 0;
-
+        public int SubsidiaryId { get; } = 0;
         public EnumAction Action { get; }
-
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
-
-        public int SubsidiaryId {get; } = 0;
     }
 }
