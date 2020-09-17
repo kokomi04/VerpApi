@@ -55,7 +55,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private int _userId = 0;
         private int _subsidiaryId = 0;
-
         private EnumAction? _action;
 
         private IList<int> _stockIds;
@@ -222,9 +221,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public int UserId { get; } = 0;
         public int SubsidiaryId { get; } = 0;
-
         public EnumAction Action { get; }
-
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
     }

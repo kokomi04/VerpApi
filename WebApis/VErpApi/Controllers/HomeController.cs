@@ -7,7 +7,7 @@ using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErpApi.Controllers
 {
-    [Route("")]
+    //[Route("")]
     [AllowAnonymous]
     public class HomeController : Controller
     {
@@ -20,7 +20,7 @@ namespace VErpApi.Controllers
             _settings = settings;
             
         }
-        [Route("")]
+        //[Route("")]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -28,7 +28,7 @@ namespace VErpApi.Controllers
             return Content("Ok, I'm working!");
         }
 
-        [Route("Error")]
+        //[Route("Error")]
         [HttpGet]
         public async Task<IActionResult> Error(string errorId)
         {

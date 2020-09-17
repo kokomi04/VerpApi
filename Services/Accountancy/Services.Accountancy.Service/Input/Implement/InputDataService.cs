@@ -199,9 +199,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-               select f.FieldName
+               select f
             ).ToListAsync()
-            ).ToHashSet();
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
 
             var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.SubsidiaryId = {_currentContextService.SubsidiaryId} AND r.IsBillEntry = 0";
 
@@ -263,7 +268,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-               select f.FieldName).ToListAsync()).ToHashSet();
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
 
             var result = new BillInfoModel();
 

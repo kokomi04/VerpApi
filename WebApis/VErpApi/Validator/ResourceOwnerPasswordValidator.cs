@@ -11,16 +11,19 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.WebApis.VErpApi.Validator
 {
     public class ResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
     {
         private readonly MasterDBContext _masterDB;
+        private readonly OrganizationDBContext _organizationDB;
         private readonly AppSetting _appSetting;
-        public ResourceOwnerPasswordValidator(MasterDBContext masterDB, IOptionsSnapshot<AppSetting> appSetting)
+        public ResourceOwnerPasswordValidator(MasterDBContext masterDB, OrganizationDBContext organizationDB, IOptionsSnapshot<AppSetting> appSetting)
         {
             _masterDB = masterDB;
+            _organizationDB = organizationDB;
             _appSetting = appSetting?.Value;
         }
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
@@ -45,6 +48,27 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
+            var subsidiaryId = context.Request.Raw["subsidiary_id"];
+            if (string.IsNullOrEmpty(subsidiaryId))
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Bạn chưa chọn công ty");
+                return;
+            }
+
+            var sub = await GetSubsidiaryByUserId(subsidiaryId);
+            if (sub == null)
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Công ty không tồn tại");
+                return;
+            }
+
+            if (!IsValidSubsidiary(user.UserId, sub.SubsidiaryId))
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} không thuộc công ty {sub.SubsidiaryName}");
+                return;
+            }
+
+
             if (!IsValidCredential(user, context.Password))
             {
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Mật khẩu không đúng");
@@ -55,6 +79,7 @@ namespace VErp.WebApis.VErpApi.Validator
             {
                 new Claim("userId", user.UserId+""),
                 new Claim("clientId", context.Request.ClientId),
+                new Claim("subsidiaryId", subsidiaryId),
             };
 
             context.Result = new GrantValidationResult(
@@ -70,6 +95,21 @@ namespace VErp.WebApis.VErpApi.Validator
 
             return await _masterDB.User.FirstOrDefaultAsync(u => u.UserNameHash == usernameHash);
         }
+
+        private async Task<Subsidiary> GetSubsidiaryByUserId(string subsidiaryId)
+        {
+            int subId;
+            _ = int.TryParse(subsidiaryId, out subId);
+            return await _organizationDB.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == subId);
+        }
+
+        private bool IsValidSubsidiary(int userId, int subsidiaryId)
+        {
+            return _organizationDB.EmployeeSubsidiary
+                .Where(x => x.UserId == userId)
+                .Any(s => s.SubsidiaryId == subsidiaryId);
+        }
+
         private bool IsValidCredential(User user, string password)
         {
             return Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, user.PasswordSalt, password, user.PasswordHash);
