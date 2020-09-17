@@ -10,6 +10,9 @@ using VErp.Services.Organization.Service.Department;
 using VErp.Services.Organization.Model.Department;
 using Services.Organization.Service.Department;
 using Services.Organization.Model.Deparment;
+using Microsoft.AspNetCore.Authorization;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace VErpApi.Controllers.System
 {
@@ -28,6 +31,14 @@ namespace VErpApi.Controllers.System
         public async Task<PageData<SubsidiaryOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _subsidiaryService.GetList(keyword, page, size).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("forLogin")]
+        [AllowAnonymous]
+        public async Task<IList<SubsidiaryOutput>> GetSubsidiaryForLogin()
+        {
+            return await _subsidiaryService.GetList().ConfigureAwait(true);
         }
 
         [HttpPost]

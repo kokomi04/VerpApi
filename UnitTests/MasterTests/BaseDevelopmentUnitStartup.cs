@@ -37,7 +37,7 @@ namespace MasterTests
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumAction.Add, RoleInfo, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumAction.Add, RoleInfo, null, 0));
 
            
             _stockDBContext = (StockDBContext)webHost.Services.GetService(typeof(StockDBContext));

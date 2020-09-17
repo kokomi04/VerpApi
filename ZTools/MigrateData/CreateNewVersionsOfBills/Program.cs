@@ -65,7 +65,7 @@ namespace CreateNewVersionsOfBills
             AppSetting = setting.AppSetting;
             ServiceProvider = new AppStartup(setting).ConfigureServices(serviceCollection);
             var contextFactory = ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-            contextFactory.SetCurrentContext(new ScopeCurrentContextService(0, VErp.Commons.Enums.MasterEnum.EnumAction.Censor, null, null));
+            contextFactory.SetCurrentContext(new ScopeCurrentContextService(0, VErp.Commons.Enums.MasterEnum.EnumAction.Censor, null, null, 0));
         }
     }
 }
