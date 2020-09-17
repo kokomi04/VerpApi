@@ -9,12 +9,14 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache
+    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ICurrentRequestDbContext
     {
         //ICurrentContextService _currentContext;
         public List<int> StockIds { get; set; }
 
         public bool FilterStock { get; private set; }
+
+        public ICurrentContextService CurrentContextService { get; private set; }
 
         public StockDBRestrictionContext(DbContextOptions<StockDBRestrictionContext> options
             , ICurrentContextService currentContext
@@ -23,6 +25,7 @@ namespace VErp.Infrastructure.EF.StockDB
         {
             // _currentContext = currentContext;
             StockIds = currentContext.StockIds?.ToList();
+            CurrentContextService = currentContext;
             FilterStock = StockIds != null;
         }
 
@@ -51,7 +54,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     var isStockIdProp = entityType.FindProperty("StockId");
                     if (isStockIdProp != null)
                     {
-                        var stockIds = Expression.PropertyOrField(ctxConstant, "StockIds");
+                        var stockIds = Expression.PropertyOrField(ctxConstant, nameof(StockIds));
                         filterBuilder.AddFilterListContains<int>("StockId", stockIds);
                     }
                 }

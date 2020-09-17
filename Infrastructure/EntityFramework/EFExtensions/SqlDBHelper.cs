@@ -19,6 +19,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
 {
     public static class SqlDBHelper
     {
+        private const string SubIdParam = "@SubId";
+        private const string SubIdColumn = "SubsidiaryId";
+
+        private static SqlParameter CreateSubSqlParam(this ICurrentRequestDbContext requestDbContext)
+        {
+            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
+        }
+
         public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
@@ -26,6 +34,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 sql.Append($" {p.ParameterName} = {p.ParameterName}");
                 if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
+                sql.Append(",");
+            }
+
+            if (dbContext is ICurrentRequestDbContext requestDbContext)
+            {
+                parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
+
+                sql.Append($" {SubIdParam} = {SubIdParam}");
                 sql.Append(",");
             }
 
@@ -42,6 +58,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
                     command.Parameters.AddRange(parammeters);
+
+                    if (dbContext is ICurrentRequestDbContext requestDbContext)
+                    {
+                        command.Parameters.Add(requestDbContext.CreateSubSqlParam());
+                    }
+
                     if (timeout.HasValue)
                     {
                         command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
@@ -80,7 +102,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static async Task<long> InsertDataTable(this DbContext dbContext, DataTable table)
+        public static async Task<long> InsertDataTable(this DbContext dbContext, DataTable table, bool includeSubId = false)
         {
             var newId = 0L;
             var columns = new HashSet<DataColumn>();
@@ -101,6 +123,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     insertColumns.Add(c.ColumnName);
                     sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
                 }
+
+                if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+                {
+                    if (!insertColumns.Any(c => c == SubIdColumn))
+                    {
+                        insertColumns.Add(SubIdColumn);
+                        sqlParams.Add(requestDbContext.CreateSubSqlParam());
+                    }
+                }
+
                 var idParam = new SqlParameter("@Id", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
                 sqlParams.Add(idParam);
                 var sql = $"INSERT INTO [{table.TableName}]({string.Join(",", insertColumns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Where(p => p.ParameterName != "@Id").Select(p => $"{p.ParameterName}"))}); SELECT @Id = SCOPE_IDENTITY();";

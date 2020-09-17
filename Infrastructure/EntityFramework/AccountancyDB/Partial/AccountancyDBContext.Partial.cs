@@ -8,16 +8,16 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
-    public partial class AccountancyDBRestrictionContext : AccountancyDBContext
+    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ICurrentRequestDbContext
     {
-        private readonly ICurrentContextService _currentContext;
+        public ICurrentContextService CurrentContextService { get; private set; }
 
         public AccountancyDBRestrictionContext(DbContextOptions<AccountancyDBRestrictionContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
             : base(options.ChangeOptionsType<AccountancyDBContext>(loggerFactory))
         {
-            _currentContext = currentContext;
+            CurrentContextService = currentContext;
         }
 
 
@@ -29,13 +29,13 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         public override int SaveChanges()
         {
-            this.SetHistoryBaseValue(_currentContext);
+            this.SetHistoryBaseValue(CurrentContextService);
             return base.SaveChanges();
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            this.SetHistoryBaseValue(_currentContext);
+            this.SetHistoryBaseValue(CurrentContextService);
             return await base.SaveChangesAsync();
         }
     }
