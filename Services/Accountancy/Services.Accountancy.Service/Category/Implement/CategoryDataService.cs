@@ -29,6 +29,8 @@ using VErp.Services.Accountancy.Model.Data;
 using Microsoft.AspNetCore.DataProtection;
 
 using CategoryEntity = VErp.Infrastructure.EF.AccountancyDB.Category;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+
 namespace VErp.Services.Accountancy.Service.Category
 {
     public class CategoryDataService : ICategoryDataService
@@ -40,6 +42,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly AccountancyDBContext _accountancyContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IDataProtectionProvider _protectionProvider;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         public CategoryDataService(AccountancyDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
@@ -47,6 +50,7 @@ namespace VErp.Services.Accountancy.Service.Category
             , IMapper mapper
             , ICurrentContextService currentContextService
             , IDataProtectionProvider protectionProvider
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _logger = logger;
@@ -56,6 +60,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _mapper = mapper;
             _currentContextService = currentContextService;
             _protectionProvider = protectionProvider;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
@@ -83,7 +88,10 @@ namespace VErp.Services.Accountancy.Service.Category
             // Lấy thông tin field
             var categoryFields = _accountancyContext.CategoryField
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
-                .AsEnumerable();
+                .ToList();
+
+            await FillGenerateColumn(categoryFields, data);
+
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
             var selectFields = categoryFields.Where(f => !f.AutoIncrement && (f.FormTypeId == (int)EnumFormType.SearchTable || f.FormTypeId == (int)EnumFormType.Select));
@@ -267,6 +275,66 @@ namespace VErp.Services.Accountancy.Service.Category
             int numberChange = await _accountancyContext.UpdateCategoryData(dataTable, fId);
             await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Cập nhật dữ liệu danh mục {fId}", data.JsonSerialize());
             return numberChange;
+        }
+
+        private async Task FillGenerateColumn(ICollection<CategoryField> fields, Dictionary<string, string> data)
+        {
+            foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
+            {
+                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
+                {
+                    CustomGenCodeOutputModelOut currentConfig;
+                    try
+                    {
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, field.CategoryFieldId);
+
+                        if (currentConfig == null)
+                        {
+                            throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
+                        }
+                    }
+                    catch (BadRequestException badRequest)
+                    {
+                        throw new BadRequestException(badRequest.Code, "Cấu hình sinh mã " + field.Title + " => " + badRequest.Message);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+
+                    try
+                    {
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                        if (generated == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
+                        }
+
+
+                        value = generated.CustomCode;
+                        currentConfig.LastValue = generated.LastValue;
+                        currentConfig.LastCode = generated.CustomCode;
+                    }
+                    catch (BadRequestException badRequest)
+                    {
+                        throw new BadRequestException(badRequest.Code, "Sinh mã " + field.Title + " => " + badRequest.Message);
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
+
+                    if (!data.ContainsKey(field.CategoryFieldName))
+                    {
+                        data.Add(field.CategoryFieldName, value);
+                    }
+                    else
+                    {
+                        data[field.CategoryFieldName] = value;
+                    }
+                }
+            }
         }
 
         public async Task<int> DeleteCategoryRow(int categoryId, int fId)
