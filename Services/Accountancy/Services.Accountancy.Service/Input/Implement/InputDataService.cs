@@ -975,7 +975,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
+            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
             var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             NonCamelCaseDictionary currentInfo = null;
             if (infoLst.Count != 0)
@@ -990,7 +990,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
             AppendSelectFields(ref rowsSQL, multiFields);
-            rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
+            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
             var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
@@ -1274,7 +1274,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         infoSQL.Append(singleFields[indx].FieldName);
                     }
-                    infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
                     var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                     data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
@@ -1289,7 +1289,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         rowsSQL.Append(multiFields[indx].FieldName);
                     }
-                    rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
