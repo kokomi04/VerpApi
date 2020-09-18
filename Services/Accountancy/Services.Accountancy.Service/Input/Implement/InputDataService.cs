@@ -377,6 +377,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     InputTypeId = inputTypeId,
                     LatestBillVersion = 1,
+                    SubsidiaryId = _currentContextService.SubsidiaryId,
                     IsDeleted = false
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
@@ -1029,7 +1030,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
-                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
+                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1191,12 +1192,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
-            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId)).ToList();
+            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
                 // Created bill version
-                await _accountancyDBContext.InsertDataTable(dataTable);
+                await _accountancyDBContext.InsertDataTable(dataTable, true);
 
                 foreach (var bill in bills)
                 {
@@ -1249,7 +1250,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id);
+                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1690,7 +1691,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@BillVersion", billVersionId),
                     new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
-                });
+                }, true);
         }
 
         private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
@@ -1938,6 +1939,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             InputTypeId = inputTypeId,
                             LatestBillVersion = 1,
+                            SubsidiaryId = _currentContextService.SubsidiaryId,
                             IsDeleted = false
                         };
 
