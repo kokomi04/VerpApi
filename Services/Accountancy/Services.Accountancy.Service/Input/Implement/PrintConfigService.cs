@@ -181,85 +181,85 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(FileErrorCode.FileNotFound);
             }
+            string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
+            string outDirectory = GeneratePhysicalFolder();
 
             var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
 
             using (var document = WordprocessingDocument.CreateFromTemplate(physicalFilePath))
             {
-                var body = document.MainDocumentPart.Document.Body;
-
-                #region find and replace string with regex
-                var paragraphs = body.Descendants<Paragraph>();
-                List<VErpDocMatch> docMatchs = new List<VErpDocMatch>();
-
-                foreach (Paragraph paragraph in paragraphs)
+                if (true)
                 {
-                    VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Info);
-                    if (vErpDocMatch.fieldMatchs.Count > 0)
-                        docMatchs.Add(vErpDocMatch);
-                }
+                    var body = document.MainDocumentPart.Document.Body;
 
-                foreach (var docMatch in docMatchs)
-                {
-                    var paragraph = docMatch.paragraph;
-                    foreach (var match in docMatch.fieldMatchs)
+                    #region find and replace string with regex
+                    var paragraphs = body.Descendants<Paragraph>();
+                    List<VErpDocMatch> docMatchs = new List<VErpDocMatch>();
+
+                    foreach (Paragraph paragraph in paragraphs)
                     {
-                        var result = await match.Value.GetFieldValue(templateModel.data, _accountancyDBContext);
-                        WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
+                        VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Info);
+                        if (vErpDocMatch.fieldMatchs.Count > 0)
+                            docMatchs.Add(vErpDocMatch);
                     }
-                }
-                #endregion
 
-                #region generate row data into table
-                var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "main_table").FirstOrDefault()?.Parent);
-                var rows = mainTable.Descendants<TableRow>();
-                if (rows.Count() > 1)
-                {
-                    TableRow row = rows.ElementAt(1);
-                    templateModel.data.Reverse();
-                    foreach (var data in templateModel.data)
+                    foreach (var docMatch in docMatchs)
                     {
-                        var tableRow = (TableRow)row.Clone();
-                        foreach (var cell in tableRow.Descendants<TableCell>())
+                        var paragraph = docMatch.paragraph;
+                        foreach (var match in docMatch.fieldMatchs)
                         {
-                            List<VErpDocMatch> ls = new List<VErpDocMatch>();
+                            var result = await match.Value.GetFieldValue(templateModel.data, _accountancyDBContext);
+                            WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
+                        }
+                    }
+                    #endregion
 
-                            foreach (Paragraph paragraph in cell.Descendants<Paragraph>())
+                    #region generate row data into table
+                    var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "main_table").FirstOrDefault()?.Parent);
+                    var rows = mainTable.Descendants<TableRow>();
+                    if (rows.Count() > 1)
+                    {
+                        TableRow row = rows.ElementAt(1);
+                        templateModel.data.Reverse();
+                        foreach (var data in templateModel.data)
+                        {
+                            var tableRow = (TableRow)row.Clone();
+                            foreach (var cell in tableRow.Descendants<TableCell>())
                             {
-                                var vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Table);
-                                ls.Add(vErpDocMatch);
-                            }
+                                List<VErpDocMatch> ls = new List<VErpDocMatch>();
 
-                            foreach (var docMatch in ls)
-                            {
-                                var paragraph = docMatch.paragraph;
-                                foreach (var match in docMatch.fieldMatchs)
+                                foreach (Paragraph paragraph in cell.Descendants<Paragraph>())
                                 {
-                                    var temps = new List<NonCamelCaseDictionary>();
-                                    temps.Add(data);
-                                    var result = await match.Value.GetFieldValue(temps, _accountancyDBContext);
-                                    WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
+                                    var vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Table);
+                                    ls.Add(vErpDocMatch);
+                                }
+
+                                foreach (var docMatch in ls)
+                                {
+                                    var paragraph = docMatch.paragraph;
+                                    foreach (var match in docMatch.fieldMatchs)
+                                    {
+                                        var temps = new List<NonCamelCaseDictionary>();
+                                        temps.Add(data);
+                                        var result = await match.Value.GetFieldValue(temps, _accountancyDBContext);
+                                        WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
+                                    }
                                 }
                             }
+                            mainTable.InsertAfter(tableRow, row);
                         }
-                        mainTable.InsertAfter(tableRow, row);
+                        row.Remove();
                     }
-                    row.Remove();
+                    #endregion
                 }
-                #endregion
-
-                string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
-                string outDirectory = GeneratePhysicalFolder();
 
                 document.SaveAs($"{outDirectory}/{file}.docx").Close();
                 document.Close();
-
                 WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{file}.docx", $"{outDirectory}/{file}.pdf");
-
-                return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"),
-                    "application/pdf",
-                    $"{file}.pdf");
             }
+            return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"),
+                "application/pdf",
+                $"{file}.pdf");
         }
 
         private string GeneratePhysicalFolder()

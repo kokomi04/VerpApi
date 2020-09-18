@@ -38,13 +38,15 @@ namespace VErp.Services.Accountancy.Model.Input
         public async Task<object> GetFieldValue(List<NonCamelCaseDictionary> datas, DbContext dBContext)
         {
             var regex = new Regex(pattern);
+
+            if (datas.Count <= 0) return null;
+
             if (textExpression.StartsWith("[") && textExpression.EndsWith("]"))
             {
                 var funcMatch = new VErpDocFuncMatch { textExpression = textExpression };
                 return await funcMatch.GetFuncValue(datas, dBContext);
             }
-            else
-            if (regex.IsMatch(textExpression))
+            else if (regex.IsMatch(textExpression))
             {
                 var m = regex.Match(textExpression);
                 object result;
@@ -57,7 +59,6 @@ namespace VErp.Services.Accountancy.Model.Input
                 {
                     int index;
                     int.TryParse(m.Groups[2].Value, out index);
-
                     index = index > datas.Count ? 0 : index;
                     datas[index].TryGetValue(fieldName, out result);
                 }
@@ -96,7 +97,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
                 var sqlParams = paramsData.Select(p => new SqlParameter("@" + p.Key, $"{{\"{p.Key}\":{p.Value.JsonSerialize()}}}")).ToArray();
                 var tbl = await dBContext.QueryFunction(functionName, sqlParams);
-                
+
                 return tbl.Rows[0][0];
             }
             return null;
