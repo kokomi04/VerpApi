@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -67,8 +68,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int inputTypeId)
         {
-            var query =  _accountancyDBContext.PrintConfig.AsQueryable();
-            if(inputTypeId > 0)
+            var query = _accountancyDBContext.PrintConfig.AsQueryable();
+            if (inputTypeId > 0)
             {
                 query = query.Where(p => p.InputTypeId == inputTypeId);
             }
@@ -193,7 +194,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 foreach (Paragraph paragraph in paragraphs)
                 {
-                    VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph);
+                    VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Info);
                     if (vErpDocMatch.fieldMatchs.Count > 0)
                         docMatchs.Add(vErpDocMatch);
                 }
@@ -210,7 +211,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 #endregion
 
                 #region generate row data into table
-                var mainTable = body.GetMainTable();
+                var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "main_table").FirstOrDefault()?.Parent);
                 var rows = mainTable.Descendants<TableRow>();
                 if (rows.Count() > 1)
                 {
@@ -221,11 +222,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var tableRow = (TableRow)row.Clone();
                         foreach (var cell in tableRow.Descendants<TableCell>())
                         {
-                            List<VErpDocTableMatch> ls = new List<VErpDocTableMatch>();
+                            List<VErpDocMatch> ls = new List<VErpDocMatch>();
 
                             foreach (Paragraph paragraph in cell.Descendants<Paragraph>())
                             {
-                                var vErpDocMatch = new VErpDocTableMatch(paragraph);
+                                var vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Table);
                                 ls.Add(vErpDocMatch);
                             }
 
@@ -247,27 +248,27 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 #endregion
 
-                string filePath = GenerateTempFilePath(fileInfo.FileName);
-                //string filePathPdf = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) +".pdf");
+                string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
+                string outDirectory = GeneratePhysicalFolder();
 
-                document.SaveAs(GetPhysicalFilePath(filePath)).Close();
+                document.SaveAs($"{outDirectory}/{file}.docx").Close();
                 document.Close();
-                return (System.IO.File.OpenRead(GetPhysicalFilePath(filePath)), 
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                    fileInfo.FileName);
+
+                WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{file}.docx", $"{outDirectory}/{file}.pdf");
+
+                return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"),
+                    "application/pdf",
+                    $"{file}.pdf");
             }
         }
 
-        private string GenerateTempFilePath(string uploadFileName)
+        private string GeneratePhysicalFolder()
         {
             var relativeFolder = $"/_tmp_/{Guid.NewGuid().ToString()}";
-            var relativeFilePath = relativeFolder + "/" + uploadFileName;
-
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
-
-            return relativeFilePath;
+            return obsoluteFolder;
         }
 
         private string GetPhysicalFilePath(string filePath)

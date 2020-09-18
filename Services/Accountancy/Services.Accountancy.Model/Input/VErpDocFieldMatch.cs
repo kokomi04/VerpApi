@@ -13,33 +13,13 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-
-    public class VErpDocTableMatch
-    {
-        private readonly string pattern = @"#table{([\w|,|$|\[\]|\{|\}]+)}";
-        public string fullMatch { get; set; }
-        public Paragraph paragraph { get; set; }
-        public NonCamelCaseDictionary<VErpDocFieldMatch> fieldMatchs { get; set; }
-
-        public VErpDocTableMatch(Paragraph paragraph)
-        {
-            this.paragraph = paragraph;
-            this.fieldMatchs = new NonCamelCaseDictionary<VErpDocFieldMatch>();
-            foreach (Match match in Regex.Matches(paragraph.InnerText, pattern))
-            {
-                fieldMatchs.Add(match.Groups[0].Value,
-                    new VErpDocFieldMatch { textExpression = match.Groups[1].Value });
-            }
-        }
-    }
     public class VErpDocMatch
     {
-        private readonly string pattern = @"#{([\w|,|$|\[\]|\{|\}]+)}";
         public string fullMatch { get; set; }
         public Paragraph paragraph { get; set; }
         public NonCamelCaseDictionary<VErpDocFieldMatch> fieldMatchs { get; set; }
 
-        public VErpDocMatch(Paragraph paragraph)
+        public VErpDocMatch(Paragraph paragraph, string pattern)
         {
             this.paragraph = paragraph;
             this.fieldMatchs = new NonCamelCaseDictionary<VErpDocFieldMatch>();
@@ -77,10 +57,10 @@ namespace VErp.Services.Accountancy.Model.Input
                 {
                     int index;
                     int.TryParse(m.Groups[2].Value, out index);
+
+                    index = index > datas.Count ? 0 : index;
                     datas[index].TryGetValue(fieldName, out result);
                 }
-
-
                 return result;
             }
 
@@ -145,7 +125,7 @@ namespace VErp.Services.Accountancy.Model.Input
                 else if (a > b && b < c)
                 {
                     ls.Add(str.Substring(0, b));
-                    ls.Add(str.Substring(b + 1, a - b + 1));
+                    ls.AddRange(ParameterDecomposition(str.Substring(b + 1, a - b + 1)));
                     if (a + 3 > lent) str = "";
                     else
                         str = str.Substring(a + 3);
