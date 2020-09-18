@@ -283,14 +283,31 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
                 {
-                    CustomGenCodeOutputModelOut currentConfig;
                     try
                     {
-                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, field.CategoryFieldId);
+                        CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, field.CategoryFieldId);
 
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
+                        }
+                       
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                       
+                        if (generated == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
+                        }
+
+                        value = generated.CustomCode;
+
+                        if (!data.ContainsKey(field.CategoryFieldName))
+                        {
+                            data.Add(field.CategoryFieldName, value);
+                        }
+                        else
+                        {
+                            data[field.CategoryFieldName] = value;
                         }
                     }
                     catch (BadRequestException badRequest)
@@ -300,38 +317,6 @@ namespace VErp.Services.Accountancy.Service.Category
                     catch (Exception)
                     {
                         throw;
-                    }
-
-                    try
-                    {
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
-                        if (generated == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
-                        }
-
-
-                        value = generated.CustomCode;
-                        currentConfig.LastValue = generated.LastValue;
-                        currentConfig.LastCode = generated.CustomCode;
-                    }
-                    catch (BadRequestException badRequest)
-                    {
-                        throw new BadRequestException(badRequest.Code, "Sinh mã " + field.Title + " => " + badRequest.Message);
-                    }
-                    catch (Exception)
-                    {
-
-                        throw;
-                    }
-
-                    if (!data.ContainsKey(field.CategoryFieldName))
-                    {
-                        data.Add(field.CategoryFieldName, value);
-                    }
-                    else
-                    {
-                        data[field.CategoryFieldName] = value;
                     }
                 }
             }
