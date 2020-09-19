@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -26,5 +27,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
+    }
+
+    public class PrintTemplateInput
+    {
+        public List<NonCamelCaseDictionary> data { get; set; }
     }
 }

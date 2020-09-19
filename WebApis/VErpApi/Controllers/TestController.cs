@@ -39,6 +39,7 @@ namespace VErp.WebApis.VErpApi.Controllers
             _activityService = activityService;
             _asyncRunnerService = asyncRunnerService;
         }
+
         [HttpPost]
         [Route("CreateUser")]
         public async Task<bool> Post([FromQuery] string userName, [FromQuery] string password, [FromQuery] int roleId)
