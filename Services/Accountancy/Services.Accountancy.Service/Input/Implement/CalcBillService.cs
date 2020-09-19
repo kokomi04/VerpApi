@@ -31,7 +31,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@TyGia", exchangeRate),
                 new SqlParameter("@Currency", currency)
             };
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcFixExchangeRate", sqlParams, true);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcFixExchangeRate", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
@@ -51,7 +51,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@by_vthhtp", byProduct),
                 new SqlParameter("@by_kho", byStock)
             };
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransfer", sqlParams, true);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransfer", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
@@ -129,7 +129,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime())
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransferBalanceZero", sqlParams, true);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransferBalanceZero", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
