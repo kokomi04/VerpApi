@@ -216,6 +216,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     #region generate row data into table
                     var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "main_table").FirstOrDefault()?.Parent);
+                    var tablePr = mainTable.Elements<TableProperties>().FirstOrDefault();
+
+                    tablePr.TableWidth.Width = "0";
+                    tablePr.TableWidth.Type = TableWidthUnitValues.Auto;
+
                     var rows = mainTable.Descendants<TableRow>();
                     if (rows.Count() > 1)
                     {
@@ -250,6 +255,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         row.Remove();
                     }
+                    tablePr.TableWidth.Width = "5000";
+                    tablePr.TableWidth.Type = TableWidthUnitValues.Pct;
                     #endregion
                 }
 
