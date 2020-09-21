@@ -25,6 +25,8 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
         private readonly ILogger<StoredProcedureService> _logger;
         private readonly AccountancyDBContext _accountancyDBContext;
 
+        private const string PATTERN = @"(uv|usp|ufn)\w+";
+
         public StoredProcedureService(AccountancyDBContext accountancyDBContext,
             ILogger<StoredProcedureService> logger,
             IActivityLogService activityLogService)
@@ -106,7 +108,7 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
         {
             var type = storedProcedureModel.Type;
 
-            int indexPoint = storedProcedureModel.Definition.IndexOf("(");
+            int indexPoint = storedProcedureModel.Definition.IndexOf("AS");
 
             if (!storedProcedureModel.Definition.Substring(0, indexPoint).ToLower().Contains(type.GetEnumDescription().ToLower()))
             {
