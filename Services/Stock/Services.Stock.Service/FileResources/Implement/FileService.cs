@@ -1,12 +1,16 @@
-﻿using ImageMagick;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using ImageMagick;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Spire.Doc;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -519,56 +523,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private string GetPhysicalFilePath(string filePath)
         {
             return filePath.GetPhysicalFilePath(_appSetting);
-        }
-
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel)
-        {
-            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-            if (fileInfo == null)
-            {
-                throw new BadRequestException(FileErrorCode.FileNotFound);
-            }
-
-            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
-
-            using (var document = new DocumentReader(physicalFilePath).document)
-            {
-
-                //find and replace in document
-                foreach (var data in templateModel.dataReplace)
-                {
-                    document.Replace($"#{{{data.Key}}}", data.Value ?? "", false, true);
-                }
-
-                //insert and set value to table in document
-                if (document.LastSection.Tables.Count > 0)
-                {
-                    var table = document.LastSection.Tables[0];
-                    for (int i = 0; i < templateModel.dataTable.Count; i++)
-                    {
-                        var rowData = templateModel.dataTable[i];
-                        if (table.Rows.Count <= 1)
-                            throw new BadRequestException(FileErrorCode.InvalidTabeInDocument,"Table trong document không hợp lệ");
-                        TableRow row = table.Rows[1].Clone();
-
-                        for (int j = 0; j < rowData.Length; j++)
-                        {
-                            if (j < row.Cells.Count)
-                                row.Cells[j].LastParagraph.Text = rowData[j];
-                        }
-                        table.Rows.Insert(i + 2, row);
-                    }
-                    table.Rows.RemoveAt(1);
-                }
-
-                document.Replace(new Regex(@"^#{.*}$"), string.Empty);
-
-                string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
-
-                document.SaveToFile(GetPhysicalFilePath(filePath), FileFormat.Auto);
-
-                return (File.OpenRead(GetPhysicalFilePath(filePath)), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
-            }
         }
         #endregion
     }

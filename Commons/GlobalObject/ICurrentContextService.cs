@@ -7,6 +7,7 @@ namespace VErp.Commons.GlobalObject
     public interface ICurrentContextService
     {
         int UserId { get; }
+        int SubsidiaryId { get; }
         EnumAction Action { get; }
         IList<int> StockIds { get; }
         RoleInfo RoleInfo { get; }

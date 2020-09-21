@@ -10,7 +10,8 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure
     public interface IStoredProcedureService
     {
         Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList();
-        Task<bool> Modify(int type, StoredProcedureModel storedProcedureModel);
+        Task<bool> Create(int type, StoredProcedureModel storedProcedureModel);
+        Task<bool> Update(int type, StoredProcedureModel storedProcedureModel);
         Task<bool> Drop(int type, StoredProcedureModel storedProcedureModel);
 
     }

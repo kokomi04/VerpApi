@@ -19,7 +19,28 @@ namespace VErp.Infrastructure.EF.EFExtensions
 {
     public static class SqlDBHelper
     {
-        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters)
+        private const string SubIdParam = "@SubId";
+        private const string SubIdColumn = "SubsidiaryId";
+
+        private static SqlParameter CreateSubSqlParam(this ICurrentRequestDbContext requestDbContext)
+        {
+            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
+        }
+
+        public static async Task<DataTable> QueryFunction(this DbContext dbContext, string procedureName, SqlParameter[] parammeters)
+        {
+            var sql = new StringBuilder($"Select dbo.{procedureName}(");
+            for (int i = 0; i < parammeters.Length; i++)
+            {
+                sql.Append($" {parammeters[i].ParameterName}");
+                if (i < parammeters.Length - 1)
+                    sql.Append(",");
+                else sql.Append(")");
+            }
+            return await dbContext.QueryDataTable(sql.ToString(), parammeters);
+        }
+
+        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, bool includeSubId = false)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var p in parammeters)
@@ -29,7 +50,27 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
+            if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+            {
+                parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
+
+                sql.Append($" {SubIdParam} = {SubIdParam}");
+                sql.Append(",");
+            }
+
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
+        }
+
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        {
+            var sql = new StringBuilder($"EXEC {procedureName}");
+            foreach (var param in parammeters)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+            }
+
+            sql.Append($" {SubIdParam} = {SubIdParam},");
+            return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
         }
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
@@ -42,6 +83,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
                     command.Parameters.AddRange(parammeters);
+
+                    if (dbContext is ICurrentRequestDbContext requestDbContext)
+                    {
+                        command.Parameters.Add(requestDbContext.CreateSubSqlParam());
+                    }
+
                     if (timeout.HasValue)
                     {
                         command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
@@ -80,7 +127,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static async Task<long> InsertDataTable(this DbContext dbContext, DataTable table)
+        public static async Task<long> InsertDataTable(this DbContext dbContext, DataTable table, bool includeSubId = false)
         {
             var newId = 0L;
             var columns = new HashSet<DataColumn>();
@@ -101,6 +148,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     insertColumns.Add(c.ColumnName);
                     sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
                 }
+
+                if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+                {
+                    if (!insertColumns.Any(c => c == SubIdColumn))
+                    {
+                        insertColumns.Add(SubIdColumn);
+                        sqlParams.Add(requestDbContext.CreateSubSqlParam());
+                    }
+                }
+
                 var idParam = new SqlParameter("@Id", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
                 sqlParams.Add(idParam);
                 var sql = $"INSERT INTO [{table.TableName}]({string.Join(",", insertColumns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Where(p => p.ParameterName != "@Id").Select(p => $"{p.ParameterName}"))}); SELECT @Id = SCOPE_IDENTITY();";

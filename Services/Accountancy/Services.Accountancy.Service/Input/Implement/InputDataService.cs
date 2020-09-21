@@ -86,7 +86,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {inputTypeId}");
+            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()}");
 
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
@@ -199,11 +199,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-               select f.FieldName
+               select f
             ).ToListAsync()
-            ).ToHashSet();
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
@@ -223,7 +228,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
@@ -232,7 +237,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -263,7 +268,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-               select f.FieldName).ToListAsync()).ToHashSet();
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
 
             var result = new BillInfoModel();
 
@@ -272,11 +284,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -365,6 +377,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     InputTypeId = inputTypeId,
                     LatestBillVersion = 1,
+                    SubsidiaryId = _currentContextService.SubsidiaryId,
                     IsDeleted = false
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
@@ -962,7 +975,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
+            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
             var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             NonCamelCaseDictionary currentInfo = null;
             if (infoLst.Count != 0)
@@ -977,7 +990,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
             AppendSelectFields(ref rowsSQL, multiFields);
-            rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputValueBillId}");
+            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
             var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
@@ -1017,7 +1030,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
-                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId);
+                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1118,7 +1131,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_TABLE} r 
 
-                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)})");
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {WhereBySubsidiary()}");
 
 
             if (oldValue == null)
@@ -1179,12 +1192,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
-            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId)).ToList();
+            var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
                 // Created bill version
-                await _accountancyDBContext.InsertDataTable(dataTable);
+                await _accountancyDBContext.InsertDataTable(dataTable, true);
 
                 foreach (var bill in bills)
                 {
@@ -1237,7 +1250,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id);
+                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1261,7 +1274,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         infoSQL.Append(singleFields[indx].FieldName);
                     }
-                    infoSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
                     var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                     data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
@@ -1276,7 +1289,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         rowsSQL.Append(multiFields[indx].FieldName);
                     }
-                    rowsSQL.Append($" FROM vInputValueRow WHERE InputBill_F_Id = {inputBill_F_Id}");
+                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
@@ -1465,7 +1478,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataTable.Columns.Add("UpdatedDatetimeUtc", typeof(DateTime));
             dataTable.Columns.Add("IsDeleted", typeof(bool));
             dataTable.Columns.Add("DeletedDatetimeUtc", typeof(DateTime));
-
+            dataTable.Columns.Add("SubsidiaryId", typeof(int));
 
             var sumReciprocals = new Dictionary<string, decimal>();
             foreach (var column in insertColumns)
@@ -1613,7 +1626,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             dataRow["UpdatedDatetimeUtc"] = DateTime.UtcNow;
             dataRow["IsDeleted"] = false;
             dataRow["DeletedDatetimeUtc"] = DBNull.Value;
-
+            dataRow["SubsidiaryId"] = _currentContextService.SubsidiaryId;
             return dataRow;
         }
 
@@ -1678,7 +1691,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@BillVersion", billVersionId),
                     new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@ResStatus", inputTypeId){ Direction = ParameterDirection.Output },
-                });
+                }, true);
         }
 
         private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
@@ -1926,6 +1939,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             InputTypeId = inputTypeId,
                             LatestBillVersion = 1,
+                            SubsidiaryId = _currentContextService.SubsidiaryId,
                             IsDeleted = false
                         };
 
@@ -2091,157 +2105,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (stream, fileName);
         }
 
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate)
-        {
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                new SqlParameter("@TyGia", exchangeRate),
-                new SqlParameter("@Currency", currency),
-            };
-            var data = await _accountancyDBContext.QueryDataTable("EXEC ufn_TK_CalcFixExchangeRate @ToDate = @ToDate, @TyGia = @TyGia, @Currency = @Currency", sqlParams);
-            var rows = data.ConvertData();
-            return rows;
-        }
-
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
-            bool byExpenseItem, bool byFactory, bool byProduct, bool byStock)
-        {
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                new SqlParameter("@Type", (int)type),
-                new SqlParameter("@by_bo_phan", byDepartment),
-                new SqlParameter("@by_kh", byCustomer),
-                new SqlParameter("@by_tscd", byFixedAsset),
-                new SqlParameter("@by_khoan_muc_cp", byExpenseItem),
-                new SqlParameter("@by_phan_xuong", byFactory),
-                new SqlParameter("@by_vthhtp", byProduct),
-                new SqlParameter("@by_kho", byStock),
-            };
-
-            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransfer");
-            foreach (var param in sqlParams)
-            {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
-            }
-
-            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
-            var rows = data.ConvertData();
-            return rows;
-        }
-
-        public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            var sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams);
-
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
-        public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams);
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
-        public ICollection<CostTransferTypeModel> GetCostTransferTypes()
-        {
-            var types = EnumExtensions.GetEnumMembers<EnumCostTransfer>().Select(m => new CostTransferTypeModel
-            {
-                Title = m.Description,
-                Value = (int)m.Enum
-            }).ToList();
-            return types;
-        }
-
-        public async Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            var sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                new SqlParameter("@Type", (int)type),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams);
-
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
-        public async Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                new SqlParameter("@Type", (int)type),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams);
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate)
-        {
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@ToDate", toDate.UnixToDateTime())
-            };
-
-            var sql = new StringBuilder("EXEC ufn_TK_CalcCostTransferBalanceZero");
-            foreach (var param in sqlParams)
-            {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
-            }
-
-            var data = await _accountancyDBContext.QueryDataTable(sql.ToString().TrimEnd(','), sqlParams);
-            var rows = data.ConvertData();
-            return rows;
-        }
-
-        public async Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            var sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransferBalanceZero", sqlParams);
-
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
-        public async Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate)
-        {
-            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-            SqlParameter[] sqlParams = new SqlParameter[]
-            {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                result
-            };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransferBalanceZero", sqlParams);
-            return (result.Value as bool?).GetValueOrDefault();
-        }
-
         private async Task ValidateAccountantConfig(BillInfoModel data)
         {
             data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
@@ -2255,12 +2118,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@BillDate", billDate),
                     result
                 };
-                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams);
+                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
             }
         }
+
+        private string WhereBySubsidiary()
+        {
+            return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
+        }
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

@@ -18,6 +18,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
 {
@@ -938,5 +939,19 @@ namespace VErp.Commons.Library
 
             return fields;
         }
+
+        public static string GetPhysicalFilePath(this string filePath, AppSetting appSetting)
+        {
+            filePath = filePath.Replace('\\', '/');
+
+            while (filePath.StartsWith('.') || filePath.StartsWith('/'))
+            {
+                filePath = filePath.TrimStart('/').TrimStart('.');
+            }
+
+            return appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
+        }
+
+
     }
 }

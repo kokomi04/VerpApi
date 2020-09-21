@@ -19,5 +19,7 @@ namespace Services.Organization.Service.Department
         Task<SubsidiaryModel> GetInfo(int subsidiaryId);
 
         Task<bool> Delete(int subsidiaryId);
+
+        Task<IList<SubsidiaryOutput>> GetList();
     }
 }

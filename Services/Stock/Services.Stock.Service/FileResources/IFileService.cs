@@ -34,6 +34,5 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);
 
         IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null);
-        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel);
     }
 }
