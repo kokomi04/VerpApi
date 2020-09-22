@@ -5,7 +5,9 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 {
     public partial class AccountantConfig
     {
-        public int Id { get; set; }
+        public int SubsidiaryId { get; set; }
         public DateTime ClosingDate { get; set; }
+        public bool AutoClosingDate { get; set; }
+        public string FreqClosingDate { get; set; }
     }
 }
