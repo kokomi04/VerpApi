@@ -64,7 +64,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@FromDate", SqlDbType.DateTime2){ Value = fDate},
                     new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
 
-                    req.GroupColumns.ToNValueSqlParameter("@GroupColumns"),
+                    req.GroupColumns.ToSqlParameter("@GroupColumns"),
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
                     req.DirectLaborFee.ToDecimalKeyValueSqlParameter("@DirectLaborFee"),
@@ -98,6 +98,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 IndirectLaborFeeSum = indirectLaborFeeSum.Value as decimal?,
                 GeneralManufacturingSum = generalManufacturingSum.Value as decimal?
             };
+        }
+
+        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceWeightedAverageInput req)
+        {
+            return (
+                await _accountancyDBContext.QueryDataTable(
+                "usp_CalcProductPrice_WeightedAverage",
+                 new[] {
+                    new SqlParameter("@Date", SqlDbType.DateTime2){ Value = req.Date.UnixToDateTime()},
+                    req.ProductIds.ToSqlParameter("ProductIds")
+
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                ).ConvertData();
+
         }
     }
 }

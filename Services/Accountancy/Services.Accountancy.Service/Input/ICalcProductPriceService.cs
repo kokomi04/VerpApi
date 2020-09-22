@@ -11,5 +11,7 @@ namespace VErp.Services.Accountancy.Service.Input
     public interface ICalcProductPriceService
     {
         Task<CalcProductPriceGetTableOutput> GetCalcProductPriceTable(CalcProductPriceGetTableInput req);
+
+        Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceWeightedAverageInput req);
     }
 }
