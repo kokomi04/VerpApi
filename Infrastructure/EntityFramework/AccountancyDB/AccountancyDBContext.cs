@@ -41,7 +41,16 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
             modelBuilder.Entity<AccountantConfig>(entity =>
             {
+                entity.HasKey(e => e.SubsidiaryId);
+
+                entity.Property(e => e.AutoClosingDate).HasComment("");
+
                 entity.Property(e => e.ClosingDate).HasColumnType("datetime");
+
+                entity.Property(e => e.FreqClosingDate)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .HasComment("");
             });
 
             modelBuilder.Entity<Category>(entity =>

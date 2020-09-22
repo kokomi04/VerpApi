@@ -38,6 +38,15 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<CalcProductPriceGetTableOutput> GetCalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
         {
             return await _calcProductPriceService.GetCalcProductPriceTable(req).ConfigureAwait(true);
-        }       
+        }
+
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [GlobalApi]
+        [Route("GetWeightedAverageProductPrice")]
+        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice([FromBody] CalcProductPriceWeightedAverageInput req)
+        {
+            return await _calcProductPriceService.GetWeightedAverageProductPrice(req).ConfigureAwait(true);
+        }
     }
 }

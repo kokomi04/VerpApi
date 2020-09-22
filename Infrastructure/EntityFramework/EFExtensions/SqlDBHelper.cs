@@ -463,12 +463,26 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-        public static SqlParameter ToNValueSqlParameter(this IList<string> values, string parameterName)
+        public static SqlParameter ToSqlParameter(this IList<string> values, string parameterName)
         {
-            var type = "_NVALUES";
-            var valueColumn = "NValue";
+            return values.ToSqlParameter(parameterName, "_NVALUES", "NValue");
+        }
+
+        public static SqlParameter ToSqlParameter(this IList<int> values, string parameterName)
+        {
+            return values.ToSqlParameter(parameterName, "_INTVALUES", "Value");
+        }
+
+        public static SqlParameter ToSqlParameter(this IList<long> values, string parameterName)
+        {
+            return values.ToSqlParameter(parameterName, "_BIGINTVALUES", "Value");
+        }
+
+
+        private static SqlParameter ToSqlParameter<T>(this IList<T> values, string parameterName, string type, string valueColumn)
+        {
             var table = new DataTable(type);
-            table.Columns.Add(new DataColumn(valueColumn, typeof(string)));
+            table.Columns.Add(new DataColumn(valueColumn, typeof(T)));
             if (values != null)
             {
                 foreach (var item in values)
