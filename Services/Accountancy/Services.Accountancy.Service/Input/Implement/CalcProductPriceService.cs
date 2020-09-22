@@ -107,7 +107,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 "usp_CalcProductPrice_WeightedAverage",
                  new[] {
                     new SqlParameter("@Date", SqlDbType.DateTime2){ Value = req.Date.UnixToDateTime()},
-                    req.ProductIds.ToSqlParameter("ProductIds")
+                    req.ProductIds.ToSqlParameter("@ProductIds")
 
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
