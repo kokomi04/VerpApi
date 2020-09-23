@@ -78,5 +78,7 @@ namespace VErp.Commons.Enums.StandardEnum
         CategoryFieldReadOnly = 44,
         [Description("Đang tồn tại tham chiếu tới giá trị này")]
         RelationshipAlreadyExisted = 45,
+        [Description("Dữ liệu không thuộc vào đơn vị")]
+        InvalidSubsidiary = 46,
     }
 }

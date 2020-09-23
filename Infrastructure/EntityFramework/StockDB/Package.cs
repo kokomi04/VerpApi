@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public long PackageId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int PackageTypeId { get; set; }
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }
