@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     public partial class BusinessInfo
     {
         public int BusinessInfoId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string CompanyName { get; set; }
         public string LegalRepresentative { get; set; }
         public string Address { get; set; }

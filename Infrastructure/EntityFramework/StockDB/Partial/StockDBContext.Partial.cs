@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
@@ -13,8 +14,10 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         //ICurrentContextService _currentContext;
         public List<int> StockIds { get; set; }
+        public int SubsidiaryId { get; private set; }
 
         public bool FilterStock { get; private set; }
+        public bool FilterSubsidiary { get; private set; }
 
         public ICurrentContextService CurrentContextService { get; private set; }
 
@@ -27,6 +30,7 @@ namespace VErp.Infrastructure.EF.StockDB
             StockIds = currentContext.StockIds?.ToList();
             CurrentContextService = currentContext;
             FilterStock = StockIds != null;
+            FilterSubsidiary = true;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.ReplaceService<IModelCacheKeyFactory, DynamicModelCacheKeyFactory>();
@@ -42,20 +46,30 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
 
-                var isDeletedProp = entityType.FindProperty("IsDeleted");
+                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
                 if (isDeletedProp != null)
                 {
                     var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter("IsDeleted", isDeleted);
+                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
                 }
 
                 if (FilterStock)
                 {
-                    var isStockIdProp = entityType.FindProperty("StockId");
+                    var isStockIdProp = entityType.FindProperty(GlobalFieldConstants.StockId);
                     if (isStockIdProp != null)
                     {
                         var stockIds = Expression.PropertyOrField(ctxConstant, nameof(StockIds));
-                        filterBuilder.AddFilterListContains<int>("StockId", stockIds);
+                        filterBuilder.AddFilterListContains<int>(GlobalFieldConstants.StockId, stockIds);
+                    }
+                }
+
+                if (FilterSubsidiary)
+                {
+                    var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
+                    if (isSubsidiaryIdProp != null)
+                    {
+                        var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
+                        filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
                     }
                 }
 
