@@ -10,7 +10,6 @@ namespace VErp.Services.Accountancy.Model.Config
 {
     public class AccountantConfigModel
     {
-        public int SubsidiaryId { get; set; }
         public long ClosingDate { get; set; }
         public bool AutoClosingDate { get; set; }
         public FreqClosingDate FreqClosingDate { get; set; }
