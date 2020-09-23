@@ -635,17 +635,20 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
         {
-            var viewAlias = $"v";
+            
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
                           select f).ToList();
 
+            var viewAlias = $"v";
+            var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
+
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
             var allDataSql = new StringBuilder();
             dataSql.Append(GetSelect(viewAlias, fields, category.IsTreeView));
-            dataSql.Append($" FROM {GetCategoryView(category, fields, viewAlias)}");
+            dataSql.Append($" FROM {categoryView}");
             allDataSql.Append(dataSql.ToString());
             var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
@@ -712,12 +715,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
             }
 
-            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {viewAlias}");
+            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {categoryView}");
 
             if (whereCondition.Length > 0)
             {
-                dataSql.Append($" WHERE {whereCondition.ToString()}");
-                totalSql.Append($" WHERE {whereCondition.ToString()}");
+                dataSql.Append($" WHERE {whereCondition}");
+                totalSql.Append($" WHERE {whereCondition}");
             }
 
             var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
@@ -843,13 +846,15 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
 
-                var viewAlias = $"v";
                 var fields = (from f in _accountancyContext.CategoryField
                               join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                               where c.CategoryCode == category.CategoryCode
                               select f).ToList();
-                
-                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView)} FROM {GetCategoryView(category, fields, viewAlias)} ";
+
+                var viewAlias = $"v";
+                var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
+
+                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView)} FROM {categoryView} ";
                 var groupByFilters = group.GroupBy(v => new { v.Filters });
                 foreach (var groupByFilter in groupByFilters)
                 {
