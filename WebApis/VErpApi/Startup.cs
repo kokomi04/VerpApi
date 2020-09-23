@@ -94,6 +94,8 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureAutoMaper(services);
 
+            services.AddSingleton<IServiceCollection>(services);
+
             return BuildService(services);
         }
         private static void ConfigureBussinessService(IServiceCollection services)
