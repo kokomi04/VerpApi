@@ -40,7 +40,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await dbContext.QueryDataTable(sql.ToString(), parammeters);
         }
 
-        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, bool includeSubId = false)
+        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, bool includeSubId = false)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var p in parammeters)
@@ -61,7 +61,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var param in parammeters)
@@ -73,7 +73,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, SqlParameter[] parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try
             {
@@ -82,7 +82,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandType = cmdType;
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
-                    command.Parameters.AddRange(parammeters);
+                    foreach(var param in parammeters)
+                    {
+                        command.Parameters.Add(param);
+                    }
 
                     if (dbContext is ICurrentRequestDbContext requestDbContext)
                     {
