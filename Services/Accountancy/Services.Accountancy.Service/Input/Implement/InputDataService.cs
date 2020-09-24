@@ -332,7 +332,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
-            await ValidateAccountantConfig(data);
+            await ValidateAccountantConfig(data?.Info, null);
+
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
             // Validate multiRow existed
@@ -959,7 +960,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-            await ValidateAccountantConfig(data);
+
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -976,12 +977,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
-            var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
-            NonCamelCaseDictionary currentInfo = null;
-            if (infoLst.Count != 0)
+            var currentInfo = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
+
+            if (currentInfo == null)
             {
-                currentInfo = infoLst[0];
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chứng từ trong hệ thống");
             }
+
+            await ValidateAccountantConfig(data?.Info, currentInfo);
+
             NonCamelCaseDictionary futureInfo = data.Info;
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, CompareRow(currentInfo, futureInfo, singleFields));
 
@@ -1156,17 +1160,29 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     dataTable.Columns.Add(column.ColumnName, column.DataType);
             }
 
+            var oldBillDates = new Dictionary<long, DateTime?>();
+
             for (var i = 0; i < data.Rows.Count; i++)
             {
                 var row = data.Rows[i];
 
                 var billId = (long)row["InputBill_F_Id"];
-                if (!updateBillIds.Contains(billId)) updateBillIds.Add(billId);
+                if (!updateBillIds.Contains(billId))
+                {
+                    updateBillIds.Add(billId);
+                    oldBillDates.Add(billId, null);
+                }
 
                 var newRow = dataTable.NewRow();
                 foreach (DataColumn column in data.Columns)
                 {
                     var v = row[column];
+
+                    if (column.ColumnName == AccountantConstants.BILL_DATE && !v.IsNullObject())
+                    {
+                        oldBillDates[billId] = v as DateTime?;
+                    }
+
                     switch (column.ColumnName)
                     {
                         case "F_Id":
@@ -1191,6 +1207,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataTable.Rows.Add(newRow);
             }
 
+            foreach (var oldBillDate in oldBillDates)
+            {
+                await ValidateAccountantConfig(fieldName == AccountantConstants.BILL_DATE ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+            }
 
             var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
@@ -1293,7 +1313,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-                await ValidateAccountantConfig(data);
+                await ValidateAccountantConfig(null, data?.Info);
                 // Before saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
@@ -1909,7 +1929,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     Info = info,
                     Rows = rows.ToArray()
                 };
-                await ValidateAccountantConfig(billInfo);
+
+                await ValidateAccountantConfig(billInfo?.Info, null);
+
                 bills.Add(billInfo);
             }
 
@@ -2105,19 +2127,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (stream, fileName);
         }
 
-        private async Task ValidateAccountantConfig(BillInfoModel data)
+
+        private DateTime? ExtractBillDate(NonCamelCaseDictionary info)
         {
-            data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
-            if (value != null)
+            object oldDateValue = null;
+
+            info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
+            if (oldDateValue.IsNullObject()) return null;
+            return (DateTime)oldDateValue;
+        }
+
+        private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
+        {
+            var billDate = ExtractBillDate(info);
+            var oldDate = ExtractBillDate(oldInfo);
+
+            await ValidateAccountantConfig(billDate, oldDate);
+        }
+
+        private async Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate)
+        {
+            if (billDate != null || oldDate != null)
             {
-                var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
 
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-                var sqlParams = new SqlParameter[]
+                var sqlParams = new List<SqlParameter>
                 {
-                    new SqlParameter("@BillDate", billDate),
                     result
                 };
+
+                if (oldDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
+                }
+
+                if (oldDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+                }
+
                 await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
