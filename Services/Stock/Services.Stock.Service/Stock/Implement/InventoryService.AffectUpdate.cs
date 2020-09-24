@@ -539,6 +539,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 break;
                             case EnumObjectType.InventoryDetail:
                                 parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
+
+                                var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == ((InventoryDetail)parent).InventoryId);
+
+                                await ValidateInventoryConfig(inventory.Date, inventory.Date);
+
                                 if (!updatedInventoryDetails.Contains((InventoryDetail)parent))
                                 {
                                     updatedInventoryDetails.Add((InventoryDetail)parent);
@@ -609,6 +614,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         }
 
                                         var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
+
+                                        await ValidateInventoryConfig(inventory.Date, inventory.Date);
 
                                         //if(inventory.InventoryTypeId==(int)EnumInventoryType.Output)                                        
 
