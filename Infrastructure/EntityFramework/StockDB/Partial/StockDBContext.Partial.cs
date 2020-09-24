@@ -27,8 +27,11 @@ namespace VErp.Infrastructure.EF.StockDB
             : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
             // _currentContext = currentContext;
-            StockIds = currentContext.StockIds?.ToList();
             CurrentContextService = currentContext;
+
+            StockIds = currentContext.StockIds?.ToList();            
+            SubsidiaryId = currentContext.SubsidiaryId;
+
             FilterStock = StockIds != null;
             FilterSubsidiary = true;
         }
