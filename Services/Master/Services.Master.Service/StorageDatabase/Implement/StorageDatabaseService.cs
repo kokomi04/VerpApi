@@ -172,7 +172,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                                     FROM DISK = '{GetPhysicalFilePath(backup.FilePath)}'";
 
             await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
-            await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint, 
+            await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
                 $"Restore database {dbInfo["name"]} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
         }
 
@@ -199,11 +199,11 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 query = query.Where(x => x.DatabaseId == databaseId);
             }
 
-            var data = query.GroupBy(x => x.BackupPoint)
+            var data = query.AsEnumerable().GroupBy(x => new { x.BackupPoint, x.Title })
                 .Select(g => new BackupStorageOutput
                 {
-                    BackupPoint = g.Key,
-                    Title = g.FirstOrDefault().Title,
+                    BackupPoint = g.Key.BackupPoint,
+                    Title = g.Key.Title,
                     backupStorages = g.Select(gg => new BackupStorageModel
                     {
                         BackupDate = gg.BackupDate.GetUnix(),
