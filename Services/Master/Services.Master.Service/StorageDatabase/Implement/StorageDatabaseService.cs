@@ -28,17 +28,20 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly ILogger<StorageDatabaseService> _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IServiceCollection _serviceDescriptors;
+        private readonly ICurrentContextService _currentContextService;
         public StorageDatabaseService(MasterDBContext masterDBContext,
             IOptions<AppSetting> appSetting,
             IActivityLogService activityLogService,
             ILogger<StorageDatabaseService> logger,
-            IServiceCollection serviceDescriptors)
+            IServiceCollection serviceDescriptors,
+            ICurrentContextService currentContextService)
         {
             _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
             _masterContext = masterDBContext;
             _logger = logger;
             _serviceDescriptors = serviceDescriptors;
+            _currentContextService = currentContextService;
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
@@ -69,7 +72,10 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     FileName = $"{storage.DatabaseName.ToLower()}.bak",
                     FilePath = filePath,
                     Title = backupStorage.Title,
-                    DatabaseId = storage.DatabaseId
+                    DatabaseId = storage.DatabaseId,
+                    IsDeleted = false,
+                    CreatedByUserId = _currentContextService.UserId,
+                    UpdatedByUserId = _currentContextService.UserId
                 });
             }
 
@@ -133,6 +139,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
                 await RestoreDatabase(databases, backup);
                 backup.RestoreDate = DateTime.UtcNow;
+                backup.UpdatedByUserId = _currentContextService.UserId;
             }
 
             await _masterContext.SaveChangesAsync();
@@ -166,7 +173,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
         private async Task RestoreDatabase(List<NonCamelCaseDictionary> databases, BackupStorage backup)
         {
-            var dbInfo = databases.FirstOrDefault(x => x["database_id"].Equals(backup.DatabaseId.ToString()));
+            var dbInfo = databases.FirstOrDefault(x => x["database_id"].ToString().Equals(backup.DatabaseId.ToString()));
             if (dbInfo == null)
                 throw new BadRequestException(BackupErrorCode.NotFoundInfoDB, $"Dabase {backup.DatabaseId} không tồn tại");
 

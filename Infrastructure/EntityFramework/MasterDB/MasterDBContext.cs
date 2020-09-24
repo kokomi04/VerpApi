@@ -101,9 +101,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.BackupDate).HasColumnType("datetime");
 
-                entity.Property(e => e.CreatedByUserId)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.CreatedByUserId).HasComment("");
 
                 entity.Property(e => e.FileName)
                     .IsRequired()
@@ -120,9 +118,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(255);
 
-                entity.Property(e => e.UpdatedByUserId)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.UpdatedByUserId).HasComment("");
             });
 
             modelBuilder.Entity<BarcodeConfig>(entity =>
