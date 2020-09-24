@@ -31,9 +31,16 @@ namespace VErpApi.Controllers.Accountancy
 
         [HttpPost]
         [Route("{type}")]
-        public async Task<bool> Modify([FromRoute] int type, [FromBody] StoredProcedureModel model)
+        public async Task<bool> Create([FromRoute] int type, [FromBody] StoredProcedureModel model)
         {
-            return await _storedProcedureService.Modify(type, model);
+            return await _storedProcedureService.Create(type, model);
+        }
+
+        [HttpPut]
+        [Route("{type}")]
+        public async Task<bool> Update([FromRoute] int type, [FromBody] StoredProcedureModel model)
+        {
+            return await _storedProcedureService.Update(type, model);
         }
 
         [HttpDelete]

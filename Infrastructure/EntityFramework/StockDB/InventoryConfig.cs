@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VErp.Infrastructure.EF.AccountancyDB
+namespace VErp.Infrastructure.EF.StockDB
 {
-    public partial class AccountantConfig
+    public partial class InventoryConfig
     {
         public int SubsidiaryId { get; set; }
         public DateTime ClosingDate { get; set; }

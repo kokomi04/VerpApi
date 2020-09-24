@@ -98,7 +98,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             get
             {
                 if (_subsidiaryId > 0)
-                    return _userId;
+                    return _subsidiaryId;
 
                 foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
                 {

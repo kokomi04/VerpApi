@@ -30,6 +30,7 @@ using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
+using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
@@ -94,6 +95,8 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureAutoMaper(services);
 
+            services.AddSingleton<IServiceCollection>(services);
+
             return BuildService(services);
         }
         private static void ConfigureBussinessService(IServiceCollection services)
@@ -115,7 +118,7 @@ namespace VErp.WebApis.VErpApi
 
             var profile = new MappingProfile();
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
-            //profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(StockModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
