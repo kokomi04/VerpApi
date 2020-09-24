@@ -44,21 +44,20 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
         {
             var backupPoint = DateTime.UtcNow.GetUnix();
-            string outDirectory = GenerateOutDirectory(backupPoint);
 
             var lsBackupStorage = new List<BackupStorage>();
             foreach (var storage in backupStorage.storages)
             {
-                string filePath = GetPhysicalFilePath($"{outDirectory}/{storage.DatabaseName.ToLower()}.bak");
-                var sqlDB = $@"BACKUP DATABASE {storage.DatabaseName} TO DISK='{filePath}'";
+                string filePath = GenerateOutDirectory($"{storage.DatabaseName.ToLower()}.bak");
+                var sqlDB = $@"BACKUP DATABASE {storage.DatabaseName} TO DISK='{GetPhysicalFilePath(filePath)}'";
 
                 await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
 
-                if (!System.IO.File.Exists(filePath))
+                if (!System.IO.File.Exists(GetPhysicalFilePath(filePath)))
                 {
                     lsBackupStorage.ForEach(x =>
                     {
-                        System.IO.File.Delete(x.FilePath);
+                        System.IO.File.Delete(GetPhysicalFilePath(x.FilePath));
                     });
                     throw new BadRequestException(BackupErrorCode.NotFoundFileAfterBackup);
                 }
@@ -68,7 +67,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     BackupDate = DateTime.UtcNow,
                     BackupPoint = backupPoint,
                     FileName = $"{storage.DatabaseName.ToLower()}.bak",
-                    FilePath = $"{outDirectory}/{storage.DatabaseName.ToLower()}.bak",
+                    FilePath = filePath,
                     Title = backupStorage.Title,
                     DatabaseId = storage.DatabaseId
                 });
@@ -168,6 +167,9 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private async Task RestoreDatabase(List<NonCamelCaseDictionary> databases, BackupStorage backup)
         {
             var dbInfo = databases.FirstOrDefault(x => x["database_id"].Equals(backup.DatabaseId.ToString()));
+            if (dbInfo == null)
+                throw new BadRequestException(BackupErrorCode.NotFoundInfoDB, $"Dabase {backup.DatabaseId} không tồn tại");
+
             string sqlDB = $@"RESTORE DATABASE {dbInfo["name"]}  
                                     FROM DISK = '{GetPhysicalFilePath(backup.FilePath)}'";
 
@@ -176,20 +178,30 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 $"Restore database {dbInfo["name"]} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
         }
 
-        private string GenerateOutDirectory(long point)
+        private string GenerateOutDirectory(string FileName)
         {
-            var relativeFolder = $"/_backup_/{point}";
+            var relativeFolder = $"/_backup_/{Guid.NewGuid().ToString()}";
+            var relativeFilePath = relativeFolder + "/" + FileName;
+
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
 
-            return obsoluteFolder;
+            return relativeFilePath;
         }
 
         private string GetPhysicalFilePath(string filePath)
         {
-            return filePath.GetPhysicalFilePath(_appSetting);
+            filePath = filePath.Replace('\\', '/');
+
+            while (filePath.StartsWith('.') || filePath.StartsWith('/'))
+            {
+                filePath = filePath.TrimStart('/').TrimStart('.');
+            }
+
+            return _appSetting.BackupStorage.FileBackupFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
+
 
         public async Task<IList<BackupStorageOutput>> GetBackupStorages(int databaseId = 0)
         {
