@@ -1829,7 +1829,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
-                            value = date.AddHours(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
+                            value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                         }
 
                         // Validate refer
