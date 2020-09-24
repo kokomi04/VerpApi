@@ -2161,7 +2161,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
                 }
 
-                if (oldDate.HasValue)
+                if (billDate.HasValue)
                 {
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
