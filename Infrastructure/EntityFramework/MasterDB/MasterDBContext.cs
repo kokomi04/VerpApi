@@ -103,14 +103,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.CreatedByUserId).HasComment("");
 
-                entity.Property(e => e.FileName)
-                    .IsRequired()
-                    .HasMaxLength(128)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.FilePath)
-                    .IsRequired()
-                    .HasMaxLength(1024);
+                entity.Property(e => e.FileId).HasComment("");
 
                 entity.Property(e => e.RestoreDate).HasColumnType("datetime");
 

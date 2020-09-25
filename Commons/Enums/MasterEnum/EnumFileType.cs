@@ -9,6 +9,7 @@ namespace VErp.Commons.Enums.StockEnum
         Image = 1,
         Document = 2,
         Audio = 3,
-        Video = 4
+        Video = 4,
+        Other = 5
     }
 }
