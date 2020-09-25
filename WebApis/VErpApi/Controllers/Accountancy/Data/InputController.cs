@@ -89,6 +89,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [Route("{inputTypeId}/multiple")]
         public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
         {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
         }
 
