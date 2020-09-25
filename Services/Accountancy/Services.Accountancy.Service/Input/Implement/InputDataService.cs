@@ -86,7 +86,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()}");
+            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {GlobalFilter()}");
 
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
@@ -208,7 +208,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             )
             .ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
@@ -228,7 +228,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
@@ -237,7 +237,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -284,11 +284,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -976,7 +976,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
+            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
             var currentInfo = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
 
             if (currentInfo == null)
@@ -994,7 +994,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
             AppendSelectFields(ref rowsSQL, multiFields);
-            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
+            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
             var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
@@ -1135,7 +1135,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_TABLE} r 
 
-                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {WhereBySubsidiary()}");
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {GlobalFilter()}");
 
 
             if (oldValue == null)
@@ -1178,7 +1178,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName == AccountantConstants.BILL_DATE && !v.IsNullObject())
+                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1209,7 +1209,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var oldBillDate in oldBillDates)
             {
-                await ValidateAccountantConfig(fieldName == AccountantConstants.BILL_DATE ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+                await ValidateAccountantConfig(fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
             }
 
             var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
@@ -1294,7 +1294,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         infoSQL.Append(singleFields[indx].FieldName);
                     }
-                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
+                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
                     var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                     data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
@@ -1309,7 +1309,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         rowsSQL.Append(multiFields[indx].FieldName);
                     }
-                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
+                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
@@ -2173,7 +2173,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private string WhereBySubsidiary()
+        private string GlobalFilter()
         {
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
         }

@@ -6,7 +6,6 @@ namespace VErp.Infrastructure.EF.StockDB
     public partial class StockProduct
     {
         public int StockProductId { get; set; }
-        public int SubsidiaryId { get; set; }
         public int StockId { get; set; }
         public int ProductId { get; set; }
         public int? ProductUnitConversionId { get; set; }
