@@ -42,7 +42,9 @@ BEGIN
 	FROM OrganizationDB.dbo.BusinessInfo
 END
 
-SELECT @SubsidiaryId = SubsidiaryId FROM OrganizationDB.dbo.Subsidiary
+SELECT TOP(1) @SubsidiaryId = SubsidiaryId FROM OrganizationDB.dbo.Subsidiary WHERE IsDeleted=0 ORDER BY OrganizationDB.dbo.Subsidiary.SubsidiaryId
+
+SELECT @SubsidiaryId SubsidiaryId
 
 UPDATE OrganizationDB.dbo.BusinessInfo SET SubsidiaryId = @SubsidiaryId
 
