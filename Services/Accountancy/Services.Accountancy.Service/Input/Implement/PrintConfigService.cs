@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,8 +18,10 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
@@ -189,16 +192,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 using (var document = WordprocessingDocument.CreateFromTemplate(physicalFilePath))
                 {
-                    if (true)
+                    var body = document.MainDocumentPart.Document.Body;
+
+                    #region generate row data into table
+                    var mainTable = (Table)(body.Descendants<TableProperties>()
+                                                .Where(x => x.TableCaption?.Val == RegexDocExpression.DetectMainTable)
+                                                .FirstOrDefault()?.Parent);
+                    if (mainTable != null)
                     {
-                        var body = document.MainDocumentPart.Document.Body;
-
-                        #region generate row data into table
-                        var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "table").FirstOrDefault()?.Parent);
-                        var tablePr = mainTable.Elements<TableProperties>().FirstOrDefault();
-
-                        tablePr.TableWidth.Width = "0";
-                        tablePr.TableWidth.Type = TableWidthUnitValues.Auto;
+                        mainTable.AutoFitContents();
 
                         var rows = mainTable.Descendants<TableRow>();
                         if (rows.Count() > 1)
@@ -210,23 +212,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 var tableRow = (TableRow)row.Clone();
                                 foreach (var cell in tableRow.Descendants<TableCell>())
                                 {
-                                    List<VErpDocMatch> ls = new List<VErpDocMatch>();
+                                    var lsDocMatch = cell.Descendants<Paragraph>()
+                                                            .MatchingLinesWithRegex(RegexDocExpression.PrintTemplatePattern);
 
-                                    foreach (Paragraph paragraph in cell.Descendants<Paragraph>())
-                                    {
-                                        var vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Pattern);
-                                        ls.Add(vErpDocMatch);
-                                    }
-
-                                    foreach (var docMatch in ls)
+                                    foreach (var docMatch in lsDocMatch)
                                     {
                                         var paragraph = docMatch.paragraph;
-                                        foreach (var match in docMatch.fieldMatchs)
+                                        foreach (var (fullText, field) in docMatch.matchs)
                                         {
-                                            var temps = new List<NonCamelCaseDictionary>();
-                                            temps.Add(data);
-                                            var result = await match.Value.GetFieldValue(temps, _accountancyDBContext);
-                                            WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
+                                            string rs = string.Empty;
+                                            if (field.StartsWith(RegexDocExpression.StartWithFuntion))
+                                            {
+                                                var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
+                                                var tbl = await _accountancyDBContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                                                rs = tbl.Rows[0][0].ToString();
+                                            }
+                                            else
+                                                data.TryGetValue(field, out rs);
+
+                                            WordOpenXmlTools.ReplaceText(paragraph, fullText, rs ?? string.Empty);
                                         }
                                     }
                                 }
@@ -234,46 +238,47 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             row.Remove();
                         }
-                        tablePr.TableWidth.Width = "5000";
-                        tablePr.TableWidth.Type = TableWidthUnitValues.Pct;
-                        #endregion
-
-                        #region find and replace string with regex
-                        var paragraphs = body.Descendants<Paragraph>();
-                        List<VErpDocMatch> docMatchs = new List<VErpDocMatch>();
-
-                        foreach (Paragraph paragraph in paragraphs)
-                        {
-                            VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Pattern);
-                            if (vErpDocMatch.fieldMatchs.Count > 0)
-                                docMatchs.Add(vErpDocMatch);
-                        }
-
-                        foreach (var docMatch in docMatchs)
-                        {
-                            var paragraph = docMatch.paragraph;
-                            foreach (var match in docMatch.fieldMatchs)
-                            {
-                                var result = await match.Value.GetFieldValue(templateModel.data, _accountancyDBContext);
-                                WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
-                            }
-                        }
-                        #endregion
+                        mainTable.AutoFitWindow();
                     }
+                    #endregion
+
+                    #region find and replace string with regex
+                    var docMatchs = body.Descendants<Paragraph>()
+                                            .MatchingLinesWithRegex(RegexDocExpression.PrintTemplatePattern);
+
+                    foreach (var docMatch in docMatchs)
+                    {
+                        var paragraph = docMatch.paragraph;
+                        foreach (var (fullText, field) in docMatch.matchs)
+                        {
+                            string rs = string.Empty;
+                            if (templateModel.data.Count > 0)
+                            {
+                                if (templateModel.data.Count > 0 && field.StartsWith(RegexDocExpression.StartWithFuntion))
+                                {
+                                    var sqlParam = new SqlParameter("@data", templateModel.data.JsonSerialize());
+                                    var tbl = await _accountancyDBContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                                    rs = tbl.Rows[0][0].ToString();
+                                }
+                                else
+                                    templateModel.data[0].TryGetValue(field, out rs);
+                            }
+
+                            WordOpenXmlTools.ReplaceText(paragraph, fullText, rs ?? string.Empty);
+                        }
+                    }
+                    #endregion
 
                     document.SaveAs($"{outDirectory}/{file}.docx").Close();
                     document.Close();
                     WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{file}.docx", $"{outDirectory}/{file}.pdf");
                 }
-                return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"),
-                    "application/pdf",
-                    $"{file}.pdf");
+                return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"), "application/pdf", $"{file}.pdf");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemple, ex.Message);
+                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemplate, ex.Message);
             }
-            
         }
 
         private string GeneratePhysicalFolder()
