@@ -44,6 +44,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public bool IsBsc { get; set; }
         public string BscConfig { get; set; }
         public string HeadPrint { get; set; }
+        public long? TemplateFileId { get; set; }
 
         public virtual ReportTypeGroup ReportTypeGroup { get; set; }
         public virtual ICollection<ReportTypeView> ReportTypeView { get; set; }
