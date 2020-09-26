@@ -8,6 +8,7 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IInventoryConfigService
     {
+        Task<InventoryConfigModel> GetConfig();
         Task<bool> UpdateConfig(InventoryConfigModel req);
     }
 }

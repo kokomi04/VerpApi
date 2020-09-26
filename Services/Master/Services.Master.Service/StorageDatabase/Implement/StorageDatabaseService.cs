@@ -11,75 +11,105 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.StorageDatabase;
+using FileEntity = VErp.Infrastructure.EF.StockDB.File;
 
 namespace VErp.Services.Master.Service.StorageDatabase.Implement
 {
     public class StorageDatabaseService : IStorageDatabaseService
     {
         private readonly MasterDBContext _masterContext;
+        private readonly StockDBContext _stockDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger<StorageDatabaseService> _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IServiceCollection _serviceDescriptors;
+        private readonly ICurrentContextService _currentContextService;
         public StorageDatabaseService(MasterDBContext masterDBContext,
+            StockDBContext stockDBContext,
             IOptions<AppSetting> appSetting,
             IActivityLogService activityLogService,
             ILogger<StorageDatabaseService> logger,
-            IServiceCollection serviceDescriptors)
+            IServiceCollection serviceDescriptors,
+            ICurrentContextService currentContextService)
         {
             _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
             _masterContext = masterDBContext;
             _logger = logger;
             _serviceDescriptors = serviceDescriptors;
+            _currentContextService = currentContextService;
+            _stockDBContext = stockDBContext;
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
         {
             var backupPoint = DateTime.UtcNow.GetUnix();
-            string outDirectory = GenerateOutDirectory(backupPoint);
 
             var lsBackupStorage = new List<BackupStorage>();
+            var lsFileEntity = new List<FileEntity>();
             foreach (var storage in backupStorage.storages)
             {
-                string filePath = GetPhysicalFilePath($"{outDirectory}/{storage.DatabaseName.ToLower()}.bak");
-                var sqlDB = $@"BACKUP DATABASE {storage.DatabaseName} TO DISK='{filePath}'";
-
+                string filePath = GenerateOutDirectory($"{storage.DatabaseName.ToLower()}.bak");
+#if !DEBUG
+                var sqlDB = $@"BACKUP DATABASE {storage.DatabaseName} TO DISK='{GetPhysicalFilePath(filePath)}'";
                 await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
-
-                if (!System.IO.File.Exists(filePath))
+                if (!System.IO.File.Exists(GetPhysicalFilePath(filePath)))
                 {
-                    lsBackupStorage.ForEach(x =>
-                    {
-                        System.IO.File.Delete(x.FilePath);
-                    });
+                    foreach (var f in lsFileEntity)
+                        System.IO.File.Delete(GetPhysicalFilePath(f.FilePath));
                     throw new BadRequestException(BackupErrorCode.NotFoundFileAfterBackup);
                 }
+#endif
+                lsFileEntity.Add(new FileEntity
+                {
+                    FileTypeId = (int)EnumFileType.Other,
+                    FilePath = filePath,
+                    FileName = $"{storage.DatabaseName.ToLower()}.bak",
+                    ContentType = "application/octet-stream",
+                    FileLength = 0,
+                    ObjectTypeId = (int)EnumObjectType.StorageDabase,
+                    ObjectId = null,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    FileStatusId = (int)EnumFileStatus.Temp,
+                    IsDeleted = false
+                });
 
                 lsBackupStorage.Add(new BackupStorage
                 {
                     BackupDate = DateTime.UtcNow,
                     BackupPoint = backupPoint,
-                    FileName = $"{storage.DatabaseName.ToLower()}.bak",
-                    FilePath = $"{outDirectory}/{storage.DatabaseName.ToLower()}.bak",
                     Title = backupStorage.Title,
-                    DatabaseId = storage.DatabaseId
+                    DatabaseId = storage.DatabaseId,
+                    IsDeleted = false,
+                    CreatedByUserId = _currentContextService.UserId,
+                    UpdatedByUserId = _currentContextService.UserId,
                 });
             }
 
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
+            await using (var trans = new MultipleDbTransaction(_stockDBContext, _masterContext))
             {
                 try
                 {
+                    await _stockDBContext.AddRangeAsync(lsFileEntity);
+                    await _stockDBContext.SaveChangesAsync();
+                    for (int i = 0; i < lsBackupStorage.Count; i++)
+                    {
+                        lsBackupStorage[i].FileId = lsFileEntity[i].FileId;
+                    }
                     await _masterContext.BackupStorage.AddRangeAsync(lsBackupStorage);
                     await _masterContext.SaveChangesAsync();
+
                     trans.Commit();
 
                     await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backupPoint, $"Backup database into backup point: {backupPoint}", lsBackupStorage.JsonSerialize());
@@ -90,7 +120,6 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     _logger.LogError(ex, "Backup database");
                     throw;
                 }
-
             }
 
             return true;
@@ -134,6 +163,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
                 await RestoreDatabase(databases, backup);
                 backup.RestoreDate = DateTime.UtcNow;
+                backup.UpdatedByUserId = _currentContextService.UserId;
             }
 
             await _masterContext.SaveChangesAsync();
@@ -167,29 +197,46 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
         private async Task RestoreDatabase(List<NonCamelCaseDictionary> databases, BackupStorage backup)
         {
-            var dbInfo = databases.FirstOrDefault(x => x["database_id"].Equals(backup.DatabaseId.ToString()));
+            var dbInfo = databases.FirstOrDefault(x => x["database_id"].ToString().Equals(backup.DatabaseId.ToString()));
+            if (dbInfo == null)
+                throw new BadRequestException(BackupErrorCode.NotFoundInfoDB, $"Database {backup.DatabaseId} không tồn tại");
+            var fileInfo = await _stockDBContext.File.FirstOrDefaultAsync(x => x.FileId == backup.FileId);
+            if (fileInfo == null)
+                throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thấy file của database {backup.DatabaseId}");
+#if !DEBUG
             string sqlDB = $@"RESTORE DATABASE {dbInfo["name"]}  
-                                    FROM DISK = '{GetPhysicalFilePath(backup.FilePath)}'";
-
+                                    FROM DISK = '{GetPhysicalFilePath(fileInfo.FilePath)}'";
             await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
+#endif
+
             await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
                 $"Restore database {dbInfo["name"]} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
         }
 
-        private string GenerateOutDirectory(long point)
+        private string GenerateOutDirectory(string FileName)
         {
-            var relativeFolder = $"/_backup_/{point}";
+            var relativeFolder = $"/_backup_/{Guid.NewGuid().ToString()}";
+            var relativeFilePath = relativeFolder + "/" + FileName;
+
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
 
-            return obsoluteFolder;
+            return relativeFilePath;
         }
 
         private string GetPhysicalFilePath(string filePath)
         {
-            return filePath.GetPhysicalFilePath(_appSetting);
+            filePath = filePath.Replace('\\', '/');
+
+            while (filePath.StartsWith('.') || filePath.StartsWith('/'))
+            {
+                filePath = filePath.TrimStart('/').TrimStart('.');
+            }
+
+            return _appSetting.BackupStorage.FileBackupFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
+
 
         public async Task<IList<BackupStorageOutput>> GetBackupStorages(int databaseId = 0)
         {
@@ -209,8 +256,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                         BackupDate = gg.BackupDate.GetUnix(),
                         BackupPoint = gg.BackupPoint,
                         DatabaseId = gg.DatabaseId,
-                        FileName = gg.FileName,
-                        FilePath = gg.FilePath,
+                        FileId = gg.FileId,
                         RestoreDate = gg.RestoreDate.HasValue ? gg.RestoreDate.GetUnix().Value : 0,
                         Title = gg.Title,
                     }).ToList()

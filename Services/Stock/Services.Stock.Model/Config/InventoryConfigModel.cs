@@ -14,8 +14,10 @@ namespace VErp.Services.Stock.Model.Config
         {
             profile.CreateMap<InventoryConfig, InventoryConfigModel>()
                 .ForMember(m => m.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonDeserialize<FreqClosingDate>()))
+                .ForMember(m => m.ClosingDate, m => m.MapFrom(v => v.ClosingDate.GetUnix()))
                 .ReverseMap()
-                .ForMember(d => d.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonSerialize()));
+                .ForMember(d => d.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonSerialize()))
+                .ForMember(m => m.ClosingDate, m => m.MapFrom(v => v.ClosingDate.UnixToDateTime()));
         }
     }
 }

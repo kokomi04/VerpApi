@@ -86,7 +86,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()}");
+            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {GlobalFilter()}");
 
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
@@ -208,7 +208,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             )
             .ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
@@ -228,7 +228,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
@@ -237,7 +237,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -284,11 +284,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {WhereBySubsidiary()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -332,7 +332,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
-            await ValidateAccountantConfig(data);
+            await ValidateAccountantConfig(data?.Info, null);
+
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
             // Validate multiRow existed
@@ -959,7 +960,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
-            await ValidateAccountantConfig(data);
+
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -975,13 +976,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
-            var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
-            NonCamelCaseDictionary currentInfo = null;
-            if (infoLst.Count != 0)
+            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
+            var currentInfo = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
+
+            if (currentInfo == null)
             {
-                currentInfo = infoLst[0];
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chứng từ trong hệ thống");
             }
+
+            await ValidateAccountantConfig(data?.Info, currentInfo);
+
             NonCamelCaseDictionary futureInfo = data.Info;
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, CompareRow(currentInfo, futureInfo, singleFields));
 
@@ -990,7 +994,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var rowsSQL = new StringBuilder("SELECT F_Id,");
             var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
             AppendSelectFields(ref rowsSQL, multiFields);
-            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {WhereBySubsidiary()}");
+            rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
             var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
@@ -1131,7 +1135,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_TABLE} r 
 
-                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {WhereBySubsidiary()}");
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {GlobalFilter()}");
 
 
             if (oldValue == null)
@@ -1156,17 +1160,29 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     dataTable.Columns.Add(column.ColumnName, column.DataType);
             }
 
+            var oldBillDates = new Dictionary<long, DateTime?>();
+
             for (var i = 0; i < data.Rows.Count; i++)
             {
                 var row = data.Rows[i];
 
                 var billId = (long)row["InputBill_F_Id"];
-                if (!updateBillIds.Contains(billId)) updateBillIds.Add(billId);
+                if (!updateBillIds.Contains(billId))
+                {
+                    updateBillIds.Add(billId);
+                    oldBillDates.Add(billId, null);
+                }
 
                 var newRow = dataTable.NewRow();
                 foreach (DataColumn column in data.Columns)
                 {
                     var v = row[column];
+
+                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    {
+                        oldBillDates[billId] = v as DateTime?;
+                    }
+
                     switch (column.ColumnName)
                     {
                         case "F_Id":
@@ -1191,6 +1207,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataTable.Rows.Add(newRow);
             }
 
+            foreach (var oldBillDate in oldBillDates)
+            {
+                await ValidateAccountantConfig(fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+            }
 
             var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
@@ -1274,7 +1294,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         infoSQL.Append(singleFields[indx].FieldName);
                     }
-                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
+                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
                     var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                     data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
@@ -1289,11 +1309,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
                         rowsSQL.Append(multiFields[indx].FieldName);
                     }
-                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {WhereBySubsidiary()}");
+                    rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
                     var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-                await ValidateAccountantConfig(data);
+                await ValidateAccountantConfig(null, data?.Info);
                 // Before saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
 
@@ -1909,7 +1929,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     Info = info,
                     Rows = rows.ToArray()
                 };
-                await ValidateAccountantConfig(billInfo);
+
+                await ValidateAccountantConfig(billInfo?.Info, null);
+
                 bills.Add(billInfo);
             }
 
@@ -2105,19 +2127,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (stream, fileName);
         }
 
-        private async Task ValidateAccountantConfig(BillInfoModel data)
+
+        private DateTime? ExtractBillDate(NonCamelCaseDictionary info)
         {
-            data.Info.TryGetValue(AccountantConstants.BILL_DATE, out object value);
-            if (value != null)
+            object oldDateValue = null;
+
+            info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
+            if (oldDateValue.IsNullObject()) return null;
+            return (DateTime)oldDateValue;
+        }
+
+        private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
+        {
+            var billDate = ExtractBillDate(info);
+            var oldDate = ExtractBillDate(oldInfo);
+
+            await ValidateAccountantConfig(billDate, oldDate);
+        }
+
+        private async Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate)
+        {
+            if (billDate != null || oldDate != null)
             {
-                var billDate = (DateTime)EnumDataType.Date.GetSqlValue(value);
 
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-                var sqlParams = new SqlParameter[]
+                var sqlParams = new List<SqlParameter>
                 {
-                    new SqlParameter("@BillDate", billDate),
                     result
                 };
+
+                if (oldDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
+                }
+
+                if (billDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+                }
+
                 await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
@@ -2125,7 +2173,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private string WhereBySubsidiary()
+        private string GlobalFilter()
         {
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
         }

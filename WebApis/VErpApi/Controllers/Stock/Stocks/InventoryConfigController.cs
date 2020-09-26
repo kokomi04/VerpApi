@@ -20,6 +20,13 @@ namespace VErpApi.Controllers.Stock.Stocks
             _inventoryConfigService = inventoryConfigService;
         }
 
+        [Route("")]
+        [HttpGet]
+        public Task<InventoryConfigModel> GetConfig()
+        {
+            return _inventoryConfigService.GetConfig();
+        }
+
 
         [Route("")]
         [HttpPut]

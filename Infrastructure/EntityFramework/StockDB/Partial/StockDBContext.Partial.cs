@@ -10,6 +10,16 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
+    public static class StockDBContextExtensions
+    {
+        public static IQueryable<Stock> AllStockBySub(this StockDBContext stockDBContext, ICurrentContextService currentContextService)
+        {
+            return stockDBContext.Stock.IgnoreQueryFilters().Where(s => !s.IsDeleted && s.SubsidiaryId == currentContextService.SubsidiaryId);
+        }
+
+    }
+
+
     public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ICurrentRequestDbContext
     {
         //ICurrentContextService _currentContext;
@@ -27,8 +37,11 @@ namespace VErp.Infrastructure.EF.StockDB
             : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
             // _currentContext = currentContext;
-            StockIds = currentContext.StockIds?.ToList();
             CurrentContextService = currentContext;
+
+            StockIds = currentContext.StockIds?.ToList();
+            SubsidiaryId = currentContext.SubsidiaryId;
+
             FilterStock = StockIds != null;
             FilterSubsidiary = true;
         }

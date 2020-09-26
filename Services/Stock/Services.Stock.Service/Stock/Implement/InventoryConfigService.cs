@@ -27,6 +27,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityLogService = activityLogService;
         }
 
+        public async Task<InventoryConfigModel> GetConfig()
+        {
+            var info = await _stockDBContext.InventoryConfig.FirstOrDefaultAsync();
+            if (info == null)
+            {
+                info = new InventoryConfig();
+            }
+            return _mapper.Map<InventoryConfigModel>(info);
+        }
+
         public async Task<bool> UpdateConfig(InventoryConfigModel req)
         {
             var info = await _stockDBContext.InventoryConfig.FirstOrDefaultAsync();

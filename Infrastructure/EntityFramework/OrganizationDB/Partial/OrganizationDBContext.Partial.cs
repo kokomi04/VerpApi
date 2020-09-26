@@ -21,16 +21,17 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             : base(options.ChangeOptionsType<OrganizationDBContext>(loggerFactory))
         {
             CurrentContextService = currentContext;
+            SubsidiaryId = currentContext.SubsidiaryId;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.AddFilterBase();
+            //modelBuilder.AddFilterBase();
 
             var ctxConstant = Expression.Constant(this);
 
-            base.OnModelCreating(modelBuilder);
+            //base.OnModelCreating(modelBuilder);
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
