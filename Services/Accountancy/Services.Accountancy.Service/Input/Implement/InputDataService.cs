@@ -2128,13 +2128,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        private DateTime? ExtractBillDate(NonCamelCaseDictionary info)
+        private object ExtractBillDate(NonCamelCaseDictionary info)
         {
             object oldDateValue = null;
 
             info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
-            if (oldDateValue.IsNullObject()) return null;
-            return (DateTime)oldDateValue;
+            return EnumDataType.Date.GetSqlValue(oldDateValue);
         }
 
         private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
@@ -2145,7 +2144,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             await ValidateAccountantConfig(billDate, oldDate);
         }
 
-        private async Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate)
+        private async Task ValidateAccountantConfig(object billDate, object oldDate)
         {
             if (billDate != null || oldDate != null)
             {
@@ -2155,18 +2154,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     result
                 };
-
-                if (oldDate.HasValue)
-                {
-                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
-                }
-
-                if (billDate.HasValue)
-                {
-                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
-                }
-
-                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
+                sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
+                sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
