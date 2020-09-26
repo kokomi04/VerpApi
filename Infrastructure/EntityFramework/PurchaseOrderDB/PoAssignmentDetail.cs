@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         }
 
         public long PoAssignmentDetailId { get; set; }
+        public int SubsidiaryId { get; set; }
         public long PoAssignmentId { get; set; }
         public long PurchasingSuggestDetailId { get; set; }
         public decimal PrimaryQuantity { get; set; }

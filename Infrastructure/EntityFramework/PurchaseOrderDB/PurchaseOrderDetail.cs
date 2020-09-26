@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     public partial class PurchaseOrderDetail
     {
         public long PurchaseOrderDetailId { get; set; }
+        public int SubsidiaryId { get; set; }
         public long PurchaseOrderId { get; set; }
         public long? PoAssignmentDetailId { get; set; }
         public long? PurchasingSuggestDetailId { get; set; }
