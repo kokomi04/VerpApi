@@ -1275,30 +1275,29 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
                 var inputAreaFields = new List<ValidateField>();
+
                 // Get current data
                 BillInfoModel data = new BillInfoModel();
+                // Lấy thông tin field
+                inputAreaFields = await GetInputFields(inputTypeId);
+
+                // Get changed row info
+                var infoSQL = new StringBuilder("SELECT TOP 1 ");
+                var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
+                for (int indx = 0; indx < singleFields.Count; indx++)
+                {
+                    if (indx > 0)
+                    {
+                        infoSQL.Append(", ");
+                    }
+                    infoSQL.Append(singleFields[indx].FieldName);
+                }
+                infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
+                var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+
+                data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
                 if (!string.IsNullOrEmpty(inputTypeInfo.BeforeSaveAction) || !string.IsNullOrEmpty(inputTypeInfo.AfterSaveAction))
                 {
-                    // Lấy thông tin field
-                    inputAreaFields = await GetInputFields(inputTypeId);
-
-
-                    // Get changed row info
-                    var infoSQL = new StringBuilder("SELECT TOP 1 ");
-                    var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
-                    for (int indx = 0; indx < singleFields.Count; indx++)
-                    {
-                        if (indx > 0)
-                        {
-                            infoSQL.Append(", ");
-                        }
-                        infoSQL.Append(singleFields[indx].FieldName);
-                    }
-                    infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputBill_F_Id} AND {GlobalFilter()}");
-                    var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
-
-                    data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
-
                     var rowsSQL = new StringBuilder("SELECT ");
                     var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
                     for (int indx = 0; indx < multiFields.Count; indx++)
