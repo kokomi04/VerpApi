@@ -48,17 +48,16 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
             if (config != null)
                 result = new AccountantConfigModel
                 {
-                    SubsidiaryId = config.SubsidiaryId,
                     ClosingDate = config.ClosingDate.GetUnix(),
                     AutoClosingDate = config.AutoClosingDate,
                     FreqClosingDate = config.FreqClosingDate.JsonDeserialize<FreqClosingDate>()
                 };
-            else result = new AccountantConfigModel { SubsidiaryId = _currentContextService.SubsidiaryId };
+            else result = new AccountantConfigModel {};
 
             return result;
         }
 
-        public async Task<bool> UpdateAccountantConfig(int keyId, AccountantConfigModel accountantConfigModel)
+        public async Task<bool> UpdateAccountantConfig(AccountantConfigModel accountantConfigModel)
         {
             using (var trans = await _accountancyContext.Database.BeginTransactionAsync())
             {
@@ -87,7 +86,7 @@ namespace VErp.Services.Accountancy.Service.Configuration.Implement
                     await _accountancyContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.AccountantConfig, keyId, $"Cập nhật thông số hệ thống", accountantConfigModel.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.AccountantConfig, config.SubsidiaryId, $"Cập nhật thông số hệ thống", accountantConfigModel.JsonSerialize());
 
                     return true;
                 }

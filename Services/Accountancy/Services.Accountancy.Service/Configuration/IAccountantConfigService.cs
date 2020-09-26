@@ -10,6 +10,6 @@ namespace VErp.Services.Accountancy.Service.Configuration
     public interface IAccountantConfigService
     {
         Task<AccountantConfigModel> GetAccountantConfig();
-        Task<bool> UpdateAccountantConfig(int keyId, AccountantConfigModel accountantConfigModel);
+        Task<bool> UpdateAccountantConfig(AccountantConfigModel accountantConfigModel);
     }
 }

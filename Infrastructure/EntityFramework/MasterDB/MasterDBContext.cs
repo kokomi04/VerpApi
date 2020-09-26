@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
+        public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
@@ -56,7 +57,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<TimeType> TimeType { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<UnitStatus> UnitStatus { get; set; }
-        public virtual DbSet<User> User { get; set; }      
+        public virtual DbSet<User> User { get; set; }
         public virtual DbSet<UserStatus> UserStatus { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -92,6 +93,25 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.MethodId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ApiEndpoint_Method");
+            });
+
+            modelBuilder.Entity<BackupStorage>(entity =>
+            {
+                entity.HasKey(e => new { e.DatabaseId, e.BackupPoint });
+
+                entity.Property(e => e.BackupDate).HasColumnType("datetime");
+
+                entity.Property(e => e.CreatedByUserId).HasComment("");
+
+                entity.Property(e => e.FileId).HasComment("");
+
+                entity.Property(e => e.RestoreDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedByUserId).HasComment("");
             });
 
             modelBuilder.Entity<BarcodeConfig>(entity =>
@@ -584,7 +604,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(64);
             });
-            
 
             modelBuilder.Entity<UserStatus>(entity =>
             {

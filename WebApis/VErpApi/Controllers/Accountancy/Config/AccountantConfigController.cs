@@ -27,10 +27,10 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpPut]
-        [Route("{configId}")]
-        public async Task<bool> UpdateAccountantConfig([FromRoute] int configId, [FromBody] AccountantConfigModel accountantConfigModel)
+        [Route("")]
+        public async Task<bool> UpdateAccountantConfig([FromBody] AccountantConfigModel accountantConfigModel)
         {
-            return await _accountantConfigService.UpdateAccountantConfig(configId, accountantConfigModel);
+            return await _accountantConfigService.UpdateAccountantConfig(accountantConfigModel);
         }
     }
 }

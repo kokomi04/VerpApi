@@ -11,5 +11,6 @@ namespace VErp.Commons.GlobalObject
         EnumAction Action { get; }
         IList<int> StockIds { get; }
         RoleInfo RoleInfo { get; }
+        int? TimeZoneOffset { get; }
     }
 }

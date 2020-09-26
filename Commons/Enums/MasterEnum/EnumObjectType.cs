@@ -113,6 +113,7 @@ namespace VErp.Commons.Enums.MasterEnum
         SystemParameter = 48,
         AccountantConfig = 49,
         PrintConfig = 50,
-        InventoryConfig = 51
+        StorageDabase = 51,
+        InventoryConfig = 52
     }
 }
