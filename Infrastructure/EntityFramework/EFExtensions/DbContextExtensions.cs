@@ -12,6 +12,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -43,7 +44,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception)
             {
-              
+
             }
         }
         public static async Task TryRollbackTransactionAsync(this IDbContextTransaction trans)
@@ -123,6 +124,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     obj.SetValue("UpdatedByUserId", currentContext.UserId);
 
                     obj.SetValue("DeletedDatetimeUtc", null);
+
+                    var p = obj.GetType().GetProperty(GlobalFieldConstants.SubsidiaryId);
+                    if (p != null)
+                    {
+                        p.SetValue(obj, currentContext.SubsidiaryId);                        
+                    }
+
+
                 }
                 else
                 {

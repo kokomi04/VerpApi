@@ -87,3 +87,11 @@ UPDATE StockDB.dbo.[Package] SET SubsidiaryId = @SubsidiaryId
 UPDATE StockDB.dbo.Stock SET SubsidiaryId = @SubsidiaryId
 
 
+UPDATE PurchaseOrderDB.dbo.PoAssignment SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PoAssignmentDetail SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchaseOrder SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchaseOrderDetail SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchasingRequest SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchasingRequestDetail SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchasingSuggest SET SubsidiaryId = @SubsidiaryId
+UPDATE PurchaseOrderDB.dbo.PurchasingSuggestDetail SET SubsidiaryId = @SubsidiaryId

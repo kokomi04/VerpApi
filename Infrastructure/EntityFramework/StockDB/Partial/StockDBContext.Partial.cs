@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -89,6 +91,18 @@ namespace VErp.Infrastructure.EF.StockDB
                 entityType.SetQueryFilter(filterBuilder.Build());
             }
 
+        }
+
+        public override int SaveChanges()
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return await base.SaveChangesAsync(true, cancellationToken);
         }
     }
 
