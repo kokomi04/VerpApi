@@ -82,7 +82,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandType = cmdType;
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
-                    foreach(var param in parammeters)
+                    foreach (var param in parammeters)
                     {
                         command.Parameters.Add(param);
                     }
@@ -316,7 +316,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
+        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
         {
             if (clause != null)
             {
@@ -328,7 +328,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         singleClause.Value = value;
                     }
-                    BuildExpression(singleClause, tableName, ref condition, ref sqlParams, ref suffix, not);
+                    BuildExpression(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -345,7 +345,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, ref condition, ref sqlParams, ref suffix, isNot, value);
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value);
                     }
                 }
                 else
@@ -356,7 +356,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-        public static void BuildExpression(SingleClause clause, string tableName, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
+        public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
         {
             if (clause != null)
             {
@@ -369,11 +369,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")}");
+                            condition.Append($"[{viewAlias}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")}");
                         }
                         else
                         {
-                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
@@ -381,22 +381,22 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "=" : "!=";
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"[{tableName}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")}");
+                            condition.Append($"[{viewAlias}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")}");
                         }
                         else
                         {
-                            condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                            condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
                     case EnumOperator.Contains:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
                         break;
                     case EnumOperator.InList:
                         ope = not ? "NOT IN" : "IN";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} (");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} (");
                         int inSuffix = 0;
                         var paramNames = new StringBuilder();
                         foreach (var value in (clause.Value as string).Split(","))
@@ -412,52 +412,52 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.IsLeafNode:
                         ope = not ? "EXISTS" : "NOT EXISTS";
-                        var alias = $"{tableName}_{suffix}";
-                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{tableName}].F_Id)");
+                        var alias = $"{viewAlias}_{suffix}";
+                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{viewAlias}].F_Id)");
                         break;
                     case EnumOperator.StartsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
                         break;
                     case EnumOperator.EndsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;
                     case EnumOperator.Greater:
                         ope = not ? "<=" : ">";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.GreaterOrEqual:
                         ope = not ? "<" : ">=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThan:
                         ope = not ? ">=" : "<";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThanOrEqual:
                         ope = not ? ">" : "<=";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
                         ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope}");
                         break;
                     case EnumOperator.IsEmpty:
                         ope = not ? "!= ''''" : "=''''";
-                        condition.Append($"[{tableName}].{clause.FieldName} {ope}");
+                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope}");
                         break;
                     case EnumOperator.IsNullOrEmpty:
                         ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"( [{tableName}].{clause.FieldName} {ope}");
+                        condition.Append($"( [{viewAlias}].{clause.FieldName} {ope}");
                         ope = not ? "!= ''''" : "=''''";
-                        condition.Append($" AND [{tableName}].{clause.FieldName} {ope})");
+                        condition.Append($" AND [{viewAlias}].{clause.FieldName} {ope})");
                         break;
                     default:
                         break;
