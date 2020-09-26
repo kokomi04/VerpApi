@@ -96,7 +96,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
             {
-                model.ColumnsFilters.FilterClauseProcess("v", ref filterCondition, ref sqlParams, ref suffix);
+                model.ColumnsFilters.FilterClauseProcess(string.Empty, "v", ref filterCondition, ref sqlParams, ref suffix);
             }
 
             if (reportInfo.IsBsc)

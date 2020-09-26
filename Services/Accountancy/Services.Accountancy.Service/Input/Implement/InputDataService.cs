@@ -116,7 +116,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 whereCondition.Append(" AND ");
                             }
 
-                            filterClause.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
                         }
                     }
                 }
@@ -129,7 +129,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     whereCondition.Append(" AND ");
                 }
 
-                columnsFilters.FilterClauseProcess("r", ref whereCondition, ref sqlParams, ref suffix);
+                columnsFilters.FilterClauseProcess(INPUTVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
             var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
@@ -881,7 +881,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, ref whereCondition, ref sqlParams, ref suffix);
+                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
                 }
             }
 
@@ -1901,7 +1901,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 if (filterClause != null)
                                 {
                                     var whereCondition = new StringBuilder();
-                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
+                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
                                     if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
                                 }
                             }
