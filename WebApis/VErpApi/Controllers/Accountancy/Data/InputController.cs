@@ -189,5 +189,26 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             return await _calcBillService.DeletedCostTransferBalanceZero(fromDate, toDate);
         }
+
+        [HttpGet]
+        [Route("CalcDepreciation")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CalcDepreciation(fromDate, toDate, accountNumber);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedDepreciation")]
+        public async Task<bool> CheckExistedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CheckExistedDepreciation(fromDate, toDate, accountNumber);
+        }
+
+        [HttpDelete]
+        [Route("DeletedDepreciation")]
+        public async Task<bool> DeletedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.DeletedDepreciation(fromDate, toDate, accountNumber);
+        }
     }
 }
