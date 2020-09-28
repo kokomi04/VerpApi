@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomerStatus> CustomerStatus { get; set; }
         public virtual DbSet<CustomerType> CustomerType { get; set; }
+        public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<FileStatus> FileStatus { get; set; }
         public virtual DbSet<FileType> FileType { get; set; }
         public virtual DbSet<FunctionLevel> FunctionLevel { get; set; }
@@ -207,6 +208,21 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CustomerTypeName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<DataConfig>(entity =>
+            {
+                entity.HasKey(e => e.SubsidiaryId);
+
+                entity.Property(e => e.AutoClosingDate).HasComment("");
+
+                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
+
+                entity.Property(e => e.FreqClosingDate)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('{}')")
+                    .HasComment("");
             });
 
             modelBuilder.Entity<FileStatus>(entity =>

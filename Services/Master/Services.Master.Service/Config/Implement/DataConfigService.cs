@@ -6,52 +6,53 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Stock.Model.Config;
+using VErp.Services.Master.Model.Config;
 
-namespace VErp.Services.Stock.Service.Stock.Implement
+namespace VErp.Services.Master.Service.Config.Implement
 {
-    public class InventoryConfigService : IInventoryConfigService
+    public class DataConfigService : IDataConfigService
     {
-        private readonly StockDBContext _stockDBContext;
+        private readonly MasterDBContext _masterDbContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
 
-        public InventoryConfigService(StockDBContext stockDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
+        public DataConfigService(MasterDBContext masterDbContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
-            _stockDBContext = stockDBContext;
+            _masterDbContext = masterDbContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
             _activityLogService = activityLogService;
         }
 
-        public async Task<InventoryConfigModel> GetConfig()
+        public async Task<DataConfigModel> GetConfig()
         {
-            var info = await _stockDBContext.InventoryConfig.FirstOrDefaultAsync();
+            var info = await _masterDbContext.DataConfig.FirstOrDefaultAsync();
             if (info == null)
             {
-                info = new InventoryConfig();
+                info = new DataConfig();
             }
-            return _mapper.Map<InventoryConfigModel>(info);
+            return _mapper.Map<DataConfigModel>(info);
         }
 
-        public async Task<bool> UpdateConfig(InventoryConfigModel req)
+        public async Task<bool> UpdateConfig(DataConfigModel req)
         {
-            var info = await _stockDBContext.InventoryConfig.FirstOrDefaultAsync();
+            var info = await _masterDbContext.DataConfig.FirstOrDefaultAsync();
             if (info == null)
             {
-                info = _mapper.Map<InventoryConfig>(req);
+                info = _mapper.Map<DataConfig>(req);
                 info.SubsidiaryId = _currentContextService.SubsidiaryId;
-                await _stockDBContext.InventoryConfig.AddAsync(info);
+                await _masterDbContext.DataConfig.AddAsync(info);
             }
             else
             {
                 _mapper.Map(req, info);
             }
 
-            await _stockDBContext.SaveChangesAsync();
+            await _masterDbContext.SaveChangesAsync();
             await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.InventoryConfig, info.SubsidiaryId, $"Cập nhật thiết lập xuất/nhập kho", req.JsonSerialize());
 
             return true;

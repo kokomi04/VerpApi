@@ -240,7 +240,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                         return newCode;
 
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         trans.Rollback();
                         throw;

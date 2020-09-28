@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 
-namespace VErp.Commons.GlobalObject
+namespace VErp.Services.Master.Model.Config
 {
     public class FreqClosingDate
     {

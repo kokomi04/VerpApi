@@ -4,15 +4,20 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Stock.Model.Config
+namespace VErp.Services.Master.Model.Config
 {
-    public class InventoryConfigModel : ModuleConfig, IMapFrom<InventoryConfig>
+    public class DataConfigModel : IMapFrom<DataConfig>
     {
+        public int SubsidiaryId { get; set; }
+        public long ClosingDate { get; set; }
+        public bool AutoClosingDate { get; set; }
+        public FreqClosingDate FreqClosingDate { get; set; }
+
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InventoryConfig, InventoryConfigModel>()
+            profile.CreateMap<DataConfig, DataConfigModel>()
                 .ForMember(m => m.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonDeserialize<FreqClosingDate>()))
                 .ForMember(m => m.ClosingDate, m => m.MapFrom(v => v.ClosingDate.GetUnix()))
                 .ReverseMap()
