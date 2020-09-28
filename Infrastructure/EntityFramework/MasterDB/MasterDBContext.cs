@@ -214,6 +214,8 @@ namespace VErp.Infrastructure.EF.MasterDB
             {
                 entity.HasKey(e => e.SubsidiaryId);
 
+                entity.Property(e => e.SubsidiaryId).ValueGeneratedNever();
+
                 entity.Property(e => e.AutoClosingDate).HasComment("");
 
                 entity.Property(e => e.ClosingDate).HasColumnType("datetime");
