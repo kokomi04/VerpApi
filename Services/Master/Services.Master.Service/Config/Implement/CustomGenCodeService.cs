@@ -398,14 +398,16 @@ namespace VErp.Services.Master.Service.Config.Implement
             return result;
         }
 
-        public async Task<PageData<ObjectType>> GetAllObjectType()
+        public PageData<ObjectType> GetAllObjectType()
         {
+            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(m => new ObjectType
+            {
+                ObjectTypeId = m.Enum,
+                ObjectTypeName = m.Description ?? m.Name.ToString()
+            }).ToList();
 
-            var total = await _masterDbContext.ObjectType.CountAsync();
-            var allData = await _masterDbContext.ObjectType.AsNoTracking().ToListAsync();
-
-            return (allData, total);
-
+            
+            return (allData, allData.Count);        
         }
 
         public async Task<bool> ConfirmCode(int objectTypeId, int objectId)
