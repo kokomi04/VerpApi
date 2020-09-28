@@ -18,7 +18,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<File> File { get; set; }
         public virtual DbSet<Inventory> Inventory { get; set; }
         public virtual DbSet<InventoryChange> InventoryChange { get; set; }
-        public virtual DbSet<InventoryConfig> InventoryConfig { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
         public virtual DbSet<InventoryDetailChange> InventoryDetailChange { get; set; }
         public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
@@ -103,22 +102,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("PK_InventoryTracking");
 
                 entity.Property(e => e.InventoryId).ValueGeneratedNever();
-            });
-
-            modelBuilder.Entity<InventoryConfig>(entity =>
-            {
-                entity.HasKey(e => e.SubsidiaryId);
-
-                entity.Property(e => e.SubsidiaryId).ValueGeneratedNever();
-
-                entity.Property(e => e.AutoClosingDate).HasComment("");
-
-                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
-
-                entity.Property(e => e.FreqClosingDate)
-                    .IsRequired()
-                    .HasMaxLength(255)
-                    .HasComment("");
             });
 
             modelBuilder.Entity<InventoryDetail>(entity =>

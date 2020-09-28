@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -30,7 +31,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<DataConfigModel> GetConfig()
         {
-            var info = await _masterDbContext.DataConfig.FirstOrDefaultAsync();
+            var info = await _masterDbContext.DataConfig.Where(c => c.SubsidiaryId == _currentContextService.SubsidiaryId).FirstOrDefaultAsync();
             if (info == null)
             {
                 info = new DataConfig();

@@ -7,7 +7,6 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ReportConfigDB;
-using VErp.Commons.Library;
 
 namespace Verp.Services.ReportConfig.Model
 {
