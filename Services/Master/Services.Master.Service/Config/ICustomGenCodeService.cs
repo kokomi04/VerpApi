@@ -23,7 +23,7 @@ namespace VErp.Services.Master.Service.Config
 
         Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "");
 
-        Task<PageData<ObjectType>> GetAllObjectType();
+        PageData<ObjectType> GetAllObjectType();
 
         Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId);
 

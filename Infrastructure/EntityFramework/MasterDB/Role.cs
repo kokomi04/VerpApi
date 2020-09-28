@@ -27,7 +27,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string ChildrenRoleIds { get; set; }
 
         public virtual Role ParentRole { get; set; }
-        public virtual RoleStatus RoleStatus { get; set; }
         public virtual ICollection<Role> InverseParentRole { get; set; }
         public virtual ICollection<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual ICollection<RolePermission> RolePermission { get; set; }

@@ -162,7 +162,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(ObjectGenCodeErrorCode.ConfigAlreadyExisted);
             }
             // Lấy thông tin tên loại đối tượng tương ứng
-            var objType = await _masterDbContext.ObjectType.FirstOrDefaultAsync(q => q.ObjectTypeId == (int)objectType);
+            var objectTypes = GetAllObjectType().List;
+            var objType = objectTypes.FirstOrDefault(q => q.ObjectTypeId == objectType);
             if (objType == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
@@ -250,14 +251,16 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<PageData<ObjectType>> GetAllObjectType()
+        public PageData<ObjectType> GetAllObjectType()
         {
+            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(m => new ObjectType
+            {
+                ObjectTypeId = m.Enum,
+                ObjectTypeName = m.Description ?? m.Name.ToString()
+            }).ToList();
 
-            var total = await _masterDbContext.ObjectType.CountAsync();
-            var allData = await _masterDbContext.ObjectType.AsNoTracking().ToListAsync();
 
-            return (allData, total);
-
+            return (allData, allData.Count);
         }
     }
 }

@@ -117,9 +117,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("GetAllObjectType")]
-        public async Task<PageData<ObjectType>> GetAllObjectType()
+        public PageData<ObjectType> GetAllObjectType()
         {
-            return await _customGenCodeService.GetAllObjectType();
+            return _customGenCodeService.GetAllObjectType();
         }
 
     }

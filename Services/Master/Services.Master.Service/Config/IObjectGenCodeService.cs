@@ -28,6 +28,6 @@ namespace VErp.Services.Master.Service.Config
         /// <returns>string code</returns>
         Task<string> GenerateCode(EnumObjectType objectType);
 
-        Task<PageData<ObjectType>> GetAllObjectType();
+        PageData<ObjectType> GetAllObjectType();
     }
 }
