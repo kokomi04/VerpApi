@@ -8,6 +8,7 @@ namespace VErp.Commons.Constants
     {
         public const string StartWithFuntion = "=";
         public const string DetectMainTable = "table";
-        public const string PrintTemplatePattern = @"{{([\w,$\[\]\.\(\)='*@]+)}}";
+
+        public const string PrintTemplatePattern = @"{{([\w,$\[\].()='*@?]+)}}";
     }
 }
