@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,14 +10,12 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
-using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
 
@@ -31,9 +27,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
-        private readonly StockDBContext _stockDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly AppSetting _appSetting;
+        private readonly IDocOpenXmlService _docOpenXmlService;
+        private readonly IPhysicalFileService _physicalFileService;
 
         public PrintConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -41,7 +38,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICurrentContextService currentContextService
-            , StockDBContext stockDBContext
+            , IPhysicalFileService physicalFileService
+            , IDocOpenXmlService docOpenXmlService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -49,8 +47,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _currentContextService = currentContextService;
-            _stockDBContext = stockDBContext;
             _appSetting = appSetting.Value;
+            _docOpenXmlService = docOpenXmlService;
+            _physicalFileService = physicalFileService;
         }
 
         public async Task<PrintConfigModel> GetPrintConfig(int printConfigId)
@@ -172,123 +171,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var printConfig = await _accountancyDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .FirstOrDefaultAsync();
-            if (printConfig == null)
-            {
-                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
-            }
-            var fileInfo = await _stockDBContext.File.FirstOrDefaultAsync(f => f.FileId == printConfig.TemplateFileId);
-            if (fileInfo == null)
-            {
-                throw new BadRequestException(FileErrorCode.FileNotFound);
-            }
-            string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
-            string outDirectory = GeneratePhysicalFolder();
 
-            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
+            if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var fileInfo = await _physicalFileService.GetSimpleFileInfo(printConfig.TemplateFileId.Value);
+
+            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound);
+
             try
             {
-                using (var document = WordprocessingDocument.CreateFromTemplate(physicalFilePath))
-                {
-                    if (true)
-                    {
-                        var body = document.MainDocumentPart.Document.Body;
-
-                        #region generate row data into table
-                        var mainTable = (Table)(body.Descendants<TableProperties>().Where(x => x.TableCaption?.Val == "table").FirstOrDefault()?.Parent);
-                        var tablePr = mainTable.Elements<TableProperties>().FirstOrDefault();
-
-                        tablePr.TableWidth.Width = "0";
-                        tablePr.TableWidth.Type = TableWidthUnitValues.Auto;
-
-                        var rows = mainTable.Descendants<TableRow>();
-                        if (rows.Count() > 1)
-                        {
-                            TableRow row = rows.ElementAt(1);
-                            templateModel.data.Reverse();
-                            foreach (var data in templateModel.data)
-                            {
-                                var tableRow = (TableRow)row.Clone();
-                                foreach (var cell in tableRow.Descendants<TableCell>())
-                                {
-                                    List<VErpDocMatch> ls = new List<VErpDocMatch>();
-
-                                    foreach (Paragraph paragraph in cell.Descendants<Paragraph>())
-                                    {
-                                        var vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Pattern);
-                                        ls.Add(vErpDocMatch);
-                                    }
-
-                                    foreach (var docMatch in ls)
-                                    {
-                                        var paragraph = docMatch.paragraph;
-                                        foreach (var match in docMatch.fieldMatchs)
-                                        {
-                                            var temps = new List<NonCamelCaseDictionary>();
-                                            temps.Add(data);
-                                            var result = await match.Value.GetFieldValue(temps, _accountancyDBContext);
-                                            WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
-                                        }
-                                    }
-                                }
-                                mainTable.InsertAfter(tableRow, row);
-                            }
-                            row.Remove();
-                        }
-                        tablePr.TableWidth.Width = "5000";
-                        tablePr.TableWidth.Type = TableWidthUnitValues.Pct;
-                        #endregion
-
-                        #region find and replace string with regex
-                        var paragraphs = body.Descendants<Paragraph>();
-                        List<VErpDocMatch> docMatchs = new List<VErpDocMatch>();
-
-                        foreach (Paragraph paragraph in paragraphs)
-                        {
-                            VErpDocMatch vErpDocMatch = new VErpDocMatch(paragraph, RegexDocExpression.Pattern);
-                            if (vErpDocMatch.fieldMatchs.Count > 0)
-                                docMatchs.Add(vErpDocMatch);
-                        }
-
-                        foreach (var docMatch in docMatchs)
-                        {
-                            var paragraph = docMatch.paragraph;
-                            foreach (var match in docMatch.fieldMatchs)
-                            {
-                                var result = await match.Value.GetFieldValue(templateModel.data, _accountancyDBContext);
-                                WordOpenXmlTools.ReplaceText(paragraph, match.Key, result != null ? result.ToString() : string.Empty);
-                            }
-                        }
-                        #endregion
-                    }
-
-                    document.SaveAs($"{outDirectory}/{file}.docx").Close();
-                    document.Close();
-                    WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{file}.docx", $"{outDirectory}/{file}.pdf");
-                }
-                return (System.IO.File.OpenRead($"{outDirectory}/{file}.pdf"),
-                    "application/pdf",
-                    $"{file}.pdf");
+                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _accountancyDBContext);
+                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemple, ex.Message);
+                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemplate, ex.Message);
             }
-            
         }
-
-        private string GeneratePhysicalFolder()
-        {
-            var relativeFolder = $"/_tmp_/{Guid.NewGuid().ToString()}";
-            var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
-            if (!Directory.Exists(obsoluteFolder))
-                Directory.CreateDirectory(obsoluteFolder);
-            return obsoluteFolder;
-        }
-
-        private string GetPhysicalFilePath(string filePath)
-        {
-            return filePath.GetPhysicalFilePath(_appSetting);
-        }
+       
     }
 }
 

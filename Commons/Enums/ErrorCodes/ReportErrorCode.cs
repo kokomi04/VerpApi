@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không tìm thấy báo cáo trong hệ thống")]
         ReportNotFound = 1,
         [Description("Tên báo cáo đã tồn tại")]
-        ReportNameAlreadyExisted = 2
+        ReportNameAlreadyExisted = 2,
+        CanNotGenerateReportAsDoc = 3
     }
 }

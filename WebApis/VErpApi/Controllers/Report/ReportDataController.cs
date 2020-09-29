@@ -29,6 +29,15 @@ namespace VErpApi.Controllers.Report
             return await _accountancyReportService.Report(reportId, model)
                 .ConfigureAwait(true);
         }
+
+        [HttpPost]
+        [Route("view/{reportId}/asDocument")]
+        public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
+        {
+            var r = await _accountancyReportService.GenerateReportAsPdf(reportId, dataModel);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
+        }
     }
 
    

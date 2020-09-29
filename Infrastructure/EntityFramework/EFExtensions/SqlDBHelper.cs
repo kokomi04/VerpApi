@@ -27,19 +27,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
         }
 
-        public static async Task<DataTable> QueryFunction(this DbContext dbContext, string procedureName, SqlParameter[] parammeters)
-        {
-            var sql = new StringBuilder($"Select dbo.{procedureName}(");
-            for (int i = 0; i < parammeters.Length; i++)
-            {
-                sql.Append($" {parammeters[i].ParameterName}");
-                if (i < parammeters.Length - 1)
-                    sql.Append(",");
-                else sql.Append(")");
-            }
-            return await dbContext.QueryDataTable(sql.ToString(), parammeters);
-        }
-
         public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, bool includeSubId = false)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
