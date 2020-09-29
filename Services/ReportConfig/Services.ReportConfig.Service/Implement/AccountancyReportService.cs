@@ -522,6 +522,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             totalSql.Append($" FROM {view}");
             if (!string.IsNullOrEmpty(filterCondition))
                 totalSql.Append($" WHERE {filterCondition}");
+
             var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
