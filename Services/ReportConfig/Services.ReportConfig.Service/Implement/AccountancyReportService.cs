@@ -393,9 +393,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
-            selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
+            selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v1";
+
             if (!string.IsNullOrEmpty(filterCondition))
-                selectAliasSql += $" WHERE {filterCondition}";
+                selectAliasSql = $"SELECT * FROM ({selectAliasSql}) AS v WHERE {filterCondition}";
+
             string orderBy = reportInfo?.OrderBy;
 
             if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
@@ -424,7 +426,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             //{
             //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
             //}
-
 
             var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
