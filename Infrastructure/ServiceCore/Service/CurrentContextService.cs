@@ -52,7 +52,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly MasterDBContext _masterDBContext;
+        private readonly UnAuthorizeMasterDBContext _masterDBContext;
 
         private int _userId = 0;
         private int _subsidiaryId = 0;
@@ -66,7 +66,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-            , MasterDBContext masterDBContext
+            , UnAuthorizeMasterDBContext masterDBContext
             )
         {
             _appSetting = appSetting.Value;
