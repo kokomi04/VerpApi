@@ -60,7 +60,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     ObjectTypeId = (int)input.ObjectTypeId,
                     MessageTypeId = (int)input.MessageTypeId,
                     ObjectId = input.ObjectId,
-                    Message = input.Message
+                    Message = input.Message,
+                    SubsidiaryId = input.SubsidiaryId
                 };
 
                 await _activityLogContext.UserActivityLog.AddAsync(activity);
@@ -85,7 +86,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
-        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int actionTypeId, EnumMessageType messageTypeId, string message)
+        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message)
         {
             var activity = new UserActivityLog()
             {
@@ -96,6 +97,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 MessageTypeId = (int)messageTypeId,
                 Message = message,
                 CreatedDatetimeUtc = DateTime.UtcNow,
+                SubsidiaryId = subsidiaryId
             };
 
             await _activityLogContext.UserActivityLog.AddAsync(activity);
@@ -130,6 +132,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     Message = item.Message,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     MessageTypeId = (EnumMessageType)item.MessageTypeId,
+                    SubsidiaryId = item.SubsidiaryId
                 };
                 result.Add(actLogOutput);
             }

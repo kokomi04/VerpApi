@@ -15,5 +15,6 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public long ObjectId { get; set; }
         public string Message { get; set; }
         public string Data { get; set; }
+        public int SubsidiaryId { get; set; }
     }
 }
