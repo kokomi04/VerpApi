@@ -14,7 +14,6 @@
     <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\ActivityLogDB\ActivityLogDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\MasterDB\MasterDB.csproj" />
-    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.Master.Model\Services.Master.Model.csproj" />
   </ItemGroup>

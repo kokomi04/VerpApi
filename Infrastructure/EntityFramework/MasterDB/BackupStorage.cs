@@ -5,7 +5,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class BackupStorage
     {
-        public int DatabaseId { get; set; }
+        public int ModuleId { get; set; }
         public long BackupPoint { get; set; }
         public string Title { get; set; }
         public DateTime BackupDate { get; set; }

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Config;
 
