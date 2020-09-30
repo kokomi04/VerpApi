@@ -118,7 +118,6 @@ namespace VErp.WebApis.VErpApi
             //services.AddAutoMapper(typeof(Startup));
 
             var profile = new MappingProfile();
-
             profile.ApplyMappingsFromAssembly(MasterModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(StockModelAssembly.Assembly);
