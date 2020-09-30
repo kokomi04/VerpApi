@@ -6,8 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.Report
 {
@@ -15,9 +18,11 @@ namespace VErpApi.Controllers.Report
     public class ReportTypeController : VErpBaseController
     {
         private readonly IReportConfigService _reportConfigService;
-        public ReportTypeController(IReportConfigService reportConfigService)
+        private readonly IFileService _fileService; 
+        public ReportTypeController(IReportConfigService reportConfigService, IFileService fileService)
         {
             _reportConfigService = reportConfigService;
+            _fileService = fileService;
         }
 
         [HttpGet]
@@ -136,5 +141,11 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
+        [HttpPost]
+        [Route("uploadReportTemplate")]
+        public async Task<long> UploadReportTemplate(IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.ReportType, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
+        }
     }
 }

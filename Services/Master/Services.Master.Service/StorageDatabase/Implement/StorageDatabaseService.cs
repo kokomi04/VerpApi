@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Elasticsearch.Net;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -7,48 +8,57 @@ using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.StorageDatabase;
-using FileEntity = VErp.Infrastructure.EF.StockDB.File;
 
 namespace VErp.Services.Master.Service.StorageDatabase.Implement
 {
     public class StorageDatabaseService : IStorageDatabaseService
     {
         private readonly MasterDBContext _masterContext;
-        private readonly StockDBContext _stockDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger<StorageDatabaseService> _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IServiceCollection _serviceDescriptors;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IPhysicalFileService _physicalFileService;
+
+        private static readonly Dictionary<EnumModuleType, string[]> ListDatabase = new Dictionary<EnumModuleType, string[]>()
+        {
+            {EnumModuleType.Master, new[] { "MasterDB", "ActivityLogDB" } },
+            {EnumModuleType.Accountant, new[] { "AccountancyDB", "ReportConfigDB" } },
+            {EnumModuleType.Organization, new[] { "OrganizationDB" } },
+            {EnumModuleType.PurchaseOrder, new[] { "PurchaseOrderDB" } },
+            {EnumModuleType.Stock, new[] { "StockDB" } },
+        };
+
+
         public StorageDatabaseService(MasterDBContext masterDBContext,
-            StockDBContext stockDBContext,
             IOptions<AppSetting> appSetting,
             IActivityLogService activityLogService,
             ILogger<StorageDatabaseService> logger,
-            IServiceCollection serviceDescriptors,
-            ICurrentContextService currentContextService)
+            ICurrentContextService currentContextService,
+            IPhysicalFileService physicalFileService)
         {
             _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
             _masterContext = masterDBContext;
             _logger = logger;
-            _serviceDescriptors = serviceDescriptors;
             _currentContextService = currentContextService;
-            _stockDBContext = stockDBContext;
+            _physicalFileService = physicalFileService;
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
@@ -56,57 +66,54 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             var backupPoint = DateTime.UtcNow.GetUnix();
 
             var lsBackupStorage = new List<BackupStorage>();
-            var lsFileEntity = new List<FileEntity>();
             foreach (var storage in backupStorage.storages)
             {
-                string filePath = GenerateOutDirectory($"{storage.DatabaseName.ToLower()}.bak");
-#if !DEBUG
-                var sqlDB = $@"BACKUP DATABASE {storage.DatabaseName} TO DISK='{GetPhysicalFilePath(filePath)}'";
-                await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
-                if (!System.IO.File.Exists(GetPhysicalFilePath(filePath)))
-                {
-                    foreach (var f in lsFileEntity)
-                        System.IO.File.Delete(GetPhysicalFilePath(f.FilePath));
-                    throw new BadRequestException(BackupErrorCode.NotFoundFileAfterBackup);
-                }
-#endif
-                lsFileEntity.Add(new FileEntity
-                {
-                    FileTypeId = (int)EnumFileType.Other,
-                    FilePath = filePath,
-                    FileName = $"{storage.DatabaseName.ToLower()}.bak",
-                    ContentType = "application/octet-stream",
-                    FileLength = 0,
-                    ObjectTypeId = (int)EnumObjectType.StorageDabase,
-                    ObjectId = null,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    FileStatusId = (int)EnumFileStatus.Temp,
-                    IsDeleted = false
-                });
 
-                lsBackupStorage.Add(new BackupStorage
+                string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleId.GetStringValue());
+                foreach (string db in ListDatabase[storage.ModuleId])
                 {
-                    BackupDate = DateTime.UtcNow,
-                    BackupPoint = backupPoint,
-                    Title = backupStorage.Title,
-                    DatabaseId = storage.DatabaseId,
-                    IsDeleted = false,
-                    CreatedByUserId = _currentContextService.UserId,
-                    UpdatedByUserId = _currentContextService.UserId,
-                });
+                    string filePath = $"{outDirectory}/{db.ToLower()}.bak";
+#if !DEBUG
+                    var sqlDB = $@"BACKUP DATABASE {db} TO DISK='{GetPhysicalFilePath(filePath)}'";
+                    await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
+                    if (!System.IO.File.Exists(GetPhysicalFilePath(filePath)))
+                    {
+                        throw new BadRequestException(BackupErrorCode.NotFoundFileAfterBackup);
+                    }
+#endif
+                }
+
+                string fileZip = $"{storage.ModuleId.GetStringValue()}.zip";
+
+                if (ZipDirectory(GetPhysicalFilePath(outDirectory), fileZip))
+                {
+                    var fileId = await _physicalFileService.SaveSimpleFileInfo(EnumObjectType.StorageDabase, new SimpleFileInfo
+                    {
+                        FileTypeId = (int)EnumFileType.Other,
+                        FilePath = $"{outDirectory}/{fileZip}",
+                        FileName = fileZip,
+                        ContentType = "application/zip",
+                        FileLength = 0,
+                    });
+
+                    lsBackupStorage.Add(new BackupStorage
+                    {
+                        BackupDate = DateTime.UtcNow,
+                        BackupPoint = backupPoint,
+                        Title = backupStorage.Title,
+                        ModuleId = (int)storage.ModuleId,
+                        IsDeleted = false,
+                        FileId = fileId,
+                        CreatedByUserId = _currentContextService.UserId,
+                        UpdatedByUserId = _currentContextService.UserId,
+                    });
+                }
             }
 
-            await using (var trans = new MultipleDbTransaction(_stockDBContext, _masterContext))
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 try
                 {
-                    await _stockDBContext.AddRangeAsync(lsFileEntity);
-                    await _stockDBContext.SaveChangesAsync();
-                    for (int i = 0; i < lsBackupStorage.Count; i++)
-                    {
-                        lsBackupStorage[i].FileId = lsFileEntity[i].FileId;
-                    }
                     await _masterContext.BackupStorage.AddRangeAsync(lsBackupStorage);
                     await _masterContext.SaveChangesAsync();
 
@@ -127,26 +134,16 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
         public async Task<IList<StorageDatabseModel>> GetList()
         {
-            var lsDbRegister = new List<string>();
-            foreach (var sd in _serviceDescriptors.Where(x => x.ServiceType.IsSubclassOf(typeof(DbContext))))
+            var results = new List<StorageDatabseModel>();
+            foreach (var (module, storages) in ListDatabase)
             {
-                lsDbRegister.Add(sd.ServiceType.Name);
+                results.Add(new StorageDatabseModel
+                {
+                    ModuleId = module,
+                    ModuleName = module.GetEnumDescription(),
+                });
             }
 
-            var databases = await GetAllDatabase();
-
-            var results = new List<StorageDatabseModel>();
-            databases.ForEach(x =>
-            {
-                if (lsDbRegister.Any(y => y.Contains(x["name"])))
-                {
-                    results.Add(new StorageDatabseModel
-                    {
-                        DatabaseName = x["name"].ToString(),
-                        DatabaseId = int.Parse(x["database_id"].ToString()),
-                    });
-                }
-            });
             return results;
         }
 
@@ -157,11 +154,11 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
                 throw new BadRequestException(BackupErrorCode.NotFoundBackupPoint);
             }
-            var databases = await GetAllDatabase();
 
             foreach (var backup in backups)
             {
-                await RestoreDatabase(databases, backup);
+                await RestoreDatabase(backup);
+
                 backup.RestoreDate = DateTime.UtcNow;
                 backup.UpdatedByUserId = _currentContextService.UserId;
             }
@@ -171,58 +168,51 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return true;
         }
 
-        private async Task<List<NonCamelCaseDictionary>> GetAllDatabase()
+        public async Task<bool> RestoreForBackupPoint(long backupPoint, int moduleId)
         {
-            string sqlDB = @"SELECT name, database_id, create_date
-                                FROM sys.databases";
-            var data = (await _masterContext.QueryDataTable(sqlDB, Array.Empty<SqlParameter>())).ConvertData();
-            return data;
-        }
-
-        public async Task<bool> RestoreForBackupPoint(long backupPoint, int databaseId)
-        {
-            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.DatabaseId == databaseId);
+            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.ModuleId == moduleId);
             if (backup == null)
             {
                 throw new BadRequestException(BackupErrorCode.NotFoundBackupForDatabase);
             }
-            var databases = await GetAllDatabase();
-            await RestoreDatabase(databases, backup);
+            await RestoreDatabase(backup);
 
             backup.RestoreDate = DateTime.UtcNow;
+            backup.UpdatedByUserId = _currentContextService.UserId;
             await _masterContext.SaveChangesAsync();
 
             return true;
         }
 
-        private async Task RestoreDatabase(List<NonCamelCaseDictionary> databases, BackupStorage backup)
+        private async Task RestoreDatabase(BackupStorage backup)
         {
-            var dbInfo = databases.FirstOrDefault(x => x["database_id"].ToString().Equals(backup.DatabaseId.ToString()));
-            if (dbInfo == null)
-                throw new BadRequestException(BackupErrorCode.NotFoundInfoDB, $"Database {backup.DatabaseId} không tồn tại");
-            var fileInfo = await _stockDBContext.File.FirstOrDefaultAsync(x => x.FileId == backup.FileId);
-            if (fileInfo == null)
-                throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thấy file của database {backup.DatabaseId}");
-#if !DEBUG
-            string sqlDB = $@"RESTORE DATABASE {dbInfo["name"]}  
-                                    FROM DISK = '{GetPhysicalFilePath(fileInfo.FilePath)}'";
-            await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
-#endif
+            var fileInfo = await _physicalFileService.GetSimpleFileInfo(backup.FileId);
 
-            await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                $"Restore database {dbInfo["name"]} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+            if (fileInfo == null)
+                throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
+            foreach(string db in ListDatabase[(EnumModuleType)backup.ModuleId])
+            {
+                string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
+                string filePath = GetPhysicalFilePath($"{outDirectory}/{db}.bak");
+#if !DEBUG
+                string sqlDB = $@"RESTORE DATABASE {db}  
+                                    FROM DISK = '{filePath}'";
+                await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
+#endif
+                await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
+                $"Restore database {db} of module {backup.ModuleId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+            }
         }
 
-        private string GenerateOutDirectory(string FileName)
+        private string GenerateOutDirectory(long backupPoint, string moduleName)
         {
-            var relativeFolder = $"/_backup_/{Guid.NewGuid().ToString()}";
-            var relativeFilePath = relativeFolder + "/" + FileName;
+            var relativeFolder = $"/_backup_/{backupPoint}/{moduleName}";
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
                 Directory.CreateDirectory(obsoluteFolder);
 
-            return relativeFilePath;
+            return relativeFolder;
         }
 
         private string GetPhysicalFilePath(string filePath)
@@ -237,13 +227,21 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return _appSetting.BackupStorage.FileBackupFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
 
+        private bool ZipDirectory(string folderInput, string fileName)
+        {
+            string filePath = GetPhysicalFilePath(fileName);
+            ZipFile.CreateFromDirectory(folderInput, filePath);
+            File.Move(filePath, $"{folderInput}/{fileName}");
+            return true;
+        }
 
-        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int databaseId = 0)
+
+        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int moduleId = 0)
         {
             var query = _masterContext.BackupStorage.AsQueryable();
-            if (databaseId != 0)
+            if (moduleId != 0)
             {
-                query = query.Where(x => x.DatabaseId == databaseId);
+                query = query.Where(x => x.ModuleId == moduleId);
             }
 
             var data = query.AsEnumerable().GroupBy(x => new { x.BackupPoint, x.Title })
@@ -255,12 +253,13 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     {
                         BackupDate = gg.BackupDate.GetUnix(),
                         BackupPoint = gg.BackupPoint,
-                        DatabaseId = gg.DatabaseId,
+                        ModuleId = gg.ModuleId,
                         FileId = gg.FileId,
                         RestoreDate = gg.RestoreDate.HasValue ? gg.RestoreDate.GetUnix().Value : 0,
                         Title = gg.Title,
                     }).ToList()
-                }).ToList();
+                })
+                .OrderByDescending(x => x.BackupPoint).ToList();
 
             return data;
         }

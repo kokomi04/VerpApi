@@ -28,6 +28,8 @@ namespace ActivityLogDB
                 entity.Property(e => e.Message).HasMaxLength(512);
 
                 entity.Property(e => e.MessageTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.SubsidiaryId).HasComment("");
             });
 
             modelBuilder.Entity<UserActivityLogChange>(entity =>

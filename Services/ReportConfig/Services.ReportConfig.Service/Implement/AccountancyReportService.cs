@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -15,10 +17,13 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
@@ -27,16 +32,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ReportConfigDBContext _reportConfigDBContext;
         private readonly IReportConfigService _reportConfigService;
+        private readonly IDocOpenXmlService _docOpenXmlService;
+        private readonly AppSetting _appSetting;
+        private readonly IPhysicalFileService _physicalFileService;
 
         public AccountancyReportService(
             AccountancyDBContext accountancyDBContext,
             ReportConfigDBContext reportConfigDBContext,
-            IReportConfigService reportConfigService
+            IReportConfigService reportConfigService,
+            IDocOpenXmlService docOpenXmlService,
+            IOptions<AppSetting> appSetting,
+            IPhysicalFileService physicalFileService
             )
         {
             _accountancyDBContext = accountancyDBContext;
             _reportConfigDBContext = reportConfigDBContext;
             _reportConfigService = reportConfigService;
+            _docOpenXmlService = docOpenXmlService;
+            _appSetting = appSetting.Value;
+            _physicalFileService = physicalFileService;
         }
 
 
@@ -644,6 +658,27 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             return selectSql.ToString();
+        }
+
+        public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
+        {
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+
+            if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
+
+            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound, "Không tìm thấy mẫu in báo cáo");
+
+            try
+            {
+                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _accountancyDBContext);
+                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+            }
+            catch (Exception ex)
+            {
+                throw new BadRequestException(ReportErrorCode.CanNotGenerateReportAsDoc, ex.Message);
+            }
         }
 
         private class BscValueOrder

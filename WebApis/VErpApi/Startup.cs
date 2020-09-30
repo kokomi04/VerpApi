@@ -51,10 +51,12 @@ namespace VErp.WebApis.VErpApi
 
             ConfigReadWriteDBContext(services);
 
-            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly ,
-                configureClient => {
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly,
+                configureClient =>
+                {
                     configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
-                }, configureOptions => {
+                }, configureOptions =>
+                {
                     configureOptions.SuppressContextNotFoundErrors = true;
                 });
 
@@ -95,8 +97,6 @@ namespace VErp.WebApis.VErpApi
             ConfigSwagger(services);
 
             ConfigureAutoMaper(services);
-
-            services.AddSingleton<IServiceCollection>(services);
 
             return BuildService(services);
         }

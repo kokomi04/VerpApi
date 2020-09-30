@@ -14,7 +14,7 @@ namespace VErp.Services.Master.Model.StorageDatabase
 
     public class BackupStorageModel
     {
-        public int DatabaseId { get; set; }
+        public int ModuleId { get; set; }
         public long BackupPoint { get; set; }
         public string Title { get; set; }
         public long FileId { get; set; }

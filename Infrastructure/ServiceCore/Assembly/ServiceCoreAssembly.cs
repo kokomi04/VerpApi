@@ -28,6 +28,7 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddScoped<HttpCurrentContextService>();
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
+            services.AddScoped<IDocOpenXmlService, DocOpenXmlService>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());
             return services;
         }

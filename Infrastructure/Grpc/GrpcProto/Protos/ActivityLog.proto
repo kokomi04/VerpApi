@@ -12,6 +12,7 @@ message ActivityInput {
     int64 ObjectId = 5;
     string Message = 6;
     string Data = 7;
+    int32 SubsidiaryId = 8;
 }
 
 message ActivityResponses {
