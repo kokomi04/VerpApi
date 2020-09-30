@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace Services.Organization.Model.SystemParameter
 {

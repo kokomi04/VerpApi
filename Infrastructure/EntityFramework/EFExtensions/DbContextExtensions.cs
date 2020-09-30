@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 

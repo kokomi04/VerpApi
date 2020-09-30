@@ -9,7 +9,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Users;
 
-namespace VErpApi.Controllers.Stock.Internal
+namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]

@@ -28,6 +28,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
+using VErp.Services.Master.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Model;
@@ -117,6 +118,7 @@ namespace VErp.WebApis.VErpApi
             //services.AddAutoMapper(typeof(Startup));
 
             var profile = new MappingProfile();
+            profile.ApplyMappingsFromAssembly(MasterModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(StockModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);

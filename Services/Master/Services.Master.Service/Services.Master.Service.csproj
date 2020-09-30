@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="3.1.8" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />

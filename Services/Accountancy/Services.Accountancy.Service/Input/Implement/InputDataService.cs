@@ -28,6 +28,7 @@ using VErp.Commons.Constants;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.IO;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -43,7 +44,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideImportMappingService _outsideImportMappingService;
-
+        private readonly IHttpCrossService _httpCrossService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -52,6 +53,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
             , IOutsideImportMappingService outsideImportMappingService
+            , IHttpCrossService httpCrossService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -61,6 +63,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _outsideImportMappingService = outsideImportMappingService;
+            _httpCrossService = httpCrossService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -1085,14 +1088,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (((EnumFormType)field.InputField.FormTypeId).IsSelectForm())
             {
                 var refTableTitle = field.InputField.RefTableTitle.Split(',')[0];
-                var categoryFields = (from f in _accountancyDBContext.CategoryField
-                                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-                                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
-                                      select new
-                                      {
-                                          f.CategoryFieldName,
-                                          f.DataTypeId
-                                      }).ToList();
+                //var categoryFields = (from f in _accountancyDBContext.CategoryField
+                //                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
+                //                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
+                //                      select new
+                //                      {
+                //                          f.CategoryFieldName,
+                //                          f.DataTypeId
+                //                      }).ToList();
+
+                var categoryFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+                {
+                    CategoryCodes = new List<string>() { field.InputField.RefTableCode },
+                    FieldNames = new List<string>() { refTableTitle, field.InputField.RefTableField }
+                });
+
                 var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.InputField.RefTableField);
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
 
@@ -1122,11 +1132,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             var singleFields = (await (
-             from af in _accountancyDBContext.InputAreaField
-             join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-             join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-             where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
-             select f.FieldName).ToListAsync()).ToHashSet();
+                from af in _accountancyDBContext.InputAreaField
+                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+                select f.FieldName).ToListAsync()).ToHashSet();
 
             // Get bills by old value
             var sqlParams = new List<SqlParameter>();
@@ -1757,15 +1767,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            var referFields = (from f in _accountancyDBContext.CategoryField
-                               join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-                               where referTableNames.Contains(c.CategoryCode) && referMapingFields.Select(f => f.RefTableField).Contains(f.CategoryFieldName)
-                               select new
-                               {
-                                   c.CategoryCode,
-                                   f.CategoryFieldName,
-                                   f.DataTypeId
-                               }).ToList();
+            //var referFields = (from f in _accountancyDBContext.CategoryField
+            //                   join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
+            //                   where referTableNames.Contains(c.CategoryCode) && referMapingFields.Select(f => f.RefTableField).Contains(f.CategoryFieldName)
+            //                   select new
+            //                   {
+            //                       c.CategoryCode,
+            //                       f.CategoryFieldName,
+            //                       f.DataTypeId
+            //                   }).ToList();
+
+            var referFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+            {
+                CategoryCodes = referTableNames,
+                FieldNames = referMapingFields.Select(f => f.RefTableField).ToList()
+            });
+
 
             var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
             if (columnKey == null)
@@ -2012,18 +2029,33 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (inputType == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
 
-            var refDataTypes = (from iaf in _accountancyDBContext.InputAreaField.Where(iaf => iaf.InputTypeId == inputTypeId)
-                                join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
-                                join c in _accountancyDBContext.Category on itf.RefTableCode equals c.CategoryCode
-                                join f in _accountancyDBContext.CategoryField on c.CategoryId equals f.CategoryId
-                                where itf.RefTableTitle.StartsWith(f.CategoryFieldName) && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
-                                select new
-                                {
-                                    f.CategoryFieldName,
-                                    f.DataTypeId,
-                                    c.CategoryCode
-                                }).Distinct()
-                                .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
+            //var refDataTypes = (from iaf in _accountancyDBContext.InputAreaField.Where(iaf => iaf.InputTypeId == inputTypeId)
+            //                    join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
+            //                    join c in _accountancyDBContext.Category on itf.RefTableCode equals c.CategoryCode
+            //                    join f in _accountancyDBContext.CategoryField on c.CategoryId equals f.CategoryId
+            //                    where itf.RefTableTitle.StartsWith(f.CategoryFieldName) && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+            //                    select new
+            //                    {
+            //                        f.CategoryFieldName,
+            //                        f.DataTypeId,
+            //                        c.CategoryCode
+            //                    }).Distinct()
+            //                    .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
+
+            var selectFormFields = (from iaf in _accountancyDBContext.InputAreaField
+                                    join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
+                                    where iaf.InputTypeId == inputTypeId && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    select new
+                                    {
+                                        itf.RefTableTitle,
+                                        itf.RefTableCode
+                                    }).ToList();
+
+            var refDataTypes = (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+            {
+                CategoryCodes = selectFormFields.Select(f => f.RefTableCode).ToList(),
+                FieldNames = selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()
+            })).Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var writer = new ExcelWriter();
             int endRow = 0;
@@ -2166,7 +2198,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
         }
-
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
