@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.System
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, (int)EnumAction.View, EnumMessageType.Comment, req.Message);
+            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumAction.View, EnumMessageType.Comment, req.Message);
         }
 
         /// <summary>

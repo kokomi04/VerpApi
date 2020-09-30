@@ -9,7 +9,7 @@ namespace VErp.Services.Master.Model.Activity
     public class UserActivityLogOuputModel
     {
         public int UserId { set; get; }
-
+        public int SubsidiaryId { set; get; }
         public string UserName { set; get; }
         public string FullName { get; set; }
         public long? AvatarFileId { get; set; }
