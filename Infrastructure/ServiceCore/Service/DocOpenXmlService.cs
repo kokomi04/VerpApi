@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -61,53 +62,60 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 var body = document.MainDocumentPart.Document.Body;
 
                 #region generate row data into table
-                var tablePrs = body.Descendants<TableProperties>()
-                                            .Where(x => !string.IsNullOrEmpty(x.TableCaption?.Val))
-                                            .FirstOrDefault();
-                var mainTable = (Table)(tablePrs?.Parent);
-
-                if (mainTable != null)
+                var tRowDetects = body.Descendants<TableRow>()
+                                            .Where(x => x.InnerText.StartsWith(RegexDocExpression.DetectMainTable));
+                foreach(var tRowDetect in tRowDetects)
                 {
-                    mainTable.AutoFitContents();
+                    var mainTable = (Table)(tRowDetect?.Parent);
 
-                    var rows = mainTable.Descendants<TableRow>();
-                    if (rows.Count() > 1)
+                    if (mainTable != null)
                     {
-                        TableRow row = rows.ElementAt(1);
+                        mainTable.AutoFitContents();
 
-                        foreach (var data in jObject.SelectTokens(tablePrs.TableCaption.Val).Reverse())
+                        var rows = mainTable.Descendants<TableRow>();
+                        var index = rows.IndexOf(tRowDetect);
+
+                        if (rows.Count() > 1)
                         {
-                            var tableRow = (TableRow)row.Clone();
-                            foreach (var cell in tableRow.Descendants<TableCell>())
+                            TableRow row = rows.ElementAt(index + 1);
+
+                            var dataPath = tRowDetect.InnerText.Replace(RegexDocExpression.DetectMainTable, "").Trim();
+                            foreach (var data in jObject.SelectTokens(dataPath).Reverse())
                             {
-                                var lsDocMatch = cell.Descendants<Paragraph>()
-                                                        .MatchingLinesWithRegex(RegexDocExpression.PrintTemplatePattern);
-
-                                foreach (var docMatch in lsDocMatch)
+                                var tableRow = (TableRow)row.Clone();
+                                foreach (var cell in tableRow.Descendants<TableCell>())
                                 {
-                                    var paragraph = docMatch.paragraph;
-                                    foreach (var (fullText, field) in docMatch.matchs)
-                                    {
-                                        string rs = string.Empty;
-                                        if (field.StartsWith(RegexDocExpression.StartWithFuntion))
-                                        {
-                                            var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
-                                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
-                                            rs = tbl.Rows[0][0].ToString();
-                                        }
-                                        else
-                                            rs = (string)data.SelectToken(field);
+                                    var lsDocMatch = cell.Descendants<Paragraph>()
+                                                            .MatchingLinesWithRegex(RegexDocExpression.PrintTemplatePattern);
 
-                                        WordOpenXmlTools.ReplaceText(paragraph, fullText, rs ?? string.Empty);
+                                    foreach (var docMatch in lsDocMatch)
+                                    {
+                                        var paragraph = docMatch.paragraph;
+                                        foreach (var (fullText, field) in docMatch.matchs)
+                                        {
+                                            string rs = string.Empty;
+                                            if (field.StartsWith(RegexDocExpression.StartWithFuntion))
+                                            {
+                                                var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
+                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                                                rs = tbl.Rows[0][0].ToString();
+                                            }
+                                            else
+                                                rs = (string)data.SelectToken(field);
+
+                                            WordOpenXmlTools.ReplaceText(paragraph, fullText, rs ?? string.Empty);
+                                        }
                                     }
                                 }
+                                mainTable.InsertAfter(tableRow, row);
                             }
-                            mainTable.InsertAfter(tableRow, row);
+                            row.Remove();
+                            tRowDetect.Remove();
                         }
-                        row.Remove();
+                        mainTable.AutoFitWindow();
                     }
-                    mainTable.AutoFitWindow();
                 }
+                
                 #endregion
 
                 #region find and replace string with regex

@@ -54,7 +54,7 @@ namespace VErp.Commons.Library
                     // TODO: Determine max-width from size of content area.
                     WmlToHtmlConverterSettings settings = new WmlToHtmlConverterSettings()
                     {
-                        AdditionalCss = "body { margin: 1cm auto; max-width: 23.5cm; padding: 0; }",
+                        AdditionalCss = "body { margin: 0.75cm auto; max-width: 24.5cm; padding: 0; }",
                         PageTitle = pageTitle,
                         FabricateCssClasses = true,
                         CssClassPrefix = "pt-",
