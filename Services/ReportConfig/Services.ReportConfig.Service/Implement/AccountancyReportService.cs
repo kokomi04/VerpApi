@@ -681,6 +681,54 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
         }
 
+        public async Task<(MemoryStream Stream, string FileName)> ExportExcel(int reportId, ReportFilterModel model)
+        {
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+
+            if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            var results = await Report(reportId, model);
+
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col=>col.SortOrder);
+
+            var writer = new ExcelWriter();
+            int endRow = 0;
+
+            ExcelData table = new ExcelData();
+            foreach (var col in columns)
+            {
+                table.Columns.Add(col.Name);
+            }
+
+            foreach (var row in results.Rows.List)
+            {
+                ExcelRow tbRow = table.NewRow();
+                int columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
+                    if (row.ContainsKey(field.Alias))
+                        tbRow[columnIndx] = new ExcelCell
+                        {
+                            Value = dataType.GetSqlValue(row[field.Alias]),
+                            Type = dataType.GetExcelType()
+                        };
+                    columnIndx++;
+                }
+                table.Rows.Add(tbRow);
+            }
+
+            byte[] headerRgb = new byte[3] { 125, 171, 245 };
+
+            writer.WriteToSheet(table, "Data", out endRow, true, headerRgb, 0, 0);
+
+            var fileName = $"{reportInfo.ReportTypeName}.xlsx";
+
+            MemoryStream stream = await writer.WriteToStream();
+            return (stream, fileName);
+
+        }
+
         private class BscValueOrder
         {
             public string SelectData { get; set; }
