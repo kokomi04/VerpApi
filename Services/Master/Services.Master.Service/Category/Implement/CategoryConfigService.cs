@@ -166,7 +166,7 @@ namespace VErp.Services.Master.Service.Category
                     new SqlParameter("@IsOutSideData", category.IsOutSideData),
                     new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                     new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                    new SqlParameter("@UsePlace", category.UsePlace)
+                    new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
 
                 trans.Commit();
@@ -327,7 +327,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace)
+                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
@@ -650,7 +650,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace)
+                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
 
                 trans.Commit();
@@ -709,7 +709,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace)
+                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
 
                 trans.Commit();

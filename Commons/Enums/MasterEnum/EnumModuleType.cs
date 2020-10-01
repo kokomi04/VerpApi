@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
-namespace VErp.Commons.Enums.AccountantEnum
+namespace VErp.Commons.Enums.MasterEnum
 {
     public enum EnumModuleType
     {
