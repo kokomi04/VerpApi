@@ -54,7 +54,9 @@ namespace VErp.Commons.Library
                     // TODO: Determine max-width from size of content area.
                     WmlToHtmlConverterSettings settings = new WmlToHtmlConverterSettings()
                     {
-                        AdditionalCss = "body { margin: 0.75cm auto; max-width: 24.5cm; padding: 0; }",
+                        AdditionalCss = @"  body { margin: 0cm auto; max-width: 100%; padding: 0; }
+                                            table { page-break-inside:auto }
+                                            tr    { page-break-inside:avoid; page-break-after:auto }",
                         PageTitle = pageTitle,
                         FabricateCssClasses = true,
                         CssClassPrefix = "pt-",
@@ -145,6 +147,14 @@ namespace VErp.Commons.Library
         public static void ConvertHtmlToPdf(string htmlString, string destFileName)
         {
             HtmlToPdf converter = new HtmlToPdf();
+
+            converter.Options.PdfPageSize = PdfPageSize.A4;
+            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+            converter.Options.MarginLeft = 30;
+            converter.Options.MarginRight = 30;
+            converter.Options.MarginTop = 25;
+            converter.Options.MarginBottom = 25;
+
             PdfDocument pdfDocument = converter.ConvertHtmlString(htmlString);
             pdfDocument.Save(destFileName);
             pdfDocument.Close();
