@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsOutSideData { get; set; }
+        public string UsePlace { get; set; }
 
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }

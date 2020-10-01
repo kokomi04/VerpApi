@@ -166,6 +166,7 @@ namespace VErp.Services.Master.Service.Category
                     new SqlParameter("@IsOutSideData", category.IsOutSideData),
                     new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                     new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
+                    new SqlParameter("@UsePlace", category.UsePlace)
                     });
 
                 trans.Commit();
@@ -233,7 +234,7 @@ namespace VErp.Services.Master.Service.Category
                     {
                         // Delete category table
                         await _masterContext.ExecuteStoreProcedure("asp_Category_Delete", new[] {
-                            new SqlParameter("@@CategoryCode", data.CategoryCode ),
+                            new SqlParameter("@CategoryCode", data.CategoryCode ),
                             new SqlParameter("@IsTable", true),
                         });
                     }
@@ -268,7 +269,7 @@ namespace VErp.Services.Master.Service.Category
                 // Update other info
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
-
+                category.UsePlace = data.UsePlace;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -326,6 +327,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
+                        new SqlParameter("@UsePlace", category.UsePlace)
                     });
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
@@ -648,6 +650,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
+                        new SqlParameter("@UsePlace", category.UsePlace)
                     });
 
                 trans.Commit();
@@ -706,6 +709,7 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@IsOutSideData", category.IsOutSideData),
                         new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
                         new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
+                        new SqlParameter("@UsePlace", category.UsePlace)
                     });
 
                 trans.Commit();

@@ -24,6 +24,7 @@ namespace VErp.Services.Master.Model.Category
         public bool IsReadonly { get; set; }
         public bool IsOutSideData { get; set; }
         public bool IsTreeView { get; set; }
+        public string UsePlace { get; set; }
         public OutSideDataConfigModel OutSideDataConfig { get; set; }
     }
 
