@@ -12,18 +12,13 @@ namespace VErp.Infrastructure.EF.MasterDB
     {
         public UnAuthorizeMasterDBContext(DbContextOptions<MasterDBContext> options): base(options)
         {
-
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
             base.OnModelCreating(modelBuilder);
-
             modelBuilder.AddFilterBase();
-
         }
-
-
     }
 
     public partial class MasterDBContext: ICurrentRequestDbContext
