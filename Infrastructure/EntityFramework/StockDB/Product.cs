@@ -35,6 +35,14 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public int ProductStatusId { get; set; }
+        public string PackingMethod { get; set; }
+        public int? CustomerId { get; set; }
+        public decimal? NetWeight { get; set; }
+        public decimal? GrossWeight { get; set; }
+        public decimal? Measurement { get; set; }
+        public decimal? LoadAbility { get; set; }
+        public string ProductDescription { get; set; }
+        public string ProductNameEng { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }

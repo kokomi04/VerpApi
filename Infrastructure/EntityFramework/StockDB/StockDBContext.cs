@@ -305,9 +305,19 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
 
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PackingMethod).HasMaxLength(255);
 
                 entity.Property(e => e.ProductCode)
                     .IsRequired()
@@ -324,6 +334,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasComment("Tên sản phẩm");
+
+                entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
