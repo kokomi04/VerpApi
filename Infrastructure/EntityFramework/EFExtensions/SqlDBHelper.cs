@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -346,6 +348,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
         {
+            var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
+
+            var aliasFId = string.IsNullOrWhiteSpace(viewAlias) ? $"[F_Id]" : $"[{viewAlias}].[F_Id]";
+
             if (clause != null)
             {
                 var paramName = $"@{clause.FieldName}_filter_{suffix}";
@@ -357,11 +363,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"[{viewAlias}].{clause.FieldName} {(not ? "IS NOT NULL" : "IS NULL")}");
+                            condition.Append($"{aliasField} {(not ? "IS NOT NULL" : "IS NULL")}");
                         }
                         else
                         {
-                            condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                            condition.Append($"{aliasField} {ope} {paramName}");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
@@ -369,22 +375,22 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         ope = not ? "=" : "!=";
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"[{viewAlias}].{clause.FieldName} {(not ? "IS NULL" : "IS NOT NULL")}");
+                            condition.Append($"{aliasField} {(not ? "IS NULL" : "IS NOT NULL")}");
                         }
                         else
                         {
-                            condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                            condition.Append($"{aliasField} {ope} {paramName}");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
                     case EnumOperator.Contains:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
                         break;
                     case EnumOperator.InList:
                         ope = not ? "NOT IN" : "IN";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} (");
+                        condition.Append($"{aliasField} {ope} (");
                         int inSuffix = 0;
                         var paramNames = new StringBuilder();
                         foreach (var value in (clause.Value as string).Split(","))
@@ -400,52 +406,52 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.IsLeafNode:
                         ope = not ? "EXISTS" : "NOT EXISTS";
-                        var alias = $"{viewAlias}_{suffix}";
-                        condition.Append($"{ope}(SELECT {alias}.F_Id FROM {tableName} {alias} WHERE {alias}.ParentId = [{viewAlias}].F_Id)");
+                        var internalAlias = $"{viewAlias}_{suffix}";
+                        condition.Append($"{ope}(SELECT {internalAlias}.F_Id FROM {tableName} {internalAlias} WHERE {internalAlias}.ParentId = {aliasFId})");
                         break;
                     case EnumOperator.StartsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
                         break;
                     case EnumOperator.EndsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;
                     case EnumOperator.Greater:
                         ope = not ? "<=" : ">";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.GreaterOrEqual:
                         ope = not ? "<" : ">=";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThan:
                         ope = not ? ">=" : "<";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThanOrEqual:
                         ope = not ? ">" : "<=";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope} {paramName}");
+                        condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
                         ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope}");
+                        condition.Append($"{aliasField} {ope}");
                         break;
                     case EnumOperator.IsEmpty:
                         ope = not ? "!= ''''" : "=''''";
-                        condition.Append($"[{viewAlias}].{clause.FieldName} {ope}");
+                        condition.Append($"{aliasField} {ope}");
                         break;
                     case EnumOperator.IsNullOrEmpty:
                         ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"( [{viewAlias}].{clause.FieldName} {ope}");
+                        condition.Append($"( {aliasField} {ope}");
                         ope = not ? "!= ''''" : "=''''";
-                        condition.Append($" AND [{viewAlias}].{clause.FieldName} {ope})");
+                        condition.Append($" AND {aliasField} {ope})");
                         break;
                     default:
                         break;
@@ -511,6 +517,98 @@ namespace VErp.Infrastructure.EF.EFExtensions
         public static SqlParameter ToSqlParameterValue(this decimal? value, string parameterName)
         {
             return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
+        }
+
+
+        private static char[] SpaceChars = new[] { ';', '\n', '\r', '\t', '\v', ' ' };
+
+        public static string TSqlAppendCondition(this string sql, string filterCondition)
+        {
+            sql = sql.TrimEnd(SpaceChars);
+
+            var parseOptions = new ParseOptions();
+            var scanner = new Scanner(parseOptions);
+
+            int state = 0,
+                start,
+                end,
+                token;
+
+            bool isPairMatch, isExecAutoParamHelp;
+
+            scanner.SetSource(sql, 0);
+
+            var commentTokens = new[] { (int)Tokens.LEX_END_OF_LINE_COMMENT, (int)Tokens.LEX_MULTILINE_COMMENT };
+
+            var idxSelect = -1;
+            var idxWhereStart = -1;
+            var idxWhereEnd = -1;
+
+            var stack = new Stack<string>();
+
+            var correct = true;
+            while ((token = scanner.GetNext(ref state, out start, out end, out isPairMatch, out isExecAutoParamHelp)) != (int)Tokens.EOF)
+            {
+                if (!commentTokens.Contains(token))
+                {
+                    var sqlToken = sql.Substring(start, end - start + 1);
+                    if (string.Equals(sqlToken, "SELECT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        idxSelect = start;
+                    }
+
+                    if (string.Equals(sqlToken, "WHERE", StringComparison.OrdinalIgnoreCase))
+                    {
+                        idxWhereStart = start;
+                        idxWhereEnd = end;
+                        stack.Clear();
+                        correct = true;
+                    }
+
+                    if (sqlToken == "(")
+                    {
+                        stack.Push(sqlToken);
+                    }
+
+                    if (sqlToken == ")" && correct)
+                    {
+                        if (stack.Count == 0)
+                        {
+                            correct = false;
+                        }
+                        else
+                        {
+                            stack.Pop();
+                        }
+                    }
+                }
+            }
+
+
+            if (idxWhereStart < idxSelect)
+            {
+                idxWhereStart = -1;
+            }
+
+            if (idxWhereStart > 0)
+            {
+                if (stack.Count == 0 && correct)
+                {
+                    sql = sql.Insert(idxWhereEnd + 1, " (");
+
+                    sql += $"\n) AND ({filterCondition})";
+                }
+                else
+                {
+                    sql += $"\n WHERE {filterCondition}";
+                }
+            }
+            else
+            {
+                sql += $"\n WHERE {filterCondition}";
+            }
+
+            return sql;
         }
     }
 }

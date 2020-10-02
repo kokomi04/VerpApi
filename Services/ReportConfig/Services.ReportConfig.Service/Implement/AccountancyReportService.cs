@@ -111,7 +111,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
             {
-                model.ColumnsFilters.FilterClauseProcess(string.Empty, "v", ref filterCondition, ref sqlParams, ref suffix);
+                var viewAlias = string.Empty;
+                if (reportInfo.IsBsc || !string.IsNullOrWhiteSpace(reportInfo.BodySql))
+                {
+                    viewAlias = "v";
+                }
+                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
             }
 
             if (reportInfo.IsBsc)
@@ -406,12 +411,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
-
-            selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v1";
+            var sql = reportInfo.BodySql;
 
             if (!string.IsNullOrEmpty(filterCondition))
-                selectAliasSql = $"SELECT * FROM ({selectAliasSql}) AS v WHERE {filterCondition}";
+            {
+                sql = sql.TSqlAppendCondition(filterCondition);
+            }
 
             string orderBy = reportInfo?.OrderBy;
 
@@ -428,21 +433,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(orderBy))
             {
-                selectAliasSql += " ORDER BY " + orderBy;
+                sql += " ORDER BY " + orderBy;
             }
 
-            //var whereColumn = new List<string>();
-            //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
-            //{
-            //    whereColumn.Add($"{column.Alias} {column.Where}");
-            //}
-
-            //if (whereColumn.Count > 0)
-            //{
-            //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
-            //}
-
-            var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _accountancyDBContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary();
 
@@ -483,6 +477,88 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
 
         }
+
+        //private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        //{
+        //    var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+        //    var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
+
+        //    selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v1";
+
+        //    if (!string.IsNullOrEmpty(filterCondition))
+        //        selectAliasSql = $"SELECT * FROM ({selectAliasSql}) AS v WHERE {filterCondition}";
+
+        //    string orderBy = reportInfo?.OrderBy;
+
+        //    if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+        //    {
+        //        orderBy = reportInfo.OrderBy;
+        //    }
+
+        //    if (!string.IsNullOrWhiteSpace(orderByFieldName))
+        //    {
+        //        if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+        //        orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+        //    }
+
+        //    if (!string.IsNullOrWhiteSpace(orderBy))
+        //    {
+        //        selectAliasSql += " ORDER BY " + orderBy;
+        //    }
+
+        //    //var whereColumn = new List<string>();
+        //    //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+        //    //{
+        //    //    whereColumn.Add($"{column.Alias} {column.Where}");
+        //    //}
+
+        //    //if (whereColumn.Count > 0)
+        //    //{
+        //    //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+        //    //}
+
+        //    var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+
+        //    var totals = new NonCamelCaseDictionary();
+
+        //    var data = table.ConvertData();
+
+        //    var calSumColumns = columns.Where(c => c.IsCalcSum);
+        //    foreach (var column in calSumColumns)
+        //    {
+        //        totals.Add(column.Alias, 0M);
+        //    }
+
+        //    for (var i = 0; i < data.Count; i++)
+        //    {
+        //        var row = data[i];
+
+        //        if (row != null)
+        //        {
+        //            foreach (var column in calSumColumns)
+        //            {
+        //                var colData = row[column.Alias];
+        //                if (!colData.IsNullObject())
+        //                {
+        //                    totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
+        //                }
+        //            }
+
+        //        }
+
+        //    }
+
+        //    if (!asc)
+        //    {
+        //        data.Reverse();
+        //    }
+
+        //    var pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+
+        //    return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
+
+        //}
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
@@ -689,7 +765,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var results = await Report(reportId, model);
 
-            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col=>col.SortOrder);
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder);
 
             var writer = new ExcelWriter();
             int endRow = 0;
