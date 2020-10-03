@@ -126,12 +126,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                     obj.SetValue("DeletedDatetimeUtc", null);
 
-                    var p = obj.GetType().GetProperty(GlobalFieldConstants.SubsidiaryId);
-                    if (p != null)
+                    if (!obj.GetType().Name.Contains("Subsidiary"))
                     {
-                        p.SetValue(obj, currentContext.SubsidiaryId);                        
+                        var p = obj.GetType().GetProperty(GlobalFieldConstants.SubsidiaryId);
+                        if (p != null)
+                        {
+                            p.SetValue(obj, currentContext.SubsidiaryId);
+                        }
                     }
-
 
                 }
                 else
