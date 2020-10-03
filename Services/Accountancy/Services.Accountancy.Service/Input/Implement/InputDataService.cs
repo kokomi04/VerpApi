@@ -2158,6 +2158,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (stream, fileName);
         }
 
+        public async Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow)
+        {
+            var inputReferToFields = _accountancyDBContext.InputField
+                .Where(f => f.RefTableCode == categoryCode && fieldNames.Contains(f.RefTableField)).ToList();
+            // check bill refer
+            foreach (var field in fieldNames)
+            {
+                categoryRow.TryGetValue(field, out object value);
+                if (value == null) continue;
+                foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
+                {
+                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
+                    var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (isExisted)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 
         private object ExtractBillDate(NonCamelCaseDictionary info)
         {

@@ -17,9 +17,9 @@ namespace VErpApi.Controllers.System.Internal
     public class InternalCategoryController : CrossServiceBaseController
     {
         private readonly ICategoryConfigService _categoryConfigService;
-        public InternalCategoryController(ICategoryConfigService userService)
+        public InternalCategoryController(ICategoryConfigService categoryConfigService)
         {
-            _categoryConfigService = userService;
+            _categoryConfigService = categoryConfigService;
         }
 
         [HttpPost]
