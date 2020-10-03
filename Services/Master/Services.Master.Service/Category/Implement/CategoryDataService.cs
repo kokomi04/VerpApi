@@ -43,6 +43,8 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly ICurrentContextService _currentContextService;
         private readonly IDataProtectionProvider _protectionProvider;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IHttpCrossService _httpCrossService;
+
         public CategoryDataService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryDataService> logger
@@ -51,6 +53,7 @@ namespace VErp.Services.Accountancy.Service.Category
             , ICurrentContextService currentContextService
             , IDataProtectionProvider protectionProvider
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IHttpCrossService httpCrossService
             )
         {
             _logger = logger;
@@ -61,6 +64,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _currentContextService = currentContextService;
             _protectionProvider = protectionProvider;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _httpCrossService = httpCrossService;
         }
 
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
@@ -369,16 +373,12 @@ namespace VErp.Services.Accountancy.Service.Category
             var referToCategoryIds = referToFields.Select(f => f.CategoryId).Distinct().ToList();
             var referToCategories = _accountancyContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
 
-            // Bill refer fields
-
-            // TODO
-            //var inputReferToFields = _accountancyContext.InputField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
-
             // Check reference
             foreach (var field in categoryFields)
             {
                 categoryRow.TryGetValue(field.CategoryFieldName, out object value);
                 if (value == null) continue;
+                bool isExisted = false;
                 foreach (var referToField in referToFields.Where(c => c.RefTableField == field.CategoryFieldName))
                 {
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
@@ -386,7 +386,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     var existSql = $"SELECT F_Id FROM [dbo].v{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
-                    bool isExisted = result != null && result.Rows.Count > 0;
+                    isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
                         throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
@@ -394,17 +394,17 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
 
                 // TODO
-                // check bill refer
-                //foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field.CategoryFieldName))
-                //{
-                //    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                //    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
-                //    bool isExisted = result != null && result.Rows.Count > 0;
-                //    if (isExisted)
-                //    {
-                //        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
-                //    }
-                //}
+                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
+                {
+                    category.CategoryCode,
+                    FieldNames = fieldNames,
+                    CategoryRow = categoryRow
+                });
+
+                if (isExisted)
+                {
+                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                }
 
             }
             // Delete data
