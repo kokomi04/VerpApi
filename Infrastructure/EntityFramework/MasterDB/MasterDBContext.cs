@@ -15,18 +15,17 @@ namespace VErp.Infrastructure.EF.MasterDB
         {
         }
 
-        public virtual DbSet<Category> Category { get; set; }
-        public virtual DbSet<CategoryField> CategoryField { get; set; }
-        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
-        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
+        public virtual DbSet<Category> Category { get; set; }
+        public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
+        public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
@@ -34,6 +33,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
+        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -45,107 +46,6 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Category>(entity =>
-            {
-                entity.Property(e => e.CategoryCode)
-                    .IsRequired()
-                    .HasMaxLength(45)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Title).HasMaxLength(256);
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<CategoryField>(entity =>
-            {
-                entity.Property(e => e.CategoryFieldName)
-                    .IsRequired()
-                    .HasMaxLength(45)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Filters).HasMaxLength(512);
-
-                entity.Property(e => e.RefTableCode)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RefTableField)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RefTableTitle)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RegularExpression)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(256)
-                    .HasDefaultValueSql("('')");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.Category)
-                    .WithMany(p => p.CategoryField)
-                    .HasForeignKey(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CategoryField_Category");
-            });
-            modelBuilder.Entity<OutSideDataConfig>(entity =>
-            {
-                entity.HasKey(e => e.CategoryId)
-                    .HasName("PK__OutSideD__19093A0B4E7BC7E8");
-
-                entity.Property(e => e.CategoryId).ValueGeneratedNever();
-
-                entity.Property(e => e.Description).HasMaxLength(255);
-
-                entity.Property(e => e.Key)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ParentKey)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.Category)
-                    .WithOne(p => p.OutSideDataConfig)
-                    .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutSideDataConfig_Category");
-            });
-
-            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
-            {
-                entity.Property(e => e.Alias).HasMaxLength(512);
-
-                entity.Property(e => e.Value)
-                    .IsRequired()
-                    .HasMaxLength(512);
-
-                entity.HasOne(d => d.OutsideDataConfig)
-                    .WithMany(p => p.OutsideDataFieldConfig)
-                    .HasForeignKey(d => d.OutsideDataConfigId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
-            });
-
             modelBuilder.Entity<Action>(entity =>
             {
                 entity.Property(e => e.ActionId).ValueGeneratedNever();
@@ -202,6 +102,69 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
+            });
+
+            modelBuilder.Entity<Category>(entity =>
+            {
+                entity.Property(e => e.CategoryCode)
+                    .IsRequired()
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Title).HasMaxLength(256);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UsePlace)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CategoryField>(entity =>
+            {
+                entity.Property(e => e.CategoryFieldName)
+                    .IsRequired()
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Filters).HasMaxLength(512);
+
+                entity.Property(e => e.RefTableCode)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RefTableField)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RefTableTitle)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RegularExpression)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryField)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryField_Category");
             });
 
             modelBuilder.Entity<Config>(entity =>
@@ -278,6 +241,21 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(255)
                     .HasDefaultValueSql("('{}')")
                     .HasComment("");
+            });
+
+            modelBuilder.Entity<Guide>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).IsRequired();
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<Menu>(entity =>
@@ -394,6 +372,49 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<OutSideDataConfig>(entity =>
+            {
+                entity.HasKey(e => e.CategoryId)
+                    .HasName("PK__OutSideD__19093A0B3AED9766");
+
+                entity.Property(e => e.CategoryId).ValueGeneratedNever();
+
+                entity.Property(e => e.Description).HasMaxLength(255);
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.ParentKey)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Url)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.Category)
+                    .WithOne(p => p.OutSideDataConfig)
+                    .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutSideDataConfig_Category");
+            });
+
+            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
+            {
+                entity.Property(e => e.Alias).HasMaxLength(512);
+
+                entity.Property(e => e.Value)
+                    .IsRequired()
+                    .HasMaxLength(512);
+
+                entity.HasOne(d => d.OutsideDataConfig)
+                    .WithMany(p => p.OutsideDataFieldConfig)
+                    .HasForeignKey(d => d.OutsideDataConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
             modelBuilder.Entity<Role>(entity =>
