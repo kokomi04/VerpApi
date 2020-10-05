@@ -31,5 +31,8 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Item không tồn tại")]
         ItemNotFound = 8,
+
+        [Description("Tài khoản không có quyền truy cập vào hệ thống")]
+        LockedOut = 9,
     }
 }

@@ -462,6 +462,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<User>(entity =>
             {
+                entity.Property(e => e.AccessFailedCount).HasComment("");
+
                 entity.Property(e => e.PasswordHash)
                     .IsRequired()
                     .HasMaxLength(128);

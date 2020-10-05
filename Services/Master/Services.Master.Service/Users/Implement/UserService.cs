@@ -176,7 +176,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone,
-                AvatarFileId = em.AvatarFileId
+                AvatarFileId = em.AvatarFileId,
             };
 
             // Thêm thông tin phòng ban cho nhân viên
@@ -568,10 +568,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                 IsDeleted = false,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UserStatusId = (int)req.UserStatusId,
-                PasswordSalt = salt,
                 PasswordHash = passwordHash,
                 RoleId = req.RoleId,
-                UpdatedDatetimeUtc = DateTime.UtcNow
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                AccessFailedCount = 0
 
             };
 
@@ -653,7 +653,8 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 return UserErrorCode.UserNotFound;
             }
-
+            if (req.UserStatusId == EnumUserStatus.Actived) 
+                user.AccessFailedCount = 0;
             user.UserStatusId = (int)req.UserStatusId;
             user.RoleId = req.RoleId;
             user.UpdatedDatetimeUtc = DateTime.UtcNow;
