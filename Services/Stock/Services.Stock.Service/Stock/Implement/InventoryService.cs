@@ -2195,7 +2195,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
 
-                await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, false);
+                await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
