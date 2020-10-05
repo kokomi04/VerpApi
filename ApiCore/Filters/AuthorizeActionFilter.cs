@@ -51,6 +51,21 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
+            var ur = await _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
+
+            if (ur.UserStatusId != (int) EnumUserStatus.Actived)
+            {
+                var json = new ServiceResult
+                {
+                    Code = GeneralCode.LockedOut,
+                    Message = GeneralCode.LockedOut.GetEnumDescription()
+                };
+
+                context.Result = new JsonResult(json);
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                return;
+            }
+
 
             var globalapi = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is GlobalApiAttribute);
             if (globalapi != null)
