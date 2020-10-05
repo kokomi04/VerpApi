@@ -519,10 +519,15 @@ namespace VErp.Commons.Library
                     return value?.ToString();
                 case EnumDataType.Int:
                     int intValue;
-                    if (!int.TryParse(value.ToString(), out intValue))
+                    try
+                    {
+                        intValue = Convert.ToInt32(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
                     }
+                   
                     return intValue;
 
                 case EnumDataType.Date:
@@ -530,18 +535,28 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    if (!long.TryParse(value.ToString(), out long dateValue))
+                    long dateValue;
+                    try
+                    {
+                        dateValue = Convert.ToInt64(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                     }
+
                     if (dateValue == 0) return DBNull.Value;
                     return dateValue.UnixToDateTime().Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
-                    bool boolValue;
-                    if (!bool.TryParse(value.ToString(), out boolValue))
+                    bool boolValue;                    
+                    try
+                    {
+                        boolValue = Convert.ToBoolean(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
                     }
@@ -555,7 +570,12 @@ namespace VErp.Commons.Library
                     return percentValue;
                 case EnumDataType.BigInt:
                     long longValue;
-                    if (!long.TryParse(value.ToString(), out longValue))
+
+                    try
+                    {
+                        longValue = Convert.ToInt64(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
                     }
