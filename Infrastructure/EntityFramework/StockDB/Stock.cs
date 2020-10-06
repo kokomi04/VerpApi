@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public int StockId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string StockName { get; set; }
         public string Description { get; set; }
         public int? StockKeeperId { get; set; }

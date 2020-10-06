@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,13 +13,17 @@ using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
@@ -26,16 +32,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ReportConfigDBContext _reportConfigDBContext;
         private readonly IReportConfigService _reportConfigService;
+        private readonly IDocOpenXmlService _docOpenXmlService;
+        private readonly AppSetting _appSetting;
+        private readonly IPhysicalFileService _physicalFileService;
 
         public AccountancyReportService(
             AccountancyDBContext accountancyDBContext,
             ReportConfigDBContext reportConfigDBContext,
-            IReportConfigService reportConfigService
+            IReportConfigService reportConfigService,
+            IDocOpenXmlService docOpenXmlService,
+            IOptions<AppSetting> appSetting,
+            IPhysicalFileService physicalFileService
             )
         {
             _accountancyDBContext = accountancyDBContext;
             _reportConfigDBContext = reportConfigDBContext;
             _reportConfigService = reportConfigService;
+            _docOpenXmlService = docOpenXmlService;
+            _appSetting = appSetting.Value;
+            _physicalFileService = physicalFileService;
         }
 
 
@@ -96,7 +111,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
             {
-                model.ColumnsFilters.FilterClauseProcess("v", ref filterCondition, ref sqlParams, ref suffix);
+                var viewAlias = string.Empty;
+                if (reportInfo.IsBsc || !string.IsNullOrWhiteSpace(reportInfo.BodySql))
+                {
+                    viewAlias = "v";
+                }
+                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
             }
 
             if (reportInfo.IsBsc)
@@ -391,11 +411,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
-            var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
+            var sql = reportInfo.BodySql;
 
-            selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v";
             if (!string.IsNullOrEmpty(filterCondition))
-                selectAliasSql += $" WHERE {filterCondition}";
+            {
+                sql = sql.TSqlAppendCondition(filterCondition);
+            }
+
             string orderBy = reportInfo?.OrderBy;
 
             if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
@@ -411,22 +433,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(orderBy))
             {
-                selectAliasSql += " ORDER BY " + orderBy;
+                sql += " ORDER BY " + orderBy;
             }
 
-            //var whereColumn = new List<string>();
-            //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
-            //{
-            //    whereColumn.Add($"{column.Alias} {column.Where}");
-            //}
-
-            //if (whereColumn.Count > 0)
-            //{
-            //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
-            //}
-
-
-            var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _accountancyDBContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary();
 
@@ -467,6 +477,88 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
 
         }
+
+        //private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        //{
+        //    var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+        //    var selectAliasSql = SelectAsAlias(columns.Where(c => !c.IsGroup).ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
+
+        //    selectAliasSql = $"SELECT {selectAliasSql} FROM ({reportInfo.BodySql}) AS v1";
+
+        //    if (!string.IsNullOrEmpty(filterCondition))
+        //        selectAliasSql = $"SELECT * FROM ({selectAliasSql}) AS v WHERE {filterCondition}";
+
+        //    string orderBy = reportInfo?.OrderBy;
+
+        //    if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+        //    {
+        //        orderBy = reportInfo.OrderBy;
+        //    }
+
+        //    if (!string.IsNullOrWhiteSpace(orderByFieldName))
+        //    {
+        //        if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+        //        orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+        //    }
+
+        //    if (!string.IsNullOrWhiteSpace(orderBy))
+        //    {
+        //        selectAliasSql += " ORDER BY " + orderBy;
+        //    }
+
+        //    //var whereColumn = new List<string>();
+        //    //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
+        //    //{
+        //    //    whereColumn.Add($"{column.Alias} {column.Where}");
+        //    //}
+
+        //    //if (whereColumn.Count > 0)
+        //    //{
+        //    //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
+        //    //}
+
+        //    var table = await _accountancyDBContext.QueryDataTable(selectAliasSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+
+        //    var totals = new NonCamelCaseDictionary();
+
+        //    var data = table.ConvertData();
+
+        //    var calSumColumns = columns.Where(c => c.IsCalcSum);
+        //    foreach (var column in calSumColumns)
+        //    {
+        //        totals.Add(column.Alias, 0M);
+        //    }
+
+        //    for (var i = 0; i < data.Count; i++)
+        //    {
+        //        var row = data[i];
+
+        //        if (row != null)
+        //        {
+        //            foreach (var column in calSumColumns)
+        //            {
+        //                var colData = row[column.Alias];
+        //                if (!colData.IsNullObject())
+        //                {
+        //                    totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
+        //                }
+        //            }
+
+        //        }
+
+        //    }
+
+        //    if (!asc)
+        //    {
+        //        data.Reverse();
+        //    }
+
+        //    var pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+
+        //    return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
+
+        //}
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
@@ -521,6 +613,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             totalSql.Append($" FROM {view}");
             if (!string.IsNullOrEmpty(filterCondition))
                 totalSql.Append($" WHERE {filterCondition}");
+
             var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
@@ -641,6 +734,75 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             return selectSql.ToString();
+        }
+
+        public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
+        {
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+
+            if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
+
+            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound, "Không tìm thấy mẫu in báo cáo");
+
+            try
+            {
+                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _accountancyDBContext);
+                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+            }
+            catch (Exception ex)
+            {
+                throw new BadRequestException(ReportErrorCode.CanNotGenerateReportAsDoc, ex.Message);
+            }
+        }
+
+        public async Task<(MemoryStream Stream, string FileName)> ExportExcel(int reportId, ReportFilterModel model)
+        {
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+
+            if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            var results = await Report(reportId, model);
+
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder);
+
+            var writer = new ExcelWriter();
+            int endRow = 0;
+
+            ExcelData table = new ExcelData();
+            foreach (var col in columns)
+            {
+                table.Columns.Add(col.Name);
+            }
+
+            foreach (var row in results.Rows.List)
+            {
+                ExcelRow tbRow = table.NewRow();
+                int columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
+                    if (row.ContainsKey(field.Alias))
+                        tbRow[columnIndx] = new ExcelCell
+                        {
+                            Value = dataType.GetSqlValue(row[field.Alias]),
+                            Type = dataType.GetExcelType()
+                        };
+                    columnIndx++;
+                }
+                table.Rows.Add(tbRow);
+            }
+
+            byte[] headerRgb = new byte[3] { 125, 171, 245 };
+
+            writer.WriteToSheet(table, "Data", out endRow, true, headerRgb, 0, 0);
+
+            var fileName = $"{reportInfo.ReportTypeName}.xlsx";
+
+            MemoryStream stream = await writer.WriteToStream();
+            return (stream, fileName);
+
         }
 
         private class BscValueOrder

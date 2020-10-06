@@ -498,7 +498,7 @@ namespace VErp.Commons.Library
         {
             return AccountantConstants.TIME_TYPES.Contains(type);
         }
-      
+
         public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
         {
             if (oldType.IsTimeType() && !newType.IsTimeType() && newType != EnumDataType.Text)
@@ -519,10 +519,15 @@ namespace VErp.Commons.Library
                     return value?.ToString();
                 case EnumDataType.Int:
                     int intValue;
-                    if (!int.TryParse(value.ToString(), out intValue))
+                    try
+                    {
+                        intValue = Convert.ToInt32(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
                     }
+                   
                     return intValue;
 
                 case EnumDataType.Date:
@@ -530,32 +535,47 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    if (!long.TryParse(value.ToString(), out long dateValue))
+                    long dateValue;
+                    try
+                    {
+                        dateValue = Convert.ToInt64(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
                     }
+
                     if (dateValue == 0) return DBNull.Value;
                     return dateValue.UnixToDateTime().Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
-                    bool boolValue;
-                    if (!bool.TryParse(value.ToString(), out boolValue))
+                    bool boolValue;                    
+                    try
+                    {
+                        boolValue = Convert.ToBoolean(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
                     }
                     return boolValue;
                 case EnumDataType.Percentage:
-                    short percentValue;
-                    if (!short.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
+                    float percentValue;
+                    if (!float.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }
                     return percentValue;
                 case EnumDataType.BigInt:
                     long longValue;
-                    if (!long.TryParse(value.ToString(), out longValue))
+
+                    try
+                    {
+                        longValue = Convert.ToInt64(value);
+                    }
+                    catch (Exception)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
                     }
@@ -629,54 +649,30 @@ namespace VErp.Commons.Library
             if (value1.IsNullObject() && value2.IsNullObject()) return 0;
             if (value1.IsNullObject() && !value2.IsNullObject()) return -1;
             if (!value1.IsNullObject() && value2.IsNullObject()) return 1;
+            var dataValue1 = dataType.GetSqlValue(value1);
+            var dataValue2 = dataType.GetSqlValue(value2);
 
             switch (dataType)
             {
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
-                    return string.Compare(value1.ToString(), value2.ToString());
+                    return string.Compare((string)dataValue1, (string)dataValue2);
                 case EnumDataType.Int:
-                    if (!int.TryParse(value1.ToString(), out int intValue1) || !int.TryParse(value2.ToString(), out int intValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu int");
-                    }
-                    return intValue1.CompareTo(intValue2);
-
+                    return ((int)dataValue1).CompareTo((int)dataValue2);
                 case EnumDataType.Date:
                 case EnumDataType.Year:
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    if (!long.TryParse(value1.ToString(), out long dateValue1) || !long.TryParse(value2.ToString(), out long dateValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu ngày tháng");
-                    }
-                    return dateValue1.CompareTo(dateValue2);
-                case EnumDataType.Boolean:
-                    if (!bool.TryParse(value1.ToString(), out bool boolValue1) || !bool.TryParse(value2.ToString(), out bool boolValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu logic");
-                    }
-                    return boolValue1.CompareTo(boolValue2);
-                case EnumDataType.Percentage:
-                    if (!short.TryParse(value1.ToString(), out short percentValue1) || !short.TryParse(value2.ToString(), out short percentValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu phần trăm");
-                    }
-                    return percentValue1.CompareTo(percentValue2);
                 case EnumDataType.BigInt:
-                    if (!long.TryParse(value1.ToString(), out long longValue1) || !long.TryParse(value2.ToString(), out long longValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu long");
-                    }
-                    return longValue1.CompareTo(longValue2);
+                    return ((long)dataValue1).CompareTo((long)dataValue2);
+                case EnumDataType.Boolean:
+                    return ((bool)dataValue1).CompareTo((bool)dataValue2);
+                case EnumDataType.Percentage:
+                    return ((float)dataValue1).CompareTo((float)dataValue2);
                 case EnumDataType.Decimal:
-                    if (!decimal.TryParse(value1.ToString(), out decimal decimalValue1) || !decimal.TryParse(value2.ToString(), out decimal decimalValue2))
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value1}, {value2} sang kiểu decimal");
-                    }
-                    return decimalValue1.CompareTo(decimalValue2);
+                    return ((decimal)dataValue1).CompareTo((decimal)dataValue2);
                 default: return 0;
             }
         }

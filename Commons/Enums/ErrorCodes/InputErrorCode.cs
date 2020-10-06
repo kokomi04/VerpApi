@@ -75,6 +75,6 @@ namespace VErp.Commons.Enums.StandardEnum
         PrintConfigNotFound = 36,
         [Description("Tên cấu hình phiếu in đã tồn tại")]
         PrintConfigNameAlreadyExisted = 37,
-        DoNotGeneratePrintTemple = 38
+        DoNotGeneratePrintTemplate = 38
     }
 }

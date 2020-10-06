@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -86,7 +87,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                 resultClause = new ArrayClause
                 {
-                    Condition = AccountantEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
+                    Condition = MasterEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
                     Not = bool.Parse(not)
                 };
                 var arrClause = clauses.ToArray();

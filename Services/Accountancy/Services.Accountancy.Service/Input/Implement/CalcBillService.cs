@@ -31,7 +31,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@TyGia", exchangeRate),
                 new SqlParameter("@Currency", currency)
             };
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcFixExchangeRate", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcFixExchangeRate", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
@@ -51,7 +51,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@by_vthhtp", byProduct),
                 new SqlParameter("@by_kho", byStock)
             };
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransfer", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcCostTransfer", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
@@ -65,7 +65,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedFixExchangeRate", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedFixExchangeRate", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -79,7 +79,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteFixExchangeRate", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteFixExchangeRate", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
 
@@ -103,7 +103,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@Type", (int)type),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransfer", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedCostTransfer", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -118,7 +118,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@Type", (int)type),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransfer", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteCostTransfer", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
 
@@ -129,7 +129,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime())
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("ufn_TK_CalcCostTransferBalanceZero", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcCostTransferBalanceZero", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
@@ -143,7 +143,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_CheckExistedCostTransferBalanceZero", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedCostTransferBalanceZero", sqlParams, true);
 
             return (result.Value as bool?).GetValueOrDefault();
         }
@@ -157,8 +157,53 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 result
             };
-            await _accountancyDBContext.ExecuteStoreProcedure("ufn_TK_DeleteCostTransferBalanceZero", sqlParams, true);
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteCostTransferBalanceZero", sqlParams, true);
             return (result.Value as bool?).GetValueOrDefault();
         }
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcDepreciation(long fromDate, long toDate, string accountNumber)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+            };
+
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcDepreciation", sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+        public async Task<bool> CheckExistedDepreciation(long fromDate, long toDate, string accountNumber)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedDepreciation", sqlParams, true);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteDepreciation", sqlParams, true);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
     }
 }

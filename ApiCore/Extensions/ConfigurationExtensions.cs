@@ -27,6 +27,12 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.MasterDatabase);
             }, contextScope);
+
+            services.AddDbContext<UnAuthorizeMasterDBContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.MasterDatabase);
+            }, contextScope);
+            
         }
 
         public static void ConfigStockDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)

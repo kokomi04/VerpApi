@@ -20,6 +20,8 @@ namespace VErp.WebApis.VErpApi.Validator
         private readonly MasterDBContext _masterDB;
         private readonly OrganizationDBContext _organizationDB;
         private readonly AppSetting _appSetting;
+
+        private const int MAX_FAIL_ACCESS = 5;
         public ResourceOwnerPasswordValidator(MasterDBContext masterDB, OrganizationDBContext organizationDB, IOptionsSnapshot<AppSetting> appSetting)
         {
             _masterDB = masterDB;
@@ -44,7 +46,7 @@ namespace VErp.WebApis.VErpApi.Validator
             var userStatus = (EnumUserStatus)user.UserStatusId;
             if (userStatus != EnumUserStatus.Actived)
             {
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} chưa được kích hoạt");
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} chưa được kích hoạt hoặc đã bị khóa");
                 return;
             }
 
@@ -71,7 +73,8 @@ namespace VErp.WebApis.VErpApi.Validator
 
             if (!IsValidCredential(user, context.Password))
             {
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Mật khẩu không đúng");
+                await MaxFailedAccessAttempts(user, false);
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Mật khẩu không đúng. Số lần nhập sai {user.AccessFailedCount}/{MAX_FAIL_ACCESS}");
                 return;
             }
 
@@ -82,6 +85,7 @@ namespace VErp.WebApis.VErpApi.Validator
                 new Claim("subsidiaryId", subsidiaryId),
             };
 
+            await MaxFailedAccessAttempts(user, true);
             context.Result = new GrantValidationResult(
                 context.UserName,
                 authenticationMethod: "password",
@@ -113,6 +117,23 @@ namespace VErp.WebApis.VErpApi.Validator
         private bool IsValidCredential(User user, string password)
         {
             return Sercurity.VerifyPasswordHash(_appSetting.PasswordPepper, user.PasswordSalt, password, user.PasswordHash);
+        }
+
+        private async Task<bool> MaxFailedAccessAttempts(User user, bool isAccess)
+        {
+            if (!isAccess)
+            {
+                user.AccessFailedCount += 1;
+                user.UserStatusId = user.AccessFailedCount >= MAX_FAIL_ACCESS ? (int)EnumUserStatus.Locked : user.UserStatusId;
+            }
+            else
+            {
+                user.AccessFailedCount = 0;
+            }
+
+            await _masterDB.SaveChangesAsync();
+
+            return true;
         }
     }
 }

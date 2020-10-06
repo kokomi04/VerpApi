@@ -55,7 +55,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         ObjectId = objectId,
                         MessageTypeId = (int)EnumMessageType.ActivityLog,
                         Message = message,
-                        Data = jsonData
+                        Data = jsonData,
+                        SubsidiaryId = _currentContext.SubsidiaryId
                     }, headers);
 
                     return (bool)(reulst?.IsSuccess);
@@ -68,6 +69,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ActionId = _currentContext.Action,
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
+                    SubsidiaryId = _currentContext.SubsidiaryId,
                     MessageTypeId = EnumMessageType.ActivityLog,
                     Message = message,
                     Data = jsonData

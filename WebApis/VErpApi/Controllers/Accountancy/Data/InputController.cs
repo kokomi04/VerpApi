@@ -89,6 +89,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [Route("{inputTypeId}/multiple")]
         public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
         {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
         }
 
@@ -187,6 +188,27 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<bool> DeletedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
         {
             return await _calcBillService.DeletedCostTransferBalanceZero(fromDate, toDate);
+        }
+
+        [HttpGet]
+        [Route("CalcDepreciation")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CalcDepreciation(fromDate, toDate, accountNumber);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedDepreciation")]
+        public async Task<bool> CheckExistedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CheckExistedDepreciation(fromDate, toDate, accountNumber);
+        }
+
+        [HttpDelete]
+        [Route("DeletedDepreciation")]
+        public async Task<bool> DeletedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.DeletedDepreciation(fromDate, toDate, accountNumber);
         }
     }
 }

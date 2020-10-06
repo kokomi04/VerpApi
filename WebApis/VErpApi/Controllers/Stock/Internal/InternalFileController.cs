@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -41,6 +43,20 @@ namespace VErpApi.Controllers.Stock.Internal
         public async Task<bool> DeleteFile([FromRoute] long fileId)
         {
             return await _fileService.DeleteFile(fileId);
+        }
+        
+        [HttpPost]
+        [Route("{objectTypeId}")]
+        public async Task<long> SaveSimpleFileInfo([FromRoute] EnumObjectType objectTypeId,[FromBody] SimpleFileInfo simpleFile)
+        {
+            return await _fileService.SaveFileInfo(objectTypeId, simpleFile);
+        }
+
+        [HttpGet]
+        [Route("{fileId}")]
+        public async Task<SimpleFileInfo> GetSimpleFileInfo([FromRoute] long fileId)
+        {
+            return await _fileService.GetSimpleFileInfo(fileId);
         }
     }
 }

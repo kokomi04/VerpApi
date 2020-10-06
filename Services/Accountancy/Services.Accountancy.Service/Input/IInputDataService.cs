@@ -33,5 +33,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId);
 
         Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
+
+        Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
     }
 }

@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using Microsoft.Extensions.Primitives;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -51,12 +52,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly MasterDBContext _masterDBContext;
+        private readonly UnAuthorizeMasterDBContext _masterDBContext;
 
         private int _userId = 0;
         private int _subsidiaryId = 0;
         private EnumAction? _action;
-
+        private int? _timeZoneOffset = null;
         private IList<int> _stockIds;
         //private IList<int> _roleIds;
         private RoleInfo _roleInfo;
@@ -65,7 +66,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-            , MasterDBContext masterDBContext
+            , UnAuthorizeMasterDBContext masterDBContext
             )
         {
             _appSetting = appSetting.Value;
@@ -110,7 +111,22 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _subsidiaryId;
             }
         }
+        public int? TimeZoneOffset
+        {
+            get
+            {
+                if (_timeZoneOffset.HasValue)
+                    return _timeZoneOffset.Value;
+                var timeZoneOffsets = new StringValues();
+                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("x-timezone-offset", out timeZoneOffsets);
 
+                if (timeZoneOffsets.Count == 0 || !int.TryParse(timeZoneOffsets[0], out int timeZoneOffset))
+                {
+                    timeZoneOffset = 0;
+                }
+                return timeZoneOffset;
+            }
+        }
         public EnumAction Action
         {
             get
@@ -144,7 +160,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     return _roleInfo;
                 }
-                if(UserId == 0)
+                if (UserId == 0)
                 {
                     return null;
                 }
@@ -210,13 +226,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
-        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId)
+        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
             Action = action;
             RoleInfo = roleInfo;
             StockIds = stockIds;
+            TimeZoneOffset = timeZoneOffset;
         }
 
         public int UserId { get; } = 0;
@@ -224,5 +241,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public EnumAction Action { get; }
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
+        public int? TimeZoneOffset { get; }
     }
 }

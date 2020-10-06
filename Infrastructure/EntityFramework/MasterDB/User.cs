@@ -15,5 +15,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public int? RoleId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int AccessFailedCount { get; set; }
     }
 }

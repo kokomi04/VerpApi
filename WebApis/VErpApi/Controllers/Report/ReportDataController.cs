@@ -29,6 +29,24 @@ namespace VErpApi.Controllers.Report
             return await _accountancyReportService.Report(reportId, model)
                 .ConfigureAwait(true);
         }
+
+        [HttpPost]
+        [Route("view/{reportId}/asDocument")]
+        public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
+        {
+            var r = await _accountancyReportService.GenerateReportAsPdf(reportId, dataModel);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
+        }
+
+        [HttpPost]
+        [Route("view/{reportId}/asExcel")]
+        public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFilterModel model)
+        {
+            var result = await _accountancyReportService.ExportExcel(reportId, model);
+
+            return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
+        }
     }
 
    
