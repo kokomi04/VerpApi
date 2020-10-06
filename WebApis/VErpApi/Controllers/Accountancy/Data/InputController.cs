@@ -127,6 +127,13 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpGet]
+        [Route("FixExchangeRateDetail")]
+        public async Task<ExchangeRateModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
+        {
+            return await _calcBillService.FixExchangeRateDetail(fromDate, toDate, currency, accountNumber, partnerId);
+        }
+
+        [HttpGet]
         [Route("CalcCostTransfer")]
         public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer([FromQuery] long toDate, [FromQuery] EnumCostTransfer type, [FromQuery] bool byDepartment,
             [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock)

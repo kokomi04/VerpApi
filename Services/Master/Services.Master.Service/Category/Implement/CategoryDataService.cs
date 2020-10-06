@@ -599,7 +599,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryRow;
         }
 
-
         private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
         {
             StringBuilder sql = new StringBuilder();

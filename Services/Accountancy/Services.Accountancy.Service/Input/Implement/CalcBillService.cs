@@ -9,6 +9,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
@@ -34,6 +35,41 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcFixExchangeRate", sqlParams);
             var rows = data.ConvertData();
             return rows;
+        }
+
+        public async Task<ExchangeRateModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@Kh", partnerId),
+                new SqlParameter("@Du_no_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_co_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_no_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_co_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_no_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_co_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_no_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
+                new SqlParameter("@Du_co_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output }
+            };
+
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_FixExchangeRateDetail", sqlParams);
+            var rows = data.ConvertData();
+            var head = new NonCamelCaseDictionary();
+            foreach (var param in sqlParams)
+            {
+                if (param.Direction != ParameterDirection.Output) continue;
+                head.Add(param.ParameterName.TrimStart('@'), (param.Value as decimal?).GetValueOrDefault());
+            }
+            var result = new ExchangeRateModel
+            {
+                Rows = rows,
+                Head = head
+            };
+            return result;
         }
 
         public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset,
