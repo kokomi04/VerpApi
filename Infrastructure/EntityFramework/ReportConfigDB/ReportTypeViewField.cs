@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
         public string ExtraFilter { get; set; }
+        public int? Column { get; set; }
 
         public virtual ReportTypeView ReportTypeView { get; set; }
     }
