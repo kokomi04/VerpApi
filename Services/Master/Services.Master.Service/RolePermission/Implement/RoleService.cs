@@ -397,6 +397,34 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _masterContext.SaveChanges();
         }
 
+        public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
+        {
+            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Category);
+            return  roleDataPermissions.Select(x => new CategoryPermissionModel
+            {
+                CategoryId = (int)x.ObjectId,
+                RoleId = x.RoleId
+            }).ToList();
+        }
+
+        public async Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req)
+        {
+            if (req == null) req = new List<CategoryPermissionModel>();
+
+            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Category);
+
+            _masterContext.RoleDataPermission.RemoveRange(lst);
+            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
+            {
+                ObjectTypeId = (int)EnumObjectType.Category,
+                ObjectId = d.CategoryId,
+                RoleId = d.RoleId
+            }));
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
         #endregion
     }
 }

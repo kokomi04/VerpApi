@@ -20,5 +20,8 @@ namespace VErp.Services.Master.Service.RolePermission
 
         Task<IList<StockPemissionOutput>> GetStockPermission();
         Task<bool> UpdateStockPermission(IList<StockPemissionOutput> req);
+
+        Task<IList<CategoryPermissionModel>> GetCategoryPermissions();
+        Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req);
     }
 }
