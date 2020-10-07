@@ -30,6 +30,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
+            
 
         )
         {
@@ -37,7 +38,6 @@ namespace VErp.Services.Master.Service.Config.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-
         }
 
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
