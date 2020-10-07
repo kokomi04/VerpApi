@@ -12,7 +12,8 @@ namespace VErp.Services.Master.Service.Config
     public interface IObjectGenCodeService
     {
         Task<PageData<ObjectGenCodeOutputModel>> GetList(EnumObjectType objectType,string keyword, int page, int size);
-        
+        Task<PageData<ObjectGenCodeModel>> GetList(string keyword, int page, int size);
+
         Task<ObjectGenCodeOutputModel> GetInfo(int objectGenCodeId);
         
         Task<bool> Update(int objectGenCodeId, int currentUserId, ObjectGenCodeInputModel model);
@@ -29,5 +30,6 @@ namespace VErp.Services.Master.Service.Config
         Task<string> GenerateCode(EnumObjectType objectType);
 
         PageData<ObjectType> GetAllObjectType();
+        public Task<bool> MapObjectGenCode(ObjectGenCodeMapping model);
     }
 }
