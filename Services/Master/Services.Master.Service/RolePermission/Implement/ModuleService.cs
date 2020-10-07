@@ -38,7 +38,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                     ModuleGroupId = m.ModuleGroupId,
                     ModuleId = m.ModuleId,
                     ModuleName = m.ModuleName,
-                    Description = m.Description
+                    Description = m.Description,
+                    IsDeveloper = m.IsDeveloper
                 }).ToListAsync();
         }
 

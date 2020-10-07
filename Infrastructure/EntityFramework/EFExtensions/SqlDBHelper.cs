@@ -23,7 +23,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
     public static class SqlDBHelper
     {
         private const string SubIdParam = "@SubId";
-        private const string SubIdColumn = "SubsidiaryId";
+        private const string SubsidiaryIdColumn = "SubsidiaryId";
 
         private static SqlParameter CreateSubSqlParam(this ICurrentRequestDbContext requestDbContext)
         {
@@ -144,9 +144,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                 if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
                 {
-                    if (!insertColumns.Any(c => c == SubIdColumn))
+                    if (!insertColumns.Any(c => c == SubsidiaryIdColumn))
                     {
-                        insertColumns.Add(SubIdColumn);
+                        insertColumns.Add(SubsidiaryIdColumn);
                         sqlParams.Add(requestDbContext.CreateSubSqlParam());
                     }
                 }
@@ -168,6 +168,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var columns = new HashSet<DataColumn>();
             foreach (DataColumn c in table.Columns)
             {
+                if (c.ColumnName == nameof(SubsidiaryIdColumn)) { continue; }
+
                 columns.Add(c);
             }
 
