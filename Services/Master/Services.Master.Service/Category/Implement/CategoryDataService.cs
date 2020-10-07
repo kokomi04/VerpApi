@@ -706,6 +706,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var pattern = @"@(?<word>\w+)";
                 Regex rx = new Regex(pattern);
                 MatchCollection match = rx.Matches(extraFilter);
+                sqlParams.Add(new SqlParameter("@SubId", _currentContextService.SubsidiaryId));
                 for (int i = 0; i < match.Count; i++)
                 {
                     var word = match[i].Groups["word"].Value;
