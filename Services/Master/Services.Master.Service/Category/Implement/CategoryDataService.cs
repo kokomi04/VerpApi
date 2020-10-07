@@ -706,12 +706,11 @@ namespace VErp.Services.Accountancy.Service.Category
                 var pattern = @"@(?<word>\w+)";
                 Regex rx = new Regex(pattern);
                 MatchCollection match = rx.Matches(extraFilter);
-                sqlParams.Add(new SqlParameter("@SubId", _currentContextService.SubsidiaryId));
                 for (int i = 0; i < match.Count; i++)
                 {
                     var word = match[i].Groups["word"].Value;
                     var paramName = $"@{word}";
-                    if (sqlParams.Any(p => p.ParameterName == paramName)) continue;
+                    if (sqlParams.Any(p => p.ParameterName == paramName) || paramName == "@SubId") continue;
                     var param = extraFilterParams.FirstOrDefault(p => p.ParamName == word);
                     object value = param != null ? param.DataType.GetSqlValue(param.Value) : DBNull.Value;
                     sqlParams.Add(new SqlParameter(paramName, value));
