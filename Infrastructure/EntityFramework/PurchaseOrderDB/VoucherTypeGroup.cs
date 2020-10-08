@@ -3,15 +3,15 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputTypeGroup
+    public partial class VoucherTypeGroup
     {
-        public InputTypeGroup()
+        public VoucherTypeGroup()
         {
-            InputType = new HashSet<InputType>();
+            VoucherType = new HashSet<VoucherType>();
         }
 
-        public int InputTypeGroupId { get; set; }
-        public string InputTypeGroupName { get; set; }
+        public int VoucherTypeGroupId { get; set; }
+        public string VoucherTypeGroupName { get; set; }
         public int SortOrder { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -20,6 +20,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual ICollection<InputType> InputType { get; set; }
+        public virtual ICollection<VoucherType> VoucherType { get; set; }
     }
 }

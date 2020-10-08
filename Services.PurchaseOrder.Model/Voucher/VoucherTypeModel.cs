@@ -6,47 +6,45 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 
 {
-    public class InputTypeModel: IMapFrom<InputType>
+    public class VoucherTypeModel: IMapFrom<VoucherType>
     {
-        public InputTypeModel()
+        public VoucherTypeModel()
         {
         }
 
-        public int InputTypeId { get; set; }
+        public int VoucherTypeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên chứng từ")]
         [MaxLength(256, ErrorMessage = "Tên chứng từ quá dài")]
         public string Title { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã chứng từ")]
         [MaxLength(45, ErrorMessage = "Mã chứng từ quá dài")]
         [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Mã chứng từ chỉ gồm các ký tự chữ, số và ký tự _.")]
-        public string InputTypeCode { get; set; }
+        public string VoucherTypeCode { get; set; }
 
         public int SortOrder { get; set; }
-        public int? InputTypeGroupId { get; set; }
+        public int? VoucherTypeGroupId { get; set; }
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
         public string AfterLoadAction { get; set; }
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
-
-        //public MenuStyleModel MenuStyle { get; set; }
     }
 
-    public class InputTypeFullModel : InputTypeModel
+    public class VoucherTypeFullModel : VoucherTypeModel
     {
-        public InputTypeFullModel()
+        public VoucherTypeFullModel()
         {
-            InputAreas = new List<InputAreaModel>();
+            VoucherAreas = new List<VoucherAreaModel>();
         }
-        public ICollection<InputAreaModel> InputAreas { get; set; }
+        public ICollection<VoucherAreaModel> VoucherAreas { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputType, InputTypeFullModel>()
-                .ForMember(dest => dest.InputAreas, opt => opt.MapFrom(src => src.InputArea));
+            profile.CreateMap<VoucherType, VoucherTypeFullModel>()
+                .ForMember(dest => dest.VoucherAreas, opt => opt.MapFrom(src => src.VoucherArea));
         }
     }
 }

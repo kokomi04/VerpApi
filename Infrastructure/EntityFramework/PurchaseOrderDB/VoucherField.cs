@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputField
+    public partial class VoucherField
     {
-        public InputField()
+        public VoucherField()
         {
-            InputAreaField = new HashSet<InputAreaField>();
+            VoucherAreaField = new HashSet<VoucherAreaField>();
         }
 
-        public int InputFieldId { get; set; }
+        public int VoucherFieldId { get; set; }
         public string FieldName { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
@@ -30,6 +30,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual ICollection<InputAreaField> InputAreaField { get; set; }
+        public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
     }
 }

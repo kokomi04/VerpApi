@@ -3,20 +3,20 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class InputTypeListInfo
+    public class VoucherTypeListInfo
     {
         public string Title { get; set; }
         public string InputTypeCode { get; set; }
-        public IList<InputTypeViewModelList> Views { get; set; }
-        public IList<InputTypeListColumn> ColumnsInList { get; set; }
+        public IList<VoucherTypeViewModelList> Views { get; set; }
+        public IList<VoucherTypeListColumn> ColumnsInList { get; set; }
     }
 
-    public class InputTypeListColumn
+    public class VoucherTypeListColumn
     {
-        public int InputAreaFieldId { get; set; }
-        public int InputAreaId { get; set; }
+        public int VoucherAreaFieldId { get; set; }
+        public int VoucherAreaId { get; set; }
         public int FieldIndex { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
@@ -28,9 +28,9 @@ namespace VErp.Services.PurchaseOrder.Model.Input
 
     }
 
-    public class InputValueBillListOutput
+    public class VoucherValueBillListOutput
     {
-        public long InputValueBillId { get; set; }
+        public long VoucherValueBillId { get; set; }
         public IDictionary<int, string> FieldValues { get; set; }
     }
 }

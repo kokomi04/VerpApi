@@ -1,5 +1,4 @@
-﻿namespace VErp.Services.PurchaseOrder.Model.Input
-
+﻿namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
     public class UpdateMultipleModel
     {

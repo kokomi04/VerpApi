@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class BillInfoModel
+    public class SaleBillInfoModel
     {
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }

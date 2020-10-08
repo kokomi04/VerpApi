@@ -38,14 +38,14 @@ namespace ConfigApi.Controllers.Accountancy
         }
 
         [HttpPut]
-        [Route("groups/{inputTypeGroupId}")]
+        [Route("groups/{voucherTypeGroupId}")]
         public async Task<bool> GetInputType([FromRoute] int inputTypeGroupId, [FromBody] InputTypeGroupModel model)
         {
             return await _inputConfigService.InputTypeGroupUpdate(inputTypeGroupId, model).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("groups/{inputTypeGroupId}")]
+        [Route("groups/{voucherTypeGroupId}")]
         public async Task<bool> DeleteInputTypeGroup([FromRoute] int inputTypeGroupId)
         {
             return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
@@ -74,14 +74,14 @@ namespace ConfigApi.Controllers.Accountancy
         }
 
         [HttpPut]
-        [Route("fields/{inputFieldId}")]
+        [Route("fields/{voucherFieldId}")]
         public async Task<bool> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
         {
             return await _inputConfigService.UpdateInputField(inputFieldId, inputField).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("fields/{inputFieldId}")]
+        [Route("fields/{voucherFieldId}")]
         public async Task<bool> DeleteInputField([FromRoute] int inputFieldId)
         {
             return await _inputConfigService.DeleteInputField(inputFieldId).ConfigureAwait(true);
@@ -95,77 +95,77 @@ namespace ConfigApi.Controllers.Accountancy
         }
 
         [HttpPost]
-        [Route("{inputTypeId}/clone")]
+        [Route("{voucherTypeId}/clone")]
         public async Task<int> CloneInputType([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.CloneInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}")]
+        [Route("{voucherTypeId}")]
         public async Task<InputTypeFullModel> GetInputType([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.GetInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpPut]
-        [Route("{inputTypeId}")]
+        [Route("{voucherTypeId}")]
         public async Task<bool> UpdateInputType([FromRoute] int inputTypeId, [FromBody] InputTypeModel inputType)
         {
             return await _inputConfigService.UpdateInputType(inputTypeId, inputType).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("{inputTypeId}")]
+        [Route("{voucherTypeId}")]
         public async Task<bool> DeleteInputType([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.DeleteInputType(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputareas")]
+        [Route("{voucherTypeId}/inputareas")]
         public async Task<PageData<InputAreaModel>> GetInputAreas([FromRoute] int inputTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputAreas(inputTypeId, keyword, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}")]
+        [Route("{voucherTypeId}/inputareas/{voucherAreaId}")]
         public async Task<InputAreaModel> GetInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
             return await _inputConfigService.GetInputArea(inputTypeId, inputAreaId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/basicInfo")]
+        [Route("{voucherTypeId}/basicInfo")]
         public async Task<InputTypeBasicOutput> GetInputTypeBasicInfo([FromRoute] int inputTypeId)
         {
             return await _inputConfigService.GetInputTypeBasicInfo(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        [Route("{voucherTypeId}/views/{voucherTypeViewId}")]
         public async Task<InputTypeViewModel> GetInputTypeBasicInfo([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
             return await _inputConfigService.GetInputTypeViewInfo(inputTypeId, inputTypeViewId).ConfigureAwait(true);
         }
 
         [HttpPost]
-        [Route("{inputTypeId}/views")]
+        [Route("{voucherTypeId}/views")]
         public async Task<int> InputTypeViewCreate([FromRoute] int inputTypeId, [FromBody] InputTypeViewModel model)
         {
             return await _inputConfigService.InputTypeViewCreate(inputTypeId, model).ConfigureAwait(true);
         }
 
         [HttpPut]
-        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        [Route("{voucherTypeId}/views/{voucherTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId, [FromBody] InputTypeViewModel model)
         {
             return await _inputConfigService.InputTypeViewUpdate(inputTypeViewId, model).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("{inputTypeId}/views/{inputTypeViewId}")]
+        [Route("{voucherTypeId}/views/{voucherTypeViewId}")]
         public async Task<bool> InputTypeViewUpdate([FromRoute] int inputTypeId, [FromRoute] int inputTypeViewId)
         {
             return await _inputConfigService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
@@ -173,42 +173,42 @@ namespace ConfigApi.Controllers.Accountancy
 
 
         [HttpPost]
-        [Route("{inputTypeId}/inputareas")]
+        [Route("{voucherTypeId}/inputareas")]
         public async Task<int> AddInputArea([FromRoute] int inputTypeId, [FromBody] InputAreaInputModel inputArea)
         {
             return await _inputConfigService.AddInputArea(inputTypeId, inputArea).ConfigureAwait(true);
         }
 
         [HttpPut]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}")]
+        [Route("{voucherTypeId}/inputareas/{voucherAreaId}")]
         public async Task<bool> UpdateInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromBody] InputAreaInputModel inputArea)
         {
             return await _inputConfigService.UpdateInputArea(inputTypeId, inputAreaId, inputArea).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}")]
+        [Route("{voucherTypeId}/inputareas/{voucherAreaId}")]
         public async Task<bool> DeleteInputArea([FromRoute] int inputTypeId, [FromRoute] int inputAreaId)
         {
             return await _inputConfigService.DeleteInputArea(inputTypeId, inputAreaId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields")]
+        [Route("{voucherTypeId}/inputareas/{voucherAreaId}/inputareafields")]
         public async Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputAreaFields(inputTypeId, inputAreaId, keyword, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaField}")]
+        [Route("{voucherTypeId}/inputareas/{voucherAreaId}/inputareafields/{voucherAreaField}")]
         public async Task<InputAreaFieldOutputFullModel> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaField)
         {
             return await _inputConfigService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField).ConfigureAwait(true); ;
         }
 
         [HttpPost]
-        [Route("{inputTypeId}/multifields")]
+        [Route("{voucherTypeId}/multifields")]
         public async Task<bool> UpdateMultiField([FromRoute] int inputTypeId, [FromBody] List<InputAreaFieldInputModel> fields)
         {
             return await _inputConfigService.UpdateMultiField(inputTypeId, fields).ConfigureAwait(true);

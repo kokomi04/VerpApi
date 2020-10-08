@@ -6,9 +6,9 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class InputFieldInputModel : IMapFrom<InputField>
+    public class VoucherFieldInputModel : IMapFrom<VoucherField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
@@ -28,9 +28,9 @@ namespace VErp.Services.PurchaseOrder.Model.Input
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
 
-        protected void MappingBase<T>(Profile profile) where T: InputFieldInputModel
+        protected void MappingBase<T>(Profile profile) where T: VoucherFieldInputModel
         {
-            profile.CreateMap<InputField, T>()
+            profile.CreateMap<VoucherField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (EnumFormType)f.FormTypeId))
                 .ReverseMap()
@@ -40,30 +40,30 @@ namespace VErp.Services.PurchaseOrder.Model.Input
 
         public void Mapping(Profile profile)
         {
-            MappingBase<InputFieldInputModel>(profile);
+            MappingBase<VoucherFieldInputModel>(profile);
         }
 
     }
 
-    public class InputFieldOutputModel : InputFieldInputModel
+    public class VoucherFieldOutputModel : VoucherFieldInputModel
     {
-        public int InputFieldId { get; set; }   
+        public int VoucherFieldId { get; set; }   
         public new void Mapping(Profile profile)
         {
-            MappingBase<InputFieldOutputModel>(profile);
+            MappingBase<VoucherFieldOutputModel>(profile);
         }
     }
 
-    public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
+    public class VoucherAreaFieldInputModel : IMapFrom<VoucherAreaField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
         public string Title { get; set; }
         public string Placeholder { get; set; }
-        public int InputFieldId { get; set; }
-        public int? InputAreaFieldId { get; set; }
-        public int InputAreaId { get; set; }
-        public int InputTypeId { get; set; }
+        public int VoucherFieldId { get; set; }
+        public int? VoucherAreaFieldId { get; set; }
+        public int VoucherAreaId { get; set; }
+        public int VoucherTypeId { get; set; }
         public bool IsAutoIncrement { get; set; }
         public bool IsRequire { get; set; }
         public bool IsUnique { get; set; }
@@ -87,12 +87,12 @@ namespace VErp.Services.PurchaseOrder.Model.Input
         public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
 
-        public bool Compare(InputAreaField curField)
+        public bool Compare(VoucherAreaField curField)
         {
             return !curField.IsDeleted &&
-                InputAreaId == curField.InputAreaId &&
-                InputFieldId == curField.InputFieldId &&
-                InputTypeId == curField.InputTypeId &&
+                VoucherAreaId == curField.VoucherAreaId &&
+                VoucherFieldId == curField.VoucherFieldId &&
+                VoucherTypeId == curField.VoucherTypeId &&
                 Title == curField.Title &&
                 Placeholder == curField.Placeholder &&
                 SortOrder == curField.SortOrder &&
@@ -119,8 +119,8 @@ namespace VErp.Services.PurchaseOrder.Model.Input
         }
     }
 
-    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
+    public class VoucherAreaFieldOutputFullModel : VoucherAreaFieldInputModel
     {
-        public InputFieldOutputModel InputField { get; set; }
+        public VoucherFieldOutputModel VoucherField { get; set; }
     }
 }

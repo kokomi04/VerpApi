@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputTypeView
+    public partial class VoucherTypeView
     {
-        public InputTypeView()
+        public VoucherTypeView()
         {
-            InputTypeViewField = new HashSet<InputTypeViewField>();
+            VoucherTypeViewField = new HashSet<VoucherTypeViewField>();
         }
 
-        public int InputTypeViewId { get; set; }
-        public string InputTypeViewName { get; set; }
-        public int InputTypeId { get; set; }
+        public int VoucherTypeViewId { get; set; }
+        public string VoucherTypeViewName { get; set; }
+        public int VoucherTypeId { get; set; }
         public int? UserId { get; set; }
         public bool IsDefault { get; set; }
         public int? Columns { get; set; }
@@ -23,7 +23,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual InputType InputType { get; set; }
-        public virtual ICollection<InputTypeViewField> InputTypeViewField { get; set; }
+        public virtual VoucherType VoucherType { get; set; }
+        public virtual ICollection<VoucherTypeViewField> VoucherTypeViewField { get; set; }
     }
 }
