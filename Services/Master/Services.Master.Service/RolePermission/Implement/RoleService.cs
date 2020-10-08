@@ -39,7 +39,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<int> AddRole(RoleInput role)
+        public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
         {
             if (role.ParentRoleId == 0)
                 role.ParentRoleId = null;
@@ -62,11 +62,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
-                IsEditable = true,
+                IsEditable = roleTypeId != EnumRoleType.Administrator,
                 RoleStatusId = (int)role.RoleStatusId,
                 RootPath = "",
                 IsModulePermissionInherit = role.IsModulePermissionInherit,
-                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock
+                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock,
+                RoleTypeId = (int)roleTypeId
             };
 
 
@@ -86,6 +87,20 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 await _masterContext.SaveChangesAsync();
 
                 UpdateRoleChildren(roleInfo.RootPath);
+
+                if (roleTypeId == EnumRoleType.Administrator)
+                {
+                    var modules = _masterContext.Module.ToList();
+
+                    await _masterContext.RolePermission.AddRangeAsync(modules.Select(m => new Infrastructure.EF.MasterDB.RolePermission()
+                    {
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        ModuleId = m.ModuleId,
+                        RoleId = roleInfo.RoleId,
+                        Permission = int.MaxValue
+                    }));
+                }
+                await _masterContext.SaveChangesAsync();
 
                 trans.Commit();
             }
@@ -151,6 +166,24 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
 
             return roleInfo;
+        }
+
+        public async Task<RoleOutput> GetAdminRoleInfo()
+        {
+            return await _masterContext.Role
+                .Where(r => r.RoleTypeId == (int)EnumRoleType.Administrator)
+                .Select(r => new RoleOutput()
+                {
+                    ParentRoleId = r.ParentRoleId,
+                    RoleId = r.RoleId,
+                    RoleName = r.RoleName,
+                    Description = r.Description,
+                    RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
+                    IsEditable = r.IsEditable,
+                    RootPath = r.RootPath,
+                    IsModulePermissionInherit = r.IsModulePermissionInherit,
+                    IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
+                }).FirstOrDefaultAsync();
         }
 
         public async Task<bool> UpdateRole(int roleId, RoleInput role)

@@ -2,19 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.Org;
 
 namespace VErp.Services.Master.Model.Users
 {
-    public class EmployeeBase
-    {
-        public string EmployeeCode { get; set; }
-        public string FullName { get; set; }
-        public string Email { get; set; }
-        public string Phone { get; set; }
-        public string Address { get; set; }
-        public EnumGender? GenderId { get; set; }
-        public long? AvatarFileId { get; set; }
-    }
+   
     public class UserInfoInput : EmployeeBase
     {
         public string UserName { get; set; }
@@ -23,7 +15,6 @@ namespace VErp.Services.Master.Model.Users
         public int? RoleId { get; set; }
 
         public int? DepartmentId { get; set; }
-        public IList<int> SubsidiaryIds { get; set; }
     }
 
     public class UserChangepasswordInput

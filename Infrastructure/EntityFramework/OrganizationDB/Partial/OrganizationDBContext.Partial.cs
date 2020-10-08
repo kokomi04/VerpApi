@@ -47,7 +47,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
 
                 var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null && entityType.ClrType.Name != nameof(Subsidiary) && entityType.ClrType.Name != nameof(EmployeeSubsidiary))
+                if (isSubsidiaryIdProp != null && entityType.ClrType.Name != nameof(Subsidiary))// && entityType.ClrType.Name != nameof(EmployeeSubsidiary)
                 {
                     var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
                     filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);

@@ -64,12 +64,19 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
-            if (!IsValidSubsidiary(user.UserId, sub.SubsidiaryId))
+            //if (!IsValidSubsidiary(user.UserId, sub.SubsidiaryId))
+            //{
+            //    context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} không thuộc công ty {sub.SubsidiaryName}");
+            //    return;
+            //}
+
+            var employeeInfo = await GetEmployeeInfo(user.UserId);
+
+            if (employeeInfo?.SubsidiaryId != sub.SubsidiaryId)
             {
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} không thuộc công ty {sub.SubsidiaryName}");
                 return;
             }
-
 
             if (!IsValidCredential(user, context.Password))
             {
@@ -107,11 +114,17 @@ namespace VErp.WebApis.VErpApi.Validator
             return await _organizationDB.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == subId);
         }
 
-        private bool IsValidSubsidiary(int userId, int subsidiaryId)
+        //private bool IsValidSubsidiary(int userId, int subsidiaryId)
+        //{
+        //    return _organizationDB.EmployeeSubsidiary
+        //        .Where(x => x.UserId == userId)
+        //        .Any(s => s.SubsidiaryId == subsidiaryId);
+        //}
+
+        private Task<Employee> GetEmployeeInfo(int userId)
         {
-            return _organizationDB.EmployeeSubsidiary
-                .Where(x => x.UserId == userId)
-                .Any(s => s.SubsidiaryId == subsidiaryId);
+            return _organizationDB.Employee
+                .FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
         private bool IsValidCredential(User user, string password)

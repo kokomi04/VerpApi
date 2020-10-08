@@ -13,9 +13,11 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public int RoleId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string RoleName { get; set; }
         public string Description { get; set; }
         public int RoleStatusId { get; set; }
+        public int RoleTypeId { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsEditable { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

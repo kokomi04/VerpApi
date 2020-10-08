@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -42,7 +43,7 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<int> AddRole([FromBody] RoleInput role)
         {
-            return await _roleService.AddRole(role);
+            return await _roleService.AddRole(role, EnumRoleType.Normal);
         }
 
         /// <summary>

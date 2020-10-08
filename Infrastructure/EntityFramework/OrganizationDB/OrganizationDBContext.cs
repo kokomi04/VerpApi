@@ -163,8 +163,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.Property(e => e.UserId).ValueGeneratedNever();
-
                 entity.Property(e => e.Address).HasMaxLength(512);
 
                 entity.Property(e => e.Email).HasMaxLength(128);
@@ -272,6 +270,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.SubsidiaryCode).HasMaxLength(128);
 
                 entity.Property(e => e.SubsidiaryName).HasMaxLength(128);
+
+                entity.Property(e => e.SubsidiaryStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
