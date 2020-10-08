@@ -9,7 +9,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class UnAuthorizeMasterDBContext : MasterDBContext
-    {       
+    {
         public UnAuthorizeMasterDBContext(DbContextOptions<UnAuthorizeMasterDBContext> options
            , ILoggerFactory loggerFactory)
            : base(options.ChangeOptionsType<MasterDBContext>(loggerFactory))
@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
     }
 
-    public partial class MasterDBContext: ICurrentRequestDbContext
+    public partial class MasterDBContext : ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
@@ -39,7 +39,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
         {
-            modelBuilder.AddFilterBase();
+            modelBuilder.AddFilterAuthorize(this);
         }
 
         public override int SaveChanges()

@@ -93,6 +93,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                         RoleStatusId = EnumRoleStatus.Active,
                         RoleName = $"{subsidiaryInfo.SubsidiaryCode} Admin"
                     }, EnumRoleType.Administrator);
+
+                    req.UserStatusId = EnumUserStatus.Actived;
                 }
                 else
                 {
