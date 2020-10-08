@@ -9,9 +9,12 @@ using VErp.Infrastructure.EF.EFExtensions;
 namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class UnAuthorizeMasterDBContext : MasterDBContext
-    {
-        public UnAuthorizeMasterDBContext(DbContextOptions<MasterDBContext> options): base(options)
+    {       
+        public UnAuthorizeMasterDBContext(DbContextOptions<UnAuthorizeMasterDBContext> options
+           , ILoggerFactory loggerFactory)
+           : base(options.ChangeOptionsType<MasterDBContext>(loggerFactory))
         {
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

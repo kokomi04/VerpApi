@@ -12,10 +12,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public class UnAuthorizeOrganizationContext : OrganizationDBContext
     {
-        public UnAuthorizeOrganizationContext(DbContextOptions<OrganizationDBContext> options) : base(options)
+        public UnAuthorizeOrganizationContext(DbContextOptions<UnAuthorizeOrganizationContext> options
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<OrganizationDBContext>(loggerFactory))
         {
-
+           
         }
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
