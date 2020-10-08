@@ -38,6 +38,5 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedDepreciation(long fromDate, long toDate, string accountNumber);
 
         Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber);
-
     }
 }
