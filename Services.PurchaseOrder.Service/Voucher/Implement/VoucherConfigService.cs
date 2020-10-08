@@ -599,10 +599,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<PageData<VoucherAreaModel>> GetVoucherAreas(int voucherTypeId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _purchaseOrderDBContext.VoucherType.Where(a => a.VoucherTypeId == voucherTypeId).AsQueryable();
+            var query = _purchaseOrderDBContext.VoucherArea.Where(a => a.VoucherTypeId == voucherTypeId).AsQueryable();
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(a => a.VoucherTypeCode.Contains(keyword) || a.Title.Contains(keyword));
+                query = query.Where(a => a.VoucherAreaCode.Contains(keyword) || a.Title.Contains(keyword));
             }
             query = query.OrderBy(c => c.Title);
             var total = await query.CountAsync();
