@@ -73,8 +73,7 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<int> Post([FromBody] UserInfoInput req)
         {
-            int updatedUserId = UserId;
-            return await _userService.CreateUser(req, updatedUserId).ConfigureAwait(true);
+            return await _userService.CreateUser(req, EnumEmployeeType.Normal).ConfigureAwait(true);
         }
 
 
@@ -90,6 +89,20 @@ namespace VErpApi.Controllers.System
             return await _userService.GetInfo(userId).ConfigureAwait(true);
         }
 
+
+        /// <summary>
+        /// Thêm mới user sở hữu công ty con
+        /// </summary>
+        /// <param name="subsidiaryId"></param>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("subsidiaryOwner/{subsidiaryId}")]
+        public async Task<int> OwnerCreate([FromRoute] int subsidiaryId, [FromBody] UserInfoInput req)
+        {
+            return await _userService.CreateOwnerUser(subsidiaryId, req).ConfigureAwait(true);
+        }
+
         /// <summary>
         /// Cập nhật thông tin user
         /// </summary>
@@ -101,7 +114,7 @@ namespace VErpApi.Controllers.System
         public async Task<bool> Update([FromRoute] int userId, [FromBody] UserInfoInput req)
         {
             int updatedUserId = UserId;
-            return await _userService.UpdateUser(userId, req, updatedUserId).ConfigureAwait(true);
+            return await _userService.UpdateUser(userId, req).ConfigureAwait(true);
         }
 
         /// <summary>

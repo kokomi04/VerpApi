@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string Email { get; set; }
         public string Fax { get; set; }
         public string Description { get; set; }
+        public int SubsidiaryStatusId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

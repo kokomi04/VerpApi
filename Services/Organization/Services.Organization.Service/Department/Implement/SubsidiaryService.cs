@@ -59,6 +59,21 @@ namespace Services.Organization.Service.Department.Implement
             var a = query.ToList();
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync();
 
+            var subsidiaryIds = lst.Select(s => s.SubsidiaryId).ToList();
+
+            var owners = await _organizationContext.Employee.IgnoreQueryFilters()
+                .Where(e => !e.IsDeleted && subsidiaryIds.Contains(e.SubsidiaryId) && e.EmployeeTypeId == (int)EnumEmployeeType.Owner)
+                .ToListAsync();
+
+            foreach (var item in lst)
+            {
+                var owner = owners.FirstOrDefault(o => o.SubsidiaryId == item.SubsidiaryId);
+                if (owner != null)
+                {
+                    item.Owner = _mapper.Map<SubsidiaryOwnerModel>(owner);
+                }
+            }
+
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -92,6 +107,7 @@ namespace Services.Organization.Service.Department.Implement
             await _organizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Thêm cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
+
             return info.SubsidiaryId;
         }
 
@@ -146,15 +162,20 @@ namespace Services.Organization.Service.Department.Implement
             return true;
         }
 
-        public async Task<SubsidiaryModel> GetInfo(int subsidiaryId)
+        public async Task<SubsidiaryOutput> GetInfo(int subsidiaryId)
         {
-
-            var info = await _organizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var info = await _organizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
             if (info == null)
             {
                 throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
             }
+
+            var owner = await _organizationContext.Employee.IgnoreQueryFilters()
+                .Where(e => !e.IsDeleted && e.SubsidiaryId == subsidiaryId && e.EmployeeTypeId == (int)EnumEmployeeType.Owner)
+                .FirstOrDefaultAsync();
+
+            info.Owner = _mapper.Map<SubsidiaryOwnerModel>(owner);
             return info;
         }
 

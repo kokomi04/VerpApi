@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Services.Organization.Model.Department;
 
 namespace VErp.Services.Master.Model.Users
@@ -14,7 +15,6 @@ namespace VErp.Services.Master.Model.Users
         public int? RoleId { get; set; }
 
         public DepartmentModel Department { get; set; }
-        public IList<SubsidiaryBasicInfo> Subsidiaries { get; set; }
     }
     
 

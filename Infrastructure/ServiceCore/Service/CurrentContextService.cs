@@ -226,18 +226,36 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
+        public ScopeCurrentContextService(ICurrentContextService currentContextService)
+        : this(
+                currentContextService.UserId,
+                currentContextService.Action,
+                currentContextService.RoleInfo,
+                currentContextService.StockIds,
+                currentContextService.SubsidiaryId,
+                currentContextService.TimeZoneOffset
+        )
+        {
+
+        }
+
         public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
             Action = action;
-            RoleInfo = roleInfo;
-            StockIds = stockIds;
+            RoleInfo = roleInfo == null ? null : roleInfo.JsonSerialize().JsonDeserialize<RoleInfo>();
+            StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
             TimeZoneOffset = timeZoneOffset;
         }
 
+        public void SetSubsidiaryId(int subsidiaryId)
+        {
+            SubsidiaryId = subsidiaryId;
+        }
+
         public int UserId { get; } = 0;
-        public int SubsidiaryId { get; } = 0;
+        public int SubsidiaryId { get; private set; } = 0;
         public EnumAction Action { get; }
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
