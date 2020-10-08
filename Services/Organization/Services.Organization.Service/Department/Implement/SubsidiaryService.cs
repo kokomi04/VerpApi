@@ -23,14 +23,15 @@ namespace Services.Organization.Service.Department.Implement
 {
     public class SubsidiaryService : ISubsidiaryService
     {
-        private readonly OrganizationDBContext _organizationContext;
+        private readonly UnAuthorizeOrganizationContext _unAuthorizeOrganizationContext;
+
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger<SubsidiaryService> _logger;
         private readonly ICurrentContextService _currentContext;
 
         private readonly IMapper _mapper;
 
-        public SubsidiaryService(OrganizationDBContext organizationContext
+        public SubsidiaryService(UnAuthorizeOrganizationContext unAuthorizeOrganizationContext
             , IActivityLogService activityLogService
             , ILogger<SubsidiaryService> logger
             , ICurrentContextService currentContext
@@ -38,7 +39,7 @@ namespace Services.Organization.Service.Department.Implement
             )
         {
 
-            _organizationContext = organizationContext;
+            _unAuthorizeOrganizationContext = unAuthorizeOrganizationContext;
             _activityLogService = activityLogService;
             _logger = logger;
             _currentContext = currentContext;
@@ -49,7 +50,7 @@ namespace Services.Organization.Service.Department.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider);
+            var query = _unAuthorizeOrganizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider);
             query = query.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -61,7 +62,7 @@ namespace Services.Organization.Service.Department.Implement
 
             var subsidiaryIds = lst.Select(s => s.SubsidiaryId).ToList();
 
-            var owners = await _organizationContext.Employee.IgnoreQueryFilters()
+            var owners = await _unAuthorizeOrganizationContext.Employee.IgnoreQueryFilters()
                 .Where(e => !e.IsDeleted && subsidiaryIds.Contains(e.SubsidiaryId) && e.EmployeeTypeId == (int)EnumEmployeeType.Owner)
                 .ToListAsync();
 
@@ -81,7 +82,7 @@ namespace Services.Organization.Service.Department.Implement
 
         public async Task<int> Create(SubsidiaryModel data)
         {
-            var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName);
+            var info = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName);
 
             if (info != null)
             {
@@ -94,7 +95,7 @@ namespace Services.Organization.Service.Department.Implement
             }
             if (data.ParentSubsidiaryId.HasValue)
             {
-                var parent = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
+                var parent = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
                 if (parent == null)
                 {
                     throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
@@ -103,8 +104,8 @@ namespace Services.Organization.Service.Department.Implement
 
             info = _mapper.Map<Subsidiary>(data);
 
-            await _organizationContext.Subsidiary.AddAsync(info);
-            await _organizationContext.SaveChangesAsync();
+            await _unAuthorizeOrganizationContext.Subsidiary.AddAsync(info);
+            await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Thêm cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
 
@@ -114,7 +115,7 @@ namespace Services.Organization.Service.Department.Implement
 
         public async Task<bool> Update(int subsidiaryId, SubsidiaryModel data)
         {
-            var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId != subsidiaryId && (d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName));
+            var info = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId != subsidiaryId && (d.SubsidiaryCode == data.SubsidiaryCode || d.SubsidiaryName == data.SubsidiaryName));
 
             if (info != null)
             {
@@ -126,7 +127,7 @@ namespace Services.Organization.Service.Department.Implement
                 throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNameExisted);
             }
 
-            info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
+            info = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
 
             if (info == null)
             {
@@ -135,7 +136,7 @@ namespace Services.Organization.Service.Department.Implement
 
             if (data.ParentSubsidiaryId.HasValue)
             {
-                var parent = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
+                var parent = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == data.ParentSubsidiaryId.Value);
                 if (parent == null)
                 {
                     throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
@@ -155,7 +156,7 @@ namespace Services.Organization.Service.Department.Implement
             //info.UpdatedByUserId = _currentContext.UserId;
             //info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-            await _organizationContext.SaveChangesAsync();
+            await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Cập nhật cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
 
@@ -164,14 +165,14 @@ namespace Services.Organization.Service.Department.Implement
 
         public async Task<SubsidiaryOutput> GetInfo(int subsidiaryId)
         {
-            var info = await _organizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var info = await _unAuthorizeOrganizationContext.Subsidiary.Where(d => d.SubsidiaryId == subsidiaryId).ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
             if (info == null)
             {
                 throw new BadRequestException(SubsidiaryErrorCode.SubsidiaryNotfound);
             }
 
-            var owner = await _organizationContext.Employee.IgnoreQueryFilters()
+            var owner = await _unAuthorizeOrganizationContext.Employee.IgnoreQueryFilters()
                 .Where(e => !e.IsDeleted && e.SubsidiaryId == subsidiaryId && e.EmployeeTypeId == (int)EnumEmployeeType.Owner)
                 .FirstOrDefaultAsync();
 
@@ -182,7 +183,7 @@ namespace Services.Organization.Service.Department.Implement
 
         public async Task<bool> Delete(int subsidiaryId)
         {
-            var info = await _organizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
+            var info = await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(d => d.SubsidiaryId == subsidiaryId);
 
             if (info == null)
             {
@@ -193,7 +194,7 @@ namespace Services.Organization.Service.Department.Implement
             //info.UpdatedByUserId = _currentContext.UserId;
             //info.DeletedDatetimeUtc = DateTime.UtcNow;
 
-            await _organizationContext.SaveChangesAsync();
+            await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Xóa cty con/chi nhánh {info.SubsidiaryCode}", new { subsidiaryId }.JsonSerialize());
 
@@ -202,7 +203,7 @@ namespace Services.Organization.Service.Department.Implement
 
         public async Task<IList<SubsidiaryOutput>> GetList()
         {
-            return await _organizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).ToListAsync();
+            return await _unAuthorizeOrganizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider).ToListAsync();
         }
     }
 }

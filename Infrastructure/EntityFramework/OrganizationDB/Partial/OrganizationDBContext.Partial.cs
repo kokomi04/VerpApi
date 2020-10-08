@@ -10,6 +10,20 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
+    public class UnAuthorizeOrganizationContext : OrganizationDBContext
+    {
+        public UnAuthorizeOrganizationContext(DbContextOptions<OrganizationDBContext> options) : base(options)
+        {
+
+        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
+        }
+    }
+
+
     public partial class OrganizationDBRestrictionContext : OrganizationDBContext, ICurrentRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
@@ -47,7 +61,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
 
                 var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null && entityType.ClrType.Name != nameof(Subsidiary))// && entityType.ClrType.Name != nameof(EmployeeSubsidiary)
+                if (isSubsidiaryIdProp != null)// && entityType.ClrType.Name != nameof(Subsidiary))// && entityType.ClrType.Name != nameof(EmployeeSubsidiary)
                 {
                     var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
                     filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
@@ -56,7 +70,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entityType.SetQueryFilter(filterBuilder.Build());
             }
-
         }
 
         public override int SaveChanges()

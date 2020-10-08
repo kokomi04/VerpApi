@@ -18,14 +18,14 @@ namespace VErp.WebApis.VErpApi.Validator
     public class ResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
     {
         private readonly MasterDBContext _masterDB;
-        private readonly OrganizationDBContext _organizationDB;
+        private readonly UnAuthorizeOrganizationContext _unAuthorizeOrganizationContext;
         private readonly AppSetting _appSetting;
 
         private const int MAX_FAIL_ACCESS = 5;
-        public ResourceOwnerPasswordValidator(MasterDBContext masterDB, OrganizationDBContext organizationDB, IOptionsSnapshot<AppSetting> appSetting)
+        public ResourceOwnerPasswordValidator(MasterDBContext masterDB, UnAuthorizeOrganizationContext unAuthorizeOrganizationContext, IOptionsSnapshot<AppSetting> appSetting)
         {
             _masterDB = masterDB;
-            _organizationDB = organizationDB;
+            _unAuthorizeOrganizationContext = unAuthorizeOrganizationContext;
             _appSetting = appSetting?.Value;
         }
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
@@ -111,7 +111,7 @@ namespace VErp.WebApis.VErpApi.Validator
         {
             int subId;
             _ = int.TryParse(subsidiaryId, out subId);
-            return await _organizationDB.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == subId);
+            return await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == subId);
         }
 
         //private bool IsValidSubsidiary(int userId, int subsidiaryId)
@@ -123,7 +123,7 @@ namespace VErp.WebApis.VErpApi.Validator
 
         private Task<Employee> GetEmployeeInfo(int userId)
         {
-            return _organizationDB.Employee
+            return _unAuthorizeOrganizationContext.Employee
                 .FirstOrDefaultAsync(x => x.UserId == userId);
         }
 
