@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.AddFilterBase();
+            modelBuilder.AddFilterAuthorize(this);
         }
 
         public override int SaveChanges()

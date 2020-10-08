@@ -292,6 +292,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.IsDeveloper).HasComment("");
+
                 entity.Property(e => e.ModuleName)
                     .IsRequired()
                     .HasMaxLength(128);

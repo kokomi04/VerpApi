@@ -9,7 +9,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
-    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ICurrentRequestDbContext
+    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }

@@ -8,8 +8,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
 {
     public interface IDbContextFilterTypeCache
     {
-        bool FilterStock { get; }
-        bool FilterSubsidiary { get; }
+        bool IgnoreFilterSubsidiary { get; }
+        bool IgnoreFilterStock { get; }
     }
 
     public class DynamicModelCacheKeyFactory : IModelCacheKeyFactory
@@ -18,7 +18,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             if (context is IDbContextFilterTypeCache dynamicContext)
             {
-                return (context.GetType(), dynamicContext.FilterStock, dynamicContext.FilterSubsidiary);
+                return (context.GetType(), dynamicContext.IgnoreFilterSubsidiary, dynamicContext.IgnoreFilterStock);
             }
             return context.GetType();
         }

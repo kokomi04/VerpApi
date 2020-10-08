@@ -25,7 +25,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         private const string SubIdParam = "@SubId";
         private const string SubsidiaryIdColumn = "SubsidiaryId";
 
-        private static SqlParameter CreateSubSqlParam(this ICurrentRequestDbContext requestDbContext)
+        private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
         }
@@ -40,7 +40,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
-            if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+            if (includeSubId && dbContext is ISubsidiayRequestDbContext requestDbContext)
             {
                 parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
 
@@ -77,7 +77,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         command.Parameters.Add(param);
                     }
 
-                    if (dbContext is ICurrentRequestDbContext requestDbContext)
+                    if (dbContext is ISubsidiayRequestDbContext requestDbContext)
                     {
                         command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
@@ -142,7 +142,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
                 }
 
-                if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+                if (includeSubId && dbContext is ISubsidiayRequestDbContext requestDbContext)
                 {
                     if (!insertColumns.Any(c => c == SubsidiaryIdColumn))
                     {

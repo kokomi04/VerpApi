@@ -28,7 +28,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     }
 
 
-    public partial class OrganizationDBRestrictionContext : OrganizationDBContext, ICurrentRequestDbContext
+    public partial class OrganizationDBRestrictionContext : OrganizationDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
@@ -45,35 +45,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            //modelBuilder.AddFilterBase();
 
-            var ctxConstant = Expression.Constant(this);
-
-            //base.OnModelCreating(modelBuilder);
-
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
-
-                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
-                }
-
-
-                var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null)// && entityType.ClrType.Name != nameof(Subsidiary))// && entityType.ClrType.Name != nameof(EmployeeSubsidiary)
-                {
-                    var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
-                    filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
-                }
-
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
+            modelBuilder.AddFilterAuthorize(this);
+            
         }
 
         public override int SaveChanges()

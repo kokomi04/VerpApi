@@ -22,14 +22,13 @@ namespace VErp.Infrastructure.EF.StockDB
     }
 
 
-    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ICurrentRequestDbContext
+    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ISubsidiayRequestDbContext, IStockRequestDbContext
     {
-        //ICurrentContextService _currentContext;
         public List<int> StockIds { get; set; }
         public int SubsidiaryId { get; private set; }
 
-        public bool FilterStock { get; private set; }
-        public bool FilterSubsidiary { get; private set; }
+        public bool IgnoreFilterSubsidiary { get; private set; }
+        public bool IgnoreFilterStock { get; private set; }
 
         public ICurrentContextService CurrentContextService { get; private set; }
 
@@ -38,14 +37,13 @@ namespace VErp.Infrastructure.EF.StockDB
             , ILoggerFactory loggerFactory)
             : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
-            // _currentContext = currentContext;
             CurrentContextService = currentContext;
 
             StockIds = currentContext.StockIds?.ToList();
             SubsidiaryId = currentContext.SubsidiaryId;
 
-            FilterStock = StockIds != null;
-            FilterSubsidiary = true;
+            IgnoreFilterSubsidiary = false;
+            IgnoreFilterStock = false;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.ReplaceService<IModelCacheKeyFactory, DynamicModelCacheKeyFactory>();
@@ -56,40 +54,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             base.OnModelCreating(modelBuilder);
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
-
-                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
-                }
-
-                if (FilterStock)
-                {
-                    var isStockIdProp = entityType.FindProperty(GlobalFieldConstants.StockId);
-                    if (isStockIdProp != null)
-                    {
-                        var stockIds = Expression.PropertyOrField(ctxConstant, nameof(StockIds));
-                        filterBuilder.AddFilterListContains<int>(GlobalFieldConstants.StockId, stockIds);
-                    }
-                }
-
-                if (FilterSubsidiary)
-                {
-                    var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                    if (isSubsidiaryIdProp != null)
-                    {
-                        var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
-                        filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
-                    }
-                }
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
+            modelBuilder.AddFilterAuthorize(this);
 
         }
 
