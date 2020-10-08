@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputAreaField
+    public partial class VoucherAreaField
     {
-        public int InputAreaFieldId { get; set; }
-        public int InputFieldId { get; set; }
-        public int InputTypeId { get; set; }
-        public int InputAreaId { get; set; }
+        public int VoucherAreaFieldId { get; set; }
+        public int VoucherFieldId { get; set; }
+        public int VoucherTypeId { get; set; }
+        public int VoucherAreaId { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }
         public int SortOrder { get; set; }
@@ -39,8 +39,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string RequireFilters { get; set; }
 
-        public virtual InputArea InputArea { get; set; }
-        public virtual InputField InputField { get; set; }
-        public virtual InputType InputType { get; set; }
+        public virtual VoucherArea VoucherArea { get; set; }
+        public virtual VoucherField VoucherField { get; set; }
+        public virtual VoucherType VoucherType { get; set; }
     }
 }

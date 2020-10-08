@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Infrastructure.EF.EFExtensions;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class InputTypeBillsRequestModel
+    public class VoucherTypeBillsRequestModel
     {
         public string Keyword { get; set; }
         public Dictionary<int, object> Filters { get; set; }

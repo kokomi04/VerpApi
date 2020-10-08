@@ -7,41 +7,41 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Services.PurchaseOrder.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class InputTypeBasicOutput : IMapFrom<InputType>
+    public class VoucherTypeBasicOutput : IMapFrom<VoucherType>
     {
         public string Title { get; set; }
-        public string InputTypeCode { get; set; }
-        public IList<InputAreaBasicOutput> Areas { get; set; }
-        public IList<InputTypeViewModelList> Views { get; set; }
+        public string VoucherTypeCode { get; set; }
+        public IList<VoucherAreaBasicOutput> Areas { get; set; }
+        public IList<VoucherTypeViewModelList> Views { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputType, InputTypeBasicOutput>()
+            profile.CreateMap<VoucherType, VoucherTypeBasicOutput>()
                 .ForMember(d => d.Areas, m => m.Ignore())
                 .ForMember(d => d.Views, m => m.Ignore());
         }
     }
 
-    public class InputAreaBasicOutput : IMapFrom<InputArea>
+    public class VoucherAreaBasicOutput : IMapFrom<VoucherArea>
     {
-        public int InputAreaId { get; set; }
+        public int VoucherAreaId { get; set; }
         public string Title { get; set; }
         public string InputAreaCode { get; set; }
         public bool IsMultiRow { get; set; }
-        public IList<InputAreaFieldBasicOutput> Fields { get; set; }
+        public IList<VoucherAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputArea, InputAreaBasicOutput>()
+            profile.CreateMap<VoucherArea, VoucherAreaBasicOutput>()
                 .ForMember(d => d.Fields, m => m.Ignore());
         }
     }
 
-    public class InputAreaFieldBasicOutput
+    public class VoucherAreaFieldBasicOutput
     {
-        public int InputAreaId { get; set; }
-        public int InputAreaFieldId { get; set; }
+        public int VoucherAreaId { get; set; }
+        public int VoucherAreaFieldId { get; set; }
         public string FieldName { get; set; }
         public string Title { get; set; }
         public string Placeholder { get; set; }

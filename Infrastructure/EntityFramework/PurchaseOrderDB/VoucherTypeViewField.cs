@@ -3,10 +3,10 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputTypeViewField
+    public partial class VoucherTypeViewField
     {
-        public int InputTypeViewFieldId { get; set; }
-        public int InputTypeViewId { get; set; }
+        public int VoucherTypeViewFieldId { get; set; }
+        public int VoucherTypeViewId { get; set; }
         public int Column { get; set; }
         public int SortOrder { get; set; }
         public string Title { get; set; }
@@ -22,6 +22,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
-        public virtual InputTypeView InputTypeView { get; set; }
+        public virtual VoucherTypeView VoucherTypeView { get; set; }
     }
 }

@@ -113,7 +113,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}/datafile")]
-        public async Task<FileStreamResult> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
+        public async Task<FileStreamResult> ExportBill([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
             var result = await _inputDataService.ExportBill(inputTypeId, fId);
             return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };

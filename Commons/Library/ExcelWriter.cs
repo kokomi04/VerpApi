@@ -10,7 +10,7 @@ using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using VErp.Infrastructure.AppSettings.Model;
 using System.Data;
-using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 using System.Collections;
 
 namespace VErp.Commons.Library

@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputArea
+    public partial class VoucherArea
     {
-        public InputArea()
+        public VoucherArea()
         {
-            InputAreaField = new HashSet<InputAreaField>();
+            VoucherAreaField = new HashSet<VoucherAreaField>();
         }
 
-        public int InputAreaId { get; set; }
-        public int InputTypeId { get; set; }
-        public string InputAreaCode { get; set; }
+        public int VoucherAreaId { get; set; }
+        public int VoucherTypeId { get; set; }
+        public string VoucherAreaCode { get; set; }
         public string Title { get; set; }
         public bool IsMultiRow { get; set; }
         public int Columns { get; set; }
@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual InputType InputType { get; set; }
-        public virtual ICollection<InputAreaField> InputAreaField { get; set; }
+        public virtual VoucherType VoucherType { get; set; }
+        public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
     }
 }

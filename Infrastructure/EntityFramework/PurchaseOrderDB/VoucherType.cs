@@ -3,20 +3,20 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class InputType
+    public partial class VoucherType
     {
-        public InputType()
+        public VoucherType()
         {
-            InputArea = new HashSet<InputArea>();
-            InputAreaField = new HashSet<InputAreaField>();
-            InputBill = new HashSet<InputBill>();
-            InputTypeView = new HashSet<InputTypeView>();
+            SaleBill = new HashSet<SaleBill>();
+            VoucherArea = new HashSet<VoucherArea>();
+            VoucherAreaField = new HashSet<VoucherAreaField>();
+            VoucherTypeView = new HashSet<VoucherTypeView>();
         }
 
-        public int InputTypeId { get; set; }
-        public int? InputTypeGroupId { get; set; }
+        public int VoucherTypeId { get; set; }
+        public int? VoucherTypeGroupId { get; set; }
         public string Title { get; set; }
-        public string InputTypeCode { get; set; }
+        public string VoucherTypeCode { get; set; }
         public int SortOrder { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -31,10 +31,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
 
-        public virtual InputTypeGroup InputTypeGroup { get; set; }
-        public virtual ICollection<InputArea> InputArea { get; set; }
-        public virtual ICollection<InputAreaField> InputAreaField { get; set; }
-        public virtual ICollection<InputBill> InputBill { get; set; }
-        public virtual ICollection<InputTypeView> InputTypeView { get; set; }
+        public virtual VoucherTypeGroup VoucherTypeGroup { get; set; }
+        public virtual ICollection<SaleBill> SaleBill { get; set; }
+        public virtual ICollection<VoucherArea> VoucherArea { get; set; }
+        public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
+        public virtual ICollection<VoucherTypeView> VoucherTypeView { get; set; }
     }
 }
