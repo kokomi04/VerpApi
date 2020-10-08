@@ -21,13 +21,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
     [Route("api/PurchasingOrder/data/salebills")]
 
-    public class InputController : VErpBaseController
+    public class VoucherController : VErpBaseController
     {
-        private readonly IVoucherDataService _inputDataService;
+        private readonly IVoucherDataService _voucherDataService;
 
-        public InputController(IVoucherDataService inputDataService)
+        public VoucherController(IVoucherDataService voucherDataService)
         {
-            _inputDataService = inputDataService;
+            _voucherDataService = voucherDataService;
         }
 
         [HttpPost]
@@ -37,21 +37,21 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetSaleBills(voucherTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _voucherDataService.GetSaleBills(voucherTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}")]
         public async Task<PageDataTable> GetSaleBillInfoRows([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inputDataService.GetSaleBillInfoRows(voucherTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
+            return await _voucherDataService.GetSaleBillInfoRows(voucherTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/info")]
         public async Task<SaleBillInfoModel> GetSaleBillInfo([FromRoute] int voucherTypeId, [FromRoute] long fId)
         {
-            return await _inputDataService.GetSaleBillInfo(voucherTypeId, fId).ConfigureAwait(true);
+            return await _voucherDataService.GetSaleBillInfo(voucherTypeId, fId).ConfigureAwait(true);
         }
 
 
@@ -61,7 +61,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.CreateSaleBill(voucherTypeId, data).ConfigureAwait(true);
+            return await _voucherDataService.CreateSaleBill(voucherTypeId, data).ConfigureAwait(true);
         }
 
         [HttpPut]
@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.UpdateSaleBill(voucherTypeId, fId, data).ConfigureAwait(true);
+            return await _voucherDataService.UpdateSaleBill(voucherTypeId, fId, data).ConfigureAwait(true);
         }
 
         [HttpPut]
@@ -78,14 +78,14 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         public async Task<bool> UpdateMultipleSaleBills([FromRoute] int voucherTypeId, [FromBody] UpdateMultipleModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _inputDataService.UpdateMultipleSaleBills(voucherTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
+            return await _voucherDataService.UpdateMultipleSaleBills(voucherTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
         }
 
         [HttpDelete]
         [Route("{voucherTypeId}/{fId}")]
         public async Task<bool> DeleteSaleBill([FromRoute] int voucherTypeId, [FromRoute] long fId)
         {
-            return await _inputDataService.DeleteSaleBill(voucherTypeId, fId).ConfigureAwait(true);
+            return await _voucherDataService.DeleteSaleBill(voucherTypeId, fId).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -96,14 +96,14 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inputDataService.ImportSaleBillFromMapping(voucherTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _voucherDataService.ImportSaleBillFromMapping(voucherTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/datafile")]
         public async Task<FileStreamResult> ExportSaleBill([FromRoute] int voucherTypeId, [FromRoute] long fId)
         {
-            var result = await _inputDataService.ExportSaleBill(voucherTypeId, fId);
+            var result = await _voucherDataService.ExportSaleBill(voucherTypeId, fId);
             return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
         }
     }
