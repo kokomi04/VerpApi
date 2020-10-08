@@ -31,7 +31,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<UnAuthorizeMasterDBContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.MasterDatabase);
-            }, contextScope);
+            }, ServiceLifetime.Singleton);
             
         }
 
@@ -55,6 +55,12 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<UnAuthorizeOrganizationContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.OrganizationDatabase);
+            }, ServiceLifetime.Singleton);
+            
         }
 
         //public static void ConfigAccountingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
