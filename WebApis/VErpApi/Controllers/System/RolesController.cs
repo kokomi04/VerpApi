@@ -129,5 +129,27 @@ namespace VErpApi.Controllers.System
         {
             return await _roleService.UpdateStockPermission(req);
         }
+
+        /// <summary>
+        /// Lấy danh sách nhóm quyền có quyền trên danh mục
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("Categorys")]
+        public async Task<IList<CategoryPermissionModel>> Categorys()
+        {
+            return (await _roleService.GetCategoryPermissions()).ToList();
+        }
+
+        /// <summary>
+        /// Cập nhật quyền của nhóm quyền trên danh mục
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("Categorys")]
+        public async Task<bool> Categorys(IList<CategoryPermissionModel> req)
+        {
+            return await _roleService.UpdateCategoryPermission(req);
+        }
     }
 }
