@@ -24,6 +24,16 @@ namespace VErp.Commons.Library
             hssfwb = new XSSFWorkbook();
         }
 
+        public ISheet GetSheet(string sheetName)
+        {
+            var sheet = hssfwb.GetSheet(sheetName);
+            if (sheet == null)
+            {
+                sheet = hssfwb.CreateSheet(sheetName);
+            }
+            return sheet;
+        }
+
         public void WriteToSheet((string, byte[])[][] dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
         {
             var sheet = hssfwb.GetSheet(sheetName);
@@ -129,6 +139,16 @@ namespace VErp.Commons.Library
                 addedRow++;
             }
             endRow = startRow + addedRow - 1;
+        }
+
+        public ICreationHelper GetCreationHelper()
+        {
+            return hssfwb.GetCreationHelper();
+        }
+
+        public int AddPicture(byte[] bytes, PictureType pictureType)
+        {
+            return hssfwb.AddPicture(bytes, pictureType);
         }
 
         public async Task<MemoryStream> WriteToStream()
