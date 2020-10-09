@@ -17,6 +17,7 @@ namespace VErp.Services.Organization.Model.Customer
         public string Website { get; set; }
         public string Email { get; set; }
         public string Identify { get; set; }
+        public int? DebtDays { get; set; }
         public EnumCustomerStatus CustomerStatusId { get; set; }
     }
 }
