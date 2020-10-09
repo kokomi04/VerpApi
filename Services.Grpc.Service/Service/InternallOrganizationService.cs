@@ -15,11 +15,11 @@ using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Grpc.Service
 {
-    public class InternallOrganizationService: OrganizationProvider.OrganizationProviderBase
+    public class InternallOrganizationService : OrganizationProvider.OrganizationProviderBase
     {
         private readonly OrganizationDBContext _organizationDBContext;
 
-        public InternallOrganizationService(ILogger<InternallOrganizationService> logger, 
+        public InternallOrganizationService(ILogger<InternallOrganizationService> logger,
             OrganizationDBContext organizationDBContext)
         {
             _organizationDBContext = organizationDBContext;
@@ -73,6 +73,7 @@ namespace VErp.Services.Grpc.Service
                 IsActived = customerInfo.IsActived,
                 CustomerStatusId = customerInfo.CustomerStatusId,
                 Identify = customerInfo.Identify,
+                DebtDays = customerInfo.DebtDays ?? 0
             };
             responses.Contacts.Add(customerContacts.Select(c => new CustomerContactModel()
             {

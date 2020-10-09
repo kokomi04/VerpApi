@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
-            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
+            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.SubsidiaryId };
         }
 
         public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, bool includeSubId = false)

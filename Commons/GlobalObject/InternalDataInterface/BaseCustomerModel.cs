@@ -52,7 +52,11 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         [Display(Name = "Số CMND, thẻ căn cước")]
         [MaxLength(64, ErrorMessage = "Số CMND quá dài")]
-        public string Identify { get; set; }      
+        public string Identify { get; set; }
+
+        [Display(Name = "Số ngày nợ")]
+        public int? DebtDays { get; set; }
+        
     }
 
     public class BaseCustomerModel: BaseCustomerImportModel
