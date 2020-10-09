@@ -5,13 +5,16 @@ INSERT INTO dbo.RolePermission
     Permission,
     CreatedDatetimeUtc
 )
-SELECT 1,
+SELECT  r.RoleId,
 		m.ModuleId,
 		2147483647,
 		GETDATE()
 	FROM
-	dbo.Module AS m
-	WHERE m.ModuleId NOT IN
+	dbo.Module AS m,
+	dbo.[Role] AS r
+	WHERE 
+	(r.RoleTypeId = 1 OR r.IsEditable = 0)
+	AND m.ModuleId NOT IN
 	(
-	SELECT ModuleId FROM dbo.RolePermission WHERE RoleId=1
+		SELECT ModuleId FROM dbo.RolePermission WHERE RoleId = r.RoleId
 	)
