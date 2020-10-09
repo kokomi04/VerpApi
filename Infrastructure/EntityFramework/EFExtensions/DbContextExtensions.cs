@@ -107,10 +107,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             bool filterStock = true;
             if (dbContext is IDbContextFilterTypeCache filterCache)
             {
-                if (!filterCache.IgnoreFilterSubsidiary)
+                if (filterCache.IgnoreFilterSubsidiary)
                     filterSubId = false;
 
-                if (!filterCache.IgnoreFilterStock)
+                if (filterCache.IgnoreFilterStock)
                     filterStock = false;
             }
 
