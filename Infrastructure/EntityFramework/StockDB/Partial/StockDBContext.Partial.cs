@@ -50,8 +50,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var ctxConstant = Expression.Constant(this);
-
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.AddFilterAuthorize(this);
