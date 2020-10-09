@@ -13,6 +13,6 @@ namespace Verp.Services.ReportConfig.Service
     {
         Task<ReportDataModel> Report(int reportId, ReportFilterModel model);
         Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel dataModel);
-        Task<(MemoryStream Stream, string FileName)> ExportExcel(int reportId, ReportFilterModel model);
+        Task<(Stream stream, string fileName, string contentType)> ExportExcel(int reportId, ReportFacadeModel model);
     }
 }
