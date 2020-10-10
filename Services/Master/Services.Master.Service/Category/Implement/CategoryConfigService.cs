@@ -289,6 +289,7 @@ namespace VErp.Services.Master.Service.Category
                     {
                         config.ModuleType = data.OutSideDataConfig.ModuleType;
                         config.Url = data.OutSideDataConfig.Url;
+                        config.ParentKey = data.OutSideDataConfig.ParentKey;
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
                         config.Joins = data.OutSideDataConfig.Joins;
