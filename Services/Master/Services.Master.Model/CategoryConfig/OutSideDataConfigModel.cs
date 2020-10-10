@@ -18,6 +18,7 @@ namespace VErp.Services.Master.Model.CategoryConfig
         public int ModuleType { get; set; }
         public string Url { get; set; }
         public string Key { get; set; }
+        public string ParentKey { get; set; }
         public string Description { get; set; }
         public string ModuleTypeTitle { get; set; }
         public string Joins { get; set; }
