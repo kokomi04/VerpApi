@@ -17,17 +17,16 @@ namespace VErp.WebApis.VErpApi.Validator
 {
     public class ResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
     {
-        private readonly MasterDBContext _masterDB;
-        private readonly UnAuthorizeOrganizationContext _unAuthorizeOrganizationContext;
+        private readonly UnAuthorizeMasterDBContext _masterDB;
         private readonly AppSetting _appSetting;
 
         private const int MAX_FAIL_ACCESS = 5;
-        public ResourceOwnerPasswordValidator(MasterDBContext masterDB, UnAuthorizeOrganizationContext unAuthorizeOrganizationContext, IOptionsSnapshot<AppSetting> appSetting)
+        public ResourceOwnerPasswordValidator(UnAuthorizeMasterDBContext masterDB, IOptionsSnapshot<AppSetting> appSetting)
         {
             _masterDB = masterDB;
-            _unAuthorizeOrganizationContext = unAuthorizeOrganizationContext;
             _appSetting = appSetting?.Value;
         }
+
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
         {
             if (string.IsNullOrEmpty(context?.UserName) || string.IsNullOrEmpty(context.Password))
@@ -36,7 +35,21 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
-            var user = await GetUserByUsername(context.UserName);
+            var strSubId = context.Request.Raw["subsidiary_id"];
+            if (string.IsNullOrEmpty(strSubId))
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Bạn chưa chọn công ty");
+                return;
+            }
+
+            int subsidiaryId;
+            if (!int.TryParse(strSubId, out subsidiaryId))
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Thông tin công ty không hợp lệ");
+                return;
+            }
+
+            var user = await GetUserByUsername(context.UserName, subsidiaryId);
             if (user == null)
             {
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tên đăng nhập  {context.UserName} không tồn tại");
@@ -50,31 +63,9 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
-            var subsidiaryId = context.Request.Raw["subsidiary_id"];
-            if (string.IsNullOrEmpty(subsidiaryId))
+            if (user.SubsidiaryId != subsidiaryId)
             {
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Bạn chưa chọn công ty");
-                return;
-            }
-
-            var sub = await GetSubsidiaryByUserId(subsidiaryId);
-            if (sub == null)
-            {
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Công ty không tồn tại");
-                return;
-            }
-
-            //if (!IsValidSubsidiary(user.UserId, sub.SubsidiaryId))
-            //{
-            //    context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} không thuộc công ty {sub.SubsidiaryName}");
-            //    return;
-            //}
-
-            var employeeInfo = await GetEmployeeInfo(user.UserId);
-
-            if (employeeInfo?.SubsidiaryId != sub.SubsidiaryId)
-            {
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Tài khoản {context.UserName} không thuộc công ty {sub.SubsidiaryName}");
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, $"Thông tin công ty của tài khoản {context.UserName} không hợp lệ");
                 return;
             }
 
@@ -89,7 +80,7 @@ namespace VErp.WebApis.VErpApi.Validator
             {
                 new Claim("userId", user.UserId+""),
                 new Claim("clientId", context.Request.ClientId),
-                new Claim("subsidiaryId", subsidiaryId),
+                new Claim("subsidiaryId", subsidiaryId+""),
             };
 
             await MaxFailedAccessAttempts(user, true);
@@ -100,31 +91,11 @@ namespace VErp.WebApis.VErpApi.Validator
                 identityProvider: "local");
         }
 
-        private async Task<User> GetUserByUsername(string username)
+        private async Task<User> GetUserByUsername(string username, int subsidiayId)
         {
             var usernameHash = username.ToGuid();
 
-            return await _masterDB.User.FirstOrDefaultAsync(u => u.UserNameHash == usernameHash);
-        }
-
-        private async Task<Subsidiary> GetSubsidiaryByUserId(string subsidiaryId)
-        {
-            int subId;
-            _ = int.TryParse(subsidiaryId, out subId);
-            return await _unAuthorizeOrganizationContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == subId);
-        }
-
-        //private bool IsValidSubsidiary(int userId, int subsidiaryId)
-        //{
-        //    return _organizationDB.EmployeeSubsidiary
-        //        .Where(x => x.UserId == userId)
-        //        .Any(s => s.SubsidiaryId == subsidiaryId);
-        //}
-
-        private Task<Employee> GetEmployeeInfo(int userId)
-        {
-            return _unAuthorizeOrganizationContext.Employee
-                .FirstOrDefaultAsync(x => x.UserId == userId);
+            return await _masterDB.User.FirstOrDefaultAsync(u => u.UserNameHash == usernameHash && u.SubsidiaryId == subsidiayId && u.UserName == username);
         }
 
         private bool IsValidCredential(User user, string password)

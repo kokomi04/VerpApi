@@ -172,6 +172,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.FullName).HasMaxLength(128);
 
                 entity.Property(e => e.Phone).HasMaxLength(64);
+
+                entity.Property(e => e.UserStatusId).HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<EmployeeDepartmentMapping>(entity =>
