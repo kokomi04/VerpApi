@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.MasterDB
     public partial class User
     {
         public int UserId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string UserName { get; set; }
         public Guid UserNameHash { get; set; }
         public string PasswordHash { get; set; }

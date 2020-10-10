@@ -297,25 +297,26 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
-            IQueryable<Employee> employees = _organizationContext.Employee;
-            IQueryable<User> users = _masterContext.User;
+            var employees = _organizationContext.Employee.AsQueryable();
+            var users = _masterContext.User.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                var userIds = await employees.Where(em => em.FullName.Contains(keyword)
+                employees = employees.Where(em => em.FullName.Contains(keyword)
                     || em.EmployeeCode.Contains(keyword)
-                    || em.Email.Contains(keyword)).Select(em => em.UserId).ToArrayAsync();
+                    || em.Email.Contains(keyword));
 
+                var userIds = await employees.Select(e => e.UserId).ToListAsync();
                 users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
             }
 
-            var total = await users.CountAsync();
+            var total = await employees.CountAsync();
 
-            var lstUsers = await (size > 0 ? users.OrderBy(u => u.UserStatusId).ThenBy(u => u.UserName).Skip((page - 1) * size).Take(size).ToListAsync() : users.OrderBy(u => u.UserStatusId).ThenBy(u => u.UserName).ToListAsync());
+            var lstEmployees = await (size > 0 ? employees.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).Skip((page - 1) * size).Take(size).ToListAsync() : employees.OrderBy(u => u.UserStatusId).ThenBy(u => u.FullName).ToListAsync());
 
-            var selectedUserIds = lstUsers.Select(u => u.UserId).ToList();
+            var selectedUserIds = lstEmployees.Select(u => u.UserId).ToList();
 
-            var lstEmployees = employees.Where(e => selectedUserIds.Contains(e.UserId));
+            var lstUsers = users.Where(e => selectedUserIds.Contains(e.UserId));
 
             var lst = lstUsers.AsEnumerable().Join(lstEmployees, u => u.UserId, em => em.UserId, (u, em) => new UserInfoOutput
             {
@@ -615,7 +616,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 PasswordHash = passwordHash,
                 RoleId = req.RoleId,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
-                AccessFailedCount = 0
+                AccessFailedCount = 0,
+                SubsidiaryId = _currentContextService.SubsidiaryId
             };
 
             _masterContext.User.Add(user);
@@ -637,7 +639,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Phone = req.Phone,
                 AvatarFileId = req.AvatarFileId,
                 SubsidiaryId = _currentContextService.SubsidiaryId,
-                EmployeeTypeId = (int)employeeTypeId
+                EmployeeTypeId = (int)employeeTypeId,
+                UserStatusId = (int)req.UserStatusId,
             };
 
             await _organizationContext.Employee.AddAsync(employee);
@@ -688,6 +691,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.GenderId = (int?)req.GenderId;
             employee.Phone = req.Phone;
             employee.AvatarFileId = req.AvatarFileId;
+            employee.UserStatusId = (int)req.UserStatusId;
 
             await _organizationContext.SaveChangesAsync();
 
