@@ -136,6 +136,7 @@ sdd WHERE
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
 
                 throw;
             }

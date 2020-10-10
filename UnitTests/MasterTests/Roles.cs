@@ -1,6 +1,7 @@
 using EntityFrameworkCore3Mock;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -37,8 +38,9 @@ namespace MasterTests
 
             var f = new LoggerFactory();
 
-            var inMem = SetupInMemoryDbContext<MasterDBContext>(f);
-            var inMem1 = SetupInMemoryDbContext<OrganizationDBContext>(f);
+            var inMemMasterDBContext = SetupInMemoryDbContext<MasterDBContext>(f);
+            var inMemUnAuthorizeMasterDBContext = SetupInMemoryDbContext<UnAuthorizeMasterDBContext>(f);
+            var inMemOrganizationDBContext = SetupInMemoryDbContext<OrganizationDBContext>(f);
 
             var setting = new Mock<IOptions<AppSetting>>();
             var basePath = Assembly.GetExecutingAssembly().CodeBase;
@@ -50,10 +52,11 @@ namespace MasterTests
             var roleService = new Mock<IRoleService>();
             var activityLogService = new Mock<IActivityLogService>();
             var asyncRunnerService = new Mock<IAsyncRunnerService>();
+            var serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
             var currentContext = new ScopeCurrentContextService(1, EnumAction.Add, new RoleInfo(1, null, true, true), new List<int>(), 0, null);
 
-            IUserService user = new UserService(inMem, inMem1, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object);
+            IUserService user = new UserService(inMemMasterDBContext, inMemUnAuthorizeMasterDBContext, inMemOrganizationDBContext, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object, serviceScopeFactory.Object);
 
             var result = user.CreateUser(new UserInfoInput()
             {
