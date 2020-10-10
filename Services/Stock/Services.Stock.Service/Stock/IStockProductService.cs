@@ -13,7 +13,8 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IStockProductService
     {
-      
+       
+        Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null);
 
         Task<IList<StockWarning>> StockWarnings();
 

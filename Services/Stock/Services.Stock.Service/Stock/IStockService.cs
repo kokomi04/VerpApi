@@ -13,16 +13,6 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IStockService
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="fieldName"></param>
-        /// <param name="values"></param>
-        /// <param name="keyword"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Clause filters = null);
 
         /// <summary>
         /// Lấy toàn bộ danh sách kho, bao gồm cả những kho mà user đang đăng nhập không có quyền
@@ -31,7 +21,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<StockOutput>> GetAll(string keyword, int page, int size);
+        Task<PageData<StockOutput>> GetAll(string keyword, int page, int size, Clause filters);
 
         Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size);
 
