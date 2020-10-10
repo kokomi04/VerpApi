@@ -22,10 +22,13 @@ namespace VErpApi.Controllers.Stock.Stocks
     public class StockController : VErpBaseController
     {
         private readonly IStockService _stockService;
+        private readonly IStockProductService _stockProductService;
         public StockController(IStockService stockService
+            , IStockProductService stockProductService
             )
         {
             _stockService = stockService;
+            _stockProductService = stockProductService;
         }
 
 
@@ -140,7 +143,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockWarnings")]
         public async Task<IList<StockWarning>> StockWarnings()
         {
-            return (await _stockService.StockWarnings()).ToList();
+            return (await _stockProductService.StockWarnings()).ToList();
         }
 
         /// <summary>
@@ -158,7 +161,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("{stockId}/StockProducts")]
         public async Task<PageData<StockProductListOutput>> StockProducts([FromRoute] int stockId, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<EnumWarningType> stockWarningTypeIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
+            return await _stockProductService.StockProducts(stockId, keyword, productTypeIds, productCateIds, stockWarningTypeIds, page, size);
         }
 
         /// <summary>
@@ -173,7 +176,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("{stockId}/StockProducts/{productId}")]
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockProductPackageDetails(stockId, productId, page, size);
+            return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
         }
 
         /// <summary>
@@ -190,7 +193,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("{stockId}/Packages")]
         public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails([FromRoute] int stockId, [FromQuery] int? locationId, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.LocationProductPackageDetails(stockId, locationId, productTypeIds, productCateIds, page, size);
+            return await _stockProductService.LocationProductPackageDetails(stockId, locationId, productTypeIds, productCateIds, page, size);
         }
 
         /// <summary>
@@ -207,7 +210,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("GetStockProductQuantityWarning")]
         public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size);
+            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size);
         }
 
         /// <summary>
@@ -228,7 +231,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockSumaryReport")]
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport([FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string keyword, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, sortBy, asc, page, size);
+            return await _stockProductService.StockSumaryReport(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, sortBy, asc, page, size);
         }
 
         /// <summary>
@@ -243,7 +246,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockProductDetailsReport")]
         public async Task<StockProductDetailsReportOutput> StockProductDetailsReport([FromQuery] int productId, [FromQuery] IList<int> stockIds, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _stockService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
+            return await _stockProductService.StockProductDetailsReport(productId, stockIds, fromDate, toDate);
         }
 
         /// <summary>
@@ -262,7 +265,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockSumaryReportForm03")]
         public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReportForm03(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
+            return await _stockProductService.StockSumaryReportForm03(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
 
         /// <summary>
@@ -278,7 +281,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("StockSumaryReportForm04")]
         public async Task<PageData<StockSumaryReportForm04Output>> StockSumaryReportForm04([FromQuery] IList<int> stockIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.StockSumaryReportForm04(stockIds, fromDate, toDate, page, size);
+            return await _stockProductService.StockSumaryReportForm04(stockIds, fromDate, toDate, page, size);
         }
     }
 }

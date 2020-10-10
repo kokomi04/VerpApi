@@ -12,15 +12,55 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public static class StockDBContextExtensions
+    public class StockDBSubsidiaryContext : StockDBContext, ISubsidiayRequestDbContext
     {
-        public static IQueryable<Stock> AllStockBySub(this StockDBContext stockDBContext, ICurrentContextService currentContextService)
+        public int SubsidiaryId { get; private set; }
+
+        public ICurrentContextService CurrentContextService { get; private set; }
+
+        public StockDBSubsidiaryContext(DbContextOptions<StockDBSubsidiaryContext> options
+            , ICurrentContextService currentContext
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
-            return stockDBContext.Stock.IgnoreQueryFilters().Where(s => !s.IsDeleted && s.SubsidiaryId == currentContextService.SubsidiaryId);
+            CurrentContextService = currentContext;
+
+            SubsidiaryId = currentContext.SubsidiaryId;
+
         }
 
-    }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
+            modelBuilder.AddFilterAuthorize(this);
+
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override int SaveChanges()
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
 
     public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ISubsidiayRequestDbContext, IStockRequestDbContext
     {
@@ -56,16 +96,28 @@ namespace VErp.Infrastructure.EF.StockDB
 
         }
 
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
         public override int SaveChanges()
         {
             this.SetHistoryBaseValue(CurrentContextService);
             return base.SaveChanges();
         }
 
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             this.SetHistoryBaseValue(CurrentContextService);
-            return await base.SaveChangesAsync(true, cancellationToken);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 
