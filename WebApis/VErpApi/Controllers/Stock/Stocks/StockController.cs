@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("GetAll")]
         public async Task<PageData<StockOutput>> GetAll([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetAll(keyword, page, size);
+            return await _stockService.GetAll(keyword, page, size, null);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("")]
         public async Task<PageData<StockOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetList(keyword, page, size);
+            return await _stockProductService.StockGetListByPermission(keyword, page, size);
         }
 
         /// <summary>

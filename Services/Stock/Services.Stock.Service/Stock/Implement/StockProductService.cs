@@ -45,11 +45,39 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _stockContext = stockContext;
         }
 
+        public async Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null)
+        {
+            var query = from p in _stockContext.Stock
+                        select p;
 
-        #region CRUD Stocks
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.StockName.Contains(keyword)
+                        select q;
+            }
+            query = query.InternalFilter(filters);
+            var total = await query.CountAsync();
+            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
-       
-        #endregion
+            var pagedData = new List<StockOutput>();
+            foreach (var item in lstData)
+            {
+                var stockInfo = new StockOutput()
+                {
+                    StockId = item.StockId,
+                    StockName = item.StockName,
+                    Description = item.Description,
+                    StockKeeperId = item.StockKeeperId,
+                    StockKeeperName = item.StockKeeperName,
+                    Type = item.Type,
+                    Status = item.Status
+                };
+                pagedData.Add(stockInfo);
+            }
+            return (pagedData, total);
+        }
+
 
 
         public async Task<IList<StockWarning>> StockWarnings()

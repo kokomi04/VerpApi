@@ -183,7 +183,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
-        public async Task<PageData<StockOutput>> GetAll(string keyword, int page, int size)
+        public async Task<PageData<StockOutput>> GetAll(string keyword, int page, int size, Clause filters)
         {
             var query = from p in _stockContext.Stock
                         select p;
@@ -195,6 +195,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
+            
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
@@ -219,39 +221,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-        public async Task<PageData<StockOutput>> GetList(string keyword, int page, int size, Clause filters = null)
-        {
-            var query = from p in _stockContext.Stock
-                        select p;
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                query = from q in query
-                        where q.StockName.Contains(keyword)
-                        select q;
-            }
-            query = query.InternalFilter(filters);
-            var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
-
-            var pagedData = new List<StockOutput>();
-            foreach (var item in lstData)
-            {
-                var stockInfo = new StockOutput()
-                {
-                    StockId = item.StockId,
-                    StockName = item.StockName,
-                    Description = item.Description,
-                    StockKeeperId = item.StockKeeperId,
-                    StockKeeperName = item.StockKeeperName,
-                    Type = item.Type,
-                    Status = item.Status
-                };
-                pagedData.Add(stockInfo);
-            }
-            return (pagedData, total);
-        }
-
+      
 
 
         public async Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size)
