@@ -28,6 +28,7 @@ namespace VErp.Services.Master.Service.Config
         Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId);
 
         Task<bool> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
+        Task<bool> DeleteMapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
         Task<bool> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
 
