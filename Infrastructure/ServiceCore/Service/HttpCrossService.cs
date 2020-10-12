@@ -52,9 +52,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -90,9 +88,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -123,10 +119,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     RequestUri = new Uri(uri),
                     Method = HttpMethod.Get
                 };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -146,6 +139,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        private void SetContextHeaders(HttpRequestMessage request)
+        {
+            request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
+            request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
+            request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+            request.Headers.TryAddWithoutValidation(Headers.TimeZoneOffset, _currentContext.TimeZoneOffset.ToString());
+            request.Headers.TryAddWithoutValidation(Headers.SubsidiaryId, _currentContext.SubsidiaryId.ToString());
+        }
 
         private void ThrowErrorResponse(string method, string uri, object body, HttpResponseMessage responseMessage, string response)
         {
