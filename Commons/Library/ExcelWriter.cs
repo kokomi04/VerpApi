@@ -140,6 +140,65 @@ namespace VErp.Commons.Library
             }
             endRow = startRow + addedRow - 1;
         }
+        public void WriteToSheet(ExcelData table, string sheetName, out int endRow, int startCollumn = 0, int startRow = 0)
+        {
+            var sheet = hssfwb.GetSheet(sheetName);
+            if (sheet == null)
+            {
+                sheet = hssfwb.CreateSheet(sheetName);
+            }
+
+            int addedRow = 0;
+            int columnLength = table.Columns.Count;
+
+            foreach (ExcelRow row in table.Rows)
+            {
+                int curRow = startRow + addedRow;
+                IRow newRow = sheet.CreateRow(curRow);
+                for (int indx = 0; indx < columnLength; indx++)
+                {
+                    int curCollumn = indx + startCollumn;
+                    ICell cell = newRow.CreateCell(curCollumn);
+                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value)
+                    {
+                        (row[indx] as ExcelCell).Value = string.Empty;
+                        (row[indx] as ExcelCell).Type = EnumExcelType.String;
+                    }
+                    switch ((row[indx] as ExcelCell).Type)
+                    {
+                        case EnumExcelType.String:
+                            cell.SetCellValue((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellType(CellType.String);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                            break;
+                        case EnumExcelType.Boolean:
+                            cell.SetCellValue((bool)(row[indx] as ExcelCell).Value);
+                            cell.SetCellType(CellType.Boolean);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                            break;
+                        case EnumExcelType.DateTime:
+                            cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+                            break;
+                        case EnumExcelType.Number:
+                            cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
+                            cell.SetCellType(CellType.Numeric);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00");
+                            break;
+                        case EnumExcelType.Formula:
+                            cell.SetCellFormula((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellType(CellType.Formula);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00", isBold: true);
+                            break;
+                        default:
+                            break;
+                    }
+
+                }
+                addedRow++;
+            }
+            endRow = startRow + addedRow - 1;
+        }
 
         public ICreationHelper GetCreationHelper()
         {
@@ -228,6 +287,15 @@ namespace VErp.Commons.Library
         public void Add(ExcelCell value = null)
         {
             row.Add(value);
+        }
+
+        public void FillAllRow()
+        {
+            for (int r = 0; r < Count; r++)
+            {
+                if (this[r] == null)
+                    this[r] = new ExcelCell { Value = string.Empty, Type = EnumExcelType.String };
+            }
         }
     }
 
