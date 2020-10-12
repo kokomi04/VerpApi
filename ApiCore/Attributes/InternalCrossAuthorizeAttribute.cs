@@ -62,12 +62,12 @@ namespace VErp.Infrastructure.ApiCore.Attributes
                 action = (EnumAction)int.Parse(strAction);
             }
 
-            if (headers.TryGetValue(Headers.UserId, out var strSubsidiaryId))
+            if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
             {
                 subsidiaryId = int.Parse(strSubsidiaryId);
             }
 
-            if (headers.TryGetValue(Headers.UserId, out var strTimeZoneOffset))
+            if (headers.TryGetValue(Headers.TimeZoneOffset, out var strTimeZoneOffset))
             {
                 timeZoneOffset = int.Parse(strTimeZoneOffset);
             }
