@@ -22,9 +22,23 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<List<GuideModel>> GetList()
+        public async Task<IList<GuideModel>> GetList()
         {
             return await _guideService.GetList();
+        }
+
+        [HttpGet]
+        [Route("byCode/{guideCode}")]
+        public async Task<IList<GuideModel>> GetListGuideByCode([FromRoute] string guideCode)
+        {
+            return await _guideService.GetGuidesByCode(guideCode);
+        }
+
+        [HttpGet]
+        [Route("{guideId}")]
+        public async Task<GuideModel> GetGuideById([FromRoute] int guideId)
+        {
+            return await _guideService.GetGuideById(guideId);
         }
 
         [HttpPost]

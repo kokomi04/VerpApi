@@ -50,7 +50,23 @@ namespace VErp.Services.Master.Service.Guide.Implement
             return true;
         }
 
-        public async Task<List<GuideModel>> GetList()
+        public async Task<IList<GuideModel>> GetGuidesByCode(string guideCode)
+        {
+            var ls = _masterDBContext.Guide.AsNoTracking()
+                .Where(g=>g.GuideCode.Equals(guideCode))
+                .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
+                .ToList();
+            return ls;
+        }
+
+        public async Task<GuideModel> GetGuideById(int guideId)
+        {
+            return await _masterDBContext.Guide.AsNoTracking()
+                .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(g => g.GuideId == guideId);
+        }
+
+        public async Task<IList<GuideModel>> GetList()
         {
             var ls = _masterDBContext.Guide.AsNoTracking()
                 .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)

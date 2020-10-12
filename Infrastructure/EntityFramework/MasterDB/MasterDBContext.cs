@@ -251,6 +251,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.Description).IsRequired();
 
+                entity.Property(e => e.GuideCode)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasComment("");
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
