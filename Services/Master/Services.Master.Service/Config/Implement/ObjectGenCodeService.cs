@@ -314,7 +314,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
                 ObjectId = 0,//default
                 ObjectTypeId = model.ObjectTypeId,
-                UpdatedUserId = _currentContextService.UserId
+                UpdatedByUserId = _currentContextService.UserId
             });
 
         }
@@ -327,7 +327,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
                 ObjectId = 0,//default
                 ObjectTypeId = model.ObjectTypeId,
-                UpdatedUserId = _currentContextService.UserId
+                UpdatedByUserId = _currentContextService.UserId
             });
         }
     }
