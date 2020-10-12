@@ -9,7 +9,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int ObjectTypeId { get; set; }
         public int ObjectId { get; set; }
         public int CustomGenCodeId { get; set; }
-        public int UpdatedUserId { get; set; }
+        public int UpdatedByUserId { get; set; }
         public int SubsidiaryId { get; set; }
     }
 }
