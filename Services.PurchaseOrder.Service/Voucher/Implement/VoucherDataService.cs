@@ -317,7 +317,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<long> CreateSaleBill(int voucherTypeId, SaleBillInfoModel data)
         {
-            await ValidateAccountantConfig(data?.Info, null);
+            await ValidateSaleVoucherConfig(data?.Info, null);
 
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
@@ -964,7 +964,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chứng từ trong hệ thống");
             }
 
-            await ValidateAccountantConfig(data?.Info, currentInfo);
+            await ValidateSaleVoucherConfig(data?.Info, currentInfo);
 
             NonCamelCaseDictionary futureInfo = data.Info;
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, CompareRow(currentInfo, futureInfo, singleFields));
@@ -1157,7 +1157,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    if (column.ColumnName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1188,7 +1188,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             foreach (var oldBillDate in oldBillDates)
             {
-                await ValidateAccountantConfig(fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+                await ValidateSaleVoucherConfig(fieldName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
             }
 
             var bills = _purchaseOrderDBContext.SaleBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
@@ -1291,7 +1291,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-                await ValidateAccountantConfig(null, data?.Info);
+                await ValidateSaleVoucherConfig(null, data?.Info);
                 // Before saving action (SQL)
                 await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Delete);
 
@@ -1515,8 +1515,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     if (item.Key.IsTkCoColumn())
                     {
-                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_CO_PREFIX.Length);
-                        var tkNo = AccountantConstants.TAI_KHOAN_NO_PREFIX + butToan;
+                        var butToan = item.Key.Substring(PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX.Length);
+                        var tkNo = PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX + butToan;
                         if (data.Info.Keys.Any(k => k.Equals(tkNo, StringComparison.OrdinalIgnoreCase)))
                         {
                             ignoreCopyInfoValues.Add(item.Key);
@@ -1526,8 +1526,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     if (item.Key.IsTkNoColumn())
                     {
-                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_NO_PREFIX.Length);
-                        var tkCo = AccountantConstants.TAI_KHOAN_CO_PREFIX + butToan;
+                        var butToan = item.Key.Substring(PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX.Length);
+                        var tkCo = PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX + butToan;
                         if (data.Info.Keys.Any(k => k.Equals(tkCo, StringComparison.OrdinalIgnoreCase)))
                         {
                             ignoreCopyInfoValues.Add(item.Key);
@@ -1575,7 +1575,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 dataTable.Rows.Add(dataRow);
             }
 
-            //Create addition reciprocal accounting
+            //Create addition reciprocal sales
             if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
             {
                 var dataRow = NewSaleBillVersionRow(dataTable, voucherTypeId, voucherBill_F_Id, billVersionId, true);
@@ -1630,11 +1630,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow, HashSet<string> requireFields)
         {
-            for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
+            for (var i = 0; i <= PurchaseOrderConstants.MAX_COUPLE_RECIPROCAL; i++)
             {
-                var credit_column_name = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
-                var debit_column_name = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
-                var money_column_name = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
+                var credit_column_name = PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX + i;
+                var debit_column_name = PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX + i;
+                var money_column_name = PurchaseOrderConstants.THANH_TIEN_VND_PREFIX + i;
 
                 object tk_co = null;
                 object tk_no = null;
@@ -1697,7 +1697,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return await (from af in _purchaseOrderDBContext.VoucherAreaField
                           join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
                           join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
-                          where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
+                          where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != PurchaseOrderConstants.F_IDENTITY
                           select new ValidateVoucherField
                           {
                               VoucherAreaFieldId = af.VoucherAreaFieldId,
@@ -1906,7 +1906,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     Rows = rows.ToArray()
                 };
 
-                await ValidateAccountantConfig(billInfo?.Info, null);
+                await ValidateSaleVoucherConfig(billInfo?.Info, null);
 
                 bills.Add(billInfo);
             }
@@ -1991,7 +1991,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var selectFormFields = (from iaf in _purchaseOrderDBContext.VoucherAreaField
                                     join itf in _purchaseOrderDBContext.VoucherField on iaf.VoucherFieldId equals itf.VoucherFieldId
-                                    where iaf.VoucherTypeId == voucherTypeId && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    where iaf.VoucherTypeId == voucherTypeId && PurchaseOrderConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
                                         itf.RefTableTitle,
@@ -2132,19 +2132,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             object oldDateValue = null;
 
-            info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
+            info?.TryGetValue(PurchaseOrderConstants.BILL_DATE, out oldDateValue);
             return EnumDataType.Date.GetSqlValue(oldDateValue);
         }
 
-        private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
+        private async Task ValidateSaleVoucherConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
         {
             var billDate = ExtractBillDate(info);
             var oldDate = ExtractBillDate(oldInfo);
 
-            await ValidateAccountantConfig(billDate, oldDate);
+            await ValidateSaleVoucherConfig(billDate, oldDate);
         }
 
-        private async Task ValidateAccountantConfig(object billDate, object oldDate)
+        private async Task ValidateSaleVoucherConfig(object billDate, object oldDate)
         {
             if (billDate != null || oldDate != null)
             {
