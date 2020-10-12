@@ -223,7 +223,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             else
             {
                 obj.CustomGenCodeId = model.CustomGenCodeId;
-                obj.UpdatedUserId = currentUserId;
+                obj.UpdatedByUserId = currentUserId;
             }
             await _masterDbContext.SaveChangesAsync();
 
