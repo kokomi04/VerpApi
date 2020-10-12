@@ -13,6 +13,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using Microsoft.Extensions.Primitives;
+using VErp.Commons.Constants;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -118,7 +119,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 if (_timeZoneOffset.HasValue)
                     return _timeZoneOffset.Value;
                 var timeZoneOffsets = new StringValues();
-                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("x-timezone-offset", out timeZoneOffsets);
+                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue(Headers.TimeZoneOffset, out timeZoneOffsets);
 
                 if (timeZoneOffsets.Count == 0 || !int.TryParse(timeZoneOffsets[0], out int timeZoneOffset))
                 {

@@ -63,8 +63,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     {
         public bool IsActived { get; set; }
 
-        public int? DebtDays { get; set; }
-
         public EnumCustomerStatus CustomerStatusId { get; set; }
     }
 }
