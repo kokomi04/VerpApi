@@ -48,31 +48,6 @@ namespace VErp.Infrastructure.ApiCore.Attributes
                 return Task.CompletedTask;
             }
 
-            var userId = 0;
-            var action = EnumAction.View;
-            var subsidiaryId = 0;
-            var timeZoneOffset = 0;
-            if (headers.TryGetValue(Headers.UserId, out var strUserId))
-            {
-                userId = int.Parse(strUserId);
-            }
-
-            if (headers.TryGetValue(Headers.Action, out var strAction))
-            {
-                action = (EnumAction)int.Parse(strAction);
-            }
-
-            if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
-            {
-                subsidiaryId = int.Parse(strSubsidiaryId);
-            }
-
-            if (headers.TryGetValue(Headers.TimeZoneOffset, out var strTimeZoneOffset))
-            {
-                timeZoneOffset = int.Parse(strTimeZoneOffset);
-            }
-
-            _currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, action, null, null, subsidiaryId, timeZoneOffset));
 
             return base.OnActionExecutionAsync(context, next);
         }
