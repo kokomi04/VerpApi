@@ -955,10 +955,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     .Where(f => f.IdGencode.HasValue)
                     .Select(f => new
                     {
-                        InputAreaFieldId = f.VoucherAreaFieldId.Value,
+                        VoucherAreaFieldId = f.VoucherAreaFieldId.Value,
                         IdGencode = f.IdGencode.Value
                     })
-                    .ToDictionary(c => c.InputAreaFieldId, c => c.IdGencode);
+                    .ToDictionary(c => c.VoucherAreaFieldId, c => c.IdGencode);
 
                 var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.VoucherType, genCodeConfigs);
 
