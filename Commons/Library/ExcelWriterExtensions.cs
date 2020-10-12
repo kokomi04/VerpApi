@@ -44,7 +44,7 @@ namespace VErp.Commons.Library
             return cell;
         }
 
-        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null)
+        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null, string dataFormat = "")
         {
             var style = sheet.Workbook.CreateCellStyle();
             if (vAlign.HasValue)
@@ -78,6 +78,14 @@ namespace VErp.Commons.Library
                 ((XSSFCellStyle)style).SetFillForegroundColor(new XSSFColor(rgb));
                 style.FillPattern = FillPattern.SolidForeground;
             }
+
+            if (!string.IsNullOrWhiteSpace(dataFormat))
+            {
+                ((XSSFCellStyle)style).SetDataFormat(sheet.Workbook.GetCreationHelper().CreateDataFormat().GetFormat(dataFormat));
+            }
+
+            
+
             return style;
         }
     }
