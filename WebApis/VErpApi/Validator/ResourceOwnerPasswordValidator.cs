@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
@@ -78,9 +79,9 @@ namespace VErp.WebApis.VErpApi.Validator
 
             var customClaims = new List<Claim>
             {
-                new Claim("userId", user.UserId+""),
-                new Claim("clientId", context.Request.ClientId),
-                new Claim("subsidiaryId", subsidiaryId+""),
+                new Claim(UserClaimConstants.UserId, user.UserId+""),
+                new Claim(UserClaimConstants.ClientId, context.Request.ClientId),
+                new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId+""),
             };
 
             await MaxFailedAccessAttempts(user, true);

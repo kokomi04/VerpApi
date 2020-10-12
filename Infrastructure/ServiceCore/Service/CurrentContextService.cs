@@ -14,6 +14,8 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using Microsoft.Extensions.Primitives;
 using VErp.Commons.Constants;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -74,6 +76,56 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _masterDBContext = masterDBContext;
+
+            CrossServiceLogin();
+        }
+
+
+        private void CrossServiceLogin()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            var headers = httpContext.Request.Headers;
+            headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
+            if (crossServiceKeys.ToString() != _appSetting?.Configuration?.InternalCrossServiceKey)
+            {
+                return;
+            }
+
+            var userId = 0;
+            var action = EnumAction.View;
+            var subsidiaryId = 0;
+            if (headers.TryGetValue(Headers.UserId, out var strUserId))
+            {
+                userId = int.Parse(strUserId);
+            }
+
+            if (headers.TryGetValue(Headers.Action, out var strAction))
+            {
+                action = (EnumAction)int.Parse(strAction);
+            }
+
+            if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
+            {
+                subsidiaryId = int.Parse(strSubsidiaryId);
+            }
+
+
+            if (userId > 0)
+            {
+                var claims = new List<Claim>() {
+                    new Claim(UserClaimConstants.UserId, userId + ""),
+                    new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId + "")
+                };
+
+                var user = new GenericPrincipal(new ClaimsIdentity(claims), null);
+                httpContext.User = user;
+
+                if (!httpContext.Items.ContainsKey(HttpContextActionConstants.Action))
+                {
+                    httpContext.Items.Add(HttpContextActionConstants.Action, action);
+                }
+
+            }
         }
 
         public int UserId
@@ -85,7 +137,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
                 {
-                    if (claim.Type != "userId")
+                    if (claim.Type != UserClaimConstants.UserId)
                         continue;
 
                     int.TryParse(claim.Value, out _userId);
@@ -103,7 +155,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
                 {
-                    if (claim.Type != "subsidiaryId")
+                    if (claim.Type != UserClaimConstants.SubsidiaryId)
                         continue;
 
                     int.TryParse(claim.Value, out _subsidiaryId);
@@ -139,10 +191,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 var method = (EnumMethod)Enum.Parse(typeof(EnumMethod), _httpContextAccessor.HttpContext.Request.Method, true);
 
-                if (_httpContextAccessor.HttpContext.Items.ContainsKey("action"))
+                if (_httpContextAccessor.HttpContext.Items.ContainsKey(HttpContextActionConstants.Action))
                 {
 
-                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items["action"];
+                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
                 }
                 else
                 {
