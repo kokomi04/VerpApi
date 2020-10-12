@@ -333,7 +333,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
             {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId })
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
                     .HasName("UK_ObjectCustomGenCode")
                     .IsUnique();
             });
