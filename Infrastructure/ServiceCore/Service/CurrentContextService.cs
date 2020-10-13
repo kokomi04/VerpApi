@@ -58,6 +58,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly UnAuthorizeMasterDBContext _masterDBContext;
 
         private int _userId = 0;
+        private string _userName = "";
         private int _subsidiaryId = 0;
         private EnumAction? _action;
         private int? _timeZoneOffset = null;
@@ -146,6 +147,23 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _userId;
             }
         }
+
+        private string UserName
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_userName)) return _userName;
+
+                var userInfo = _masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                if (userInfo != null)
+                {
+                    _userName = userInfo.UserName;
+                }
+
+                return _userName;
+            }
+        }
+
         public int SubsidiaryId
         {
             get
@@ -227,7 +245,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         r.RoleId,
                         r.IsDataPermissionInheritOnStock,
                         r.IsModulePermissionInherit,
-                        r.ChildrenRoleIds
+                        r.ChildrenRoleIds,
+                        r.RoleName
                     }
                    )
                    .First();
@@ -236,7 +255,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleInfo.RoleId,
                     roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
                     roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit
+                    roleInfo.IsModulePermissionInherit,
+                    roleInfo.RoleName
                 );
 
 
@@ -273,6 +293,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     .ToArray();
 
                 return _stockIds;
+            }
+        }
+
+        public bool IsDeveloper
+        {
+            get
+            {
+                return _appSetting.Developer.IsDeveloper(UserName, RoleInfo.RoleName);
             }
         }
     }
@@ -313,5 +341,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }
+        public bool IsDeveloper { get; } = false;
     }
 }

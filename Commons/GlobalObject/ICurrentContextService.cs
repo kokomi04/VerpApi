@@ -12,5 +12,6 @@ namespace VErp.Commons.GlobalObject
         IList<int> StockIds { get; }
         RoleInfo RoleInfo { get; }
         int? TimeZoneOffset { get; }
+        bool IsDeveloper { get; }
     }
 }

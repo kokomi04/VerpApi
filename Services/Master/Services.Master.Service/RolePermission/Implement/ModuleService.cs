@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.RolePermission;
@@ -18,20 +19,28 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
+        private readonly ICurrentContextService _currentContextService;
 
         public ModuleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<ModuleService> logger
+            , ICurrentContextService currentContextService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
+            _currentContextService = currentContextService;
         }
 
         public async Task<IList<ModuleOutput>> GetList()
         {
-            return await _masterContext.Module
+            var query = _masterContext.Module.AsNoTracking();
+
+            if (!_currentContextService.IsDeveloper)
+                query = query.Where(x => !x.IsDeveloper);
+
+            return await query
                 .OrderBy(m => m.SortOrder)
                 .Select(m => new ModuleOutput()
                 {
