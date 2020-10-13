@@ -268,6 +268,7 @@ namespace MigrateAndMappingApi.Controllers
             info.ModuleName = data.ModuleName;
             info.Description = data.Description;
             info.SortOrder = data.SortOrder;
+            info.IsDeveloper = data.IsDeveloper;
 
             await _masterContext.SaveChangesAsync();
 
