@@ -10,13 +10,15 @@ namespace VErp.Commons.GlobalObject
             int roleId,
             IList<int> childrenRoleIds,
             bool isModulePermissionInherit,
-            bool isDataPermissionInheritOnStock
+            bool isDataPermissionInheritOnStock,
+            string roleName
             )
         {
             RoleId = roleId;
             ChildrenRoleIds = childrenRoleIds;
             IsModulePermissionInherit = isModulePermissionInherit;
             IsDataPermissionInheritOnStock = isDataPermissionInheritOnStock;
+            RoleName = roleName;
         }
 
         public int RoleId { get; set; }
@@ -38,5 +40,6 @@ namespace VErp.Commons.GlobalObject
                 return roleIds;
             }
         }
+        public string RoleName { get; set; }
     }
 }
