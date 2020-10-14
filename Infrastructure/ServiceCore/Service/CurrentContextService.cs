@@ -300,7 +300,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                return _appSetting.Developer.IsDeveloper(UserName, RoleInfo.RoleName);
+                return _appSetting.Developer?.IsDeveloper(UserName, RoleInfo.RoleName) == true;
             }
         }
     }

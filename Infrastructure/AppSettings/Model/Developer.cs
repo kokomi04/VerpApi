@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.AppSettings.Model
 
         public bool IsDeveloper(string userName, string roleName)
         {
-            return Users.Contains(userName) && Roles.Contains(roleName);
+            return Users?.Contains(userName) == true && Roles?.Contains(roleName) == true;
         }
     }
 }

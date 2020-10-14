@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -578,10 +579,21 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
-
-            var genderData = new Dictionary<string, EnumGender> { { "Nam", EnumGender.Male }, { "Nữ", EnumGender.Female } };
-            var userStatusData = new Dictionary<string, EnumUserStatus> { { "Chưa kích hoạt", EnumUserStatus.InActived }, { "Hoạt động", EnumUserStatus.Actived }, { "Khóa", EnumUserStatus.Locked } };
-            var roleData = _masterContext.Role.Select(r => new { r.RoleId, r.RoleName }).ToDictionary(r => r.RoleName, r => r.RoleId);
+            
+            var genderData = new Dictionary<string, EnumGender> { 
+                { EnumGender.Male.GetEnumDescription(), EnumGender.Male }, 
+                { EnumGender.Female.GetEnumDescription(), EnumGender.Female } 
+            };
+            var userStatusData = new Dictionary<string, EnumUserStatus> { 
+                { EnumUserStatus.InActived.GetEnumDescription(), EnumUserStatus.InActived }, 
+                { EnumUserStatus.Actived.GetEnumDescription(), EnumUserStatus.Actived }, 
+                { EnumUserStatus.Locked.GetEnumDescription(), EnumUserStatus.Locked } 
+            };
+            var roleData = _masterContext.Role
+                .Select(r => new { r.RoleId, r.RoleName })
+                .ToList()
+                .GroupBy(r=>r.RoleName)
+                .ToDictionary(r => r.Key, r => r.First().RoleId);
             
             var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
             {
@@ -720,7 +732,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<List<User>> AddBatchUserAuthen(List<(int userId, UserInfoInput userInfo)> ls)
         {
             var users = new List<User>();
-            ls.ForEach(async req =>
+            foreach(var req in ls)
             {
                 var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.userInfo.Password);
                 req.userInfo.UserName = (req.userInfo.UserName ?? "").Trim().ToLower();
@@ -751,7 +763,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     AccessFailedCount = 0,
                     SubsidiaryId = _currentContextService.SubsidiaryId
                 });
-            });
+            };
 
             await _masterContext.User.AddRangeAsync(users);
 
