@@ -582,7 +582,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         #endregion
 
         #region Area
-
         public async Task<VoucherAreaModel> GetVoucherArea(int voucherTypeId, int voucherAreaId)
         {
             var inputArea = await _purchaseOrderDBContext.VoucherArea
