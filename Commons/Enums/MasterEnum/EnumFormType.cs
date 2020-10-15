@@ -20,6 +20,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chỉ hiển thị")]
         ViewOnly = 6,
         [Description("Chọn từ danh sách (chọn nhiều giá trị)")]
-        MultiSelect = 7
+        MultiSelect = 7,
+        [Description("Danh sách file")]
+        FileMap = 8,
     }
 }
