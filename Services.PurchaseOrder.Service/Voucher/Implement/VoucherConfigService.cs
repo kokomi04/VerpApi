@@ -218,7 +218,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         {
                             VoucherFieldId = field.VoucherFieldId,
                             VoucherTypeId = cloneType.VoucherTypeId,
-                            VoucherAreaId = cloneArea.VoucherTypeId,
+                            VoucherAreaId = cloneArea.VoucherAreaId,
                             Title = field.Title,
                             Placeholder = field.Placeholder,
                             SortOrder = field.SortOrder,
@@ -322,7 +322,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@VoucherTypeId",voucherTypeId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
-
 
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, voucherType.VoucherTypeId, $"Xóa chứng từ {voucherType.Title}", voucherType.JsonSerialize());
             return true;
