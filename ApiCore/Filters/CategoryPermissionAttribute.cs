@@ -45,7 +45,7 @@ namespace VErp.Infrastructure.ApiCore.Attributes
                 return base.OnActionExecutionAsync(context, next);
             }
 
-            if (context.RouteData.Values.ContainsKey("categoryId"))
+            if (context.RouteData.Values.ContainsKey("categoryId") && !context.HttpContext.Request.Method.Contains("GET"))
             {
                 var roleInfo = _currentContextService.RoleInfo;
                 int.TryParse(context.RouteData.Values["categoryId"].ToString(), out var categoryId);
