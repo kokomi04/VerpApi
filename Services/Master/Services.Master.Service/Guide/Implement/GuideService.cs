@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Guide;
 using GuideEntity = VErp.Infrastructure.EF.MasterDB.Guide;
 
@@ -53,7 +55,8 @@ namespace VErp.Services.Master.Service.Guide.Implement
         public async Task<IList<GuideModel>> GetGuidesByCode(string guideCode)
         {
             var ls = _masterDBContext.Guide.AsNoTracking()
-                .Where(g=>g.GuideCode.Equals(guideCode))
+                .Where(g => g.GuideCode.Equals(guideCode))
+                .OrderBy(x => x.SortOrder)
                 .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
                 .ToList();
             return ls;
@@ -66,12 +69,31 @@ namespace VErp.Services.Master.Service.Guide.Implement
                 .FirstOrDefaultAsync(g => g.GuideId == guideId);
         }
 
-        public async Task<IList<GuideModel>> GetList()
+        public async Task<PageData<GuideModel>> GetList(string keyword, int page, int size)
         {
-            var ls = _masterDBContext.Guide.AsNoTracking()
-                .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
-                .ToList();
-            return ls;
+            var query = _masterDBContext.Guide.AsNoTracking();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(x => x.GuideCode.Contains(keyword) || x.Title.Contains(keyword));
+            }
+            var total = await query.CountAsync();
+            IList<GuideModel> pagedData = null;
+
+            if (size > 0)
+            {
+                pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q=>q.SortOrder)
+                    .Skip((page - 1) * size)
+                    .Take(size)
+                    .ProjectTo<GuideModel>(_mapper.ConfigurationProvider).ToListAsync();
+            }
+            else
+            {
+                pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q => q.SortOrder)
+                    .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
+            }
+
+            return (pagedData, total);
         }
 
         public async Task<bool> Update(int guideId, GuideModel model)
