@@ -1002,7 +1002,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<int> AddVoucherField(VoucherFieldInputModel data)
+        public async Task<VoucherFieldInputModel> AddVoucherField(VoucherFieldInputModel data)
         {
             ValidateVoucherField(data);
 
@@ -1025,7 +1025,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Thêm trường dữ liệu chung {voucherField.Title}", data.JsonSerialize());
-                return voucherField.VoucherFieldId;
+                return data;
             }
             catch (Exception ex)
             {
@@ -1035,7 +1035,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<bool> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data)
+        public async Task<VoucherFieldInputModel> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data)
         {
             var voucherField = await _purchaseOrderDBContext.VoucherField.FirstOrDefaultAsync(f => f.VoucherFieldId == voucherFieldId);
 
@@ -1063,7 +1063,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Cập nhật trường dữ liệu chung {voucherField.Title}", data.JsonSerialize());
-                return true;
+                return data;
             }
             catch (Exception ex)
             {
