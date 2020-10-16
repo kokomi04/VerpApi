@@ -355,18 +355,17 @@ namespace VErp.Services.Master.Service.Category
 
             // Validate
             var isExisted = _masterContext.CategoryField.Any(c => c.CategoryId != categoryId && c.RefTableCode == category.CategoryCode);
-            if (!isExisted)
+            if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
+            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
             {
-                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
-                {
-                    category.CategoryCode
-                });
-            }
-            if (isExisted)
+                category.CategoryCode
+            });
+            if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
+            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
             {
-                throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
-            }
-
+                category.CategoryCode
+            });
+            if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
 
             using var trans = await _masterContext.Database.BeginTransactionAsync();
             try
@@ -378,8 +377,6 @@ namespace VErp.Services.Master.Service.Category
                 var deleteFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId);
                 foreach (var field in deleteFields)
                 {
-                    // Check có trường đang tham chiếu tới
-
                     field.IsDeleted = true;
                 }
 
@@ -747,15 +744,15 @@ namespace VErp.Services.Master.Service.Category
         public async Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames)
         {
             return await (from f in _masterContext.CategoryField
-                   join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                   where categoryCodes.Contains(c.CategoryCode) && fieldNames.Contains(f.CategoryFieldName)
-                   select new ReferFieldModel
-                   {
-                       CategoryCode = c.CategoryCode,
-                       CategoryFieldName = f.CategoryFieldName,
-                       DataTypeId = f.DataTypeId,
-                       DataSize = f.DataSize
-                   }).ToListAsync();
+                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
+                          where categoryCodes.Contains(c.CategoryCode) && fieldNames.Contains(f.CategoryFieldName)
+                          select new ReferFieldModel
+                          {
+                              CategoryCode = c.CategoryCode,
+                              CategoryFieldName = f.CategoryFieldName,
+                              DataTypeId = f.DataTypeId,
+                              DataSize = f.DataSize
+                          }).ToListAsync();
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)

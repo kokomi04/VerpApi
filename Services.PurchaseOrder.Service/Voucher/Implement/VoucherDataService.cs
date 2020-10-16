@@ -2109,19 +2109,28 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var voucherReferToFields = _purchaseOrderDBContext.VoucherField
                 .Where(f => f.RefTableCode == categoryCode && fieldNames.Contains(f.RefTableField)).ToList();
-            // check bill refer
-            foreach (var field in fieldNames)
+            if (categoryRow == null)
             {
-                categoryRow.TryGetValue(field, out object value);
-                if (value == null) continue;
-                foreach (var referToField in voucherReferToFields.Where(f => f.RefTableField == field))
+                // Check khi xóa cả danh mục
+                return _purchaseOrderDBContext.VoucherField.Any(f => f.RefTableCode == categoryCode);
+            }
+            else
+            {
+                // Check khi xóa dòng trong danh mục
+                // check bill refer
+                foreach (var field in fieldNames)
                 {
-                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                    var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
-                    bool isExisted = result != null && result.Rows.Count > 0;
-                    if (isExisted)
+                    categoryRow.TryGetValue(field, out object value);
+                    if (value == null) continue;
+                    foreach (var referToField in voucherReferToFields.Where(f => f.RefTableField == field))
                     {
-                        return true;
+                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
+                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        bool isExisted = result != null && result.Rows.Count > 0;
+                        if (isExisted)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
