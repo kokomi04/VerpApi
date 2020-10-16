@@ -37,12 +37,14 @@ namespace VErp.Services.Master.Service.Category
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
+        private readonly IHttpCrossService _httpCrossService;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IHttpCrossService httpCrossService
             )
         {
             _logger = logger;
@@ -50,6 +52,7 @@ namespace VErp.Services.Master.Service.Category
             _masterContext = accountancyContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
+            _httpCrossService = httpCrossService;
         }
 
         #region Category
@@ -349,6 +352,21 @@ namespace VErp.Services.Master.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
+
+            // Validate
+            var isExisted = _masterContext.CategoryField.Any(c => c.CategoryId != categoryId && c.RefTableCode == category.CategoryCode);
+            if (!isExisted)
+            {
+                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
+                {
+                    category.CategoryCode
+                });
+            }
+            if (isExisted)
+            {
+                throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
+            }
+
 
             using var trans = await _masterContext.Database.BeginTransactionAsync();
             try

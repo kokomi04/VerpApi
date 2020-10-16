@@ -80,5 +80,7 @@ namespace VErp.Commons.Enums.StandardEnum
         RelationshipAlreadyExisted = 45,
         [Description("Dữ liệu không thuộc vào đơn vị")]
         InvalidSubsidiary = 46,
+        [Description("Đang tồn tại tham chiếu tới danh mục này")]
+        CatRelationshipAlreadyExisted = 47,
     }
 }
