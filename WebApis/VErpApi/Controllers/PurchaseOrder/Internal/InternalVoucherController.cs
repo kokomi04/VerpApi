@@ -7,26 +7,26 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Data;
-using VErp.Services.Accountancy.Service.Input;
+using VErp.Services.PurchaseOrder.Model.Voucher;
+using VErp.Services.PurchaseOrder.Service.Voucher;
 
-namespace VErpApi.Controllers.Accountancy.Internal
+namespace VErpApi.Controllers.PurchaseOrder.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]
-    public class InternalInputController : CrossServiceBaseController
+    public class InternalVoucherController : CrossServiceBaseController
     {
-        private readonly IInputDataService _inputDataService;
-        public InternalInputController(IInputDataService inputDataService)
+        private readonly IVoucherDataService _voucherDataService;
+        public InternalVoucherController(IVoucherDataService voucherDataService)
         {
-            _inputDataService = inputDataService;
+            _voucherDataService = voucherDataService;
         }
 
         [HttpPost]
         [Route("CheckReferFromCategory")]
         public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
-            return await _inputDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
+            return await _voucherDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
         }
     }
 }

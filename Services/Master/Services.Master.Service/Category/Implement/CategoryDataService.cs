@@ -400,11 +400,14 @@ namespace VErp.Services.Accountancy.Service.Category
                     FieldNames = fieldNames,
                     CategoryRow = categoryRow
                 });
-
-                if (isExisted)
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
                 {
-                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
-                }
+                    category.CategoryCode,
+                    FieldNames = fieldNames,
+                    CategoryRow = categoryRow
+                });
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
 
             }
             // Delete data
