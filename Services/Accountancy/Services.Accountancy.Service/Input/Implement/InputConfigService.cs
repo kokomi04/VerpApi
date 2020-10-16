@@ -41,6 +41,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMenuHelperService _menuHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IHttpCrossService _httpCrossService;
 
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -50,6 +51,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IMenuHelperService menuHelperService
             , ICurrentContextService currentContextService
+            , IHttpCrossService httpCrossService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -59,6 +61,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _menuHelperService = menuHelperService;
             _currentContextService = currentContextService;
+            _httpCrossService = httpCrossService;
         }
 
         #region InputType
@@ -817,35 +820,54 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)inputField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
                 }
             }
-            //if (data.ReferenceCategoryFieldId.HasValue)
-            //{
-            //    var sourceCategoryField = _accountancyDBContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
-            //    if (sourceCategoryField == null)
-            //    {
-            //        return InputErrorCode.SourceCategoryFieldNotFound;
-            //    }
-            //}
+            if (!string.IsNullOrEmpty(data.RefTableCode) && !string.IsNullOrEmpty(data.RefTableField))
+            {
+                var categoryCode = data.RefTableCode;
+                var fieldName = data.RefTableField;
+                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+                {
+                    CategoryCodes = new List<string>() { categoryCode },
+                    FieldNames = new List<string>() { fieldName }
+                })).FirstOrDefault());
+                task.Wait();
+                var sourceCategoryField = task.Result;
+                if (sourceCategoryField == null)
+                {
+                    throw new BadRequestException(InputErrorCode.SourceCategoryFieldNotFound);
+                }
+            }
         }
 
         private void FieldDataProcess(ref InputFieldInputModel data)
         {
-            //if (data.ReferenceCategoryFieldId.HasValue)
-            //{
-            //    int referId = data.ReferenceCategoryFieldId.Value;
-            //    var sourceCategoryField = _accountancyDBContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == referId);
-            //    data.DataTypeId = sourceCategoryField.DataTypeId;
-            //    data.DataSize = sourceCategoryField.DataSize;
-            //}
-            //if (data.FormTypeId == (int)EnumFormType.Generate)
-            //{
-            //    data.DataTypeId = (int)EnumDataType.Text;
-            //    data.DataSize = 0;
-            //}
-            //if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
-            //{
-            //    data.ReferenceCategoryFieldId = null;
-            //    data.ReferenceCategoryTitleFieldId = null;
-            //}
+            if (!string.IsNullOrEmpty(data.RefTableCode) && !string.IsNullOrEmpty(data.RefTableField))
+            {
+                var categoryCode = data.RefTableCode;
+                var fieldName = data.RefTableField;
+                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+                {
+                    CategoryCodes = new List<string>() { categoryCode },
+                    FieldNames = new List<string>() { fieldName }
+                })).FirstOrDefault());
+                task.Wait();
+                var sourceCategoryField = task.Result;
+                if (sourceCategoryField != null)
+                {
+                    data.DataTypeId = (EnumDataType)sourceCategoryField.DataTypeId;
+                    data.DataSize = sourceCategoryField.DataSize;
+                }
+            }
+
+            if (data.FormTypeId == EnumFormType.Generate)
+            {
+                data.DataTypeId = EnumDataType.Text;
+                data.DataSize = -1;
+            }
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId) && data.FormTypeId != EnumFormType.Input)
+            {
+                data.RefTableCode = null;
+                data.RefTableField = null;
+            }
         }
 
         public async Task<bool> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields)
@@ -1035,7 +1057,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             ValidateInputField(data, inputField, inputFieldId);
 
-            //FieldDataProcess(ref data);
+            FieldDataProcess(ref data);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try

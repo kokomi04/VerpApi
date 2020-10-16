@@ -25,6 +25,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.Voucher;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -39,6 +40,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMenuHelperService _menuHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IHttpCrossService _httpCrossService;
 
         public VoucherConfigService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
@@ -48,6 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IMenuHelperService menuHelperService
             , ICurrentContextService currentContextService
+            , IHttpCrossService httpCrossService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -57,6 +60,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _menuHelperService = menuHelperService;
             _currentContextService = currentContextService;
+            _httpCrossService = httpCrossService;
         }
 
         #region InputType
@@ -800,35 +804,54 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)voucherField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
                 }
             }
-            //if (data.ReferenceCategoryFieldId.HasValue)
-            //{
-            //    var sourceCategoryField = _accountancyDBContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.ReferenceCategoryFieldId.Value);
-            //    if (sourceCategoryField == null)
-            //    {
-            //        return VoucherErrorCode.SourceCategoryFieldNotFound;
-            //    }
-            //}
+            if (!string.IsNullOrEmpty(data.RefTableCode) && !string.IsNullOrEmpty(data.RefTableField))
+            {
+                var categoryCode = data.RefTableCode;
+                var fieldName = data.RefTableField;
+                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+                {
+                    CategoryCodes = new List<string>() { categoryCode },
+                    FieldNames = new List<string>() { fieldName }
+                })).FirstOrDefault());
+                task.Wait();
+                var sourceCategoryField = task.Result;
+                if (sourceCategoryField == null)
+                {
+                    throw new BadRequestException(VoucherErrorCode.SourceCategoryFieldNotFound);
+                }
+            }
         }
 
         private void FieldDataProcess(ref VoucherFieldInputModel data)
         {
-            //if (data.ReferenceCategoryFieldId.HasValue)
-            //{
-            //    int referId = data.ReferenceCategoryFieldId.Value;
-            //    var sourceCategoryField = _accountancyDBContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == referId);
-            //    data.DataTypeId = sourceCategoryField.DataTypeId;
-            //    data.DataSize = sourceCategoryField.DataSize;
-            //}
-            //if (data.FormTypeId == (int)EnumFormType.Generate)
-            //{
-            //    data.DataTypeId = (int)EnumDataType.Text;
-            //    data.DataSize = 0;
-            //}
-            //if (!AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)data.FormTypeId))
-            //{
-            //    data.ReferenceCategoryFieldId = null;
-            //    data.ReferenceCategoryTitleFieldId = null;
-            //}
+            if (!string.IsNullOrEmpty(data.RefTableCode) && !string.IsNullOrEmpty(data.RefTableField))
+            {
+                var categoryCode = data.RefTableCode;
+                var fieldName = data.RefTableField;
+                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
+                {
+                    CategoryCodes = new List<string>() { categoryCode },
+                    FieldNames = new List<string>() { fieldName }
+                })).FirstOrDefault());
+                task.Wait();
+                var sourceCategoryField = task.Result;
+                if(sourceCategoryField != null)
+                {
+                    data.DataTypeId = (EnumDataType)sourceCategoryField.DataTypeId;
+                    data.DataSize = sourceCategoryField.DataSize;
+                }
+            }
+
+            if (data.FormTypeId == EnumFormType.Generate)
+            {
+                data.DataTypeId = EnumDataType.Text;
+                data.DataSize = -1;
+            }
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId) && data.FormTypeId != EnumFormType.Input)
+            {
+                data.RefTableCode = null;
+                data.RefTableField = null;
+            }
         }
 
         public async Task<bool> UpdateMultiField(int voucherTypeId, List<VoucherAreaFieldInputModel> fields)
@@ -1018,7 +1041,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             ValidateVoucherField(data, voucherField, voucherFieldId);
 
-            //FieldDataProcess(ref data);
+            FieldDataProcess(ref data);
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
