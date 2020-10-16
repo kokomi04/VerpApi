@@ -735,7 +735,8 @@ namespace VErp.Services.Master.Service.Category
                    {
                        CategoryCode = c.CategoryCode,
                        CategoryFieldName = f.CategoryFieldName,
-                       DataTypeId = f.DataTypeId
+                       DataTypeId = f.DataTypeId,
+                       DataSize = f.DataSize
                    }).ToListAsync();
         }
 
