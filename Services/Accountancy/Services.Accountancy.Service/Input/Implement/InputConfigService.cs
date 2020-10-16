@@ -1018,7 +1018,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<int> AddInputField(InputFieldInputModel data)
+        public async Task<InputFieldInputModel> AddInputField(InputFieldInputModel data)
         {
             ValidateInputField(data);
 
@@ -1041,7 +1041,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Thêm trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
-                return inputField.InputFieldId;
+                return data;
             }
             catch (Exception ex)
             {
@@ -1051,7 +1051,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateInputField(int inputFieldId, InputFieldInputModel data)
+        public async Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data)
         {
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
 
@@ -1079,7 +1079,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Cập nhật trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
-                return true;
+                return data;
             }
             catch (Exception ex)
             {
