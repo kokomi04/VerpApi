@@ -69,7 +69,7 @@ namespace VErp.Services.Master.Service.Guide.Implement
                 .FirstOrDefaultAsync(g => g.GuideId == guideId);
         }
 
-        public async Task<PageData<GuideModel>> GetList(string keyword, int page, int size)
+        public async Task<PageData<GuideModelOutput>> GetList(string keyword, int page, int size)
         {
             var query = _masterDBContext.Guide.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -77,19 +77,19 @@ namespace VErp.Services.Master.Service.Guide.Implement
                 query = query.Where(x => x.GuideCode.Contains(keyword) || x.Title.Contains(keyword));
             }
             var total = await query.CountAsync();
-            IList<GuideModel> pagedData = null;
+            IList<GuideModelOutput> pagedData = null;
 
             if (size > 0)
             {
                 pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q=>q.SortOrder)
                     .Skip((page - 1) * size)
                     .Take(size)
-                    .ProjectTo<GuideModel>(_mapper.ConfigurationProvider).ToListAsync();
+                    .ProjectTo<GuideModelOutput>(_mapper.ConfigurationProvider).ToListAsync();
             }
             else
             {
                 pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q => q.SortOrder)
-                    .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
+                    .ProjectTo<GuideModelOutput>(_mapper.ConfigurationProvider)
                     .ToListAsync();
             }
 

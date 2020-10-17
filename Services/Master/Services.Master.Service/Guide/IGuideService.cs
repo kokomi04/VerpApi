@@ -9,7 +9,7 @@ namespace VErp.Services.Master.Service.Guide
 {
     public interface IGuideService
     {
-        Task<PageData<GuideModel>> GetList(string keyword, int page, int size);
+        Task<PageData<GuideModelOutput>> GetList(string keyword, int page, int size);
         Task<GuideModel> GetGuideById(int guideId);
         Task<IList<GuideModel>> GetGuidesByCode(string guideCode);
         Task<bool> Update(int guideId, GuideModel model);

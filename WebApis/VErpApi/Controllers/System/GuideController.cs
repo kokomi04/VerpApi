@@ -23,7 +23,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<GuideModel>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<GuideModelOutput>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _guideService.GetList(keyword, page, size);
         }
