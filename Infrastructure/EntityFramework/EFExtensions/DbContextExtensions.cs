@@ -85,16 +85,62 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static void AddFilterBase(this ModelBuilder modelBuilder)
         {
+           
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
+
+                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
+                if (isDeletedProp != null)
+                {
+                    var isDeleted = Expression.Constant(false);
+                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
+                }
+
+                entityType.SetQueryFilter(filterBuilder.Build());
+            }
+        }
+
+        public static void AddFilterAuthorize(this ModelBuilder modelBuilder, DbContext dbContext)
+        {
+            bool filterSubId = true;
+            bool filterStock = true;
+            if (dbContext is IDbContextFilterTypeCache filterCache)
+            {
+                if (filterCache.IgnoreFilterSubsidiary)
+                    filterSubId = false;
+
+                if (filterCache.IgnoreFilterStock)
+                    filterStock = false;
+            }
+
+            var ctxConstant = Expression.Constant(dbContext);
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
 
                 var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
 
-                var isDeletedProp = entityType.FindProperty("IsDeleted");
+                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
                 if (isDeletedProp != null)
                 {
                     var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter("IsDeleted", isDeleted);
+                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
+                }
+
+                var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
+                if (isSubsidiaryIdProp != null && dbContext is ISubsidiayRequestDbContext && filterSubId)
+                {
+                    var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(ISubsidiayRequestDbContext.SubsidiaryId));
+                    filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
+
+                }
+
+                var isStockIdProp = entityType.FindProperty(GlobalFieldConstants.StockId);
+                if (isStockIdProp != null && dbContext is IStockRequestDbContext && filterStock)
+                {
+                    var stockIds = Expression.PropertyOrField(ctxConstant, nameof(IStockRequestDbContext.StockIds));
+                    filterBuilder.AddFilterListContains<int>(GlobalFieldConstants.StockId, stockIds);
                 }
 
                 entityType.SetQueryFilter(filterBuilder.Build());

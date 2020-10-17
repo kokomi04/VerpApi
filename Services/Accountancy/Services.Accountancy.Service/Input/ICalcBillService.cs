@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input
@@ -11,6 +12,8 @@ namespace VErp.Services.Accountancy.Service.Input
     public interface ICalcBillService
     {
         Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
+
+        Task<ExchangeRateModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
 
         Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
 
@@ -35,6 +38,5 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedDepreciation(long fromDate, long toDate, string accountNumber);
 
         Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber);
-
     }
 }

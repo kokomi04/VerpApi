@@ -26,7 +26,7 @@ namespace VErpApi.Controllers.Stock.Internal
         [Route("")]
         public async Task<PageData<StockOutput>> GetStocks([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockService.GetList(keyword, page, size, filters);
+            return await _stockService.GetAll(keyword, page, size, filters);
         }
 
         [HttpGet]

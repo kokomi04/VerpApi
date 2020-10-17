@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -42,7 +43,7 @@ namespace VErpApi.Controllers.System
         [Route("")]
         public async Task<int> AddRole([FromBody] RoleInput role)
         {
-            return await _roleService.AddRole(role);
+            return await _roleService.AddRole(role, EnumRoleType.Normal);
         }
 
         /// <summary>
@@ -128,6 +129,28 @@ namespace VErpApi.Controllers.System
         public async Task<bool> Stocks(IList<StockPemissionOutput> req)
         {
             return await _roleService.UpdateStockPermission(req);
+        }
+
+        /// <summary>
+        /// Lấy danh sách nhóm quyền có quyền trên danh mục
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("Categorys")]
+        public async Task<IList<CategoryPermissionModel>> Categorys()
+        {
+            return (await _roleService.GetCategoryPermissions()).ToList();
+        }
+
+        /// <summary>
+        /// Cập nhật quyền của nhóm quyền trên danh mục
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("Categorys")]
+        public async Task<bool> Categorys(IList<CategoryPermissionModel> req)
+        {
+            return await _roleService.UpdateCategoryPermission(req);
         }
     }
 }

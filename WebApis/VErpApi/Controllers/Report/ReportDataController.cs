@@ -41,11 +41,11 @@ namespace VErpApi.Controllers.Report
 
         [HttpPost]
         [Route("view/{reportId}/asExcel")]
-        public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFilterModel model)
+        public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFacadeModel model)
         {
-            var result = await _accountancyReportService.ExportExcel(reportId, model);
+            var (stream, fileName, contentType) = await _accountancyReportService.ExportExcel(reportId, model);
 
-            return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
         }
     }
 

@@ -11,6 +11,8 @@ namespace VErp.Services.Master.Service.Config
 {
     public interface IMenuService
     {
+        Task<ICollection<MenuOutputModel>> GetMeMenuList();
+
         Task<ICollection<MenuOutputModel>> GetList();
         
         Task<bool> Update(int menuId, MenuInputModel model);

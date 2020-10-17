@@ -9,11 +9,10 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
-    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ICurrentRequestDbContext
+    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
-
         public AccountancyDBRestrictionContext(DbContextOptions<AccountancyDBRestrictionContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
@@ -23,36 +22,18 @@ namespace VErp.Infrastructure.EF.AccountancyDB
             SubsidiaryId = currentContext.SubsidiaryId;
         }
 
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            var ctxConstant = Expression.Constant(this);
+            modelBuilder.AddFilterAuthorize(this);
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
+        }
 
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
-
-                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
-                }
-
-
-                var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null)
-                {
-                    var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
-                    filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
-                }
-
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override int SaveChanges()
@@ -61,10 +42,16 @@ namespace VErp.Infrastructure.EF.AccountancyDB
             return base.SaveChanges();
         }
 
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             this.SetHistoryBaseValue(CurrentContextService);
-            return await base.SaveChangesAsync();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 }

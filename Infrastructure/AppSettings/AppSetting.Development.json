@@ -27,5 +27,9 @@
   },
   "BackupStorage": {
     "FileBackupFolder": "C:/usr/resources/"
+  },
+  "Developer": {
+    "Users": [ "user01" ],
+    "Roles": [ "Administrators" ]
   }
 }

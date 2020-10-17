@@ -23,11 +23,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
     public static class SqlDBHelper
     {
         private const string SubIdParam = "@SubId";
-        private const string SubIdColumn = "SubsidiaryId";
+        private const string SubsidiaryIdColumn = "SubsidiaryId";
 
-        private static SqlParameter CreateSubSqlParam(this ICurrentRequestDbContext requestDbContext)
+        private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
-            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.CurrentContextService.SubsidiaryId };
+            return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.SubsidiaryId };
         }
 
         public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, bool includeSubId = false)
@@ -40,7 +40,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
-            if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+            if (includeSubId && dbContext is ISubsidiayRequestDbContext requestDbContext)
             {
                 parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
 
@@ -77,7 +77,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         command.Parameters.Add(param);
                     }
 
-                    if (dbContext is ICurrentRequestDbContext requestDbContext)
+                    if (dbContext is ISubsidiayRequestDbContext requestDbContext)
                     {
                         command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
@@ -142,11 +142,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     sqlParams.Add(new SqlParameter("@" + c.ColumnName, cell));
                 }
 
-                if (includeSubId && dbContext is ICurrentRequestDbContext requestDbContext)
+                if (includeSubId && dbContext is ISubsidiayRequestDbContext requestDbContext)
                 {
-                    if (!insertColumns.Any(c => c == SubIdColumn))
+                    if (!insertColumns.Any(c => c == SubsidiaryIdColumn))
                     {
-                        insertColumns.Add(SubIdColumn);
+                        insertColumns.Add(SubsidiaryIdColumn);
                         sqlParams.Add(requestDbContext.CreateSubSqlParam());
                     }
                 }
@@ -168,6 +168,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var columns = new HashSet<DataColumn>();
             foreach (DataColumn c in table.Columns)
             {
+                if (c.ColumnName == nameof(SubsidiaryIdColumn)) { continue; }
+
                 columns.Add(c);
             }
 

@@ -70,14 +70,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("fields")]
-        public async Task<int> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        public async Task<InputFieldInputModel> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
             return await _inputConfigService.AddInputField(inputAreaField).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("fields/{inputFieldId}")]
-        public async Task<bool> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
+        public async Task<InputFieldInputModel> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
         {
             return await _inputConfigService.UpdateInputField(inputFieldId, inputField).ConfigureAwait(true);
         }

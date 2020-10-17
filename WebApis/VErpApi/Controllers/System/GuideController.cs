@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Guide;
 using VErp.Services.Master.Service.Guide;
 
@@ -22,9 +23,23 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<List<GuideModel>> GetList()
+        public async Task<PageData<GuideModelOutput>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _guideService.GetList();
+            return await _guideService.GetList(keyword, page, size);
+        }
+
+        [HttpGet]
+        [Route("byCode/{guideCode}")]
+        public async Task<IList<GuideModel>> GetListGuideByCode([FromRoute] string guideCode)
+        {
+            return await _guideService.GetGuidesByCode(guideCode);
+        }
+
+        [HttpGet]
+        [Route("{guideId}")]
+        public async Task<GuideModel> GetGuideById([FromRoute] int guideId)
+        {
+            return await _guideService.GetGuideById(guideId);
         }
 
         [HttpPost]

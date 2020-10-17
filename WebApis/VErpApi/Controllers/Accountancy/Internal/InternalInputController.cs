@@ -24,9 +24,9 @@ namespace VErpApi.Controllers.Accountancy.Internal
 
         [HttpPost]
         [Route("CheckReferFromCategory")]
-        public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel input)
+        public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
-            return await _inputDataService.CheckReferFromCategory(input.CategoryCode, input.FieldNames, input.CategoryRow).ConfigureAwait(true);
+            return await _inputDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
         }
     }
 }

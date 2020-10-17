@@ -113,7 +113,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}/datafile")]
-        public async Task<FileStreamResult> ExportCategoryRow([FromRoute] int inputTypeId, [FromRoute] long fId)
+        public async Task<FileStreamResult> ExportBill([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
             var result = await _inputDataService.ExportBill(inputTypeId, fId);
             return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
@@ -124,6 +124,13 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
         {
             return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+        }
+
+        [HttpGet]
+        [Route("FixExchangeRateDetail")]
+        public async Task<ExchangeRateModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
+        {
+            return await _calcBillService.FixExchangeRateDetail(fromDate, toDate, currency, accountNumber, partnerId);
         }
 
         [HttpGet]

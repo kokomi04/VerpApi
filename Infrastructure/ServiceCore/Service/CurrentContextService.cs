@@ -13,6 +13,9 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using Microsoft.Extensions.Primitives;
+using VErp.Commons.Constants;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -55,6 +58,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly UnAuthorizeMasterDBContext _masterDBContext;
 
         private int _userId = 0;
+        private string _userName = "";
         private int _subsidiaryId = 0;
         private EnumAction? _action;
         private int? _timeZoneOffset = null;
@@ -73,6 +77,56 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _masterDBContext = masterDBContext;
+
+            CrossServiceLogin();
+        }
+
+
+        private void CrossServiceLogin()
+        {
+            var httpContext = _httpContextAccessor.HttpContext;
+            var headers = httpContext.Request.Headers;
+            headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
+            if (crossServiceKeys.ToString() != _appSetting?.Configuration?.InternalCrossServiceKey)
+            {
+                return;
+            }
+
+            var userId = 0;
+            var action = EnumAction.View;
+            var subsidiaryId = 0;
+            if (headers.TryGetValue(Headers.UserId, out var strUserId))
+            {
+                userId = int.Parse(strUserId);
+            }
+
+            if (headers.TryGetValue(Headers.Action, out var strAction))
+            {
+                action = (EnumAction)int.Parse(strAction);
+            }
+
+            if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
+            {
+                subsidiaryId = int.Parse(strSubsidiaryId);
+            }
+
+
+            if (userId > 0)
+            {
+                var claims = new List<Claim>() {
+                    new Claim(UserClaimConstants.UserId, userId + ""),
+                    new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId + "")
+                };
+
+                var user = new GenericPrincipal(new ClaimsIdentity(claims), null);
+                httpContext.User = user;
+
+                if (!httpContext.Items.ContainsKey(HttpContextActionConstants.Action))
+                {
+                    httpContext.Items.Add(HttpContextActionConstants.Action, action);
+                }
+
+            }
         }
 
         public int UserId
@@ -84,7 +138,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
                 {
-                    if (claim.Type != "userId")
+                    if (claim.Type != UserClaimConstants.UserId)
                         continue;
 
                     int.TryParse(claim.Value, out _userId);
@@ -93,6 +147,23 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _userId;
             }
         }
+
+        private string UserName
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_userName)) return _userName;
+
+                var userInfo = _masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                if (userInfo != null)
+                {
+                    _userName = userInfo.UserName;
+                }
+
+                return _userName;
+            }
+        }
+
         public int SubsidiaryId
         {
             get
@@ -102,7 +173,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 foreach (var claim in _httpContextAccessor.HttpContext.User.Claims)
                 {
-                    if (claim.Type != "subsidiaryId")
+                    if (claim.Type != UserClaimConstants.SubsidiaryId)
                         continue;
 
                     int.TryParse(claim.Value, out _subsidiaryId);
@@ -118,7 +189,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 if (_timeZoneOffset.HasValue)
                     return _timeZoneOffset.Value;
                 var timeZoneOffsets = new StringValues();
-                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue("x-timezone-offset", out timeZoneOffsets);
+                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue(Headers.TimeZoneOffset, out timeZoneOffsets);
 
                 if (timeZoneOffsets.Count == 0 || !int.TryParse(timeZoneOffsets[0], out int timeZoneOffset))
                 {
@@ -138,10 +209,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 var method = (EnumMethod)Enum.Parse(typeof(EnumMethod), _httpContextAccessor.HttpContext.Request.Method, true);
 
-                if (_httpContextAccessor.HttpContext.Items.ContainsKey("action"))
+                if (_httpContextAccessor.HttpContext.Items.ContainsKey(HttpContextActionConstants.Action))
                 {
 
-                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items["action"];
+                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
                 }
                 else
                 {
@@ -174,7 +245,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         r.RoleId,
                         r.IsDataPermissionInheritOnStock,
                         r.IsModulePermissionInherit,
-                        r.ChildrenRoleIds
+                        r.ChildrenRoleIds,
+                        r.RoleName
                     }
                    )
                    .First();
@@ -183,7 +255,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleInfo.RoleId,
                     roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
                     roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit
+                    roleInfo.IsModulePermissionInherit,
+                    roleInfo.RoleName
                 );
 
 
@@ -222,25 +295,52 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _stockIds;
             }
         }
+
+        public bool IsDeveloper
+        {
+            get
+            {
+                return _appSetting.Developer?.IsDeveloper(UserName, RoleInfo.RoleName) == true;
+            }
+        }
     }
 
     public class ScopeCurrentContextService : ICurrentContextService
     {
+        public ScopeCurrentContextService(ICurrentContextService currentContextService)
+        : this(
+                currentContextService.UserId,
+                currentContextService.Action,
+                currentContextService.RoleInfo,
+                currentContextService.StockIds,
+                currentContextService.SubsidiaryId,
+                currentContextService.TimeZoneOffset
+        )
+        {
+
+        }
+
         public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
             Action = action;
-            RoleInfo = roleInfo;
-            StockIds = stockIds;
+            RoleInfo = roleInfo == null ? null : roleInfo.JsonSerialize().JsonDeserialize<RoleInfo>();
+            StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
             TimeZoneOffset = timeZoneOffset;
         }
 
+        public void SetSubsidiaryId(int subsidiaryId)
+        {
+            SubsidiaryId = subsidiaryId;
+        }
+
         public int UserId { get; } = 0;
-        public int SubsidiaryId { get; } = 0;
+        public int SubsidiaryId { get; private set; } = 0;
         public EnumAction Action { get; }
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }
+        public bool IsDeveloper { get; } = false;
     }
 }

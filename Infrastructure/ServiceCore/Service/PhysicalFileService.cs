@@ -24,14 +24,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class PhysicalFileService : IPhysicalFileService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpCrossService _httpCrossService;
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
         private readonly ICurrentContextService _currentContext;
 
-        public PhysicalFileService(HttpClient httpClient, ILogger<IPhysicalFileService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
+        public PhysicalFileService(IHttpCrossService httpCrossService, ILogger<IPhysicalFileService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
         {
-            _httpClient = httpClient;
+            _httpCrossService = httpCrossService;
             _logger = logger;
             _appSetting = appSetting.Value;
             _currentContext = currentContext;
@@ -39,131 +39,29 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<bool> FileAssignToObject(long fileId, EnumObjectType objectTypeId, long objectId)
         {
-            try
+            return await _httpCrossService.Put<bool>($"/api/internal/InternalFile/{fileId}/FileAssignToObject", new FileAssignToObjectInput
             {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalFile/{fileId}/FileAssignToObject";
-
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(uri),
-                    Method = HttpMethod.Put,
-                    Content = new StringContent(new FileAssignToObjectInput
-                    {
-                        ObjectTypeId = objectTypeId,
-                        ObjectId = objectId
-                    }.JsonSerialize(), Encoding.UTF8, "application/json"),
-                };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-
-                var data = await _httpClient.SendAsync(request);
-
-                return data.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "PhysicalFileService:FileAssignToObject");
-                return false;
-            }
+                ObjectTypeId = objectTypeId,
+                ObjectId = objectId
+            });
         }
 
         public async Task<bool> DeleteFile(long fileId)
         {
-            try
+            return await _httpCrossService.Detete<bool>($"/api/internal/InternalFile/{fileId}", new
             {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalFile/{fileId}";
 
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(uri),
-                    Method = HttpMethod.Delete,
-                    Content = new StringContent(new object
-                    {
-                        
-                    }.JsonSerialize(), Encoding.UTF8, "application/json"),
-                };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-
-                var data = await _httpClient.SendAsync(request);
-
-                return data.IsSuccessStatusCode;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "PhysicalFileService:DeleteFile");
-                return false;
-            }
+            });
         }
 
         public async Task<long> SaveSimpleFileInfo(EnumObjectType objectTypeId, SimpleFileInfo simpleFile)
         {
-            try
-            {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalFile/{objectTypeId}";
-
-                var body = simpleFile.JsonSerialize();
-
-
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(uri),
-                    Method = HttpMethod.Post,
-                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
-                };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
-
-                var data = await _httpClient.SendAsync(request);
-
-                var response = await data.Content.ReadAsStringAsync();
-
-                if (!data.IsSuccessStatusCode) return 0;
-
-                long.TryParse(response, out var fileId);
-                
-                return fileId;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "PhysicalFileService:SaveSimpleFileInfo");
-                return 0;
-            }
+            return await _httpCrossService.Post<long>($"/api/internal/InternalFile/{objectTypeId}", simpleFile);
         }
 
         public async Task<SimpleFileInfo> GetSimpleFileInfo(long fileId)
         {
-            try
-            {
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalFile/{fileId}";
-
-
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(uri),
-                    Method = HttpMethod.Get,
-                };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
-
-                var data = await _httpClient.SendAsync(request);
-
-                var response = await data.Content.ReadAsStringAsync();
-
-                if (!data.IsSuccessStatusCode) return null;
-
-
-                return response.JsonDeserialize<SimpleFileInfo>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "PhysicalFileService:GetSimpleFileInfo");
-                throw;
-            }
+            return await _httpCrossService.Get<SimpleFileInfo>($"/api/internal/InternalFile/{fileId}");
         }
     }
 }

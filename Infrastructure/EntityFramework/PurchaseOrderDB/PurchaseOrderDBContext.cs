@@ -26,6 +26,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
         public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
+        public virtual DbSet<SaleBill> SaleBill { get; set; }
+        public virtual DbSet<VoucherArea> VoucherArea { get; set; }
+        public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
+        public virtual DbSet<VoucherField> VoucherField { get; set; }
+        public virtual DbSet<VoucherType> VoucherType { get; set; }
+        public virtual DbSet<VoucherTypeGroup> VoucherTypeGroup { get; set; }
+        public virtual DbSet<VoucherTypeView> VoucherTypeView { get; set; }
+        public virtual DbSet<VoucherTypeViewField> VoucherTypeViewField { get; set; }
+        public virtual DbSet<VoucherValueRow> VoucherValueRow { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -260,6 +269,170 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchasingSuggestFile_PurchasingSuggest");
+            });
+
+            modelBuilder.Entity<SaleBill>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_InputValueBill");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.HasOne(d => d.VoucherType)
+                    .WithMany(p => p.SaleBill)
+                    .HasForeignKey(d => d.VoucherTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SaleBill_VoucherType");
+            });
+
+            modelBuilder.Entity<VoucherArea>(entity =>
+            {
+                entity.Property(e => e.Columns).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.VoucherAreaCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.VoucherType)
+                    .WithMany(p => p.VoucherArea)
+                    .HasForeignKey(d => d.VoucherTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherArea_VoucherType");
+            });
+
+            modelBuilder.Entity<VoucherAreaField>(entity =>
+            {
+                entity.HasIndex(e => new { e.VoucherTypeId, e.VoucherFieldId })
+                    .HasName("IX_InputAreaField")
+                    .IsUnique();
+
+                entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.Filters).HasMaxLength(512);
+
+                entity.Property(e => e.InputStyleJson).HasMaxLength(512);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
+
+                entity.HasOne(d => d.VoucherArea)
+                    .WithMany(p => p.VoucherAreaField)
+                    .HasForeignKey(d => d.VoucherAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherAreaField_VoucherArea");
+
+                entity.HasOne(d => d.VoucherField)
+                    .WithMany(p => p.VoucherAreaField)
+                    .HasForeignKey(d => d.VoucherFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherAreaField_VoucherField");
+
+                entity.HasOne(d => d.VoucherType)
+                    .WithMany(p => p.VoucherAreaField)
+                    .HasForeignKey(d => d.VoucherTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherAreaField_VoucherType");
+            });
+
+            modelBuilder.Entity<VoucherField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<VoucherType>(entity =>
+            {
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.VoucherTypeCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.VoucherTypeGroup)
+                    .WithMany(p => p.VoucherType)
+                    .HasForeignKey(d => d.VoucherTypeGroupId)
+                    .HasConstraintName("FK_VoucherType_VoucherTypeGroup");
+            });
+
+            modelBuilder.Entity<VoucherTypeGroup>(entity =>
+            {
+                entity.Property(e => e.VoucherTypeGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<VoucherTypeView>(entity =>
+            {
+                entity.Property(e => e.VoucherTypeViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.VoucherType)
+                    .WithMany(p => p.VoucherTypeView)
+                    .HasForeignKey(d => d.VoucherTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherTypeView_VoucherType");
+            });
+
+            modelBuilder.Entity<VoucherTypeViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.SelectFilters).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.VoucherTypeView)
+                    .WithMany(p => p.VoucherTypeViewField)
+                    .HasForeignKey(d => d.VoucherTypeViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherTypeViewField_VoucherTypeView");
+            });
+
+            modelBuilder.Entity<VoucherValueRow>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_@_InputValueRow");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.SaleBillFId).HasColumnName("SaleBill_F_Id");
+
+                entity.Property(e => e.SystemLog).HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -40,6 +40,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string PreLoadDataJsCode { get; set; }
         public string AfterLoadDataJsCode { get; set; }
         public string OnCloseJsCode { get; set; }
+        public string OnCellClickJsCode { get; set; }
+        public string OnCellChangeValueJsCode { get; set; }
         public string Columns { get; set; }
         public bool IsBsc { get; set; }
         public string BscConfig { get; set; }

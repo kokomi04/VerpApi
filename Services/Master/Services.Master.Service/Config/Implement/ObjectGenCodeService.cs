@@ -26,23 +26,34 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICustomGenCodeService _customGenCodeService;
+        private readonly ICurrentContextService _currentContextService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
-
+            , ICustomGenCodeService customGenCodeService
+            , ICurrentContextService currentContextService
         )
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-
+            _customGenCodeService = customGenCodeService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<ObjectGenCodeOutputModel>> GetList(EnumObjectType objectType = 0, string keyword = "", int page = 1, int size = 10)
         {
+
+            var allObjectType = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(e => (int)e.Enum);
+
+            _masterDbContext.ObjectCustomGenCodeMapping.AsNoTracking().Where(x => allObjectType.Contains(x.ObjectTypeId));
+
+
+
             var query = from ogc in _masterDbContext.ObjectGenCode
                         select ogc;
 
@@ -197,7 +208,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<string> GenerateCode(EnumObjectType objectType)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
+            /*using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
             {
                 using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
@@ -247,8 +258,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                         throw;
                     }
                 }
-            }
+            }*/
 
+            var currentConfig = await _customGenCodeService.GetCurrentConfig((int)objectType, 0);
+            var customCode = await _customGenCodeService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+
+            await _customGenCodeService.ConfirmCode((int)objectType, 0);
+
+            return customCode.CustomCode;
         }
 
         public PageData<ObjectType> GetAllObjectType()
@@ -261,6 +278,57 @@ namespace VErp.Services.Master.Service.Config.Implement
 
 
             return (allData, allData.Count);
+        }
+
+        public async Task<PageData<ObjectGenCodeModel>> GetList(string keyword, int page, int size)
+        {
+            var allObjectType = GetAllObjectType().List;
+
+            var query = _masterDbContext.ObjectCustomGenCodeMapping
+                .AsNoTracking()
+                .Where(x => x.ObjectId == 0)
+                .ToList().Select(x => new ObjectGenCodeModel
+                {
+                    ObjectCustomGenCodeMappingId = x.ObjectCustomGenCodeMappingId,
+                    ObjectTypeId = x.ObjectTypeId,
+                    CustomGenCodeId = x.CustomGenCodeId,
+                    ObjectTypeName = allObjectType.FirstOrDefault(e => (int)e.ObjectTypeId == x.ObjectTypeId).ObjectTypeName
+                }).ToList();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(x => x.ObjectTypeName.Contains(keyword)).ToList();
+            }
+
+            var total = query.Count();
+            var objList = query.Skip((page - 1) * size).Take(size).ToList();
+
+            return (query, total);
+        }
+
+        public async Task<bool> MapObjectGenCode(ObjectGenCodeMapping model)
+        {
+            return await _customGenCodeService.MapObjectCustomGenCode(_currentContextService.UserId, new ObjectCustomGenCodeMapping
+            {
+                CustomGenCodeId = model.CustomGenCodeId,
+                ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
+                ObjectId = 0,//default
+                ObjectTypeId = model.ObjectTypeId,
+                UpdatedByUserId = _currentContextService.UserId
+            });
+
+        }
+
+        public async Task<bool> DeleteMapObjectGenCode(ObjectGenCodeMapping model)
+        {
+            return await _customGenCodeService.DeleteMapObjectCustomGenCode(_currentContextService.UserId, new ObjectCustomGenCodeMapping
+            {
+                CustomGenCodeId = model.CustomGenCodeId,
+                ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
+                ObjectId = 0,//default
+                ObjectTypeId = model.ObjectTypeId,
+                UpdatedByUserId = _currentContextService.UserId
+            });
         }
     }
 }

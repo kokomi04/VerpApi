@@ -1,50 +1,57 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class PurchaseOrderDBContext : ICurrentRequestDbContext
+    public class PurchaseOrderDBRestrictionContext : PurchaseOrderDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
-        public PurchaseOrderDBContext(DbContextOptions<PurchaseOrderDBContext> options, ICurrentContextService currentContext)
-            : base(options)
+        public PurchaseOrderDBRestrictionContext(DbContextOptions<PurchaseOrderDBRestrictionContext> options
+            , ICurrentContextService currentContext
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<PurchaseOrderDBContext>(loggerFactory))
         {
             CurrentContextService = currentContext;
             SubsidiaryId = currentContext.SubsidiaryId;
         }
 
-        partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var ctxConstant = Expression.Constant(this);
+            base.OnModelCreating(modelBuilder);
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
+            modelBuilder.AddFilterAuthorize(this);
 
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
+        }
 
-                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
-                }
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
 
+        public override int SaveChanges()
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges();
+        }
 
-                var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null)
-                {
-                    var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
-                    filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
-                }
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(cancellationToken);
+        }
 
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 }

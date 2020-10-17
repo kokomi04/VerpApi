@@ -400,11 +400,14 @@ namespace VErp.Services.Accountancy.Service.Category
                     FieldNames = fieldNames,
                     CategoryRow = categoryRow
                 });
-
-                if (isExisted)
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
                 {
-                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
-                }
+                    category.CategoryCode,
+                    FieldNames = fieldNames,
+                    CategoryRow = categoryRow
+                });
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
 
             }
             // Delete data
@@ -599,7 +602,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryRow;
         }
 
-
         private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
         {
             StringBuilder sql = new StringBuilder();
@@ -711,7 +713,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     var word = match[i].Groups["word"].Value;
                     var paramName = $"@{word}";
-                    if (sqlParams.Any(p => p.ParameterName == paramName)) continue;
+                    if (sqlParams.Any(p => p.ParameterName == paramName) || paramName == "@SubId") continue;
                     var param = extraFilterParams.FirstOrDefault(p => p.ParamName == word);
                     object value = param != null ? param.DataType.GetSqlValue(param.Value) : DBNull.Value;
                     sqlParams.Add(new SqlParameter(paramName, value));

@@ -114,6 +114,12 @@ namespace VErp.Commons.Enums.MasterEnum
         AccountantConfig = 49,
         PrintConfig = 50,
         StorageDabase = 51,
-        InventoryConfig = 52
+        InventoryConfig = 52,
+
+        VoucherType = 53,
+        VoucherTypeGroup = 54,
+        VoucherTypeView = 55,
+
+        VoucherTypeRow = 56,
     }
 }

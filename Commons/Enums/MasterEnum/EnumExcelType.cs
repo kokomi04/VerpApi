@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VErp.Commons.Enums.AccountantEnum
+namespace VErp.Commons.Enums.MasterEnum
 {
     public enum EnumExcelType
     {

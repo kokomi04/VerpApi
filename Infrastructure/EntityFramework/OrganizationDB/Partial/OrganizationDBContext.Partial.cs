@@ -10,7 +10,25 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
-    public partial class OrganizationDBRestrictionContext : OrganizationDBContext, ICurrentRequestDbContext
+    public class UnAuthorizeOrganizationContext : OrganizationDBContext
+    {
+        public UnAuthorizeOrganizationContext(DbContextOptions<UnAuthorizeOrganizationContext> options
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<OrganizationDBContext>(loggerFactory))
+        {
+
+        }
+
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
+        }
+    }
+
+
+    public class OrganizationDBRestrictionContext : OrganizationDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
@@ -27,36 +45,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            //modelBuilder.AddFilterBase();
 
-            var ctxConstant = Expression.Constant(this);
+            modelBuilder.AddFilterAuthorize(this);
 
-            //base.OnModelCreating(modelBuilder);
+        }
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
-
-                var isDeletedProp = entityType.FindProperty(GlobalFieldConstants.IsDeleted);
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter(GlobalFieldConstants.IsDeleted, isDeleted);
-                }
-
-
-                var isSubsidiaryIdProp = entityType.FindProperty(GlobalFieldConstants.SubsidiaryId);
-                if (isSubsidiaryIdProp != null && entityType.ClrType.Name != nameof(Subsidiary) && entityType.ClrType.Name != nameof(EmployeeSubsidiary))
-                {
-                    var subsidiaryId = Expression.PropertyOrField(ctxConstant, nameof(SubsidiaryId));
-                    filterBuilder.AddFilter(GlobalFieldConstants.SubsidiaryId, subsidiaryId);
-                }
-
-
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
-
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override int SaveChanges()
@@ -65,10 +62,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             return base.SaveChanges();
         }
 
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             this.SetHistoryBaseValue(CurrentContextService);
-            return await base.SaveChangesAsync(true, cancellationToken);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 
