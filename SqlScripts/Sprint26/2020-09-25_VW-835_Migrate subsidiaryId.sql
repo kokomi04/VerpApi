@@ -48,6 +48,11 @@ SELECT @SubsidiaryId SubsidiaryId
 
 UPDATE OrganizationDB.dbo.BusinessInfo SET SubsidiaryId = @SubsidiaryId
 UPDATE OrganizationDB.dbo.Employee SET SubsidiaryId = @SubsidiaryId
+UPDATE OrganizationDB.dbo.Customer SET SubsidiaryId = @SubsidiaryId
+UPDATE OrganizationDB.dbo.CustomerBankAccount SET SubsidiaryId = @SubsidiaryId
+UPDATE OrganizationDB.dbo.CustomerContact SET SubsidiaryId = @SubsidiaryId
+UPDATE OrganizationDB.dbo.Department SET SubsidiaryId = @SubsidiaryId
+
 
 INSERT INTO OrganizationDB.dbo.EmployeeSubsidiary
 (
@@ -80,6 +85,9 @@ UPDATE MasterDB.dbo.Role SET SubsidiaryId = @SubsidiaryId
 UPDATE MasterDB.dbo.Unit SET SubsidiaryId = @SubsidiaryId
 UPDATE MasterDB.dbo.[User] SET SubsidiaryId = @SubsidiaryId
 UPDATE MasterDB.dbo.ObjectCustomGenCodeMapping SET SubsidiaryId = @SubsidiaryId
+UPDATE MasterDB.dbo.BarCodeConfig SET SubsidiaryId = @SubsidiaryId
+UPDATE MasterDB.dbo.CustomGenCode SET SubsidiaryId = @SubsidiaryId
+
 
 --UPDATE AccountancyDB.dbo.AccountantConfig SET SubsidiaryId = @SubsidiaryId
 
