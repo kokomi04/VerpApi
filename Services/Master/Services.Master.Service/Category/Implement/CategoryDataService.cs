@@ -384,7 +384,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
                     var referToTable = $"v{referToCategory.CategoryCode}";
 
-                    var existSql = $"SELECT F_Id FROM [dbo].v{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
+                    var existSql = $"SELECT F_Id FROM [dbo].{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
                     var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                     isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
