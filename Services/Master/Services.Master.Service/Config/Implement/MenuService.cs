@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Master.Service.RolePermission;
+using VErp.Services.Master.Service.Users;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -24,11 +26,13 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IUserService _userService;
 
         public MenuService(MasterDBContext masterDbContext
             , ILogger<MenuService> logger
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
+            , IUserService userService
 
         )
         {
@@ -36,7 +40,33 @@ namespace VErp.Services.Master.Service.Config.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _userService = userService;
 
+        }
+
+        public async Task<ICollection<MenuOutputModel>> GetMeMenuList()
+        {
+            var lstMenu = new List<MenuOutputModel>();
+            var lstModules = await _userService.GetMePermission();
+            var moduleIds = lstModules.Select(p => p.ModuleId).ToList();
+            foreach (var item in await _masterDbContext.Menu.Where(m => lstModules.Contains(m.ModuleId) || m.ModuleId <= 0).OrderBy(m => m.SortOrder).ToListAsync())
+            {
+                var info = new MenuOutputModel()
+                {
+                    MenuId = item.MenuId,
+                    ParentId = item.ParentId,
+                    IsDisabled = item.IsDisabled,
+                    ModuleId = item.ModuleId,
+                    MenuName = item.MenuName,
+                    Url = item.Url,
+                    Icon = item.Icon,
+                    Param = item.Param,
+                    SortOrder = item.SortOrder,
+                    IsGroup = item.IsGroup
+                };
+                lstMenu.Add(info);
+            }
+            return lstMenu;
         }
 
         public async Task<ICollection<MenuOutputModel>> GetList()
