@@ -2178,8 +2178,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (value == null) continue;
                     foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
-                        var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                        var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        var referToValue = new SqlParameter("@RefValue", value?.ToString());
+
+                        var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
                         {
