@@ -49,7 +49,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             var lstMenu = new List<MenuOutputModel>();
             var lstModules = await _userService.GetMePermission();
             var moduleIds = lstModules.Select(p => p.ModuleId).ToList();
-            foreach (var item in await _masterDbContext.Menu.Where(m => lstModules.Contains(m.ModuleId) || m.ModuleId <= 0).OrderBy(m => m.SortOrder).ToListAsync())
+            foreach (var item in await _masterDbContext.Menu.Where(m => moduleIds.Contains(m.ModuleId) || m.ModuleId <= 0).OrderBy(m => m.SortOrder).ToListAsync())
             {
                 var info = new MenuOutputModel()
                 {
