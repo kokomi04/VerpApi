@@ -331,7 +331,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var modules = _masterContext.Module.AsQueryable();
             if (isDeveloper.HasValue && !isDeveloper.Value)
             {
-                modules = modules.Where(m => m.IsDeveloper == isDeveloper);
+                modules = modules.Where(m => !m.IsDeveloper);
             }
             return await (
                 from p in _masterContext.RolePermission
