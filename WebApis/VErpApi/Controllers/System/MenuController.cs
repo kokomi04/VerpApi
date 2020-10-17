@@ -28,6 +28,14 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [GlobalApi]
+        [Route("Me")]
+        public async Task<ICollection<MenuOutputModel>> GetMeMenuList()
+        {
+            return await _menuService.GetMeMenuList().ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [GlobalApi]
         [Route("")]
         public async Task<ICollection<MenuOutputModel>> Get()
         {

@@ -2162,19 +2162,31 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputReferToFields = _accountancyDBContext.InputField
                 .Where(f => f.RefTableCode == categoryCode && fieldNames.Contains(f.RefTableField)).ToList();
-            // check bill refer
-            foreach (var field in fieldNames)
+
+            if (categoryRow == null)
             {
-                categoryRow.TryGetValue(field, out object value);
-                if (value == null) continue;
-                foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
+                // Check khi xóa cả danh mục
+                return _accountancyDBContext.InputField.Any(f => f.RefTableCode == categoryCode);
+            }
+            else
+            {
+                // Check khi xóa dòng trong danh mục
+                // check bill refer
+                foreach (var field in fieldNames)
                 {
-                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                    var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
-                    bool isExisted = result != null && result.Rows.Count > 0;
-                    if (isExisted)
+                    categoryRow.TryGetValue(field, out object value);
+                    if (value == null) continue;
+                    foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
-                        return true;
+                        var referToValue = new SqlParameter("@RefValue", value?.ToString());
+
+                        var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
+                        bool isExisted = result != null && result.Rows.Count > 0;
+                        if (isExisted)
+                        {
+                            return true;
+                        }
                     }
                 }
             }

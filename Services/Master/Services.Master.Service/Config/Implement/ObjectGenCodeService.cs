@@ -314,9 +314,21 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
                 ObjectId = 0,//default
                 ObjectTypeId = model.ObjectTypeId,
-                UpdatedUserId = _currentContextService.UserId
+                UpdatedByUserId = _currentContextService.UserId
             });
 
+        }
+
+        public async Task<bool> DeleteMapObjectGenCode(ObjectGenCodeMapping model)
+        {
+            return await _customGenCodeService.DeleteMapObjectCustomGenCode(_currentContextService.UserId, new ObjectCustomGenCodeMapping
+            {
+                CustomGenCodeId = model.CustomGenCodeId,
+                ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
+                ObjectId = 0,//default
+                ObjectTypeId = model.ObjectTypeId,
+                UpdatedByUserId = _currentContextService.UserId
+            });
         }
     }
 }

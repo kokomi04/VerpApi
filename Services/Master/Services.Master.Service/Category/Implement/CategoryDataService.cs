@@ -381,11 +381,14 @@ namespace VErp.Services.Accountancy.Service.Category
                 bool isExisted = false;
                 foreach (var referToField in referToFields.Where(c => c.RefTableField == field.CategoryFieldName))
                 {
+                    if (!((EnumFormType)referToField.FormTypeId).IsJoinForm()) continue;
+
                     var referToCategory = referToCategories.First(c => c.CategoryId == referToField.CategoryId);
                     var referToTable = $"v{referToCategory.CategoryCode}";
 
-                    var existSql = $"SELECT F_Id FROM [dbo].v{referToTable} WHERE {referToField.CategoryFieldName} = {value.ToString()};";
-                    var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                    var referToValue = new SqlParameter("@RefValue", value?.ToString());
+                    var existSql = $"SELECT F_Id FROM [dbo].{referToTable} WHERE {referToField.CategoryFieldName} = @RefValue;";
+                    var result = await _accountancyContext.QueryDataTable(existSql, new[] { referToValue });
                     isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -400,11 +403,14 @@ namespace VErp.Services.Accountancy.Service.Category
                     FieldNames = fieldNames,
                     CategoryRow = categoryRow
                 });
-
-                if (isExisted)
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
                 {
-                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
-                }
+                    category.CategoryCode,
+                    FieldNames = fieldNames,
+                    CategoryRow = categoryRow
+                });
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
 
             }
             // Delete data

@@ -251,6 +251,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.Description).IsRequired();
 
+                entity.Property(e => e.GuideCode)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasComment("");
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
@@ -333,7 +338,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
             {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId })
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
                     .HasName("UK_ObjectCustomGenCode")
                     .IsUnique();
             });

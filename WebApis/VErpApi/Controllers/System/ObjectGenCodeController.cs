@@ -128,5 +128,12 @@ namespace VErpApi.Controllers.System
         {
             return await _customGenCodeService.MapObjectGenCode(model);
         }
+
+        [HttpDelete]
+        [Route("MapObjectGenCode")]
+        public async Task<bool> DeleteMapObjectGenCode(ObjectGenCodeMapping model)
+        {
+            return await _customGenCodeService.DeleteMapObjectGenCode(model);
+        }
     }
 }

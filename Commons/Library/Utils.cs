@@ -24,6 +24,19 @@ namespace VErp.Commons.Library
 {
     public static class Utils
     {
+        public static string RemoveDiacritics(this string str)
+        {
+            if (str == null) return null;
+            var chars =
+                from c in str.Normalize(NormalizationForm.FormD).ToCharArray()
+                let uc = CharUnicodeInfo.GetUnicodeCategory(c)
+                where uc != UnicodeCategory.NonSpacingMark
+                select c;
+
+            var cleanStr = new string(chars.ToArray()).Normalize(NormalizationForm.FormC);
+
+            return cleanStr.Replace("đ", "d").Replace("Đ", "D");
+        }
         public static Guid ToGuid(this string value)
         {
             MD5 md5Hasher = MD5.Create();
@@ -527,7 +540,7 @@ namespace VErp.Commons.Library
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
                     }
-                   
+
                     return intValue;
 
                 case EnumDataType.Date:
@@ -551,7 +564,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
                 case EnumDataType.Boolean:
-                    bool boolValue;                    
+                    bool boolValue;
                     try
                     {
                         boolValue = Convert.ToBoolean(value);

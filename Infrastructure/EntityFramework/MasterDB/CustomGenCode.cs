@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.MasterDB
     public partial class CustomGenCode
     {
         public int CustomGenCodeId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int? ParentId { get; set; }
         public string CustomGenCodeName { get; set; }
         public int CodeLength { get; set; }

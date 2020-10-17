@@ -84,7 +84,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {voucherTypeId} AND {GlobalFilter()}");
+            whereCondition.Append($"r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
 
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
@@ -317,7 +317,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<long> CreateSaleBill(int voucherTypeId, SaleBillInfoModel data)
         {
-            await ValidateAccountantConfig(data?.Info, null);
+            await ValidateSaleVoucherConfig(data?.Info, null);
 
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
@@ -392,7 +392,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task<bool> CheckRequireFilter(Clause clause, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> inputAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, int? rowIndex, bool not = false)
+        private async Task<bool> CheckRequireFilter(Clause clause, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> voucherAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, int? rowIndex, bool not = false)
         {
             bool? isRequire = null;
             if (clause != null)
@@ -400,7 +400,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
-                    var field = inputAreaFields.First(f => f.FieldName == singleClause.FieldName);
+                    var field = voucherAreaFields.First(f => f.FieldName == singleClause.FieldName);
                     // Data check nằm trong thông tin chung và data điều kiện nằm trong thông tin chi tiết
                     if (!rowIndex.HasValue && field.IsMultiRow)
                     {
@@ -533,7 +533,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
-                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), info, rows, inputAreaFields, sfValues, rowIndex, isNot);
+                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(indx), info, rows, voucherAreaFields, sfValues, rowIndex, isNot);
                         isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
                     }
                 }
@@ -606,14 +606,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return fields.Distinct().ToArray();
         }
 
-        private async Task CheckRequired(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> requiredFields, List<ValidateVoucherField> inputAreaFields)
+        private async Task CheckRequired(ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> requiredFields, List<ValidateVoucherField> voucherAreaFields)
         {
             var filters = requiredFields
                 .Where(f => !string.IsNullOrEmpty(f.RequireFilters))
                 .ToDictionary(f => f.FieldName, f => JsonConvert.DeserializeObject<Clause>(f.RequireFilters));
 
             string[] filterFieldNames = GetFieldInFilter(filters.Select(f => f.Value).ToArray());
-            var sfFields = inputAreaFields.Where(f => ((EnumFormType)f.FormTypeId).IsSelectForm() && filterFieldNames.Contains(f.FieldName)).ToList();
+            var sfFields = voucherAreaFields.Where(f => ((EnumFormType)f.FormTypeId).IsSelectForm() && filterFieldNames.Contains(f.FieldName)).ToList();
             var sfValues = new Dictionary<string, Dictionary<object, object>>();
 
             foreach (var field in sfFields)
@@ -669,7 +669,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = filters[field.FieldName];
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null)))
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null)))
                         {
                             continue;
                         }
@@ -695,7 +695,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1)))
+                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1)))
                             {
                                 continue;
                             }
@@ -711,7 +711,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task CheckUniqueAsync(int inputTypeId, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> uniqueFields, long? inputValueBillId = null)
+        private async Task CheckUniqueAsync(int voucherTypeId, ValidateRowModel info, List<ValidateRowModel> rows, List<ValidateVoucherField> uniqueFields, long? voucherValueBillId = null)
         {
             // Check unique
             foreach (var field in uniqueFields)
@@ -726,7 +726,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     info.Data.TryGetValue(field.FieldName, out object value);
                     // Checkin unique trong db
                     if (value != null)
-                        await ValidUniqueAsync(inputTypeId, new List<object>() { ((EnumDataType)field.DataTypeId).GetSqlValue(value) }, field, inputValueBillId);
+                        await ValidUniqueAsync(voucherTypeId, new List<object>() { ((EnumDataType)field.DataTypeId).GetSqlValue(value) }, field, voucherValueBillId);
                 }
                 else // Validate rows
                 {
@@ -755,18 +755,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             continue;
                         }
                         // Checkin unique trong db
-                        await ValidUniqueAsync(inputTypeId, values, field, inputValueBillId);
+                        await ValidUniqueAsync(voucherTypeId, values, field, voucherValueBillId);
                     }
                 }
             }
         }
 
-        private async Task ValidUniqueAsync(int inputTypeId, List<object> values, ValidateVoucherField field, long? inputValueBillId = null)
+        private async Task ValidUniqueAsync(int voucherTypeId, List<object> values, ValidateVoucherField field, long? voucherValueBillId = null)
         {
-            var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
-            if (inputValueBillId.HasValue)
+            var existSql = $"SELECT F_Id FROM vVoucherValueRow WHERE VoucherTypeId = {voucherTypeId} ";
+            if (voucherValueBillId.HasValue)
             {
-                existSql += $"AND InputBill_F_Id != {inputValueBillId}";
+                existSql += $"AND SaleBill_F_Id != {voucherValueBillId}";
             }
             existSql += $" AND {field.FieldName} IN (";
             List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -950,11 +950,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
 
             // Lấy thông tin field
-            var inputAreaFields = await GetVoucherFields(voucherTypeId);
+            var voucherAreaFields = await GetVoucherFields(voucherTypeId);
 
             // Get changed info
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
-            var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
+            var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE SaleBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
             var currentInfo = (await _purchaseOrderDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
@@ -964,7 +964,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chứng từ trong hệ thống");
             }
 
-            await ValidateAccountantConfig(data?.Info, currentInfo);
+            await ValidateSaleVoucherConfig(data?.Info, currentInfo);
 
             NonCamelCaseDictionary futureInfo = data.Info;
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, CompareRow(currentInfo, futureInfo, singleFields));
@@ -972,7 +972,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             // Get changed rows
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
             var rowsSQL = new StringBuilder("SELECT F_Id,");
-            var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
+            var multiFields = voucherAreaFields.Where(f => f.IsMultiRow).ToList();
             AppendSelectFields(ref rowsSQL, multiFields);
             rowsSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE SaleBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
             var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
@@ -992,24 +992,24 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
             // Lấy thông tin field
-            var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
+            var requiredFields = voucherAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+            var uniqueFields = voucherAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var selectFields = voucherAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
             // Check field required
-            await CheckRequired(checkInfo, checkRows, requiredFields, inputAreaFields);
+            await CheckRequired(checkInfo, checkRows, requiredFields, voucherAreaFields);
             // Check refer
             await CheckReferAsync(checkInfo, checkRows, selectFields);
             // Check unique
             await CheckUniqueAsync(voucherTypeId, checkInfo, checkRows, uniqueFields, voucherValueBillId);
             // Check value
-            CheckValue(checkInfo, checkRows, inputAreaFields);
+            CheckValue(checkInfo, checkRows, voucherAreaFields);
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Update);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -1031,7 +1031,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Update);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherAreaFields, EnumAction.Update);
 
                 await ConfirmCustomGenCode(areaFieldGenCodes);
 
@@ -1157,7 +1157,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    if (column.ColumnName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1188,7 +1188,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             foreach (var oldBillDate in oldBillDates)
             {
-                await ValidateAccountantConfig(fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+                await ValidateSaleVoucherConfig(fieldName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
             }
 
             var bills = _purchaseOrderDBContext.SaleBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
@@ -1253,16 +1253,16 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
-                var inputAreaFields = new List<ValidateVoucherField>();
+                var voucherAreaFields = new List<ValidateVoucherField>();
 
                 // Get current data
                 SaleBillInfoModel data = new SaleBillInfoModel();
                 // Lấy thông tin field
-                inputAreaFields = await GetVoucherFields(voucherTypeId);
+                voucherAreaFields = await GetVoucherFields(voucherTypeId);
 
                 // Get changed row info
                 var infoSQL = new StringBuilder("SELECT TOP 1 ");
-                var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
+                var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
                 for (int indx = 0; indx < singleFields.Count; indx++)
                 {
                     if (indx > 0)
@@ -1278,7 +1278,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 if (!string.IsNullOrEmpty(voucherTypeInfo.BeforeSaveAction) || !string.IsNullOrEmpty(voucherTypeInfo.AfterSaveAction))
                 {
                     var rowsSQL = new StringBuilder("SELECT ");
-                    var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
+                    var multiFields = voucherAreaFields.Where(f => f.IsMultiRow).ToList();
                     for (int indx = 0; indx < multiFields.Count; indx++)
                     {
                         if (indx > 0)
@@ -1291,9 +1291,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
-                await ValidateAccountantConfig(null, data?.Info);
+                await ValidateSaleVoucherConfig(null, data?.Info);
                 // Before saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Delete);
 
                 await DeleteSaleBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1304,7 +1304,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherAreaFields, EnumAction.Delete);
 
                 //await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -1406,9 +1406,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, SaleBillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, SaleBillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            var fields = (await GetVoucherFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
+            var fields = (await GetVoucherFields(voucherTypeId)).ToDictionary(f => f.FieldName, f => f);
 
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
@@ -1500,7 +1500,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             //Create rows
             foreach (var row in data.Rows)
             {
-                var dataRow = NewSaleBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, false);
+                var dataRow = NewSaleBillVersionRow(dataTable, voucherTypeId, voucherBill_F_Id, billVersionId, false);
 
                 foreach (var item in data.Info)
                 {
@@ -1515,8 +1515,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     if (item.Key.IsTkCoColumn())
                     {
-                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_CO_PREFIX.Length);
-                        var tkNo = AccountantConstants.TAI_KHOAN_NO_PREFIX + butToan;
+                        var butToan = item.Key.Substring(PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX.Length);
+                        var tkNo = PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX + butToan;
                         if (data.Info.Keys.Any(k => k.Equals(tkNo, StringComparison.OrdinalIgnoreCase)))
                         {
                             ignoreCopyInfoValues.Add(item.Key);
@@ -1526,8 +1526,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     if (item.Key.IsTkNoColumn())
                     {
-                        var butToan = item.Key.Substring(AccountantConstants.TAI_KHOAN_NO_PREFIX.Length);
-                        var tkCo = AccountantConstants.TAI_KHOAN_CO_PREFIX + butToan;
+                        var butToan = item.Key.Substring(PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX.Length);
+                        var tkCo = PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX + butToan;
                         if (data.Info.Keys.Any(k => k.Equals(tkCo, StringComparison.OrdinalIgnoreCase)))
                         {
                             ignoreCopyInfoValues.Add(item.Key);
@@ -1575,10 +1575,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 dataTable.Rows.Add(dataRow);
             }
 
-            //Create addition reciprocal accounting
+            //Create addition reciprocal sales
             if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
             {
-                var dataRow = NewSaleBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, true);
+                var dataRow = NewSaleBillVersionRow(dataTable, voucherTypeId, voucherBill_F_Id, billVersionId, true);
 
                 foreach (var item in data.Info)
                 {
@@ -1630,11 +1630,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private string GetInValidReciprocalColumn(DataTable dataTable, DataRow dataRow, HashSet<string> requireFields)
         {
-            for (var i = 0; i <= AccountantConstants.MAX_COUPLE_RECIPROCAL; i++)
+            for (var i = 0; i <= PurchaseOrderConstants.MAX_COUPLE_RECIPROCAL; i++)
             {
-                var credit_column_name = AccountantConstants.TAI_KHOAN_CO_PREFIX + i;
-                var debit_column_name = AccountantConstants.TAI_KHOAN_NO_PREFIX + i;
-                var money_column_name = AccountantConstants.THANH_TIEN_VND_PREFIX + i;
+                var credit_column_name = PurchaseOrderConstants.TAI_KHOAN_CO_PREFIX + i;
+                var debit_column_name = PurchaseOrderConstants.TAI_KHOAN_NO_PREFIX + i;
+                var money_column_name = PurchaseOrderConstants.THANH_TIEN_VND_PREFIX + i;
 
                 object tk_co = null;
                 object tk_no = null;
@@ -1692,12 +1692,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateVoucherField>> GetVoucherFields(int inputTypeId)
+        private async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId)
         {
             return await (from af in _purchaseOrderDBContext.VoucherAreaField
                           join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
                           join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
-                          where af.VoucherTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
+                          where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != PurchaseOrderConstants.F_IDENTITY
                           select new ValidateVoucherField
                           {
                               VoucherAreaFieldId = af.VoucherAreaFieldId,
@@ -1906,7 +1906,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     Rows = rows.ToArray()
                 };
 
-                await ValidateAccountantConfig(billInfo?.Info, null);
+                await ValidateSaleVoucherConfig(billInfo?.Info, null);
 
                 bills.Add(billInfo);
             }
@@ -1991,7 +1991,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var selectFormFields = (from iaf in _purchaseOrderDBContext.VoucherAreaField
                                     join itf in _purchaseOrderDBContext.VoucherField on iaf.VoucherFieldId equals itf.VoucherFieldId
-                                    where iaf.VoucherTypeId == voucherTypeId && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    where iaf.VoucherTypeId == voucherTypeId && PurchaseOrderConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
                                         itf.RefTableTitle,
@@ -2107,21 +2107,30 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow)
         {
-            var inputReferToFields = _purchaseOrderDBContext.VoucherField
+            var voucherReferToFields = _purchaseOrderDBContext.VoucherField
                 .Where(f => f.RefTableCode == categoryCode && fieldNames.Contains(f.RefTableField)).ToList();
-            // check bill refer
-            foreach (var field in fieldNames)
+            if (categoryRow == null)
             {
-                categoryRow.TryGetValue(field, out object value);
-                if (value == null) continue;
-                foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
+                // Check khi xóa cả danh mục
+                return _purchaseOrderDBContext.VoucherField.Any(f => f.RefTableCode == categoryCode);
+            }
+            else
+            {
+                // Check khi xóa dòng trong danh mục
+                // check bill refer
+                foreach (var field in fieldNames)
                 {
-                    var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                    var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
-                    bool isExisted = result != null && result.Rows.Count > 0;
-                    if (isExisted)
+                    categoryRow.TryGetValue(field, out object value);
+                    if (value == null) continue;
+                    foreach (var referToField in voucherReferToFields.Where(f => f.RefTableField == field))
                     {
-                        return true;
+                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
+                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        bool isExisted = result != null && result.Rows.Count > 0;
+                        if (isExisted)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
@@ -2132,19 +2141,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             object oldDateValue = null;
 
-            info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
+            info?.TryGetValue(PurchaseOrderConstants.BILL_DATE, out oldDateValue);
             return EnumDataType.Date.GetSqlValue(oldDateValue);
         }
 
-        private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
+        private async Task ValidateSaleVoucherConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
         {
             var billDate = ExtractBillDate(info);
             var oldDate = ExtractBillDate(oldInfo);
 
-            await ValidateAccountantConfig(billDate, oldDate);
+            await ValidateSaleVoucherConfig(billDate, oldDate);
         }
 
-        private async Task ValidateAccountantConfig(object billDate, object oldDate)
+        private async Task ValidateSaleVoucherConfig(object billDate, object oldDate)
         {
             if (billDate != null || oldDate != null)
             {

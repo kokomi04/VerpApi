@@ -23,15 +23,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class ActivityLogService : IActivityLogService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpCrossService _httpCrossService;
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
         private readonly ICurrentContextService _currentContext;
         private readonly GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient _internalActivityLogClient;
 
-        public ActivityLogService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext, GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient internalActivityLogClient)
+        public ActivityLogService(IHttpCrossService httpCrossService, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext, GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient internalActivityLogClient)
         {
-            _httpClient = httpClient;
+            _httpCrossService = httpCrossService;
             _logger = logger;
             _appSetting = appSetting.Value;
             _currentContext = currentContext;
@@ -62,7 +62,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return (bool)(reulst?.IsSuccess);
                 }
 
-                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/api/internal/InternalActivityLog/Log";
                 var body = new ActivityInput
                 {
                     UserId = _currentContext.UserId,
@@ -73,27 +72,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     MessageTypeId = EnumMessageType.ActivityLog,
                     Message = message,
                     Data = jsonData
-                }.JsonSerialize();
-
-
-                var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(uri),
-                    Method = HttpMethod.Post,
-                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
 
-                var data = await _httpClient.SendAsync(request);
-
-                if (!data.IsSuccessStatusCode)
-                {
-                    var response = await data.Content.ReadAsStringAsync();
-                    _logger.LogError($"CreateLog {uri} {{0}} Error {data.StatusCode} {{1}}", body, response);
-                }
-
-                return data.IsSuccessStatusCode;
+                return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/Log", body);
+               
             }
             catch (Exception ex)
             {

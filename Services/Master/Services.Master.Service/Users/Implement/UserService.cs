@@ -1,9 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -11,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
@@ -37,6 +41,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IMapper _mapper;
         public UserService(MasterDBContext masterContext
             , UnAuthorizeMasterDBContext unAuthorizeMasterDBContext
             , OrganizationDBContext organizationContext
@@ -47,6 +52,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             , ICurrentContextService currentContextService
             , IAsyncRunnerService asyncRunnerService
             , IServiceScopeFactory serviceScopeFactory
+            , IMapper mapper
             )
         {
             _masterContext = masterContext;
@@ -59,6 +65,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
             _serviceScopeFactory = serviceScopeFactory;
+            _mapper = mapper;
         }
 
 
@@ -465,7 +472,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<IList<RolePermissionModel>> GetMePermission()
         {
-            return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds);
+            return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds, _currentContextService.IsDeveloper);
         }
 
         /// <summary>
@@ -553,8 +560,103 @@ namespace VErp.Services.Master.Service.Users.Implement
             }).ToList();
         }
 
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "Employee",
+                CategoryTitle = "Nhân Viên",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<UserImportModel>();
+            result.Fields = fields;
+            return result;
+        }
+
+        public async Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            var reader = new ExcelReader(stream);
+
+            var genderData = new Dictionary<string, EnumGender> {
+                { EnumGender.Male.GetEnumDescription(), EnumGender.Male },
+                { EnumGender.Female.GetEnumDescription(), EnumGender.Female }
+            };
+            var userStatusData = new Dictionary<string, EnumUserStatus> {
+                { EnumUserStatus.InActived.GetEnumDescription(), EnumUserStatus.InActived },
+                { EnumUserStatus.Actived.GetEnumDescription(), EnumUserStatus.Actived },
+                { EnumUserStatus.Locked.GetEnumDescription(), EnumUserStatus.Locked }
+            };
+            var roleData = _masterContext.Role
+                .Select(r => new { r.RoleId, r.RoleName })
+                .ToList()
+                .GroupBy(r => r.RoleName)
+                .ToDictionary(r => r.Key, r => r.First().RoleId);
+
+            var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
+            {
+                if (string.IsNullOrWhiteSpace(value)) return true;
+                switch (propertyName)
+                {
+                    case nameof(UserImportModel.GenderId):
+                        if (!genderData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.GenderTypeInvalid, $"Giới tính {value} không đúng");
+                        entity.GenderId = genderData[value];
+                        return true;
+                    case nameof(UserImportModel.UserStatusId):
+                        if (!userStatusData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.StatusTypeInvalid, $"Trạng thái {value} không đúng");
+                        entity.UserStatusId = userStatusData[value];
+                        return true;
+                    case nameof(UserImportModel.RoleId):
+                        if (!roleData.ContainsKey(value)) throw new BadRequestException(RoleErrorCode.RoleNotFound, $"Nhóm quyền {value} không đúng");
+                        entity.RoleId = roleData[value];
+                        return true;
+                }
+                return false;
+            });
+
+            var userModels = new List<UserInfoInput>();
+
+            foreach (var userModel in lstData)
+            {
+                var userInfo = _mapper.Map<UserInfoInput>(userModel);
+                userModels.Add(userInfo);
+            }
+
+            await CreateBatchUser(userModels, EnumEmployeeType.Normal);
+
+            return true;
+        }
 
         #region private
+        private async Task<bool> CreateBatchUser(List<UserInfoInput> req, EnumEmployeeType employeeTypeId)
+        {
+            await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
+            try
+            {
+                var employees = await AddBatchEmployees(req, employeeTypeId);
+
+                await AddBatchUserAuthen(employees);
+
+                trans.Commit();
+
+                foreach (var info in employees)
+                {
+
+                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, info.userId, $"Thêm mới nhân viên {info.userInfo.EmployeeCode}", req.JsonSerialize());
+
+                    _logger.LogInformation("CreateUser({0}) successful!", info.userId);
+                }
+                return true;
+            }
+
+            catch (Exception)
+            {
+                await trans.TryRollbackTransactionAsync();
+                throw;
+            }
+        }
         private async Task<Enum> ValidateUserInfoInput(int currentUserId, UserInfoInput req)
         {
             var findByCode = await _organizationContext.Employee.AnyAsync(e => e.UserId != currentUserId && e.EmployeeCode == req.EmployeeCode);
@@ -627,6 +729,49 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user.UserId;
         }
 
+        private async Task<List<User>> AddBatchUserAuthen(List<(int userId, UserInfoInput userInfo)> ls)
+        {
+            var users = new List<User>();
+            foreach (var req in ls)
+            {
+                var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.userInfo.Password);
+                req.userInfo.UserName = (req.userInfo.UserName ?? "").Trim().ToLower();
+
+                var userNameHash = req.userInfo.UserName.ToGuid();
+                User user;
+                if (!string.IsNullOrWhiteSpace(req.userInfo.UserName))
+                {
+                    user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
+                    if (user != null)
+                    {
+                        throw new BadRequestException(UserErrorCode.UserNameExisted);
+                    }
+                }
+
+                users.Add(new User()
+                {
+                    UserId = req.userId,
+                    UserName = req.userInfo.UserName,
+                    UserNameHash = userNameHash,
+                    IsDeleted = false,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UserStatusId = (int)req.userInfo.UserStatusId,
+                    PasswordSalt = salt,
+                    PasswordHash = passwordHash,
+                    RoleId = req.userInfo.RoleId,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    AccessFailedCount = 0,
+                    SubsidiaryId = _currentContextService.SubsidiaryId
+                });
+            };
+
+            await _masterContext.User.AddRangeAsync(users);
+
+            await _masterContext.SaveChangesAsync();
+
+            return users;
+        }
+
         private async Task<int> CreateEmployee(UserInfoInput req, EnumEmployeeType employeeTypeId)
         {
             var employee = new Employee()
@@ -648,6 +793,32 @@ namespace VErp.Services.Master.Service.Users.Implement
             await _organizationContext.SaveChangesAsync();
 
             return employee.UserId;
+        }
+
+        private async Task<List<(int userId, UserInfoInput userInfo)>> AddBatchEmployees(List<UserInfoInput> userInfos, EnumEmployeeType employeeTypeId)
+        {
+            var employees = userInfos.Select(e => new Employee()
+            {
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName,
+                Email = e.Email,
+                Address = e.Address,
+                GenderId = (int?)e.GenderId,
+                Phone = e.Phone,
+                AvatarFileId = e.AvatarFileId,
+                SubsidiaryId = _currentContextService.SubsidiaryId,
+                EmployeeTypeId = (int)employeeTypeId,
+                UserStatusId = (int)e.UserStatusId,
+            }).ToList();
+            await _organizationContext.Employee.AddRangeAsync(employees);
+
+            await _organizationContext.SaveChangesAsync();
+            var rs = new List<(int userId, UserInfoInput userInfo)>();
+            for (int i = 0; i < employees.Count(); i++)
+            {
+                rs.Add((employees[i].UserId, userInfos[i]));
+            }
+            return rs;
         }
 
         private async Task<Enum> UpdateUserAuthen(int userId, UserInfoInput req)
@@ -749,7 +920,6 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             return user;
         }
-
 
         private class UserFullDbInfo
         {

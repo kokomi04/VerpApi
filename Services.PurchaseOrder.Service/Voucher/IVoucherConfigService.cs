@@ -40,8 +40,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         // Field
         Task<PageData<VoucherFieldOutputModel>> GetVoucherFields(string keyword, int page, int size);
-        Task<int> AddVoucherField(VoucherFieldInputModel data);
-        Task<bool> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data);
+        Task<VoucherFieldInputModel> AddVoucherField(VoucherFieldInputModel data);
+        Task<VoucherFieldInputModel> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data);
         Task<bool> DeleteVoucherField(int voucherFieldId);
         Task<VoucherAreaFieldOutputFullModel> GetVoucherAreaField(int voucherTypeId, int voucherAreaId, int voucherAreaFieldId);
         Task<PageData<VoucherAreaFieldOutputFullModel>> GetVoucherAreaFields(int voucherTypeId, int voucherAreaId, string keyword, int page, int size);

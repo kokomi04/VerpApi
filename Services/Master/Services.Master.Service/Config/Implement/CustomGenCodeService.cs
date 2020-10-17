@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using NPOI.SS.Formula.Functions;
 using VErp.Commons.GlobalObject;
+using NPOI.OpenXmlFormats.Dml;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -223,7 +224,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             else
             {
                 obj.CustomGenCodeId = model.CustomGenCodeId;
-                obj.UpdatedUserId = currentUserId;
+                obj.UpdatedByUserId = currentUserId;
             }
             await _masterDbContext.SaveChangesAsync();
 
@@ -435,6 +436,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
             return true;
 
+        }
+
+        public async Task<bool> DeleteMapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req)
+        {
+            _masterDbContext.ObjectCustomGenCodeMapping.Remove(req);
+            await _masterDbContext.SaveChangesAsync();
+            return true;
         }
     }
 }

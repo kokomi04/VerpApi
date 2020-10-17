@@ -151,13 +151,6 @@ namespace VErp.Commons.Library
             int addedRow = 0;
             int columnLength = table.Columns.Count;
 
-            var dateStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
-            var commaSeparatedStyle = (XSSFCellStyle)hssfwb.CreateCellStyle();
-            var createHelper = hssfwb.GetCreationHelper();
-
-            dateStyle.SetDataFormat(createHelper.CreateDataFormat().GetFormat("dd/mm/yyyy"));
-            commaSeparatedStyle.SetDataFormat(createHelper.CreateDataFormat().GetFormat("#,##0.00"));
-
             foreach (ExcelRow row in table.Rows)
             {
                 int curRow = startRow + addedRow;
@@ -166,30 +159,36 @@ namespace VErp.Commons.Library
                 {
                     int curCollumn = indx + startCollumn;
                     ICell cell = newRow.CreateCell(curCollumn);
-                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value) continue;
+                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value)
+                    {
+                        (row[indx] as ExcelCell).Value = string.Empty;
+                        (row[indx] as ExcelCell).Type = EnumExcelType.String;
+                    }
                     switch ((row[indx] as ExcelCell).Type)
                     {
                         case EnumExcelType.String:
                             cell.SetCellValue((row[indx] as ExcelCell).Value.ToString());
                             cell.SetCellType(CellType.String);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
                             break;
                         case EnumExcelType.Boolean:
                             cell.SetCellValue((bool)(row[indx] as ExcelCell).Value);
                             cell.SetCellType(CellType.Boolean);
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
                             break;
                         case EnumExcelType.DateTime:
                             cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
-                            cell.CellStyle = dateStyle;
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
                             break;
                         case EnumExcelType.Number:
                             cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
                             cell.SetCellType(CellType.Numeric);
-                            cell.CellStyle = commaSeparatedStyle;
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00");
                             break;
                         case EnumExcelType.Formula:
                             cell.SetCellFormula((row[indx] as ExcelCell).Value.ToString());
                             cell.SetCellType(CellType.Formula);
-                            cell.CellStyle = commaSeparatedStyle;
+                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00", isBold: true);
                             break;
                         default:
                             break;
@@ -288,6 +287,15 @@ namespace VErp.Commons.Library
         public void Add(ExcelCell value = null)
         {
             row.Add(value);
+        }
+
+        public void FillAllRow()
+        {
+            for (int r = 0; r < Count; r++)
+            {
+                if (this[r] == null)
+                    this[r] = new ExcelCell { Value = string.Empty, Type = EnumExcelType.String };
+            }
         }
     }
 

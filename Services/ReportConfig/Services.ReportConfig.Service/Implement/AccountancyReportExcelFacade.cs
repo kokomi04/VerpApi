@@ -84,12 +84,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
             for (var i = 0; i <= maxCloumn; i++)
             {
                 var c = sheet.GetColumnWidth(i);
-                if (c < 2000)
+                if (c < 2600)
                 {
-                    sheet.SetColumnWidth(i, 2000);
-                }else if(c > 7000)
+                    sheet.SetColumnWidth(i, 2600);
+                }
+                else if (c > 10000)
                 {
-                    sheet.SetColumnWidth(i, 7000);
+                    sheet.SetColumnWidth(i, 10000);
                 }
             }
 
@@ -97,7 +98,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"{reportInfo.ReportTypeName}.xlsx";
+            var fileName = Utils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
             return (stream, fileName, contentType);
         }
 
@@ -218,7 +219,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var pivot = x.Substring(x.IndexOf("(") + 1, x.IndexOf(")") - x.IndexOf("(") - 1).Split(",");
 
                     int.TryParse(pivot[0], out int fCol);
-                    int.TryParse(pivot[pivot.Length -1], out int lCol);
+                    int.TryParse(pivot[pivot.Length - 1], out int lCol);
 
                     return new { value, fCol, lCol };
                 });
@@ -229,21 +230,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var lCol = columns.IndexOf(columns.FirstOrDefault(x => x.SortOrder == col.lCol));
                     sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
                     sheet.EnsureCell(fRow, fCol).SetCellValue(col.value);
-                    sheet.SetCellStyle(fRow, fCol,
+                    for (int i = fCol; i <= lCol; i++)
+                    {
+                        sheet.SetCellStyle(fRow, i,
                             vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12);
+                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                    }
                 }
 
                 for (int i = 0; i < columns.Count; i++)
                 {
-                    if (gColumns.Any(x => x.fCol == columns[i].SortOrder 
-                        || x.lCol == columns[i].SortOrder 
+                    if (gColumns.Any(x => x.fCol == columns[i].SortOrder
+                        || x.lCol == columns[i].SortOrder
                         || (x.lCol > columns[i].SortOrder && x.fCol < columns[i].SortOrder)))
                     {
                         sheet.EnsureCell(sRow, i).SetCellValue(columns[i].Name);
                         sheet.SetCellStyle(sRow, i,
                             vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12);
+                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
                     }
                     else
                     {
@@ -251,18 +255,21 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                         sheet.SetCellStyle(fRow, i,
                             vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12);
+                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        sheet.SetCellStyle(sRow, i,
+                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
+                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
                     }
                 }
             }
             else
             {
-                for(int i=0; i< columns.Count; i++ )
+                for (int i = 0; i < columns.Count; i++)
                 {
                     sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                     sheet.SetCellStyle(fRow, i,
                         vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                        rgb: headerRgb, isBold: true, fontSize: 12);
+                        rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
                 }
             }
 
@@ -274,9 +281,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             currentRow += 1;
             ExcelData table = new ExcelData();
 
-            foreach (var col in columns)
+            for (var index = 1; index <= columns.Count; index++)
             {
-                table.Columns.Add($"Col-{col.Name}");
+                table.Columns.Add($"Col-{index}");
             }
             var sumCalc = new List<int>();
             foreach (var row in _model.Body.TableData)
@@ -295,6 +302,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         };
                     columnIndx++;
                 }
+                tbRow.FillAllRow();
                 table.Rows.Add(tbRow);
             }
             if (sumCalc.Count > 0)
@@ -309,6 +317,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         Type = EnumExcelType.Formula
                     };
                 }
+                sumRow.FillAllRow();
                 table.Rows.Add(sumRow);
             }
 

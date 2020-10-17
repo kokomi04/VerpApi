@@ -70,14 +70,14 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
 
         [HttpPost]
         [Route("fields")]
-        public async Task<int> AddVoucherField([FromBody] VoucherFieldInputModel voucherAreaField)
+        public async Task<VoucherFieldInputModel> AddVoucherField([FromBody] VoucherFieldInputModel voucherAreaField)
         {
             return await _voucherConfigService.AddVoucherField(voucherAreaField).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("fields/{voucherFieldId}")]
-        public async Task<bool> UpdateVoucherField([FromRoute] int voucherFieldId, [FromBody] VoucherFieldInputModel voucherField)
+        public async Task<VoucherFieldInputModel> UpdateVoucherField([FromRoute] int voucherFieldId, [FromBody] VoucherFieldInputModel voucherField)
         {
             return await _voucherConfigService.UpdateVoucherField(voucherFieldId, voucherField).ConfigureAwait(true);
         }

@@ -326,16 +326,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return GetRolesPermission(new List<int> { roleId });
         }
 
-        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds)
+        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds, bool? isDeveloper = null)
         {
-            return await _masterContext.RolePermission
-               .Where(p => roleIds.Contains(p.RoleId))
-                    .Select(p => new RolePermissionModel()
-                    {
-                        ModuleId = p.ModuleId,
-                        Permission = p.Permission,
-                    })
-                    .ToListAsync();
+            var modules = _masterContext.Module.AsQueryable();
+            if (isDeveloper.HasValue && !isDeveloper.Value)
+            {
+                modules = modules.Where(m => !m.IsDeveloper);
+            }
+            return await (
+                from p in _masterContext.RolePermission
+                join m in modules on p.ModuleId equals m.ModuleId
+                where roleIds.Contains(p.RoleId)
+                select new RolePermissionModel()
+                {
+                    ModuleId = p.ModuleId,
+                    Permission = p.Permission,
+                }).ToListAsync();
         }
 
         public async Task<IList<StockPemissionOutput>> GetStockPermission()
@@ -365,6 +371,34 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
             return true;
         }
+        public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
+        {
+            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Category);
+            return roleDataPermissions.Select(x => new CategoryPermissionModel
+            {
+                CategoryId = (int)x.ObjectId,
+                RoleId = x.RoleId
+            }).ToList();
+        }
+
+        public async Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req)
+        {
+            if (req == null) req = new List<CategoryPermissionModel>();
+
+            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Category);
+
+            _masterContext.RoleDataPermission.RemoveRange(lst);
+            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
+            {
+                ObjectTypeId = (int)EnumObjectType.Category,
+                ObjectId = d.CategoryId,
+                RoleId = d.RoleId
+            }));
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
         #region private
 
         private string FormatRootPath(string parentRootPath, int roleId)
@@ -433,33 +467,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _masterContext.SaveChanges();
         }
 
-        public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
-        {
-            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Category);
-            return  roleDataPermissions.Select(x => new CategoryPermissionModel
-            {
-                CategoryId = (int)x.ObjectId,
-                RoleId = x.RoleId
-            }).ToList();
-        }
 
-        public async Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req)
-        {
-            if (req == null) req = new List<CategoryPermissionModel>();
-
-            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Category);
-
-            _masterContext.RoleDataPermission.RemoveRange(lst);
-            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
-            {
-                ObjectTypeId = (int)EnumObjectType.Category,
-                ObjectId = d.CategoryId,
-                RoleId = d.RoleId
-            }));
-            await _masterContext.SaveChangesAsync();
-
-            return true;
-        }
 
         #endregion
     }

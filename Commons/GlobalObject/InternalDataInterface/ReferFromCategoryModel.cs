@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
 
-namespace VErp.Services.Accountancy.Model.Data
+namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class ReferFromCategoryModel
     {
