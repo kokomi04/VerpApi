@@ -32,7 +32,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
-        public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<Role> Role { get; set; }
@@ -341,44 +340,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
                     .HasName("UK_ObjectCustomGenCode")
                     .IsUnique();
-            });
-
-            modelBuilder.Entity<ObjectGenCode>(entity =>
-            {
-                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
-
-                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.DateFormat)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.LastCode)
-                    .IsRequired()
-                    .HasMaxLength(64)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
-
-                entity.Property(e => e.ObjectTypeName).HasMaxLength(128);
-
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ResetDate).HasColumnType("datetime");
-
-                entity.Property(e => e.Seperator)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .IsFixedLength();
-
-                entity.Property(e => e.Suffix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>

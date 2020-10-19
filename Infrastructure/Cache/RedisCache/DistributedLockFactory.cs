@@ -111,6 +111,12 @@ namespace Verp.Cache.RedisCache
             return $"GENERATECODE_LOCK_{objectTypeId}";
         }
 
+        public static string GetLockGenerateCodeCustomKey(int customGenCodeId)
+        {
+            return $"GENERATECODE_CUSTOM_LOCK_{customGenCodeId}";
+        }
+
+
         public static string GetLockPoSuggest(long purchasingOrderSugguestId)
         {
             return $"PO_SUGGUEST_LOCK_{purchasingOrderSugguestId}";
