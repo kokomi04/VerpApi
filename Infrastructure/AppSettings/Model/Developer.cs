@@ -8,11 +8,11 @@ namespace VErp.Infrastructure.AppSettings.Model
     public class Developer
     {
         public string[] Users { get; set; }
-        public string[] Roles { get; set; }
+        public int[] SubsidiaryIds { get; set; }
 
-        public bool IsDeveloper(string userName, string roleName)
+        public bool IsDeveloper(string userName, int subsidiaryId)
         {
-            return Users?.Contains(userName) == true && Roles?.Contains(roleName) == true;
+            return Users?.Contains(userName) == true && SubsidiaryIds?.Contains(subsidiaryId) == true;
         }
     }
 }
