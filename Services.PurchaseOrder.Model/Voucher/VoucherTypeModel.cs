@@ -7,7 +7,6 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
-
 {
     public class VoucherTypeModel: IMapFrom<VoucherType>
     {

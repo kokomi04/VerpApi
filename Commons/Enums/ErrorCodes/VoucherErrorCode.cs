@@ -75,6 +75,10 @@ namespace VErp.Commons.Enums.StandardEnum
         PrintConfigNotFound = 36,
         [Description("Tên cấu hình phiếu in đã tồn tại")]
         PrintConfigNameAlreadyExisted = 37,
-        DoNotGeneratePrintTemplate = 38
+        DoNotGeneratePrintTemplate = 38,
+        [Description("Không tìm thấy chức năng")]
+        VoucherActionNotFound = 39,
+        [Description("Mã chức năng đã tồn tại")]
+        VoucherActionCodeAlreadyExisted = 40,
     }
 }
