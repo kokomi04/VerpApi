@@ -9,45 +9,50 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.ErrorCodes;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountancy.Model.StoredProcedure;
+using VErp.Services.Master.Model.StoredProcedure;
 
-namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
+namespace VErp.Services.Master.Service.StoredProcedure.Implement
 {
     public class StoredProcedureService : IStoredProcedureService
     {
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger<StoredProcedureService> _logger;
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly MasterDBContext _masterDBContext;
+        private readonly IManageVErpModuleService _manageVErpModuleService;
 
         private const string PATTERN = @"(uv|usp|ufn)\w+";
 
-        public StoredProcedureService(AccountancyDBContext accountancyDBContext,
+        public StoredProcedureService(MasterDBContext masterDBContext,
             ILogger<StoredProcedureService> logger,
-            IActivityLogService activityLogService)
+            IActivityLogService activityLogService,
+            IManageVErpModuleService manageVErpModuleService)
         {
-            _accountancyDBContext = accountancyDBContext;
+            _masterDBContext = masterDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
+            _manageVErpModuleService = manageVErpModuleService;
         }
 
-        public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList()
+        public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList(EnumModuleType moduleType)
         {
-            var query = @"
+            var data = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
+            var db = await GetDatabase(moduleType);
+            var query = @$"
+                use {db};
                 select o.name, o.type_desc, m.definition
                 from sys.objects o
                 join sys.sql_modules m on m.object_id = o.object_id
-                where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%')
+                where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%');
             ";
 
-            var result = (await _accountancyDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
-
-            var data = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
+            var result = (await _masterDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
 
             foreach (var type in new[]{EnumStoreProcedureType.View,
                 EnumStoreProcedureType.Procedure,
@@ -70,12 +75,15 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
             return data;
         }
 
-        public async Task<bool> Create(int type, StoredProcedureModel storedProcedureModel)
+        public async Task<bool> Create(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
-            string sqlQuery = @$"select o.name
+            var db = await GetDatabase(moduleType);
+            string sqlQuery = @$"
+                                use {db};
+                                select o.name
                                 from sys.objects o
                                 join sys.sql_modules m on m.object_id = o.object_id
-                                where o.name = '{storedProcedureModel.Name}'";
+                                where o.name = '{storedProcedureModel.Name}';";
 
             if (!storedProcedureModel.Definition.ToLower().StartsWith("create"))
             {
@@ -84,22 +92,23 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
 
             InvalidStoreProcedure(storedProcedureModel);
 
-            if ((await _accountancyDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
+            if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
             {
                 throw new BadRequestException(StoredProcedureErrorCode.InvalidExists, $"Đã tồn tại {storedProcedureModel.Name}");
             }
 
-            await _accountancyDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);
+            await _masterDBContext.Database.ExecuteSqlRawAsync($"USE {GetDatabase(moduleType)}; {storedProcedureModel.Definition}");
             return true;
         }
-        public async Task<bool> Update(int type, StoredProcedureModel storedProcedureModel)
+        public async Task<bool> Update(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
             if (!storedProcedureModel.Definition.ToLower().StartsWith("alter"))
             {
                 throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm thay đổi bắt đầu với \"ALTER\"");
             }
             InvalidStoreProcedure(storedProcedureModel);
-            await _accountancyDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);
+            var db = await GetDatabase(moduleType);
+            await _masterDBContext.Database.ExecuteSqlRawAsync($"USE {db}; {storedProcedureModel.Definition}");
             return true;
         }
 
@@ -120,16 +129,17 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
                 throw new BadRequestException(StoredProcedureErrorCode.InvalidName);
             }
 
-            if(!InvalidName(type, storedProcedureModel.Name))
+            if (!InvalidName(type, storedProcedureModel.Name))
             {
                 throw new BadRequestException(StoredProcedureErrorCode.InvalidName);
             }
         }
 
-        public async Task<bool> Drop(int type, StoredProcedureModel storedProcedureModel)
+        public async Task<bool> Drop(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
-            var query = $"DROP {storedProcedureModel.Type.GetEnumDescription()} {storedProcedureModel.Name}";
-            await _accountancyDBContext.Database.ExecuteSqlRawAsync(query);
+            var db = await GetDatabase(moduleType);
+            var query = $"USE {db}; DROP {storedProcedureModel.Type.GetEnumDescription()} {storedProcedureModel.Name}";
+            await _masterDBContext.Database.ExecuteSqlRawAsync(query);
             return true;
         }
 
@@ -137,7 +147,7 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
         {
             switch (type)
             {
-                case EnumStoreProcedureType.Function: 
+                case EnumStoreProcedureType.Function:
                     return name.StartsWith("ufn");
                 case EnumStoreProcedureType.View:
                     return name.StartsWith("uv");
@@ -146,6 +156,12 @@ namespace VErp.Services.Accountancy.Service.StoredProcedure.Implement
             }
 
             return false;
+        }
+
+        private async Task<string> GetDatabase(EnumModuleType moduleType)
+        {
+            var ls = await _manageVErpModuleService.GetDbByModule(moduleType);
+            return ls[0];
         }
 
     }

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 
-namespace VErp.Services.Accountancy.Model.StoredProcedure
+namespace VErp.Services.Master.Model.StoredProcedure
 {
     public class StoredProcedureModel
     {

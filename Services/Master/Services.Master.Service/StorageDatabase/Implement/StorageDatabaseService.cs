@@ -35,23 +35,15 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IPhysicalFileService _physicalFileService;
-
-        private static readonly Dictionary<EnumModuleType, string[]> ListDatabase = new Dictionary<EnumModuleType, string[]>()
-        {
-            {EnumModuleType.Master, new[] { "MasterDB", "ActivityLogDB" } },
-            {EnumModuleType.Accountant, new[] { "AccountancyDB", "ReportConfigDB" } },
-            {EnumModuleType.Organization, new[] { "OrganizationDB" } },
-            {EnumModuleType.PurchaseOrder, new[] { "PurchaseOrderDB" } },
-            {EnumModuleType.Stock, new[] { "StockDB" } },
-        };
-
+        private readonly IManageVErpModuleService _manageVErpModuleService;
 
         public StorageDatabaseService(MasterDBContext masterDBContext,
             IOptions<AppSetting> appSetting,
             IActivityLogService activityLogService,
             ILogger<StorageDatabaseService> logger,
             ICurrentContextService currentContextService,
-            IPhysicalFileService physicalFileService)
+            IPhysicalFileService physicalFileService,
+            IManageVErpModuleService manageVErpModuleService)
         {
             _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
@@ -59,6 +51,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             _logger = logger;
             _currentContextService = currentContextService;
             _physicalFileService = physicalFileService;
+            _manageVErpModuleService = manageVErpModuleService;
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
@@ -70,7 +63,8 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
 
                 string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleId.GetStringValue());
-                foreach (string db in ListDatabase[storage.ModuleId])
+                var dbs = await _manageVErpModuleService.GetDbByModule(storage.ModuleId);
+                foreach (string db in dbs)
                 {
                     string filePath = $"{outDirectory}/{db.ToLower()}.bak";
 #if !DEBUG
@@ -132,19 +126,9 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return true;
         }
 
-        public async Task<IList<StorageDatabseModel>> GetList()
+        public async Task<IList<ProductModuleInfo>> GetList()
         {
-            var results = new List<StorageDatabseModel>();
-            foreach (var (module, storages) in ListDatabase)
-            {
-                results.Add(new StorageDatabseModel
-                {
-                    ModuleId = module,
-                    ModuleName = module.GetEnumDescription(),
-                });
-            }
-
-            return results;
+            return await _manageVErpModuleService.GetAllModule();
         }
 
         public async Task<bool> RestoreForBackupPoint(long backupPoint)
@@ -190,7 +174,8 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
             if (fileInfo == null)
                 throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
-            foreach(string db in ListDatabase[(EnumModuleType)backup.ModuleId])
+            var dbs = await _manageVErpModuleService.GetDbByModule((EnumModuleType)backup.ModuleId);
+            foreach(string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
                 string filePath = GetPhysicalFilePath($"{outDirectory}/{db}.bak");
