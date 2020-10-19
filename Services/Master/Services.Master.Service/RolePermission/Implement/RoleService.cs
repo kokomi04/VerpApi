@@ -326,16 +326,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return GetRolesPermission(new List<int> { roleId });
         }
 
-        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds)
+        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds, bool? isDeveloper = null)
         {
-            return await _masterContext.RolePermission
-               .Where(p => roleIds.Contains(p.RoleId))
-                    .Select(p => new RolePermissionModel()
-                    {
-                        ModuleId = p.ModuleId,
-                        Permission = p.Permission,
-                    })
-                    .ToListAsync();
+            var modules = _masterContext.Module.AsQueryable();
+            if (isDeveloper.HasValue && !isDeveloper.Value)
+            {
+                modules = modules.Where(m => !m.IsDeveloper);
+            }
+            return await (
+                from p in _masterContext.RolePermission
+                join m in modules on p.ModuleId equals m.ModuleId
+                where roleIds.Contains(p.RoleId)
+                select new RolePermissionModel()
+                {
+                    ModuleId = p.ModuleId,
+                    Permission = p.Permission,
+                }).ToListAsync();
         }
 
         public async Task<IList<StockPemissionOutput>> GetStockPermission()
@@ -461,7 +467,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _masterContext.SaveChanges();
         }
 
-        
+
 
         #endregion
     }

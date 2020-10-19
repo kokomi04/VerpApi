@@ -472,7 +472,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<IList<RolePermissionModel>> GetMePermission()
         {
-            return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds);
+            return await _roleService.GetRolesPermission(_currentContextService.RoleInfo.RoleIds, _currentContextService.IsDeveloper);
         }
 
         /// <summary>
@@ -579,29 +579,29 @@ namespace VErp.Services.Master.Service.Users.Implement
         public async Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
-            
-            var genderData = new Dictionary<string, EnumGender> { 
-                { EnumGender.Male.GetEnumDescription(), EnumGender.Male }, 
-                { EnumGender.Female.GetEnumDescription(), EnumGender.Female } 
+
+            var genderData = new Dictionary<string, EnumGender> {
+                { EnumGender.Male.GetEnumDescription(), EnumGender.Male },
+                { EnumGender.Female.GetEnumDescription(), EnumGender.Female }
             };
-            var userStatusData = new Dictionary<string, EnumUserStatus> { 
-                { EnumUserStatus.InActived.GetEnumDescription(), EnumUserStatus.InActived }, 
-                { EnumUserStatus.Actived.GetEnumDescription(), EnumUserStatus.Actived }, 
-                { EnumUserStatus.Locked.GetEnumDescription(), EnumUserStatus.Locked } 
+            var userStatusData = new Dictionary<string, EnumUserStatus> {
+                { EnumUserStatus.InActived.GetEnumDescription(), EnumUserStatus.InActived },
+                { EnumUserStatus.Actived.GetEnumDescription(), EnumUserStatus.Actived },
+                { EnumUserStatus.Locked.GetEnumDescription(), EnumUserStatus.Locked }
             };
             var roleData = _masterContext.Role
                 .Select(r => new { r.RoleId, r.RoleName })
                 .ToList()
-                .GroupBy(r=>r.RoleName)
+                .GroupBy(r => r.RoleName)
                 .ToDictionary(r => r.Key, r => r.First().RoleId);
-            
+
             var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
                     case nameof(UserImportModel.GenderId):
-                        if(!genderData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.GenderTypeInvalid, $"Giới tính {value} không đúng");
+                        if (!genderData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.GenderTypeInvalid, $"Giới tính {value} không đúng");
                         entity.GenderId = genderData[value];
                         return true;
                     case nameof(UserImportModel.UserStatusId):
@@ -618,7 +618,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var userModels = new List<UserInfoInput>();
 
-            foreach(var userModel in lstData)
+            foreach (var userModel in lstData)
             {
                 var userInfo = _mapper.Map<UserInfoInput>(userModel);
                 userModels.Add(userInfo);
@@ -732,7 +732,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private async Task<List<User>> AddBatchUserAuthen(List<(int userId, UserInfoInput userInfo)> ls)
         {
             var users = new List<User>();
-            foreach(var req in ls)
+            foreach (var req in ls)
             {
                 var (salt, passwordHash) = Sercurity.GenerateHashPasswordHash(_appSetting.PasswordPepper, req.userInfo.Password);
                 req.userInfo.UserName = (req.userInfo.UserName ?? "").Trim().ToLower();

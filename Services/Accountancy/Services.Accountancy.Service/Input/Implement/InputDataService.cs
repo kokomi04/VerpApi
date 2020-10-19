@@ -1754,7 +1754,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-         
+
             var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefTableField).ToList());
 
             var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
@@ -2148,8 +2148,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (value == null) continue;
                     foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
-                        var existSql = $"SELECT tk.F_Id FROM {INPUTVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                        var result = await _accountancyDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        var referToValue = new SqlParameter("@RefValue", value?.ToString());
+                        var existSql = $"SELECT tk.F_Id FROM {INPUTVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
                         {

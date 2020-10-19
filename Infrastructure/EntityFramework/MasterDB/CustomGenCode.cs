@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.MasterDB
     public partial class CustomGenCode
     {
         public int CustomGenCodeId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int? ParentId { get; set; }
         public string CustomGenCodeName { get; set; }
         public int CodeLength { get; set; }
@@ -25,5 +26,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int? TempValue { get; set; }
         public string TempCode { get; set; }
         public int SortOrder { get; set; }
+        public bool IsDefault { get; set; }
     }
 }
