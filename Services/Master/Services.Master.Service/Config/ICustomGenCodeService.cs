@@ -25,7 +25,7 @@ namespace VErp.Services.Master.Service.Config
 
         PageData<ObjectType> GetAllObjectType();
 
-        Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId);
+        Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType objectTypeId, int objectId);
 
         Task<bool> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
