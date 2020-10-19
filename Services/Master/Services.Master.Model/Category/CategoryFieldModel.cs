@@ -74,16 +74,4 @@ namespace VErp.Services.Master.Model.Category
         public string CategoryFieldName { get; set; }
         public string Title { get; set; }
     }
-
-    public class ReferInputModel
-    {
-        public IList<string> CategoryCodes { get; set; }
-        public IList<string> FieldNames { get; set; }
-
-        public ReferInputModel()
-        {
-            CategoryCodes = new List<string>();
-            FieldNames = new List<string>();
-        }
-    }
 }

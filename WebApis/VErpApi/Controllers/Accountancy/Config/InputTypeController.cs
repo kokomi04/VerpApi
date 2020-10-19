@@ -24,7 +24,6 @@ namespace VErpApi.Controllers.Accountancy.Config
             _inputConfigService = inputConfigService;
         }
 
-
         [HttpGet]
         [Route("groups")]
         public async Task<IList<InputTypeGroupList>> GetList()
@@ -52,7 +51,6 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
         }
-
 
         [HttpGet]
         [Route("")]
