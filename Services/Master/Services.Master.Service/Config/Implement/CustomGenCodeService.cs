@@ -57,7 +57,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             var total = await query.CountAsync();
-            var objList = size > 0 ? await query.OrderBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderBy(c => c.SortOrder).ToListAsync();
+            var objList = size > 0 ? await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).ToListAsync();
 
             var pagedData = new List<CustomGenCodeOutputModel>();
             foreach (var item in objList)
