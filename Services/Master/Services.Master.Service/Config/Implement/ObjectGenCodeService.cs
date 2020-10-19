@@ -261,7 +261,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }*/
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
             {
-                var currentConfig = await _customGenCodeService.GetCurrentConfig((int)objectType, 0);
+                var currentConfig = await _customGenCodeService.GetCurrentConfig(objectType, 0);
                 var customCode = await _customGenCodeService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
 
                 await _customGenCodeService.ConfirmCode((int)objectType, 0);
