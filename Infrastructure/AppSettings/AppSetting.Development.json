@@ -30,6 +30,6 @@
   },
   "Developer": {
     "Users": [ "user01" ],
-    "Roles": [ "Administrators" ]
+    "SubsidiaryIds": [ 2 ]
   }
 }
