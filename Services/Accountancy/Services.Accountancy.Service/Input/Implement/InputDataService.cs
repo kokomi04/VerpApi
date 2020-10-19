@@ -2182,7 +2182,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             if (billDate != null || oldDate != null)
             {
-
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {
