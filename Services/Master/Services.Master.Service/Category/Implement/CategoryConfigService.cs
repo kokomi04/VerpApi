@@ -26,6 +26,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Category;
 using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Service.Category
@@ -37,14 +38,14 @@ namespace VErp.Services.Master.Service.Category
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             )
         {
             _logger = logger;
@@ -52,7 +53,7 @@ namespace VErp.Services.Master.Service.Category
             _masterContext = accountancyContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
         }
 
         #region Category
@@ -356,15 +357,7 @@ namespace VErp.Services.Master.Service.Category
             // Validate
             var isExisted = _masterContext.CategoryField.Any(c => c.CategoryId != categoryId && c.RefTableCode == category.CategoryCode);
             if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
-            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
-            {
-                category.CategoryCode
-            });
-            if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
-            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
-            {
-                category.CategoryCode
-            });
+            isExisted = await _httpCategoryHelperService.CheckReferFromCategory(category.CategoryCode);
             if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
 
             using var trans = await _masterContext.Database.BeginTransactionAsync();
@@ -740,7 +733,6 @@ namespace VErp.Services.Master.Service.Category
         }
         #endregion
 
-
         public async Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames)
         {
             return await (from f in _masterContext.CategoryField
@@ -770,7 +762,6 @@ namespace VErp.Services.Master.Service.Category
             //{
             //    throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
             //}
-
 
             var result = new CategoryNameModel()
             {
@@ -818,8 +809,6 @@ namespace VErp.Services.Master.Service.Category
                     })
                     .First()
                 );
-
-
 
             foreach (var field in fields)
             {

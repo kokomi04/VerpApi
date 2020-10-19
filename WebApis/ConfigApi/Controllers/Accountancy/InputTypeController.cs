@@ -22,7 +22,6 @@ namespace ConfigApi.Controllers.Accountancy
             _inputConfigService = inputConfigService;
         }
 
-
         [HttpGet]
         [Route("groups")]
         public async Task<IList<InputTypeGroupList>> GetList()
@@ -51,7 +50,6 @@ namespace ConfigApi.Controllers.Accountancy
             return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
         }
 
-
         [HttpGet]
         [Route("")]
         public async Task<PageData<InputTypeModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
@@ -68,14 +66,14 @@ namespace ConfigApi.Controllers.Accountancy
 
         [HttpPost]
         [Route("fields")]
-        public async Task<int> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        public async Task<InputFieldInputModel> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
             return await _inputConfigService.AddInputField(inputAreaField).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("fields/{voucherFieldId}")]
-        public async Task<bool> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
+        public async Task<InputFieldInputModel> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
         {
             return await _inputConfigService.UpdateInputField(inputFieldId, inputField).ConfigureAwait(true);
         }
@@ -170,7 +168,6 @@ namespace ConfigApi.Controllers.Accountancy
         {
             return await _inputConfigService.InputTypeViewDelete(inputTypeViewId).ConfigureAwait(true);
         }
-
 
         [HttpPost]
         [Route("{voucherTypeId}/inputareas")]
