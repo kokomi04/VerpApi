@@ -26,16 +26,9 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
 
         [HttpGet]
         [Route("voucherType/{voucherTypeId}")]
-        public async Task<IList<VoucherActionListModel>> GetList(int voucherTypeId)
+        public async Task<IList<VoucherActionModel>> GetList(int voucherTypeId)
         {
             return await _voucherActionService.GetVoucherActions(voucherTypeId).ConfigureAwait(true);
-        }
-
-        [HttpGet]
-        [Route("{voucherActionId}")]
-        public async Task<VoucherActionModel> GetVoucherAction(int voucherActionId)
-        {
-            return await _voucherActionService.GetVoucherAction(voucherActionId).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -58,6 +51,11 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
             return await _voucherActionService.DeleteVoucherAction(voucherActionId).ConfigureAwait(true);
         }
 
-        
+        [HttpPost]
+        [Route("ExecVoucherAction/{voucherActionId}")]
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherActionId, [FromBody] SaleBillInfoModel data)
+        {
+            return await _voucherActionService.ExecVoucherAction(voucherActionId, data).ConfigureAwait(true);
+        }
     }
 }

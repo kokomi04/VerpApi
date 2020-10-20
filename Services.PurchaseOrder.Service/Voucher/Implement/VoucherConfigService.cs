@@ -1021,7 +1021,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     await _purchaseOrderDBContext.AddColumn(VOUCHERVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
                 await UpdateVoucherValueView();
-
+                await UpdateVoucherTableType();
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Thêm trường dữ liệu chung {voucherField.Title}", data.JsonSerialize());
@@ -1059,6 +1059,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await UpdateVoucherValueView();
+                await UpdateVoucherTableType();
 
                 trans.Commit();
 
@@ -1097,6 +1098,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     await _purchaseOrderDBContext.DropColumn(VOUCHERVALUEROW_TABLE, voucherField.FieldName);
                 }
                 await UpdateVoucherValueView();
+                await UpdateVoucherTableType();
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Xóa trường dữ liệu chung {voucherField.Title}", voucherField.JsonSerialize());
@@ -1115,6 +1117,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private async Task UpdateVoucherValueView()
         {
             await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_VoucherValueRow_UpdateView", Array.Empty<SqlParameter>());
+        }
+
+        private async Task UpdateVoucherTableType()
+        {
+            await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_UpdateTableType", Array.Empty<SqlParameter>());
         }
     }
 }

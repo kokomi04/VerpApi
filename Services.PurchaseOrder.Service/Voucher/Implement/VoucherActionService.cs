@@ -49,22 +49,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _mapper = mapper;
         }
 
-        public async Task<IList<VoucherActionListModel>> GetVoucherActions(int voucherTypeId)
+        public async Task<IList<VoucherActionModel>> GetVoucherActions(int voucherTypeId)
         {
             return _purchaseOrderDBContext.VoucherAction
                 .Where(a => a.VoucherTypeId == voucherTypeId)
-                .ProjectTo<VoucherActionListModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<VoucherActionModel>(_mapper.ConfigurationProvider)
                 .ToList();
-        }
-
-        public async Task<VoucherActionModel> GetVoucherAction(int voucherActionId)
-        {
-            var action = _purchaseOrderDBContext.VoucherAction
-               .Where(a => a.VoucherActionId == voucherActionId)
-               .ProjectTo<VoucherActionModel>(_mapper.ConfigurationProvider)
-               .FirstOrDefault();
-            if (action == null) throw new BadRequestException(GeneralCode.ItemNotFound);
-            return action;
         }
 
         public async Task<VoucherActionModel> AddVoucherAction(VoucherActionModel data)
@@ -91,7 +81,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             if (!_purchaseOrderDBContext.VoucherType.Any(v => v.VoucherTypeId == data.VoucherTypeId)) throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             if (_purchaseOrderDBContext.VoucherAction.Any(v => v.VoucherActionId != voucherActionId && v.VoucherActionCode == data.VoucherActionCode)) throw new BadRequestException(VoucherErrorCode.VoucherActionCodeAlreadyExisted);
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherTypeId == voucherActionId);
+            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
             try
             {
@@ -114,7 +104,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<bool> DeleteVoucherAction(int voucherActionId)
         {
-           var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherTypeId == voucherActionId);
+            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
             try
             {
@@ -128,6 +118,63 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 _logger.LogError(ex, "Delete");
                 throw;
             }
+        }
+
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, SaleBillInfoModel data)
+        {
+            List<NonCamelCaseDictionary> result = null;
+            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
+            if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
+
+            var fields = _purchaseOrderDBContext.VoucherField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
+            // Validate permission
+
+            var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
+            var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
+            if (!string.IsNullOrEmpty(action.SqlAction))
+            {
+                var parammeters = new List<SqlParameter>() {
+                    resultParam,
+                    messageParam
+                };
+
+                DataTable rows = ConvertToDataTable(data, fields);
+                parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" });
+
+                var resultData = await _purchaseOrderDBContext.QueryDataTable(action.SqlAction, parammeters);
+                result = resultData.ConvertData();
+            }
+            var code = (resultParam.Value as int?).GetValueOrDefault();
+
+            if (code != 0)
+            {
+                var message = messageParam.Value as string;
+                throw new BadRequestException(GeneralCode.InvalidParams, message);
+            }
+
+            return result;
+        }
+
+        private DataTable ConvertToDataTable(SaleBillInfoModel data, IList<VoucherField> fields)
+        {
+            var dataTable = new DataTable();
+            foreach (var field in fields)
+            {
+                dataTable.Columns.Add(field.FieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
+            }
+            foreach (var row in data.Rows)
+            {
+                var dataRow = dataTable.NewRow();
+                foreach (var field in fields)
+                {
+                    row.TryGetValue(field.FieldName, out var celValue);
+                    if (celValue == null) data.Info.TryGetValue(field.FieldName, out celValue);
+                    var value = ((EnumDataType)field.DataTypeId).GetSqlValue(celValue);
+                    dataRow[field.FieldName] = value;
+                }
+                dataTable.Rows.Add(dataRow);
+            }
+            return dataTable;
         }
     }
 }
