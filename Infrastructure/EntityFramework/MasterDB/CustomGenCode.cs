@@ -26,5 +26,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int? TempValue { get; set; }
         public string TempCode { get; set; }
         public int SortOrder { get; set; }
+        public bool IsDefault { get; set; }
     }
 }

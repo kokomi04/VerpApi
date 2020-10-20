@@ -17,6 +17,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using NPOI.SS.Formula.Functions;
 using VErp.Commons.GlobalObject;
 using NPOI.OpenXmlFormats.Dml;
+using VErp.Infrastructure.EF.EFExtensions;
+using Verp.Cache.RedisCache;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -31,7 +33,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
-            
+
 
         )
         {
@@ -55,7 +57,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             var total = await query.CountAsync();
-            var objList = size > 0 ? await query.OrderBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderBy(c => c.SortOrder).ToListAsync();
+            var objList = size > 0 ? await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).ToListAsync();
 
             var pagedData = new List<CustomGenCodeOutputModel>();
             foreach (var item in objList)
@@ -76,7 +78,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedUserId = item.UpdatedUserId,
                     CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
                     UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
-                    SortOrder = item.SortOrder
+                    SortOrder = item.SortOrder,
+                    IsDefault = item.IsDefault
                 };
                 pagedData.Add(info);
             }
@@ -107,25 +110,27 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
                 UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
-                SortOrder = obj.SortOrder
+                SortOrder = obj.SortOrder,
+                IsDefault = obj.IsDefault
             };
             return info;
         }
 
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(int objectTypeId, int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType objectTypeId, int objectId)
         {
-            var obj = await _masterDbContext.ObjectCustomGenCodeMapping
-                .Join(_masterDbContext.CustomGenCode, m => m.CustomGenCodeId, c => c.CustomGenCodeId, (m, c) => new
-                {
-                    ObjectCustomGenCodeMapping = m,
-                    CustomGenCodeId = c
-                })
-                .Where(q => q.ObjectCustomGenCodeMapping.ObjectTypeId == objectTypeId
-                && q.ObjectCustomGenCodeMapping.ObjectId == objectId
-                && q.CustomGenCodeId.IsActived
-                && !q.CustomGenCodeId.IsDeleted)
-                .Select(q => q.CustomGenCodeId)
-                .FirstOrDefaultAsync();
+            var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId))?.CustomGenCodeId;
+
+            CustomGenCode obj = null;
+
+            if (customGenCodeId.HasValue)
+            {
+                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.CustomGenCodeId == customGenCodeId);
+            }
+            else
+            {
+                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
+            }
+
 
             if (obj == null)
             {
@@ -148,7 +153,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
                 UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
-                SortOrder = obj.SortOrder
+                SortOrder = obj.SortOrder,
+                IsDefault = obj.IsDefault
             };
         }
 
@@ -174,7 +180,19 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.LastValue = model.LastValue;
             obj.SortOrder = model.SortOrder;
 
+            obj.IsDefault = model.IsDefault;
+
             await _masterDbContext.SaveChangesAsync();
+
+            if (obj.IsDefault)
+            {
+                await _masterDbContext.CustomGenCode.Where(c => c.CustomGenCodeId != customGenCodeId)
+                    .UpdateByBatch(c => new CustomGenCode()
+                    {
+                        IsDefault = false
+                    });
+            }
+
             await UpdateSortOrder();
 
             await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
@@ -324,6 +342,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                 LastValue = model.LastValue,
                 LastCode = string.Empty,
                 IsActived = true,
+                IsDefault = model.IsDefault,
+
+
                 IsDeleted = false,
                 UpdatedUserId = currentUserId,
                 ResetDate = DateTime.UtcNow,
@@ -333,6 +354,16 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext.CustomGenCode.Add(entity);
 
             await _masterDbContext.SaveChangesAsync();
+
+            if (model.IsDefault)
+            {
+                await _masterDbContext.CustomGenCode.Where(c => c.CustomGenCodeId != entity.CustomGenCodeId)
+                    .UpdateByBatch(c => new CustomGenCode()
+                    {
+                        IsDefault = false
+                    });
+            }
+
             await UpdateSortOrder();
 
             await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
@@ -343,60 +374,63 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "")
         {
-            CustomCodeModel result;
-
-            using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeCustomKey(customGenCodeId)))
             {
-                var config = _masterDbContext.CustomGenCode
-                    .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
+                CustomCodeModel result;
 
-                if (config == null)
+                using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
-                    trans.Rollback();
-                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+                    var config = _masterDbContext.CustomGenCode
+                        .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
+
+                    if (config == null)
+                    {
+                        trans.Rollback();
+                        throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+                    }
+                    string newCode = string.Empty;
+                    var newId = 0;
+                    var maxId = (int)Math.Pow(10, config.CodeLength);
+                    var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
+
+                    lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
+
+                    if (lastValue < 1)
+                    {
+                        newId = 1;
+                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                    }
+                    else
+                    {
+                        newId = lastValue + 1;
+                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
+                    }
+
+                    newCode = Utils.FormatStyle(newCode, code, null);
+
+                    if (!(newId < maxId))
+                    {
+                        config.CodeLength += 1;
+                        config.ResetDate = DateTime.UtcNow;
+                    }
+                    config.TempValue = newId;
+                    config.TempCode = newCode;
+
+                    _masterDbContext.SaveChanges();
+                    trans.Commit();
+
+                    result = new CustomCodeModel
+                    {
+                        CustomCode = newCode,
+                        LastValue = newId,
+                        CustomGenCodeId = config.CustomGenCodeId,
+                    };
                 }
-                string newCode = string.Empty;
-                var newId = 0;
-                var maxId = (int)Math.Pow(10, config.CodeLength);
-                var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
 
-                lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
-
-                if (lastValue < 1)
-                {
-                    newId = 1;
-                    var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                    newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                }
-                else
-                {
-                    newId = lastValue + 1;
-                    var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                    newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                }
-
-                newCode = Utils.FormatStyle(newCode, code, null);
-
-                if (!(newId < maxId))
-                {
-                    config.CodeLength += 1;
-                    config.ResetDate = DateTime.UtcNow;
-                }
-                config.TempValue = newId;
-                config.TempCode = newCode;
-
-                _masterDbContext.SaveChanges();
-                trans.Commit();
-
-                result = new CustomCodeModel
-                {
-                    CustomCode = newCode,
-                    LastValue = newId,
-                    CustomGenCodeId = config.CustomGenCodeId,
-                };
+                return result;
             }
-
-            return result;
         }
 
         public PageData<ObjectType> GetAllObjectType()
@@ -407,8 +441,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ObjectTypeName = m.Description ?? m.Name.ToString()
             }).ToList();
 
-            
-            return (allData, allData.Count);        
+
+            return (allData, allData.Count);
         }
 
         public async Task<bool> ConfirmCode(int objectTypeId, int objectId)

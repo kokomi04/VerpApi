@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.System.Internal
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
         }
