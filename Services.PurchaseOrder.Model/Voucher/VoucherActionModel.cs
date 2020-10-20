@@ -22,12 +22,4 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string SqlAction { get; set; }
         public string JsAction { get; set; }
     }
-
-    public class VoucherActionListModel : IMapFrom<VoucherAction>
-    {
-        public int VoucherActionId { get; set; }
-        public string Title { get; set; }
-        public string VoucherActionCode { get; set; }
-        public int SortOrder { get; set; }
-    }
 }
