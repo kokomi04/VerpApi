@@ -1154,7 +1154,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                        ProductId = g.Key,
                        Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                    }
-           ).Where(b => b.Total < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
+           ).Where(b => b.Total < -Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
            .ToListAsync();
 
             var afters = await (
@@ -1186,7 +1186,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      g.Key.ProductUnitConversionId,
                      Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
                  }
-            ).Where(b => b.Total < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
+            ).Where(b => b.Total < -Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
             .ToListAsync();
 
             var aftersByAltUnit = await (
