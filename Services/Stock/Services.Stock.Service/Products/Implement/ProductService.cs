@@ -117,7 +117,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 EstimatePrice = req.EstimatePrice,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
-                IsDeleted = false
+                IsDeleted = false,
+                CustomerId = req.CustomerId,
+                GrossWeight = req.GrossWeight,
+                Height = req.Height,
+                Long = req.Long,
+                Width = req.Width,
+                LoadAbility = req.LoadAbility,
+                NetWeight = req.NetWeight,
+                PackingMethod = req.PackingMethod,
+                Measurement = req.Measurement,
+                ProductDescription = req.ProductDescription,
+                ProductNameEng = req.ProductNameEng
             };
 
             await _stockContext.AddAsync(productInfo);
@@ -241,6 +252,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Barcode = productInfo.Barcode,
                 UnitId = productInfo.UnitId,
                 EstimatePrice = productInfo.EstimatePrice,
+                CustomerId = productInfo.CustomerId,
+                GrossWeight = productInfo.GrossWeight,
+                Height = productInfo.Height,
+                Long = productInfo.Long,
+                Width = productInfo.Width,
+                LoadAbility = productInfo.LoadAbility,
+                NetWeight = productInfo.NetWeight,
+                PackingMethod = productInfo.PackingMethod,
+                Measurement = productInfo.Measurement,
+                ProductDescription = productInfo.ProductDescription,
+                ProductNameEng = productInfo.ProductNameEng,
 
                 Extra = productExtra != null ? new ProductModelExtra()
                 {
@@ -353,6 +375,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.UnitId = req.UnitId;
                     productInfo.EstimatePrice = req.EstimatePrice;
                     productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    productInfo.CustomerId = req.CustomerId;
+                    productInfo.GrossWeight = req.GrossWeight;
+                    productInfo.Height = req.Height;
+                    productInfo.Long = req.Long;
+                    productInfo.Width = req.Width;
+                    productInfo.LoadAbility = req.LoadAbility;
+                    productInfo.NetWeight = req.NetWeight;
+                    productInfo.PackingMethod = req.PackingMethod;
+                    productInfo.Measurement = req.Measurement;
+                    productInfo.ProductDescription = req.ProductDescription;
+                    productInfo.ProductNameEng = req.ProductNameEng;
 
                     //Product extra info
                     productExtra.Specification = req.Extra?.Specification;

@@ -27,5 +27,6 @@ namespace VErp.Services.Master.Model.Config
 
         public int LastValue { get; set; }
         public int SortOrder { get; set; }
+        public bool IsDefault { get; set; }
     }
 }

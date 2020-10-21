@@ -26,20 +26,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<RoleService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
-        public async Task<int> AddRole(RoleInput role)
+        public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
         {
             if (role.ParentRoleId == 0)
                 role.ParentRoleId = null;
@@ -62,11 +65,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
-                IsEditable = true,
+                IsEditable = roleTypeId != EnumRoleType.Administrator,
                 RoleStatusId = (int)role.RoleStatusId,
                 RootPath = "",
                 IsModulePermissionInherit = role.IsModulePermissionInherit,
-                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock
+                IsDataPermissionInheritOnStock = role.IsDataPermissionInheritOnStock,
+                RoleTypeId = (int)roleTypeId
             };
 
 
@@ -86,6 +90,20 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 await _masterContext.SaveChangesAsync();
 
                 UpdateRoleChildren(roleInfo.RootPath);
+
+                if (roleTypeId == EnumRoleType.Administrator)
+                {
+                    var modules = _masterContext.Module.ToList();
+
+                    await _masterContext.RolePermission.AddRangeAsync(modules.Select(m => new Infrastructure.EF.MasterDB.RolePermission()
+                    {
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        ModuleId = m.ModuleId,
+                        RoleId = roleInfo.RoleId,
+                        Permission = int.MaxValue
+                    }));
+                }
+                await _masterContext.SaveChangesAsync();
 
                 trans.Commit();
             }
@@ -151,6 +169,24 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
 
             return roleInfo;
+        }
+
+        public async Task<RoleOutput> GetAdminRoleInfo()
+        {
+            return await _masterContext.Role
+                .Where(r => r.RoleTypeId == (int)EnumRoleType.Administrator)
+                .Select(r => new RoleOutput()
+                {
+                    ParentRoleId = r.ParentRoleId,
+                    RoleId = r.RoleId,
+                    RoleName = r.RoleName,
+                    Description = r.Description,
+                    RoleStatusId = (EnumRoleStatus)r.RoleStatusId,
+                    IsEditable = r.IsEditable,
+                    RootPath = r.RootPath,
+                    IsModulePermissionInherit = r.IsModulePermissionInherit,
+                    IsDataPermissionInheritOnStock = r.IsDataPermissionInheritOnStock
+                }).FirstOrDefaultAsync();
         }
 
         public async Task<bool> UpdateRole(int roleId, RoleInput role)
@@ -290,16 +326,22 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return GetRolesPermission(new List<int> { roleId });
         }
 
-        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds)
+        public async Task<IList<RolePermissionModel>> GetRolesPermission(IList<int> roleIds, bool? isDeveloper = null)
         {
-            return await _masterContext.RolePermission
-               .Where(p => roleIds.Contains(p.RoleId))
-                    .Select(p => new RolePermissionModel()
-                    {
-                        ModuleId = p.ModuleId,
-                        Permission = p.Permission,
-                    })
-                    .ToListAsync();
+            var modules = _masterContext.Module.AsQueryable();
+            if (isDeveloper.HasValue && !isDeveloper.Value)
+            {
+                modules = modules.Where(m => !m.IsDeveloper);
+            }
+            return await (
+                from p in _masterContext.RolePermission
+                join m in modules on p.ModuleId equals m.ModuleId
+                where roleIds.Contains(p.RoleId)
+                select new RolePermissionModel()
+                {
+                    ModuleId = p.ModuleId,
+                    Permission = p.Permission,
+                }).ToListAsync();
         }
 
         public async Task<IList<StockPemissionOutput>> GetStockPermission()
@@ -329,6 +371,34 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
             return true;
         }
+        public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
+        {
+            var roleDataPermissions = await RoleDataPermission(EnumObjectType.Category);
+            return roleDataPermissions.Select(x => new CategoryPermissionModel
+            {
+                CategoryId = (int)x.ObjectId,
+                RoleId = x.RoleId
+            }).ToList();
+        }
+
+        public async Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req)
+        {
+            if (req == null) req = new List<CategoryPermissionModel>();
+
+            var lst = _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)EnumObjectType.Category);
+
+            _masterContext.RoleDataPermission.RemoveRange(lst);
+            _masterContext.RoleDataPermission.AddRange(req.Select(d => new RoleDataPermission()
+            {
+                ObjectTypeId = (int)EnumObjectType.Category,
+                ObjectId = d.CategoryId,
+                RoleId = d.RoleId
+            }));
+            await _masterContext.SaveChangesAsync();
+
+            return true;
+        }
+
         #region private
 
         private string FormatRootPath(string parentRootPath, int roleId)
@@ -396,6 +466,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
             _masterContext.SaveChanges();
         }
+
+
 
         #endregion
     }

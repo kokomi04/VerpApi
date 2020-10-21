@@ -191,7 +191,7 @@ namespace VErpApi.Controllers.Stock.Products
             {
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
 
-                var productTypeConfig = await _customGenCodeService.GetCurrentConfig((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
+                var productTypeConfig = await _customGenCodeService.GetCurrentConfig(EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
 
                 var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.IdentityCode).ConfigureAwait(true);
 

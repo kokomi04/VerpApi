@@ -11,5 +11,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public int UnitStatusId { get; set; }
+        public int SubsidiaryId { get; set; }
     }
 }

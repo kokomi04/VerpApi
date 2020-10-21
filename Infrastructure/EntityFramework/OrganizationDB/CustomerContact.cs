@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     public partial class CustomerContact
     {
         public int CustomerContactId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int CustomerId { get; set; }
         public string FullName { get; set; }
         public int? GenderId { get; set; }

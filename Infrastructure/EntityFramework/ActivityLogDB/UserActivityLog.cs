@@ -13,5 +13,6 @@ namespace ActivityLogDB
         public int MessageTypeId { get; set; }
         public string Message { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
+        public int SubsidiaryId { get; set; }
     }
 }

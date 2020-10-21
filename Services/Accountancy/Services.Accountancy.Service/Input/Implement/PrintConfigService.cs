@@ -1,29 +1,21 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
-using VErp.Commons.Constants;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
 
@@ -36,6 +28,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly AppSetting _appSetting;
+        private readonly IDocOpenXmlService _docOpenXmlService;
+        private readonly IPhysicalFileService _physicalFileService;
 
         public PrintConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -43,6 +38,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICurrentContextService currentContextService
+            , IPhysicalFileService physicalFileService
+            , IDocOpenXmlService docOpenXmlService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -50,6 +47,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _currentContextService = currentContextService;
+            _appSetting = appSetting.Value;
+            _docOpenXmlService = docOpenXmlService;
+            _physicalFileService = physicalFileService;
         }
 
         public async Task<PrintConfigModel> GetPrintConfig(int printConfigId)
@@ -67,8 +67,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int inputTypeId)
         {
-            var query =  _accountancyDBContext.PrintConfig.AsQueryable();
-            if(inputTypeId > 0)
+            var query = _accountancyDBContext.PrintConfig.AsQueryable();
+            if (inputTypeId > 0)
             {
                 query = query.Where(p => p.InputTypeId == inputTypeId);
             }
@@ -165,6 +165,30 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             await _activityLogService.CreateLog(EnumObjectType.InventoryInput, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
             return true;
         }
+
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel)
+        {
+            var printConfig = await _accountancyDBContext.PrintConfig
+                .Where(p => p.PrintConfigId == printConfigId)
+                .FirstOrDefaultAsync();
+
+            if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var fileInfo = await _physicalFileService.GetSimpleFileInfo(printConfig.TemplateFileId.Value);
+
+            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound);
+
+            try
+            {
+                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _accountancyDBContext);
+                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+            }
+            catch (Exception ex)
+            {
+                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemplate, ex.Message);
+            }
+        }
+       
     }
 }
 

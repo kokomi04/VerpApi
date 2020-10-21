@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.ApiCore
     public class VErpBaseController : ControllerBase
     {
         private int _userId = 0;
+        private int _subsidiaryId = 0;
         private string _clientId = string.Empty;
         private string _sub = string.Empty;
 
@@ -31,6 +32,26 @@ namespace VErp.Infrastructure.ApiCore
                 }
 
                 return _userId;
+            }
+        }
+
+        protected int SubsidiaryId
+        {
+            get
+            {
+                if (_subsidiaryId > 0)
+                    return _subsidiaryId;
+
+                foreach (var claim in User.Claims)
+                {
+                    if (claim.Type != "subsidiaryId")
+                        continue;
+
+                    int.TryParse(claim.Value, out _subsidiaryId);
+                    break;
+                }
+
+                return _subsidiaryId;
             }
         }
 

@@ -81,6 +81,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.CustomerStatusId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.DebtLimitation).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.Email).HasMaxLength(128);
@@ -88,6 +90,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Identify).HasMaxLength(64);
 
                 entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
+
+                entity.Property(e => e.LoanLimitation).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PhoneNumber).HasMaxLength(32);
 
@@ -163,8 +167,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.Property(e => e.UserId).ValueGeneratedNever();
-
                 entity.Property(e => e.Address).HasMaxLength(512);
 
                 entity.Property(e => e.Email).HasMaxLength(128);
@@ -174,6 +176,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.FullName).HasMaxLength(128);
 
                 entity.Property(e => e.Phone).HasMaxLength(64);
+
+                entity.Property(e => e.UserStatusId).HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<EmployeeDepartmentMapping>(entity =>
@@ -272,6 +276,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.SubsidiaryCode).HasMaxLength(128);
 
                 entity.Property(e => e.SubsidiaryName).HasMaxLength(128);
+
+                entity.Property(e => e.SubsidiaryStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 

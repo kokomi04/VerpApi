@@ -41,8 +41,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         // Field
         Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size);
-        Task<int> AddInputField(InputFieldInputModel data);
-        Task<bool> UpdateInputField(int inputFieldId, InputFieldInputModel data);
+        Task<InputFieldInputModel> AddInputField(InputFieldInputModel data);
+        Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data);
         Task<bool> DeleteInputField(int inputFieldId);
         Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId);
         Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size);

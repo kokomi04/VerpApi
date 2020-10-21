@@ -151,7 +151,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
-                await _organizationContext.BatchInsert(customerEntities);
+                await _organizationContext.InsertByBatch(customerEntities);
 
                 var contactEntities = new List<CustomerContact>();
                 var bankAccountEntities = new List<CustomerBankAccount>();
@@ -172,8 +172,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     bankAccountEntities.AddRange(bankAccounts[entity]);
                 }
 
-                await _organizationContext.BatchInsert(contactEntities, false);
-                await _organizationContext.BatchInsert(bankAccountEntities, false);
+                await _organizationContext.InsertByBatch(contactEntities, false);
+                await _organizationContext.InsertByBatch(bankAccountEntities, false);
 
                 transaction.Commit();
             }
@@ -231,6 +231,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 IsActived = customerInfo.IsActived,
                 CustomerStatusId = (EnumCustomerStatus)customerInfo.CustomerStatusId,
                 Identify = customerInfo.Identify,
+                DebtDays = customerInfo.DebtDays,
                 Contacts = customerContacts.Select(c => new CustomerContactModel()
                 {
                     CustomerContactId = c.CustomerContactId,
@@ -269,6 +270,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                      Website = c.Website,
                      Email = c.Email,
                      Identify = c.Identify,
+                     DebtDays = c.DebtDays,
                      CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
              );
@@ -326,6 +328,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Website = c.Website,
                     Email = c.Email,
                     Identify = c.Identify,
+                    DebtDays = c.DebtDays,
                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                 }
             ).ToListAsync();
@@ -369,6 +372,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     customerInfo.Website = data.Website;
                     customerInfo.Email = data.Email;
                     customerInfo.Identify = data.Identify;
+                    customerInfo.DebtDays = data.DebtDays;
                     customerInfo.Description = data.Description;
                     customerInfo.IsActived = data.IsActived;
                     customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -616,7 +620,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     CustomerStatusId = (int)data.CustomerStatusId,
-                    Identify = data.Identify
+                    Identify = data.Identify,
+                    DebtDays = data.DebtDays
                 };
                 customerEntities.Add(customer);
                 contacts.Add(customer, new List<CustomerContact>());

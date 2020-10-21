@@ -17,47 +17,28 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
+        public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
-        public virtual DbSet<BarcodeStandard> BarcodeStandard { get; set; }
+        public virtual DbSet<Category> Category { get; set; }
+        public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
-        public virtual DbSet<CustomerStatus> CustomerStatus { get; set; }
-        public virtual DbSet<CustomerType> CustomerType { get; set; }
-        public virtual DbSet<FileStatus> FileStatus { get; set; }
-        public virtual DbSet<FileType> FileType { get; set; }
-        public virtual DbSet<FunctionLevel> FunctionLevel { get; set; }
-        public virtual DbSet<Gender> Gender { get; set; }
-        public virtual DbSet<InventoryType> InventoryType { get; set; }
+        public virtual DbSet<DataConfig> DataConfig { get; set; }
+        public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
-        public virtual DbSet<ObjectGenCode> ObjectGenCode { get; set; }
-        public virtual DbSet<ObjectProcessType> ObjectProcessType { get; set; }
-        public virtual DbSet<ObjectType> ObjectType { get; set; }
-        public virtual DbSet<PackageOperationType> PackageOperationType { get; set; }
-        public virtual DbSet<PackageOption> PackageOption { get; set; }
-        public virtual DbSet<PackageType> PackageType { get; set; }
-        public virtual DbSet<PoProcessStatus> PoProcessStatus { get; set; }
-        public virtual DbSet<ProductStatus> ProductStatus { get; set; }
-        public virtual DbSet<ProgramingLang> ProgramingLang { get; set; }
-        public virtual DbSet<ProgramingLevel> ProgramingLevel { get; set; }
-        public virtual DbSet<PurchaseOrderStatus> PurchaseOrderStatus { get; set; }
-        public virtual DbSet<PurchasingRequestStatus> PurchasingRequestStatus { get; set; }
-        public virtual DbSet<PurchasingSuggestStatus> PurchasingSuggestStatus { get; set; }
+        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
-        public virtual DbSet<RoleStatus> RoleStatus { get; set; }
-        public virtual DbSet<StockOutputRule> StockOutputRule { get; set; }
-        public virtual DbSet<TimeType> TimeType { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
-        public virtual DbSet<UnitStatus> UnitStatus { get; set; }
-        public virtual DbSet<User> User { get; set; }      
-        public virtual DbSet<UserStatus> UserStatus { get; set; }
+        public virtual DbSet<User> User { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -94,6 +75,25 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_ApiEndpoint_Method");
             });
 
+            modelBuilder.Entity<BackupStorage>(entity =>
+            {
+                entity.HasKey(e => new { e.ModuleId, e.BackupPoint });
+
+                entity.Property(e => e.BackupDate).HasColumnType("datetime");
+
+                entity.Property(e => e.CreatedByUserId).HasComment("");
+
+                entity.Property(e => e.FileId).HasComment("");
+
+                entity.Property(e => e.RestoreDate).HasColumnType("datetime");
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedByUserId).HasComment("");
+            });
+
             modelBuilder.Entity<BarcodeConfig>(entity =>
             {
                 entity.Property(e => e.Name)
@@ -103,13 +103,67 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
             });
 
-            modelBuilder.Entity<BarcodeStandard>(entity =>
+            modelBuilder.Entity<Category>(entity =>
             {
-                entity.Property(e => e.BarcodeStandardId).ValueGeneratedNever();
-
-                entity.Property(e => e.BarcodeStandardName)
+                entity.Property(e => e.CategoryCode)
                     .IsRequired()
-                    .HasMaxLength(128);
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Title).HasMaxLength(256);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UsePlace)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+            });
+
+            modelBuilder.Entity<CategoryField>(entity =>
+            {
+                entity.Property(e => e.CategoryFieldName)
+                    .IsRequired()
+                    .HasMaxLength(45)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Filters).HasMaxLength(512);
+
+                entity.Property(e => e.RefTableCode)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RefTableField)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RefTableTitle)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.RegularExpression)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryField)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryField_Category");
             });
 
             modelBuilder.Entity<Config>(entity =>
@@ -171,67 +225,41 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
             });
 
-            modelBuilder.Entity<CustomerStatus>(entity =>
+            modelBuilder.Entity<DataConfig>(entity =>
             {
-                entity.Property(e => e.CustomerStatusId).ValueGeneratedNever();
+                entity.HasKey(e => e.SubsidiaryId);
 
-                entity.Property(e => e.CustomerStatusName)
+                entity.Property(e => e.SubsidiaryId).ValueGeneratedNever();
+
+                entity.Property(e => e.AutoClosingDate).HasComment("");
+
+                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
+
+                entity.Property(e => e.FreqClosingDate)
                     .IsRequired()
-                    .HasMaxLength(128);
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('{}')")
+                    .HasComment("");
             });
 
-            modelBuilder.Entity<CustomerType>(entity =>
+            modelBuilder.Entity<Guide>(entity =>
             {
-                entity.Property(e => e.CustomerTypeId).ValueGeneratedNever();
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.CustomerTypeName)
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).IsRequired();
+
+                entity.Property(e => e.GuideCode)
                     .IsRequired()
-                    .HasMaxLength(128);
-            });
+                    .HasMaxLength(128)
+                    .HasComment("");
 
-            modelBuilder.Entity<FileStatus>(entity =>
-            {
-                entity.Property(e => e.FileStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.FileStatusName)
+                entity.Property(e => e.Title)
                     .IsRequired()
-                    .HasMaxLength(128);
-            });
+                    .HasMaxLength(255);
 
-            modelBuilder.Entity<FileType>(entity =>
-            {
-                entity.Property(e => e.FileTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.FileTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<FunctionLevel>(entity =>
-            {
-                entity.Property(e => e.FunctionLevelId).ValueGeneratedNever();
-
-                entity.Property(e => e.FunctionLevelName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<Gender>(entity =>
-            {
-                entity.Property(e => e.GenderId).ValueGeneratedNever();
-
-                entity.Property(e => e.GenderName)
-                    .IsRequired()
-                    .HasMaxLength(64);
-            });
-
-            modelBuilder.Entity<InventoryType>(entity =>
-            {
-                entity.Property(e => e.InventoryTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.InventoryTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<Menu>(entity =>
@@ -267,6 +295,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ModuleId).ValueGeneratedNever();
 
                 entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.IsDeveloper).HasComment("");
 
                 entity.Property(e => e.ModuleName)
                     .IsRequired()
@@ -307,159 +337,52 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
             {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId })
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
                     .HasName("UK_ObjectCustomGenCode")
                     .IsUnique();
             });
 
-            modelBuilder.Entity<ObjectGenCode>(entity =>
+            modelBuilder.Entity<OutSideDataConfig>(entity =>
             {
-                entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
+                entity.HasKey(e => e.CategoryId)
+                    .HasName("PK__OutSideD__19093A0B3AED9766");
 
-                entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CategoryId).ValueGeneratedNever();
 
-                entity.Property(e => e.DateFormat)
-                    .HasMaxLength(32)
+                entity.Property(e => e.Description).HasMaxLength(255);
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(255)
                     .IsUnicode(false);
 
-                entity.Property(e => e.LastCode)
-                    .IsRequired()
-                    .HasMaxLength(64)
-                    .IsUnicode(false)
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
-
-                entity.Property(e => e.ObjectTypeName).HasMaxLength(128);
-
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(32)
+                entity.Property(e => e.ParentKey)
+                    .HasMaxLength(255)
                     .IsUnicode(false);
 
-                entity.Property(e => e.ResetDate).HasColumnType("datetime");
-
-                entity.Property(e => e.Seperator)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .IsFixedLength();
-
-                entity.Property(e => e.Suffix)
-                    .HasMaxLength(32)
+                entity.Property(e => e.Url)
+                    .HasMaxLength(255)
                     .IsUnicode(false);
 
-                entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+                entity.HasOne(d => d.Category)
+                    .WithOne(p => p.OutSideDataConfig)
+                    .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutSideDataConfig_Category");
             });
 
-            modelBuilder.Entity<ObjectProcessType>(entity =>
+            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
             {
-                entity.Property(e => e.ObjectProcessTypeId).ValueGeneratedNever();
+                entity.Property(e => e.Alias).HasMaxLength(512);
 
-                entity.Property(e => e.ObjectProcessTypeDescription).HasMaxLength(512);
-
-                entity.Property(e => e.ObjectProcessTypeName)
+                entity.Property(e => e.Value)
                     .IsRequired()
-                    .HasMaxLength(128);
-            });
+                    .HasMaxLength(512);
 
-            modelBuilder.Entity<ObjectType>(entity =>
-            {
-                entity.Property(e => e.ObjectTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.ObjectTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PackageOperationType>(entity =>
-            {
-                entity.Property(e => e.PackageOperationTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.PackageOperationTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PackageOption>(entity =>
-            {
-                entity.Property(e => e.PackageOptionId).ValueGeneratedNever();
-
-                entity.Property(e => e.PackageOptionName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PackageType>(entity =>
-            {
-                entity.Property(e => e.PackageTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.PackageTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PoProcessStatus>(entity =>
-            {
-                entity.Property(e => e.PoProcessStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.PoProcessStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<ProductStatus>(entity =>
-            {
-                entity.Property(e => e.ProductStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.ProductStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<ProgramingLang>(entity =>
-            {
-                entity.HasKey(e => e.ProgramingLevelId);
-
-                entity.Property(e => e.ProgramingLevelId).ValueGeneratedNever();
-
-                entity.Property(e => e.ProgramingLevelName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<ProgramingLevel>(entity =>
-            {
-                entity.Property(e => e.ProgramingLevelId).ValueGeneratedNever();
-
-                entity.Property(e => e.ProgramingLevelName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PurchaseOrderStatus>(entity =>
-            {
-                entity.Property(e => e.PurchaseOrderStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.PurchaseOrderStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PurchasingRequestStatus>(entity =>
-            {
-                entity.Property(e => e.PurchasingRequestStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.PurchasingRequestStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<PurchasingSuggestStatus>(entity =>
-            {
-                entity.Property(e => e.PurchasingSuggestStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.PurchasingSuggestStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.HasOne(d => d.OutsideDataConfig)
+                    .WithMany(p => p.OutsideDataFieldConfig)
+                    .HasForeignKey(d => d.OutsideDataConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
             modelBuilder.Entity<Role>(entity =>
@@ -485,12 +408,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .WithMany(p => p.InverseParentRole)
                     .HasForeignKey(d => d.ParentRoleId)
                     .HasConstraintName("FK_Role_Role");
-
-                entity.HasOne(d => d.RoleStatus)
-                    .WithMany(p => p.Role)
-                    .HasForeignKey(d => d.RoleStatusId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Role_RoleStatus");
             });
 
             modelBuilder.Entity<RoleDataPermission>(entity =>
@@ -523,33 +440,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_RolePermission_Role");
             });
 
-            modelBuilder.Entity<RoleStatus>(entity =>
-            {
-                entity.Property(e => e.RoleStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.RoleStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<StockOutputRule>(entity =>
-            {
-                entity.Property(e => e.StockOutputRuleId).ValueGeneratedNever();
-
-                entity.Property(e => e.StockOutputRuleName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<TimeType>(entity =>
-            {
-                entity.Property(e => e.TimeTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.TimeTypeName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
             modelBuilder.Entity<Unit>(entity =>
             {
                 entity.Property(e => e.UnitName)
@@ -559,17 +449,12 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UnitStatusId).HasDefaultValueSql("((1))");
             });
 
-            modelBuilder.Entity<UnitStatus>(entity =>
-            {
-                entity.Property(e => e.UnitStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.UnitStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
             modelBuilder.Entity<User>(entity =>
             {
+                entity.Property(e => e.UserId).ValueGeneratedNever();
+
+                entity.Property(e => e.AccessFailedCount).HasComment("");
+
                 entity.Property(e => e.PasswordHash)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -583,16 +468,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UserName)
                     .IsRequired()
                     .HasMaxLength(64);
-            });
-            
-
-            modelBuilder.Entity<UserStatus>(entity =>
-            {
-                entity.Property(e => e.UserStatusId).ValueGeneratedNever();
-
-                entity.Property(e => e.UserStatusName)
-                    .IsRequired()
-                    .HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

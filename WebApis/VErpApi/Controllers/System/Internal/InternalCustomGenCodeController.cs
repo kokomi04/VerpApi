@@ -10,7 +10,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Service.Config;
 
-namespace VErpApi.Controllers.Stock.Internal
+namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]
@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
         }

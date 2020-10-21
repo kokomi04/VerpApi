@@ -32,26 +32,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId);
 
-        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
-
-        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
-
-        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
-
-        Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
-
-        ICollection<CostTransferTypeModel> GetCostTransferTypes();
-
-        Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
-
-        Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
-
-        Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero(long toDate);
-
-        Task<bool> CheckExistedCostTransferBalanceZero(long fromDate, long toDate);
-
-        Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate);
-
         Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
+
+        Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
     }
 }

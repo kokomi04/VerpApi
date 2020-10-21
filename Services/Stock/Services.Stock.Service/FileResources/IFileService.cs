@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
@@ -34,6 +35,8 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);
 
         IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null);
-        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel);
+
+        Task<long> SaveFileInfo(EnumObjectType objectTypeId, SimpleFileInfo simpleFileInfo);
+        Task<SimpleFileInfo> GetSimpleFileInfo(long fileId);
     }
 }

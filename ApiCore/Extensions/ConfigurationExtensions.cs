@@ -23,10 +23,16 @@ namespace VErp.Infrastructure.ApiCore.Extensions
     {
         public static void ConfigMasterDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections, ServiceLifetime contextScope)
         {
-            services.AddDbContext<MasterDBContext>((option) =>
+            services.AddDbContext<MasterDBContext, MasterDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.MasterDatabase);
             }, contextScope);
+
+            services.AddDbContext<UnAuthorizeMasterDBContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.MasterDatabase);
+            }, ServiceLifetime.Scoped);
+
         }
 
         public static void ConfigStockDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
@@ -35,20 +41,33 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.StockDatabase);
             }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<StockDBSubsidiaryContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.StockDatabase);
+            }, ServiceLifetime.Scoped);
         }
+
         public static void ConfigPurchaseOrderContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
-            services.AddDbContext<PurchaseOrderDBContext>((option) =>
+            services.AddDbContext<PurchaseOrderDBContext, PurchaseOrderDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.PurchaseOrderDatabase);
             }, ServiceLifetime.Scoped);
         }
+
         public static void ConfigOrganizationContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<OrganizationDBContext, OrganizationDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<UnAuthorizeOrganizationContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.OrganizationDatabase);
+            }, ServiceLifetime.Scoped);
+
         }
 
         //public static void ConfigAccountingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)

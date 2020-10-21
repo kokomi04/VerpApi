@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         }
 
         public long PurchasingSuggestId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string PurchasingSuggestCode { get; set; }
         public DateTime Date { get; set; }
         public string Content { get; set; }

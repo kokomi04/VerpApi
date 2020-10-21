@@ -25,5 +25,7 @@ namespace VErp.Infrastructure.AppSettings.Model
 
         public ElasticApmSetting ElasticApm { get; set; }
         public GrpcInternalSetting GrpcInternal { get; set; }
+        public BackupStorageSetting BackupStorage { get; set; }
+        public Developer Developer { get; set; }
     }
 }

@@ -17,10 +17,10 @@ namespace MigrateAndMappingApi.Controllers
     [ApiController]
     public class ApiEndpointController : ControllerBase
     {
-        private readonly MasterDBContext _masterContext;
+        private readonly UnAuthorizeMasterDBContext _masterContext;
         private readonly IApiEndpointService _apiEndpointService;
 
-        public ApiEndpointController(MasterDBContext masterContext
+        public ApiEndpointController(UnAuthorizeMasterDBContext masterContext
             , IApiEndpointService apiEndpointService
             )
         {
@@ -268,6 +268,7 @@ namespace MigrateAndMappingApi.Controllers
             info.ModuleName = data.ModuleName;
             info.Description = data.Description;
             info.SortOrder = data.SortOrder;
+            info.IsDeveloper = data.IsDeveloper;
 
             await _masterContext.SaveChangesAsync();
 

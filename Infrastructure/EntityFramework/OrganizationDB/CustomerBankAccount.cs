@@ -6,6 +6,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     public partial class CustomerBankAccount
     {
         public int CustomerBankAccountId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int CustomerId { get; set; }
         public string BankName { get; set; }
         public string AccountNumber { get; set; }

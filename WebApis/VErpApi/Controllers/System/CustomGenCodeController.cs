@@ -56,7 +56,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
             return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
         }
@@ -139,9 +139,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("getAllObjectType")]
-        public async Task<PageData<ObjectType>> GetAllObjectType()
+        public PageData<ObjectType> GetAllObjectType()
         {
-            return await _customGenCodeService.GetAllObjectType();
+            return _customGenCodeService.GetAllObjectType();
         }
     }
 }

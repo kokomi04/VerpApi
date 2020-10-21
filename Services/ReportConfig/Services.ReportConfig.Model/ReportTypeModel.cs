@@ -44,7 +44,10 @@ namespace Verp.Services.ReportConfig.Model
         public string PreLoadDataJsCode { get; set; }
         public string AfterLoadDataJsCode { get; set; }
         public string OnCloseJsCode { get; set; }
+        public string OnCellClickJsCode { get; set; }
+        public string OnCellChangeValueJsCode { get; set; }
         public string HeadPrint { get; set; }
+        public long? TemplateFileId { get; set; }
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
         public BscConfigModel BscConfig { get; set; }
