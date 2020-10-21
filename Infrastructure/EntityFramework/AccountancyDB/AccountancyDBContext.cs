@@ -37,20 +37,16 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
             modelBuilder.Entity<InputAction>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.Property(e => e.IconName).HasMaxLength(25);
 
                 entity.Property(e => e.InputActionCode)
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.InputActionId).ValueGeneratedOnAdd();
-
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.HasOne(d => d.InputType)
-                    .WithMany()
+                    .WithMany(p => p.InputAction)
                     .HasForeignKey(d => d.InputTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputAction_InputType");
