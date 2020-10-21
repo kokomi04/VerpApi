@@ -21,7 +21,7 @@ namespace VErpApi.Controllers.Accountancy.Action
     public class InputActionController : VErpBaseController
     {
         private readonly IInputActionService _inputActionService;
-        public InputActionController(InputActionService inputActionService)
+        public InputActionController(IInputActionService inputActionService)
         {
             _inputActionService = inputActionService;
         }
