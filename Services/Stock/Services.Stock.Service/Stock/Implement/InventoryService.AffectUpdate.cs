@@ -487,6 +487,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 detail.Description = submitDetail?.Description;
 
+                detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
+
                 if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
