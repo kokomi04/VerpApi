@@ -14,7 +14,7 @@ using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Accountancy.Service.Input.Implement;
 
-namespace VErpApi.Controllers.PurchaseOrder.Config
+namespace VErpApi.Controllers.Accountancy.Action
 {
     [Route("api/accountancy/InputAction")]
 
