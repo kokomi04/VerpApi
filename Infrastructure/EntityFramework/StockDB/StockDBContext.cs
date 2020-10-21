@@ -63,6 +63,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
+                entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
+
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -106,6 +108,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");

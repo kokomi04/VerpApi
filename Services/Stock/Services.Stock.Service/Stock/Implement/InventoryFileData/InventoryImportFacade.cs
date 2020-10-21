@@ -164,7 +164,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     RefObjectId = null,
                     RefObjectCode = item.CatePrefixCode,
                     ToPackageId = null,
-                    PackageOptionId = EnumPackageOption.NoPackageManager
+                    PackageOptionId = EnumPackageOption.NoPackageManager,
+                    AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                 });
             }
 
@@ -218,6 +219,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     StockId = _model.StockId,
                     InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                     Date = _model.IssuedDate,
+
                     Shipper = string.Empty,
                     Content = "Nhập tồn kho ban đầu từ excel",
                     CustomerId = null,
@@ -227,7 +229,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     BillSerial = string.Empty,
                     BillDate = _model.IssuedDate,
                     FileIdList = null,
-                    InProducts = newInventoryInputModel
+                    InProducts = newInventoryInputModel,
+                    AccountancyAccountNumber = _model.AccountancyAccountNumber
                 };
 
                 inventoryInputList.Add(newInventory);
@@ -300,7 +303,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     UnitPrice = item.UnitPrice,
                     RefObjectTypeId = null,
                     RefObjectId = null,
-                    RefObjectCode = item.CatePrefixCode
+                    RefObjectCode = item.CatePrefixCode,
+                    AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                 });
             }
 
@@ -378,7 +382,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     BillSerial = string.Empty,
                     BillDate = _model.IssuedDate,
                     FileIdList = null,
-                    OutProducts = newInventoryOutProductModel
+                    OutProducts = newInventoryOutProductModel,
+                    AccountancyAccountNumber = _model.AccountancyAccountNumber
                 };
 
                 inventoryOutList.Add(newInventory);

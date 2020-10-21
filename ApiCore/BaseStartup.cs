@@ -62,6 +62,8 @@ namespace VErp.Infrastructure.ApiCore
 
             services.Configure<AppSetting>(Configuration);
 
+            services.AddSingleton<IConfiguration>(Configuration);
+
             CreateSerilogLogger(Configuration);
 
 
@@ -256,7 +258,7 @@ namespace VErp.Infrastructure.ApiCore
                 config.MapControllers();
             });
 
-           
+
         }
 
         private void ConfigureAuthService(IServiceCollection services)
