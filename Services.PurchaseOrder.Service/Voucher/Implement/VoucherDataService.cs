@@ -64,9 +64,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<PageDataTable> GetSaleBills(int voucherTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             var viewInfo = await _purchaseOrderDBContext.VoucherTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
-
             var voucherTypeViewId = viewInfo?.VoucherTypeViewId;
-
             var fields = (await (
                 from af in _purchaseOrderDBContext.VoucherAreaField
                 join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
@@ -75,17 +73,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 select new { a.VoucherAreaId, af.VoucherAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
-
             var viewFields = await (
                 from f in _purchaseOrderDBContext.VoucherTypeViewField
                 where f.VoucherTypeViewId == voucherTypeViewId
                 select f
             ).ToListAsync();
-
             var whereCondition = new StringBuilder();
-
             whereCondition.Append($"r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
-
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
             if (filters != null)
@@ -94,16 +88,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var viewField = viewFields.FirstOrDefault(f => f.VoucherTypeViewFieldId == filter.Key);
                     if (viewField == null) continue;
-
                     var value = filter.Value;
-
                     if (value.IsNullObject()) continue;
-
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
                         value = Convert.ToInt64(value);
                     }
-
                     if (!string.IsNullOrEmpty(viewField.SelectFilters))
                     {
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(viewField.SelectFilters);
@@ -113,30 +103,25 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             {
                                 whereCondition.Append(" AND ");
                             }
-
                             filterClause.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
                         }
                     }
                 }
             }
-
             if (columnsFilters != null)
             {
                 if (whereCondition.Length > 0)
                 {
                     whereCondition.Append(" AND ");
                 }
-
                 columnsFilters.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
             }
-
             var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
             {
                 var refColumns = new List<string>()
                 {
                     f.FieldName
                 };
-
                 if (((EnumFormType)f.FormTypeId).IsJoinForm()
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle)
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle))
@@ -145,25 +130,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 return refColumns;
             }).ToList();
-
             if (!mainColumns.Contains(orderByFieldName))
             {
                 orderByFieldName = "F_Id";
                 asc = false;
             }
-
             var totalSql = @$"SELECT COUNT(DISTINCT r.SaleBill_F_Id) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
-
             var table = await _purchaseOrderDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
-
             var total = 0;
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
-
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
-
             var dataSql = @$"
                  ;WITH tmp AS (
                     SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id
@@ -177,16 +156,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 FROM tmp t JOIN {VOUCHERVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
-
             if (size >= 0)
             {
                 dataSql += @$" OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT { size}
                 ROWS ONLY";
             }
-
             var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
-
             return (data, total);
         }
 

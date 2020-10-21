@@ -44,7 +44,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideImportMappingService _outsideImportMappingService;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -53,7 +53,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
             , IOutsideImportMappingService outsideImportMappingService
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -63,7 +63,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _outsideImportMappingService = outsideImportMappingService;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -1088,20 +1088,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (((EnumFormType)field.InputField.FormTypeId).IsSelectForm())
             {
                 var refTableTitle = field.InputField.RefTableTitle.Split(',')[0];
-                //var categoryFields = (from f in _accountancyDBContext.CategoryField
-                //                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-                //                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
-                //                      select new
-                //                      {
-                //                          f.CategoryFieldName,
-                //                          f.DataTypeId
-                //                      }).ToList();
-
-                var categoryFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-                {
-                    CategoryCodes = new List<string>() { field.InputField.RefTableCode },
-                    FieldNames = new List<string>() { refTableTitle, field.InputField.RefTableField }
-                });
+                var categoryFields = await _httpCategoryHelperService.GetReferFields(new List<string>() { field.InputField.RefTableCode }, new List<string>() { refTableTitle, field.InputField.RefTableField });
 
                 var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.InputField.RefTableField);
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
@@ -1767,22 +1754,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            //var referFields = (from f in _accountancyDBContext.CategoryField
-            //                   join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-            //                   where referTableNames.Contains(c.CategoryCode) && referMapingFields.Select(f => f.RefTableField).Contains(f.CategoryFieldName)
-            //                   select new
-            //                   {
-            //                       c.CategoryCode,
-            //                       f.CategoryFieldName,
-            //                       f.DataTypeId
-            //                   }).ToList();
 
-            var referFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = referTableNames,
-                FieldNames = referMapingFields.Select(f => f.RefTableField).ToList()
-            });
-
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefTableField).ToList());
 
             var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
             if (columnKey == null)
@@ -2051,11 +2024,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                         itf.RefTableCode
                                     }).ToList();
 
-            var refDataTypes = (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = selectFormFields.Select(f => f.RefTableCode).ToList(),
-                FieldNames = selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()
-            })).Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
+            var refDataTypes = (await _httpCategoryHelperService.GetReferFields(selectFormFields.Select(f => f.RefTableCode).ToList(), selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()))
+                .Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var writer = new ExcelWriter();
             int endRow = 0;
@@ -2179,8 +2149,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
                         var referToValue = new SqlParameter("@RefValue", value?.ToString());
-
-                        var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var existSql = $"SELECT tk.F_Id FROM {INPUTVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @RefValue;";
                         var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
@@ -2213,7 +2182,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             if (billDate != null || oldDate != null)
             {
-
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {

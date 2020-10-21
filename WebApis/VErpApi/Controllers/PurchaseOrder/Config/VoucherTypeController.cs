@@ -24,7 +24,6 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
             _voucherConfigService = voucherConfigService;
         }
 
-
         [HttpGet]
         [Route("groups")]
         public async Task<IList<VoucherTypeGroupList>> GetList()
@@ -41,7 +40,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
 
         [HttpPut]
         [Route("groups/{voucherTypeGroupId}")]
-        public async Task<bool> GetVoucherType([FromRoute] int voucherTypeGroupId, [FromBody] VoucherTypeGroupModel model)
+        public async Task<bool> VoucherTypeGroupUpdate([FromRoute] int voucherTypeGroupId, [FromBody] VoucherTypeGroupModel model)
         {
             return await _voucherConfigService.VoucherTypeGroupUpdate(voucherTypeGroupId, model).ConfigureAwait(true);
         }
@@ -52,7 +51,6 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
         {
             return await _voucherConfigService.VoucherTypeGroupDelete(voucherTypeGroupId).ConfigureAwait(true);
         }
-
 
         [HttpGet]
         [Route("")]
@@ -187,7 +185,6 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
             }
             return await _voucherConfigService.VoucherTypeViewDelete(voucherTypeViewId).ConfigureAwait(true);
         }
-
 
         [HttpPost]
         [Route("{voucherTypeId}/voucherareas")]

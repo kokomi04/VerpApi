@@ -151,7 +151,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
-                await _organizationContext.BatchInsert(customerEntities);
+                await _organizationContext.InsertByBatch(customerEntities);
 
                 var contactEntities = new List<CustomerContact>();
                 var bankAccountEntities = new List<CustomerBankAccount>();
@@ -172,8 +172,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     bankAccountEntities.AddRange(bankAccounts[entity]);
                 }
 
-                await _organizationContext.BatchInsert(contactEntities, false);
-                await _organizationContext.BatchInsert(bankAccountEntities, false);
+                await _organizationContext.InsertByBatch(contactEntities, false);
+                await _organizationContext.InsertByBatch(bankAccountEntities, false);
 
                 transaction.Commit();
             }

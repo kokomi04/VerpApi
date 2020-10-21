@@ -48,5 +48,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public ProductListOutput ProductOutput { get; set; }
 
         public ProductUnitConversion ProductUnitConversion { set; get; }
+
+        public string AccountancyAccountNumberDu { get; set; }
     }
 }

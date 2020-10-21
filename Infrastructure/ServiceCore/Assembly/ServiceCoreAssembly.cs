@@ -26,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<IStockHelperService, StockHelperService>();
             services.AddScoped<IProductHelperService, ProductHelperService>();
             services.AddScoped<IOrganizationHelperService, OrganizationHelperService>();
-
+            services.AddScoped<ICategoryHelperService, CategoryHelperService>();
             services.AddScoped<IMenuHelperService, MenuHelperService>();
 
             services.AddScoped<HttpCurrentContextService>();

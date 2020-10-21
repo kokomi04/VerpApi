@@ -121,5 +121,7 @@ namespace VErp.Commons.Enums.MasterEnum
         VoucherTypeView = 55,
 
         VoucherTypeRow = 56,
+        VoucherAction = 57,
+        InputAction = 58,
     }
 }

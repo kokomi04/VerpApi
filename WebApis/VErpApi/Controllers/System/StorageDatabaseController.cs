@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject;
 using VErp.Services.Master.Model.StorageDatabase;
 using VErp.Services.Master.Service.StorageDatabase;
 
@@ -23,7 +24,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<StorageDatabseModel>> GetList()
+        public async Task<IList<ProductModuleInfo>> GetList()
         {
             return await _storageDbService.GetList();
         }

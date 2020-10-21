@@ -48,5 +48,14 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 
         [Display(Name = "Chiều dài mặt hàng")]
         public decimal Long { set; get; }
+
+        [Display(Name = "Tài khoản kế toán")]
+        public string AccountancyAccountNumber { set; get; }
+
+        [Display(Name = "Tài khoản kế toán đối ứng")]
+        public string AccountancyAccountNumberDu { set; get; }
+
+        
+
     }
 }
