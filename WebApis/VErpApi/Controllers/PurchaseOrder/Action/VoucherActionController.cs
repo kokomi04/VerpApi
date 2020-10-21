@@ -12,7 +12,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service.Voucher;
 
-namespace VErpApi.Controllers.PurchaseOrder.Config
+namespace VErpApi.Controllers.PurchaseOrder.Action
 {
     [Route("api/PurchasingOrder/VoucherAction")]
 
