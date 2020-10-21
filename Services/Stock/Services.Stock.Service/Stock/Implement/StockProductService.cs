@@ -23,6 +23,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Constants;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -1153,7 +1154,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                        ProductId = g.Key,
                        Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                    }
-           ).Where(b => b.Total != 0)
+           ).Where(b => b.Total < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
            .ToListAsync();
 
             var afters = await (
@@ -1185,7 +1186,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      g.Key.ProductUnitConversionId,
                      Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
                  }
-            ).Where(b => b.Total != 0)
+            ).Where(b => b.Total < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
             .ToListAsync();
 
             var aftersByAltUnit = await (
@@ -1210,7 +1211,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var a in afters)
             {
-                productIds.Add(a.ProductId);
+                if (!productIds.Contains(a.ProductId))
+                    productIds.Add(a.ProductId);
             }
 
             foreach (var b in beforesByAltUnit)
@@ -1220,7 +1222,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     productAltUnitModelList.Add(new ProductAltUnitModel()
                     {
                         ProductId = b.ProductId,
-                        ProductUnitConversionId = (int)b.ProductUnitConversionId
+                        ProductUnitConversionId = b.ProductUnitConversionId
                     });
                 }
             }
@@ -1232,7 +1234,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     productAltUnitModelList.Add(new ProductAltUnitModel()
                     {
                         ProductId = a.ProductId,
-                        ProductUnitConversionId = (int)a.ProductUnitConversionId
+                        ProductUnitConversionId = a.ProductUnitConversionId
                     });
                 }
             }
