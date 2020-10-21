@@ -211,22 +211,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var totalMoney = InputCalTotalMoney(updateDetails);
-
-                inventoryInfo.TotalMoney = totalMoney;
-                inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
-                inventoryInfo.Shipper = req.Inventory.Shipper;
-                inventoryInfo.Content = req.Inventory.Content;
-                inventoryInfo.Date = issuedDate;
-                inventoryInfo.CustomerId = req.Inventory.CustomerId;
-                inventoryInfo.Department = req.Inventory.Department;
-                inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
-                inventoryInfo.BillForm = req.Inventory.BillForm;
-                inventoryInfo.BillCode = req.Inventory.BillCode;
-                inventoryInfo.BillSerial = req.Inventory.BillSerial;
-                inventoryInfo.BillDate = billDate;
-                inventoryInfo.TotalMoney = totalMoney;
-                inventoryInfo.UpdatedByUserId = _currentContextService.UserId;
-                inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                InventoryInputUpdateData(inventoryInfo, req.Inventory, totalMoney);
+               
             }
             else
             {

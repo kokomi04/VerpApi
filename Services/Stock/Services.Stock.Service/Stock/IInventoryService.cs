@@ -19,18 +19,22 @@ namespace VErp.Services.Stock.Service.Stock
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
-        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
+        /// <param name="keyword"></param>
+        /// <param name="customerId"></param>
+        /// <param name="accountancyAccountNumber"></param>
+        /// <param name="stockId"></param>
         /// <param name="isApproved"></param>
-        /// <param name="type">Loại typeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>
+        /// <param name="type"></param>
         /// <param name="beginTime"></param>
         /// <param name="endTime"></param>
+        /// <param name="isExistedInputBill"></param>
+        /// <param name="mappingFunctionKeys"></param>
         /// <param name="sortBy"></param>
         /// <param name="asc"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
 
 
         /// <summary>
