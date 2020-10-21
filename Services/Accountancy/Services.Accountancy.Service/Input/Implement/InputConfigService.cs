@@ -1029,7 +1029,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Thêm trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
@@ -1067,7 +1067,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Cập nhật trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
@@ -1106,7 +1106,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
                 }
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField.JsonSerialize());
                 return true;
@@ -1124,6 +1124,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private async Task UpdateInputValueView()
         {
             await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", Array.Empty<SqlParameter>());
+        }
+
+        private async Task UpdateInputTableType()
+        {
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_UpdateInputTableType", Array.Empty<SqlParameter>());
         }
     }
 }
