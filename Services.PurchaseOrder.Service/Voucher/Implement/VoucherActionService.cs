@@ -89,7 +89,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 action.VoucherActionCode = data.VoucherActionCode;
                 action.JsAction = data.JsAction;
                 action.SqlAction = data.SqlAction;
-
+                action.IconName = data.IconName;
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Cập nhật chức năng {action.Title}", data.JsonSerialize());

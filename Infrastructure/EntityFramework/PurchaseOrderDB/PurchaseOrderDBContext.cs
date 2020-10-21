@@ -288,6 +288,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<VoucherAction>(entity =>
             {
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.Property(e => e.VoucherActionCode)

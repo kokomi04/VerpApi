@@ -21,5 +21,6 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public int SortOrder { get; set; }
         public string SqlAction { get; set; }
         public string JsAction { get; set; }
+        public string IconName { get; set; }
     }
 }

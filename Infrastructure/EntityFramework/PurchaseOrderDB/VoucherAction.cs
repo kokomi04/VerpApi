@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string SqlAction { get; set; }
         public string JsAction { get; set; }
+        public string IconName { get; set; }
 
         public virtual VoucherType VoucherType { get; set; }
     }
