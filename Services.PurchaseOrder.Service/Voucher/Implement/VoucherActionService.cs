@@ -38,7 +38,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
-            , ILogger<VoucherConfigService> logger
+            , ILogger<VoucherActionService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             )

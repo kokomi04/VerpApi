@@ -1121,7 +1121,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task UpdateVoucherTableType()
         {
-            await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_UpdateTableType", Array.Empty<SqlParameter>());
+            await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_UpdateVoucherTableType", Array.Empty<SqlParameter>());
         }
     }
 }
