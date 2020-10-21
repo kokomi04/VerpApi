@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
