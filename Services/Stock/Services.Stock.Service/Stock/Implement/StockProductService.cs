@@ -1142,18 +1142,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var befores = await (
-           from iv in inventoryQuery
-           join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-           join p in productQuery on d.ProductId equals p.ProductId
-           where iv.IsApproved && iv.Date < fromDate
+                   from iv in inventoryQuery
+                   join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                   join p in productQuery on d.ProductId equals p.ProductId
+                   where iv.IsApproved && iv.Date < fromDate
+                   group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
 
-           group new { d.PrimaryQuantity, iv.InventoryTypeId } by d.ProductId into g
-           select new
-           {
-               ProductId = g.Key,
-               Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
-           }
-           ).ToListAsync();
+                   select new
+                   {
+                       ProductId = g.Key,
+                       Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                   }
+           ).Where(b => b.Total != 0)
+           .ToListAsync();
 
             var afters = await (
                 from iv in inventoryQuery
@@ -1169,7 +1170,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.PrimaryQuantity : 0),
                     Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                 }
-                ).ToListAsync();
+           ).ToListAsync();
 
 
             var beforesByAltUnit = await (
@@ -1184,22 +1185,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      g.Key.ProductUnitConversionId,
                      Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
                  }
-         ).ToListAsync();
+            ).Where(b => b.Total != 0)
+            .ToListAsync();
 
             var aftersByAltUnit = await (
-               from iv in inventoryQuery
-               join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
-               join p in productQuery on d.ProductId equals p.ProductId
-               where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
-               group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
-               select new
-               {
-                   g.Key.ProductId,
-                   g.Key.ProductUnitConversionId,
-                   TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : 0),
-                   TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.ProductUnitConversionQuantity : 0),
-                   Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
-               }
+                   from iv in inventoryQuery
+                   join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
+                   join p in productQuery on d.ProductId equals p.ProductId
+                   where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
+                   group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
+                   select new
+                   {
+                       g.Key.ProductId,
+                       g.Key.ProductUnitConversionId,
+                       TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : 0),
+                       TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.ProductUnitConversionQuantity : 0),
+                       Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+                   }
                ).ToListAsync();
 
             #region product  - ProductUnitModel  
@@ -1276,46 +1278,48 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                    }).ToList();
 
             var productAltSummaryData = (
-             from p in productAltUnitPaged
-             join c in productUnitConversionInfos on p.ProductUnitConversionId equals c.ProductUnitConversionId
-             //join info in productInfos on p.ProductId equals info.ProductId
-             join b in beforesByAltUnit on new { p.ProductId, p.ProductUnitConversionId } equals new { b.ProductId, b.ProductUnitConversionId } into bp
-             from b in bp.DefaultIfEmpty()
-             join a in aftersByAltUnit on new { p.ProductId, p.ProductUnitConversionId } equals new { a.ProductId, a.ProductUnitConversionId } into ap
-             from a in ap.DefaultIfEmpty()
-             select new ProductAltSummary
-             {
-                 ProductId = p.ProductId,
-                 ProductUnitConversionId = p.ProductUnitConversionId,
-                 UnitId = c.SecondaryUnitId,
-                 ProductUnitCoversionName = c.ProductUnitConversionName,
-                 ConversionDescription = c.ConversionDescription,
-                 ProductUnitConversionQuantityBefore = b == null ? 0 : b.Total,
-                 ProductUnitConversionQuantityInput = a == null ? 0 : a.TotalInput,
-                 ProductUnitConversionQuantityOutput = a == null ? 0 : a.TotalOutput,
-                 ProductUnitConversionQuantityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
-             }).ToList();
+                 from p in productAltUnitPaged
+                 join c in productUnitConversionInfos on p.ProductUnitConversionId equals c.ProductUnitConversionId
+                 //join info in productInfos on p.ProductId equals info.ProductId
+                 join b in beforesByAltUnit on new { p.ProductId, p.ProductUnitConversionId } equals new { b.ProductId, b.ProductUnitConversionId } into bp
+                 from b in bp.DefaultIfEmpty()
+                 join a in aftersByAltUnit on new { p.ProductId, p.ProductUnitConversionId } equals new { a.ProductId, a.ProductUnitConversionId } into ap
+                 from a in ap.DefaultIfEmpty()
+                 select new ProductAltSummary
+                 {
+                     ProductId = p.ProductId,
+                     ProductUnitConversionId = p.ProductUnitConversionId,
+                     UnitId = c.SecondaryUnitId,
+                     ProductUnitCoversionName = c.ProductUnitConversionName,
+                     ConversionDescription = c.ConversionDescription,
+                     ProductUnitConversionQuantityBefore = b == null ? 0 : b.Total,
+                     ProductUnitConversionQuantityInput = a == null ? 0 : a.TotalInput,
+                     ProductUnitConversionQuantityOutput = a == null ? 0 : a.TotalOutput,
+                     ProductUnitConversionQuantityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total)
+                 }
+             ).ToList();
 
             var resultData = (
-            from p in productInfos
-            join u in unitInfos on p.UnitId equals u.UnitId
-            join b in befores on p.ProductId equals b.ProductId into bp
-            from b in bp.DefaultIfEmpty()
-            join a in afters on p.ProductId equals a.ProductId into ap
-            from a in ap.DefaultIfEmpty()
-            select new StockSumaryReportForm03Output
-            {
-                ProductId = p.ProductId,
-                ProductCode = p.ProductCode,
-                ProductName = p.ProductName,
-                UnitId = p.UnitId,
-                UnitName = u.UnitName,
-                PrimaryQualtityBefore = b == null ? 0 : b.Total,
-                PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
-                PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
-                PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
-                ProductAltSummaryList = productAltSummaryData.Where(q => q.ProductId == p.ProductId).ToList()
-            }).ToList();
+                from p in productInfos
+                join u in unitInfos on p.UnitId equals u.UnitId
+                join b in befores on p.ProductId equals b.ProductId into bp
+                from b in bp.DefaultIfEmpty()
+                join a in afters on p.ProductId equals a.ProductId into ap
+                from a in ap.DefaultIfEmpty()
+                select new StockSumaryReportForm03Output
+                {
+                    ProductId = p.ProductId,
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    UnitId = p.UnitId,
+                    UnitName = u.UnitName,
+                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
+                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
+                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
+                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
+                    ProductAltSummaryList = productAltSummaryData.Where(q => q.ProductId == p.ProductId).ToList()
+                }
+            ).ToList();
 
             if (packageInfoData != null && packageInfoData.Count > 0)
             {
@@ -1335,6 +1339,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     item.PakageDateNotExport = pakageNotExport != null ? (pakageNotExport.Date.HasValue ? ((DateTime)pakageNotExport.Date).GetUnix() : 0) : 0;
                 }
             }
+
             return new PageData<StockSumaryReportForm03Output>
             {
                 List = resultData,
