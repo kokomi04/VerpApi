@@ -128,7 +128,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("FixExchangeRateDetail")]
-        public async Task<ExchangeRateModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
+        public async Task<DataResultModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
         {
             return await _calcBillService.FixExchangeRateDetail(fromDate, toDate, currency, accountNumber, partnerId);
         }
@@ -139,6 +139,17 @@ namespace VErpApi.Controllers.Accountancy.Data
             [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock)
         {
             return await _calcBillService.CalcCostTransfer(toDate, type, byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock);
+        }
+
+        [HttpGet]
+        [Route("CalcCostTransferDetail")]
+        public async Task<DataResultModel> CalcCostTransferDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] EnumCostTransfer type,
+            [FromQuery] bool byDepartment, [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock,
+            [FromQuery] int? department, [FromQuery] string customer, [FromQuery] int? fixedAsset, [FromQuery] int? expenseItem, [FromQuery] int? factory, [FromQuery] int? product, [FromQuery] int? stock)
+        {
+            return await _calcBillService.CalcCostTransferDetail(fromDate, toDate, type,
+                byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock,
+                department, customer, fixedAsset, expenseItem, factory, product, stock);
         }
 
         [HttpGet]
