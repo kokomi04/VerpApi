@@ -5,9 +5,9 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject
 {
-    public class ProductModuleInfo
+    public class SubSystemInfo
     {
-        public EnumModuleType ModuleId { get; set; }
-        public string ModuleName { get; set; }
+        public EnumModuleType SubSystemId { get; set; }
+        public string SubSystemName { get; set; }
     }
 }

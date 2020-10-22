@@ -23,13 +23,6 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
-        [Route("")]
-        public async Task<IList<ProductModuleInfo>> GetList()
-        {
-            return await _storageDbService.GetList();
-        }
-
-        [HttpGet]
         [Route("backupPoints/{databaseId}")]
         public async Task<IList<BackupStorageOutput>> GetBackupStorages([FromRoute]int databaseId)
         {
