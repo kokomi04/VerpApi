@@ -95,7 +95,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                         BackupDate = DateTime.UtcNow,
                         BackupPoint = backupPoint,
                         Title = backupStorage.Title,
-                        ModuleId = (int)storage.SubSystemId,
+                        SubSystemId = (int)storage.SubSystemId,
                         IsDeleted = false,
                         FileId = fileId,
                         CreatedByUserId = _currentContextService.UserId,
@@ -147,9 +147,9 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return true;
         }
 
-        public async Task<bool> RestoreForBackupPoint(long backupPoint, int moduleId)
+        public async Task<bool> RestoreForBackupPoint(long backupPoint, int subSystemId)
         {
-            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.ModuleId == moduleId);
+            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.SubSystemId == subSystemId);
             if (backup == null)
             {
                 throw new BadRequestException(BackupErrorCode.NotFoundBackupForDatabase);
@@ -169,7 +169,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
             if (fileInfo == null)
                 throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
-            var dbs = await _manageVErpModuleService.GetDbBySubSystemId((EnumModuleType)backup.ModuleId);
+            var dbs = await _manageVErpModuleService.GetDbBySubSystemId((EnumModuleType)backup.SubSystemId);
             foreach(string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
@@ -180,13 +180,13 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
 #endif
                 await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                $"Restore database {db} of module {backup.ModuleId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                $"Restore database {db} of module {backup.SubSystemId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
             }
         }
 
-        private string GenerateOutDirectory(long backupPoint, string moduleName)
+        private string GenerateOutDirectory(long backupPoint, string subSystemName)
         {
-            var relativeFolder = $"/_backup_/{backupPoint}/{moduleName}";
+            var relativeFolder = $"/_backup_/{backupPoint}/{subSystemName}";
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
@@ -216,12 +216,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         }
 
 
-        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int moduleId = 0)
+        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int subSystemId = 0)
         {
             var query = _masterContext.BackupStorage.AsQueryable();
-            if (moduleId != 0)
+            if (subSystemId != 0)
             {
-                query = query.Where(x => x.ModuleId == moduleId);
+                query = query.Where(x => x.SubSystemId == subSystemId);
             }
 
             var data = query.AsEnumerable().GroupBy(x => new { x.BackupPoint, x.Title })
@@ -233,7 +233,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     {
                         BackupDate = gg.BackupDate.GetUnix(),
                         BackupPoint = gg.BackupPoint,
-                        ModuleId = gg.ModuleId,
+                        SubSystemId = gg.SubSystemId,
                         FileId = gg.FileId,
                         RestoreDate = gg.RestoreDate.HasValue ? gg.RestoreDate.GetUnix().Value : 0,
                         Title = gg.Title,

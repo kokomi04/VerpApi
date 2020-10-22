@@ -44,10 +44,10 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
-        [Route("restore/{backupPoint}/{moduleId}")]
-        public async Task<bool> RestoreForBackupPoint([FromRoute] long backupPoint, [FromRoute] int moduleId)
+        [Route("restore/{backupPoint}/{subSystemId}")]
+        public async Task<bool> RestoreForBackupPoint([FromRoute] long backupPoint, [FromRoute] int subSystemId)
         {
-            return await _storageDbService.RestoreForBackupPoint(backupPoint, moduleId);
+            return await _storageDbService.RestoreForBackupPoint(backupPoint, subSystemId);
         }
 
         [HttpPost]
