@@ -31,5 +31,9 @@
   "Developer": {
     "Users": [ "user01" ],
     "SubsidiaryIds": [ 2 ]
+  },
+  "VisualDirectory": {
+    "Address": "http://localhost/DemoVisualDirectory",
+    "PhysicalRootDirectory": "/usr/resources/_visual_/"
   }
 }
