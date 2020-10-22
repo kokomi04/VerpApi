@@ -690,6 +690,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     LoanManagerUserId = data.LoanManagerUserId
                 };
                 customerEntities.Add(customer);
+
+                originData.Add(customer, data);
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
 
