@@ -145,7 +145,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
             var dataSql = @$"
                  ;WITH tmp AS (
-                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id, r.Status
+                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id, MAX(r.Status) Status
                     FROM {VOUCHERVALUEROW_VIEW} r
                     WHERE {whereCondition}
                     GROUP BY r.SaleBill_F_Id    
