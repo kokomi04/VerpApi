@@ -234,11 +234,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 DebtDays = customerInfo.DebtDays,
                 DebtLimitation = customerInfo.DebtLimitation,
-                DebtBeginingTypeId = (EnumBeginingType)customerInfo.DebtBeginingTypeId,
+                DebtBeginningTypeId = (EnumBeginningType)customerInfo.DebtBeginningTypeId,
                 DebtManagerUserId = customerInfo.DebtManagerUserId,
                 LoanDays = customerInfo.LoanDays,
                 LoanLimitation = customerInfo.LoanLimitation,
-                LoanBeginingTypeId = (EnumBeginingType)customerInfo.LoanBeginingTypeId,
+                LoanBeginningTypeId = (EnumBeginningType)customerInfo.LoanBeginningTypeId,
                 LoanManagerUserId = customerInfo.LoanManagerUserId,
 
 
@@ -282,11 +282,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                      Identify = c.Identify,
                      DebtDays = c.DebtDays,
                      DebtLimitation = c.DebtLimitation,
-                     DebtBeginingTypeId = (EnumBeginingType)c.DebtBeginingTypeId,
+                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
                      DebtManagerUserId = c.DebtManagerUserId,
                      LoanDays = c.LoanDays,
                      LoanLimitation = c.LoanLimitation,
-                     LoanBeginingTypeId = (EnumBeginingType)c.LoanBeginingTypeId,
+                     LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
                      LoanManagerUserId = c.LoanManagerUserId,
                      CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
@@ -347,11 +347,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Identify = c.Identify,
                     DebtDays = c.DebtDays,
                     DebtLimitation = c.DebtLimitation,
-                    DebtBeginingTypeId = (EnumBeginingType)c.DebtBeginingTypeId,
+                    DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
                     DebtManagerUserId = c.DebtManagerUserId,
                     LoanDays = c.LoanDays,
                     LoanLimitation = c.LoanLimitation,
-                    LoanBeginingTypeId = (EnumBeginingType)c.LoanBeginingTypeId,
+                    LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
                     LoanManagerUserId = c.LoanManagerUserId,
                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                 }
@@ -398,11 +398,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     customerInfo.Identify = data.Identify;
                     customerInfo.DebtDays = data.DebtDays;
                     customerInfo.DebtLimitation = data.DebtLimitation;
-                    customerInfo.DebtBeginingTypeId = (int)data.DebtBeginingTypeId;
+                    customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
                     customerInfo.DebtManagerUserId = data.DebtManagerUserId;
                     customerInfo.LoanDays = data.LoanDays;
                     customerInfo.LoanLimitation = data.LoanLimitation;
-                    customerInfo.LoanBeginingTypeId = (int)data.LoanBeginingTypeId;
+                    customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
                     customerInfo.LoanManagerUserId = data.LoanManagerUserId;
                     customerInfo.Description = data.Description;
                     customerInfo.IsActived = data.IsActived;
@@ -536,29 +536,29 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     return true;
                 }
 
-                if (propertyName == nameof(CustomerModel.DebtBeginingTypeId))
+                if (propertyName == nameof(CustomerModel.DebtBeginningTypeId))
                 {
-                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginingType.EndOfMonth).ToString().NormalizeAsInternalName()))
+                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
                     {
-                        entity.DebtBeginingTypeId = EnumBeginingType.EndOfMonth;
+                        entity.DebtBeginningTypeId = EnumBeginningType.EndOfMonth;
                     }
                     else
                     {
-                        entity.DebtBeginingTypeId = EnumBeginingType.BillDate;
+                        entity.DebtBeginningTypeId = EnumBeginningType.BillDate;
                     }
 
                     return true;
                 }
 
-                if (propertyName == nameof(CustomerModel.LoanBeginingTypeId))
+                if (propertyName == nameof(CustomerModel.LoanBeginningTypeId))
                 {
-                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginingType.EndOfMonth).ToString().NormalizeAsInternalName()))
+                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
                     {
-                        entity.LoanBeginingTypeId = EnumBeginingType.EndOfMonth;
+                        entity.LoanBeginningTypeId = EnumBeginningType.EndOfMonth;
                     }
                     else
                     {
-                        entity.LoanBeginingTypeId = EnumBeginingType.BillDate;
+                        entity.LoanBeginningTypeId = EnumBeginningType.BillDate;
                     }
 
                     return true;
@@ -682,11 +682,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Identify = data.Identify,
                     DebtDays = data.DebtDays,
                     DebtLimitation = data.DebtLimitation,
-                    DebtBeginingTypeId = (int)data.DebtBeginingTypeId,
+                    DebtBeginningTypeId = (int)data.DebtBeginningTypeId,
                     DebtManagerUserId = data.DebtManagerUserId,
                     LoanDays = data.LoanDays,
                     LoanLimitation = data.LoanLimitation,
-                    LoanBeginingTypeId = (int)data.LoanBeginingTypeId,
+                    LoanBeginningTypeId = (int)data.LoanBeginningTypeId,
                     LoanManagerUserId = data.LoanManagerUserId
                 };
                 customerEntities.Add(customer);

@@ -59,7 +59,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Hạn mức nợ")]
         public decimal? DebtLimitation { get; set; }
         [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)")]
-        public EnumBeginingType DebtBeginingTypeId { get; set; }
+        public EnumBeginningType DebtBeginningTypeId { get; set; }
         [Display(Name = "NV quản lý nợ")]
         public int? DebtManagerUserId { get; set; }
 
@@ -68,7 +68,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Hạn mức cho nợ")]
         public decimal? LoanLimitation { get; set; }
         [Display(Name = "Thời điểm tính cho nợ (0: Ngày HĐ, 1: Cuối tháng)")]
-        public EnumBeginingType LoanBeginingTypeId { get; set; }
+        public EnumBeginningType LoanBeginningTypeId { get; set; }
         [Display(Name = "NV quản lý cho nợ")]
         public int? LoanManagerUserId { get; set; }
 

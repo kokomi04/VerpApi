@@ -31,11 +31,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string Identify { get; set; }
         public int? DebtDays { get; set; }
         public decimal? DebtLimitation { get; set; }
-        public int DebtBeginingTypeId { get; set; }
+        public int DebtBeginningTypeId { get; set; }
         public int? DebtManagerUserId { get; set; }
         public int? LoanDays { get; set; }
         public decimal? LoanLimitation { get; set; }
-        public int LoanBeginingTypeId { get; set; }
+        public int LoanBeginningTypeId { get; set; }
         public int? LoanManagerUserId { get; set; }
 
         public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }

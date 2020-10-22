@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
-    public enum EnumBeginingType
+    public enum EnumBeginningType
     {
         BillDate = 0,
         EndOfMonth = 1
