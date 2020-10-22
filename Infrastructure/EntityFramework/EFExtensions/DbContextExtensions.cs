@@ -184,7 +184,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 else
                 {
-                    if (obj.GetValue("IsDeleted") == (object)true)
+                    if ((bool)obj.GetValue("IsDeleted"))
                     {
                         obj.SetValue("DeletedDatetimeUtc", DateTime.UtcNow);
                     }
