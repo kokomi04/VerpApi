@@ -145,13 +145,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
             var dataSql = @$"
                  ;WITH tmp AS (
-                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id
+                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id, r.Status
                     FROM {VOUCHERVALUEROW_VIEW} r
                     WHERE {whereCondition}
                     GROUP BY r.SaleBill_F_Id    
                 )
                 SELECT 
-                    t.SaleBill_F_Id AS F_Id
+                    t.SaleBill_F_Id AS F_Id, r.Status
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {VOUCHERVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
@@ -1446,6 +1446,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             dataTable.Columns.Add("SaleBill_F_Id", typeof(long));
             dataTable.Columns.Add("BillVersion", typeof(int));
             dataTable.Columns.Add("IsBillEntry", typeof(bool));
+            dataTable.Columns.Add("Status", typeof(int));
             dataTable.Columns.Add("CreatedByUserId", typeof(int));
             dataTable.Columns.Add("CreatedDatetimeUtc", typeof(DateTime));
             dataTable.Columns.Add("UpdatedByUserId", typeof(int));
