@@ -145,7 +145,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
             var dataSql = @$"
                  ;WITH tmp AS (
-                    SELECT r.VoucherBill_F_Id, MAX(F_Id) as F_Id,
+                    SELECT r.VoucherBill_F_Id, MAX(F_Id) as F_Id
                     FROM {VOUCHERVALUEROW_VIEW} r
                     WHERE {whereCondition}
                     GROUP BY r.VoucherBill_F_Id    
@@ -1355,7 +1355,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         }
                         catch (Exception)
                         {
-
                             throw;
                         }
 

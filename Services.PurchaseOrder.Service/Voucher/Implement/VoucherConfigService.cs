@@ -842,11 +842,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
             }
 
-            if (data.FormTypeId == EnumFormType.Generate)
+            if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.DynamicControl)
             {
                 data.DataTypeId = EnumDataType.Text;
-                data.DataSize = -1;
+                if(data.FormTypeId == EnumFormType.DynamicControl)
+                {
+                    data.DataSize = -1;
+                }
             }
+           
             if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId) && data.FormTypeId != EnumFormType.Input)
             {
                 data.RefTableCode = null;

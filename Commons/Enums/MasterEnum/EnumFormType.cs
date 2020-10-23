@@ -22,7 +22,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chọn từ danh sách (chọn nhiều giá trị)")]
         MultiSelect = 7,
         [Description("Danh sách file")]
-        FileMap = 8,
+        DynamicControl = 8,
         [Description("Chỉ đọc")]
         ReadOnly = 9,
     }
