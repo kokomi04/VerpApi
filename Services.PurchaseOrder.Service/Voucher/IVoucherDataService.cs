@@ -13,25 +13,25 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
     public interface IVoucherDataService
     {
-        Task<PageDataTable> GetSaleBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetVoucherBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         //Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
-        Task<PageDataTable> GetSaleBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetVoucherBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
-        Task<SaleBillInfoModel> GetSaleBillInfo(int inputTypeId, long fId);
+        Task<VoucherBillInfoModel> GetVoucherBillInfo(int inputTypeId, long fId);
 
-        Task<long> CreateSaleBill(int inputTypeId, SaleBillInfoModel data);
+        Task<long> CreateVoucherBill(int inputTypeId, VoucherBillInfoModel data);
 
-        Task<bool> UpdateSaleBill(int inputTypeId, long inputValueBillId, SaleBillInfoModel data);
+        Task<bool> UpdateVoucherBill(int inputTypeId, long inputValueBillId, VoucherBillInfoModel data);
 
-        Task<bool> DeleteSaleBill(int inputTypeId, long inputValueBillId);
+        Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
-        Task<bool> ImportSaleBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+        Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
 
-        Task<(MemoryStream Stream, string FileName)> ExportSaleBill(int inputTypeId, long fId);
+        Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int inputTypeId, long fId);
 
-        Task<bool> UpdateMultipleSaleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
+        Task<bool> UpdateMultipleVoucherBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
     }

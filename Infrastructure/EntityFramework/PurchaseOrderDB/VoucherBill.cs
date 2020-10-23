@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class SaleBill
+    public partial class VoucherBill
     {
         public long FId { get; set; }
         public int VoucherTypeId { get; set; }

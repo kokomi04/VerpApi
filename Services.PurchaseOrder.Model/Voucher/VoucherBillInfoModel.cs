@@ -5,7 +5,7 @@ using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class SaleBillInfoModel
+    public class VoucherBillInfoModel
     {
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }
