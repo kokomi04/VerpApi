@@ -120,7 +120,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, SaleBillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, VoucherBillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
             var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
@@ -155,7 +155,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return result;
         }
 
-        private DataTable ConvertToDataTable(SaleBillInfoModel data, IList<VoucherField> fields)
+        private DataTable ConvertToDataTable(VoucherBillInfoModel data, IList<VoucherField> fields)
         {
             var dataTable = new DataTable();
             foreach (var field in fields)

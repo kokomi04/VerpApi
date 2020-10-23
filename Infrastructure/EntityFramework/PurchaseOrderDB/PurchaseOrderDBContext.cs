@@ -26,10 +26,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
         public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
-        public virtual DbSet<SaleBill> SaleBill { get; set; }
         public virtual DbSet<VoucherAction> VoucherAction { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
+        public virtual DbSet<VoucherBill> VoucherBill { get; set; }
         public virtual DbSet<VoucherField> VoucherField { get; set; }
         public virtual DbSet<VoucherType> VoucherType { get; set; }
         public virtual DbSet<VoucherTypeGroup> VoucherTypeGroup { get; set; }
@@ -272,20 +272,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_PurchasingSuggestFile_PurchasingSuggest");
             });
 
-            modelBuilder.Entity<SaleBill>(entity =>
-            {
-                entity.HasKey(e => e.FId)
-                    .HasName("PK_InputValueBill");
-
-                entity.Property(e => e.FId).HasColumnName("F_Id");
-
-                entity.HasOne(d => d.VoucherType)
-                    .WithMany(p => p.SaleBill)
-                    .HasForeignKey(d => d.VoucherTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_SaleBill_VoucherType");
-            });
-
             modelBuilder.Entity<VoucherAction>(entity =>
             {
                 entity.Property(e => e.IconName).HasMaxLength(25);
@@ -361,6 +347,20 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.VoucherTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_VoucherAreaField_VoucherType");
+            });
+
+            modelBuilder.Entity<VoucherBill>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_InputValueBill");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.HasOne(d => d.VoucherType)
+                    .WithMany(p => p.VoucherBill)
+                    .HasForeignKey(d => d.VoucherTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_VoucherBill_VoucherType");
             });
 
             modelBuilder.Entity<VoucherField>(entity =>
@@ -496,19 +496,35 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("kh_vt")
                     .HasMaxLength(1);
 
+                entity.Property(e => e.Kho).HasColumnName("kho");
+
+                entity.Property(e => e.KyHieuHd)
+                    .HasColumnName("ky_hieu_hd")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.LoaiTien).HasColumnName("loai_tien");
 
                 entity.Property(e => e.MaBgBh)
                     .HasColumnName("ma_bg_bh")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.MaLsx)
+                    .HasColumnName("ma_lsx")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.MaVthhtpYc)
                     .HasColumnName("ma_vthhtp_yc")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.MauHd)
+                    .HasColumnName("mau_hd")
                     .HasMaxLength(512);
 
                 entity.Property(e => e.NgayCt).HasColumnName("ngay_ct");
 
                 entity.Property(e => e.NgayGh).HasColumnName("ngay_gh");
+
+                entity.Property(e => e.NgayHd).HasColumnName("ngay_hd");
 
                 entity.Property(e => e.NgoaiTe0)
                     .HasColumnName("ngoai_te0")
@@ -526,7 +542,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("ong_ba")
                     .HasMaxLength(512);
 
-                entity.Property(e => e.SaleBillFId).HasColumnName("SaleBill_F_Id");
+                entity.Property(e => e.OrderCode)
+                    .HasColumnName("order_code")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.SeriHd)
+                    .HasColumnName("seri_hd")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.SlOd).HasColumnName("sl_od");
 
                 entity.Property(e => e.SoCt)
                     .HasColumnName("so_ct")
@@ -584,9 +608,21 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ThueSuatXnk).HasColumnName("thue_suat_xnk");
 
-                entity.Property(e => e.TkCo)
-                    .HasColumnName("tk_co")
-                    .HasMaxLength(1);
+                entity.Property(e => e.TkCo0)
+                    .HasColumnName("tk_co0")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.TkCo1)
+                    .HasColumnName("tk_co1")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.TkNo0)
+                    .HasColumnName("tk_no0")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.TkNo1)
+                    .HasColumnName("tk_no1")
+                    .HasMaxLength(512);
 
                 entity.Property(e => e.TongTheTich)
                     .HasColumnName("tong_the_tich")
@@ -611,6 +647,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.Vnd3)
                     .HasColumnName("vnd3")
                     .HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.VoucherBillFId).HasColumnName("VoucherBill_F_Id");
 
                 entity.Property(e => e.Vthhtp).HasColumnName("vthhtp");
 
