@@ -151,7 +151,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     GROUP BY r.VoucherBill_F_Id    
                 )
                 SELECT 
-                    t.VoucherBill_F_Id AS F_Id,
+                    t.VoucherBill_F_Id AS F_Id
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {VOUCHERVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
