@@ -7,11 +7,10 @@ namespace VErp.Services.Master.Service.StorageDatabase
 {
     public interface IStorageDatabaseService
     {
-        Task<IList<ProductModuleInfo>> GetList();
-        Task<IList<BackupStorageOutput>> GetBackupStorages(int moduleId = 0);
+        Task<IList<BackupStorageOutput>> GetBackupStorages(int? moduleTypeId = null);
         Task<bool> BackupStorage(BackupStorageInput backupStorage);
         Task<bool> RestoreForBackupPoint(long backupPoint);
-        Task<bool> RestoreForBackupPoint(long backupPoint, int moduleId);
+        Task<bool> RestoreForBackupPoint(long backupPoint, int moduleTypeId);
         
     }
 }

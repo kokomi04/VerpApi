@@ -65,9 +65,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return printConfig;
         }
 
-        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int inputTypeId)
+        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int inputTypeId)
         {
-            var query = _accountancyDBContext.PrintConfig.AsQueryable();
+            var query = _accountancyDBContext.PrintConfig.AsQueryable()
+                .Where(p => p.ModuleTypeId == moduleTypeId);
+
             if (inputTypeId > 0)
             {
                 query = query.Where(p => p.InputTypeId == inputTypeId);
@@ -137,6 +139,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 config.Background = data.Background;
                 config.TemplateFileId = data.TemplateFileId;
                 config.GenerateToString = data.GenerateToString;
+                config.ModuleTypeId = data.ModuleTypeId;
 
                 await _accountancyDBContext.SaveChangesAsync();
 

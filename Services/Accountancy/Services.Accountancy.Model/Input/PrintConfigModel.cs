@@ -27,6 +27,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 
     public class PrintTemplateInput

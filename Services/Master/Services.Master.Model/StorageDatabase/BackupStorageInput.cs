@@ -8,6 +8,6 @@ namespace VErp.Services.Master.Model.StorageDatabase
     public class BackupStorageInput
     {
         public string Title { get; set; }
-        public List<ProductModuleInfo> storages { get; set; }
+        public List<SubSystemInfo> storages { get; set; }
     }
 }

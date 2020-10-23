@@ -35,7 +35,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IPhysicalFileService _physicalFileService;
-        private readonly IManageVErpModuleService _manageVErpModuleService;
+        private readonly ISubSystemService _manageVErpModuleService;
 
         public StorageDatabaseService(MasterDBContext masterDBContext,
             IOptions<AppSetting> appSetting,
@@ -43,7 +43,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             ILogger<StorageDatabaseService> logger,
             ICurrentContextService currentContextService,
             IPhysicalFileService physicalFileService,
-            IManageVErpModuleService manageVErpModuleService)
+            ISubSystemService manageVErpModuleService)
         {
             _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
@@ -62,8 +62,8 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             foreach (var storage in backupStorage.storages)
             {
 
-                string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleId.GetStringValue());
-                var dbs = await _manageVErpModuleService.GetDbByModule(storage.ModuleId);
+                string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleTypeId.GetStringValue());
+                var dbs = await _manageVErpModuleService.GetDbByModuleTypeId(storage.ModuleTypeId);
                 foreach (string db in dbs)
                 {
                     string filePath = $"{outDirectory}/{db.ToLower()}.bak";
@@ -77,7 +77,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 #endif
                 }
 
-                string fileZip = $"{storage.ModuleId.GetStringValue()}.zip";
+                string fileZip = $"{storage.ModuleTypeId.GetStringValue()}.zip";
 
                 if (ZipDirectory(GetPhysicalFilePath(outDirectory), fileZip))
                 {
@@ -95,7 +95,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                         BackupDate = DateTime.UtcNow,
                         BackupPoint = backupPoint,
                         Title = backupStorage.Title,
-                        ModuleId = (int)storage.ModuleId,
+                        ModuleTypeId = (int)storage.ModuleTypeId,
                         IsDeleted = false,
                         FileId = fileId,
                         CreatedByUserId = _currentContextService.UserId,
@@ -126,11 +126,6 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return true;
         }
 
-        public async Task<IList<ProductModuleInfo>> GetList()
-        {
-            return await _manageVErpModuleService.GetAllModule();
-        }
-
         public async Task<bool> RestoreForBackupPoint(long backupPoint)
         {
             var backups = _masterContext.BackupStorage.Where(x => x.BackupPoint == backupPoint).ToList();
@@ -152,9 +147,9 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             return true;
         }
 
-        public async Task<bool> RestoreForBackupPoint(long backupPoint, int moduleId)
+        public async Task<bool> RestoreForBackupPoint(long backupPoint, int moduleTypeId)
         {
-            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.ModuleId == moduleId);
+            var backup = await _masterContext.BackupStorage.FirstOrDefaultAsync(x => x.BackupPoint == backupPoint && x.ModuleTypeId == moduleTypeId);
             if (backup == null)
             {
                 throw new BadRequestException(BackupErrorCode.NotFoundBackupForDatabase);
@@ -174,7 +169,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
             if (fileInfo == null)
                 throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
-            var dbs = await _manageVErpModuleService.GetDbByModule((EnumModuleType)backup.ModuleId);
+            var dbs = await _manageVErpModuleService.GetDbByModuleTypeId((EnumModuleType)backup.ModuleTypeId);
             foreach(string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
@@ -185,13 +180,13 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
 #endif
                 await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                $"Restore database {db} of module {backup.ModuleId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                $"Restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
             }
         }
 
-        private string GenerateOutDirectory(long backupPoint, string moduleName)
+        private string GenerateOutDirectory(long backupPoint, string moduleType)
         {
-            var relativeFolder = $"/_backup_/{backupPoint}/{moduleName}";
+            var relativeFolder = $"/_backup_/{backupPoint}/{moduleType}";
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
             if (!Directory.Exists(obsoluteFolder))
@@ -221,12 +216,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         }
 
 
-        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int moduleId = 0)
+        public async Task<IList<BackupStorageOutput>> GetBackupStorages(int? moduleTypeId)
         {
             var query = _masterContext.BackupStorage.AsQueryable();
-            if (moduleId != 0)
+            if (moduleTypeId.HasValue)
             {
-                query = query.Where(x => x.ModuleId == moduleId);
+                query = query.Where(x => x.ModuleTypeId == moduleTypeId);
             }
 
             var data = query.AsEnumerable().GroupBy(x => new { x.BackupPoint, x.Title })
@@ -238,7 +233,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     {
                         BackupDate = gg.BackupDate.GetUnix(),
                         BackupPoint = gg.BackupPoint,
-                        ModuleId = gg.ModuleId,
+                        ModuleTypeId = gg.ModuleTypeId,
                         FileId = gg.FileId,
                         RestoreDate = gg.RestoreDate.HasValue ? gg.RestoreDate.GetUnix().Value : 0,
                         Title = gg.Title,

@@ -48,6 +48,7 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size);
         }
 
+        [GlobalApi]
         [HttpGet]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
@@ -76,6 +77,7 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.DeleteCategoryRow(categoryId, categoryRowId);
         }
 
+        [GlobalApi]
         [HttpPost]
         [Route("mapToObject")]
         public async Task<List<MapObjectOutputModel>> MapToObject([FromBody] MapObjectInputModel[] data)

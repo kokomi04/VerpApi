@@ -23,17 +23,10 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
-        [Route("")]
-        public async Task<IList<ProductModuleInfo>> GetList()
+        [Route("backupPoints/{moduleTypeId}")]
+        public async Task<IList<BackupStorageOutput>> GetBackupStorages([FromRoute]int moduleTypeId)
         {
-            return await _storageDbService.GetList();
-        }
-
-        [HttpGet]
-        [Route("backupPoints/{databaseId}")]
-        public async Task<IList<BackupStorageOutput>> GetBackupStorages([FromRoute]int databaseId)
-        {
-            return await _storageDbService.GetBackupStorages(databaseId);
+            return await _storageDbService.GetBackupStorages(moduleTypeId);
         }
 
         [HttpGet]
@@ -51,10 +44,10 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
-        [Route("restore/{backupPoint}/{moduleId}")]
-        public async Task<bool> RestoreForBackupPoint([FromRoute] long backupPoint, [FromRoute] int moduleId)
+        [Route("restore/{backupPoint}/{moduleTypeId}")]
+        public async Task<bool> RestoreForBackupPoint([FromRoute] long backupPoint, [FromRoute] int moduleTypeId)
         {
-            return await _storageDbService.RestoreForBackupPoint(backupPoint, moduleId);
+            return await _storageDbService.RestoreForBackupPoint(backupPoint, moduleTypeId);
         }
 
         [HttpPost]

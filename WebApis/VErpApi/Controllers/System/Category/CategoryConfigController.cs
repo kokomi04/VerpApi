@@ -34,6 +34,7 @@ namespace VErpApi.Controllers.System.Category
             _categoryConfigService = categoryConfigService;
         }
 
+        [GlobalApi]
         [HttpGet]
         [Route("GetCategoryIdByCode/{categoryCode}")]
         public async Task<int> GetCategoryIdByCode([FromRoute] string categoryCode)
@@ -69,7 +70,7 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryConfigService.GetCategory(categoryId);
         }
 
-
+        [GlobalApi]
         [HttpGet]
         [Route("categoryByCode/{categoryCode}")]
         public async Task<CategoryFullModel> GetCategory([FromRoute] string categoryCode)

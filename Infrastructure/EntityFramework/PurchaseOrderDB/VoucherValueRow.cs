@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     {
         public long FId { get; set; }
         public int VoucherTypeId { get; set; }
-        public long SaleBillFId { get; set; }
+        public long VoucherBillFId { get; set; }
         public int BillVersion { get; set; }
         public bool IsBillEntry { get; set; }
         public int CreatedByUserId { get; set; }
@@ -19,7 +19,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string SystemLog { get; set; }
         public int SubsidiaryId { get; set; }
         public string SoCt { get; set; }
-        public string TkCo { get; set; }
+        public string TkCo0 { get; set; }
         public DateTime? NgayCt { get; set; }
         public string Kh0 { get; set; }
         public string NoiDung { get; set; }
@@ -65,5 +65,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? TongTheTich { get; set; }
         public decimal? Vnd3 { get; set; }
         public byte? ThueSuatXnk { get; set; }
+        public int? Kho { get; set; }
+        public string TkNo0 { get; set; }
+        public string MauHd { get; set; }
+        public string KyHieuHd { get; set; }
+        public string SeriHd { get; set; }
+        public DateTime? NgayHd { get; set; }
+        public string OrderCode { get; set; }
+        public int? SlOd { get; set; }
+        public string TkNo1 { get; set; }
+        public string TkCo1 { get; set; }
+        public string MaLsx { get; set; }
+        public int? Status { get; set; }
     }
 }

@@ -10,6 +10,7 @@ namespace Verp.Services.ReportConfig.Model
     {
         public string ReportTypeGroupName { get; set; }
         public int SortOrder { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 
     public class ReportTypeGroupList : ReportTypeGroupModel

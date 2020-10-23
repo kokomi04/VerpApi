@@ -25,14 +25,14 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger<StoredProcedureService> _logger;
         private readonly MasterDBContext _masterDBContext;
-        private readonly IManageVErpModuleService _manageVErpModuleService;
+        private readonly ISubSystemService _manageVErpModuleService;
 
         private const string PATTERN = @"(uv|usp|ufn)\w+";
 
         public StoredProcedureService(MasterDBContext masterDBContext,
             ILogger<StoredProcedureService> logger,
             IActivityLogService activityLogService,
-            IManageVErpModuleService manageVErpModuleService)
+            ISubSystemService manageVErpModuleService)
         {
             _masterDBContext = masterDBContext;
             _logger = logger;
@@ -160,7 +160,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
         private async Task<string> GetDatabase(EnumModuleType moduleType)
         {
-            var ls = await _manageVErpModuleService.GetDbByModule(moduleType);
+            var ls = await _manageVErpModuleService.GetDbByModuleTypeId(moduleType);
             return ls[0];
         }
 

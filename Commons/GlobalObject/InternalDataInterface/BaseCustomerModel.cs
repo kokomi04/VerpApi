@@ -56,7 +56,22 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         [Display(Name = "Số ngày nợ")]
         public int? DebtDays { get; set; }
-        
+        [Display(Name = "Hạn mức nợ")]
+        public decimal? DebtLimitation { get; set; }
+        [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)")]
+        public EnumBeginningType DebtBeginningTypeId { get; set; }
+        [Display(Name = "NV quản lý nợ")]
+        public int? DebtManagerUserId { get; set; }
+
+        [Display(Name = "Số ngày vay nợ")]
+        public int? LoanDays { get; set; }
+        [Display(Name = "Hạn mức vay nợ")]
+        public decimal? LoanLimitation { get; set; }
+        [Display(Name = "Thời điểm tính vay nợ (0: Ngày HĐ, 1: Cuối tháng)")]
+        public EnumBeginningType LoanBeginningTypeId { get; set; }
+        [Display(Name = "NV quản lý vay nợ")]
+        public int? LoanManagerUserId { get; set; }
+
     }
 
     public class BaseCustomerModel: BaseCustomerImportModel
