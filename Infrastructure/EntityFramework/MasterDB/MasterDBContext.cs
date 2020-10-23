@@ -77,7 +77,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<BackupStorage>(entity =>
             {
-                entity.HasKey(e => new { e.SubSystemId, e.BackupPoint });
+                entity.HasKey(e => new { e.ModuleTypeId, e.BackupPoint });
 
                 entity.Property(e => e.BackupDate).HasColumnType("datetime");
 

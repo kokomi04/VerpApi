@@ -24,32 +24,32 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet()]
-        [Route("{subSystemId}")]
-        public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList([FromRoute] EnumModuleType subSystemId)
+        [Route("{moduleTypeId}")]
+        public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList([FromRoute] EnumModuleType moduleTypeId)
         {
-            return await _storedProcedureService.GetList(subSystemId);
+            return await _storedProcedureService.GetList(moduleTypeId);
         }
 
         [HttpPost]
-        [Route("{subSystemId}/{type}")]
-        public async Task<bool> Create([FromRoute] EnumModuleType subSystemId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
+        [Route("{moduleTypeId}/{type}")]
+        public async Task<bool> Create([FromRoute] EnumModuleType moduleTypeId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
         {
-            return await _storedProcedureService.Create(subSystemId, type, model);
+            return await _storedProcedureService.Create(moduleTypeId, type, model);
         }
 
         [HttpPut]
-        [Route("{subSystemId}/{type}")]
-        public async Task<bool> Update([FromRoute] EnumModuleType subSystemId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
+        [Route("{moduleTypeId}/{type}")]
+        public async Task<bool> Update([FromRoute] EnumModuleType moduleTypeId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
         {
-            return await _storedProcedureService.Update(subSystemId, type, model);
+            return await _storedProcedureService.Update(moduleTypeId, type, model);
         }
 
         [HttpDelete]
-        [Route("{subSystemId}/{type}")]
+        [Route("{moduleTypeId}/{type}")]
         [AllowAnonymous]
-        public async Task<bool> Drop([FromRoute] EnumModuleType subSystemId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
+        public async Task<bool> Drop([FromRoute] EnumModuleType moduleTypeId, [FromRoute] int type, [FromBody] StoredProcedureModel model)
         {
-            return await _storedProcedureService.Drop(subSystemId, type, model);
+            return await _storedProcedureService.Drop(moduleTypeId, type, model);
         }
     }
 }

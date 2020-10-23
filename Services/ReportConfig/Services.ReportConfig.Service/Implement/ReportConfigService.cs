@@ -265,7 +265,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        public async Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? reportTypeGroupId = null)
+        public async Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? moduleTypeId = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -275,9 +275,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 query = query.Where(r => r.ReportPath.Contains(keyword) || r.ReportTypeName.Contains(keyword));
             }
-            if (reportTypeGroupId.HasValue)
+            if (moduleTypeId.HasValue)
             {
-                query = query.Where(r => r.ReportTypeGroupId == reportTypeGroupId.Value);
+                query = query.Where(r => r.ReportTypeGroup.ModuleTypeId == moduleTypeId.Value);
             }
             query = query.OrderBy(r => r.ReportTypeName);
             var total = await query.CountAsync();
