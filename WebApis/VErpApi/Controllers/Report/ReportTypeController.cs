@@ -70,10 +70,10 @@ namespace VErpApi.Controllers.Report
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ReportTypeListModel>> GetReportTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? reportTypeGroupId = null)
+        public async Task<PageData<ReportTypeListModel>> GetReportTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? moduleTypeId = null)
         {
             return await _reportConfigService
-                .ReportTypes(keyword, page, size, reportTypeGroupId)
+                .ReportTypes(keyword, page, size, moduleTypeId)
                 .ConfigureAwait(true);
         }
 

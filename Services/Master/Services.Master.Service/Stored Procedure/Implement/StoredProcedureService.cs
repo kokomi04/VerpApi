@@ -160,7 +160,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
         private async Task<string> GetDatabase(EnumModuleType moduleType)
         {
-            var ls = await _manageVErpModuleService.GetDbBySubSystemId(moduleType);
+            var ls = await _manageVErpModuleService.GetDbByModuleTypeId(moduleType);
             return ls[0];
         }
 

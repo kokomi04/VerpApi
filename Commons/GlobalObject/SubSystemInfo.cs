@@ -7,7 +7,7 @@ namespace VErp.Commons.GlobalObject
 {
     public class SubSystemInfo
     {
-        public EnumModuleType SubSystemId { get; set; }
-        public string SubSystemName { get; set; }
+        public EnumModuleType ModuleTypeId { get; set; }
+        public string Title { get; set; }
     }
 }
