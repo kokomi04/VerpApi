@@ -23,5 +23,7 @@ namespace VErp.Commons.Enums.MasterEnum
         MultiSelect = 7,
         [Description("Danh sách file")]
         FileMap = 8,
+        [Description("Chỉ đọc")]
+        ReadOnly = 9,
     }
 }
