@@ -340,6 +340,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 select new RolePermissionModel()
                 {
                     ModuleId = p.ModuleId,
+                    ObjectTypeId = p.ObjectTypeId,
+                    ObjectId = p.ObjectId,
                     Permission = p.Permission,
                 }).ToListAsync();
         }

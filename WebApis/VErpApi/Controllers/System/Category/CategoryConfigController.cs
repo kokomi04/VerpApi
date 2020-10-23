@@ -42,6 +42,14 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryConfigService.GetCategoryIdByCode(categoryCode);
         }
 
+        [GlobalApi]
+        [HttpGet]
+        [Route("dynamicCates")]
+        public async Task<IList<CategoryListModel>> GetDynamicCates()
+        {
+            return await _categoryConfigService.GetDynamicCates();
+        }
+        
         [HttpGet]
         [Route("")]
         public async Task<PageData<CategoryModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)

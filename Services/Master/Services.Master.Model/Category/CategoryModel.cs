@@ -9,17 +9,22 @@ using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 namespace VErp.Services.Master.Model.Category
 
 {
-    public class CategoryModel : IMapFrom<CategoryEntity>
+    public class CategoryListModel
     {
         public int CategoryId { get; set; }
-        //public int? ParentId { get; set; }
+        
         [Required(ErrorMessage = "Vui lòng nhập tên danh mục")]
         [MaxLength(256, ErrorMessage = "Tên danh mục quá dài")]
         public string Title { get; set; }
+
         [Required(ErrorMessage = "Vui lòng nhập mã danh mục")]
         [MaxLength(45, ErrorMessage = "Mã danh mục quá dài")]
         [RegularExpression(@"(^_[a-zA-Z0-9_]*$)", ErrorMessage = "Mã danh mục bắt đầu bằng ký tự _ và chỉ gồm các ký tự chữ, số và ký tự _.")]
         public string CategoryCode { get; set; }
+    }
+
+    public class CategoryModel : CategoryListModel, IMapFrom<CategoryEntity>
+    {       
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
         public bool IsOutSideData { get; set; }
