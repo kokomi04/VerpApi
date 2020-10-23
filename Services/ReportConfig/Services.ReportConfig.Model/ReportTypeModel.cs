@@ -59,12 +59,16 @@ namespace Verp.Services.ReportConfig.Model
             return column.JsonDeserialize<List<ReportColumnModel>>()?.OrderBy(c => c.SortOrder)?.ToList();
         }
 
+        public int ReportModuleTypeId { get; set; }
+
         public void Mapping(Profile profile) => profile.CreateMap<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonDeserialize<BscConfigModel>()))
+       .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
        .ReverseMap()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()));
+
     }
 
 }

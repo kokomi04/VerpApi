@@ -75,7 +75,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (isConfig)
             {
                 var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
-                
+
                 foreach (var field in fields)
                 {
                     if (!string.IsNullOrEmpty(field.ExtraFilter))
@@ -85,7 +85,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            info.Fields = fields.OrderBy(f=>f.SortOrder).ToList();
+            info.Fields = fields.OrderBy(f => f.SortOrder).ToList();
 
             return info;
         }
@@ -293,7 +293,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportTypeModel> ReportType(int reportTypeId)
         {
-            var reportType = await _reportConfigContext.ReportType
+            var reportType = await _reportConfigContext.ReportType.Include(x => x.ReportTypeGroup)
                 //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
             if (reportType == null)
