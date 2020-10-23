@@ -18,9 +18,7 @@ using System.IO;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
-
     [Route("api/accountancy/data/CalcProductPrice")]
-
     public class CalcProductPriceController : VErpBaseController
     {
         private readonly ICalcProductPriceService _calcProductPriceService;
@@ -28,8 +26,6 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             _calcProductPriceService = calcProductPriceService;
         }
-
-
        
         [HttpPost]
         [VErpAction(EnumAction.View)]
