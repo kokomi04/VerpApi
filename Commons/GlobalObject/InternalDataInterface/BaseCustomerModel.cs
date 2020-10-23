@@ -63,13 +63,13 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "NV quản lý nợ")]
         public int? DebtManagerUserId { get; set; }
 
-        [Display(Name = "Số ngày cho nợ")]
+        [Display(Name = "Số ngày vay nợ")]
         public int? LoanDays { get; set; }
-        [Display(Name = "Hạn mức cho nợ")]
+        [Display(Name = "Hạn mức vay nợ")]
         public decimal? LoanLimitation { get; set; }
-        [Display(Name = "Thời điểm tính cho nợ (0: Ngày HĐ, 1: Cuối tháng)")]
+        [Display(Name = "Thời điểm tính vay nợ (0: Ngày HĐ, 1: Cuối tháng)")]
         public EnumBeginningType LoanBeginningTypeId { get; set; }
-        [Display(Name = "NV quản lý cho nợ")]
+        [Display(Name = "NV quản lý vay nợ")]
         public int? LoanManagerUserId { get; set; }
 
     }
