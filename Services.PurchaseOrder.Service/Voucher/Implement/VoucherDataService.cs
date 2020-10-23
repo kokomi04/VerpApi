@@ -145,13 +145,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
             var dataSql = @$"
                  ;WITH tmp AS (
-                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id, MAX(r.Status) Status
+                    SELECT r.SaleBill_F_Id, MAX(F_Id) as F_Id,
                     FROM {VOUCHERVALUEROW_VIEW} r
                     WHERE {whereCondition}
                     GROUP BY r.SaleBill_F_Id    
                 )
                 SELECT 
-                    t.SaleBill_F_Id AS F_Id, r.Status
+                    t.SaleBill_F_Id AS F_Id,
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {VOUCHERVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
@@ -1339,13 +1339,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         try
                         {
-
                             var generated = await _customGenCodeHelperService.GenerateCode(genCodeInfo.CustomGenCodeId, genCodeInfo.LastValue);
                             if (generated == null)
                             {
                                 throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
                             }
-
 
                             value = generated.CustomCode;
                             genCodeInfo.LastValue = generated.LastValue;
@@ -1384,8 +1382,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, SaleBillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            var fields = (await GetVoucherFields(voucherTypeId)).ToDictionary(f => f.FieldName, f => f);
-
+            var fields = (await GetVoucherFields(voucherTypeId)).Where(f => f.FormTypeId != (int) EnumFormType.ReadOnly).ToDictionary(f => f.FieldName, f => f);
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
@@ -1446,7 +1443,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             dataTable.Columns.Add("SaleBill_F_Id", typeof(long));
             dataTable.Columns.Add("BillVersion", typeof(int));
             dataTable.Columns.Add("IsBillEntry", typeof(bool));
-            dataTable.Columns.Add("Status", typeof(int));
             dataTable.Columns.Add("CreatedByUserId", typeof(int));
             dataTable.Columns.Add("CreatedDatetimeUtc", typeof(DateTime));
             dataTable.Columns.Add("UpdatedByUserId", typeof(int));
@@ -1469,7 +1465,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     sumReciprocals.Add(sumColumn, 0);
                 }
             }
-
 
             var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
 
@@ -1533,7 +1528,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         //dataRow[colName] = deValue;
                         dataRow[colName] = DBNull.Value;
                     }
-
                 }
 
                 var inValidReciprocalColumn = GetInValidReciprocalColumn(dataTable, dataRow, requireFields);
@@ -1584,7 +1578,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
             await _purchaseOrderDBContext.InsertDataTable(dataTable);
-
         }
 
         private DataRow NewSaleBillVersionRow(DataTable dataTable, int voucherTypeId, long saleBill_F_Id, int billVersionId, bool isBillEntry)
