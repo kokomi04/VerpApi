@@ -27,5 +27,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 }
