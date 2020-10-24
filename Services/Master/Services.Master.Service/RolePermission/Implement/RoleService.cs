@@ -141,8 +141,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }
 
             var lst = size > 0
-                ? await query.OrderBy(r => r.RootPath).Skip((page - 1) * size).Take(size).ToListAsync()
-                : await query.OrderBy(r => r.RootPath).ToListAsync();
+                ? await query.OrderBy(r => r.IsEditable).ThenBy(r => r.RootPath).Skip((page - 1) * size).Take(size).ToListAsync()
+                : await query.OrderBy(r => r.IsEditable).ThenBy(r => r.RootPath).ToListAsync();
             var total = await query.CountAsync();
 
             return (lst, total);
@@ -339,6 +339,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 where roleIds.Contains(p.RoleId)
                 select new RolePermissionModel()
                 {
+                    ModuleGroupId = m.ModuleGroupId,
                     ModuleId = p.ModuleId,
                     ObjectTypeId = p.ObjectTypeId,
                     ObjectId = p.ObjectId,
