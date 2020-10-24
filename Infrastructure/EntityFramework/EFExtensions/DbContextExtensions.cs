@@ -85,7 +85,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static void AddFilterBase(this ModelBuilder modelBuilder)
         {
-           
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
@@ -184,7 +184,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 else
                 {
-                    if ((bool)obj.GetValue("IsDeleted"))
+                    if ((bool?)obj.GetValue("IsDeleted") == true)
                     {
                         obj.SetValue("DeletedDatetimeUtc", DateTime.UtcNow);
                     }
