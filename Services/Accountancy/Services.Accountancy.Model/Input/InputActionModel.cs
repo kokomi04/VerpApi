@@ -22,5 +22,6 @@ namespace VErp.Services.Accountancy.Model.Input
         public string SqlAction { get; set; }
         public string JsAction { get; set; }
         public string IconName { get; set; }
+        public string Style { get; set; }
     }
 }

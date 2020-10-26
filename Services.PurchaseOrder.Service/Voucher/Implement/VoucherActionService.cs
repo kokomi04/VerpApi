@@ -85,11 +85,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
             try
             {
-                action.Title = data.Title;
-                action.VoucherActionCode = data.VoucherActionCode;
-                action.JsAction = data.JsAction;
-                action.SqlAction = data.SqlAction;
-                action.IconName = data.IconName;
+                _mapper.Map(data, action);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Cập nhật chức năng {action.Title}", data.JsonSerialize());
