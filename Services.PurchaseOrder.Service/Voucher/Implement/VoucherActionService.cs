@@ -120,12 +120,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, VoucherBillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, long voucherBillId, VoucherBillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
             var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
-
+            if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.VoucherTypeId && b.FId == voucherBillId))
+                throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
             var fields = _purchaseOrderDBContext.VoucherField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             // Validate permission
 
@@ -135,7 +136,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
-                    messageParam
+                    messageParam,
+                    new SqlParameter("@VoucherTypeId", action.VoucherTypeId),
+                    new SqlParameter("@VoucherBill_F_Id", voucherBillId)
                 };
 
                 DataTable rows = ConvertToDataTable(data, fields);

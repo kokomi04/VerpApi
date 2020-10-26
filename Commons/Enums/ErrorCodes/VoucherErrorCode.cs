@@ -79,6 +79,6 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Không tìm thấy chức năng")]
         VoucherActionNotFound = 39,
         [Description("Mã chức năng đã tồn tại")]
-        VoucherActionCodeAlreadyExisted = 40,
+        VoucherActionCodeAlreadyExisted = 40
     }
 }

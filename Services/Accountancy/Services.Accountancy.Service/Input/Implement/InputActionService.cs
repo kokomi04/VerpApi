@@ -113,12 +113,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, BillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, long inputBillId, BillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
             var action = _accountancyDBContext.InputAction.FirstOrDefault(a => a.InputActionId == inputActionId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
-
+            if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.InputTypeId && b.FId == inputBillId))
+                throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
             var fields = _accountancyDBContext.InputField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             // Validate permission
 
@@ -128,7 +129,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
-                    messageParam
+                    messageParam,
+                    new SqlParameter("@InputTypeId", action.InputTypeId),
+                    new SqlParameter("@InputBill_F_Id", inputBillId)
                 };
 
                 DataTable rows = ConvertToDataTable(data, fields);
