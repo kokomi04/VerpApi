@@ -124,6 +124,24 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (lst, total);
         }
 
+        public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
+        {
+            var voucherTypes = await _purchaseOrderDBContext.VoucherType.ProjectTo<VoucherTypeSimpleModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var actions = (await _purchaseOrderDBContext.VoucherAction.ProjectTo<VoucherActionSimpleModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
+                .GroupBy(a => a.VoucherTypeId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            foreach (var item in voucherTypes)
+            {
+                if (actions.TryGetValue(item.VoucherTypeId, out var _actions))
+                {
+                    item.ActionObjects = _actions;
+                }
+            }
+
+            return voucherTypes;
+        }
+
         public async Task<int> AddVoucherType(VoucherTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(0));

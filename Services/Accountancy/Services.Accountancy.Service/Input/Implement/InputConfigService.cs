@@ -125,6 +125,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
+        public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
+        {
+            var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+           
+            var actions = (await _accountancyDBContext.InputAction.ProjectTo<InputActionSimpleModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
+                .GroupBy(a => a.InputTypeId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            foreach (var item in inputTypes)
+            {
+                if (actions.TryGetValue(item.InputTypeId, out var _actions))
+                {
+                    item.ActionObjects = _actions;
+                }
+            }
+
+            return inputTypes;
+        }
+
         public async Task<int> AddInputType(InputTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));

@@ -9,12 +9,8 @@ using VErp.Infrastructure.EF.AccountancyDB;
 namespace VErp.Services.Accountancy.Model.Input
 
 {
-    public class InputTypeModel: IMapFrom<InputType>
+    public class InputTypeSimpleModel : IMapFrom<InputType>
     {
-        public InputTypeModel()
-        {
-        }
-
         public int InputTypeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên chứng từ")]
         [MaxLength(256, ErrorMessage = "Tên chứng từ quá dài")]
@@ -26,6 +22,17 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public int SortOrder { get; set; }
         public int? InputTypeGroupId { get; set; }
+
+        public IList<InputActionSimpleModel> ActionObjects { get; set; }
+    }
+
+    public class InputTypeModel: InputTypeSimpleModel
+    {
+        public InputTypeModel()
+        {
+        }
+
+       
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
         public string AfterLoadAction { get; set; }

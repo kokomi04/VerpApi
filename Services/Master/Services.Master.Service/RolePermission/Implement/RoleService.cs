@@ -305,6 +305,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         RoleId = roleId,
                         ModuleId = p.ModuleId,
                         Permission = p.Permission,
+                        ObjectTypeId = p.ObjectTypeId,
+                        ObjectId = p.ObjectId,
+                        JsonActionIds = p.ActionIds.JsonSerialize(),
                         CreatedDatetimeUtc = DateTime.UtcNow
                     }).ToList();
 
@@ -333,18 +336,29 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             {
                 modules = modules.Where(m => !m.IsDeveloper);
             }
-            return await (
+            var lst = await (
                 from p in _masterContext.RolePermission
                 join m in modules on p.ModuleId equals m.ModuleId
                 where roleIds.Contains(p.RoleId)
-                select new RolePermissionModel()
+                select new
                 {
-                    ModuleGroupId = m.ModuleGroupId,
-                    ModuleId = p.ModuleId,
-                    ObjectTypeId = p.ObjectTypeId,
-                    ObjectId = p.ObjectId,
-                    Permission = p.Permission,
+                    m.ModuleGroupId,
+                    p.ModuleId,
+                    p.ObjectTypeId,
+                    p.ObjectId,
+                    p.Permission,
+                    p.JsonActionIds
                 }).ToListAsync();
+
+            return lst.Select(p => new RolePermissionModel()
+            {
+                ModuleGroupId = p.ModuleGroupId,
+                ModuleId = p.ModuleId,
+                ObjectTypeId = p.ObjectTypeId,
+                ObjectId = p.ObjectId,
+                Permission = p.Permission,
+                ActionIds = p.JsonActionIds.JsonDeserialize<List<int>>()
+            }).ToList();
         }
 
         public async Task<IList<StockPemissionOutput>> GetStockPermission()
