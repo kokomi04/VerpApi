@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -26,20 +27,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<IList<SubSystemInfo>> GetSubSystems()
         {
-            var rs = new List<SubSystemInfo>();
-            foreach(var value in Enum.GetValues(typeof(EnumModuleType)))
+            var ss = EnumExtensions.GetEnumMembers<EnumModuleType>().Select(m => new SubSystemInfo
             {
-                var name = ((Enum)value).GetEnumDescription();
-                var id = (EnumModuleType)value;
+                ModuleTypeId = m.Enum,
+                Title = m.Description
+            }).ToList();
 
-                rs.Add(new SubSystemInfo
-                {
-                    ModuleTypeId = id,
-                    Title = name,
-                });
-            }
-
-            return rs;
+            return ss;
         }
 
         public async Task<string[]> GetDbByModuleTypeId(EnumModuleType moduleTypeId)
