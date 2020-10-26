@@ -28,5 +28,12 @@ namespace VErpApi.Controllers.System.Internal
         {
             return await _categoryConfigService.GetReferFields(input.CategoryCodes, input.FieldNames).ConfigureAwait(true);
         }
+
+        [HttpGet]
+        [Route("DynamicCates")]
+        public async Task<IList<CategoryListModel>> GetDynamicCates()
+        {
+            return await _categoryConfigService.GetDynamicCates().ConfigureAwait(true);
+        }
     }
 }

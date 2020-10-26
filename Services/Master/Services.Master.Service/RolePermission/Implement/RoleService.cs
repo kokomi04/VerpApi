@@ -12,11 +12,12 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Service.RolePermission;
+using RolePermissionEntity = VErp.Infrastructure.EF.MasterDB.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {
@@ -27,12 +28,20 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICategoryHelperService _categoryHelperService;
+        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+        private readonly IStockHelperService _stockHelperService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<RoleService> logger
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
+            , ICategoryHelperService categoryHelperService
+            , IInputTypeHelperService inputTypeHelperService
+            , IVoucherTypeHelperService voucherTypeHelperService
+            , IStockHelperService stockHelperService
             )
         {
             _masterContext = masterContext;
@@ -40,6 +49,10 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _categoryHelperService = categoryHelperService;
+            _inputTypeHelperService = inputTypeHelperService;
+            _voucherTypeHelperService = voucherTypeHelperService;
+            _stockHelperService = stockHelperService;
         }
 
         public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
@@ -79,6 +92,15 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
                 if (parentInfo == null) throw new BadRequestException(RoleErrorCode.ParentRoleNotFound);
             }
+            var modules = _masterContext.Module.ToList();
+
+            var categories = await _categoryHelperService.GetDynamicCates();
+
+            var inputTypes = await _inputTypeHelperService.GetInputTypeSimpleList();
+
+            var voucherTypes = await _voucherTypeHelperService.GetVoucherTypeSimpleList();
+
+            var stocks = await _stockHelperService.GetAllStock();
 
             using (var trans = _masterContext.Database.BeginTransaction())
             {
@@ -91,18 +113,84 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 UpdateRoleChildren(roleInfo.RootPath);
 
-                if (roleTypeId == EnumRoleType.Administrator)
-                {
-                    var modules = _masterContext.Module.ToList();
+                var lstPermissions = new List<RolePermissionEntity>();
 
-                    await _masterContext.RolePermission.AddRangeAsync(modules.Select(m => new Infrastructure.EF.MasterDB.RolePermission()
+                foreach (var m in modules)
+                {
+
+                    switch (m.ModuleId)
                     {
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        ModuleId = m.ModuleId,
-                        RoleId = roleInfo.RoleId,
-                        Permission = int.MaxValue
-                    }));
+                        case (int)EnumModule.CategoryData:
+                            foreach (var c in categories)
+                            {
+                                var permission = new RolePermissionEntity
+                                {
+                                    CreatedDatetimeUtc = DateTime.UtcNow,
+                                    ModuleId = m.ModuleId,
+                                    RoleId = roleInfo.RoleId,
+                                    Permission = int.MaxValue,
+                                    ObjectTypeId = (int)EnumObjectType.Category,
+                                    ObjectId = c.CategoryId
+                                };
+                                lstPermissions.Add(permission);
+                            }
+                            break;
+
+                        case (int)EnumModule.Input:
+
+                            foreach (var c in inputTypes)
+                            {
+                                var actionIds = c.ActionObjects.Select(a => a.InputActionId).ToList();
+
+                                var permission = new RolePermissionEntity
+                                {
+                                    CreatedDatetimeUtc = DateTime.UtcNow,
+                                    ModuleId = m.ModuleId,
+                                    RoleId = roleInfo.RoleId,
+                                    Permission = int.MaxValue,
+                                    ObjectTypeId = (int)EnumObjectType.InputType,
+                                    ObjectId = c.InputTypeId,
+                                    JsonActionIds = actionIds.JsonSerialize()
+                                };
+                                lstPermissions.Add(permission);
+                            }
+                            break;
+
+                        case (int)EnumModule.SalesBill:
+                            foreach (var c in voucherTypes)
+                            {
+                                var actionIds = c.ActionObjects.Select(a => a.VoucherActionId).ToList();
+
+                                var permission = new RolePermissionEntity
+                                {
+                                    CreatedDatetimeUtc = DateTime.UtcNow,
+                                    ModuleId = m.ModuleId,
+                                    RoleId = roleInfo.RoleId,
+                                    Permission = int.MaxValue,
+                                    ObjectTypeId = (int)EnumObjectType.VoucherType,
+                                    ObjectId = c.VoucherTypeId,
+                                    JsonActionIds = actionIds.JsonSerialize()
+                                };
+                                lstPermissions.Add(permission);
+                            }
+                            break;
+                    }
                 }
+
+                await _masterContext.RolePermission.AddRangeAsync(lstPermissions);
+
+                var objectPermission = new List<RoleDataPermission>();
+                foreach (var stock in stocks)
+                {
+                    objectPermission.Add(new RoleDataPermission()
+                    {
+                        RoleId = roleInfo.RoleId,
+                        ObjectTypeId = (int)EnumObjectType.Stock,
+                        ObjectId = stock.StockId
+                    });
+                }
+                await _masterContext.RoleDataPermission.AddRangeAsync(objectPermission);
+
                 await _masterContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -388,6 +476,87 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> GrantDataForAllRoles(EnumObjectType objectTypeId, long objectId)
+        {
+            var existedRoleIds = (await _masterContext.RoleDataPermission.Where(o => o.ObjectTypeId == (int)objectTypeId && o.ObjectId == objectId).ToListAsync())
+                .Select(o => o.RoleId)
+                .Distinct()
+                .ToHashSet();
+            var roles = await _masterContext.Role.ToListAsync();
+
+            var datPermissions = new List<RoleDataPermission>();
+            foreach (var role in roles)
+            {
+                if (!existedRoleIds.Contains(role.RoleId))
+                {
+                    datPermissions.Add(new RoleDataPermission()
+                    {
+                        ObjectTypeId = (int)objectTypeId,
+                        ObjectId = objectId,
+                        RoleId = role.RoleId
+                    });
+                }
+            }
+
+            await _masterContext.RoleDataPermission.AddRangeAsync(datPermissions);
+            await _masterContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, IList<int> actionIds)
+        {
+            var existedRoleIds = (await _masterContext.RolePermission.Where(o => o.ModuleId == (int)moduleId && o.ObjectTypeId == (int)objectTypeId && o.ObjectId == objectId).ToListAsync())
+                .Select(o => o.RoleId)
+                .Distinct()
+                .ToHashSet();
+            var roles = await _masterContext.Role.ToListAsync();
+
+            var permissions = new List<RolePermissionEntity>();
+            foreach (var role in roles)
+            {
+                if (!existedRoleIds.Contains(role.RoleId))
+                {
+                    permissions.Add(new RolePermissionEntity()
+                    {
+                        ModuleId = (int)moduleId,
+                        ObjectTypeId = (int)objectTypeId,
+                        ObjectId = objectId,
+                        RoleId = role.RoleId,
+                        Permission = int.MaxValue,
+                        JsonActionIds = actionIds.JsonSerialize()
+                    });
+                }
+            }
+
+            await _masterContext.RolePermission.AddRangeAsync(permissions);
+            await _masterContext.SaveChangesAsync();
+            return true;
+        }
+
+
+        public async Task<bool> GrantActionPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, int actionId)
+        {
+            var data = await _masterContext.RolePermission.Where(o => o.ModuleId == (int)moduleId && o.ObjectTypeId == (int)objectTypeId && o.ObjectId == objectId).ToListAsync();
+            foreach (var item in data)
+            {
+                var actionIds = item.JsonActionIds.JsonDeserialize<List<int>>();
+                if (actionIds == null)
+                {
+                    actionIds = new List<int>() { actionId };
+                }
+                else
+                {
+                    actionIds.Add(actionId);
+                }
+                item.JsonActionIds = actionIds.JsonSerialize();
+            }
+
+            await _masterContext.SaveChangesAsync();
+            return true;
+        }
+
+
         public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
         {
             var roleDataPermissions = await RoleDataPermission(EnumObjectType.Category);
