@@ -47,14 +47,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@Currency", currency),
                 new SqlParameter("@SoTK", accountNumber),
                 new SqlParameter("@Kh", partnerId),
-                new SqlParameter("@Du_no_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_co_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_no_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_co_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_no_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_co_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_no_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_co_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output }
+                new SqlParameter("@Du_no_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_co_dau_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_no_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_co_dau_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_no_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_co_cuoi_ky_vnd", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_no_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_co_cuoi_ky_ngoai_te", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 }
             };
 
             var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_FixExchangeRateDetail", sqlParams);
@@ -116,8 +116,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 byFactory && factory.HasValue ? new SqlParameter("@phan_xuong", factory.Value) : new SqlParameter("@phan_xuong", DBNull.Value),
                 byProduct && product.HasValue ? new SqlParameter("@vthhtp", product.Value) : new SqlParameter("@vthhtp", DBNull.Value),
                 byStock && stock.HasValue ? new SqlParameter("@kho", stock.Value) : new SqlParameter("@kho", DBNull.Value),
-                new SqlParameter("@Du_no_dau_ky", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output },
-                new SqlParameter("@Du_no_cuoi_ky", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output }
+                new SqlParameter("@Du_no_dau_ky", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 },
+                new SqlParameter("@Du_no_cuoi_ky", 0) { SqlDbType = SqlDbType.Decimal, Direction = ParameterDirection.Output, Precision = 24, Scale = 5 }
             };
 
             var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcCostTransferDetail", sqlParams);
