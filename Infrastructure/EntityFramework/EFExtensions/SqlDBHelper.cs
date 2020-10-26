@@ -58,8 +58,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 sql.Append($" {param.ParameterName} = {param.ParameterName},");
             }
-
-            sql.Append($" {SubIdParam} = {SubIdParam},");
+            if (dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
+                sql.Append($" {SubIdParam} = {SubIdParam},");
+            }
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
         }
 
