@@ -942,5 +942,18 @@ namespace VErp.Services.Master.Service.Category
             }
             return category.CategoryId;
         }
+
+        public async Task<IList<CategoryListModel>> GetDynamicCates()
+        {
+            return await _masterContext.Category.Where(c => !c.IsOutSideData)
+                .Select(c => new CategoryListModel()
+                {
+                    CategoryId = c.CategoryId,
+                    CategoryCode = c.CategoryCode,
+                    Title = c.Title
+                })
+                .ToListAsync();
+
+        }
     }
 }
