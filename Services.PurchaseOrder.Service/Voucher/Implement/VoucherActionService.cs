@@ -123,23 +123,23 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
             if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.VoucherTypeId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
-            var fields = _purchaseOrderDBContext.VoucherField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
+            var fields = _purchaseOrderDBContext.VoucherField
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(action.SqlAction))
             {
+                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
                     messageParam,
                     new SqlParameter("@VoucherTypeId", action.VoucherTypeId),
-                    new SqlParameter("@VoucherBill_F_Id", voucherBillId)
+                    new SqlParameter("@VoucherBill_F_Id", voucherBillId),
+                    new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
-
-                DataTable rows = ConvertToDataTable(data, fields);
-                parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" });
-
                 var resultData = await _purchaseOrderDBContext.QueryDataTable(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
@@ -152,28 +152,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
             return result;
-        }
-
-        private DataTable ConvertToDataTable(VoucherBillInfoModel data, IList<VoucherField> fields)
-        {
-            var dataTable = new DataTable();
-            foreach (var field in fields)
-            {
-                dataTable.Columns.Add(field.FieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
-            }
-            foreach (var row in data.Rows)
-            {
-                var dataRow = dataTable.NewRow();
-                foreach (var field in fields)
-                {
-                    row.TryGetValue(field.FieldName, out var celValue);
-                    if (celValue == null) data.Info.TryGetValue(field.FieldName, out celValue);
-                    var value = ((EnumDataType)field.DataTypeId).GetSqlValue(celValue);
-                    dataRow[field.FieldName] = value;
-                }
-                dataTable.Rows.Add(dataRow);
-            }
-            return dataTable;
         }
     }
 }
