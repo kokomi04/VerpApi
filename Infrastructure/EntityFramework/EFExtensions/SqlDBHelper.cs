@@ -56,7 +56,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var param in parammeters)
             {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+                sql.Append($" {param.ParameterName} = {param.ParameterName}");
+                if (param.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
+                sql.Append(",");
             }
             sql.Append($" {SubIdParam} = {SubIdParam},");
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
