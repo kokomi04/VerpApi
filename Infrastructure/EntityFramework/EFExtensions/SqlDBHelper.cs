@@ -477,7 +477,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return values.ToSqlParameter(parameterName, "_BIGINTVALUES", "Value");
         }
 
-
         private static SqlParameter ToSqlParameter<T>(this IList<T> values, string parameterName, string type, string valueColumn)
         {
             var table = new DataTable(type);
@@ -521,6 +520,27 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
         }
 
+        public static DataTable ConvertToDataTable(NonCamelCaseDictionary info, IList<NonCamelCaseDictionary> rows, Dictionary<string, EnumDataType> fields)
+        {
+            var dataTable = new DataTable();
+            foreach (var field in fields)
+            {
+                dataTable.Columns.Add(field.Key, field.Value.GetColumnDataType());
+            }
+            foreach (var row in rows)
+            {
+                var dataRow = dataTable.NewRow();
+                foreach (var field in fields)
+                {
+                    row.TryGetValue(field.Key, out var celValue);
+                    if (celValue == null) info.TryGetValue(field.Key, out celValue);
+                    var value = (field.Value).GetSqlValue(celValue);
+                    dataRow[field.Key] = value;
+                }
+                dataTable.Rows.Add(dataRow);
+            }
+            return dataTable;
+        }
 
         private static char[] SpaceChars = new[] { ';', '\n', '\r', '\t', '\v', ' ' };
 

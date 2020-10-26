@@ -116,7 +116,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
             if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.InputTypeId && b.FId == inputBillId))
                 throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
-            var fields = _accountancyDBContext.InputField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
+            var fields = _accountancyDBContext.InputField
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -130,7 +132,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@InputBill_F_Id", inputBillId)
                 };
 
-                DataTable rows = ConvertToDataTable(data, fields);
+                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" });
 
                 var resultData = await _accountancyDBContext.QueryDataTable(action.SqlAction, parammeters);

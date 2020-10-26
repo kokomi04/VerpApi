@@ -327,8 +327,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                // Get all fields
+                var voucherFields = _purchaseOrderDBContext.VoucherField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Add);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Add);
 
                 if (result.Code != 0)
                 {
@@ -351,7 +356,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await CreateBillVersion(voucherTypeId, billInfo.FId, 1, data, areaFieldGenCodes);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherAreaFields, EnumAction.Add);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Add);
 
                 await ConfirmCustomGenCode(areaFieldGenCodes);
 
@@ -517,46 +522,49 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message)> ProcessActionAsync(string script, VoucherBillInfoModel data, List<ValidateVoucherField> fields, EnumAction action)
+        private async Task<(int Code, string Message)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(script))
             {
+                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     resultParam,
-                    messageParam
+                    messageParam,
+                    new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
-                var pattern = @"@{(?<word>\w+)}";
-                Regex rx = new Regex(pattern);
-                var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
 
-                for (int i = 0; i < match.Count; i++)
-                {
-                    var fieldName = match[i];
-                    var field = fields.First(f => f.FieldName == fieldName);
-                    if (!field.IsMultiRow)
-                    {
-                        var paramName = $"@{match[i]}";
-                        script = script.Replace($"@{{{match[i]}}}", paramName);
-                        data.Info.TryGetValue(fieldName, out string value);
-                        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                    }
-                    else
-                    {
-                        var paramNames = new List<string>();
-                        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
-                        {
-                            var paramName = $"@{match[i]}_{rowIndx}";
-                            paramNames.Add($"({paramName})");
-                            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                        }
-                        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
-                        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
-                    }
-                }
+                //var pattern = @"@{(?<word>\w+)}";
+                //Regex rx = new Regex(pattern);
+                //var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
+
+                //for (int i = 0; i < match.Count; i++)
+                //{
+                //    var fieldName = match[i];
+                //    var field = fields.First(f => f.FieldName == fieldName);
+                //    if (!field.IsMultiRow)
+                //    {
+                //        var paramName = $"@{match[i]}";
+                //        script = script.Replace($"@{{{match[i]}}}", paramName);
+                //        data.Info.TryGetValue(fieldName, out string value);
+                //        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                //    }
+                //    else
+                //    {
+                //        var paramNames = new List<string>();
+                //        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
+                //        {
+                //            var paramName = $"@{match[i]}_{rowIndx}";
+                //            paramNames.Add($"({paramName})");
+                //            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
+                //            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
+                //        }
+                //        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
+                //        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
+                //    }
+                //}
                 await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
             }
             return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string);
@@ -983,9 +991,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
-            {
+            { 
+                // Get all fields
+                var voucherFields = _purchaseOrderDBContext.VoucherField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Update);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -1007,7 +1020,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherAreaFields, EnumAction.Update);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Update);
 
                 await ConfirmCustomGenCode(areaFieldGenCodes);
 
@@ -1041,7 +1054,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (((EnumFormType)field.VoucherField.FormTypeId).IsSelectForm())
             {
                 var refTableTitle = field.VoucherField.RefTableTitle.Split(',')[0];
-              
+
                 var categoryFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
                 {
                     CategoryCodes = new List<string>() { field.VoucherField.RefTableCode },
@@ -1268,8 +1281,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
                 await ValidateSaleVoucherConfig(null, data?.Info);
+
+                // Get all fields
+                var voucherFields = _purchaseOrderDBContext.VoucherField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Delete);
 
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1280,7 +1299,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Delete);
 
                 //await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -1706,7 +1725,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-         
+
             var referFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
             {
                 CategoryCodes = referTableNames,
@@ -1887,6 +1906,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
 
+                    // Get all fields
+                    var voucherFields = _purchaseOrderDBContext.VoucherField
+                     .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                     .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                     foreach (var bill in bills)
                     {
                         // validate require
@@ -1901,7 +1925,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(voucherType.BeforeSaveAction, bill, fields, EnumAction.Add);
+                        await ProcessActionAsync(voucherType.BeforeSaveAction, bill, voucherFields, EnumAction.Add);
 
                         var billInfo = new VoucherBill()
                         {
@@ -1918,7 +1942,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CreateBillVersion(voucherTypeId, billInfo.FId, 1, bill, areaFieldGenCodes);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(voucherType.AfterSaveAction, bill, fields, EnumAction.Add);
+                        await ProcessActionAsync(voucherType.AfterSaveAction, bill, voucherFields, EnumAction.Add);
                     }
 
                     await ConfirmCustomGenCode(areaFieldGenCodes);

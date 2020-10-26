@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Services.PurchaseOrder.Model.Voucher
+namespace VErp.Commons.GlobalObject
 {
     public class ControlStructureModel
     {
