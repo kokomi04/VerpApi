@@ -78,11 +78,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
             try
             {
-                action.Title = data.Title;
-                action.InputActionCode = data.InputActionCode;
-                action.JsAction = data.JsAction;
-                action.SqlAction = data.SqlAction;
-                action.IconName = data.IconName;
+                _mapper.Map(data, action);
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputAction, action.InputActionId, $"Cập nhật chức năng {action.Title}", data.JsonSerialize());

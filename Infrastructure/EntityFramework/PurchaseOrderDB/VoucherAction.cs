@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string SqlAction { get; set; }
         public string JsAction { get; set; }
         public string IconName { get; set; }
+        public string Style { get; set; }
 
         public virtual VoucherType VoucherType { get; set; }
     }
