@@ -67,7 +67,8 @@ namespace Verp.Services.ReportConfig.Model
        .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
        .ReverseMap()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
-       .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()));
+       .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))
+       .ForMember(m => m.ReportTypeGroup, m => m.Ignore());
 
     }
 
