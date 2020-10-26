@@ -80,7 +80,8 @@ namespace MasterTests
                     roleInfo.RoleId,
                     roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
                     roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit
+                    roleInfo.IsModulePermissionInherit,
+                    string.Empty
                 );
 
 

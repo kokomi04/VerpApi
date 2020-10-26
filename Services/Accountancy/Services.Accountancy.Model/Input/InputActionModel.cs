@@ -4,19 +4,16 @@ using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class InputActionSimpleModel: IMapFrom<InputAction>
+    public class InputActionSimpleProjectMappingModel : InputActionSimpleModel, IMapFrom<InputAction>
     {
-        public int InputTypeId { get; set; }
-        public int InputActionId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tên chức năng")]
-        [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
-        public string Title { get; set; }
-        public int SortOrder { get; set; }
+       
     }
-    public class InputActionModel : InputActionSimpleModel
+
+    public class InputActionModel : InputActionSimpleProjectMappingModel
     {
        
         [Required(ErrorMessage = "Vui lòng nhập mã chức năng")]
