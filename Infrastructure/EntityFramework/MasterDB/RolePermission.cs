@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int ObjectTypeId { get; set; }
         public long ObjectId { get; set; }
         public int Permission { get; set; }
+        public string JsonActionIds { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
 
         public virtual Module Module { get; set; }

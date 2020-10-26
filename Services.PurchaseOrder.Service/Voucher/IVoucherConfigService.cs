@@ -13,6 +13,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<VoucherTypeFullModel> GetVoucherType(string inputTypeCode);
 
         Task<PageData<VoucherTypeModel>> GetVoucherTypes(string keyword, int page, int size);
+        Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList();
+
         Task<int> AddVoucherType(VoucherTypeModel data);
         Task<bool> UpdateVoucherType(int voucherTypeId, VoucherTypeModel data);
         Task<bool> DeleteVoucherType(int voucherTypeId);

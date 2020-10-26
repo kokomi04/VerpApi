@@ -11,5 +11,6 @@ namespace VErp.Services.Master.Model.RolePermission
         public int ObjectTypeId { get; set; }
         public long ObjectId { get; set; }
         public int Permission { get; set; }
+        public IList<int> ActionIds { get; set; }
     }
 }

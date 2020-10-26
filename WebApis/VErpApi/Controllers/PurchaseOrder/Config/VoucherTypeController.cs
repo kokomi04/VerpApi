@@ -60,6 +60,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
         }
 
         [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<VoucherTypeSimpleModel>> GetSimpleList()
+        {
+            return await _voucherConfigService.GetVoucherTypeSimpleList().ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("fields")]
         public async Task<PageData<VoucherFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {

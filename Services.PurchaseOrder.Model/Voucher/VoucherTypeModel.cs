@@ -8,12 +8,8 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class VoucherTypeModel: IMapFrom<VoucherType>
+    public class VoucherTypeSimpleModel : IMapFrom<VoucherType>
     {
-        public VoucherTypeModel()
-        {
-        }
-
         public int VoucherTypeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên chứng từ")]
         [MaxLength(256, ErrorMessage = "Tên chứng từ quá dài")]
@@ -25,6 +21,16 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
         public int SortOrder { get; set; }
         public int? VoucherTypeGroupId { get; set; }
+
+        public IList<VoucherActionSimpleModel> ActionObjects { get; set; }
+    }
+
+    public class VoucherTypeModel: VoucherTypeSimpleModel
+    {
+        public VoucherTypeModel()
+        {
+        }
+   
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
         public string AfterLoadAction { get; set; }

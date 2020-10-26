@@ -427,6 +427,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
 
+                entity.Property(e => e.JsonActionIds).HasMaxLength(512);
+
                 entity.HasOne(d => d.Module)
                     .WithMany(p => p.RolePermission)
                     .HasForeignKey(d => d.ModuleId)
