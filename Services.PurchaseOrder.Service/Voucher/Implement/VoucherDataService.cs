@@ -1381,7 +1381,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, VoucherBillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            var fields = (await GetVoucherFields(voucherTypeId)).Where(f => f.FormTypeId != (int) EnumFormType.ReadOnly).ToDictionary(f => f.FieldName, f => f);
+            var fields = (await GetVoucherFields(voucherTypeId)).Where(f => !f.IsReadOnly).ToDictionary(f => f.FieldName, f => f);
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
@@ -1683,7 +1683,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                               RefTableTitle = f.RefTableTitle,
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
-                              RequireFilters = af.RequireFilters
+                              RequireFilters = af.RequireFilters,
+                              IsReadOnly = f.IsReadOnly
                           }).ToListAsync();
         }
 
@@ -2196,6 +2197,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
             public string RequireFilters { get; set; }
+            public bool IsReadOnly { get; set; }
         }
     }
 }

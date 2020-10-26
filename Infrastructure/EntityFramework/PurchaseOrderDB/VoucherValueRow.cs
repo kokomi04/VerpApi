@@ -57,7 +57,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? DonGiaDv2 { get; set; }
         public string GhiChu { get; set; }
         public string VthhtpYc { get; set; }
-        public string ThongTinVthhtp { get; set; }
         public int? Dvt { get; set; }
         public string MaVthhtpYc { get; set; }
         public string TtVthhtpYc { get; set; }

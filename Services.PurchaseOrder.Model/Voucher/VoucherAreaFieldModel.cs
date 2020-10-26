@@ -27,6 +27,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public bool? IsReadOnly { get; set; }
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T: VoucherFieldInputModel
         {

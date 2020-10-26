@@ -598,10 +598,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("thhl")
                     .HasMaxLength(128);
 
-                entity.Property(e => e.ThongTinVthhtp)
-                    .HasColumnName("thong_tin_vthhtp")
-                    .HasMaxLength(512);
-
                 entity.Property(e => e.ThueSuatVat)
                     .HasColumnName("thue_suat_vat")
                     .HasColumnType("decimal(18, 5)");
@@ -628,9 +624,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("tong_the_tich")
                     .HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TtVthhtpYc)
-                    .HasColumnName("tt_vthhtp_yc")
-                    .HasMaxLength(2048);
+                entity.Property(e => e.TtVthhtpYc).HasColumnName("tt_vthhtp_yc");
 
                 entity.Property(e => e.TyGia)
                     .HasColumnName("ty_gia")

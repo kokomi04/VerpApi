@@ -14,6 +14,6 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<InputActionModel> UpdateInputAction(int inputActionId, InputActionModel data);
         Task<bool> DeleteInputAction(int inputActionId);
 
-        Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, BillInfoModel data);
+        Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, long inputBillId, BillInfoModel data);
     }
 }

@@ -54,10 +54,10 @@ namespace VErpApi.Controllers.Accountancy.Action
         }
 
         [HttpPost]
-        [Route("ExecInputAction/{inputActionId}")]
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputActionId, [FromBody] BillInfoModel data)
+        [Route("ExecInputAction/{inputActionId}/{inputBillId}")]
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputActionId, [FromRoute]long inputBillId, [FromBody] BillInfoModel data)
         {
-            return await _inputActionService.ExecInputAction(inputActionId, data).ConfigureAwait(true);
+            return await _inputActionService.ExecInputAction(inputActionId, inputBillId, data).ConfigureAwait(true);
         }
     }
 }

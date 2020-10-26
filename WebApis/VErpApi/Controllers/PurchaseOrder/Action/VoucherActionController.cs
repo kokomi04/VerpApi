@@ -52,10 +52,10 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         }
 
         [HttpPost]
-        [Route("ExecVoucherAction/{voucherActionId}")]
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherActionId, [FromBody] VoucherBillInfoModel data)
+        [Route("ExecVoucherAction/{voucherActionId}/{voucherBillId}")]
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherActionId, [FromRoute] long voucherBillId, [FromBody] VoucherBillInfoModel data)
         {
-            return await _voucherActionService.ExecVoucherAction(voucherActionId, data).ConfigureAwait(true);
+            return await _voucherActionService.ExecVoucherAction(voucherActionId, voucherBillId, data).ConfigureAwait(true);
         }
     }
 }
