@@ -42,6 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMenuHelperService _menuHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IRoleHelperService _roleHelperService;
 
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -52,6 +53,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMenuHelperService menuHelperService
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
+            , IRoleHelperService roleHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -62,6 +64,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _menuHelperService = menuHelperService;
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _roleHelperService = roleHelperService;
         }
 
         #region InputType
@@ -125,6 +128,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
+        public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
+        {
+            var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+
+            var actions = (await _accountancyDBContext.InputAction.ProjectTo<InputActionSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
+                .GroupBy(a => a.InputTypeId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            foreach (var item in inputTypes)
+            {
+                if (actions.TryGetValue(item.InputTypeId, out var _actions))
+                {
+                    item.ActionObjects = _actions.Cast<InputActionSimpleModel>().ToList();
+                }
+            }
+
+            return inputTypes.Cast<InputTypeSimpleModel>().ToList();
+        }
+
         public async Task<int> AddInputType(InputTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
@@ -156,6 +178,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
                 //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
                 //}
+
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId, new List<int>());
                 return inputType.InputTypeId;
             }
             catch (Exception ex)

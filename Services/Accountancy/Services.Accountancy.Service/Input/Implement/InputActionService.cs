@@ -19,6 +19,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Model.Data;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -28,18 +29,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly IRoleHelperService _roleHelperService;
 
         public InputActionService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputActionService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IRoleHelperService roleHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _roleHelperService = roleHelperService;
         }
 
         public async Task<IList<InputActionModel>> GetInputActions(int inputTypeId)
@@ -61,6 +65,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputAction, action.InputActionId, $"Thêm chức năng {action.Title}", data.JsonSerialize());
+
+                await _roleHelperService.GrantActionPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, data.InputTypeId, action.InputActionId);
+
                 return _mapper.Map<InputActionModel>(action);
             }
             catch (Exception ex)

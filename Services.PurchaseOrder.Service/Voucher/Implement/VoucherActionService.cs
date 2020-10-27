@@ -35,18 +35,20 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-
+        private readonly IRoleHelperService _roleHelperService;
         public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<VoucherActionService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IRoleHelperService roleHelperService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _roleHelperService = roleHelperService;
         }
 
         public async Task<IList<VoucherActionModel>> GetVoucherActions(int voucherTypeId)
@@ -68,6 +70,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Thêm chức năng {action.Title}", data.JsonSerialize());
+
+                await _roleHelperService.GrantActionPermissionForAllRoles(EnumModule.SalesBill, EnumObjectType.VoucherType, data.VoucherTypeId, action.VoucherActionId);
+
                 return _mapper.Map<VoucherActionModel>(action);
             }
             catch (Exception ex)

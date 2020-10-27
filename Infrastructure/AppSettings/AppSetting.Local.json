@@ -25,6 +25,10 @@
   },
   "Developer": {
     "Users": [ "user01" ],
-    "Roles": [ "Administrators"]
+    "SubsidiaryCodes": [ "VERP JSC" ]
+  },
+  "VisualDirectory": {
+    "Address": "http://localhost/DemoVisualDirectory",
+    "PhysicalRootDirectory": "/usr/resources/_visual_/"
   }
 }

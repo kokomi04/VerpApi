@@ -107,6 +107,22 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasMaxLength(32)
                     .IsUnicode(false);
 
+                entity.Property(e => e.BankAddress)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.BankBranch)
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.BankCode)
+                    .IsRequired()
+                    .HasMaxLength(15)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("('')");
+
                 entity.Property(e => e.BankName)
                     .IsRequired()
                     .HasMaxLength(128);

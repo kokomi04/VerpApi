@@ -51,7 +51,9 @@ namespace SynTool
             for (var i = 0; i < dataTable.Rows.Count; i++)
             {
                 var tblName = dataTable.Rows[i]["TABLE_NAME"].ToString();
-                if (!tblName.StartsWith("_") && !tblName.Equals(AccountantConstants.INPUTVALUEROW_TABLE, StringComparison.OrdinalIgnoreCase))
+                if (!tblName.StartsWith("_") && !tblName.Equals(AccountantConstants.INPUTVALUEROW_TABLE, StringComparison.OrdinalIgnoreCase)
+                    && !tblName.Equals(VoucherConstants.VOUCHER_VALUE_ROW_TABLE, StringComparison.OrdinalIgnoreCase)
+                    )
                     tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
             }
 

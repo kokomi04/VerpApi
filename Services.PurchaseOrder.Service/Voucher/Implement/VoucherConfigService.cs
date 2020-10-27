@@ -41,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly IMenuHelperService _menuHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IHttpCrossService _httpCrossService;
+        private readonly IRoleHelperService _roleHelperService;
 
         public VoucherConfigService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
@@ -51,6 +52,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , IMenuHelperService menuHelperService
             , ICurrentContextService currentContextService
             , IHttpCrossService httpCrossService
+            , IRoleHelperService roleHelperService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -61,6 +63,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _menuHelperService = menuHelperService;
             _currentContextService = currentContextService;
             _httpCrossService = httpCrossService;
+            _roleHelperService = roleHelperService;
         }
 
         #region InputType
@@ -124,6 +127,24 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (lst, total);
         }
 
+        public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
+        {
+            var voucherTypes = await _purchaseOrderDBContext.VoucherType.ProjectTo<VoucherTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var actions = (await _purchaseOrderDBContext.VoucherAction.ProjectTo<VoucherActionSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
+                .GroupBy(a => a.VoucherTypeId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            foreach (var item in voucherTypes)
+            {
+                if (actions.TryGetValue(item.VoucherTypeId, out var _actions))
+                {
+                    item.ActionObjects = _actions.Cast<VoucherActionSimpleModel>().ToList();
+                }
+            }
+
+            return voucherTypes.Cast<VoucherTypeSimpleModel>().ToList();
+        }
+
         public async Task<int> AddVoucherType(VoucherTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(0));
@@ -149,6 +170,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Thêm chứng từ {voucherType.Title}", data.JsonSerialize());
 
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.SalesBill, EnumObjectType.VoucherType, voucherType.VoucherTypeId, new List<int>());
                 return voucherType.VoucherTypeId;
             }
             catch (Exception ex)
@@ -835,7 +857,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 })).FirstOrDefault());
                 task.Wait();
                 var sourceCategoryField = task.Result;
-                if(sourceCategoryField != null)
+                if (sourceCategoryField != null)
                 {
                     data.DataTypeId = (EnumDataType)sourceCategoryField.DataTypeId;
                     data.DataSize = sourceCategoryField.DataSize;

@@ -65,12 +65,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return printConfig;
         }
 
-        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int inputTypeId)
+        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int activeForId)
         {
-            var query = _accountancyDBContext.PrintConfig.AsQueryable();
-            if (inputTypeId > 0)
+            var query = _accountancyDBContext.PrintConfig.AsQueryable()
+                .Where(p => p.ModuleTypeId == moduleTypeId);
+
+            if (activeForId > 0)
             {
-                query = query.Where(p => p.InputTypeId == inputTypeId);
+                query = query.Where(p => p.ActiveForId == activeForId);
             }
             var lst = await query.OrderBy(p => p.Title)
                 .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
@@ -81,11 +83,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<int> AddPrintConfig(PrintConfigModel data)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.InputTypeId));
-            if (!_accountancyDBContext.InputType.Any(i => i.InputTypeId == data.InputTypeId))
-            {
-                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-            }
+            //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
+            //if (!_accountancyDBContext.InputType.Any(i => i.InputTypeId == data.ActiveForId))
+            //{
+            //    throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            //}
             if (_accountancyDBContext.PrintConfig.Any(p => p.PrintConfigName == data.PrintConfigName))
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
@@ -97,7 +99,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.PrintConfig.AddAsync(config);
                 await _accountancyDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.InputTypeId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
 
                 return config.PrintConfigId;
             }
@@ -110,7 +112,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.InputTypeId));
+            //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
             var config = await _accountancyDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
             {
@@ -122,7 +124,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             try
             {
-                config.InputTypeId = data.InputTypeId;
+                config.ActiveForId = data.ActiveForId;
                 config.PrintConfigName = data.PrintConfigName;
                 config.Title = data.Title;
                 config.BodyTable = data.BodyTable;
@@ -137,6 +139,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 config.Background = data.Background;
                 config.TemplateFileId = data.TemplateFileId;
                 config.GenerateToString = data.GenerateToString;
+                config.ModuleTypeId = data.ModuleTypeId;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
