@@ -121,10 +121,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, long voucherBillId, VoucherBillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherTypeId, int voucherActionId, long voucherBillId, VoucherBillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
+            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherTypeId == voucherTypeId && a.VoucherActionId == voucherActionId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
             if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.VoucherTypeId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);

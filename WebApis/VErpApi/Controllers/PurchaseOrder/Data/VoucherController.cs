@@ -18,7 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
-
+    [ObjectDataApi(EnumObjectType.VoucherType, "voucherTypeId")]
     [Route("api/PurchasingOrder/data/VoucherBills")]
 
     public class VoucherController : VErpBaseController
