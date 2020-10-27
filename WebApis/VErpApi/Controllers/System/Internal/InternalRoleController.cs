@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -25,26 +26,52 @@ namespace VErpApi.Controllers.System.Internal
             _roleService = roleService;
         }
 
-      
+
         [Route("GrantDataForAllRoles")]
         [HttpPost]
-        public async Task<bool> GrantDataForAllRoles([FromBody] EnumObjectType objectTypeId, [FromBody] long objectId)
+        public async Task<bool> GrantDataForAllRoles([FromBody] GrantDataRequestModel data)
         {
-            return await _roleService.GrantDataForAllRoles(objectTypeId, objectId);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _roleService.GrantDataForAllRoles(data.ObjectTypeId, data.ObjectId);
         }
 
         [Route("GrantPermissionForAllRoles")]
         [HttpPost]
-        public async Task<bool> GrantPermissionForAllRoles([FromBody] EnumModule moduleId, [FromBody] EnumObjectType objectTypeId, [FromBody] long objectId, [FromBody] IList<int> actionIds)
+        public async Task<bool> GrantPermissionForAllRoles([FromBody] GrantPermissionRequestModel data)
         {
-            return await _roleService.GrantPermissionForAllRoles(moduleId, objectTypeId, objectId, actionIds);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _roleService.GrantPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId, data.ActionIds);
         }
 
         [Route("GrantActionPermissionForAllRoles")]
         [HttpPost]
-        public async Task<bool> GrantActionPermissionForAllRoles([FromBody] EnumModule moduleId, [FromBody] EnumObjectType objectTypeId, [FromBody] long objectId, [FromBody] int actionId)
+        public async Task<bool> GrantActionPermissionForAllRoles([FromBody] GrantActionPermissionRequestModel data)
         {
-            return await _roleService.GrantActionPermissionForAllRoles(moduleId, objectTypeId, objectId, actionId);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _roleService.GrantActionPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId, data.ActionId);
         }
+    }
+
+    public class GrantDataRequestModel
+    {
+        public EnumObjectType ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+    }
+
+    public abstract class GrantPermissionRequestBaseModel
+    {
+        public EnumModule ModuleId { get; set; }
+        public EnumObjectType ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+    }
+
+    public class GrantPermissionRequestModel : GrantPermissionRequestBaseModel
+    {
+        public IList<int> ActionIds { get; set; }
+    }
+
+    public class GrantActionPermissionRequestModel : GrantPermissionRequestBaseModel
+    {
+        public int ActionId { get; set; }
     }
 }
