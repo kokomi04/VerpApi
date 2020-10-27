@@ -76,5 +76,33 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string TkCo1 { get; set; }
         public string MaLsx { get; set; }
         public int? Status { get; set; }
+        public string SoDh { get; set; }
+        public string TenTau { get; set; }
+        public string SoPoDt { get; set; }
+        public string MaScac { get; set; }
+        public string PhiTaiCang { get; set; }
+        public bool? SellerPhiTaiCang { get; set; }
+        public bool? ConsigneePhiTaiCang { get; set; }
+        public bool? ShipToPhiTaiCang { get; set; }
+        public string CuocVanTai { get; set; }
+        public bool? SellerCuocVanTai { get; set; }
+        public bool? ConsigneeCuocVanTai { get; set; }
+        public bool? ShipToCuocVanTai { get; set; }
+        public string ManifestFee { get; set; }
+        public bool? SellerManifestFee { get; set; }
+        public bool? ConsigneeManifestFee { get; set; }
+        public bool? ShipToManifestFee { get; set; }
+        public int? Container { get; set; }
+        public string SoContainer { get; set; }
+        public string MoTa { get; set; }
+        public string PackageDimension { get; set; }
+        public int? GrossWeight { get; set; }
+        public int? TotalMeasure { get; set; }
+        public string Pol { get; set; }
+        public string Pod { get; set; }
+        public string FinalDestination { get; set; }
+        public string DeliveryPlace { get; set; }
+        public string CargoStuffPlace { get; set; }
+        public string FullLadenPlace { get; set; }
     }
 }
