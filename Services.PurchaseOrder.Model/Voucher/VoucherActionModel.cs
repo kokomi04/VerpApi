@@ -4,6 +4,8 @@ using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.MasterEnum;
+using AutoMapper;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
@@ -23,5 +25,20 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string JsAction { get; set; }
         public string IconName { get; set; }
         public string Style { get; set; }
+        public EnumPosition Position { set; get; }
+
+        protected void MappingBase<T>(Profile profile) where T : VoucherActionModel
+        {
+            profile.CreateMap<VoucherAction, T>()
+                .ForMember(a => a.Position, m => m.MapFrom(a => (EnumPosition)a.Position))
+                .ReverseMap()
+                .ForMember(a => a.Position, m => m.MapFrom(a => (int)a.Position));
+
+        }
+
+        public void Mapping(Profile profile)
+        {
+            MappingBase<VoucherActionModel>(profile);
+        }
     }
 }

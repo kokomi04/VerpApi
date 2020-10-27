@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<PackingList> PackingList { get; set; }
+        public virtual DbSet<PackingListDetail> PackingListDetail { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
@@ -42,6 +44,44 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<PackingList>(entity =>
+            {
+                entity.Property(e => e.ContSealNo)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.PackingNote).HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<PackingListDetail>(entity =>
+            {
+                entity.Property(e => e.PackingListDetailId).ValueGeneratedNever();
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.CubicMeter).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.PackingList)
+                    .WithMany(p => p.PackingListDetail)
+                    .HasForeignKey(d => d.PackingListId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PackingListDetail_PackingList");
+            });
+
             modelBuilder.Entity<PoAssignment>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -454,6 +494,26 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.BoPhan).HasColumnName("bo_phan");
 
+                entity.Property(e => e.CargoStuffPlace)
+                    .HasColumnName("cargo_stuff_place")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.ConsigneeCuocVanTai).HasColumnName("consignee_cuoc_van_tai");
+
+                entity.Property(e => e.ConsigneeManifestFee).HasColumnName("consignee_manifest_fee");
+
+                entity.Property(e => e.ConsigneePhiTaiCang).HasColumnName("consignee_phi_tai_cang");
+
+                entity.Property(e => e.Container).HasColumnName("container");
+
+                entity.Property(e => e.CuocVanTai)
+                    .HasColumnName("cuoc_van_tai")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.DeliveryPlace)
+                    .HasColumnName("delivery_place")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.DienGiai)
                     .HasColumnName("dien_giai")
                     .HasMaxLength(512);
@@ -480,9 +540,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Dvt).HasColumnName("dvt");
 
+                entity.Property(e => e.FinalDestination)
+                    .HasColumnName("final_destination")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.FullLadenPlace)
+                    .HasColumnName("full_laden_place")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.GhiChu)
                     .HasColumnName("ghi_chu")
                     .HasMaxLength(512);
+
+                entity.Property(e => e.GrossWeight).HasColumnName("gross_weight");
 
                 entity.Property(e => e.Kh0)
                     .HasColumnName("kh0")
@@ -512,12 +582,24 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("ma_lsx")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.MaScac)
+                    .HasColumnName("ma_scac")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.MaVthhtpYc)
                     .HasColumnName("ma_vthhtp_yc")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.ManifestFee)
+                    .HasColumnName("manifest_fee")
+                    .HasMaxLength(512);
+
                 entity.Property(e => e.MauHd)
                     .HasColumnName("mau_hd")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.MoTa)
+                    .HasColumnName("mo_ta")
                     .HasMaxLength(512);
 
                 entity.Property(e => e.NgayCt).HasColumnName("ngay_ct");
@@ -546,14 +628,50 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnName("order_code")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.PackageDimension)
+                    .HasColumnName("package_dimension")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.PhiTaiCang)
+                    .HasColumnName("phi_tai_cang")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.Pod)
+                    .HasColumnName("pod")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.Pol)
+                    .HasColumnName("pol")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.SellerCuocVanTai).HasColumnName("seller_cuoc_van_tai");
+
+                entity.Property(e => e.SellerManifestFee).HasColumnName("seller_manifest_fee");
+
+                entity.Property(e => e.SellerPhiTaiCang).HasColumnName("seller_phi_tai_cang");
+
                 entity.Property(e => e.SeriHd)
                     .HasColumnName("seri_hd")
                     .HasMaxLength(512);
 
+                entity.Property(e => e.ShipToCuocVanTai).HasColumnName("ship_to_cuoc_van_tai");
+
+                entity.Property(e => e.ShipToManifestFee).HasColumnName("ship_to_manifest_fee");
+
+                entity.Property(e => e.ShipToPhiTaiCang).HasColumnName("ship_to_phi_tai_cang");
+
                 entity.Property(e => e.SlOd).HasColumnName("sl_od");
+
+                entity.Property(e => e.SoContainer)
+                    .HasColumnName("so_container")
+                    .HasMaxLength(512);
 
                 entity.Property(e => e.SoCt)
                     .HasColumnName("so_ct")
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.SoDh)
+                    .HasColumnName("so_dh")
                     .HasMaxLength(512);
 
                 entity.Property(e => e.SoLuong)
@@ -561,6 +679,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.SoLuongDv2).HasColumnName("so_luong_dv2");
+
+                entity.Property(e => e.SoPoDt)
+                    .HasColumnName("so_po_dt")
+                    .HasMaxLength(512);
 
                 entity.Property(e => e.Stt).HasColumnName("stt");
 
@@ -589,6 +711,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.SystemLog).HasMaxLength(128);
+
+                entity.Property(e => e.TenTau)
+                    .HasColumnName("ten_tau")
+                    .HasMaxLength(512);
 
                 entity.Property(e => e.TheTich)
                     .HasColumnName("the_tich")
@@ -623,6 +749,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.TongTheTich)
                     .HasColumnName("tong_the_tich")
                     .HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.TotalMeasure).HasColumnName("total_measure");
 
                 entity.Property(e => e.TtVthhtpYc).HasColumnName("tt_vthhtp_yc");
 

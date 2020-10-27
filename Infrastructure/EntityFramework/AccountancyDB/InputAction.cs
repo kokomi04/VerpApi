@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string JsAction { get; set; }
         public string IconName { get; set; }
         public string Style { get; set; }
+        public int Position { get; set; }
 
         public virtual InputType InputType { get; set; }
     }
