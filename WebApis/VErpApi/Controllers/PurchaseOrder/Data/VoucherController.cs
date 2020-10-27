@@ -20,7 +20,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 {
 
     [Route("api/PurchasingOrder/data/salebills")]
-
+    [ObjectDataApi(EnumObjectType.VoucherType, "voucherTypeId")]
     public class VoucherController : VErpBaseController
     {
         private readonly IVoucherDataService _voucherDataService;

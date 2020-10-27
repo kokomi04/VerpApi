@@ -125,10 +125,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, SaleBillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherTypeId, int voucherActionId, SaleBillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
+            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherTypeId == voucherTypeId && a.VoucherActionId == voucherActionId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
 
             var fields = _purchaseOrderDBContext.VoucherField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();

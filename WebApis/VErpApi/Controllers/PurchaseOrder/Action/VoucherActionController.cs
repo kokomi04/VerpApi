@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service.Voucher;
@@ -52,10 +54,12 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         }
 
         [HttpPost]
-        [Route("ExecVoucherAction/{voucherActionId}")]
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherActionId, [FromBody] SaleBillInfoModel data)
+        [Route("ExecVoucherAction/{voucherTypeId}/{voucherActionId}")]
+        [ObjectDataApi(EnumObjectType.VoucherType, "voucherTypeId")]
+        [ActionButtonDataApi("voucherActionId")]
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherTypeId, [FromRoute] int voucherActionId, [FromBody] SaleBillInfoModel data)
         {
-            return await _voucherActionService.ExecVoucherAction(voucherActionId, data).ConfigureAwait(true);
+            return await _voucherActionService.ExecVoucherAction(voucherTypeId, voucherActionId, data).ConfigureAwait(true);
         }
     }
 }
