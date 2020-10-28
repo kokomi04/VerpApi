@@ -53,7 +53,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             await _masterDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.InventoryConfig, info.SubsidiaryId, $"Cập nhật thiết lập xuất/nhập kho", req.JsonSerialize());
+            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.DataConfig, info.SubsidiaryId, $"Cập nhật thiết lập xuất/nhập kho", req.JsonSerialize());
 
             return true;
         }
