@@ -83,12 +83,12 @@ namespace VErp.Services.Master.Service.VisualDirectory.Implement
                 }).ToList();
             }
 
-            var total = ls.Count;
             if (!string.IsNullOrWhiteSpace(keyWord))
             {
                 ls = ls.Where(x => x.FileName.Contains(keyWord)).ToList();
             }
 
+            var total = ls.Count;
             return (ls.Skip((page - 1) * size)
                     .Take(size).ToList(), total);
         }
