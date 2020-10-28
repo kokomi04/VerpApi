@@ -165,7 +165,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             config.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
             return true;
         }
 

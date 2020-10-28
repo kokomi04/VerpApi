@@ -366,7 +366,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     });
 
 
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
             return true;
         }
 
@@ -765,7 +765,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputArea.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
             return true;
         }
 
