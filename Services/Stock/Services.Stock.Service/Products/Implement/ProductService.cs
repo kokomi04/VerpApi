@@ -897,7 +897,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
-                value = value.NormalizeAsInternalName();
                 switch (propertyName)
                 {
                     case nameof(ProductImportModel.BarcodeConfigId):
@@ -947,7 +946,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var row in data)
             {
-                if (!units.ContainsKey(row.Unit) && !includeUnits.Any(u => u.UnitName == row.Unit))
+                if (!units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName == row.Unit.NormalizeAsInternalName()))
                 {
                     includeUnits.Add(new Unit
                     {
@@ -959,16 +958,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
-                    if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit) && !includeUnits.Any(u => u.UnitName == unit))
+                    if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName == unit.NormalizeAsInternalName()))
                     {
                         includeUnits.Add(new Unit
                         {
-                            UnitName = row.Unit,
+                            UnitName = unit,
                             UnitStatusId = (int)EnumUnitStatus.Using
                         });
                     }
                 }
-                if (!productCates.ContainsKey(row.ProductCate) && !includeProductCates.Any(c => c.ProductCateName == row.ProductCate))
+                if (!productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName == row.ProductCate.NormalizeAsInternalName()))
                 {
                     includeProductCates.Add(new ProductCate
                     {
@@ -977,7 +976,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     });
                 }
 
-                if (!productTypes.ContainsKey(row.ProductTypeCode) && !includeProductTypes.Any(t => t.IdentityCode == row.ProductTypeCode))
+                if (!productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode == row.ProductTypeCode.NormalizeAsInternalName()))
                 {
                     includeProductTypes.Add(new ProductType
                     {
@@ -1009,22 +1008,36 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
-            if (productCodes.Count != productCodes.Distinct().Count() || _stockContext.Product.Any(p => productCodes.Contains(p.ProductCode)))
+
+            var dupCodeProducts = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            dupCodeProducts.AddRange(_stockContext.Product
+                .Where(p => productCodes.Contains(p.ProductCode))
+                .Select(p => p.ProductCode)
+                .ToList());
+            dupCodeProducts = dupCodeProducts.Distinct().ToList();
+            if (dupCodeProducts.Count > 0)
             {
-                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodeProducts)} đã tồn tại");
             }
 
             // Validate required product name
-            if (data.Any(p => string.IsNullOrEmpty(p.ProductName)))
+            var emptyNameProducts = data.Where(p => string.IsNullOrEmpty(p.ProductName)).Select(p => p.ProductCode).ToList();
+            if (emptyNameProducts.Count > 0)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập tên sản phẩm");
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên sản phẩm có mã: {string.Join(",", emptyNameProducts)}");
             }
-            var productNames = data.Select(r => r.ProductName).ToList();
 
+            var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
             // Validate unique product name
-            if (productNames.Count != productNames.Distinct().Count() || _stockContext.Product.Any(p => productNames.Contains(p.ProductName)))
+            var dupNameProducts = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            dupNameProducts.AddRange(_stockContext.Product
+                .Where(p => productNames.Contains(p.ProductInternalName))
+                .Select(p => p.ProductInternalName)
+                .ToList());
+            dupNameProducts = dupNameProducts.Distinct().ToList();
+            if (dupNameProducts.Count > 0)
             {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNameProducts)} đã tồn tại");
             }
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -1040,12 +1053,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         IsCanBuy = row.IsCanBuy ?? true,
                         IsCanSell = row.IsCanSell ?? true,
                         MainImageFileId = null,
-                        ProductTypeId = productTypes[row.ProductTypeCode],
-                        ProductCateId = productCates[row.ProductCate],
+                        ProductTypeId = productTypes[row.ProductTypeCode.NormalizeAsInternalName()],
+                        ProductCateId = productCates[row.ProductCate.NormalizeAsInternalName()],
                         BarcodeConfigId = row.BarcodeConfigId,
                         BarcodeStandardId = null,
                         Barcode = row.Barcode,
-                        UnitId = units[row.Unit],
+                        UnitId = units[row.Unit.NormalizeAsInternalName()],
                         EstimatePrice = row.EstimatePrice,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
@@ -1076,7 +1089,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             new ProductUnitConversion()
                             {
                                 ProductUnitConversionName = row.Unit,
-                                SecondaryUnitId = units[row.Unit],
+                                SecondaryUnitId = units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
@@ -1109,7 +1122,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             lstUnitConverions.Add(new ProductUnitConversion()
                             {
                                 ProductUnitConversionName = unitText,
-                                SecondaryUnitId = units[unit],
+                                SecondaryUnitId = units[unit.NormalizeAsInternalName()],
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
                                 IsDefault = false,
                                 IsFreeStyle = false
