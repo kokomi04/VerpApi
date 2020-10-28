@@ -1009,15 +1009,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
 
-            var dupCodeProducts = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            dupCodeProducts.AddRange(_stockContext.Product
+            var dupCodes = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            dupCodes.AddRange(_stockContext.Product
                 .Where(p => productCodes.Contains(p.ProductCode))
                 .Select(p => p.ProductCode)
                 .ToList());
-            dupCodeProducts = dupCodeProducts.Distinct().ToList();
-            if (dupCodeProducts.Count > 0)
+            dupCodes = dupCodes.Distinct().ToList();
+            if (dupCodes.Count > 0)
             {
-                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodeProducts)} đã tồn tại");
+                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodes)} đã tồn tại");
             }
 
             // Validate required product name
@@ -1029,15 +1029,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
             // Validate unique product name
-            var dupNameProducts = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            dupNameProducts.AddRange(_stockContext.Product
-                .Where(p => productNames.Contains(p.ProductInternalName))
-                .Select(p => p.ProductInternalName)
-                .ToList());
-            dupNameProducts = dupNameProducts.Distinct().ToList();
+            var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
+            var dupNameProducts = _stockContext.Product
+                .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
+
+            dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
+            dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
+
+            dupNames = dupNames.Distinct().ToList();
+            dupNameCodes = dupNameCodes.Distinct().ToList();
+
             if (dupNameProducts.Count > 0)
             {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNameProducts)} đã tồn tại");
+                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
             }
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
