@@ -31,6 +31,7 @@ namespace VErp.Commons.Constants
 
         public const string VOUCHERVALUEROW_TABLE = "VoucherValueRow";
         public const string VOUCHERVALUEROW_VIEW = "vVoucherValueRow";
+        public const string PACKINGLISTPRODUCTINVOUCHERBILL_VIEW = "vPackingListProductInVoucherBill";
 
 
         public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
