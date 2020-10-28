@@ -888,10 +888,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Lấy thông tin field
             var fields = typeof(Product).GetProperties(BindingFlags.Public);
 
-            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.IdentityCode }).ToDictionary(t => t.IdentityCode.NormalizeAsInternalName(), t => t.ProductTypeId);
-            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToDictionary(c => c.ProductCateName.NormalizeAsInternalName(), c => c.ProductCateId);
+            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.IdentityCode }).ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), t.ProductTypeId }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductTypeId);
+            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), c.ProductCateId }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCateId);
             var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name.NormalizeAsInternalName(), c => c.BarcodeConfigId);
-            var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToDictionary(u => u.UnitName.NormalizeAsInternalName(), u => u.UnitId);
+            var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToList().Select(u => new { UnitName = u.UnitName.NormalizeAsInternalName(), u.UnitId }).GroupBy(u => u.UnitName).ToDictionary(u => u.Key, u => u.First().UnitId);
             var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
 
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
@@ -1007,8 +1007,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productTypes.Add(productType.IdentityCode, productType.ProductTypeId);
             }
 
-           // Validate unique product code
-           var productCodes = data.Select(p => p.ProductCode).ToList();
+            // Validate unique product code
+            var productCodes = data.Select(p => p.ProductCode).ToList();
             if (productCodes.Count != productCodes.Distinct().Count() || _stockContext.Product.Any(p => productCodes.Contains(p.ProductCode)))
             {
                 throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
