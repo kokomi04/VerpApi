@@ -74,7 +74,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-#if !DEBUG
+#if DEBUG
             await next();
             return;
 #endif
