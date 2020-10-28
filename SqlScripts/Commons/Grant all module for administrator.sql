@@ -54,7 +54,7 @@ INSERT INTO [dbo].[RoleDataPermission]
 	SELECT t.CategoryId
 		
 		FROM Category t 
-		WHERE t.IsDeleted = 0
+		WHERE t.IsDeleted = 0 AND t.IsOutSideData = 0
 )
 
 INSERT INTO dbo.RolePermission
