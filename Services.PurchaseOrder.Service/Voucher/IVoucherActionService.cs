@@ -14,6 +14,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<VoucherActionModel> UpdateVoucherAction(int voucherActionId, VoucherActionModel data);
         Task<bool> DeleteVoucherAction(int voucherActionId);
 
-        Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherActionId, long voucherBillId, VoucherBillInfoModel data);
+        Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherTypeId, int voucherActionId, long voucherBillId, VoucherBillInfoModel data);
     }
 }

@@ -116,10 +116,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, long inputBillId, BillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputTypeId, int inputActionId, long inputBillId, BillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
-            var action = _accountancyDBContext.InputAction.FirstOrDefault(a => a.InputActionId == inputActionId);
+            var action = _accountancyDBContext.InputAction.FirstOrDefault(a => a.InputTypeId == inputTypeId && a.InputActionId == inputActionId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
             if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.InputTypeId && b.FId == inputBillId))
                 throw new BadRequestException(InputErrorCode.InputValueBillNotFound);

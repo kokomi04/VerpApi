@@ -21,7 +21,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 {
 
     [Route("api/accountancy/data/bills")]
-
+    [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
     public class InputController : VErpBaseController
     {
         private readonly IInputDataService _inputDataService;
