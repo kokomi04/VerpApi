@@ -103,7 +103,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productInfo = new Product()
             {
                 ProductCode = req.ProductCode,
-                ProductName = req.ProductName,
+                ProductName = req.ProductName ?? req.ProductCode,
                 ProductInternalName = req.ProductName.NormalizeAsInternalName(),
                 IsCanBuy = req.IsCanBuy,
                 IsCanSell = req.IsCanSell,
@@ -127,6 +127,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 NetWeight = req.NetWeight,
                 PackingMethod = req.PackingMethod,
                 Measurement = req.Measurement,
+                Quantitative = req.Quantitative,
+                QuantitativeUnitTypeId = (int?)req.QuantitativeUnitTypeId,
                 ProductDescription = req.ProductDescription,
                 ProductNameEng = req.ProductNameEng
             };
@@ -916,6 +918,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         if (stockIds.Count != stockNames.Length) throw new BadRequestException(GeneralCode.InvalidParams, $"Danh sách kho {value} không đúng");
                         if (stockIds.Count > 0) entity.StockIds = stockIds;
                         return true;
+                    case nameof(ProductImportModel.QuantitativeUnitTypeId):
+                        var quantitativeUnitTypeId = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>().FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
+                        if (quantitativeUnitTypeId != null) entity.QuantitativeUnitTypeId = quantitativeUnitTypeId.Enum;
+                        return true;
                     case nameof(ProductImportModel.ProductTypeCode):
                     case nameof(ProductImportModel.ProductTypeName):
                     case nameof(ProductImportModel.ProductCate):
@@ -1065,6 +1071,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         Barcode = row.Barcode,
                         UnitId = units[row.Unit.NormalizeAsInternalName()],
                         EstimatePrice = row.EstimatePrice,
+                        GrossWeight = row.GrossWeight,
+                        Height = row.Height,
+                        Long = row.Long,
+                        Width = row.Width,
+                        LoadAbility = row.LoadAbility,
+                        NetWeight = row.NetWeight,
+                        PackingMethod = row.PackingMethod,
+                        Measurement = row.Measurement,
+                        Quantitative = row.Quantitative,
+                        QuantitativeUnitTypeId = (int?)row.QuantitativeUnitTypeId,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,

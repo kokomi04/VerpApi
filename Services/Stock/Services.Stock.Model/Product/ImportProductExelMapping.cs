@@ -42,6 +42,34 @@ namespace VErp.Services.Stock.Model.Product
         // Extra info
         [Display(Name = "Quy cách", GroupName = "Thông tin bổ sung")]
         public string Specification { get; set; }
+        [Display(Name = "Định lượng", GroupName = "Thông tin bổ sung")]
+        public decimal Quantitative { get; set; }
+        [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "Thông tin bổ sung")]
+        public EnumQuantitativeUnitType QuantitativeUnitTypeId { get; set; }
+
+        [Display(Name = "Dài (mm)", GroupName = "Thông tin bổ sung")]
+        public decimal Long { get; set; }
+
+        [Display(Name = "Rộng (mm)", GroupName = "Thông tin bổ sung")]
+        public decimal Width { get; set; }
+
+        [Display(Name = "Cao (mm)", GroupName = "Thông tin bổ sung")]
+        public decimal Height { get; set; }
+
+        [Display(Name = "Thể tích (m3)", GroupName = "Thông tin bổ sung")]
+        public decimal Measurement { get; set; }
+
+        [Display(Name = "Trọng lượng tịnh (g)", GroupName = "Thông tin bổ sung")]
+        public decimal NetWeight { get; set; }
+
+        [Display(Name = "Tổng trọng lượng (g)", GroupName = "Thông tin bổ sung")]
+        public decimal GrossWeight { get; set; }
+
+        [Display(Name = "Tải trọng (g)", GroupName = "Thông tin bổ sung")]
+        public decimal LoadAbility { get; set; }
+
+        [Display(Name = "Phương thức đóng gói", GroupName = "Thông tin bổ sung")]
+        public string PackingMethod { get; set; }
 
         // Stock info
         [Display(Name = "Quy tắc xuất", GroupName = "Thông tin kho")]
@@ -82,6 +110,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "ĐVT5 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression05 { get; set; }
 
+       
         public ProductImportModel()
         {
             StockIds = new List<int>();

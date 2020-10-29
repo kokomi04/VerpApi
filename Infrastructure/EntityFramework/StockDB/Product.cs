@@ -44,6 +44,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? LoadAbility { get; set; }
         public string ProductDescription { get; set; }
         public string ProductNameEng { get; set; }
+        public decimal? Quantitative { get; set; }
+        public int? QuantitativeUnitTypeId { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }
