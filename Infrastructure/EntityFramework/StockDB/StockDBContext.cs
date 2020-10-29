@@ -343,6 +343,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
 
                 entity.HasOne(d => d.ProductCate)

@@ -56,7 +56,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<IList<SimpleStockInfo>> GetAllStock()
         {
-            var lst = await _httpCrossService.Post<PageData<SimpleStockInfo>>($"api/internal/InternalStock", new { page = 1, size = int.MaxValue });
+            var lst = await _httpCrossService.Post<PageData<SimpleStockInfo>>($"api/internal/InternalStock?page={1}&size={int.MaxValue}", new { });
             return lst.List;
         }
     }
