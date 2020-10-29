@@ -14,9 +14,9 @@ namespace VErpApi.Controllers.System
     [ApiController]
     public class VisualDirectoryController : ControllerBase
     {
-        private readonly IVisualDirectoryService _visualDirectoryService;
+        private readonly IMediaLibaryService _visualDirectoryService;
 
-        public VisualDirectoryController(IVisualDirectoryService visualDirectoryService)
+        public VisualDirectoryController(IMediaLibaryService visualDirectoryService)
         {
             _visualDirectoryService = visualDirectoryService;
         }

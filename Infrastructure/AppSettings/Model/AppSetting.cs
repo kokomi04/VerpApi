@@ -27,6 +27,5 @@ namespace VErp.Infrastructure.AppSettings.Model
         public GrpcInternalSetting GrpcInternal { get; set; }
         public BackupStorageSetting BackupStorage { get; set; }
         public Developer Developer { get; set; }
-        public VisualDirectory VisualDirectory  { get; set; }
     }
 }

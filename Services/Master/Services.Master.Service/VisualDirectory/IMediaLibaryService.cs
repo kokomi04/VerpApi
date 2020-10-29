@@ -8,7 +8,7 @@ using VErp.Services.Master.Model.VisualDirectory;
 
 namespace VErp.Services.Master.Service.VisualDirectory
 {
-    public interface IVisualDirectoryService
+    public interface IMediaLibaryService
     {
         Task<PageData<VisualFile>> GetVisualFiles(string directory, string keyWord, int page, int size);
         Task<DirectoryStructure> GetDirectoryStructure();
