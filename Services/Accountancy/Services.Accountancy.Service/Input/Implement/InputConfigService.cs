@@ -879,10 +879,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId) && data.FormTypeId != EnumFormType.Input)
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
-                data.RefTableCode = null;
                 data.RefTableField = null;
+                if (data.FormTypeId != EnumFormType.Input)
+                {
+                    data.RefTableCode = null;
+                    data.RefTableTitle = null;
+                }
+                else if (string.IsNullOrEmpty(data.RefTableCode))
+                {
+                    data.RefTableTitle = null;
+                }
             }
         }
 
