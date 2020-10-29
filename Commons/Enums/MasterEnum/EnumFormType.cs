@@ -22,8 +22,6 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chọn từ danh sách (chọn nhiều giá trị)")]
         MultiSelect = 7,
         [Description("Dynamic control")]
-        DynamicControl = 8,
-        [Description("Chỉ đọc")]
-        ReadOnly = 9,
+        DynamicControl = 8
     }
 }

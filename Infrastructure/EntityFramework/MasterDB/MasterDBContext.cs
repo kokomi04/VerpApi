@@ -423,9 +423,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<RolePermission>(entity =>
             {
-                entity.HasKey(e => new { e.RoleId, e.ModuleId });
+                entity.HasKey(e => new { e.RoleId, e.ModuleId, e.ObjectTypeId, e.ObjectId });
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.JsonActionIds).HasMaxLength(512);
 
                 entity.HasOne(d => d.Module)
                     .WithMany(p => p.RolePermission)

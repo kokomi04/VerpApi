@@ -9,6 +9,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int ParentId { get; set; }
         public bool IsDisabled { get; set; }
         public int ModuleId { get; set; }
+        public int ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
         public string MenuName { get; set; }
         public string Url { get; set; }
         public string Icon { get; set; }

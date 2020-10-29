@@ -5,6 +5,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
+using Newtonsoft.Json;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -27,15 +28,18 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
-
+        public bool IsReadOnly { get; set; }
+        public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T: InputFieldInputModel
         {
             profile.CreateMap<InputField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (EnumFormType)f.FormTypeId))
+                 .ForMember(d => d.Structure, m => m.MapFrom(f => string.IsNullOrEmpty(f.Structure) ? null : JsonConvert.DeserializeObject<ControlStructureModel>(f.Structure)))
                 .ReverseMap()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (int)f.DataTypeId))
-                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId));
+                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId))
+                .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null ? string.Empty : JsonConvert.SerializeObject(f.Structure))); ;
         }
 
         public void Mapping(Profile profile)

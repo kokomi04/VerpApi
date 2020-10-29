@@ -35,6 +35,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly AppSetting _appSetting;
         private readonly IPhysicalFileService _physicalFileService;
+        private readonly ISubSystemService _subSystemService;
 
         public AccountancyReportService(
             AccountancyDBContext accountancyDBContext,
@@ -42,7 +43,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             IReportConfigService reportConfigService,
             IDocOpenXmlService docOpenXmlService,
             IOptions<AppSetting> appSetting,
-            IPhysicalFileService physicalFileService
+            IPhysicalFileService physicalFileService,
+            ISubSystemService subSystemService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -51,6 +53,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _docOpenXmlService = docOpenXmlService;
             _appSetting = appSetting.Value;
             _physicalFileService = physicalFileService;
+            _subSystemService = subSystemService;
         }
 
 
@@ -65,9 +68,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var page = model.Page;
             var size = model.Size;
 
-            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+            var reportInfo = await _reportConfigDBContext.ReportType.Include(x => x.ReportTypeGroup).AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            await SwitchDatabaseByModuleType(reportInfo);
 
             var reportViewInfo = await _reportConfigService.ReportTypeViewGetInfo(reportInfo.ReportTypeId);
 
@@ -87,7 +92,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         value = filters[paramName];
                         if (!value.IsNullObject())
                         {
-                            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year, EnumDataType.DateRange }.Contains(filterFiled.DataTypeId))
+                            if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
                             {
                                 value = Convert.ToInt64(value);
                             }
@@ -154,6 +159,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             return result;
+        }
+
+        private async Task SwitchDatabaseByModuleType(ReportType reportInfo)
+        {
+            var moduleTypeId = (EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId;
+            var dbName = (await _subSystemService.GetDbByModuleTypeId(moduleTypeId));
+
+            if (dbName.Length == 0) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy DB của phân hệ '{moduleTypeId.GetEnumDescription()}'");
+
+            await _accountancyDBContext.ChangeDatabase(dbName[0]);
         }
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)

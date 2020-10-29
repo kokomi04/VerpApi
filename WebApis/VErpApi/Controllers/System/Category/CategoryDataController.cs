@@ -25,7 +25,8 @@ using VErp.Commons.Library.Model;
 namespace VErpApi.Controllers.System.Category
 {
     [Route("api/categorydata")]
-    [TypeFilter(typeof(CategoryPermissionAttribute))]
+    //[TypeFilter(typeof(CategoryPermissionAttribute))]
+    [ObjectDataApi(EnumObjectType.Category, "categoryId")]
     public class CategoryDataController : VErpBaseController
     {
         private readonly ICategoryDataService _categoryDataService;

@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<PackingList> PackingList { get; set; }
+        public virtual DbSet<PackingListDetail> PackingListDetail { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
@@ -35,13 +37,48 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<VoucherTypeGroup> VoucherTypeGroup { get; set; }
         public virtual DbSet<VoucherTypeView> VoucherTypeView { get; set; }
         public virtual DbSet<VoucherTypeViewField> VoucherTypeViewField { get; set; }
-        public virtual DbSet<VoucherValueRow> VoucherValueRow { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<PackingList>(entity =>
+            {
+                entity.Property(e => e.ContSealNo)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.PackingNote).HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<PackingListDetail>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.CubicMeter).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.PackingList)
+                    .WithMany(p => p.PackingListDetail)
+                    .HasForeignKey(d => d.PackingListId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PackingListDetail_PackingList");
+            });
+
             modelBuilder.Entity<PoAssignment>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -439,224 +476,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.VoucherTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_VoucherTypeViewField_VoucherTypeView");
-            });
-
-            modelBuilder.Entity<VoucherValueRow>(entity =>
-            {
-                entity.HasKey(e => e.FId)
-                    .HasName("PK_@_InputValueRow");
-
-                entity.Property(e => e.FId).HasColumnName("F_Id");
-
-                entity.Property(e => e.Attachment)
-                    .HasColumnName("attachment")
-                    .HasMaxLength(1);
-
-                entity.Property(e => e.BoPhan).HasColumnName("bo_phan");
-
-                entity.Property(e => e.DienGiai)
-                    .HasColumnName("dien_giai")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.Dkgh)
-                    .HasColumnName("dkgh")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.Dktt)
-                    .HasColumnName("dktt")
-                    .HasMaxLength(1);
-
-                entity.Property(e => e.DonGia0)
-                    .HasColumnName("don_gia0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.DonGiaDv2)
-                    .HasColumnName("don_gia_dv2")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.DonGiaNt)
-                    .HasColumnName("don_gia_nt")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Dvt).HasColumnName("dvt");
-
-                entity.Property(e => e.GhiChu)
-                    .HasColumnName("ghi_chu")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.Kh0)
-                    .HasColumnName("kh0")
-                    .HasMaxLength(64);
-
-                entity.Property(e => e.KhNguoiLh)
-                    .HasColumnName("kh_nguoi_lh")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.KhVt)
-                    .HasColumnName("kh_vt")
-                    .HasMaxLength(1);
-
-                entity.Property(e => e.Kho).HasColumnName("kho");
-
-                entity.Property(e => e.KyHieuHd)
-                    .HasColumnName("ky_hieu_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.LoaiTien).HasColumnName("loai_tien");
-
-                entity.Property(e => e.MaBgBh)
-                    .HasColumnName("ma_bg_bh")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MaLsx)
-                    .HasColumnName("ma_lsx")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MaVthhtpYc)
-                    .HasColumnName("ma_vthhtp_yc")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.MauHd)
-                    .HasColumnName("mau_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.NgayCt).HasColumnName("ngay_ct");
-
-                entity.Property(e => e.NgayGh).HasColumnName("ngay_gh");
-
-                entity.Property(e => e.NgayHd).HasColumnName("ngay_hd");
-
-                entity.Property(e => e.NgoaiTe0)
-                    .HasColumnName("ngoai_te0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.NguoiPhuTrach)
-                    .HasColumnName("nguoi_phu_trach")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.NoiDung)
-                    .HasColumnName("noi_dung")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.OngBa)
-                    .HasColumnName("ong_ba")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.OrderCode)
-                    .HasColumnName("order_code")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SeriHd)
-                    .HasColumnName("seri_hd")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SlOd).HasColumnName("sl_od");
-
-                entity.Property(e => e.SoCt)
-                    .HasColumnName("so_ct")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.SoLuong)
-                    .HasColumnName("so_luong")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SoLuongDv2).HasColumnName("so_luong_dv2");
-
-                entity.Property(e => e.Stt).HasColumnName("stt");
-
-                entity.Property(e => e.SumVnd0)
-                    .HasColumnName("sum_vnd0")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SumVnd1)
-                    .HasColumnName("sum_vnd1")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SumVnd2)
-                    .HasColumnName("sum_vnd2")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SumVnd3)
-                    .HasColumnName("sum_vnd3")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SumVnd4)
-                    .HasColumnName("sum_vnd4")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SumVnd5)
-                    .HasColumnName("sum_vnd5")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.SystemLog).HasMaxLength(128);
-
-                entity.Property(e => e.TheTich)
-                    .HasColumnName("the_tich")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Thhl)
-                    .HasColumnName("thhl")
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.ThongTinVthhtp)
-                    .HasColumnName("thong_tin_vthhtp")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.ThueSuatVat)
-                    .HasColumnName("thue_suat_vat")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.ThueSuatXnk).HasColumnName("thue_suat_xnk");
-
-                entity.Property(e => e.TkCo0)
-                    .HasColumnName("tk_co0")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TkCo1)
-                    .HasColumnName("tk_co1")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TkNo0)
-                    .HasColumnName("tk_no0")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TkNo1)
-                    .HasColumnName("tk_no1")
-                    .HasMaxLength(512);
-
-                entity.Property(e => e.TongTheTich)
-                    .HasColumnName("tong_the_tich")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.TtVthhtpYc)
-                    .HasColumnName("tt_vthhtp_yc")
-                    .HasMaxLength(2048);
-
-                entity.Property(e => e.TyGia)
-                    .HasColumnName("ty_gia")
-                    .HasColumnType("decimal(18, 0)");
-
-                entity.Property(e => e.Vnd0)
-                    .HasColumnName("vnd0")
-                    .HasColumnType("decimal(18, 0)");
-
-                entity.Property(e => e.Vnd1)
-                    .HasColumnName("vnd1")
-                    .HasColumnType("decimal(8, 0)");
-
-                entity.Property(e => e.Vnd3)
-                    .HasColumnName("vnd3")
-                    .HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.VoucherBillFId).HasColumnName("VoucherBill_F_Id");
-
-                entity.Property(e => e.Vthhtp).HasColumnName("vthhtp");
-
-                entity.Property(e => e.VthhtpDvt2).HasColumnName("vthhtp_dvt2");
-
-                entity.Property(e => e.VthhtpYc)
-                    .HasColumnName("vthhtp_yc")
-                    .HasMaxLength(512);
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -19,6 +19,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Model.Data;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -28,18 +29,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly IRoleHelperService _roleHelperService;
 
         public InputActionService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputActionService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , IRoleHelperService roleHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _roleHelperService = roleHelperService;
         }
 
         public async Task<IList<InputActionModel>> GetInputActions(int inputTypeId)
@@ -61,6 +65,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputAction, action.InputActionId, $"Thêm chức năng {action.Title}", data.JsonSerialize());
+
+                await _roleHelperService.GrantActionPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, data.InputTypeId, action.InputActionId);
+
                 return _mapper.Map<InputActionModel>(action);
             }
             catch (Exception ex)
@@ -78,11 +85,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
             try
             {
-                action.Title = data.Title;
-                action.InputActionCode = data.InputActionCode;
-                action.JsAction = data.JsAction;
-                action.SqlAction = data.SqlAction;
-                action.IconName = data.IconName;
+                _mapper.Map(data, action);
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputAction, action.InputActionId, $"Cập nhật chức năng {action.Title}", data.JsonSerialize());
@@ -113,13 +116,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputActionId, BillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction(int inputTypeId, int inputActionId, long inputBillId, BillInfoModel data)
         {
             List<NonCamelCaseDictionary> result = null;
-            var action = _accountancyDBContext.InputAction.FirstOrDefault(a => a.InputActionId == inputActionId);
+            var action = _accountancyDBContext.InputAction.FirstOrDefault(a => a.InputTypeId == inputTypeId && a.InputActionId == inputActionId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
-
-            var fields = _accountancyDBContext.InputField.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
+            if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.InputTypeId && b.FId == inputBillId))
+                throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
+            var fields = _accountancyDBContext.InputField
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -128,10 +134,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
-                    messageParam
+                    messageParam,
+                    new SqlParameter("@InputTypeId", action.InputTypeId),
+                    new SqlParameter("@InputBill_F_Id", inputBillId)
                 };
 
-                DataTable rows = ConvertToDataTable(data, fields);
+                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" });
 
                 var resultData = await _accountancyDBContext.QueryDataTable(action.SqlAction, parammeters);

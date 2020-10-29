@@ -929,9 +929,11 @@ namespace VErp.Commons.Library
                 var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
 
                 var title = string.Empty;
+                var groupName = "Trường dữ liệu";
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
+                    groupName = attrs.First().GroupName;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
@@ -939,6 +941,7 @@ namespace VErp.Commons.Library
                 }
                 fields.Add(new CategoryFieldNameModel()
                 {
+                    GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,

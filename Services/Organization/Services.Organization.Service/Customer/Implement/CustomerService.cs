@@ -256,7 +256,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     CustomerBankAccountId = ba.CustomerBankAccountId,
                     BankName = ba.BankName,
                     AccountNumber = ba.AccountNumber,
-                    SwiffCode = ba.SwiffCode
+                    SwiffCode = ba.SwiffCode,
+                    BankAddress = ba.BankAddress,
+                    BankBranch = ba.BankBranch,
+                    BankCode = ba.BankCode
 
                 }).ToList()
             };
@@ -482,6 +485,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                             ba.AccountNumber = reqBankAccount.AccountNumber;
                             ba.SwiffCode = reqBankAccount.SwiffCode;
                             ba.BankName = reqBankAccount.BankName;
+                            ba.BankAddress = reqBankAccount.BankAddress;
+                            ba.BankBranch = reqBankAccount.BankBranch;
+                            ba.BankCode = reqBankAccount.BankCode;
                             ba.UpdatedUserId = updatedUserId;
                             ba.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
@@ -719,6 +725,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         BankName = ba.BankName,
                         AccountNumber = ba.AccountNumber,
                         SwiffCode = ba.SwiffCode,
+                        BankCode = ba.BankCode,
+                        BankBranch = ba.BankBranch,
+                        BankAddress = ba.BankAddress,
                         UpdatedUserId = _currentContextService.UserId,
                         IsDeleted = false,
                         CreatedDatetimeUtc = DateTime.UtcNow,

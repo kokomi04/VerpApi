@@ -44,7 +44,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryId, messageLog, req.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, messageLog, req.JsonSerialize());
 
                         return true;
                     }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Grpc.Protos;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
@@ -15,6 +16,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface IStockHelperService
     {
         Task<SimpleStockInfo> StockInfo(int stockId);
+        Task<IList<SimpleStockInfo>> GetAllStock();
     }
 
 
@@ -39,7 +41,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             {
                 var result = await _stockClient.StockInfoAsync(new StockInfoRequest { StockId = stockId });
-                if(result?.StockOutPut?.StockId != 0)
+                if (result?.StockOutPut?.StockId != 0)
                 {
                     return new SimpleStockInfo
                     {
@@ -50,6 +52,12 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 return null;
             }
             return await _httpCrossService.Get<SimpleStockInfo>($"api/internal/InternalStock/{stockId}");
+        }
+
+        public async Task<IList<SimpleStockInfo>> GetAllStock()
+        {
+            var lst = await _httpCrossService.Post<PageData<SimpleStockInfo>>($"api/internal/InternalStock?page={1}&size={int.MaxValue}", new { });
+            return lst.List;
         }
     }
 }

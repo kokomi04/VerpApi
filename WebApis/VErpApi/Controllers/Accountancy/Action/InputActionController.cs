@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
@@ -54,10 +56,12 @@ namespace VErpApi.Controllers.Accountancy.Action
         }
 
         [HttpPost]
-        [Route("ExecInputAction/{inputActionId}")]
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputActionId, [FromBody] BillInfoModel data)
+        [Route("ExecInputAction/{inputTypeId}/{inputActionId}/{inputBillId}")]
+        [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
+        [ActionButtonDataApi("inputActionId")]
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int inputActionId, [FromRoute] long inputBillId, [FromBody] BillInfoModel data)
         {
-            return await _inputActionService.ExecInputAction(inputActionId, data).ConfigureAwait(true);
+            return await _inputActionService.ExecInputAction(inputTypeId, inputActionId, inputBillId, data).ConfigureAwait(true);
         }
     }
 }

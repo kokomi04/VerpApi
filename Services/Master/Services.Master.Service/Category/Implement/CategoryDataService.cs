@@ -632,11 +632,13 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var viewAlias = $"v";
             var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
+
+            fields = fields.Where(f => f.IsShowList).ToList();
 
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
@@ -710,7 +712,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {categoryView}");
 
-            if (whereCondition.Length > 0)
+            if (whereCondition.Length > 2)
             {
                 dataSql.Append($" WHERE {whereCondition}");
                 totalSql.Append($" WHERE {whereCondition}");
@@ -817,7 +819,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (fields.Any(f => f.CategoryFieldName == GlobalFieldConstants.SubsidiaryId))
             {
-                return $"(SELECT * FROM {categoryView} WHERE {categoryView}.[{GlobalFieldConstants.SubsidiaryId}]={_currentContextService.SubsidiaryId} as {viewAlias}";
+                return $"(SELECT * FROM {categoryView} WHERE {categoryView}.[{GlobalFieldConstants.SubsidiaryId}]={_currentContextService.SubsidiaryId}) as {viewAlias}";
             }
             else
             {

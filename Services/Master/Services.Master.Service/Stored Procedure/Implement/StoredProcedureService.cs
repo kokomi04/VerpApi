@@ -25,80 +25,93 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger<StoredProcedureService> _logger;
         private readonly MasterDBContext _masterDBContext;
-        private readonly ISubSystemService _manageVErpModuleService;
+        private readonly ISubSystemService _subSystemService;
 
         private const string PATTERN = @"(uv|usp|ufn)\w+";
 
         public StoredProcedureService(MasterDBContext masterDBContext,
             ILogger<StoredProcedureService> logger,
             IActivityLogService activityLogService,
-            ISubSystemService manageVErpModuleService)
+            ISubSystemService subSystemService)
         {
             _masterDBContext = masterDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
-            _manageVErpModuleService = manageVErpModuleService;
+            _subSystemService = subSystemService;
         }
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList(EnumModuleType moduleType)
         {
             var data = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
             var db = await GetDatabase(moduleType);
-            var query = @$"
-                use {db};
+
+            using (var connection = _masterDBContext.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                await connection.ChangeDatabaseAsync(db);
+
+                var query = @$"
                 select o.name, o.type_desc, m.definition
                 from sys.objects o
                 join sys.sql_modules m on m.object_id = o.object_id
-                where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%');
-            ";
+                where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%');";
 
-            var result = (await _masterDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
+                var result = (await _masterDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
 
-            foreach (var type in new[]{EnumStoreProcedureType.View,
-                EnumStoreProcedureType.Procedure,
-                EnumStoreProcedureType.Function })
-            {
-                var ls = result
-                    .Where(x => x.Any(y => y.Key.Equals("type_desc")
-                    && y.Value.ToString().Contains(type.GetEnumDescription())))
-                    .ToList();
-                ls.ForEach(x =>
+                foreach (var type in new[]{EnumStoreProcedureType.View,
+                                           EnumStoreProcedureType.Procedure,
+                                           EnumStoreProcedureType.Function })
                 {
-                    string definition = x["definition"].ToString();
-                    string target = "create";
-                    x["definition"] = "ALTER " + definition.Substring(target.Length);
-                });
+                    var ls = result
+                        .Where(x => x.Any(y => y.Key.Equals("type_desc")
+                        && y.Value.ToString().Contains(type.GetEnumDescription())))
+                        .ToList();
+                    ls.ForEach(x =>
+                    {
+                        string definition = x["definition"].ToString();
+                        string target = "create";
+                        x["definition"] = "ALTER " + definition.Substring(target.Length);
+                    });
 
-                data.Add(type.GetEnumDescription(), ls);
+                    data.Add(type.GetEnumDescription(), ls);
+                }
+                await connection.CloseAsync();
+                return data;
             }
-
-            return data;
         }
 
         public async Task<bool> Create(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
             var db = await GetDatabase(moduleType);
-            string sqlQuery = @$"
-                                use {db};
+
+            using (var connection = _masterDBContext.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                await connection.ChangeDatabaseAsync(db);
+
+                string sqlQuery = @$"
                                 select o.name
                                 from sys.objects o
                                 join sys.sql_modules m on m.object_id = o.object_id
                                 where o.name = '{storedProcedureModel.Name}';";
 
-            if (!storedProcedureModel.Definition.ToLower().StartsWith("create"))
-            {
-                throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm tạo mới bắt đầu với \"CREATE\"");
+                if (!storedProcedureModel.Definition.ToLower().StartsWith("create"))
+                {
+                    throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm tạo mới bắt đầu với \"CREATE\"");
+                }
+
+                InvalidStoreProcedure(storedProcedureModel);
+
+                if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
+                {
+                    throw new BadRequestException(StoredProcedureErrorCode.InvalidExists, $"Đã tồn tại {storedProcedureModel.Name}");
+                }
+
+                await _masterDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);
+                await connection.CloseAsync();
+                return true;
             }
 
-            InvalidStoreProcedure(storedProcedureModel);
-
-            if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
-            {
-                throw new BadRequestException(StoredProcedureErrorCode.InvalidExists, $"Đã tồn tại {storedProcedureModel.Name}");
-            }
-
-            await _masterDBContext.Database.ExecuteSqlRawAsync($"USE {GetDatabase(moduleType)}; {storedProcedureModel.Definition}");
-            return true;
         }
         public async Task<bool> Update(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
@@ -107,8 +120,18 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                 throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm thay đổi bắt đầu với \"ALTER\"");
             }
             InvalidStoreProcedure(storedProcedureModel);
+
             var db = await GetDatabase(moduleType);
-            await _masterDBContext.Database.ExecuteSqlRawAsync($"USE {db}; {storedProcedureModel.Definition}");
+
+            using (var connection = _masterDBContext.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                await connection.ChangeDatabaseAsync(db);
+
+                await _masterDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);
+
+                await connection.CloseAsync();
+            }
             return true;
         }
 
@@ -138,8 +161,16 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         public async Task<bool> Drop(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
             var db = await GetDatabase(moduleType);
-            var query = $"USE {db}; DROP {storedProcedureModel.Type.GetEnumDescription()} {storedProcedureModel.Name}";
-            await _masterDBContext.Database.ExecuteSqlRawAsync(query);
+            using (var connection = _masterDBContext.Database.GetDbConnection())
+            {
+                await connection.OpenAsync();
+                await connection.ChangeDatabaseAsync(db);
+
+                var query = $"DROP {storedProcedureModel.Type.GetEnumDescription()} {storedProcedureModel.Name}";
+                await _masterDBContext.Database.ExecuteSqlRawAsync(query);
+
+                await connection.CloseAsync();
+            }
             return true;
         }
 
@@ -160,7 +191,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
         private async Task<string> GetDatabase(EnumModuleType moduleType)
         {
-            var ls = await _manageVErpModuleService.GetDbByModuleTypeId(moduleType);
+            var ls = await _subSystemService.GetDbByModuleTypeId(moduleType);
             return ls[0];
         }
 

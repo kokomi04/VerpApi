@@ -56,11 +56,19 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var param in parammeters)
             {
-                sql.Append($" {param.ParameterName} = {param.ParameterName},");
+                sql.Append($" {param.ParameterName} = {param.ParameterName}");
+                if (param.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
+                sql.Append(",");
             }
-
             sql.Append($" {SubIdParam} = {SubIdParam},");
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
+        }
+
+        public static async Task ChangeDatabase(this DbContext dbContext, string dbName)
+        {
+            var dbConnection = dbContext.Database.GetDbConnection();
+            await dbConnection.OpenAsync();
+            await dbConnection.ChangeDatabaseAsync(dbName);
         }
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
@@ -477,7 +485,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return values.ToSqlParameter(parameterName, "_BIGINTVALUES", "Value");
         }
 
-
         private static SqlParameter ToSqlParameter<T>(this IList<T> values, string parameterName, string type, string valueColumn)
         {
             var table = new DataTable(type);
@@ -521,6 +528,27 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
         }
 
+        public static DataTable ConvertToDataTable(NonCamelCaseDictionary info, IList<NonCamelCaseDictionary> rows, Dictionary<string, EnumDataType> fields)
+        {
+            var dataTable = new DataTable();
+            foreach (var field in fields)
+            {
+                dataTable.Columns.Add(field.Key, field.Value.GetColumnDataType());
+            }
+            foreach (var row in rows)
+            {
+                var dataRow = dataTable.NewRow();
+                foreach (var field in fields)
+                {
+                    row.TryGetValue(field.Key, out var celValue);
+                    if (celValue == null) info.TryGetValue(field.Key, out celValue);
+                    var value = (field.Value).GetSqlValue(celValue);
+                    dataRow[field.Key] = value;
+                }
+                dataTable.Rows.Add(dataRow);
+            }
+            return dataTable;
+        }
 
         private static char[] SpaceChars = new[] { ';', '\n', '\r', '\t', '\v', ' ' };
 

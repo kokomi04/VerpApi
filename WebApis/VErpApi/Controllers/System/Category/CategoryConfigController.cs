@@ -19,6 +19,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Service.Category;
 using VErp.Services.Master.Model.Category;
 using VErp.Services.Master.Model.CategoryConfig;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.System.Category
 {
@@ -42,6 +43,14 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryConfigService.GetCategoryIdByCode(categoryCode);
         }
 
+        [GlobalApi]
+        [HttpGet]
+        [Route("dynamicCates")]
+        public async Task<IList<CategoryListModel>> GetDynamicCates()
+        {
+            return await _categoryConfigService.GetDynamicCates();
+        }
+        
         [HttpGet]
         [Route("")]
         public async Task<PageData<CategoryModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
