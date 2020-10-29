@@ -710,7 +710,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {categoryView}");
 
-            if (whereCondition.Length > 0)
+            if (whereCondition.Length > 2)
             {
                 dataSql.Append($" WHERE {whereCondition}");
                 totalSql.Append($" WHERE {whereCondition}");
