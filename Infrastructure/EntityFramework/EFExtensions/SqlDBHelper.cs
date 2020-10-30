@@ -337,7 +337,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
                     if (arrClause.Rules.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống");
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống.Vui lòng kiểm tra lại cấu hình điều kiện lọc!");
                     }
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
