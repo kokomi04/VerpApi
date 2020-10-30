@@ -327,6 +327,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.NetWeight = req.NetWeight;
                     productInfo.PackingMethod = req.PackingMethod;
                     productInfo.Measurement = req.Measurement;
+                    productInfo.Quantitative = req.Quantitative;
+                    productInfo.QuantitativeUnitTypeId = (int?)req.QuantitativeUnitTypeId;
                     productInfo.ProductDescription = req.ProductDescription;
                     productInfo.ProductNameEng = req.ProductNameEng;
 
