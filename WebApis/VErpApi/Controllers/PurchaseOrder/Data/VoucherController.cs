@@ -112,10 +112,10 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpGet]
-        [Route("{voucherTypeId}/{fId}/packinglists")]
-        public async Task<PageData<PackingListModel>> CreatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
+        [Route("{voucherTypeId}/{fId}/info/pkl/{voucherTypeBKLId}")]
+        public async Task<VoucherBillInfoModel> CreatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int voucherTypeBKLId)
         {
-            return await _packingListService.GetPackingLists(fId, keyWord, page, size);
+            return await _voucherDataService.GetPackingListInfo(voucherTypeBKLId, fId);
         }
 
         [HttpPost]
