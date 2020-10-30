@@ -1258,9 +1258,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             List<string> changeFieldIndexes = new List<string>();
             foreach (var field in fields)
             {
-                var currentValue = currentRow[field.FieldName].ToString();
-                var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue?.ToString())
+                currentRow.TryGetValue(field.FieldName, out object currentValue);
+                futureRow.TryGetValue(field.FieldName, out object updateValue);
+
+                if (((EnumDataType)field.DataTypeId).CompareValue(currentValue, updateValue) != 0)
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
