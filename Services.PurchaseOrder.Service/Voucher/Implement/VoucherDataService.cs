@@ -1217,9 +1217,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             List<string> changeFieldIndexes = new List<string>();
             foreach (var field in fields)
             {
-                var currentValue = currentRow[field.FieldName].ToString();
-                var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue?.ToString())
+                currentRow.TryGetValue(field.FieldName, out object currentValue);
+                futureRow.TryGetValue(field.FieldName, out object updateValue);
+
+                if (((EnumDataType)field.DataTypeId).CompareValue(currentValue, updateValue) != 0)
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
@@ -1961,7 +1962,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int voucherTypeId, long fId)
         {
-
             var dataSql = @$"
                 SELECT     r.*
                 FROM {VOUCHERVALUEROW_VIEW} r 
@@ -2151,7 +2151,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             if (billDate != null || oldDate != null)
             {
-
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {
