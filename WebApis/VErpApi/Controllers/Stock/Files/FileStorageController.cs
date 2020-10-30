@@ -26,5 +26,6 @@ namespace VErpApi.Controllers.Stock.Files
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
+        
     }
 }
