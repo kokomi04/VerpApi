@@ -678,6 +678,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
+                    return ((DateTime)dataValue1).CompareTo((DateTime)dataValue2);
                 case EnumDataType.BigInt:
                     return ((long)dataValue1).CompareTo((long)dataValue2);
                 case EnumDataType.Boolean:
