@@ -1038,10 +1038,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<VoucherFieldInputModel> AddVoucherField(VoucherFieldInputModel data)
         {
-            ValidateVoucherField(data);
-
             FieldDataProcess(ref data);
-
+            ValidateVoucherField(data);
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -1072,10 +1070,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<VoucherFieldInputModel> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data)
         {
             var voucherField = await _purchaseOrderDBContext.VoucherField.FirstOrDefaultAsync(f => f.VoucherFieldId == voucherFieldId);
-
-            ValidateVoucherField(data, voucherField, voucherFieldId);
-
             FieldDataProcess(ref data);
+            ValidateVoucherField(data, voucherField, voucherFieldId);
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
