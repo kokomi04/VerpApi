@@ -9,7 +9,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 
 namespace Verp.Services.ReportConfig.Service
 {
-    public interface IAccountancyReportService
+    public interface IDataReportService
     {
         Task<ReportDataModel> Report(int reportId, ReportFilterModel model);
         Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel dataModel);
