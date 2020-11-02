@@ -22,7 +22,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
-    public class AccountancyReportExcelFacade
+    public class DataReportExcelFacade
     {
         private ISheet sheet = null;
         private ExcelWriter xssfwb = null;

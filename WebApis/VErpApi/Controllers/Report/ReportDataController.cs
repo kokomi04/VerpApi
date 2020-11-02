@@ -14,8 +14,8 @@ namespace VErpApi.Controllers.Report
     [Route("api/reports/accoutancy")]
     public class ReportDataController : VErpBaseController
     {
-        private readonly IAccountancyReportService _accountancyReportService;
-        public ReportDataController(IAccountancyReportService accountancyReportService)
+        private readonly IDataReportService _accountancyReportService;
+        public ReportDataController(IDataReportService accountancyReportService)
         {
             _accountancyReportService = accountancyReportService;
         }

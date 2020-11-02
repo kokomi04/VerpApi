@@ -14,7 +14,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\AccountancyDB\AccountancyDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\ReportConfigDB\ReportConfigDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.ReportConfig.Model\Services.ReportConfig.Model.csproj" />
   </ItemGroup>
