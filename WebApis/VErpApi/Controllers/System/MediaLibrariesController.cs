@@ -31,10 +31,55 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
-        [Route("structure")]
-        public async Task<bool> GetDirectoryStructure([FromQuery] string root, [FromQuery] string subdirectory)
+        [Route("structure/create")]
+        public async Task<bool> CreateDirectory([FromQuery] string root, [FromQuery] string subdirectory)
         {
             return await _mediaService.CreateSubdirectory(root, subdirectory);
+        }
+
+        [HttpDelete]
+        [Route("structure/delete")]
+        public async Task<bool> DeleteDirectory([FromQuery] string directory)
+        {
+            return await _mediaService.DeletedDirectory(directory);
+        }
+        /// <summary>
+        /// thay đổi tên directory
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="newDirectory"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("structure/rename")]
+        public async Task<bool> RenameDirectory([FromQuery] string directory, [FromQuery] string newName)
+        {
+            return await _mediaService.RenameDirectory(directory, newName);
+        }
+
+        /// <summary>
+        /// Copy directory
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="newDirectory"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("structure/copy")]
+        public async Task<bool> CopyDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
+        {
+            return await _mediaService.CopyDirectory(directory, newDirectory);
+        }
+
+        /// <summary>
+        /// move directory
+        /// </summary>
+        /// <param name="directory"></param>
+        /// <param name="newDirectory"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("structure/move")]
+        public async Task<bool> MoveDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
+        {
+            return await _mediaService.MoveDirectory(directory, newDirectory);
         }
 
         [HttpGet]
@@ -45,17 +90,56 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
-        [Route("files")]
-        public async Task<bool> GetVisualFiles([FromForm] string directory, [FromForm] List<IFormFile> files)
+        [Route("files/upload")]
+        public async Task<bool> UploadFiles([FromForm] string directory, [FromForm] List<IFormFile> files)
         {
             return await _mediaService.UploadFiles(directory, files);
         }
 
         [HttpDelete]
-        [Route("files")]
-        public async Task<bool> DeleteVisualFiles([FromBody] List<VisualFile> files)
+        [Route("files/delete")]
+        public async Task<bool> DeleteFiles([FromBody] List<string> files)
         {
             return await _mediaService.DeleteFiles(files);
+        }
+
+        /// <summary>
+        /// Copy file sang directory mới
+        /// </summary>
+        /// <param name="directory">đường dẫn directory chứa file mới</param>
+        /// <param name="files">Danh sách file copy</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("files/copy")]
+        public async Task<bool> CopyFiles([FromForm] string directory, [FromForm] List<string> files)
+        {
+            return await _mediaService.CopyFiles(files, directory);
+        }
+
+        /// <summary>
+        /// Di chuyển file sang directory mới
+        /// </summary>
+        /// <param name="directory">đường dẫn directory chứa file mới</param>
+        /// <param name="files">Danh sách file cần chuyển</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("files/move")]
+        public async Task<bool> MoveFiles([FromForm] string directory, [FromForm] List<string> files)
+        {
+            return await _mediaService.MoveFiles(files, directory);
+        }
+
+        /// <summary>
+        /// Đổi tên file
+        /// </summary>
+        /// <param name="file">đường dẫn file</param>
+        /// <param name="nfile">Tên mới</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("files/rename")]
+        public async Task<bool> RenameFile([FromQuery] string file, [FromQuery] string nfile)
+        {
+            return await _mediaService.RenameFile(file, nfile);
         }
 
         [AllowAnonymous]
