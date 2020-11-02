@@ -926,8 +926,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             // Get changed rows
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
-            var rowsSQL = new StringBuilder("SELECT F_Id,");
+            var rowsSQL = new StringBuilder("SELECT F_Id");
             var multiFields = voucherAreaFields.Where(f => f.IsMultiRow).ToList();
+            if (multiFields.Count > 0) rowsSQL.Append(",");
             AppendSelectFields(ref rowsSQL, multiFields);
             rowsSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
             var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
