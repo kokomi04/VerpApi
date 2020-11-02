@@ -1,5 +1,6 @@
 ﻿using Elasticsearch.Net;
 using Microsoft.Data.SqlClient;
+using Microsoft.Diagnostics.Tracing.Parsers.ApplicationServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -68,9 +69,25 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                         .ToList();
                     ls.ForEach(x =>
                     {
-                        string definition = x["definition"].ToString();
-                        string target = "create";
-                        x["definition"] = "ALTER " + definition.Substring(target.Length);
+                        string definition = x["definition"].ToString().TrimStart();
+                        string target = "CREATE";
+                        var index = definition.IndexOf(target, StringComparison.CurrentCultureIgnoreCase);
+                        if (index > 0)
+                        {
+                            while (!definition.Substring(index-2, 2).Contains("\n"))
+                            {
+                                if ((index + target.Length) > definition.Length) 
+                                    throw new BadRequestException(StoredProcedureErrorCode.InvalidTSQl);
+
+                                index = definition.IndexOf(target, index + target.Length, StringComparison.CurrentCultureIgnoreCase);
+                            }
+
+                            var a = definition.Substring(0, index);
+                            var b = definition.Substring(index + target.Length);
+
+                            x["definition"] = a + "ALTER " + b.TrimStart();
+                        }else
+                            x["definition"] = "ALTER " + definition.Substring(target.Length).TrimStart();
                     });
 
                     data.Add(type.GetEnumDescription(), ls);
@@ -95,11 +112,6 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                                 join sys.sql_modules m on m.object_id = o.object_id
                                 where o.name = '{storedProcedureModel.Name}';";
 
-                if (!storedProcedureModel.Definition.ToLower().StartsWith("create"))
-                {
-                    throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm tạo mới bắt đầu với \"CREATE\"");
-                }
-
                 InvalidStoreProcedure(storedProcedureModel);
 
                 if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
@@ -115,10 +127,6 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         }
         public async Task<bool> Update(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
-            if (!storedProcedureModel.Definition.ToLower().StartsWith("alter"))
-            {
-                throw new BadRequestException(StoredProcedureErrorCode.InvalidStartWith, "Định nghĩa 1 hàm thay đổi bắt đầu với \"ALTER\"");
-            }
             InvalidStoreProcedure(storedProcedureModel);
 
             var db = await GetDatabase(moduleType);
