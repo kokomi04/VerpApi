@@ -298,7 +298,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
             // Validate multiRow existed
-            if (data.Rows == null) data.Rows = new List<NonCamelCaseDictionary>();
+            if (data.Rows == null || data.Rows.Count == 0) data.Rows = new List<NonCamelCaseDictionary>(){
+                new NonCamelCaseDictionary()
+            };
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
             // Lấy thông tin field
@@ -896,7 +898,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
             // Validate multiRow existed
-            if (data.Rows == null) data.Rows = new List<NonCamelCaseDictionary>();
+            if (data.Rows == null || data.Rows.Count == 0) data.Rows = new List<NonCamelCaseDictionary>(){
+                new NonCamelCaseDictionary()
+            };
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
 
@@ -1860,7 +1864,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var billInfo = new VoucherBillInfoModel
                 {
                     Info = info,
-                    Rows = rows.ToArray()
+                    Rows = rows.Count > 0 ? rows.ToArray() : new NonCamelCaseDictionary[]
+                    {
+                        new NonCamelCaseDictionary()
+                    }
                 };
 
                 await ValidateSaleVoucherConfig(billInfo?.Info, null);
