@@ -448,16 +448,19 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> ConfirmCode(int objectTypeId, int objectId)
         {
 
-            var config = await _masterDbContext.CustomGenCode
-                .Join(_masterDbContext.ObjectCustomGenCodeMapping, c => c.CustomGenCodeId, m => m.CustomGenCodeId, (c, m) => new
-                {
-                    CustomGenCode = c,
-                    m.ObjectId,
-                    m.ObjectTypeId
-                })
-                .Where(cm => cm.ObjectId == objectId && cm.ObjectTypeId == objectTypeId)
-                .Select(cm => cm.CustomGenCode)
-                .FirstOrDefaultAsync();
+            var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId))?.CustomGenCodeId;
+
+            CustomGenCode config = null;
+
+            if (customGenCodeId.HasValue)
+            {
+                config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.CustomGenCodeId == customGenCodeId);
+            }
+            else
+            {
+                config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
+            }
+          
             if (config == null)
             {
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);

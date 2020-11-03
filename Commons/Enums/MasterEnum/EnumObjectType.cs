@@ -1,127 +1,168 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
     public enum EnumObjectType
     {
+        [Description("Nhân viên")]
         UserAndEmployee = 1,
+        [Description("Nhóm quyền")]
         Role = 2,
+        [Description("Phân quyền")]
         RolePermission = 3,
+        [Description("Danh mục mặt hàng")]
         ProductCate = 4,
+        [Description("Loại mặt hàng")]
         ProductType = 5,
+        [Description("Mặt hàng")]
         Product = 6,
+        [Description("Đơn vị tính")]
         Unit = 7,
+        [Description("Cấu hình barcode")]
         BarcodeConfig = 8,
-        /// <summary>
-        /// Kho         
-        /// </summary>
+        [Description("Kho chứa")]
         Stock = 9,
+        [Description("File")]
         File = 10,
-        /// <summary>
-        /// Vị trí trong Kho         
-        /// </summary>
+        [Description("Vị trí trong kho")]
         Location = 11,
 
-        /// <summary>
-        /// Phiếu nhập/xuất kho
-        /// </summary>
-        Inventory = 12,
+        //[Description("Phiếu xuất/nhập kho")]
+        //Inventory = 12,
 
-        /// <summary>
-        /// Phiếu nhập/xuất kho chi tiết
-        /// </summary>
+        [Description("Phiếu nhập kho")]
+        InventoryInput = 30,
+
+        [Description("Phiếu xuất kho")]
+        InventoryOutput = 31,
+
+        [Description("Xuất/nhập kho chi tiết")]
         InventoryDetail = 13,
 
-        /// <summary>
-        /// Gói / kiện
-        /// </summary>
+        [Description("Kiện")]
         Package = 14,
 
-        /// <summary>
-        /// Gói / kiện
-        /// </summary>
+        [Description("Sản phẩm kho")]
         StockProduct = 15,
 
-        GenCodeConfig = 16,
+        //[Description("Cấu hình sinh mã")]
+        //GenCodeConfig = 16,
 
+        [Description("Đối tác")]
         Customer = 17,
 
-        /// <summary>
-        /// BOM - Bill of Material - Thông tin vật tư cấu thành nên sản phẩm
-        /// </summary>
+        [Description("BOM")]
         ProductBom = 18,
 
-        /// <summary>
-        /// Yêu cầu VT HH
-        /// </summary>
+        [Description("Phiếu YC VTHH")]
         PurchasingRequest = 19,
 
+        [Description("YC VTHH chi tiết")]
         PurchasingRequestDetail = 20,
 
-        /// <summary>
-        /// Đề nghị mua VT HH
-        /// </summary>
+        [Description("Phiếu đề nghị VTHH")]
         PurchasingSuggest = 21,
 
+        [Description("Đề nghị VTHH chi tiết")]
         PurchasingSuggestDetail = 22,
 
+        [Description("Phân công mua hàng")]
         PoAssignment = 23,
+
+        [Description("Phân công mua hàng chi tiết")]
         PoAssignmentDetail = 24,
 
-        /// <summary>
-        /// PO - Đơn đặt hàng
-        /// </summary>
+        [Description("Đơn đặt hàng")]
         PurchaseOrder = 25,
+
+        [Description("Đơn đặt hàng chi tiết")]
         PurchaseOrderDetail = 26,
 
-        /// <summary>
-        /// Cấu hình mã tự sinh tùy chọn
-        /// </summary>
+        [Description("Cấu hình sinh mã")]
         CustomGenCodeConfig = 27,
-        /// <summary>
-        /// 
-        /// </summary>
+
+
+        [Description("Thông tin doanh nghiệp")]
         BusinessInfo = 28,
-        /// <summary>
-        /// 
-        /// </summary>
+
+        [Description("Bộ phận")]
         Department = 29,
-        InventoryInput = 30,
-        InventoryOutput = 31,
+
+      
+
+        [Description("Loại danh mục")]
         Category = 32,
-        AccountingAccount = 33,
+
+        
+        //AccountingAccount = 33,
+
+        [Description("Loại CTGS")]
         InputType = 34,
 
+        [Description("Nhóm CTGS")]
         InputTypeGroup = 35,
+
+        [Description("Bộ lọc CTGS")]
         InputTypeView = 36,
 
+        [Description("Dòng chứng từ ghi sổ")]
         InputTypeRow = 37,
 
+        [Description("Công ty")]
         Subsidiary = 41,
 
+        [Description("Quy trình xử lý")]
         ObjectProcessStep = 42,
 
+        [Description("Nhóm báo cáo")]
         ReportTypeGroup = 43,
 
-        ReportTypeView = 44,
+        [Description("Loại báo cáo")]
         ReportType = 45,
+
+        [Description("Bộ lọc báo cáo")]
+        ReportTypeView = 44,
+
+        [Description("Menu")]
         Menu = 46,
 
+        [Description("Thiết lập sinh mã đối tượng")]
         ObjectCustomGenCodeMapping = 47,
-        SystemParameter = 48,
-        AccountantConfig = 49,
-        PrintConfig = 50,
-        StorageDabase = 51,
-        InventoryConfig = 52,
 
+        [Description("Thông số hệ thống")]
+        SystemParameter = 48,
+
+        //AccountantConfig = 49,
+
+        [Description("Cấu hình in")]
+        PrintConfig = 50,
+
+        [Description("CSDL")]
+        StorageDabase = 51,
+
+        [Description("Thiết lập dữ liệu (Chốt sổ)")]
+        DataConfig = 52,
+
+        [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
+
+        [Description("Nhóm chứng từ bán hàng")]
         VoucherTypeGroup = 54,
+
+        [Description("Bộ lọc chứng từ bán hàng")]
         VoucherTypeView = 55,
 
+        [Description("Dòng chứng từ bán hàng")]
         VoucherTypeRow = 56,
+
+        [Description("Nút chức năng chứng từ bán hàng")]
         VoucherAction = 57,
+
+        [Description("Nút chức năng CTGS")]
         InputAction = 58,
+        PackingList = 59,
     }
 }

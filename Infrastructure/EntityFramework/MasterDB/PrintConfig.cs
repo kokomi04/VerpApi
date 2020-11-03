@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace VErp.Infrastructure.EF.AccountancyDB
+namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class PrintConfig
     {

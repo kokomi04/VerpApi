@@ -21,28 +21,59 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.ReportConfigDB;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
-    public class AccountancyReportService : IAccountancyReportService
+    public class DataReportService : IDataReportService
     {
         private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly StockDBContext _stockDBContext;
+        private readonly MasterDBContext _masterDBContext;
+        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
+        private readonly OrganizationDBContext _organizationDBContext;
         private readonly ReportConfigDBContext _reportConfigDBContext;
         private readonly IReportConfigService _reportConfigService;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly AppSetting _appSetting;
         private readonly IPhysicalFileService _physicalFileService;
+        private readonly ISubSystemService _subSystemService;
 
-        public AccountancyReportService(
+        private DbContext _dbContext;
+
+        private void SetDbContext(EnumModuleType moduleType)
+        {
+
+            _dbContext = moduleType switch
+            {
+                EnumModuleType.Accountant => _accountancyDBContext,
+                EnumModuleType.Master => _masterDBContext,
+                EnumModuleType.PurchaseOrder => _purchaseOrderDBContext,
+                EnumModuleType.Stock => _stockDBContext,
+                EnumModuleType.Organization => _organizationDBContext,
+                _ => throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy DBContext cho phân hệ {moduleType.GetEnumDescription()}")
+            };
+
+        }
+
+        public DataReportService(
             AccountancyDBContext accountancyDBContext,
+            MasterDBContext masterDBContext,
+            StockDBContext stockDBContext,
+            OrganizationDBContext organizationDBContext,
+            PurchaseOrderDBContext purchaseOrderDBContext,
             ReportConfigDBContext reportConfigDBContext,
             IReportConfigService reportConfigService,
             IDocOpenXmlService docOpenXmlService,
             IOptions<AppSetting> appSetting,
-            IPhysicalFileService physicalFileService
+            IPhysicalFileService physicalFileService,
+            ISubSystemService subSystemService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -51,6 +82,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _docOpenXmlService = docOpenXmlService;
             _appSetting = appSetting.Value;
             _physicalFileService = physicalFileService;
+            _subSystemService = subSystemService;
+            _stockDBContext = stockDBContext;
+            _purchaseOrderDBContext = purchaseOrderDBContext;
+            _organizationDBContext = organizationDBContext;
+            _masterDBContext = masterDBContext;
         }
 
 
@@ -65,9 +101,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var page = model.Page;
             var size = model.Size;
 
-            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+            var reportInfo = await _reportConfigDBContext.ReportType.Include(x => x.ReportTypeGroup).AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
+
+            SetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
             var reportViewInfo = await _reportConfigService.ReportTypeViewGetInfo(reportInfo.ReportTypeId);
 
@@ -87,7 +125,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         value = filters[paramName];
                         if (!value.IsNullObject())
                         {
-                            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year, EnumDataType.DateRange }.Contains(filterFiled.DataTypeId))
+                            if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
                             {
                                 value = Convert.ToInt64(value);
                             }
@@ -99,7 +137,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
-                var data = await _accountancyDBContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
                 foreach (var head in result.Head)
                 {
@@ -149,7 +187,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
-                var data = await _accountancyDBContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
@@ -266,7 +304,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (sql.Length > 0)
             {
-                var data = await _accountancyDBContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -286,7 +324,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 foreach (var item in cacls)
                 {
-                    var data = await _accountancyDBContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                    var data = await _dbContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                     selectValue = data.ConvertFirstRowData();
                     BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
                 }
@@ -436,7 +474,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sql += " ORDER BY " + orderBy;
             }
 
-            var table = await _accountancyDBContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary();
 
@@ -614,7 +652,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrEmpty(filterCondition))
                 totalSql.Append($" WHERE {filterCondition}");
 
-            var table = await _accountancyDBContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
             if (table != null && table.Rows.Count > 0)
@@ -659,7 +697,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 FETCH NEXT {size} ROWS ONLY
                 ");
 
-            var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await _dbContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             return ((data, totalRows), totals);
         }
@@ -711,7 +749,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
                 //}
 
-                var rowData = await _accountancyDBContext.QueryDataTable(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var rowData = await _dbContext.QueryDataTable(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 if (rowData.Rows.Count > 0)
                     data.Add(rowData.ConvertFirstRowData().ToNonCamelCaseDictionary());
             }
@@ -742,13 +780,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
+            SetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
 
             if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound, "Không tìm thấy mẫu in báo cáo");
 
             try
             {
-                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _accountancyDBContext);
+                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
                 return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
             catch (Exception ex)
@@ -759,12 +798,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportExcel(int reportId, ReportFacadeModel model)
         {
-            var accountancyReportExport = new AccountancyReportExcelFacade();
+            var accountancyReportExport = new DataReportExcelFacade();
             accountancyReportExport.SetAppSetting(_appSetting);
             accountancyReportExport.SetPhysicalFileService(_physicalFileService);
             accountancyReportExport.SetContextData(_reportConfigDBContext);
             return await accountancyReportExport.AccountancyReportExport(reportId, model);
-
         }
 
         private class BscValueOrder

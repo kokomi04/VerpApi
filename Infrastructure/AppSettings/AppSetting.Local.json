@@ -26,9 +26,6 @@
   "Developer": {
     "Users": [ "user01" ],
     "SubsidiaryCodes": [ "VERP JSC" ]
-  },
-  "VisualDirectory": {
-    "Address": "http://localhost/DemoVisualDirectory",
-    "PhysicalRootDirectory": "/usr/resources/_visual_/"
   }
+  
 }

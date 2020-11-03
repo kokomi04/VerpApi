@@ -588,6 +588,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 UnitId = 0,
                 EstimatePrice = null,
 
+                
+                Height = p.Height,
+                Long = p.Long,
+                Width = p.Width,
+
+                //GrossWeight = p.GrossWeight,
+                //LoadAbility = p.LoadAbility,
+                //NetWeight = p.NetWeight,
+                //PackingMethod = p.PackingMethod,
+                //Measurement = p.Measurement,
+                //Quantitative = p.Quantitative,
+                //QuantitativeUnitTypeId = (int?)p.QuantitativeUnitTypeId,
+
                 Extra = new ProductModel.ProductModelExtra()
                 {
 

@@ -15,24 +15,24 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Master.Model.Config;
 
-namespace VErp.Services.Accountancy.Service.Input.Implement
+namespace VErp.Services.Master.Service.Config.Implement
 {
     public class PrintConfigService : IPrintConfigService
     {
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly MasterDBContext _masterDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly AppSetting _appSetting;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly IPhysicalFileService _physicalFileService;
 
-        public PrintConfigService(AccountancyDBContext accountancyDBContext
+        public PrintConfigService(MasterDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<PrintConfigService> logger
             , IActivityLogService activityLogService
@@ -42,7 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IDocOpenXmlService docOpenXmlService
             )
         {
-            _accountancyDBContext = accountancyDBContext;
+            _masterDBContext = accountancyDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
@@ -54,7 +54,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PrintConfigModel> GetPrintConfig(int printConfigId)
         {
-            var printConfig = await _accountancyDBContext.PrintConfig
+            var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
@@ -67,7 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int activeForId)
         {
-            var query = _accountancyDBContext.PrintConfig.AsQueryable()
+            var query = _masterDBContext.PrintConfig.AsQueryable()
                 .Where(p => p.ModuleTypeId == moduleTypeId);
 
             if (activeForId > 0)
@@ -88,7 +88,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             //{
             //    throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             //}
-            if (_accountancyDBContext.PrintConfig.Any(p => p.PrintConfigName == data.PrintConfigName))
+            if (_masterDBContext.PrintConfig.Any(p => p.PrintConfigName == data.PrintConfigName))
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
@@ -96,8 +96,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 PrintConfig config = _mapper.Map<PrintConfig>(data);
-                await _accountancyDBContext.PrintConfig.AddAsync(config);
-                await _accountancyDBContext.SaveChangesAsync();
+                await _masterDBContext.PrintConfig.AddAsync(config);
+                await _masterDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
 
@@ -113,12 +113,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data)
         {
             //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
-            var config = await _accountancyDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
-            if (_accountancyDBContext.PrintConfig.Any(p => p.PrintConfigId != printConfigId && p.PrintConfigName == data.PrintConfigName))
+            if (_masterDBContext.PrintConfig.Any(p => p.PrintConfigId != printConfigId && p.PrintConfigName == data.PrintConfigName))
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
@@ -141,7 +141,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 config.GenerateToString = data.GenerateToString;
                 config.ModuleTypeId = data.ModuleTypeId;
 
-                await _accountancyDBContext.SaveChangesAsync();
+                await _masterDBContext.SaveChangesAsync();
 
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Cập nhật cấu hình phiếu in chứng từ {config.PrintConfigName}", data.JsonSerialize());
@@ -156,22 +156,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletePrintConfig(int printConfigId)
         {
-            var config = await _accountancyDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
 
             config.IsDeleted = true;
-            await _accountancyDBContext.SaveChangesAsync();
+            await _masterDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
             return true;
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel)
         {
-            var printConfig = await _accountancyDBContext.PrintConfig
+            var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .FirstOrDefaultAsync();
 
@@ -183,7 +183,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             try
             {
-                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _accountancyDBContext);
+                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
                 return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
             catch (Exception ex)

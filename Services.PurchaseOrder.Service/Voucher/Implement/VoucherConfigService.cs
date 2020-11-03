@@ -349,7 +349,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, voucherType.VoucherTypeId, $"Xóa chứng từ {voucherType.Title}", voucherType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa chứng từ {voucherType.Title}", voucherType.JsonSerialize());
             return true;
         }
 
@@ -747,7 +747,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             voucherArea.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, voucherArea.VoucherTypeId, $"Xóa vùng chứng từ {voucherArea.Title}", voucherArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherTypeId, $"Xóa vùng chứng từ {voucherArea.Title}", voucherArea.JsonSerialize());
             return true;
         }
 

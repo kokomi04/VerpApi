@@ -34,5 +34,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<bool> UpdateMultipleVoucherBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
+
+        Task<VoucherBillInfoModel> GetPackingListInfo(int inputTypeId, long fId);
     }
 }

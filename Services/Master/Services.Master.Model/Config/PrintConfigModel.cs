@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Accountancy.Model.Input
+namespace VErp.Services.Master.Model.Config
 {
     public class PrintConfigModel : IMapFrom<PrintConfig>
     {

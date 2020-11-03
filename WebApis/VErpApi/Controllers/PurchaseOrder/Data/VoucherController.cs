@@ -106,5 +106,12 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
             var result = await _voucherDataService.ExportVoucherBill(voucherTypeId, fId);
             return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
         }
+
+        [HttpGet]
+        [Route("{voucherTypeId}/{fId}/info/pkl/{voucherTypeBKLId}")]
+        public async Task<VoucherBillInfoModel> CreatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int voucherTypeBKLId)
+        {
+            return await _voucherDataService.GetPackingListInfo(voucherTypeBKLId, fId);
+        }
     }
 }

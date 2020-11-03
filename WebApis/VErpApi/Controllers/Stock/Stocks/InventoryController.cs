@@ -197,7 +197,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
+            return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
         }
 
         /// <summary>

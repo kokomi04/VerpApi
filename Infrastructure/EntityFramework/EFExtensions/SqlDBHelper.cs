@@ -64,6 +64,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
         }
 
+        public static async Task ChangeDatabase(this DbContext dbContext, string dbName)
+        {
+            var dbConnection = dbContext.Database.GetDbConnection();
+            await dbConnection.OpenAsync();
+            await dbConnection.ChangeDatabaseAsync(dbName);
+        }
+
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try

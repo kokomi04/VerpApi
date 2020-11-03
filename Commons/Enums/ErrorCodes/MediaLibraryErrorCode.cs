@@ -5,10 +5,11 @@ using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Commons.Enums.ErrorCodes
 {
-    [ErrorCodePrefix("VSD")]
-    public enum VisualDirectoryErrorCode
+    [ErrorCodePrefix("MLB")]
+    public enum MediaLibraryErrorCode
     {
         SubdirectoryExists = 1,
-        NotFoundVisualDirectory = 2
+        NotFoundDirectory = 2,
+        DirectoryNotEmpty = 3
     }
 }

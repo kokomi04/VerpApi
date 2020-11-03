@@ -103,7 +103,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productInfo = new Product()
             {
                 ProductCode = req.ProductCode,
-                ProductName = req.ProductName,
+                ProductName = req.ProductName ?? req.ProductCode,
                 ProductInternalName = req.ProductName.NormalizeAsInternalName(),
                 IsCanBuy = req.IsCanBuy,
                 IsCanSell = req.IsCanSell,
@@ -127,6 +127,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 NetWeight = req.NetWeight,
                 PackingMethod = req.PackingMethod,
                 Measurement = req.Measurement,
+                Quantitative = req.Quantitative,
+                QuantitativeUnitTypeId = (int?)req.QuantitativeUnitTypeId,
                 ProductDescription = req.ProductDescription,
                 ProductNameEng = req.ProductNameEng
             };
@@ -232,66 +234,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
-            var productExtra = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
-            var productStockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
-            var stockValidations = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
-            var unitConverions = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
-
-            return new ProductModel()
-            {
-                ProductId = productInfo.ProductId,
-                ProductCode = productInfo.ProductCode,
-                ProductName = productInfo.ProductName,
-                IsCanBuy = productInfo.IsCanBuy,
-                IsCanSell = productInfo.IsCanSell,
-                MainImageFileId = productInfo.MainImageFileId,
-                ProductTypeId = productInfo.ProductTypeId,
-                ProductCateId = productInfo.ProductCateId,
-                BarcodeConfigId = productInfo.BarcodeConfigId,
-                BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
-                Barcode = productInfo.Barcode,
-                UnitId = productInfo.UnitId,
-                EstimatePrice = productInfo.EstimatePrice,
-                CustomerId = productInfo.CustomerId,
-                GrossWeight = productInfo.GrossWeight,
-                Height = productInfo.Height,
-                Long = productInfo.Long,
-                Width = productInfo.Width,
-                LoadAbility = productInfo.LoadAbility,
-                NetWeight = productInfo.NetWeight,
-                PackingMethod = productInfo.PackingMethod,
-                Measurement = productInfo.Measurement,
-                ProductDescription = productInfo.ProductDescription,
-                ProductNameEng = productInfo.ProductNameEng,
-
-                Extra = productExtra != null ? new ProductModelExtra()
-                {
-                    Specification = productExtra.Specification,
-                    Description = productExtra.Description
-                } : null,
-                StockInfo = productStockInfo != null ? new ProductModelStock()
-                {
-                    StockOutputRuleId = (EnumStockOutputRule?)productStockInfo.StockOutputRuleId,
-                    AmountWarningMin = productStockInfo.AmountWarningMin,
-                    AmountWarningMax = productStockInfo.AmountWarningMax,
-                    TimeWarningTimeTypeId = (EnumTimeType?)productStockInfo.TimeWarningTimeTypeId,
-                    TimeWarningAmount = productStockInfo.TimeWarningAmount,
-                    ExpireTimeTypeId = (EnumTimeType?)productStockInfo.ExpireTimeTypeId,
-                    ExpireTimeAmount = productStockInfo.ExpireTimeAmount,
-                    DescriptionToStock = productStockInfo.DescriptionToStock,
-                    StockIds = stockValidations?.Select(s => s.StockId).ToList(),
-                    UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
-                    {
-                        ProductUnitConversionId = c.ProductUnitConversionId,
-                        ProductUnitConversionName = c.ProductUnitConversionName,
-                        IsDefault = c.IsDefault,
-                        IsFreeStyle = c.IsFreeStyle ?? false,
-                        SecondaryUnitId = c.SecondaryUnitId,
-                        FactorExpression = c.FactorExpression,
-                        ConversionDescription = c.ConversionDescription
-                    }).ToList()
-                } : null
-            };
+            return (await EnrichToProductModel(new[] { productInfo })).FirstOrDefault();
         }
 
 
@@ -384,6 +327,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.NetWeight = req.NetWeight;
                     productInfo.PackingMethod = req.PackingMethod;
                     productInfo.Measurement = req.Measurement;
+                    productInfo.Quantitative = req.Quantitative;
+                    productInfo.QuantitativeUnitTypeId = (int?)req.QuantitativeUnitTypeId;
                     productInfo.ProductDescription = req.ProductDescription;
                     productInfo.ProductNameEng = req.ProductNameEng;
 
@@ -732,67 +677,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var products = await _stockContext.Product.Where(p => productIds.Contains(p.ProductId)).ToListAsync();
 
-            var productExtraData = await _stockContext.ProductExtraInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
-            var productStockInfoData = await _stockContext.ProductStockInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
-            var stockValidationData = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
-            var unitConverionData = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+            return await EnrichToProductModel(products);
 
-            var result = new List<ProductModel>();
-            foreach (var productInfo in products)
-            {
-                var productExtra = productExtraData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
-                var productStockInfo = productStockInfoData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
-                var stockValidations = stockValidationData.Where(p => p.ProductId == productInfo.ProductId);
-                var unitConverions = unitConverionData.Where(p => p.ProductId == productInfo.ProductId);
-
-                var productData = new ProductModel()
-                {
-                    ProductId = productInfo.ProductId,
-                    ProductCode = productInfo.ProductCode,
-                    ProductName = productInfo.ProductName,
-                    IsCanBuy = productInfo.IsCanBuy,
-                    IsCanSell = productInfo.IsCanSell,
-                    MainImageFileId = productInfo.MainImageFileId,
-                    ProductTypeId = productInfo.ProductTypeId,
-                    ProductCateId = productInfo.ProductCateId,
-                    BarcodeConfigId = productInfo.BarcodeConfigId,
-                    BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
-                    Barcode = productInfo.Barcode,
-                    UnitId = productInfo.UnitId,
-                    EstimatePrice = productInfo.EstimatePrice,
-
-                    Extra = productExtra != null ? new ProductModelExtra()
-                    {
-                        Specification = productExtra.Specification,
-                        Description = productExtra.Description
-                    } : null,
-                    StockInfo = productStockInfo != null ? new ProductModelStock()
-                    {
-                        StockOutputRuleId = (EnumStockOutputRule?)productStockInfo.StockOutputRuleId,
-                        AmountWarningMin = productStockInfo.AmountWarningMin,
-                        AmountWarningMax = productStockInfo.AmountWarningMax,
-                        TimeWarningTimeTypeId = (EnumTimeType?)productStockInfo.TimeWarningTimeTypeId,
-                        TimeWarningAmount = productStockInfo.TimeWarningAmount,
-                        ExpireTimeTypeId = (EnumTimeType?)productStockInfo.ExpireTimeTypeId,
-                        ExpireTimeAmount = productStockInfo.ExpireTimeAmount,
-                        DescriptionToStock = productStockInfo.DescriptionToStock,
-                        StockIds = stockValidations?.Select(s => s.StockId).ToList(),
-                        UnitConversions = unitConverions?.Select(c => new ProductModelUnitConversion()
-                        {
-                            ProductUnitConversionId = c.ProductUnitConversionId,
-                            ProductUnitConversionName = c.ProductUnitConversionName,
-                            SecondaryUnitId = c.SecondaryUnitId,
-                            IsDefault = c.IsDefault,
-                            IsFreeStyle = c.IsFreeStyle ?? false,
-                            FactorExpression = c.FactorExpression,
-                            ConversionDescription = c.ConversionDescription
-                        }).ToList()
-                    } : null
-                };
-                result.Add(productData);
-            }
-
-            return result;
         }
 
         public async Task<IList<ProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req)
@@ -816,6 +702,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var products = await _stockContext.Product.AsNoTracking().Where(p => productCodes.Contains(p.ProductCode) || productInternalNames.Contains(p.ProductInternalName)).ToListAsync();
 
+            return await EnrichToProductModel(products);
+        }
+
+        private async Task<IList<ProductModel>> EnrichToProductModel(IList<Product> products)
+        {
             var productIds = products.Select(d => d.ProductId).ToList();
 
             var productExtraData = await _stockContext.ProductExtraInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
@@ -831,7 +722,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var stockValidations = stockValidationData.Where(p => p.ProductId == productInfo.ProductId);
                 var unitConverions = unitConverionData.Where(p => p.ProductId == productInfo.ProductId);
 
-                var productData = new ProductModel()
+                result.Add(new ProductModel()
                 {
                     ProductId = productInfo.ProductId,
                     ProductCode = productInfo.ProductCode,
@@ -846,6 +737,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Barcode = productInfo.Barcode,
                     UnitId = productInfo.UnitId,
                     EstimatePrice = productInfo.EstimatePrice,
+                    CustomerId = productInfo.CustomerId,
+                    GrossWeight = productInfo.GrossWeight,
+                    Height = productInfo.Height,
+                    Long = productInfo.Long,
+                    Width = productInfo.Width,
+                    LoadAbility = productInfo.LoadAbility,
+                    NetWeight = productInfo.NetWeight,
+                    PackingMethod = productInfo.PackingMethod,
+                    Measurement = productInfo.Measurement,
+                    Quantitative = productInfo.Quantitative,
+                    QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)productInfo.QuantitativeUnitTypeId,
+                    ProductDescription = productInfo.ProductDescription,
+                    ProductNameEng = productInfo.ProductNameEng,
 
                     Extra = productExtra != null ? new ProductModelExtra()
                     {
@@ -874,8 +778,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             ConversionDescription = c.ConversionDescription
                         }).ToList()
                     } : null
-                };
-                result.Add(productData);
+                });
             }
 
             return result;
@@ -915,6 +818,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var stockIds = stockNames.Where(s => stocks.ContainsKey(s)).Select(s => stocks[s]).ToList();
                         if (stockIds.Count != stockNames.Length) throw new BadRequestException(GeneralCode.InvalidParams, $"Danh sách kho {value} không đúng");
                         if (stockIds.Count > 0) entity.StockIds = stockIds;
+                        return true;
+                    case nameof(ProductImportModel.QuantitativeUnitTypeId):
+                        var quantitativeUnitTypeId = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>().FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
+                        if (quantitativeUnitTypeId != null) entity.QuantitativeUnitTypeId = quantitativeUnitTypeId.Enum;
                         return true;
                     case nameof(ProductImportModel.ProductTypeCode):
                     case nameof(ProductImportModel.ProductTypeName):
@@ -1065,6 +972,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         Barcode = row.Barcode,
                         UnitId = units[row.Unit.NormalizeAsInternalName()],
                         EstimatePrice = row.EstimatePrice,
+                        GrossWeight = row.GrossWeight,
+                        Height = row.Height,
+                        Long = row.Long,
+                        Width = row.Width,
+                        LoadAbility = row.LoadAbility,
+                        NetWeight = row.NetWeight,
+                        PackingMethod = row.PackingMethod,
+                        Measurement = row.Measurement,
+                        Quantitative = row.Quantitative,
+                        QuantitativeUnitTypeId = (int?)row.QuantitativeUnitTypeId,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
