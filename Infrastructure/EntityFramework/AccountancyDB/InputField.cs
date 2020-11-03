@@ -29,6 +29,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string Structure { get; set; }
+        public bool IsReadOnly { get; set; }
 
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
     }

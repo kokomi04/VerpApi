@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Master.Model.Config;
 
-namespace VErp.Services.Accountancy.Service.Input
+namespace VErp.Services.Master.Service.Config
 {
     public interface IPrintConfigService
     {
