@@ -39,10 +39,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
         }
 
-        public async Task<IList<ProductBomOutput>> GetBOM(long productBomId)
+        public async Task<IList<ProductBomOutput>> GetBOM(int productId)
         {
             var sql = @$"WITH prd_bom AS (
                             SELECT
+                                NULL AS ProductBomId,
                                 @ProductId AS ProductId,
                                 NULL AS ParentProductId,
                                 0 AS Level,
@@ -51,6 +52,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 CONVERT(DECIMAL(18, 4), 1) AS Total
                             UNION ALL
                             SELECT
+                                child.ProductBomId,
                                 child.ProductId, 
                                 child.ParentProductId,
 				                bom.Level + 1 AS Level,
@@ -69,7 +71,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var parammeters = new SqlParameter[]
             {
-                new SqlParameter("@ProductId", productBomId)
+                new SqlParameter("@ProductId", productId)
             };
 
             var resultData = await _stockDbContext.QueryDataTable(sql, parammeters);

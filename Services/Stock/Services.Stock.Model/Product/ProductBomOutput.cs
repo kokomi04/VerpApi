@@ -6,9 +6,9 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductBomOutput
     {
-        public long ProductBomId { get; set; }
-        public int? Level { get; set; }
-        public int? ProductId { get; set; }
+        public long? ProductBomId { get; set; }
+        public int Level { get; set; }
+        public int ProductId { get; set; }
         public int? ParentProductId { get; set; }
 
         public string ProductCode { get; set; }
@@ -16,9 +16,9 @@ namespace VErp.Services.Stock.Model.Product
         public string ProductName { get; set; }     
         public string ProductSpecification { get; set; }
 
-        public decimal? Quantity { get; set; }
-        public decimal? Wastage { get; set; }
-        public decimal? Total { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Wastage { get; set; }
+        public decimal Total { get; set; }
         public string Description { get; set; }
     }
 }

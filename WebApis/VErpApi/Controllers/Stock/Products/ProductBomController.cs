@@ -25,9 +25,9 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<ProductBomOutput>> GetBOM([FromQuery] int productBomId)
+        public async Task<IList<ProductBomOutput>> GetBOM([FromQuery] int productId)
         {
-            return await _productBomService.GetBOM(productBomId);
+            return await _productBomService.GetBOM(productId);
         }
         
         [HttpPost]

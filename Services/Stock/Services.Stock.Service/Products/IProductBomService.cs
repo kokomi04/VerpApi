@@ -12,11 +12,11 @@ namespace VErp.Services.Stock.Service.Products
     public interface IProductBomService
     {
         /// <summary>
-        /// Lấy thông tin của BOM
+        /// Lấy thông tin BOM của sản phẩm
         /// </summary>
-        /// <param name="productBomId">Mã Id BOM</param>        
+        /// <param name="productId">Id sản phẩm</param>        
         /// <returns></returns>
-        Task<IList<ProductBomOutput>> GetBOM(long productBomId);
+        Task<IList<ProductBomOutput>> GetBOM(int productId);
 
         /// <summary>
         /// Thêm mới thông tin BOM
