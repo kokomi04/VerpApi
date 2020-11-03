@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -383,6 +384,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.OutsideDataConfigId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
+            });
+
+            modelBuilder.Entity<PrintConfig>(entity =>
+            {
+                entity.Property(e => e.PrintConfigName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
             });
 
             modelBuilder.Entity<Role>(entity =>

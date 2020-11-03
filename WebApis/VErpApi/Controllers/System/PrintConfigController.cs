@@ -19,8 +19,9 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Accountancy.Model.Input;
 using Microsoft.AspNetCore.Authorization;
+using VErp.Services.Master.Model.Config;
 
-namespace VErpApi.Controllers.Accountancy.Config
+namespace VErpApi.Controllers.System
 {
     [Route("api/printConfig")]
 
