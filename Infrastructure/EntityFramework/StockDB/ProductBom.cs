@@ -6,8 +6,6 @@ namespace VErp.Infrastructure.EF.StockDB
     public partial class ProductBom
     {
         public long ProductBomId { get; set; }
-        public int? Level { get; set; }
-        public int RootProductId { get; set; }
         public int ProductId { get; set; }
         public int? ParentProductId { get; set; }
         public decimal? Quantity { get; set; }
@@ -16,6 +14,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int CreatedByUserId { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual Product ParentProduct { get; set; }
         public virtual Product Product { get; set; }
