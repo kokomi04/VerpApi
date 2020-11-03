@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var sql = @$"WITH prd_bom AS (
                             SELECT
-                                NULL AS ProductBomId,
+                                CONVERT(BIGINT, NULL) AS ProductBomId,
                                 @ProductId AS ProductId,
                                 NULL AS ParentProductId,
                                 0 AS Level,
