@@ -209,11 +209,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         select new
                         {
                             p.ProductId,
-                            p.ProductCode,
-                            p.ProductName,
-                            p.UnitId,
-                            p.ProductTypeId,
-                            p.ProductCateId,
                             sp.PrimaryQuantityRemaining,
                             ps.AmountWarningMin,
                             ps.AmountWarningMax,
@@ -254,8 +249,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
-            var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var queryData = from q in query
+                            join sp in _stockContext.StockProduct on q.ProductId equals sp.ProductId
+                            join c in _stockContext.ProductUnitConversion on sp.ProductUnitConversionId equals c.ProductUnitConversionId into cs
+                            from c in cs.DefaultIfEmpty()
+                            select new
+                            {
+                                q.ProductId,
+                                sp.PrimaryQuantityRemaining,
+                                sp.ProductUnitConversionId,
+                                c.ProductUnitConversionName,
+                                sp.ProductUnitConversionRemaining
+                            };
+
+            var total = await queryData.CountAsync();
+            var lstData = await queryData.Skip((page - 1) * size).Take(size).ToListAsync();
             var productIds = lstData.Select(p => p.ProductId).ToList();
 
             if (productIds.Count == 0)
@@ -263,12 +271,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 return (new List<StockProductListOutput>(), total);
             }
             var extraInfos = await (
-                from p in _stockContext.ProductExtraInfo
+                from p in _stockContext.Product
+                join ex in _stockContext.ProductExtraInfo on p.ProductId equals ex.ProductId into exs
+                from ex in exs.DefaultIfEmpty()
                 where productIds.Contains(p.ProductId)
                 select new
                 {
                     p.ProductId,
-                    p.Specification
+                    p.ProductCode,
+                    p.ProductName,
+                    p.ProductTypeId,
+                    p.ProductCateId,
+                    p.UnitId,
+                    ex.Specification
                 }
                 )
                 .ToListAsync();
@@ -282,13 +297,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var stockInfo = new StockProductListOutput()
                 {
                     ProductId = item.ProductId,
-                    ProductCode = item.ProductCode,
-                    ProductName = item.ProductName,
-                    ProductTypeId = item.ProductTypeId,
-                    ProductCateId = item.ProductCateId,
+                    ProductCode = extra?.ProductCode,
+                    ProductName = extra?.ProductName,
+                    ProductTypeId = extra?.ProductTypeId,
+                    ProductCateId = extra?.ProductCateId ?? 0,
                     Specification = extra?.Specification,
-                    UnitId = item.UnitId,
+                    UnitId = extra?.UnitId ?? 0,
                     PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
+
+                    ProductUnitConversionId = item.ProductUnitConversionId ?? 0,
+                    ProductUnitConversionName = item.ProductUnitConversionName,
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining
                 };
                 pagedData.Add(stockInfo);
             }
