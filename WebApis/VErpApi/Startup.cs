@@ -157,6 +157,8 @@ namespace VErp.WebApis.VErpApi
 
                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/report/swagger.json", "REPORT.API V1");
 
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
+
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");
                   c.OAuthAppName("VERP Swagger UI");
@@ -222,6 +224,13 @@ namespace VErp.WebApis.VErpApi
                     Title = "VERP Report HTTP API",
                     Version = "v1",
                     Description = "The Report Service HTTP API"
+                });
+
+                options.SwaggerDoc("manufacturing", new OpenApiInfo
+                {
+                    Title = "VERP Manufacturing HTTP API",
+                    Version = "v1",
+                    Description = "The Manufacturing Service HTTP API"
                 });
 
 

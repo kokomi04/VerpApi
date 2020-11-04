@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>VErp.Services.Manafacturing.Service</RootNamespace>
+    <AssemblyName>VErp.Services.Manafacturing.Service</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
+    <ProjectReference Include="..\Service.Manafacturing.Model\Services.Manafacturing.Model.csproj" />
+  </ItemGroup>
+
+</Project>
