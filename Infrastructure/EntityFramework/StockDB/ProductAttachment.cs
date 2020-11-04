@@ -3,14 +3,12 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public partial class ProductBom
+    public partial class ProductAttachment
     {
-        public long ProductBomId { get; set; }
+        public long ProductAttachmentId { get; set; }
         public int ProductId { get; set; }
-        public int? ChildProductId { get; set; }
-        public decimal? Quantity { get; set; }
-        public decimal? Wastage { get; set; }
-        public string Description { get; set; }
+        public int AttachmentId { get; set; }
+        public string Title { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
@@ -18,7 +16,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual Product ChildProduct { get; set; }
+        public virtual Product Attachment { get; set; }
         public virtual Product Product { get; set; }
     }
 }

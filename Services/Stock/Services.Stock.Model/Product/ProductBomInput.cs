@@ -10,7 +10,7 @@ namespace VErp.Services.Stock.Model.Product
     {
         public long? ProductBomId { get; set; }
         public int ProductId { get; set; }
-        public int? ParentProductId { get; set; }
+        public int? ChildProductId { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? Wastage { get; set; }
     }

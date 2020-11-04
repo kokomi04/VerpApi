@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Product
         public long? ProductBomId { get; set; }
         public int Level { get; set; }
         public int ProductId { get; set; }
-        public int? ParentProductId { get; set; }
+        public int? ChildProductId { get; set; }
 
         public string ProductCode { get; set; }
 
@@ -19,5 +19,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal Quantity { get; set; }
         public decimal Wastage { get; set; }
         public string Description { get; set; }
+        public string UnitName { get; set; }
+        public bool IsMaterial { get; set; }
     }
 }

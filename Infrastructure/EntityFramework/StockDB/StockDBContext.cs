@@ -27,9 +27,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<PackageOperation> PackageOperation { get; set; }
         public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
+        public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
+        public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
@@ -359,6 +361,27 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_Product_ProductType");
             });
 
+            modelBuilder.Entity<ProductAttachment>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Title).HasMaxLength(1024);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.Attachment)
+                    .WithMany(p => p.ProductAttachmentAttachment)
+                    .HasForeignKey(d => d.AttachmentId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductBo__Paren__61C668D1");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductAttachmentProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductBo__Produ__60D24498");
+            });
+
             modelBuilder.Entity<ProductBom>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -371,9 +394,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Wastage).HasColumnType("decimal(18, 4)");
 
-                entity.HasOne(d => d.ParentProduct)
-                    .WithMany(p => p.ProductBomParentProduct)
-                    .HasForeignKey(d => d.ParentProductId)
+                entity.HasOne(d => d.ChildProduct)
+                    .WithMany(p => p.ProductBomChildProduct)
+                    .HasForeignKey(d => d.ChildProductId)
                     .HasConstraintName("FK_BillOfMaterial_Product_ParentProductId");
 
                 entity.HasOne(d => d.Product)
@@ -410,6 +433,24 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey<ProductExtraInfo>(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductExtraInfo_Product");
+            });
+
+            modelBuilder.Entity<ProductMaterial>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductId, e.RootProductId })
+                    .HasName("PK__ProductM__2874C697FDC1FFD7");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductMaterialProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductBo__Produ__68736660");
+
+                entity.HasOne(d => d.RootProduct)
+                    .WithMany(p => p.ProductMaterialRootProduct)
+                    .HasForeignKey(d => d.RootProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductBo__Paren__69678A99");
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
