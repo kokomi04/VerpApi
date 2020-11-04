@@ -126,12 +126,12 @@ namespace VErp.Services.Master.Service.Category
             using var trans = await _masterContext.Database.BeginTransactionAsync();
             try
             {
-                CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                var category = _mapper.Map<CategoryEntity>(data);
                 await _masterContext.Category.AddAsync(category);
                 await _masterContext.SaveChangesAsync();
 
                 // Thêm F_Identity
-                CategoryField identityField = new CategoryField
+                var identityField = new CategoryField
                 {
                     CategoryId = category.CategoryId,
                     CategoryFieldName = AccountantConstants.F_IDENTITY,
@@ -279,7 +279,7 @@ namespace VErp.Services.Master.Service.Category
                 //Update config outside nếu là danh mục ngoài phân hệ
                 if (category.IsOutSideData)
                 {
-                    OutSideDataConfig config = _masterContext.OutSideDataConfig
+                    var config = _masterContext.OutSideDataConfig
                         .Include(o => o.OutsideDataFieldConfig)
                         .FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
 

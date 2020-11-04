@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Key { get; set; }
         public string ParentKey { get; set; }
         public string Joins { get; set; }
+        public string RawSql { get; set; }
 
         public virtual Category Category { get; set; }
         public virtual ICollection<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
