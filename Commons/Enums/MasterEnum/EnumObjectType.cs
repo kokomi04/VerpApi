@@ -164,5 +164,6 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Nút chức năng CTGS")]
         InputAction = 58,
         PackingList = 59,
+        ProductionStages = 60,
     }
 }
