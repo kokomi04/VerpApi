@@ -18,7 +18,6 @@ namespace VErp.Services.Stock.Model.Product
 
         public decimal Quantity { get; set; }
         public decimal Wastage { get; set; }
-        public decimal Total { get; set; }
         public string Description { get; set; }
     }
 }

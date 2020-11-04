@@ -18,6 +18,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using Microsoft.Data.SqlClient;
 using VErp.Infrastructure.EF.EFExtensions;
+using AutoMapper;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -27,47 +28,53 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly IMapper _mapper;
 
         public ProductBomService(StockDBContext stockContext
-           , IOptions<AppSetting> appSetting
-           , ILogger<ProductBomService> logger
-           , IActivityLogService activityLogService)
+            , IOptions<AppSetting> appSetting
+            , ILogger<ProductBomService> logger
+            , IActivityLogService activityLogService
+            , IMapper mapper)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _mapper = mapper;
         }
 
         public async Task<IList<ProductBomOutput>> GetBOM(int productId)
         {
+            if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
             var sql = @$"WITH prd_bom AS (
-                            SELECT
-                                CONVERT(BIGINT, NULL) AS ProductBomId,
-                                @ProductId AS ProductId,
-                                NULL AS ParentProductId,
-                                0 AS Level,
-                                CONVERT(DECIMAL(18, 4), 1) AS Quantity,
-                                CONVERT(DECIMAL(18, 4), 1) AS Wastage,
-                                CONVERT(DECIMAL(18, 4), 1) AS Total
-                            UNION ALL
-                            SELECT
-                                child.ProductBomId,
-                                child.ProductId, 
-                                child.ParentProductId,
-				                bom.Level + 1 AS Level,
-                                child.Quantity,
-				                child.Wastage,
-				                CONVERT(DECIMAL(18, 4), (child.Quantity * child.Wastage) * bom.Total) AS Total
-                            FROM
-                                ProductBom child
-                                INNER JOIN prd_bom bom
-                                    ON bom.ProductId = child.ParentProductId
+		                        SELECT
+				                        ProductBomId,
+				                        ProductId,
+				                        ParentProductId,
+				                        1 AS Level,
+				                        Quantity,
+				                        Wastage
+		                        FROM ProductBom
+		                        WHERE ParentProductId = @ProductId AND IsDeleted = 0
+		                        UNION ALL
+		                        SELECT
+				                        child.ProductBomId,
+				                        child.ProductId, 
+				                        child.ParentProductId,
+				                        bom.Level + 1 AS Level,
+				                        child.Quantity,
+				                        child.Wastage
+		                        FROM
+				                        ProductBom child
+				                        INNER JOIN prd_bom bom
+						                        ON bom.ProductId = child.ParentProductId
+                                        WHERE child.IsDeleted = 0
                         )
                         SELECT prd_bom.*, p.ProductCode, p.ProductName, u.UnitName FROM prd_bom 
                         LEFT JOIN Product p ON prd_bom.ProductId = p.ProductId
                         LEFT JOIN ProductExtraInfo pei ON prd_bom.ProductId = pei.ProductId
-                        LEFT JOIN v_Unit u ON p.UnitId = u.F_Id; ";
+                        LEFT JOIN v_Unit u ON p.UnitId = u.F_Id;";
 
             var parammeters = new SqlParameter[]
             {
@@ -79,70 +86,115 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return resultData.ConvertData<ProductBomOutput>();
         }
 
-        public async Task<long> Add(ProductBomInput req)
+        public async Task<bool> Update(int productId, IList<ProductBomInput> req)
         {
+            var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
+            if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            var checkExists = _stockDbContext.ProductBom.Any(q => q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
-            if (checkExists)
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            var entity = new ProductBom
+            // Validate data
+            var productIds = req.Select(b => b.ProductId).ToList();
+            var parentIds = req.Select(b => b.ParentProductId.Value).ToList();
+            var allProductIds = productIds.Union(parentIds).Distinct().ToList();
+
+            if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            // Validate parent product id
+            if (parentIds.Any(p => p != productId && !productIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            // Validate duplicate
+
+
+            // Get old BOM info
+            var sql = @$"WITH prd_bom AS (
+		                    SELECT
+                                    ProductBomId,
+				                    ProductId,
+				                    ParentProductId,
+				                    Quantity,
+				                    Wastage
+		                    FROM ProductBom
+		                    WHERE ParentProductId = @ProductId AND IsDeleted = 0
+		                    UNION ALL
+		                    SELECT
+                                    child.ProductBomId,
+				                    child.ProductId, 
+				                    child.ParentProductId,
+				                    child.Quantity,
+				                    child.Wastage
+		                    FROM
+				                    ProductBom child
+				                    INNER JOIN prd_bom bom
+						                    ON bom.ProductId = child.ParentProductId
+                            WHERE child.IsDeleted = 0
+                    )
+                    SELECT prd_bom.* FROM prd_bom;";
+            var parammeters = new SqlParameter[]
             {
-                //Level = 0,
-                ProductId = req.ProductId,
-                ParentProductId = req.ParentProductId,
-                Quantity = req.Quantity,
-                Wastage = req.Wastage,
-                Description = req.Description,
-                IsDeleted = false
+                new SqlParameter("@ProductId", productId)
             };
-            await _stockDbContext.ProductBom.AddAsync(entity);
-            await _stockDbContext.SaveChangesAsync();
+            var resultData = await _stockDbContext.QueryDataTable(sql, parammeters);
+            var oldBoms = resultData.ConvertData<ProductBomInput>();
+            var newBoms = new List<ProductBomInput>(req);
+            var changeBoms = new List<(ProductBomInput OldValue, ProductBomInput NewValue)>();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
-
-            return entity.ProductBomId;
-
-        }
-
-        public async Task<bool> Update(long productBomId, ProductBomInput req)
-        {
-
-            if (productBomId <= 0)
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-
-            entity.Quantity = req.Quantity;
-            entity.Wastage = req.Wastage;
-            entity.Description = req.Description;
-            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-            await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
-            return true;
-
-        }
-
-
-        public async Task<bool> Delete(long productBomId, int rootProductId)
-        {
-
-            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            entity.IsDeleted = true;
-            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-            var childList = new List<ProductBom>();
-            foreach (var item in childList)
+            foreach (var newItem in req)
             {
-                item.IsDeleted = true;
-                item.UpdatedDatetimeUtc = DateTime.UtcNow;
+                var oldBom = oldBoms.FirstOrDefault(b => b.ProductId == newItem.ProductId && b.ParentProductId == newItem.ParentProductId);
+                if (oldBom != null)
+                {
+                    if (HasChange(oldBom, newItem))
+                    {
+                        changeBoms.Add((oldBom, newItem));
+                    }
+                    newBoms.Remove(newItem);
+                    oldBoms.Remove(oldBom);
+                }
             }
+
+            // delete old bom
+            if (oldBoms.Count > 0)
+            {
+                var deleteBomIds = oldBoms.Select(b => b.ProductBomId).ToList();
+                var deleteBoms = _stockDbContext.ProductBom.Where(b => deleteBomIds.Contains(b.ProductBomId)).ToList();
+                foreach (var deleteBom in deleteBoms)
+                {
+                    deleteBom.IsDeleted = true;
+                }
+            }
+
+            // create new bom
+            if (newBoms.Count > 0)
+            {
+                foreach (var newBom in newBoms)
+                {
+                    var entity = _mapper.Map<ProductBom>(newBom);
+                    _stockDbContext.ProductBom.Add(entity);
+                }
+            }
+
+            // update bom
+            if(changeBoms.Count > 0)
+            {
+                var updateBomIds = changeBoms.Select(b => b.OldValue.ProductBomId).ToList();
+                var updateBoms = _stockDbContext.ProductBom.Where(b => updateBomIds.Contains(b.ProductBomId)).ToList();
+                foreach (var updateBom in changeBoms)
+                {
+                    var entity = updateBoms.First(b => b.ProductBomId == updateBom.OldValue.ProductBomId);
+                    entity.Quantity = updateBom.NewValue.Quantity;
+                    entity.Wastage = updateBom.NewValue.Wastage;
+                }
+            }
+           
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
-
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", req.JsonSerialize());
             return true;
-
         }
+
+        private bool HasChange(ProductBomInput oldValue, ProductBomInput newValue)
+        {
+            return oldValue.Quantity != newValue.Quantity
+                || oldValue.Wastage != newValue.Wastage;
+        }
+
     }
 }

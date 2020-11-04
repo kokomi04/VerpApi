@@ -6,39 +6,10 @@ using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Products    
 {
-    /// <summary>
-    /// I - BOM 
-    /// </summary>
     public interface IProductBomService
     {
-        /// <summary>
-        /// Lấy thông tin BOM của sản phẩm
-        /// </summary>
-        /// <param name="productId">Id sản phẩm</param>        
-        /// <returns></returns>
         Task<IList<ProductBomOutput>> GetBOM(int productId);
 
-        /// <summary>
-        /// Thêm mới thông tin BOM
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        Task<long> Add(ProductBomInput req);
-
-        /// <summary>
-        /// Cập nhật thông tin BOM
-        /// </summary>
-        /// <param name="productBomId">Mã Id BOM</param>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        Task<bool> Update(long productBomId, ProductBomInput req);
-
-        /// <summary>
-        /// Xóa thông tin BOM (đánh dấu xóa)
-        /// </summary>
-        /// <param name="productBomId">Mã BOM</param>
-        /// <param name="rootProductId">Mã id sản phẩm gốc</param>
-        /// <returns></returns>
-        Task<bool> Delete(long productBomId, int rootProductId);
+        Task<bool> Update(int productId, IList<ProductBomInput> req);
     }
 }

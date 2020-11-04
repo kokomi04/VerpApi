@@ -24,32 +24,17 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         [HttpGet]
-        [Route("")]
-        public async Task<IList<ProductBomOutput>> GetBOM([FromQuery] int productId)
+        [Route("{productId}")]
+        public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
         {
             return await _productBomService.GetBOM(productId);
         }
         
-        [HttpPost]
-        [Route("")]
-        public async Task<long> Add([FromBody] ProductBomInput model)
-        {
-            return await _productBomService.Add(model);
-        }
-
         [HttpPut]
-        [Route("")]
-        public async Task<bool> Update([FromQuery] long productBomId ,[FromBody] ProductBomInput model)
+        [Route("{productId}")]
+        public async Task<bool> Update([FromRoute] int productId ,[FromBody] IList<ProductBomInput> model)
         {
-            return await _productBomService.Update(productBomId, model);
+            return await _productBomService.Update(productId, model);
         }
-
-        [HttpDelete]
-        [Route("")]
-        public async Task<bool> Delete([FromQuery] long productBomId,[FromQuery] int rootProductId)
-        {
-            return await _productBomService.Delete(productBomId, rootProductId);
-        }
-
     }
 }
