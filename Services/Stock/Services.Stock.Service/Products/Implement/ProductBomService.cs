@@ -51,29 +51,30 @@ namespace VErp.Services.Stock.Service.Products.Implement
 		                        SELECT
 				                        ProductBomId,
 				                        ProductId,
-				                        ParentProductId,
+				                        ChildProductId,
 				                        1 AS Level,
 				                        Quantity,
 				                        Wastage
 		                        FROM ProductBom
-		                        WHERE ParentProductId = @ProductId AND IsDeleted = 0
+		                        WHERE ProductId = @ProductId AND IsDeleted = 0
 		                        UNION ALL
 		                        SELECT
 				                        child.ProductBomId,
 				                        child.ProductId, 
-				                        child.ParentProductId,
+				                        child.ChildProductId,
 				                        bom.Level + 1 AS Level,
 				                        child.Quantity,
 				                        child.Wastage
 		                        FROM
 				                        ProductBom child
-				                        INNER JOIN prd_bom bom
-						                        ON bom.ProductId = child.ParentProductId
-                                        WHERE child.IsDeleted = 0
+				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
+				                        WHERE child.IsDeleted = 0 AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId)
                         )
-                        SELECT prd_bom.*, p.ProductCode, p.ProductName, u.UnitName FROM prd_bom 
-                        LEFT JOIN Product p ON prd_bom.ProductId = p.ProductId
-                        LEFT JOIN ProductExtraInfo pei ON prd_bom.ProductId = pei.ProductId
+                        SELECT bom.*, p.ProductCode, p.ProductName, u.UnitName, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial
+                        FROM prd_bom bom
+                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId
+                        LEFT JOIN Product p ON bom.ChildProductId = p.ProductId
+                        LEFT JOIN ProductExtraInfo pei ON bom.ProductId = pei.ProductId
                         LEFT JOIN v_Unit u ON p.UnitId = u.F_Id;";
 
             var parammeters = new SqlParameter[]
@@ -93,7 +94,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate data
             var productIds = req.Select(b => b.ProductId).ToList();
-            var parentIds = req.Select(b => b.ParentProductId.Value).ToList();
+            var parentIds = req.Select(b => b.ChildProductId.Value).ToList();
             var allProductIds = productIds.Union(parentIds).Distinct().ToList();
 
             if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -102,14 +103,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (parentIds.Any(p => p != productId && !productIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams);
 
             // Validate duplicate
-
+            if (req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Any(g => g.Count() > 1))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin nguyên vật liệu bị trùng lặp");
+            }
 
             // Get old BOM info
             var sql = @$"WITH prd_bom AS (
 		                    SELECT
                                     ProductBomId,
 				                    ProductId,
-				                    ParentProductId,
+				                    ChildProductId,
 				                    Quantity,
 				                    Wastage
 		                    FROM ProductBom
@@ -118,7 +122,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 		                    SELECT
                                     child.ProductBomId,
 				                    child.ProductId, 
-				                    child.ParentProductId,
+				                    child.ChildProductId,
 				                    child.Quantity,
 				                    child.Wastage
 		                    FROM
@@ -139,7 +143,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var newItem in req)
             {
-                var oldBom = oldBoms.FirstOrDefault(b => b.ProductId == newItem.ProductId && b.ParentProductId == newItem.ParentProductId);
+                var oldBom = oldBoms.FirstOrDefault(b => b.ProductId == newItem.ProductId && b.ChildProductId == newItem.ChildProductId);
                 if (oldBom != null)
                 {
                     if (HasChange(oldBom, newItem))
