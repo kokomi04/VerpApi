@@ -14,11 +14,10 @@ using VErp.Services.Stock.Service.Products;
 namespace VErpApi.Controllers.Stock.Products
 {
     [Route("api/productBom")]
-    public class ProductBomController: VErpBaseController
+    public class ProductBomController : VErpBaseController
     {
         private readonly IProductBomService _productBomService;
-        public ProductBomController(IProductBomService productBomService
-            )
+        public ProductBomController(IProductBomService productBomService)
         {
             _productBomService = productBomService;
         }
@@ -29,10 +28,10 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productBomService.GetBOM(productId);
         }
-        
+
         [HttpPut]
         [Route("{productId}")]
-        public async Task<bool> Update([FromRoute] int productId ,[FromBody] IList<ProductBomInput> model)
+        public async Task<bool> Update([FromRoute] int productId, [FromBody] IList<ProductBomInput> model)
         {
             return await _productBomService.Update(productId, model);
         }
