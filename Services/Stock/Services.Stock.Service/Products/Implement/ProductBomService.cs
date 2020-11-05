@@ -94,7 +94,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate data
             var productIds = req.Select(b => b.ProductId).ToList();
-            var parentIds = req.Select(b => b.ChildProductId.Value).ToList();
+            var parentIds = req.Select(b => b.ChildProductId).ToList();
             var allProductIds = productIds.Union(parentIds).Distinct().ToList();
 
             if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -110,42 +110,69 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Get old BOM info
             var sql = @$"WITH prd_bom AS (
-		                    SELECT
-                                    ProductBomId,
-				                    ProductId,
-				                    ChildProductId,
-				                    Quantity,
-				                    Wastage
-		                    FROM ProductBom
-		                    WHERE ParentProductId = @ProductId AND IsDeleted = 0
-		                    UNION ALL
-		                    SELECT
-                                    child.ProductBomId,
-				                    child.ProductId, 
-				                    child.ChildProductId,
-				                    child.Quantity,
-				                    child.Wastage
-		                    FROM
-				                    ProductBom child
-				                    INNER JOIN prd_bom bom
-						                    ON bom.ProductId = child.ParentProductId
-                            WHERE child.IsDeleted = 0
-                    )
-                    SELECT prd_bom.* FROM prd_bom;";
+		                        SELECT
+				                        ProductBomId,
+				                        ProductId,
+				                        ChildProductId
+		                        FROM ProductBom
+		                        WHERE ProductId = @ProductId AND IsDeleted = 0
+		                        UNION ALL
+		                        SELECT
+				                        child.ProductBomId,
+				                        child.ProductId, 
+				                        child.ChildProductId
+		                        FROM
+				                        ProductBom child
+				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
+				                        WHERE child.IsDeleted = 0
+                        )
+                        SELECT bom.*, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial FROM prd_bom bom
+                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId;";
             var parammeters = new SqlParameter[]
             {
                 new SqlParameter("@ProductId", productId)
             };
             var resultData = await _stockDbContext.QueryDataTable(sql, parammeters);
+
             var oldBoms = resultData.ConvertData<ProductBomInput>();
             var newBoms = new List<ProductBomInput>(req);
             var changeBoms = new List<(ProductBomInput OldValue, ProductBomInput NewValue)>();
 
+            // Xử lý loại bỏ thông tin BOM sản phẩm con những chi tiết sẽ đổi từ bán thành phẩm sang nguyên vật liệu trong danh sách cũ
+            foreach (var newItem in req.Where(b => b.IsMaterial))
+            {
+                var oldBom = oldBoms.FirstOrDefault(b => b.ProductId == newItem.ProductId && b.ChildProductId == newItem.ChildProductId);
+                if (!oldBom.IsMaterial)
+                {
+                    // Bỏ thông tin BOM sản phẩm con trong danh sách cũ
+                    RemoveChildOfMaterial(ref oldBoms, oldBom.ChildProductId);
+                }
+            }
+
             foreach (var newItem in req)
             {
                 var oldBom = oldBoms.FirstOrDefault(b => b.ProductId == newItem.ProductId && b.ChildProductId == newItem.ChildProductId);
+                // Nếu là thay đổi
                 if (oldBom != null)
                 {
+                    // Đổi từ bán thành phẩm sang nguyên vật liệu
+                    if (newItem.IsMaterial && !oldBom.IsMaterial)
+                    {
+                        // Thêm thông tin nguyên vật liệu
+                        _stockDbContext.ProductMaterial.Add(new ProductMaterial
+                        {
+                            ProductId = newItem.ChildProductId,
+                            RootProductId = productId
+                        });
+                    }
+                    // Đổi từ nguyên vật liệu sang bán thành phẩm
+                    if (!newItem.IsMaterial && oldBom.IsMaterial)
+                    {
+                        // Xóa thông tin nguyên vật liệu
+                        var productMaterial = _stockDbContext.ProductMaterial.First(m => m.ProductId == oldBom.ChildProductId && m.RootProductId == productId);
+                        _stockDbContext.ProductMaterial.Remove(productMaterial);
+                    }
+                    // Kiểm tra thay đổi thông tin
                     if (HasChange(oldBom, newItem))
                     {
                         changeBoms.Add((oldBom, newItem));
@@ -153,17 +180,45 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     newBoms.Remove(newItem);
                     oldBoms.Remove(oldBom);
                 }
+                else // Nếu thêm mới
+                {
+                    // Thêm mới chi tiết là nguyên vật liệu
+                    if (newItem.IsMaterial)
+                    {
+                        // Thêm thông tin nguyên vật liệu
+                        _stockDbContext.ProductMaterial.Add(new ProductMaterial
+                        {
+                            ProductId = newItem.ChildProductId,
+                            RootProductId = productId
+                        });
+                    }
+                }
             }
 
-            // delete old bom
+            // Kiểm tra danh sách bom bị xóa
+            var deleteBomIds = new List<long>();
             if (oldBoms.Count > 0)
             {
-                var deleteBomIds = oldBoms.Select(b => b.ProductBomId).ToList();
+                // Danh sách mới có BOM của ProductId trong danh sách mới hoặc ProductId của BOM là productId gốc thì là xóa
+                foreach(var oldItem in oldBoms)
+                {
+                    if(oldItem.ProductId == productId && req.Any(b => b.ChildProductId == oldItem.ProductId))
+                    {
+                        deleteBomIds.Add(oldItem.ProductBomId.Value);
+                    }
+                }
+                // Xóa bom
                 var deleteBoms = _stockDbContext.ProductBom.Where(b => deleteBomIds.Contains(b.ProductBomId)).ToList();
                 foreach (var deleteBom in deleteBoms)
                 {
                     deleteBom.IsDeleted = true;
                 }
+                // Xóa material
+                var childProductIds = deleteBoms.Select(b => b.ChildProductId).ToList();
+                var deleteMaterials = _stockDbContext.ProductMaterial
+                    .Where(m => m.RootProductId == productId && childProductIds.Contains(m.ProductId))
+                    .ToList();
+                _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
 
             // create new bom
@@ -177,7 +232,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             // update bom
-            if(changeBoms.Count > 0)
+            if (changeBoms.Count > 0)
             {
                 var updateBomIds = changeBoms.Select(b => b.OldValue.ProductBomId).ToList();
                 var updateBoms = _stockDbContext.ProductBom.Where(b => updateBomIds.Contains(b.ProductBomId)).ToList();
@@ -188,10 +243,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     entity.Wastage = updateBom.NewValue.Wastage;
                 }
             }
-           
+
             await _stockDbContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", req.JsonSerialize());
             return true;
+        }
+
+        private void RemoveChildOfMaterial(ref List<ProductBomInput> oldBoms, int childProductId)
+        {
+            var childrent = oldBoms.Where(b => b.ProductId == childProductId);
+            foreach (var child in childrent)
+            {
+                RemoveChildOfMaterial(ref oldBoms, child.ChildProductId);
+            }
+            oldBoms.RemoveAll(b => b.ProductId == childProductId);
         }
 
         private bool HasChange(ProductBomInput oldValue, ProductBomInput newValue)
