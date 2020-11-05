@@ -41,7 +41,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMenuHelperService _menuHelperService;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IRoleHelperService _roleHelperService;
 
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -51,7 +52,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IMenuHelperService menuHelperService
             , ICurrentContextService currentContextService
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
+            , IRoleHelperService roleHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -61,7 +63,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _menuHelperService = menuHelperService;
             _currentContextService = currentContextService;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
+            _roleHelperService = roleHelperService;
         }
 
         #region InputType
@@ -125,6 +128,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
+        public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
+        {
+            var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+
+            var actions = (await _accountancyDBContext.InputAction.ProjectTo<InputActionSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
+                .GroupBy(a => a.InputTypeId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            foreach (var item in inputTypes)
+            {
+                if (actions.TryGetValue(item.InputTypeId, out var _actions))
+                {
+                    item.ActionObjects = _actions.Cast<InputActionSimpleModel>().ToList();
+                }
+            }
+
+            return inputTypes.Cast<InputTypeSimpleModel>().ToList();
+        }
+
         public async Task<int> AddInputType(InputTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(0));
@@ -156,6 +178,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, data.InputTypeCode, inputType.InputTypeId);
                 //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
                 //}
+
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId, new List<int>());
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
@@ -342,7 +366,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     });
 
 
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
             return true;
         }
 
@@ -741,7 +765,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputArea.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea.JsonSerialize());
             return true;
         }
 
@@ -824,11 +848,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var categoryCode = data.RefTableCode;
                 var fieldName = data.RefTableField;
-                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-                {
-                    CategoryCodes = new List<string>() { categoryCode },
-                    FieldNames = new List<string>() { fieldName }
-                })).FirstOrDefault());
+                var task = Task.Run(async () => (await _httpCategoryHelperService.GetReferFields(new List<string>() { categoryCode }, new List<string>() { fieldName })).FirstOrDefault());
                 task.Wait();
                 var sourceCategoryField = task.Result;
                 if (sourceCategoryField == null)
@@ -844,11 +864,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var categoryCode = data.RefTableCode;
                 var fieldName = data.RefTableField;
-                var task = Task.Run(async () => (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-                {
-                    CategoryCodes = new List<string>() { categoryCode },
-                    FieldNames = new List<string>() { fieldName }
-                })).FirstOrDefault());
+                var task = Task.Run(async () => (await _httpCategoryHelperService.GetReferFields(new List<string>() { categoryCode }, new List<string>() { fieldName })).FirstOrDefault());
                 task.Wait();
                 var sourceCategoryField = task.Result;
                 if (sourceCategoryField != null)
@@ -863,10 +879,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId) && data.FormTypeId != EnumFormType.Input)
+            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
-                data.RefTableCode = null;
                 data.RefTableField = null;
+                if (data.FormTypeId != EnumFormType.Input)
+                {
+                    data.RefTableCode = null;
+                    data.RefTableTitle = null;
+                }
+                else if (string.IsNullOrEmpty(data.RefTableCode))
+                {
+                    data.RefTableTitle = null;
+                }
             }
         }
 
@@ -1020,9 +1044,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputFieldInputModel> AddInputField(InputFieldInputModel data)
         {
-            ValidateInputField(data);
-
             FieldDataProcess(ref data);
+            ValidateInputField(data);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1037,7 +1060,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _accountancyDBContext.AddColumn(INPUTVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Thêm trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
@@ -1054,10 +1077,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data)
         {
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
-
-            ValidateInputField(data, inputField, inputFieldId);
-
             FieldDataProcess(ref data);
+            ValidateInputField(data, inputField, inputFieldId);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1075,7 +1096,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Cập nhật trường dữ liệu chung {inputField.Title}", data.JsonSerialize());
@@ -1114,7 +1135,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _accountancyDBContext.DropColumn(INPUTVALUEROW_TABLE, inputField.FieldName);
                 }
                 await UpdateInputValueView();
-
+                await UpdateInputTableType();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField.JsonSerialize());
                 return true;
@@ -1132,6 +1153,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private async Task UpdateInputValueView()
         {
             await _accountancyDBContext.ExecuteStoreProcedure("asp_InputValueRow_UpdateView", Array.Empty<SqlParameter>());
+        }
+
+        private async Task UpdateInputTableType()
+        {
+            await _accountancyDBContext.ExecuteStoreProcedure("asp_UpdateInputTableType", Array.Empty<SqlParameter>());
         }
     }
 }

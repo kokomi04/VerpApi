@@ -17,9 +17,11 @@ namespace VErpApi.Controllers.Accountancy.Internal
     public class InternalInputController : CrossServiceBaseController
     {
         private readonly IInputDataService _inputDataService;
-        public InternalInputController(IInputDataService inputDataService)
+        private readonly IInputConfigService _inputConfigService;
+        public InternalInputController(IInputDataService inputDataService, IInputConfigService inputConfigService)
         {
             _inputDataService = inputDataService;
+            _inputConfigService = inputConfigService;
         }
 
         [HttpPost]
@@ -27,6 +29,13 @@ namespace VErpApi.Controllers.Accountancy.Internal
         public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
             return await _inputDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<InputTypeSimpleModel>> GetSimpleList()
+        {
+            return await _inputConfigService.GetInputTypeSimpleList().ConfigureAwait(true);
         }
     }
 }

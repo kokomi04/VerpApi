@@ -15,6 +15,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int UpdatedUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public string BankCode { get; set; }
+        public string BankBranch { get; set; }
+        public string BankAddress { get; set; }
 
         public virtual Customer Customer { get; set; }
     }

@@ -44,7 +44,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideImportMappingService _outsideImportMappingService;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -53,7 +53,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
             , IOutsideImportMappingService outsideImportMappingService
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -63,7 +63,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _outsideImportMappingService = outsideImportMappingService;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -369,8 +369,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
+                // Get all fields
+                var inputFields = _accountancyDBContext.InputField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Add);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Add);
 
                 if (result.Code != 0)
                 {
@@ -393,7 +398,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, areaFieldGenCodes);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Add);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
@@ -564,49 +569,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, List<ValidateField> fields, EnumAction action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
         {
+            List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(script))
             {
+                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     resultParam,
-                    messageParam
+                    messageParam,
+                    new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
                 };
-                var pattern = @"@{(?<word>\w+)}";
-                Regex rx = new Regex(pattern);
-                var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
 
-                for (int i = 0; i < match.Count; i++)
-                {
-                    var fieldName = match[i];
-                    var field = fields.First(f => f.FieldName == fieldName);
-                    if (!field.IsMultiRow)
-                    {
-                        var paramName = $"@{match[i]}";
-                        script = script.Replace($"@{{{match[i]}}}", paramName);
-                        data.Info.TryGetValue(fieldName, out string value);
-                        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                    }
-                    else
-                    {
-                        var paramNames = new List<string>();
-                        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
-                        {
-                            var paramName = $"@{match[i]}_{rowIndx}";
-                            paramNames.Add($"({paramName})");
-                            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                        }
-                        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
-                        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
-                    }
-                }
-                await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
+                resultData = (await _accountancyDBContext.QueryDataTable(script, parammeters)).ConvertData();
             }
-            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string);
+            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
 
         private string[] GetFieldInFilter(Clause[] clauses)
@@ -1031,8 +1011,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
+                // Get all fields
+                var inputFields = _accountancyDBContext.InputField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Update);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -1054,7 +1039,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Update);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Update);
 
                 await ConfirmCustomGenCode(areaFieldGenCodes);
 
@@ -1088,20 +1073,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (((EnumFormType)field.InputField.FormTypeId).IsSelectForm())
             {
                 var refTableTitle = field.InputField.RefTableTitle.Split(',')[0];
-                //var categoryFields = (from f in _accountancyDBContext.CategoryField
-                //                      join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-                //                      where c.CategoryCode == field.InputField.RefTableCode && (f.CategoryFieldName == refTableTitle || f.CategoryFieldName == field.InputField.RefTableField)
-                //                      select new
-                //                      {
-                //                          f.CategoryFieldName,
-                //                          f.DataTypeId
-                //                      }).ToList();
-
-                var categoryFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-                {
-                    CategoryCodes = new List<string>() { field.InputField.RefTableCode },
-                    FieldNames = new List<string>() { refTableTitle, field.InputField.RefTableField }
-                });
+                var categoryFields = await _httpCategoryHelperService.GetReferFields(new List<string>() { field.InputField.RefTableCode }, new List<string>() { refTableTitle, field.InputField.RefTableField });
 
                 var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.InputField.RefTableField);
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
@@ -1259,9 +1231,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             List<string> changeFieldIndexes = new List<string>();
             foreach (var field in fields)
             {
-                var currentValue = currentRow[field.FieldName].ToString();
-                var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue?.ToString())
+                currentRow.TryGetValue(field.FieldName, out object currentValue);
+                futureRow.TryGetValue(field.FieldName, out object updateValue);
+
+                if (((EnumDataType)field.DataTypeId).CompareValue(currentValue, updateValue) != 0)
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
@@ -1323,8 +1296,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value.ToString())).ToArray();
                 }
                 await ValidateAccountantConfig(null, data?.Info);
+
+                // Get all fields
+                var inputFields = _accountancyDBContext.InputField
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Delete);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1335,7 +1314,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputAreaFields, EnumAction.Delete);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Delete);
 
                 await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -1767,22 +1746,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            //var referFields = (from f in _accountancyDBContext.CategoryField
-            //                   join c in _accountancyDBContext.Category on f.CategoryId equals c.CategoryId
-            //                   where referTableNames.Contains(c.CategoryCode) && referMapingFields.Select(f => f.RefTableField).Contains(f.CategoryFieldName)
-            //                   select new
-            //                   {
-            //                       c.CategoryCode,
-            //                       f.CategoryFieldName,
-            //                       f.DataTypeId
-            //                   }).ToList();
 
-            var referFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = referTableNames,
-                FieldNames = referMapingFields.Select(f => f.RefTableField).ToList()
-            });
-
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefTableField).ToList());
 
             var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
             if (columnKey == null)
@@ -1957,6 +1922,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
 
+                    // Get all fields
+                    var inputFields = _accountancyDBContext.InputField
+                     .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                     .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
                     foreach (var bill in bills)
                     {
                         // validate require
@@ -1971,7 +1941,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, fields, EnumAction.Add);
+                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, inputFields, EnumAction.Add);
 
                         var billInfo = new InputBill()
                         {
@@ -1988,7 +1958,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, areaFieldGenCodes);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputType.AfterSaveAction, bill, fields, EnumAction.Add);
+                        await ProcessActionAsync(inputType.AfterSaveAction, bill, inputFields, EnumAction.Add);
                     }
 
                     await ConfirmCustomGenCode(areaFieldGenCodes);
@@ -2051,11 +2021,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                         itf.RefTableCode
                                     }).ToList();
 
-            var refDataTypes = (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = selectFormFields.Select(f => f.RefTableCode).ToList(),
-                FieldNames = selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()
-            })).Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
+            var refDataTypes = (await _httpCategoryHelperService.GetReferFields(selectFormFields.Select(f => f.RefTableCode).ToList(), selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()))
+                .Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var writer = new ExcelWriter();
             int endRow = 0;
@@ -2179,8 +2146,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
                         var referToValue = new SqlParameter("@RefValue", value?.ToString());
-
-                        var existSql = $"SELECT tk.F_Id FROM [dbo]._tk tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var existSql = $"SELECT tk.F_Id FROM {INPUTVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @RefValue;";
                         var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
@@ -2213,7 +2179,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             if (billDate != null || oldDate != null)
             {
-
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {

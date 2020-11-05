@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using System;
 using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using Newtonsoft.Json;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
@@ -27,15 +27,19 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
-
+        public bool IsReadOnly { get; set; }
+        public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T: VoucherFieldInputModel
         {
             profile.CreateMap<VoucherField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (EnumFormType)f.FormTypeId))
+                .ForMember(d => d.Structure, m => m.MapFrom(f => string.IsNullOrEmpty(f.Structure) ? null : JsonConvert.DeserializeObject<ControlStructureModel>(f.Structure)))
                 .ReverseMap()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (int)f.DataTypeId))
-                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId));
+                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId))
+                .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null? string.Empty : JsonConvert.SerializeObject(f.Structure)));
+
         }
 
         public void Mapping(Profile profile)

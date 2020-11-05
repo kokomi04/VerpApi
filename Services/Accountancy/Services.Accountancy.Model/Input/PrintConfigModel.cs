@@ -10,7 +10,7 @@ namespace VErp.Services.Accountancy.Model.Input
     public class PrintConfigModel : IMapFrom<PrintConfig>
     {
         public int PrintConfigId { get; set; }
-        public int InputTypeId { get; set; }
+        public int? ActiveForId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên cấu hình")]
         public string PrintConfigName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề phiếu in")]
@@ -27,6 +27,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 
     public class PrintTemplateInput

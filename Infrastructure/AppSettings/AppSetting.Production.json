@@ -25,7 +25,7 @@
   },
   "Developer": {
     "Users": [ "user01" ],
-    "Roles": [ "Administrators" ]
+    "SubsidiaryCodes": [ "VERP JSC" ]
   }
 
 

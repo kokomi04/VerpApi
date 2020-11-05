@@ -48,6 +48,17 @@
           }
         }
       },
+      "DocumentFormat.OpenXml/2.11.3": {
+        "dependencies": {
+          "System.IO.Packaging": "4.7.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/DocumentFormat.OpenXml.dll": {
+            "assemblyVersion": "2.11.3.0",
+            "fileVersion": "2.11.3.0"
+          }
+        }
+      },
       "Elastic.Apm/1.6.1": {
         "dependencies": {
           "Ben.Demystifier": "0.1.6",
@@ -557,6 +568,18 @@
           }
         }
       },
+      "Open-Xml-PowerTools/4.4.0": {
+        "dependencies": {
+          "DocumentFormat.OpenXml": "2.11.3",
+          "System.Drawing.Common": "4.7.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/OpenXmlPowerTools.dll": {
+            "assemblyVersion": "4.4.0.0",
+            "fileVersion": "4.4.0.0"
+          }
+        }
+      },
       "Portable.BouncyCastle/1.8.6": {
         "runtime": {
           "lib/netstandard2.0/BouncyCastle.Crypto.dll": {
@@ -602,6 +625,23 @@
             "rid": "win-x86",
             "assetType": "native",
             "fileVersion": "4.6.25512.1"
+          }
+        }
+      },
+      "Select.HtmlToPdf.NetCore/20.1.0": {
+        "dependencies": {
+          "Newtonsoft.Json": "12.0.3",
+          "System.Buffers": "4.5.0",
+          "System.Drawing.Common": "4.7.0",
+          "System.Numerics.Vectors": "4.5.0",
+          "System.Security.Principal.Windows": "4.7.0",
+          "System.Text.Encoding.CodePages": "4.7.0",
+          "System.Threading.Tasks.Extensions": "4.5.3"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Select.HtmlToPdf.dll": {
+            "assemblyVersion": "20.1.0.0",
+            "fileVersion": "20.1.0.0"
           }
         }
       },
@@ -845,6 +885,14 @@
           "System.Runtime": "4.3.0"
         }
       },
+      "System.IO.Packaging/4.7.0": {
+        "runtime": {
+          "lib/netstandard2.0/System.IO.Packaging.dll": {
+            "assemblyVersion": "4.0.5.0",
+            "fileVersion": "4.700.19.56404"
+          }
+        }
+      },
       "System.Linq/4.3.0": {
         "dependencies": {
           "System.Collections": "4.3.0",
@@ -880,6 +928,7 @@
           "System.Runtime.Handles": "4.3.0"
         }
       },
+      "System.Numerics.Vectors/4.5.0": {},
       "System.Private.DataContractSerialization/4.3.0": {
         "dependencies": {
           "System.Collections": "4.3.0",
@@ -1238,8 +1287,11 @@
       "VErp.Commons.Library/1.0.0": {
         "dependencies": {
           "CoreCLR-NCalc": "2.2.80",
+          "DocumentFormat.OpenXml": "2.11.3",
           "NPOI": "2.5.1",
           "Newtonsoft.Json": "12.0.3",
+          "Open-Xml-PowerTools": "4.4.0",
+          "Select.HtmlToPdf.NetCore": "20.1.0",
           "Sodium.Core": "1.2.3",
           "VErp.Commons.Constants": "1.0.0",
           "VErp.Commons.Enums": "1.0.0",
@@ -1292,6 +1344,13 @@
       "sha512": "sha512-7x0sG9+6JncFCdPIjPkHlqhQGGZCN6gqOWqvsfBF6l0eIraQJNxFChMwiorYr3DSn7+RqjndGlQxf26YEH7H3g==",
       "path": "coreclr-ncalc/2.2.80",
       "hashPath": "coreclr-ncalc.2.2.80.nupkg.sha512"
+    },
+    "DocumentFormat.OpenXml/2.11.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dCugN386ka+LwcOHnxi4gUHbiDeIw0/GEYw1sXFhYiErGFbJpRpscRcn5b12dywUReFCOgGNJ/l16zG5udkC/A==",
+      "path": "documentformat.openxml/2.11.3",
+      "hashPath": "documentformat.openxml.2.11.3.nupkg.sha512"
     },
     "Elastic.Apm/1.6.1": {
       "type": "package",
@@ -1594,6 +1653,13 @@
       "path": "npoi/2.5.1",
       "hashPath": "npoi.2.5.1.nupkg.sha512"
     },
+    "Open-Xml-PowerTools/4.4.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-zdxzqgaByTx4UJpxA+SfLW4YpZwDkmPy9Vw2r+Y3RQQh0roRDyygvcalZR5C66kiRhpkbGV2azYKUNw6xVotpg==",
+      "path": "open-xml-powertools/4.4.0",
+      "hashPath": "open-xml-powertools.4.4.0.nupkg.sha512"
+    },
     "Portable.BouncyCastle/1.8.6": {
       "type": "package",
       "serviceable": true,
@@ -1635,6 +1701,13 @@
       "sha512": "sha512-YhEdSQUsTx+C8m8Bw7ar5/VesXvCFMItyZF7G1AUY+OM0VPZUOeAVpJ4Wl6fydBGUYZxojTDR3I6Bj/+BPkJNA==",
       "path": "runtime.win-x86.runtime.native.system.data.sqlclient.sni/4.4.0",
       "hashPath": "runtime.win-x86.runtime.native.system.data.sqlclient.sni.4.4.0.nupkg.sha512"
+    },
+    "Select.HtmlToPdf.NetCore/20.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Ruli5sdbReVlLK6s5/M2uJrT191SbaWt1iSRxn3KZvY9O5OQAf2jn45xY2V/LdbpIGCEb5D0qs7xURRAolr3/Q==",
+      "path": "select.htmltopdf.netcore/20.1.0",
+      "hashPath": "select.htmltopdf.netcore.20.1.0.nupkg.sha512"
     },
     "SharpZipLib/1.2.0": {
       "type": "package",
@@ -1709,7 +1782,7 @@
     "System.ComponentModel.TypeConverter/4.3.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-16pQ6P+EdhcXzPiEK4kbA953Fu0MNG2ovxTZU81/qsCd1zPRsKc3uif5NgvllCY598k6bI0KUyKW8fanlfaDQg==",
+      "sha512": "sha512-HZiP0DwTHJ+C+rdFqP47nBYUh5283kcwXIGY2zOVVhsJmVI/2tYiX2zNRdjRQRHsTox58Ydkec6h0pWSh8wAsw==",
       "path": "system.componentmodel.typeconverter/4.3.0",
       "hashPath": "system.componentmodel.typeconverter.4.3.0.nupkg.sha512"
     },
@@ -1811,6 +1884,13 @@
       "path": "system.io.filesystem.primitives/4.3.0",
       "hashPath": "system.io.filesystem.primitives.4.3.0.nupkg.sha512"
     },
+    "System.IO.Packaging/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9VV4KAbgRQZ79iEoG40KIeZy38O30oWwewScAST879+oki8g/Wa2HXZQgrhDDxQM4GkP1PnRJll05NMiVPbYAw==",
+      "path": "system.io.packaging/4.7.0",
+      "hashPath": "system.io.packaging.4.7.0.nupkg.sha512"
+    },
     "System.Linq/4.3.0": {
       "type": "package",
       "serviceable": true,
@@ -1831,6 +1911,13 @@
       "sha512": "sha512-qOu+hDwFwoZPbzPvwut2qATe3ygjeQBDQj91xlsaqGFQUI5i4ZnZb8yyQuLGpDGivEPIt8EJkd1BVzVoP31FXA==",
       "path": "system.net.primitives/4.3.0",
       "hashPath": "system.net.primitives.4.3.0.nupkg.sha512"
+    },
+    "System.Numerics.Vectors/4.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-QQTlPTl06J/iiDbJCiepZ4H//BVraReU4O4EoRw1U02H5TLUIT7xn3GnDp9AXPSlJUDyFs4uWjWafNX6WrAojQ==",
+      "path": "system.numerics.vectors/4.5.0",
+      "hashPath": "system.numerics.vectors.4.5.0.nupkg.sha512"
     },
     "System.Private.DataContractSerialization/4.3.0": {
       "type": "package",

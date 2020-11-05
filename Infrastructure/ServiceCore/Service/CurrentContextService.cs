@@ -16,6 +16,9 @@ using Microsoft.Extensions.Primitives;
 using VErp.Commons.Constants;
 using System.Security.Claims;
 using System.Security.Principal;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.EF.OrganizationDB;
+using OpenXmlPowerTools;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -56,6 +59,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly UnAuthorizeMasterDBContext _masterDBContext;
+        private readonly UnAuthorizeOrganizationContext _organizationDBContext;
 
         private int _userId = 0;
         private string _userName = "";
@@ -71,13 +75,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
             , UnAuthorizeMasterDBContext masterDBContext
+            , UnAuthorizeOrganizationContext organizationDBContext
             )
         {
             _appSetting = appSetting.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _masterDBContext = masterDBContext;
-
+            _organizationDBContext = organizationDBContext;
             CrossServiceLogin();
         }
 
@@ -300,7 +305,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                return _appSetting.Developer?.IsDeveloper(UserName, RoleInfo.RoleName) == true;
+                var subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+
+                if (subdiaryInfo == null) return false;
+
+                return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
             }
         }
     }

@@ -43,7 +43,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly ICurrentContextService _currentContextService;
         private readonly IDataProtectionProvider _protectionProvider;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
 
         public CategoryDataService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
@@ -53,7 +53,7 @@ namespace VErp.Services.Accountancy.Service.Category
             , ICurrentContextService currentContextService
             , IDataProtectionProvider protectionProvider
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             )
         {
             _logger = logger;
@@ -64,7 +64,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _currentContextService = currentContextService;
             _protectionProvider = protectionProvider;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
         }
 
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
@@ -284,8 +284,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return numberChange;
         }
 
-
-
         private async Task FillGenerateColumn(ICollection<CategoryField> fields, Dictionary<string, string> data)
         {
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
@@ -397,19 +395,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
 
                 // TODO
-                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
-                {
-                    category.CategoryCode,
-                    FieldNames = fieldNames,
-                    CategoryRow = categoryRow
-                });
-                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
-                isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
-                {
-                    category.CategoryCode,
-                    FieldNames = fieldNames,
-                    CategoryRow = categoryRow
-                });
+                isExisted = await _httpCategoryHelperService.CheckReferFromCategory(category.CategoryCode, fieldNames, categoryRow);
                 if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
 
             }
@@ -646,11 +632,13 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.IsShowList == true
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
             var viewAlias = $"v";
             var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
+
+            fields = fields.Where(f => f.IsShowList).ToList();
 
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
@@ -675,7 +663,6 @@ namespace VErp.Services.Accountancy.Service.Category
                         var paramName = $"@{field.CategoryFieldName}_{idx}";
                         sqlParams.Add(new SqlParameter(paramName, $"%{keyword}%"));
                         whereCondition.Append($"[{viewAlias}].{field.CategoryFieldName} LIKE {paramName}");
-
                     }
                     else
                     {
@@ -725,7 +712,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {categoryView}");
 
-            if (whereCondition.Length > 0)
+            if (whereCondition.Length > 2)
             {
                 dataSql.Append($" WHERE {whereCondition}");
                 totalSql.Append($" WHERE {whereCondition}");
@@ -832,7 +819,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (fields.Any(f => f.CategoryFieldName == GlobalFieldConstants.SubsidiaryId))
             {
-                return $"(SELECT * FROM {categoryView} WHERE {categoryView}.[{GlobalFieldConstants.SubsidiaryId}]={_currentContextService.SubsidiaryId} as {viewAlias}";
+                return $"(SELECT * FROM {categoryView} WHERE {categoryView}.[{GlobalFieldConstants.SubsidiaryId}]={_currentContextService.SubsidiaryId}) as {viewAlias}";
             }
             else
             {
@@ -1200,9 +1187,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         }
                     }
 
-
                     trans.Commit();
-
                 }
                 catch (Exception ex)
                 {

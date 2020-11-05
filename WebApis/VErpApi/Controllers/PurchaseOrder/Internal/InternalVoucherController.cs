@@ -17,9 +17,11 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
     public class InternalVoucherController : CrossServiceBaseController
     {
         private readonly IVoucherDataService _voucherDataService;
-        public InternalVoucherController(IVoucherDataService voucherDataService)
+        private readonly IVoucherConfigService _voucherConfigService;
+        public InternalVoucherController(IVoucherDataService voucherDataService, IVoucherConfigService voucherConfigService)
         {
             _voucherDataService = voucherDataService;
+            _voucherConfigService = voucherConfigService;
         }
 
         [HttpPost]
@@ -27,6 +29,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
         public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
             return await _voucherDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<VoucherTypeSimpleModel>> GetSimpleList()
+        {
+            return await _voucherConfigService.GetVoucherTypeSimpleList().ConfigureAwait(true);
         }
     }
 }

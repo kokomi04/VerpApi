@@ -47,9 +47,11 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<ICollection<MenuOutputModel>> GetMeMenuList()
         {
             var lstMenu = new List<MenuOutputModel>();
-            var lstModules = await _userService.GetMePermission();
-            var moduleIds = lstModules.Select(p => p.ModuleId).ToList();
-            foreach (var item in await _masterDbContext.Menu.Where(m => moduleIds.Contains(m.ModuleId) || m.ModuleId <= 0).OrderBy(m => m.SortOrder).ToListAsync())
+            var lstPermissions = await _userService.GetMePermission();
+            var moduleIds = lstPermissions.Select(p => p.ModuleId).ToList();
+            foreach (var item in await _masterDbContext.Menu.Where(m => m.ModuleId <= 0
+                || lstPermissions.Any(p => p.ModuleId == m.ModuleId && (m.ObjectTypeId == 0 || m.ObjectTypeId == p.ObjectTypeId && m.ObjectId == p.ObjectId))
+            ).OrderBy(m => m.SortOrder).ToListAsync())
             {
                 var info = new MenuOutputModel()
                 {
@@ -104,6 +106,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.ParentId = model.ParentId;
             obj.IsDisabled = model.IsDisabled;
             obj.ModuleId = model.ModuleId;
+            obj.ObjectTypeId = model.ObjectTypeId;
+            obj.ObjectId = model.ObjectId;
             obj.MenuName = model.MenuName;
             obj.Url = model.Url;
             obj.Icon = model.Icon;
@@ -144,6 +148,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ParentId = model.ParentId,
                 IsDisabled = model.IsDisabled,
                 ModuleId = model.ModuleId,
+                ObjectTypeId = model.ObjectTypeId,
+                ObjectId = model.ObjectId,
                 MenuName = model.MenuName,
                 Url = model.Url,
                 Icon = model.Icon,

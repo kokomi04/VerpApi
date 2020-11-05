@@ -48,6 +48,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public bool IsApproved { set; get; }
 
+        public string AccountancyAccountNumber { get; set; }
+
         public StockOutput StockOutput { get; set; }
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 

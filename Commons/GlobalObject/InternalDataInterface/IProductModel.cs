@@ -35,6 +35,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string ProductDescription { get; set; }
         public string ProductNameEng { get; set; }
 
+        public decimal? Quantitative { get; set; }
+        public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
+
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
 

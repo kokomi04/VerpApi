@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
+        public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -34,7 +35,23 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            
+            modelBuilder.Entity<InputAction>(entity =>
+            {
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.InputActionCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.InputType)
+                    .WithMany(p => p.InputAction)
+                    .HasForeignKey(d => d.InputTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InputAction_InputType");
+            });
+
             modelBuilder.Entity<InputArea>(entity =>
             {
                 entity.Property(e => e.Columns).HasDefaultValueSql("((1))");
@@ -187,7 +204,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
             });
 
-          
             modelBuilder.Entity<OutsideImportMapping>(entity =>
             {
                 entity.Property(e => e.DestinationFieldName).HasMaxLength(128);

@@ -14,6 +14,8 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<InputTypeFullModel> GetInputType(string inputTypeCode);
 
         Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size);
+        Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList();
+
         Task<int> AddInputType(InputTypeModel data);
         Task<bool> UpdateInputType(int inputTypeId, InputTypeModel data);
         Task<bool> DeleteInputType(int inputTypeId);

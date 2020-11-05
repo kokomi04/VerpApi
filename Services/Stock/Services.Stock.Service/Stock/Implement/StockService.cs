@@ -23,6 +23,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -30,14 +31,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         private readonly StockDBContext _stockContext;
         private readonly IActivityLogService _activityLogService;
+        private readonly IRoleHelperService _roleHelperService;
 
         public StockService(
             StockDBSubsidiaryContext stockContext
             , IActivityLogService activityLogService
+            , IRoleHelperService roleHelperService
             )
         {
             _stockContext = stockContext;
             _activityLogService = activityLogService;
+            _roleHelperService = roleHelperService;
         }
 
 
@@ -72,6 +76,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                     await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", req.JsonSerialize());
+
+                    await _roleHelperService.GrantDataForAllRoles(EnumObjectType.Stock, stockInfo.StockId);
 
                     return stockInfo.StockId;
                 }

@@ -28,6 +28,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<long> FileIdList { set; get; }
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
+        public string AccountancyAccountNumber { get; set; }
     }
 
     public class InventoryOutProductModel
@@ -61,5 +62,6 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public int SortOrder { get; set; }
         public string Description { get; set; }
+        public string AccountancyAccountNumberDu { get; set; }
     }
 }
