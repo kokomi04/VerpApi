@@ -94,13 +94,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate data
             var productIds = req.Select(b => b.ProductId).ToList();
-            var parentIds = req.Select(b => b.ChildProductId).ToList();
-            var allProductIds = productIds.Union(parentIds).Distinct().ToList();
+            var childIds = req.Select(b => b.ChildProductId).ToList();
+            var allProductIds = productIds.Union(childIds).Distinct().ToList();
 
             if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            // Validate parent product id
-            if (parentIds.Any(p => p != productId && !productIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams);
+            // Validate product id
+            if (productIds.Any(p => p != productId && !productIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams);
 
             // Validate duplicate
             if (req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Any(g => g.Count() > 1))
