@@ -104,11 +104,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var childIds = req.Where(b => !b.IsMaterial).Select(b => b.ChildProductId).Distinct().ToList();
             if (productIds.Any(p => p != productId && !childIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM nằm ngoài nhánh của sản phẩm chính");
 
-            // Validate duplicate
-            if (req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Any(g => g.Count() > 1))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin nguyên vật liệu bị trùng lặp");
-            }
+            // Remove duplicate
+            req = req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
 
             // Get old BOM info
             var sql = @$"WITH prd_bom AS (
