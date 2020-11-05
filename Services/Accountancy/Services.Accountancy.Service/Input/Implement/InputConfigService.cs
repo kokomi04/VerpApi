@@ -732,6 +732,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputArea.Title = data.Title;
                 inputArea.IsMultiRow = data.IsMultiRow;
                 inputArea.Columns = data.Columns;
+                inputArea.ColumnStyles = data.ColumnStyles;
                 inputArea.SortOrder = data.SortOrder;
                 await _accountancyDBContext.SaveChangesAsync();
 
