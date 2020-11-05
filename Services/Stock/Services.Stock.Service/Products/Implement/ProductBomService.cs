@@ -95,17 +95,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             // Validate data
-            var productIds = req.Select(b => b.ProductId).Distinct().ToList();
-            var childIds = req.Select(b => b.ChildProductId).Distinct().ToList();
-            var allProductIds = productIds.Union(childIds).Distinct().ToList();
+            var allProductIds = req.Select(b => b.ProductId).Union(req.Select(b => b.ChildProductId)).Distinct().ToList();
 
             if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             // Validate product id
-            if (productIds.Any(p => p != productId && !childIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM nằm ngoài nhánh của sản phẩm chính ");
-
-            // Validate productId của BOM là material
-            if (productIds.Any(p => req.Any(b => b.IsMaterial && b.ChildProductId == p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM của nguyên vật liệu, vui lòng kiểm tra lại");
+            var productIds = req.Select(b => b.ProductId).Distinct().ToList();
+            var childIds = req.Where(b => !b.IsMaterial).Select(b => b.ChildProductId).Distinct().ToList();
+            if (productIds.Any(p => p != productId && !childIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM nằm ngoài nhánh của sản phẩm chính");
 
             // Validate duplicate
             if (req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Any(g => g.Count() > 1))
