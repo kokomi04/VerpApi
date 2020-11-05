@@ -714,6 +714,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherArea.Title = data.Title;
                 voucherArea.IsMultiRow = data.IsMultiRow;
                 voucherArea.Columns = data.Columns;
+                voucherArea.ColumnStyles = data.ColumnStyles;
                 voucherArea.SortOrder = data.SortOrder;
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
