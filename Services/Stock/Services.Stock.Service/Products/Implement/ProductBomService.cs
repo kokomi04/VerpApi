@@ -113,7 +113,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        ProductBomId,
 				                        ProductId,
 				                        ChildProductId,
-                                        ProductId ParentProductId
+                                        ProductId ParentProductId,
+                                        Quantity,
+				                        Wastage
 		                        FROM ProductBom
 		                        WHERE ProductId = @ProductId AND IsDeleted = 0
 		                        UNION ALL
@@ -121,7 +123,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        child.ProductBomId,
 				                        child.ProductId, 
 				                        child.ChildProductId,
-                                        bom.ProductId ParentProductId
+                                        bom.ProductId ParentProductId,
+                                        child.Quantity,
+				                        child.Wastage
 		                        FROM
 				                        ProductBom child
 				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
@@ -207,7 +211,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 // Danh sách mới có BOM của ProductId trong danh sách mới hoặc ProductId của BOM là productId gốc thì là xóa
                 foreach (var oldItem in oldBoms)
                 {
-                    if (oldItem.ProductId == productId && req.Any(b => b.ChildProductId == oldItem.ProductId))
+                    if (oldItem.ProductId == productId || req.Any(b => b.ChildProductId == oldItem.ProductId))
                     {
                         deleteBoms.Add(oldItem.ProductBomId.Value, oldItem.IsMaterial);
                     }
@@ -233,6 +237,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 foreach (var newBom in newBoms)
                 {
                     var entity = _mapper.Map<ProductBom>(newBom);
+                    entity.ProductBomId = 0;
                     _stockDbContext.ProductBom.Add(entity);
                 }
             }
