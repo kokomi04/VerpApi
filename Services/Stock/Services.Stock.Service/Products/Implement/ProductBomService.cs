@@ -52,6 +52,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        ProductBomId,
 				                        ProductId,
 				                        ChildProductId,
+				                        ProductId ParentProductId,
 				                        1 AS Level,
 				                        Quantity,
 				                        Wastage
@@ -62,17 +63,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        child.ProductBomId,
 				                        child.ProductId, 
 				                        child.ChildProductId,
+				                        bom.ProductId ParentProductId,
 				                        bom.Level + 1 AS Level,
 				                        child.Quantity,
 				                        child.Wastage
 		                        FROM
 				                        ProductBom child
 				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
-				                        WHERE child.IsDeleted = 0 AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId)
+				                        WHERE child.IsDeleted = 0 AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId AND m.ParentProductId = bom.ParentProductId)
                         )
                         SELECT bom.*, p.ProductCode, p.ProductName, u.UnitName, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial
                         FROM prd_bom bom
-                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId
+                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId AND m.ParentProductId = bom.ParentProductId
                         LEFT JOIN Product p ON bom.ChildProductId = p.ProductId
                         LEFT JOIN ProductExtraInfo pei ON bom.ProductId = pei.ProductId
                         LEFT JOIN v_Unit u ON p.UnitId = u.F_Id;";
@@ -93,14 +95,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             // Validate data
-            var productIds = req.Select(b => b.ProductId).ToList();
-            var childIds = req.Select(b => b.ChildProductId).ToList();
+            var productIds = req.Select(b => b.ProductId).Distinct().ToList();
+            var childIds = req.Select(b => b.ChildProductId).Distinct().ToList();
             var allProductIds = productIds.Union(childIds).Distinct().ToList();
 
             if (_stockDbContext.Product.Count(p => allProductIds.Contains(p.ProductId)) != allProductIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             // Validate product id
-            if (productIds.Any(p => p != productId && !productIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams);
+            if (productIds.Any(p => p != productId && !childIds.Contains(p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM nằm ngoài nhánh của sản phẩm chính ");
+
+            // Validate productId của BOM là material
+            if (productIds.Any(p => req.Any(b => b.IsMaterial && b.ChildProductId == p))) throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại thông tin BOM của nguyên vật liệu, vui lòng kiểm tra lại");
 
             // Validate duplicate
             if (req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Any(g => g.Count() > 1))
@@ -113,21 +118,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
 		                        SELECT
 				                        ProductBomId,
 				                        ProductId,
-				                        ChildProductId
+				                        ChildProductId,
+                                        ProductId ParentProductId
 		                        FROM ProductBom
 		                        WHERE ProductId = @ProductId AND IsDeleted = 0
 		                        UNION ALL
 		                        SELECT
 				                        child.ProductBomId,
 				                        child.ProductId, 
-				                        child.ChildProductId
+				                        child.ChildProductId,
+                                        bom.ProductId ParentProductId
 		                        FROM
 				                        ProductBom child
 				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
 				                        WHERE child.IsDeleted = 0
                         )
-                        SELECT bom.*, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial FROM prd_bom bom
-                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId;";
+                        SELECT bom.*, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial 
+                        FROM prd_bom bom
+                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId AND m.ParentProductId = bom.ParentProductId;";
+
             var parammeters = new SqlParameter[]
             {
                 new SqlParameter("@ProductId", productId)
@@ -162,14 +171,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         _stockDbContext.ProductMaterial.Add(new ProductMaterial
                         {
                             ProductId = newItem.ChildProductId,
-                            RootProductId = productId
+                            RootProductId = productId,
+                            ParentProductId = newItem.ProductId
                         });
                     }
                     // Đổi từ nguyên vật liệu sang bán thành phẩm
                     if (!newItem.IsMaterial && oldBom.IsMaterial)
                     {
                         // Xóa thông tin nguyên vật liệu
-                        var productMaterial = _stockDbContext.ProductMaterial.First(m => m.ProductId == oldBom.ChildProductId && m.RootProductId == productId);
+                        var productMaterial = _stockDbContext.ProductMaterial.First(m => m.ProductId == oldBom.ChildProductId && m.ParentProductId == oldBom.ProductId && m.RootProductId == productId);
                         _stockDbContext.ProductMaterial.Remove(productMaterial);
                     }
                     // Kiểm tra thay đổi thông tin
@@ -189,36 +199,38 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         _stockDbContext.ProductMaterial.Add(new ProductMaterial
                         {
                             ProductId = newItem.ChildProductId,
-                            RootProductId = productId
+                            RootProductId = productId,
+                            ParentProductId = newItem.ProductId
                         });
                     }
                 }
             }
 
             // Kiểm tra danh sách bom bị xóa
-            var deleteBomIds = new List<long>();
+            var deleteBoms = new Dictionary<long, bool>();
             if (oldBoms.Count > 0)
             {
                 // Danh sách mới có BOM của ProductId trong danh sách mới hoặc ProductId của BOM là productId gốc thì là xóa
-                foreach(var oldItem in oldBoms)
+                foreach (var oldItem in oldBoms)
                 {
-                    if(oldItem.ProductId == productId && req.Any(b => b.ChildProductId == oldItem.ProductId))
+                    if (oldItem.ProductId == productId && req.Any(b => b.ChildProductId == oldItem.ProductId))
                     {
-                        deleteBomIds.Add(oldItem.ProductBomId.Value);
+                        deleteBoms.Add(oldItem.ProductBomId.Value, oldItem.IsMaterial);
                     }
                 }
                 // Xóa bom
-                var deleteBoms = _stockDbContext.ProductBom.Where(b => deleteBomIds.Contains(b.ProductBomId)).ToList();
-                foreach (var deleteBom in deleteBoms)
+                var productBomIds = deleteBoms.Select(b => b.Key).ToList();
+                var entities = _stockDbContext.ProductBom.Where(b => productBomIds.Contains(b.ProductBomId)).ToList();
+                foreach (var entity in entities)
                 {
-                    deleteBom.IsDeleted = true;
+                    entity.IsDeleted = true;
+                    // Xóa material
+                    if (deleteBoms[entity.ProductBomId])
+                    {
+                        var deleteMaterial = _stockDbContext.ProductMaterial.FirstOrDefault(m => m.RootProductId == productId && m.ProductId == entity.ChildProductId && m.ParentProductId == entity.ProductId);
+                        _stockDbContext.ProductMaterial.RemoveRange(deleteMaterial);
+                    }
                 }
-                // Xóa material
-                var childProductIds = deleteBoms.Select(b => b.ChildProductId).ToList();
-                var deleteMaterials = _stockDbContext.ProductMaterial
-                    .Where(m => m.RootProductId == productId && childProductIds.Contains(m.ProductId))
-                    .ToList();
-                _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
 
             // create new bom

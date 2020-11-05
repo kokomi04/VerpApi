@@ -5,10 +5,8 @@ namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class ProductMaterial
     {
-        public int ProductId { get; set; }
         public int RootProductId { get; set; }
-
-        public virtual Product Product { get; set; }
-        public virtual Product RootProduct { get; set; }
+        public int ParentProductId { get; set; }
+        public int ProductId { get; set; }
     }
 }
