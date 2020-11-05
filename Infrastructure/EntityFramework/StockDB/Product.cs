@@ -12,8 +12,6 @@ namespace VErp.Infrastructure.EF.StockDB
             ProductAttachmentProduct = new HashSet<ProductAttachment>();
             ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
-            ProductMaterialProduct = new HashSet<ProductMaterial>();
-            ProductMaterialRootProduct = new HashSet<ProductMaterial>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -60,8 +58,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<ProductAttachment> ProductAttachmentProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
-        public virtual ICollection<ProductMaterial> ProductMaterialProduct { get; set; }
-        public virtual ICollection<ProductMaterial> ProductMaterialRootProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }

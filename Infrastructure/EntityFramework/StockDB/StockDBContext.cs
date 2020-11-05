@@ -437,20 +437,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterial>(entity =>
             {
-                entity.HasKey(e => new { e.ProductId, e.RootProductId })
-                    .HasName("PK__ProductM__2874C697FDC1FFD7");
-
-                entity.HasOne(d => d.Product)
-                    .WithMany(p => p.ProductMaterialProduct)
-                    .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ProductBo__Produ__68736660");
-
-                entity.HasOne(d => d.RootProduct)
-                    .WithMany(p => p.ProductMaterialRootProduct)
-                    .HasForeignKey(d => d.RootProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ProductBo__Paren__69678A99");
+                entity.HasKey(e => new { e.RootProductId, e.ParentProductId, e.ProductId })
+                    .HasName("PK__ProductM__63C0A75D25E67C75");
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
