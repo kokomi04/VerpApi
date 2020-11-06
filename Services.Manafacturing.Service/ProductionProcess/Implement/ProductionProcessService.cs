@@ -54,7 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStages, step.ProductionStepId,
+                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
                         $"Tạo mới công đoạn {req.ProductionStepId} của sản phẩm {req.ProductId}", req.JsonSerialize());
                     return step.ProductionStepId;
                 }
@@ -90,7 +90,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStages, productionStep.ProductionStepId,
+                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
                         $"Xóa công đoạn {productionStep.ProductionStepId} của sản phẩm {productionStep.ProductId}", productionStep.JsonSerialize());
                     return true;
                 }
@@ -120,7 +120,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     trans.Commit();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStages, productId,
+                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, productId,
                         $"Khởi tạo mapping công đoạn của sản phẩm {productId}", req.JsonSerialize());
                     return true;
                 }
@@ -197,7 +197,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStages, sProductionStep.ProductionStepId,
+                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
                         $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của sản phẩm {sProductionStep.ProductId}", req.JsonSerialize());
                     return true;
                 }catch(Exception ex)
