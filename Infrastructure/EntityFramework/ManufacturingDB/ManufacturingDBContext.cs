@@ -16,12 +16,16 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public virtual DbSet<InOutStepLink> InOutStepLink { get; set; }
+        public virtual DbSet<OutsourceComposition> OutsourceComposition { get; set; }
         public virtual DbSet<ProductInStep> ProductInStep { get; set; }
         public virtual DbSet<ProductInStepLink> ProductInStepLink { get; set; }
+        public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
+        public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
         public virtual DbSet<ProductionStepLink> ProductionStepLink { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
+        public virtual DbSet<TrackOutsource> TrackOutsource { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -46,6 +50,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_InOutStepMapping_ProductionStep");
             });
 
+            modelBuilder.Entity<OutsourceComposition>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<ProductInStep>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
@@ -61,6 +74,26 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.HasKey(e => new { e.InputProductInStepId, e.OutputProductInStepId })
                     .HasName("PK_ProductInStepMapping");
+            });
+
+            modelBuilder.Entity<ProductionOrder>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProductionOrderDetail>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(128);
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.ProductionOrderDetail)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionOrderDetail_ProductionOrder");
             });
 
             modelBuilder.Entity<ProductionStep>(entity =>
@@ -106,6 +139,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.StepGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<TrackOutsource>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DateTrack).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Description)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             OnModelCreatingPartial(modelBuilder);
