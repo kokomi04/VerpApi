@@ -57,7 +57,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        1 AS Level,
 				                        Quantity,
 				                        Wastage,
-                                        CONVERT(nvarchar(max), CONCAT('""', ProductId, '""')) AS BranchIds
+                                        CONVERT(nvarchar(max), CONCAT('""', ProductId, '""')) AS BranchIds,
+                                        CONVERT(nvarchar(max), ROW_NUMBER() OVER(ORDER BY ProductBomId)) AS NumberOrder
                                 FROM ProductBom
 		                        WHERE ProductId = @ProductId AND IsDeleted = 0
 		                        UNION ALL
@@ -69,7 +70,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        bom.Level + 1 AS Level,
 				                        child.Quantity,
 				                        child.Wastage,
-                                        CONVERT(nvarchar(max), CONCAT(bom.BranchIds, ',""', child.ProductId, '""')) AS BranchIds
+                                        CONVERT(nvarchar(max), CONCAT(bom.BranchIds, ',""', child.ProductId, '""')) AS BranchIds,
+                                        CONVERT(nvarchar(max), CONCAT(bom.NumberOrder,'.', ROW_NUMBER() OVER(ORDER BY child.ProductBomId))) NumberOrder
                                 FROM
 				                        ProductBom child
 				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
