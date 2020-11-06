@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
@@ -16,6 +17,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         }
 
         public virtual ICollection<ProductionOrderDetailModel> ProductionOrderDetail { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionOrderModel, ProductionOrderEntity>()
+                .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore());
+        }
     }
 
     public class ProductionOrderListModel : IMapFrom<ProductionOrderEntity>

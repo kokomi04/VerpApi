@@ -86,12 +86,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
                 data.ProductionOrderCode = generated.CustomCode;
-                var productOrder = _mapper.Map<ProductionOrderEntity>(data);
-                _manufacturingDBContext.ProductionOrder.Add(productOrder);
+                var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
+                _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
-                data.ProductionOrderId = productOrder.ProductionOrderId;
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productOrder.ProductionOrderId}", data.JsonSerialize());
+                data.ProductionOrderId = productionOrder.ProductionOrderId;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;
             }
             catch (Exception ex)
@@ -101,15 +101,96 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
-
-        public Task<bool> DeleteProductionOrder(int productionOrderId)
+        public async Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data)
         {
-            throw new NotImplementedException();
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productionOrder = _manufacturingDBContext.ProductionOrder
+                    .Where(o => o.ProductionOrderId == productionOrderId)
+                    .FirstOrDefault();
+                if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+
+                _mapper.Map(data, productionOrder);
+
+                var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
+
+                foreach (var item in data.ProductionOrderDetail)
+                {
+                    item.ProductionOrderId = productionOrderId;
+                    var oldItem = oldDetail.Where(od => od.ProductionOrderDetailId == item.ProductionOrderDetailId).FirstOrDefault();
+                    if (oldItem != null)
+                    {
+                        // Cập nhật
+                        _mapper.Map(item, oldItem);
+                        // Gỡ khỏi danh sách cũ
+                        oldDetail.Remove(oldItem);
+                    }
+                    else
+                    {
+                        item.ProductionOrderDetailId = 0;
+                        // Tạo mới
+                        var entity = _mapper.Map<ProductionOrderDetail>(item);
+                        _manufacturingDBContext.ProductionOrderDetail.Add(entity);
+                    }
+                }
+                // Xóa
+                foreach (var item in oldDetail)
+                {
+                    item.IsDeleted = true;
+                }
+
+                await _manufacturingDBContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+                data = _manufacturingDBContext.ProductionOrder
+                    .Include(o => o.ProductionOrderDetail)
+                    .Where(o => o.ProductionOrderId == productionOrderId)
+                    .ProjectTo<ProductionOrderModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefault();
+                return data;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateProductOrder");
+                throw;
+            }
         }
 
-        public Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data)
+        public async Task<bool> DeleteProductionOrder(int productionOrderId)
         {
-            throw new NotImplementedException();
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productionOrder = _manufacturingDBContext.ProductionOrder
+                    .Where(o => o.ProductionOrderId == productionOrderId)
+                    .FirstOrDefault();
+                if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+                productionOrder.IsDeleted = true;
+
+                var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
+                // Xóa chi tiết
+                foreach (var item in detail)
+                {
+                    item.IsDeleted = true;
+                }
+               
+                await _manufacturingDBContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Xóa lệnh sản xuất {productionOrder.ProductionOrderCode}", productionOrder.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "DeleteProductOrder");
+                throw;
+            }
         }
     }
 }
