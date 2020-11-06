@@ -43,11 +43,11 @@ namespace VErpApi.Controllers.System
             return await _customGenCodeService.GetList(keyword, page, size);
         }
 
-        /// <summary>
-        /// Lấy thông tin cấu hình gen code cho đối tượng
-        /// </summary>
-        /// <param name="objectGenCodeId">Id cấu hình</param>
-        /// <returns></returns>
+        //// <summary>
+        //// Lấy thông tin cấu hình gen code cho đối tượng
+        //// </summary>
+        //// <param name="objectGenCodeId">Id cấu hình</param>
+        //// <returns></returns>
         //[HttpGet]
         //[Route("{objectGenCodeId}")]
         //public async Task<ObjectGenCodeOutputModel> GetInfo([FromRoute] int objectGenCodeId)
@@ -56,12 +56,12 @@ namespace VErpApi.Controllers.System
         //}
 
 
-        /// <summary>
-        /// Thêm mới cấu hình gen code cho đối tượng
-        /// </summary>
-        /// <param name="objectType">Loại đối tượng</param>
-        /// <param name="req"></param>
-        /// <returns></returns>
+        //// <summary>
+        //// Thêm mới cấu hình gen code cho đối tượng
+        //// </summary>
+        //// <param name="objectType">Loại đối tượng</param>
+        //// <param name="req"></param>
+        //// <returns></returns>
         //[HttpPost]
         //[Route("")]
         //public async Task<int> Post([FromQuery] EnumObjectType objectType, [FromBody] ObjectGenCodeInputModel req)
@@ -71,12 +71,12 @@ namespace VErpApi.Controllers.System
         //}
 
 
-        /// <summary>
-        /// Cập nhật cấu hình gen code cho đối tượng
-        /// </summary>
-        /// <param name="objectGenCodeId"></param>
-        /// <param name="req"></param>
-        /// <returns></returns>
+        //// <summary>
+        //// Cập nhật cấu hình gen code cho đối tượng
+        //// </summary>
+        //// <param name="objectGenCodeId"></param>
+        //// <param name="req"></param>
+        //// <returns></returns>
         //[HttpPut]
         //[Route("{objectGenCodeId}")]
         //public async Task<bool> Update([FromRoute] int objectGenCodeId, [FromBody] ObjectGenCodeInputModel req)
@@ -86,11 +86,11 @@ namespace VErpApi.Controllers.System
         //}
 
 
-        /// <summary>
-        /// Xóa cấu hình gen code cho đối tượng
-        /// </summary>
-        /// <param name="objectGenCodeId"></param>
-        /// <returns></returns>
+        //// <summary>
+        //// Xóa cấu hình gen code cho đối tượng
+        //// </summary>
+        //// <param name="objectGenCodeId"></param>
+        //// <returns></returns>
         //[HttpDelete]
         //[Route("{objectGenCodeId}")]
         //public async Task<bool> Delete([FromRoute] int objectGenCodeId)
