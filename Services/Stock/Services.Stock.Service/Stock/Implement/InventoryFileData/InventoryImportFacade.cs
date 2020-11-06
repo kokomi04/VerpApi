@@ -448,7 +448,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false
-                });
+                })
+                .ToList();
 
             await _stockDbContext.ProductType.AddRangeAsync(newProductTypes);
             await _stockDbContext.SaveChangesAsync();
@@ -537,7 +538,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                             IsFreeStyle = false,
                             IsDefault = false
                         };
-                    });
+                    })
+                    .ToList();
 
                 await _stockDbContext.ProductUnitConversion.AddRangeAsync(newPus);
                 await _stockDbContext.SaveChangesAsync();
@@ -627,7 +629,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
                     UnitStatusId = (int)EnumUnitStatus.Using
-                });
+                })
+                .ToList();
 
             await _masterDBContext.Unit.AddRangeAsync(newUnits);
             await _masterDBContext.SaveChangesAsync();
