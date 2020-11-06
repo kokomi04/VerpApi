@@ -28,6 +28,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
+using VErp.Services.Manafacturing.Model;
+using VErp.Services.Manafacturing.Service;
 using VErp.Services.Master.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
@@ -110,6 +112,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
             services.AddScopedServices(OrganizationServiceAssembly.Assembly);
             services.AddScopedServices(ReportConfigServiceAssembly.Assembly);
+            services.AddScopedServices(ManufacturingServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
 
@@ -124,6 +127,7 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(ManufacturingModelAssembly.Assembly);
 
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
