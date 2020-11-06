@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductInStep()
         {
             InOutStepLink = new HashSet<InOutStepLink>();
+            RequestOutsourcePart = new HashSet<RequestOutsourcePart>();
         }
 
         public int ProductInStepId { get; set; }
@@ -23,5 +24,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SortOrder { get; set; }
 
         public virtual ICollection<InOutStepLink> InOutStepLink { get; set; }
+        public virtual ICollection<RequestOutsourcePart> RequestOutsourcePart { get; set; }
     }
 }

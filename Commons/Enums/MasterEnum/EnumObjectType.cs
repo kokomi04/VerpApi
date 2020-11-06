@@ -163,10 +163,16 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Nút chức năng CTGS")]
         InputAction = 58,
-        PackingList = 59,
-        ProductionStages = 60,
 
+        [Description("Công đoạn sản xuất")]
+        ProductionStep = 60,
+        [Description("Danh mục công đoạn")]
+        Step = 61,
+        [Description("Nhóm danh mục công đoạn")]
+        StepGroup = 62,
+        [Description("Yêu cầu gia công chi tiết")]
+        RequestOutsourcePart = 63,
+        [Description("Lệnh sản xuất")]
         ProductionOrder = 70,
-
     }
 }
