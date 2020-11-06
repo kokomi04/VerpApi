@@ -19,6 +19,7 @@ using VErp.Commons.GlobalObject;
 using Microsoft.Data.SqlClient;
 using VErp.Infrastructure.EF.EFExtensions;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -43,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _mapper = mapper;
         }
 
-        public async Task<IList<ProductBomOutput>> GetBOM(int productId)
+        public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
@@ -271,28 +272,28 @@ namespace VErp.Services.Stock.Service.Products.Implement
         //    oldBoms.RemoveAll(b => b.ProductId == childProductId);
         //}
 
-        public async Task<bool> Update(int productId, IList<ProductBomInput> req)
+        public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials)
         {
             var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             // Validate data
             // Validate child product id
-            var childIds = req.Select(b => b.ChildProductId).Distinct().ToList();
+            var childIds = productBoms.Select(b => b.ChildProductId).Distinct().ToList();
             if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound, "Vật tư không tồn tại");
 
-            if (req.Any(p => p.ProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
+            if (productBoms.Any(p => p.ProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
 
             // Remove duplicate
-            req = req.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
+            productBoms = productBoms.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
 
             // Get old BOM info
             var oldBoms = _stockDbContext.ProductBom.Where(b => b.ProductId == productId).ToList();
-            var newBoms = new List<ProductBomInput>(req);
+            var newBoms = new List<ProductBomInput>(productBoms);
             var changeBoms = new List<(ProductBom OldValue, ProductBomInput NewValue)>();
 
             // Cập nhật BOM
-            foreach (var newItem in req)
+            foreach (var newItem in productBoms)
             {
                 var oldBom = oldBoms.FirstOrDefault(b => b.ChildProductId == newItem.ChildProductId);
                 // Nếu là thay đổi
@@ -329,8 +330,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 updateBom.OldValue.Wastage = updateBom.NewValue.Wastage;
             }
 
+            // Cập nhật Material
+            var oldMaterials = _stockDbContext.ProductMaterial.Where(m => m.RootProductId == productId).ToList();
+            _stockDbContext.ProductMaterial.RemoveRange(oldMaterials);
+            var newMaterials = productMaterials.AsQueryable().ProjectTo<ProductMaterial>(_mapper.ConfigurationProvider).ToList();
+            _stockDbContext.ProductMaterial.AddRange(newMaterials);
+
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", req.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
             return true;
         }
 
@@ -339,6 +346,5 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return oldValue.Quantity != newValue.Quantity
                 || oldValue.Wastage != newValue.Wastage;
         }
-
     }
 }

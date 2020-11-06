@@ -26,14 +26,14 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
         {
-            return await _productBomService.GetBOM(productId);
+            return await _productBomService.GetBom(productId);
         }
 
         [HttpPut]
         [Route("{productId}")]
-        public async Task<bool> Update([FromRoute] int productId, [FromBody] IList<ProductBomInput> model)
+        public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
-            return await _productBomService.Update(productId, model);
+            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
         }
     }
 }
