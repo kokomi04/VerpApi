@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         )
                         SELECT bom.*, p.ProductCode, p.ProductName, u.UnitName, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial
                         FROM prd_bom bom
-                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId AND m.ParentProductId = bom.ParentProductId
+                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId AND m.ParentProductId = bom.ProductId
                         LEFT JOIN Product p ON bom.ChildProductId = p.ProductId
                         LEFT JOIN ProductExtraInfo pei ON bom.ProductId = pei.ProductId
                         LEFT JOIN v_Unit u ON p.UnitId = u.F_Id;";

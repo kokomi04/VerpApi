@@ -12,8 +12,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     {
         Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, Clause filters = null);
         Task<ProductionOrderModel> GetProductionOrder(int productionOrderId);
-        Task<bool> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data);
-        Task<int> CreateProductionOrder(ProductionOrderModel data);
+        Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data);
+        Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data);
         Task<bool> DeleteProductionOrder(int productionOrderId);
     }
 }
