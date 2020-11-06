@@ -26,20 +26,21 @@ namespace VErp.Services.Accountancy.Model.Input
         public string JsAction { get; set; }
         public string IconName { get; set; }
         public string Style { get; set; }
-        public EnumPosition Position { set; get; }
+        //public EnumPosition Position { set; get; }
+        public string JsVisible { get; set; }
 
-        protected void MappingBase<T>(Profile profile) where T : InputActionModel
-        {
-            profile.CreateMap<InputAction, T>()
-                .ForMember(a => a.Position, m => m.MapFrom(a => (EnumPosition)a.Position))
-                .ReverseMap()
-                .ForMember(a => a.Position, m => m.MapFrom(a => (int)a.Position));
+        //protected void MappingBase<T>(Profile profile) where T : InputActionModel
+        //{
+        //    profile.CreateMap<InputAction, T>();
+        //        //.ForMember(a => a.Position, m => m.MapFrom(a => (EnumPosition)a.Position))
+        //        //.ReverseMap()
+        //        //.ForMember(a => a.Position, m => m.MapFrom(a => (int)a.Position));
 
-        }
+        //}
 
-        public void Mapping(Profile profile)
-        {
-            MappingBase<InputActionModel>(profile);
-        }
+        //public void Mapping(Profile profile)
+        //{
+        //    MappingBase<InputActionModel>(profile);
+        //}
     }
 }

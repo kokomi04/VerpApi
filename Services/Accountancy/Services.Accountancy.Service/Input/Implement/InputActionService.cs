@@ -48,10 +48,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<InputActionModel>> GetInputActions(int inputTypeId)
         {
-            return _accountancyDBContext.InputAction
+            return await _accountancyDBContext.InputAction
                 .Where(a => a.InputTypeId == inputTypeId)
                 .ProjectTo<InputActionModel>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToListAsync();
         }
 
         public async Task<InputActionModel> AddInputAction(InputActionModel data)
