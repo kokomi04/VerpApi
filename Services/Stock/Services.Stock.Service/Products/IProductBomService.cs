@@ -8,8 +8,8 @@ namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductBomService
     {
-        Task<IList<ProductBomOutput>> GetBOM(int productId);
+        Task<IList<ProductBomOutput>> GetBom(int productId);
 
-        Task<bool> Update(int productId, IList<ProductBomInput> req);
+        Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials);
     }
 }
