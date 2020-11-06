@@ -21,5 +21,7 @@ namespace VErp.Services.Master.Model.Config
         public long UpdatedTime { get; set; }
         public string Description { get; set; }
         public int SortOrder { get; set; }
+
+        public bool IsDefault { get; set; }
     }
 }

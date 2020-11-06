@@ -17,16 +17,5 @@ namespace VErp.Services.Stock.Service.FileResources
             return protector.Unprotect(cipherText);
         }
 
-        public static string GetPhysicalFilePath(this string filePath, AppSetting appSetting)
-        {
-            filePath = filePath.Replace('\\', '/');
-
-            while (filePath.StartsWith('.')|| filePath.StartsWith('/'))
-            {
-                filePath = filePath.TrimStart('/').TrimStart('.');
-            }
-
-            return appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
-        }
     }
 }

@@ -53,12 +53,12 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
 
@@ -197,7 +197,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
+            return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
         }
 
         /// <summary>
@@ -305,5 +305,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             }
             return await _inventoryService.InventoryImport(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), JsonConvert.DeserializeObject<InventoryOpeningBalanceModel>(info)).ConfigureAwait(true);
         }
+
+        
     }
 }

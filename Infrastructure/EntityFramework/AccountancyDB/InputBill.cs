@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int LatestBillVersion { get; set; }
+        public int SubsidiaryId { get; set; }
 
         public virtual InputType InputType { get; set; }
     }

@@ -18,7 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Accountancy.Model.Input;
-using VErp.Services.Stock.Model.FileResources;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
@@ -37,9 +37,9 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("")]
-        public async Task<ICollection<PrintConfigModel>> Get([FromQuery] int inputTypeId)
+        public async Task<ICollection<PrintConfigModel>> Get([FromQuery] int moduleTypeId, [FromQuery] int activeForId)
         {
-            return await _printConfigService.GetPrintConfigs(inputTypeId);
+            return await _printConfigService.GetPrintConfigs(moduleTypeId, activeForId);
         }
 
         [HttpGet]
@@ -81,7 +81,7 @@ namespace VErpApi.Controllers.Accountancy.Config
         [Route("{printConfigId}/generatePrintTemplate/{fileId}")]
         public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromRoute] int fileId, PrintTemplateInput templateModel)
         {
-            var r = await _fileService.GeneratePrintTemplate(fileId, templateModel);
+            var r = await _printConfigService.GeneratePrintTemplate(printConfigId, fileId, templateModel);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }

@@ -4,61 +4,120 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache
+    public class StockDBSubsidiaryContext : StockDBContext, ISubsidiayRequestDbContext
     {
-        //ICurrentContextService _currentContext;
-        public List<int> StockIds { get; set; }
+        public int SubsidiaryId { get; private set; }
 
-        public bool FilterStock { get; private set; }
+        public ICurrentContextService CurrentContextService { get; private set; }
+
+        public StockDBSubsidiaryContext(DbContextOptions<StockDBSubsidiaryContext> options
+            , ICurrentContextService currentContext
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
+        {
+            CurrentContextService = currentContext;
+
+            SubsidiaryId = currentContext.SubsidiaryId;
+
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.AddFilterAuthorize(this);
+
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override int SaveChanges()
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges();
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
+
+    public class StockDBRestrictionContext : StockDBContext, IDbContextFilterTypeCache, ISubsidiayRequestDbContext, IStockRequestDbContext
+    {
+        public List<int> StockIds { get; set; }
+        public int SubsidiaryId { get; private set; }
+
+        public bool IgnoreFilterSubsidiary { get; private set; }
+        public bool IgnoreFilterStock { get; private set; }
+
+        public ICurrentContextService CurrentContextService { get; private set; }
 
         public StockDBRestrictionContext(DbContextOptions<StockDBRestrictionContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
             : base(options.ChangeOptionsType<StockDBContext>(loggerFactory))
         {
-            // _currentContext = currentContext;
+            CurrentContextService = currentContext;
+
             StockIds = currentContext.StockIds?.ToList();
-            FilterStock = StockIds != null;
+            SubsidiaryId = currentContext.SubsidiaryId;
+
+            IgnoreFilterSubsidiary = false;
+            IgnoreFilterStock = false;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.ReplaceService<IModelCacheKeyFactory, DynamicModelCacheKeyFactory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var ctxConstant = Expression.Constant(this);
-
             base.OnModelCreating(modelBuilder);
 
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
+            modelBuilder.AddFilterAuthorize(this);
 
-                var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
+        }
 
-                var isDeletedProp = entityType.FindProperty("IsDeleted");
-                if (isDeletedProp != null)
-                {
-                    var isDeleted = Expression.Constant(false);
-                    filterBuilder.AddFilter("IsDeleted", isDeleted);
-                }
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
 
-                if (FilterStock)
-                {
-                    var isStockIdProp = entityType.FindProperty("StockId");
-                    if (isStockIdProp != null)
-                    {
-                        var stockIds = Expression.PropertyOrField(ctxConstant, "StockIds");
-                        filterBuilder.AddFilterListContains<int>("StockId", stockIds);
-                    }
-                }
+        public override int SaveChanges()
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges();
+        }
 
-                entityType.SetQueryFilter(filterBuilder.Build());
-            }
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(cancellationToken);
+        }
 
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 

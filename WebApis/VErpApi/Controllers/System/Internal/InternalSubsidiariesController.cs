@@ -13,7 +13,7 @@ using VErp.Services.Organization.Model.Department;
 using VErp.Services.Organization.Service.Customer;
 using VErp.Services.Organization.Service.Department;
 
-namespace VErpApi.Controllers.Stock.Internal
+namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]

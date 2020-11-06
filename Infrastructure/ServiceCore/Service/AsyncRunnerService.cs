@@ -31,6 +31,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
             var actionId = _currentContext.Action;
             var stockIds = _currentContext.StockIds;
             var roleInfo = _currentContext.RoleInfo;
+            var subsidiaryId = _currentContext.SubsidiaryId;
+            var timeZone = _currentContext.TimeZoneOffset;
             Task.Run(async () =>
             {
                 try
@@ -38,7 +40,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds));
+                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds, subsidiaryId, timeZone));
                         var obj = scope.ServiceProvider.GetService<T>();
                         var fn = action.Compile();
                         await fn.Invoke(obj);

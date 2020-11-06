@@ -13,9 +13,11 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public int RoleId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string RoleName { get; set; }
         public string Description { get; set; }
         public int RoleStatusId { get; set; }
+        public int RoleTypeId { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsEditable { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -27,7 +29,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string ChildrenRoleIds { get; set; }
 
         public virtual Role ParentRole { get; set; }
-        public virtual RoleStatus RoleStatus { get; set; }
         public virtual ICollection<Role> InverseParentRole { get; set; }
         public virtual ICollection<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual ICollection<RolePermission> RolePermission { get; set; }

@@ -12,5 +12,11 @@ namespace VErp.Services.Organization.Model.Customer
         public string AccountNumber { get; set; }
         [MaxLength(64, ErrorMessage = "Swiff code quá dài")]
         public string SwiffCode { get; set; }
+        [MaxLength(15, ErrorMessage = "BankCode quá dài")]
+        public string BankCode { get; set; }
+        [MaxLength(255, ErrorMessage = "BankBranch quá dài")]
+        public string BankBranch { get; set; }
+        [MaxLength(255, ErrorMessage = "BankAddress quá dài")]
+        public string BankAddress { get; set; }
     }
 }

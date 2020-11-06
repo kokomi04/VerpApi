@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public int UserId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string EmployeeCode { get; set; }
         public string FullName { get; set; }
         public string Email { get; set; }
@@ -20,6 +21,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int? GenderId { get; set; }
         public bool IsDeleted { get; set; }
         public long? AvatarFileId { get; set; }
+        public int EmployeeTypeId { get; set; }
+        public int UserStatusId { get; set; }
 
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }

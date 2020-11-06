@@ -8,7 +8,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Service.Customer;
-namespace VErpApi.Controllers.Stock.Internal
+namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]

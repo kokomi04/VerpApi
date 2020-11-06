@@ -15,9 +15,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
-        public virtual DbSet<AccountantConfig> AccountantConfig { get; set; }
-        public virtual DbSet<Category> Category { get; set; }
-        public virtual DbSet<CategoryField> CategoryField { get; set; }
+        public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -26,8 +24,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
-        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
-        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
@@ -39,68 +35,21 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<AccountantConfig>(entity =>
+            modelBuilder.Entity<InputAction>(entity =>
             {
-                entity.Property(e => e.ClosingDate).HasColumnType("datetime");
-            });
+                entity.Property(e => e.IconName).HasMaxLength(25);
 
-            modelBuilder.Entity<Category>(entity =>
-            {
-                entity.Property(e => e.CategoryCode)
+                entity.Property(e => e.InputActionCode)
                     .IsRequired()
-                    .HasMaxLength(45)
-                    .IsUnicode(false);
+                    .HasMaxLength(128);
 
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+                entity.Property(e => e.Title).HasMaxLength(128);
 
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Title).HasMaxLength(256);
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<CategoryField>(entity =>
-            {
-                entity.Property(e => e.CategoryFieldName)
-                    .IsRequired()
-                    .HasMaxLength(45)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Filters).HasMaxLength(512);
-
-                entity.Property(e => e.RefTableCode)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RefTableField)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RefTableTitle)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.RegularExpression)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(256)
-                    .HasDefaultValueSql("('')");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.Category)
-                    .WithMany(p => p.CategoryField)
-                    .HasForeignKey(d => d.CategoryId)
+                entity.HasOne(d => d.InputType)
+                    .WithMany(p => p.InputAction)
+                    .HasForeignKey(d => d.InputTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CategoryField_Category");
+                    .HasConstraintName("FK_InputAction_InputType");
             });
 
             modelBuilder.Entity<InputArea>(entity =>
@@ -253,49 +202,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasForeignKey(d => d.InputTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
-            });
-
-            modelBuilder.Entity<OutSideDataConfig>(entity =>
-            {
-                entity.HasKey(e => e.CategoryId)
-                    .HasName("PK__OutSideD__19093A0B4E7BC7E8");
-
-                entity.Property(e => e.CategoryId).ValueGeneratedNever();
-
-                entity.Property(e => e.Description).HasMaxLength(255);
-
-                entity.Property(e => e.Key)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.ParentKey)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
-
-                entity.HasOne(d => d.Category)
-                    .WithOne(p => p.OutSideDataConfig)
-                    .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutSideDataConfig_Category");
-            });
-
-            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
-            {
-                entity.Property(e => e.Alias).HasMaxLength(512);
-
-                entity.Property(e => e.Value)
-                    .IsRequired()
-                    .HasMaxLength(512);
-
-                entity.HasOne(d => d.OutsideDataConfig)
-                    .WithMany(p => p.OutsideDataFieldConfig)
-                    .HasForeignKey(d => d.OutsideDataConfigId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
             modelBuilder.Entity<OutsideImportMapping>(entity =>

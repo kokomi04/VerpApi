@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public int DepartmentId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string DepartmentCode { get; set; }
         public string DepartmentName { get; set; }
         public string Description { get; set; }

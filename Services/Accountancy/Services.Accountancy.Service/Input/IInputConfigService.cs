@@ -14,6 +14,8 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<InputTypeFullModel> GetInputType(string inputTypeCode);
 
         Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size);
+        Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList();
+
         Task<int> AddInputType(InputTypeModel data);
         Task<bool> UpdateInputType(int inputTypeId, InputTypeModel data);
         Task<bool> DeleteInputType(int inputTypeId);
@@ -41,8 +43,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         // Field
         Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size);
-        Task<int> AddInputField(InputFieldInputModel data);
-        Task<bool> UpdateInputField(int inputFieldId, InputFieldInputModel data);
+        Task<InputFieldInputModel> AddInputField(InputFieldInputModel data);
+        Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data);
         Task<bool> DeleteInputField(int inputFieldId);
         Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId);
         Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size);

@@ -14,8 +14,8 @@ namespace VErpApi.Controllers.Report
     [Route("api/reports/accoutancy")]
     public class ReportDataController : VErpBaseController
     {
-        private readonly IAccountancyReportService _accountancyReportService;
-        public ReportDataController(IAccountancyReportService accountancyReportService)
+        private readonly IDataReportService _accountancyReportService;
+        public ReportDataController(IDataReportService accountancyReportService)
         {
             _accountancyReportService = accountancyReportService;
         }
@@ -28,6 +28,24 @@ namespace VErpApi.Controllers.Report
         {
             return await _accountancyReportService.Report(reportId, model)
                 .ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("view/{reportId}/asDocument")]
+        public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
+        {
+            var r = await _accountancyReportService.GenerateReportAsPdf(reportId, dataModel);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
+        }
+
+        [HttpPost]
+        [Route("view/{reportId}/asExcel")]
+        public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFacadeModel model)
+        {
+            var (stream, fileName, contentType) = await _accountancyReportService.ExportExcel(reportId, model);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
         }
     }
 

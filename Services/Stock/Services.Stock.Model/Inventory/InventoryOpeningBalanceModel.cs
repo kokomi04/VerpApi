@@ -22,5 +22,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Description { get; set; }
 
         public IList<long> FileIdList { set; get; }
+
+        public string AccountancyAccountNumber { get; set; }
     }
 }

@@ -41,6 +41,7 @@ using VErp.Services.Stock.Service.Stock.Implement.InventoryFileData;
 using VErp.Services.Stock.Service.Products;
 using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
+using System.Data;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -97,8 +98,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
+            keyword = keyword?.Trim();
+            accountancyAccountNumber = accountancyAccountNumber?.Trim();
+
             var inventoryQuery = _stockDbContext.Inventory.AsNoTracking().AsQueryable();
 
             if (stockId > 0)
@@ -138,6 +142,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (isApproved.HasValue)
             {
                 inventoryQuery = inventoryQuery.Where(q => q.IsApproved == isApproved);
+            }
+
+            if (customerId.HasValue)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.CustomerId == customerId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(accountancyAccountNumber))
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.AccountancyAccountNumber.StartsWith(accountancyAccountNumber));
             }
 
             IQueryable<VMappingOusideImportObject> mappingObjectQuery = null;
@@ -204,6 +218,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
                     TotalMoney = item.TotalMoney,
                     IsApproved = item.IsApproved,
+                    AccountancyAccountNumber = item.AccountancyAccountNumber,
+
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
@@ -332,7 +348,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null,
                         SortOrder = details.SortOrder,
-                        Description = details.Description
+                        Description = details.Description,
+                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
                     });
                 }
                 #endregion
@@ -383,6 +400,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = inventoryObj.BillDate.GetUnix(),
                     TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
+                    AccountancyAccountNumber = inventoryObj.AccountancyAccountNumber,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
 
@@ -436,6 +454,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
         {
+
             var inventoryExport = new InventoryImportFacade();
             inventoryExport.SetProductService(_productService);
             inventoryExport.SetMasterDBContext(_masterDBContext);
@@ -513,6 +532,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
+            await ValidateInventoryConfig(req.Date.UnixToDateTime(), null);
+
             req.InventoryCode = req.InventoryCode.Trim();
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
@@ -549,6 +570,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillSerial = req.BillSerial,
                     BillDate = req.BillDate?.UnixToDateTime(),
                     TotalMoney = totalMoney,
+                    AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
@@ -582,7 +604,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     foreach (var fileId in req.FileIdList)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.InventoryInput, inventoryObj.InventoryId, fileId));
                     }
                 }
                 return inventoryObj.InventoryId;
@@ -614,6 +636,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
+            await ValidateInventoryConfig(req.Date.UnixToDateTime(), null);
+
             req.InventoryCode = req.InventoryCode.Trim();
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
@@ -624,6 +648,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
+
+                
 
                 var inventoryObj = new Inventory
                 {
@@ -640,6 +666,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillCode = req.BillCode,
                     BillSerial = req.BillSerial,
                     BillDate = req.BillDate?.UnixToDateTime(),
+                    AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
@@ -666,6 +693,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new BadRequestException(processInventoryOut.Code);
                 }
 
+                var totalMoney = InputCalTotalMoney(processInventoryOut.Data);
+
+                inventoryObj.TotalMoney = totalMoney;
+
                 await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
                 await _stockDbContext.SaveChangesAsync();
 
@@ -675,7 +706,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     foreach (var fileId in req.FileIdList)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryObj.InventoryId, fileId));
+                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, fileId));
                     }
                 }
                 return inventoryObj.InventoryId;
@@ -737,20 +768,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(GeneralCode.InvalidParams);
                         }
 
-                        //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
-                        inventoryObj.InventoryCode = req.InventoryCode;
-                        inventoryObj.Date = issuedDate;
-                        inventoryObj.Shipper = req.Shipper;
-                        inventoryObj.Content = req.Content;
-                        inventoryObj.CustomerId = req.CustomerId;
-                        inventoryObj.Department = req.Department;
-                        inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
-                        inventoryObj.BillForm = req.BillForm;
-                        inventoryObj.BillCode = req.BillCode;
-                        inventoryObj.BillSerial = req.BillSerial;
-                        inventoryObj.BillDate = req.BillDate?.UnixToDateTime();
-                        inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        await ValidateInventoryConfig(req.Date.UnixToDateTime(), inventoryObj.Date);                     
 
                         #endregion
 
@@ -761,14 +779,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             d.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
 
-                        var totalMoney = (decimal)0;
                         foreach (var item in validate.Data)
                         {
                             item.InventoryId = inventoryObj.InventoryId;
-
-                            totalMoney += (item.UnitPrice * item.PrimaryQuantity);
                         }
-                        inventoryObj.TotalMoney = totalMoney;
+
+                        InventoryInputUpdateData(inventoryObj, req, InputCalTotalMoney(validate.Data));
 
                         await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
 
@@ -799,7 +815,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                         var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -814,12 +830,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     foreach (var fileId in req.FileIdList)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.InventoryInput, inventoryId, fileId));
                     }
                 }
 
                 return true;
             }
+        }
+
+        protected void InventoryInputUpdateData(Inventory inventoryObj, InventoryInModel req, decimal totalMoney)
+        {
+            var issuedDate = req.Date.UnixToDateTime().Value;
+
+            //inventoryObj.StockId = req.StockId; Khong cho phep sua kho
+            inventoryObj.InventoryCode = req.InventoryCode;
+            inventoryObj.Date = issuedDate;
+            inventoryObj.Shipper = req.Shipper;
+            inventoryObj.Content = req.Content;
+            inventoryObj.CustomerId = req.CustomerId;
+            inventoryObj.Department = req.Department;
+            inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
+            inventoryObj.BillForm = req.BillForm;
+            inventoryObj.BillCode = req.BillCode;
+            inventoryObj.BillSerial = req.BillSerial;
+            inventoryObj.BillDate = req.BillDate?.UnixToDateTime();
+            inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
+            inventoryObj.UpdatedByUserId = _currentContextService.UserId;
+            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+            inventoryObj.TotalMoney = totalMoney;
         }
 
         /// <summary>
@@ -852,6 +890,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(InventoryErrorCode.CanNotChangeStock);
                         }
 
+                        await ValidateInventoryConfig(req.Date.UnixToDateTime(), inventoryObj.Date);
+
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
                         {
@@ -873,6 +913,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
                         await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
 
+                        var totalMoney = InputCalTotalMoney(processInventoryOut.Data);
+
+                        inventoryObj.TotalMoney = totalMoney;
 
                         //note: update IsApproved after RollbackInventoryOutput
                         inventoryObj.InventoryCode = req.InventoryCode;
@@ -889,6 +932,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.BillDate = req.BillDate?.UnixToDateTime();
 
                         inventoryObj.IsApproved = false;
+                        inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
@@ -919,7 +963,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
                     {
@@ -935,7 +979,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     foreach (var fileId in req.FileIdList)
                     {
-                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.Inventory, inventoryId, fileId));
+                        _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.InventoryOutput, inventoryId, fileId));
                     }
                 }
                 return true;
@@ -978,6 +1022,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //}
                 }
 
+                await ValidateInventoryConfig(null, inventoryObj.Date);
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -987,7 +1033,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
@@ -1025,6 +1071,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //reload from db after lock
                 inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
 
+                await ValidateInventoryConfig(null, inventoryObj.Date);
+
                 // Xử lý xoá thông tin phiếu xuất kho
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -1046,7 +1094,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.SaveChangesAsync();
 
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
 
                         trans.Commit();
 
@@ -1088,6 +1136,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
             }
 
+            await ValidateInventoryConfig(inventoryObj.Date, inventoryObj.Date);
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -1126,7 +1176,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
 
                         return true;
                     }
@@ -1163,6 +1213,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
             }
 
+            await ValidateInventoryConfig(inventoryObj.Date, inventoryObj.Date);
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
@@ -1275,7 +1326,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
 
                         return true;
                     }
@@ -1580,7 +1631,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         case EnumPackageOption.Create:
 
-                            var newPackage = await CreateNewPackage(stockId, date, item);                           
+                            var newPackage = await CreateNewPackage(stockId, date, item);
                             item.ToPackageId = newPackage.PackageId;
                             break;
                         default:
@@ -1588,7 +1639,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 else
                 {
-                    var newPackage = await CreateNewPackage(stockId, date, item);                    
+                    var newPackage = await CreateNewPackage(stockId, date, item);
 
                     item.ToPackageId = newPackage.PackageId;
                 }
@@ -1776,7 +1827,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ToPackageId = details.ToPackageId,
                     PackageOptionId = (int)details.PackageOptionId,
                     SortOrder = details.SortOrder,
-                    Description = details.Description
+                    Description = details.Description,
+                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
                 });
             }
             return inventoryDetailList;
@@ -1901,7 +1953,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ToPackageId = null,
                     PackageOptionId = null,
                     SortOrder = details.SortOrder,
-                    Description = details.Description
+                    Description = details.Description,
+                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
@@ -1926,7 +1979,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (stockProductInfo == null)
             {
-                stockProductInfo = new Infrastructure.EF.StockDB.StockProduct()
+                stockProductInfo = new StockProduct()
                 {
                     StockId = stockId,
                     ProductId = productId,
@@ -1990,7 +2043,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (ensureDefaultPackage == null)
             {
-                ensureDefaultPackage = new Infrastructure.EF.StockDB.Package()
+                ensureDefaultPackage = new Package()
                 {
 
                     PackageTypeId = (int)EnumPackageType.Default,
@@ -2028,7 +2081,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
             var newPackageCodeResult = await _objectGenCodeService.GenerateCode(EnumObjectType.Package);
-           
+
             var newPackage = new Package()
             {
                 PackageTypeId = (int)EnumPackageType.Custom,
@@ -2157,6 +2210,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
+        protected async Task ValidateInventoryConfig(DateTime? billDate, DateTime? oldDate)
+        {
+            if (billDate != null || oldDate != null)
+            {
+
+                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+                var sqlParams = new List<SqlParameter>
+                {
+                    result
+                };
+
+                if (oldDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
+                }
+
+                if (billDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+                }
+
+                await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
+
+                if (!(result.Value as bool?).GetValueOrDefault())
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
+            }
+        }
         #endregion
     }
 }

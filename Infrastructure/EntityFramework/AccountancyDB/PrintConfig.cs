@@ -6,7 +6,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
     public partial class PrintConfig
     {
         public int PrintConfigId { get; set; }
-        public int InputTypeId { get; set; }
+        public int? ActiveForId { get; set; }
         public string PrintConfigName { get; set; }
         public string Title { get; set; }
         public string BodyTable { get; set; }
@@ -27,5 +27,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 }

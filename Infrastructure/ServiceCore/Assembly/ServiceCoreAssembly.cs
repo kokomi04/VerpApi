@@ -14,20 +14,29 @@ namespace VErp.Infrastructure.ServiceCore
         public static Assembly Assembly => typeof(ServiceCoreAssembly).Assembly;
         public static IServiceCollection AddServiceCoreDependency(this IServiceCollection services)
         {
-            services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
-            services.AddHttpClient<IActivityLogService, ActivityLogService>();
-            services.AddHttpClient<IPhysicalFileService, PhysicalFileService>();
             services.AddHttpClient<IHttpCrossService, HttpCrossService>();
+
+            services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
+
+            services.AddScoped<IActivityLogService, ActivityLogService>();
+            services.AddScoped<IPhysicalFileService, PhysicalFileService>();
+            
 
 
             services.AddScoped<IStockHelperService, StockHelperService>();
             services.AddScoped<IProductHelperService, ProductHelperService>();
             services.AddScoped<IOrganizationHelperService, OrganizationHelperService>();
+            services.AddScoped<IInputTypeHelperService, InputTypeHelperService>();
+            services.AddScoped<IVoucherTypeHelperService, VoucherTypeHelperService>();
+            services.AddScoped<IRoleHelperService, RoleHelperService>();
+            
 
+            services.AddScoped<ICategoryHelperService, CategoryHelperService>();
             services.AddScoped<IMenuHelperService, MenuHelperService>();
 
             services.AddScoped<HttpCurrentContextService>();
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
+            services.AddScoped<IDocOpenXmlService, DocOpenXmlService>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());
             return services;
         }

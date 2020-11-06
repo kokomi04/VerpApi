@@ -96,6 +96,11 @@ namespace Verp.Cache.RedisCache
             return $"INPUTTYPE_LOCK_{inputTypeId}";
         }
 
+        public static string GetLockVoucherTypeKey(int voucherTypeId)
+        {
+            return $"VOUCHERTYPE_LOCK_{voucherTypeId}";
+        }
+
         public static string GetLockStockResourceKey(int stockId)
         {
             return $"STOCK_LOCK_{stockId}";
@@ -105,6 +110,12 @@ namespace Verp.Cache.RedisCache
         {
             return $"GENERATECODE_LOCK_{objectTypeId}";
         }
+
+        public static string GetLockGenerateCodeCustomKey(int customGenCodeId)
+        {
+            return $"GENERATECODE_CUSTOM_LOCK_{customGenCodeId}";
+        }
+
 
         public static string GetLockPoSuggest(long purchasingOrderSugguestId)
         {

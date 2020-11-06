@@ -19,6 +19,13 @@
   },
   "GrpcInternal": {
     "Address": "http://103.21.149.106:8001"
+  },
+  "BackupStorage": {
+    "FileBackupFolder": "C:/usr/resources/"
+  },
+  "Developer": {
+    "Users": [ "user01" ],
+    "SubsidiaryCodes": [ "VERP JSC" ]
   }
 
 

@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     {
         Task<T> Post<T>(string relativeUrl, object postData);
         Task<T> Put<T>(string relativeUrl, object postData);
+        Task<T> Detete<T>(string relativeUrl, object postData);
         Task<T> Get<T>(string relativeUrl);
     }
 
@@ -29,7 +30,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ICurrentContextService _currentContext;
 
-        public HttpCrossService(HttpClient httpClient, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
+        public HttpCrossService(HttpClient httpClient, ILogger<HttpCrossService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext)
         {
             _httpClient = httpClient;
             _logger = logger;
@@ -52,9 +53,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -90,9 +89,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Content = new StringContent(body, Encoding.UTF8, "application/json"),
                 };
 
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -100,7 +97,43 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    ThrowErrorResponse("POST", uri, postData, data, response);
+                    ThrowErrorResponse("PUT", uri, postData, data, response);
+                }
+
+                return response.JsonDeserialize<T>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "HttpCrossService:Put");
+                throw;
+            }
+        }
+
+
+        public async Task<T> Detete<T>(string relativeUrl, object postData)
+        {
+            try
+            {
+                var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+                var body = postData.JsonSerialize();
+
+
+                var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(uri),
+                    Method = HttpMethod.Delete,
+                    Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                };
+
+                SetContextHeaders(request);
+
+                var data = await _httpClient.SendAsync(request);
+
+                var response = await data.Content.ReadAsStringAsync();
+
+                if (!data.IsSuccessStatusCode)
+                {
+                    ThrowErrorResponse("DELETE", uri, postData, data, response);
                 }
 
                 return response.JsonDeserialize<T>();
@@ -123,10 +156,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     RequestUri = new Uri(uri),
                     Method = HttpMethod.Get
                 };
-
-                request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
-                request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
-                request.Headers.TryAddWithoutValidation(Headers.Action, _currentContext.Action.ToString());
+                SetContextHeaders(request);
 
                 var data = await _httpClient.SendAsync(request);
 
@@ -146,6 +176,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        private void SetContextHeaders(HttpRequestMessage request)
+        {
+            request.Headers.TryAddWithoutValidation(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
+            request.Headers.TryAddWithoutValidation(Headers.UserId, _currentContext.UserId.ToString());
+            request.Headers.TryAddWithoutValidation(Headers.Action, ((int)_currentContext.Action).ToString());
+            request.Headers.TryAddWithoutValidation(Headers.TimeZoneOffset, _currentContext.TimeZoneOffset.ToString());
+            request.Headers.TryAddWithoutValidation(Headers.SubsidiaryId, _currentContext.SubsidiaryId.ToString());
+        }
 
         private void ThrowErrorResponse(string method, string uri, object body, HttpResponseMessage responseMessage, string response)
         {
@@ -177,5 +215,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             throw new Exception($"{(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {response}");
         }
+
+
     }
 }

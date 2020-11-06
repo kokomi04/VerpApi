@@ -15,7 +15,8 @@ export default class ModalEditModule extends Component {
                 moduleGroupId: 0,
                 moduleName: '',
                 description: '',
-                sortOrder: 0
+                sortOrder: 0,
+                isDeveloper: false
             }
         }
         this.open = this.open.bind(this);
@@ -30,7 +31,8 @@ export default class ModalEditModule extends Component {
             moduleGroupId: data ? data.moduleGroupId: 0,
             moduleName: '',
             description: '',
-            sortOrder: 0
+            sortOrder: 0,
+            isDeveloper: false
         };
 
        
@@ -44,21 +46,29 @@ export default class ModalEditModule extends Component {
                 moduleGroupId: data.moduleGroupId,
                 moduleName: data.moduleName,
                 description: data.description,
-                sortOrder: data.sortOrder
+                sortOrder: data.sortOrder,
+                isDeveloper: data.isDeveloper
             };
-
         }
-
         this.setState({
             info: this.state.info
         })
     }
 
+    onLoadTag(event) {
+        const target = event.target;
+        if (target.type == 'checkbox') {
+        }
+    }
+
     handlerChange(event) {
         const target = event.target;
-        const value = target.value;
+        let value = target.value;
         const name = target.name;
 
+        if (target.type == 'checkbox') {
+            value = target.checked;
+        }
        
         this.state.info[name] = value;
 
@@ -107,8 +117,8 @@ export default class ModalEditModule extends Component {
                         <div className="modal-body">
                             <form>
                                 <div className="form-group row">
-                                    <label htmlFor="moduleId" className="col-sm-2 col-form-label">Group</label>
-                                    <div className="col-sm-10">
+                                    <label htmlFor="moduleId" className="col-sm-4 col-form-label">Group</label>
+                                    <div className="col-sm-8">
                                         <select
                                             className="form-control"
                                             name="moduleGroupId"
@@ -121,19 +131,19 @@ export default class ModalEditModule extends Component {
                                     </div>
                                 </div>
                                 <div className="form-group row">
-                                    <label htmlFor="moduleId" className="col-sm-2 col-form-label">ID</label>
-                                    <div className="col-sm-10">
+                                    <label htmlFor="moduleId" className="col-sm-4 col-form-label">ID</label>
+                                    <div className="col-sm-8">
                                         <input type="text" className="form-control"
                                             name="moduleId"
                                             readOnly={!this.isNew}
-                                            value={this.state.info.moduleId}
+                                            checked={this.state.info.moduleId}
                                             onChange={this.handlerChange}
                                         />
                                     </div>
                                 </div>
                                 <div className="form-group row">
-                                    <label htmlFor="moduleName" className="col-sm-2 col-form-label">Name</label>
-                                    <div className="col-sm-10">
+                                    <label htmlFor="moduleName" className="col-sm-4 col-form-label">Name</label>
+                                    <div className="col-sm-8">
                                         <input type="text" className="form-control"
                                             name="moduleName"
                                             value={this.state.info.moduleName}
@@ -142,8 +152,8 @@ export default class ModalEditModule extends Component {
                                     </div>
                                 </div>
                                 <div className="form-group row">
-                                    <label htmlFor="description" className="col-sm-2 col-form-label">Description</label>
-                                    <div className="col-sm-10">
+                                    <label htmlFor="description" className="col-sm-4 col-form-label">Description</label>
+                                    <div className="col-sm-8">
                                         <textarea type="text" className="form-control"
                                             name="description"                                            
                                             onChange={this.handlerChange}
@@ -152,11 +162,21 @@ export default class ModalEditModule extends Component {
                                     </div>
                                 </div>
                                 <div className="form-group row">
-                                    <label htmlFor="sortOrder" className="col-sm-2 col-form-label">Sort order</label>
-                                    <div className="col-sm-10">
+                                    <label htmlFor="sortOrder" className="col-sm-4 col-form-label">Sort order</label>
+                                    <div className="col-sm-8">
                                         <input type="text" className="form-control"
                                             name="sortOrder"
                                             value={this.state.info.sortOrder}
+                                            onChange={this.handlerChange}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-group row">
+                                    <label htmlFor="isDeveloper" className="col-sm-4 col-form-label">Nhà phát triển</label>
+                                    <div className="col-sm-8">
+                                        <input type="checkbox" className="form-control checkbox"
+                                            name="isDeveloper"
+                                            checked={this.state.info.isDeveloper}
                                             onChange={this.handlerChange}
                                         />
                                     </div>

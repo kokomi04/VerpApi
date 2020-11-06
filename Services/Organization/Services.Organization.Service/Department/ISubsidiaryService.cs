@@ -16,8 +16,10 @@ namespace Services.Organization.Service.Department
 
         Task<bool> Update(int subsidiaryId, SubsidiaryModel data);
 
-        Task<SubsidiaryModel> GetInfo(int subsidiaryId);
+        Task<SubsidiaryOutput> GetInfo(int subsidiaryId);
 
         Task<bool> Delete(int subsidiaryId);
+
+        Task<IList<SubsidiaryOutput>> GetList();
     }
 }

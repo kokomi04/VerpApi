@@ -24,7 +24,6 @@ namespace VErpApi.Controllers.Accountancy.Config
             _inputConfigService = inputConfigService;
         }
 
-
         [HttpGet]
         [Route("groups")]
         public async Task<IList<InputTypeGroupList>> GetList()
@@ -53,12 +52,18 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
         }
 
-
         [HttpGet]
         [Route("")]
         public async Task<PageData<InputTypeModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputTypes(keyword, page, size).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<InputTypeSimpleModel>> GetSimpleList()
+        {
+            return await _inputConfigService.GetInputTypeSimpleList().ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -70,14 +75,14 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpPost]
         [Route("fields")]
-        public async Task<int> AddInputField([FromBody] InputFieldInputModel inputAreaField)
+        public async Task<InputFieldInputModel> AddInputField([FromBody] InputFieldInputModel inputAreaField)
         {
             return await _inputConfigService.AddInputField(inputAreaField).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("fields/{inputFieldId}")]
-        public async Task<bool> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
+        public async Task<InputFieldInputModel> UpdateInputField([FromRoute] int inputFieldId, [FromBody] InputFieldInputModel inputField)
         {
             return await _inputConfigService.UpdateInputField(inputFieldId, inputField).ConfigureAwait(true);
         }

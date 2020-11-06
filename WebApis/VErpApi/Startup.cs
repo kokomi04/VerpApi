@@ -28,8 +28,10 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
+using VErp.Services.Master.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
+using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 
@@ -49,10 +51,12 @@ namespace VErp.WebApis.VErpApi
 
             ConfigReadWriteDBContext(services);
 
-            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly ,
-                configureClient => {
+            services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly,
+                configureClient =>
+                {
                     configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
-                }, configureOptions => {
+                }, configureOptions =>
+                {
                     configureOptions.SuppressContextNotFoundErrors = true;
                 });
 
@@ -114,8 +118,9 @@ namespace VErp.WebApis.VErpApi
             //services.AddAutoMapper(typeof(Startup));
 
             var profile = new MappingProfile();
+            profile.ApplyMappingsFromAssembly(MasterModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
-            //profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(StockModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);

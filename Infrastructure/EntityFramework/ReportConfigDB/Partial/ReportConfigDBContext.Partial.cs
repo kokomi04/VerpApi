@@ -8,35 +8,52 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.ReportConfigDB
 {
-    public partial class ReportConfigDBRestrictionContext : ReportConfigDBContext
+    public class ReportConfigDBRestrictionContext : ReportConfigDBContext, ISubsidiayRequestDbContext
     {
-        private readonly ICurrentContextService _currentContext;
+        private readonly ICurrentContextService CurrentContextService;
+
+        public int SubsidiaryId { get; private set; }
 
         public ReportConfigDBRestrictionContext(DbContextOptions<ReportConfigDBRestrictionContext> options
-            , ICurrentContextService currentContext
+            , ICurrentContextService _currentContextService
             , ILoggerFactory loggerFactory)
             : base(options.ChangeOptionsType<ReportConfigDBContext>(loggerFactory))
         {
-            _currentContext = currentContext;
+            CurrentContextService = _currentContextService;
+            SubsidiaryId = _currentContextService.SubsidiaryId;
         }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.AddFilterBase();
+
+            modelBuilder.AddFilterAuthorize(this);
+
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override int SaveChanges()
         {
-            this.SetHistoryBaseValue(_currentContext);
+            this.SetHistoryBaseValue(CurrentContextService);
             return base.SaveChanges();
         }
 
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            this.SetHistoryBaseValue(_currentContext);
-            return await base.SaveChangesAsync();
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            this.SetHistoryBaseValue(CurrentContextService);
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 }

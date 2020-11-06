@@ -23,6 +23,20 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string Barcode { get; set; }
         public int UnitId { get; set; }
         public decimal? EstimatePrice { get; set; }
+        public decimal? Long { get; set; }
+        public decimal? Width { get; set; }
+        public decimal? Height { get; set; }
+        public string PackingMethod { get; set; }
+        public int? CustomerId { get; set; }
+        public decimal? NetWeight { get; set; }
+        public decimal? GrossWeight { get; set; }
+        public decimal? Measurement { get; set; }
+        public decimal? LoadAbility { get; set; }
+        public string ProductDescription { get; set; }
+        public string ProductNameEng { get; set; }
+
+        public decimal? Quantitative { get; set; }
+        public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }

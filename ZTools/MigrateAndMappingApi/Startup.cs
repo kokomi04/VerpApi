@@ -13,6 +13,7 @@ using System;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
+using VErp.Infrastructure.ServiceCore;
 using VErp.Services.Master.Service;
 using VErp.Services.Stock.Service;
 
@@ -48,6 +49,8 @@ namespace MigrateAndMappingApi
             //services.AddScopedServices(AccountantServiceAssembly.Assembly);
             services.AddScopedServices(StockServiceAssembly.Assembly);
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
+
+            services.AddServiceCoreDependency();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

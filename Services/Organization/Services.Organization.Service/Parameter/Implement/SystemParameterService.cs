@@ -124,7 +124,7 @@ namespace Services.Organization.Service.Parameter.Implement
                 {
                     SystemParameterId = x.SystemParameterId,
                     Fieldname = x.FieldName,
-                    DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)x.DataTypeId,
+                    DateTypeId = (VErp.Commons.Enums.MasterEnum.EnumDataType)x.DataTypeId,
                     Name = x.Name,
                     Value = x.Value
                 })
@@ -145,7 +145,7 @@ namespace Services.Organization.Service.Parameter.Implement
             {
                 SystemParameterId = stockInfo.SystemParameterId,
                 Fieldname = stockInfo.FieldName,
-                DateTypeId = (VErp.Commons.Enums.AccountantEnum.EnumDataType)stockInfo.DataTypeId,
+                DateTypeId = (VErp.Commons.Enums.MasterEnum.EnumDataType)stockInfo.DataTypeId,
                 Name = stockInfo.Name,
                 Value = stockInfo.Value
             };

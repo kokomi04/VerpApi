@@ -1,12 +1,16 @@
-﻿using ImageMagick;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using ImageMagick;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Spire.Doc;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -15,6 +19,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
@@ -186,26 +191,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         public async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
         {
-
-            //var fileType = EnumFileType.Image;
-
-            //switch (objectTypeId)
-            //{
-            //    case EnumObjectType.UserAndEmployee:
-            //    case EnumObjectType.BusinessInfo:
-            //        fileType = EnumFileType.Image;
-            //        break;
-
-            //    case EnumObjectType.PurchasingSuggest:
-            //    case EnumObjectType.PurchaseOrder:
-            //        fileType = EnumFileType.Document;
-            //        break;
-
-            //    default:
-            //        return null;
-            //}
-
-
             var (validate, fileTypeId) = ValidateUploadFile(file);
             if (!validate.IsSuccess())
             {
@@ -224,42 +209,16 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 fileName = file.FileName;
             }
 
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            var fileId = await SaveFileInfo(objectTypeId, new SimpleFileInfo
             {
-                try
-                {
-                    var fileRes = new FileEnity
-                    {
-                        FileTypeId = (int)fileTypeId,
-                        FilePath = filePath,
-                        FileName = fileName,
-                        ContentType = file.ContentType,
-                        FileLength = file.Length,
-                        ObjectTypeId = (int)objectTypeId,
-                        ObjectId = null,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow,
-                        FileStatusId = (int)EnumFileStatus.Temp,
-                        IsDeleted = false
-                    };
+                FileName = fileName,
+                FilePath = filePath,
+                FileTypeId = (int)fileTypeId,
+                ContentType = file.ContentType,
+                FileLength = file.Length
+            });
 
-                    await _stockContext.File.AddAsync(fileRes);
-                    await _stockContext.SaveChangesAsync();
-                    trans.Commit();
-
-                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {fileName}", fileRes.JsonSerialize());
-
-                    return fileRes.FileId;
-                }
-                catch (Exception ex)
-                {
-                    trans.TryRollbackTransaction();
-                    File.Delete(filePath);
-                    _logger.LogError(ex, "Upload");
-                    throw;
-                }
-            }
-
+            return fileId;
         }
 
 
@@ -521,54 +480,59 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return filePath.GetPhysicalFilePath(_appSetting);
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int fileId, PrintTemplateInput templateModel)
+        public async Task<long> SaveFileInfo(EnumObjectType objectTypeId, SimpleFileInfo simpleFileInfo)
         {
-            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
-            if (fileInfo == null)
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
-                throw new BadRequestException(FileErrorCode.FileNotFound);
-            }
-
-            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
-
-            using (var document = new DocumentReader(physicalFilePath).document)
-            {
-
-                //find and replace in document
-                foreach (var data in templateModel.dataReplace)
+                try
                 {
-                    document.Replace($"#{{{data.Key}}}", data.Value ?? "", false, true);
-                }
-
-                //insert and set value to table in document
-                if (document.LastSection.Tables.Count > 0)
-                {
-                    var table = document.LastSection.Tables[0];
-                    for (int i = 0; i < templateModel.dataTable.Count; i++)
+                    var fileRes = new FileEnity
                     {
-                        var rowData = templateModel.dataTable[i];
-                        if (table.Rows.Count <= 1)
-                            throw new BadRequestException(FileErrorCode.InvalidTabeInDocument,"Table trong document không hợp lệ");
-                        TableRow row = table.Rows[1].Clone();
+                        FileTypeId = (int)simpleFileInfo.FileTypeId,
+                        FilePath = simpleFileInfo.FilePath,
+                        FileName = simpleFileInfo.FileName,
+                        ContentType = simpleFileInfo.ContentType,
+                        FileLength = simpleFileInfo.FileLength,
+                        ObjectTypeId = (int)objectTypeId,
+                        ObjectId = null,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        FileStatusId = (int)EnumFileStatus.Temp,
+                        IsDeleted = false
+                    };
 
-                        for (int j = 0; j < rowData.Length; j++)
-                        {
-                            if (j < row.Cells.Count)
-                                row.Cells[j].LastParagraph.Text = rowData[j];
-                        }
-                        table.Rows.Insert(i + 2, row);
-                    }
-                    table.Rows.RemoveAt(1);
+                    await _stockContext.File.AddAsync(fileRes);
+                    await _stockContext.SaveChangesAsync();
+                    trans.Commit();
+
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {simpleFileInfo.FileName}", fileRes.JsonSerialize());
+
+                    return fileRes.FileId;
                 }
-
-                document.Replace(new Regex(@"^#{.*}$"), string.Empty);
-
-                string filePath = GenerateTempFilePath(Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
-
-                document.SaveToFile(GetPhysicalFilePath(filePath), FileFormat.Auto);
-
-                return (File.OpenRead(GetPhysicalFilePath(filePath)), ContentTypes[templateModel.Extension], Path.GetFileNameWithoutExtension(fileInfo.FileName) + templateModel.Extension);
+                catch (Exception ex)
+                {
+                    trans.TryRollbackTransaction();
+                    File.Delete(GetPhysicalFilePath(simpleFileInfo.FilePath));
+                    _logger.LogError(ex, "Upload");
+                    throw;
+                }
             }
+        }
+
+        public async Task<SimpleFileInfo> GetSimpleFileInfo(long fileId)
+        {
+            var fileInfo = await _stockContext.File.AsNoTracking().FirstOrDefaultAsync(f => f.FileId == fileId);
+
+            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound);
+
+            return new SimpleFileInfo
+            {
+                FileName = fileInfo.FileName,
+                FilePath = fileInfo.FilePath,
+                FileTypeId = fileInfo.FileTypeId,
+                ContentType = fileInfo.ContentType,
+                FileLength = fileInfo.FileLength
+            };
         }
         #endregion
     }

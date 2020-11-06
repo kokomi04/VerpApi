@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public long InventoryId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int StockId { get; set; }
         public string InventoryCode { get; set; }
         public int InventoryTypeId { get; set; }
@@ -33,6 +34,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? CensorDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsApproved { get; set; }
+        public bool IsOpening { get; set; }
+        public string AccountancyAccountNumber { get; set; }
 
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }

@@ -39,6 +39,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.TemplateFileId).HasComment("");
+
                 entity.HasOne(d => d.ReportTypeGroup)
                     .WithMany(p => p.ReportType)
                     .HasForeignKey(d => d.ReportTypeGroupId)

@@ -20,7 +20,7 @@ namespace Verp.Services.ReportConfig.Service
 
         Task<IList<ReportTypeGroupList>> ReportTypeGroupList();
 
-        Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? reportTypeGroupId = null);
+        Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? moduleTypeId = null);
 
         Task<ReportTypeModel> ReportType(int reportTypeId);
 

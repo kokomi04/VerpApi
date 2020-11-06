@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public long InventoryDetailId { get; set; }
+        public int SubsidiaryId { get; set; }
         public long InventoryId { get; set; }
         public int ProductId { get; set; }
         public decimal? RequestPrimaryQuantity { get; set; }
@@ -36,6 +37,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? SortOrder { get; set; }
         public decimal? PrimaryQuantityRemaning { get; set; }
         public decimal? ProductUnitConversionQuantityRemaning { get; set; }
+        public string AccountancyAccountNumberDu { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

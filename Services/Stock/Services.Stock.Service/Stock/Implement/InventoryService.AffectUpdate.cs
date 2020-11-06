@@ -44,7 +44,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         trans.Commit();
 
                         var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.Inventory, inventoryId, messageLog, req.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, messageLog, req.JsonSerialize());
 
                         return true;
                     }
@@ -211,22 +211,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 var totalMoney = InputCalTotalMoney(updateDetails);
-
-                inventoryInfo.TotalMoney = totalMoney;
-                inventoryInfo.InventoryCode = req.Inventory.InventoryCode;
-                inventoryInfo.Shipper = req.Inventory.Shipper;
-                inventoryInfo.Content = req.Inventory.Content;
-                inventoryInfo.Date = issuedDate;
-                inventoryInfo.CustomerId = req.Inventory.CustomerId;
-                inventoryInfo.Department = req.Inventory.Department;
-                inventoryInfo.StockKeeperUserId = req.Inventory.StockKeeperUserId;
-                inventoryInfo.BillForm = req.Inventory.BillForm;
-                inventoryInfo.BillCode = req.Inventory.BillCode;
-                inventoryInfo.BillSerial = req.Inventory.BillSerial;
-                inventoryInfo.BillDate = billDate;
-                inventoryInfo.TotalMoney = totalMoney;
-                inventoryInfo.UpdatedByUserId = _currentContextService.UserId;
-                inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+                InventoryInputUpdateData(inventoryInfo, req.Inventory, totalMoney);
+               
             }
             else
             {
@@ -501,6 +487,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 detail.Description = submitDetail?.Description;
 
+                detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
+
                 if (p.NewPrimaryQuantity == 0)
                 {
                     detail.IsDeleted = true;
@@ -539,6 +527,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 break;
                             case EnumObjectType.InventoryDetail:
                                 parent = await _stockDbContext.InventoryDetail.FirstOrDefaultAsync(d => d.InventoryDetailId == obj.ObjectId);
+
+                                var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == ((InventoryDetail)parent).InventoryId);
+
+                                await ValidateInventoryConfig(inventory.Date, inventory.Date);
+
                                 if (!updatedInventoryDetails.Contains((InventoryDetail)parent))
                                 {
                                     updatedInventoryDetails.Add((InventoryDetail)parent);
@@ -609,6 +602,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         }
 
                                         var inventory = _stockDbContext.Inventory.FirstOrDefault(iv => iv.InventoryId == childInventoryDetail.InventoryId);
+
+                                        await ValidateInventoryConfig(inventory.Date, inventory.Date);
 
                                         //if(inventory.InventoryTypeId==(int)EnumInventoryType.Output)                                        
 
