@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<StepGroupModel>> GetListStepGroup(string keyword, int page, int size)
+        public async Task<PageData<StepGroupModel>> GetListStepGroup([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stepGroupService.GetListStepGroup(keyword, page, size);
         }

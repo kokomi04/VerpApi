@@ -30,7 +30,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{stepId}")]
-        public async Task<bool> UpdateStep([FromRoute]int stepId,[FromBody] StepModel req)
+        public async Task<bool> UpdateStep([FromRoute] int stepId, [FromBody] StepModel req)
         {
             return await _stepService.UpdateStep(stepId, req);
         }
@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<StepModel>> GetListStep(string keyword, int page, int size)
+        public async Task<PageData<StepModel>> GetListStep([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stepService.GetListStep(keyword, page, size);
         }
