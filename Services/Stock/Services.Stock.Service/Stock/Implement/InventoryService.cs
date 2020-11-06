@@ -1769,14 +1769,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={productUnitConversionInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                             //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                            throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"Không thể tính giá trị đơn vị chuyển đổi {productUnitConversionInfo.ProductUnitConversionName} sản phẩm {productInfo.ProductCode}");
+                            throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, 
+                                $"Không thể tính giá trị đơn vị chuyển đổi \"{productUnitConversionInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
                         }
                     }
 
                     if (!isApproved && details.ProductUnitConversionQuantity <= 0)
                     {
                         //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"Không thể tính giá trị đơn vị chuyển đổi {productUnitConversionInfo.ProductUnitConversionName} sản phẩm {productInfo.ProductCode}");
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, 
+                            $"Không thể tính giá trị đơn vị chuyển đổi \"{productUnitConversionInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
                     }
                 }
 
