@@ -6,7 +6,7 @@ namespace VErp.Commons.Enums.ErrorCodes
 {
     public enum ProductionStagesErrorCode
     {
-        NotFoundStages = 1,
+        NotFoundProductionStep = 1,
         NotFoundInOutStages = 2,
     }
 }

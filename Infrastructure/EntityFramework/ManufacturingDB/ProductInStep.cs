@@ -3,16 +3,17 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
-    public partial class ProductionStagesDetail
+    public partial class ProductInStep
     {
-        public int ProductionStagesDetailId { get; set; }
-        public int ProductionStagesId { get; set; }
-        public int InOutStagesType { get; set; }
-        public int ProductType { get; set; }
+        public ProductInStep()
+        {
+            InOutStepLink = new HashSet<InOutStepLink>();
+        }
+
+        public int ProductInStepId { get; set; }
         public int ProductId { get; set; }
-        public decimal ActualNumber { get; set; }
+        public decimal Quantity { get; set; }
         public int UnitId { get; set; }
-        public int? AssignedTo { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
@@ -20,5 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SortOrder { get; set; }
+
+        public virtual ICollection<InOutStepLink> InOutStepLink { get; set; }
     }
 }

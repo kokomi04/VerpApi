@@ -155,6 +155,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigAccountancyContext(AppSetting.DatabaseConnections);
             services.ConfigActivityLogContext(AppSetting.DatabaseConnections);
             services.ConfigReportConfigDBContextContext(AppSetting.DatabaseConnections);
+            services.ConfigManufacturingContext(AppSetting.DatabaseConnections);
         }
 
         protected void ConfigDbOwnerContext(IServiceCollection services)
