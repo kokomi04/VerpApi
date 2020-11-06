@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _requestPartService.UpdateRequest(requestPartId, req);
         }
-        [HttpGet]
+        [HttpDelete]
         [Route("parts/{requestPartId}")]
         public async Task<bool> DeleteRequestPart([FromRoute] int requestPartId)
         {
