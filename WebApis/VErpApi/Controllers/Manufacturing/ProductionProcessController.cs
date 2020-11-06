@@ -30,35 +30,35 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productId}/{productionStepId}")]
-        public async Task<ProductionStepModel> GetProductionStagesById([FromRoute] int productId, [FromRoute] int productionStepId)
+        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] int productId, [FromRoute] int productionStepId)
         {
             return await _productionProcessService.GetProductionStepById(productId, productionStepId);
         }
 
         [HttpPut]
         [Route("{productId}/{productionStepId}")]
-        public async Task<bool> UpdateProductionStagesById([FromRoute] int productId, [FromRoute] int productionStepId,[FromBody] ProductionStepInfo req)
+        public async Task<bool> UpdateProductionStepsById([FromRoute] int productId, [FromRoute] int productionStepId,[FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.UpdateProductionStagesById(productId, productionStepId, req);
         }
 
         [HttpPost]
         [Route("{productId}")]
-        public async Task<int> CreateProductionStages([FromRoute]int productId,[FromBody] ProductionStepInfo req)
+        public async Task<int> CreateProductionStep([FromRoute]int productId,[FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.CreateProductionStep(productId, req);
         }
 
         [HttpDelete]
         [Route("{productId}/{productionStepId}")]
-        public async Task<bool> DeleteProductionStagesById([FromRoute] int productId, [FromRoute] int productionStepId)
+        public async Task<bool> DeleteProductionStepById([FromRoute] int productId, [FromRoute] int productionStepId)
         {
             return await _productionProcessService.DeleteProductionStepById(productId, productionStepId);
         }
 
         [HttpPost]
         [Route("{productId}/stagesMapping")]
-        public async Task<bool> GenerateStagesMapping([FromRoute]int productId, [FromBody] List<ProductionStepLinkModel> req)
+        public async Task<bool> GenerateProductionStepMapping([FromRoute]int productId, [FromBody] List<ProductionStepLinkModel> req)
         {
             return await _productionProcessService.GenerateProductionStepMapping(productId, req);
         }
