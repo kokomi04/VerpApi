@@ -274,6 +274,7 @@ namespace VErp.Services.Master.Service.Category
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
                 category.UsePlace = data.UsePlace;
+                category.CategoryGroupId = data.CategoryGroupId;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ

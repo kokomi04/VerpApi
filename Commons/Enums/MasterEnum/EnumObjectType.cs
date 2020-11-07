@@ -91,7 +91,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Bộ phận")]
         Department = 29,
 
-      
+
+        [Description("Nhóm danh mục")]
+        CategoryGroup = 31,
 
         [Description("Loại danh mục")]
         Category = 32,
