@@ -34,64 +34,55 @@ namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class DataReportService : IDataReportService
     {
-        private readonly AccountancyDBContext _accountancyDBContext;
-        private readonly StockDBContext _stockDBContext;
-        private readonly MasterDBContext _masterDBContext;
-        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly OrganizationDBContext _organizationDBContext;
         private readonly ReportConfigDBContext _reportConfigDBContext;
-        private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IReportConfigService _reportConfigService;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly AppSetting _appSetting;
         private readonly IPhysicalFileService _physicalFileService;
+        private readonly IServiceProvider _serviceProvider;
 
-        private DbContext _dbContext;
-
-        private void SetDbContext(EnumModuleType moduleType)
+        private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
+            { EnumModuleType.Accountant,typeof(AccountancyDBContext) },
+            { EnumModuleType.Master,typeof(MasterDBContext) },
+            { EnumModuleType.PurchaseOrder,typeof(PurchaseOrderDBContext) },
+            { EnumModuleType.Stock,typeof(StockDBContext) },
+            { EnumModuleType.Organization,typeof(OrganizationDBContext) },
+            { EnumModuleType.Manufacturing,typeof(ManufacturingDBContext) }
+        };
 
-            _dbContext = moduleType switch
-            {
-                EnumModuleType.Accountant => _accountancyDBContext,
-                EnumModuleType.Master => _masterDBContext,
-                EnumModuleType.PurchaseOrder => _purchaseOrderDBContext,
-                EnumModuleType.Stock => _stockDBContext,
-                EnumModuleType.Organization => _organizationDBContext,
-                EnumModuleType.Manufacturing => _manufacturingDBContext,
-                _ => throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy DBContext cho phân hệ {moduleType.GetEnumDescription()}")
-            };
-
-        }
+        private readonly Dictionary<EnumModuleType, DbContext> ModuleDbContexts = new Dictionary<EnumModuleType, DbContext>();
 
         public DataReportService(
-            AccountancyDBContext accountancyDBContext,
-            MasterDBContext masterDBContext,
-            StockDBContext stockDBContext,
-            OrganizationDBContext organizationDBContext,
-            PurchaseOrderDBContext purchaseOrderDBContext,
             ReportConfigDBContext reportConfigDBContext,
-            ManufacturingDBContext manufacturingDBContext,
             IReportConfigService reportConfigService,
             IDocOpenXmlService docOpenXmlService,
             IOptions<AppSetting> appSetting,
             IPhysicalFileService physicalFileService,
-            ISubSystemService subSystemService
+            IServiceProvider serviceProvider
             )
         {
-            _accountancyDBContext = accountancyDBContext;
             _reportConfigDBContext = reportConfigDBContext;
             _reportConfigService = reportConfigService;
             _docOpenXmlService = docOpenXmlService;
             _appSetting = appSetting.Value;
             _physicalFileService = physicalFileService;
-            _stockDBContext = stockDBContext;
-            _purchaseOrderDBContext = purchaseOrderDBContext;
-            _organizationDBContext = organizationDBContext;
-            _masterDBContext = masterDBContext;
-            _manufacturingDBContext = manufacturingDBContext;
+            _serviceProvider = serviceProvider;
         }
+        
 
+        private DbContext GetDbContext(EnumModuleType moduleType)
+        {
+            if (ModuleDbContexts.ContainsKey(moduleType)) return ModuleDbContexts[moduleType];
+
+            if (!ModuleDbContextTypes.ContainsKey(moduleType))
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy DBContext cho phân hệ {moduleType.GetEnumDescription()}");
+            }
+            var dbContext = _serviceProvider.GetService(ModuleDbContextTypes[moduleType]) as DbContext;
+            ModuleDbContexts.TryAdd(moduleType, dbContext);
+            return dbContext;
+        }
 
 
         public async Task<ReportDataModel> Report(int reportId, ReportFilterModel model)
@@ -108,7 +99,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
-            SetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
             var reportViewInfo = await _reportConfigService.ReportTypeViewGetInfo(reportInfo.ReportTypeId);
 
@@ -197,8 +189,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return result;
         }
 
+
+
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)
         {
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
 
@@ -450,6 +446,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
             var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
 
             var sql = reportInfo.BodySql;
@@ -603,6 +601,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
             var totals = new NonCamelCaseDictionary();
             if (string.IsNullOrWhiteSpace(reportInfo.MainView))
             {
@@ -708,6 +708,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, string filterCondition, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams, string orderByFieldName, bool asc)
         {
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
             var data = new List<NonCamelCaseDictionary>();
 
             const string staticRowParamPrefix = "@_bsc_row_data";
@@ -779,11 +781,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
         {
+
             var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
-            SetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
 
             if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound, "Không tìm thấy mẫu in báo cáo");
