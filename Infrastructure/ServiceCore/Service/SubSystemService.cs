@@ -23,6 +23,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {EnumModuleType.Organization, new[] { "OrganizationDB" } },
             {EnumModuleType.PurchaseOrder, new[] { "PurchaseOrderDB" } },
             {EnumModuleType.Stock, new[] { "StockDB" } },
+            {EnumModuleType.Manufacturing, new[] { "ManufacturingDB" } },
         };
 
         public async Task<IList<SubSystemInfo>> GetSubSystems()

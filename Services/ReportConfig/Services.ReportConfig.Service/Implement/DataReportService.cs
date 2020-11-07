@@ -21,6 +21,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -39,11 +40,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ReportConfigDBContext _reportConfigDBContext;
+        private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IReportConfigService _reportConfigService;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly AppSetting _appSetting;
         private readonly IPhysicalFileService _physicalFileService;
-        private readonly ISubSystemService _subSystemService;
 
         private DbContext _dbContext;
 
@@ -57,6 +58,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 EnumModuleType.PurchaseOrder => _purchaseOrderDBContext,
                 EnumModuleType.Stock => _stockDBContext,
                 EnumModuleType.Organization => _organizationDBContext,
+                EnumModuleType.Manufacturing => _manufacturingDBContext,
                 _ => throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy DBContext cho phân hệ {moduleType.GetEnumDescription()}")
             };
 
@@ -69,6 +71,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             OrganizationDBContext organizationDBContext,
             PurchaseOrderDBContext purchaseOrderDBContext,
             ReportConfigDBContext reportConfigDBContext,
+            ManufacturingDBContext manufacturingDBContext,
             IReportConfigService reportConfigService,
             IDocOpenXmlService docOpenXmlService,
             IOptions<AppSetting> appSetting,
@@ -82,11 +85,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _docOpenXmlService = docOpenXmlService;
             _appSetting = appSetting.Value;
             _physicalFileService = physicalFileService;
-            _subSystemService = subSystemService;
             _stockDBContext = stockDBContext;
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
+            _manufacturingDBContext = manufacturingDBContext;
         }
 
 
