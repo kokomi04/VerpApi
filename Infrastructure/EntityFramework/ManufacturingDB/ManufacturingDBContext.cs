@@ -15,13 +15,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
-        public virtual DbSet<ProdProcess> ProdProcess { get; set; }
-        public virtual DbSet<ProductInStepLink> ProductInStepLink { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
+        public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
+        public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
@@ -32,19 +32,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<ProdProcess>(entity =>
-            {
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<ProductInStepLink>(entity =>
-            {
-                entity.HasKey(e => new { e.InputProductInStepId, e.OutputProductInStepId })
-                    .HasName("PK_ProductInStepMapping");
-            });
-
             modelBuilder.Entity<ProductionOrder>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(128);
@@ -58,7 +45,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.Note).HasMaxLength(128);
 
-                entity.Property(e => e.PurchaseOrderCode).HasMaxLength(255);
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
 
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionOrderDetail)
@@ -69,21 +56,30 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStep>(entity =>
             {
+                entity.Property(e => e.ContainerId).HasComment("ID của Product hoặc lệnh SX");
+
+                entity.Property(e => e.ContainerTypeId).HasComment(@"1: Sản phẩm
+2: Lệnh SX");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(255);
+                entity.Property(e => e.StepId).HasComment("NULL nếu là quy trình con");
+
+                entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.ProductionStep)
                     .HasForeignKey(d => d.StepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStep_Step");
+            });
+
+            modelBuilder.Entity<ProductionStepInOutConverter>(entity =>
+            {
+                entity.HasKey(e => new { e.InputProductionStepLinkDataId, e.OutputProductionStepLinkDataId });
             });
 
             modelBuilder.Entity<ProductionStepLinkData>(entity =>
@@ -92,7 +88,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 3)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
@@ -116,6 +112,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStepLinkDataRole_ProductionStepLinkData");
+            });
+
+            modelBuilder.Entity<ProductionStepOrder>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderDetailId });
             });
 
             modelBuilder.Entity<RequestOutsourcePart>(entity =>
