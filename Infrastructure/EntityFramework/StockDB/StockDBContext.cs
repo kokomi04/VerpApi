@@ -431,14 +431,12 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithOne(p => p.ProductExtraInfo)
                     .HasForeignKey<ProductExtraInfo>(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductExtraInfo_Product");
             });
 
             modelBuilder.Entity<ProductMaterial>(entity =>
             {
-                entity.HasKey(e => new { e.RootProductId, e.ParentProductId, e.ProductId })
-                    .HasName("PK__ProductM__63C0A75D25E67C75");
+                entity.Property(e => e.BranchIds).IsRequired();
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
@@ -452,7 +450,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithOne(p => p.ProductStockInfo)
                     .HasForeignKey<ProductStockInfo>(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductStockInfo_Product");
             });
 
@@ -500,7 +497,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
             });
 

@@ -8,8 +8,9 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductMaterialModel : IMapFrom<ProductMaterial>
     {
+        public int ProductMaterialId { get; set; }
         public int RootProductId { get; set; }
-        public int ParentProductId { get; set; }
+        public string BranchIds { get; set; }
         public int ProductId { get; set; }
     }
 }
