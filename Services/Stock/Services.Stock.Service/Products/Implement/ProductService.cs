@@ -853,7 +853,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var row in data)
             {
-                if (!units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName == row.Unit.NormalizeAsInternalName()))
+                if (!units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
                 {
                     includeUnits.Add(new Unit
                     {
@@ -865,7 +865,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
-                    if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName == unit.NormalizeAsInternalName()))
+                    if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
                     {
                         includeUnits.Add(new Unit
                         {
@@ -874,7 +874,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         });
                     }
                 }
-                if (!productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName == row.ProductCate.NormalizeAsInternalName()))
+                if (!productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
                 {
                     includeProductCates.Add(new ProductCate
                     {
@@ -883,7 +883,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     });
                 }
 
-                if (!productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode == row.ProductTypeCode.NormalizeAsInternalName()))
+                if (!productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
                 {
                     includeProductTypes.Add(new ProductType
                     {
@@ -902,15 +902,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var unit in includeUnits)
             {
-                units.Add(unit.UnitName, unit.UnitId);
+                units.Add(unit.UnitName.NormalizeAsInternalName(), unit.UnitId);
             }
             foreach (var productCate in includeProductCates)
             {
-                productCates.Add(productCate.ProductCateName, productCate.ProductCateId);
+                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate.ProductCateId);
             }
             foreach (var productType in includeProductTypes)
             {
-                productTypes.Add(productType.IdentityCode, productType.ProductTypeId);
+                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType.ProductTypeId);
             }
 
             // Validate unique product code
