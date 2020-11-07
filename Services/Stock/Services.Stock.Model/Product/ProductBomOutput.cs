@@ -13,7 +13,7 @@ namespace VErp.Services.Stock.Model.Product
 
         public string ProductCode { get; set; }
 
-        public string ProductName { get; set; }     
+        public string ProductName { get; set; }
         public string ProductSpecification { get; set; }
 
         public decimal Quantity { get; set; }
@@ -21,7 +21,7 @@ namespace VErp.Services.Stock.Model.Product
         public string Description { get; set; }
         public string UnitName { get; set; }
         public bool IsMaterial { get; set; }
-
+        public string BranchIds { get; set; }
         public string NumberOrder { get; set; }
     }
 }

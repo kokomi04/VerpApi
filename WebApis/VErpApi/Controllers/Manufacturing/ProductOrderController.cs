@@ -8,7 +8,8 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
-
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Commons.Enums.MasterEnum;
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/manufacturing/ProductOrder")]
@@ -36,8 +37,9 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
 
-        [HttpGet]
-        [Route("")]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("Search")]
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
         {
             return await _productionOrderService.GetProductionOrders(keyword, page, size, filters);
