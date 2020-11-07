@@ -297,6 +297,7 @@ namespace VErp.Services.Master.Service.Category
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
                         config.Joins = data.OutSideDataConfig.Joins;
+                        config.RawSql = data.OutSideDataConfig.RawSql;
                         // Update config fields
                         var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
                         var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
