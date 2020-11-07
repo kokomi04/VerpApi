@@ -8,11 +8,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
-        Task<ProductionProcessInfo> GetProductionProcessByProductId(int productId);
-        Task<ProductionStepInfo> GetProductionStepById(int productId, int productionStepId);
-        Task<bool> UpdateProductionStagesById(int productId, int productionStepId, ProductionStepInfo req);
-        Task<int> CreateProductionStep(int productId, ProductionStepInfo req);
-        Task<bool> DeleteProductionStepById(int productId, int productionStepId);
-        Task<bool> GenerateProductionStepMapping(int productId, List<ProductionStepLinkModel> req);
+        Task<ProductionProcessInfo> GetProductionProcessByProductId(long containerId);
+        Task<ProductionStepInfo> GetProductionStepById(long containerId, long productionStepId);
+        Task<bool> UpdateProductionStepById(long containerId, long productionStepId, ProductionStepInfo req);
+        Task<long> CreateProductionStep(long containerId, ProductionStepInfo req);
+        Task<bool> DeleteProductionStepById(long containerId, long productionStepId);
+        //Task<bool> GenerateProductionStepMapping(int containerId, List<ProductionStepLinkModel> req);
     }
 }

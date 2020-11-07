@@ -5,23 +5,22 @@ using System.Text;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
-    public enum EnumInOutStepType
+    public enum EnumProductionStep
     {
-        InputStep = 1,
-        OutputStep = 2,
+
+    }
+    public enum ProductionStepLinkDataRoleType
+    {
+        Input = 1,
+        Output = 2,
     }
 
-    public enum EnumUsingType
+    public enum ContainerIdType
     {
         [Description("Quy trình sản xuất")]
         QTSX = 1,
         [Description("Lệnh sản xuất")]
         LSX = 2,
     }
-
-    public enum ProductTypeInStages
-    {
-        Product = 1,
-        SemiProduct = 2,
-    }
+    
 }

@@ -38,7 +38,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _mapper = mapper;
         }
 
-        public async Task<int> CreateProductionStep(int productId, ProductionStepInfo req)
+        public async Task<long> CreateProductionStep(long containerId, ProductionStepInfo req)
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -48,14 +48,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.ProductionStep.AddAsync(step);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    var rInOutStepLinks = await InsertAndUpdateProductInStep(step.ProductionStepId, req.ProductInSteps);
-                    await _manufacturingDBContext.InOutStepLink.AddRangeAsync(rInOutStepLinks);
+                    var rInOutStepLinks = await InsertAndUpdateProductionStepLinkData(step.ProductionStepId, req.ProductInSteps);
+                    await _manufacturingDBContext.ProductionStepLinkDataRole.AddRangeAsync(rInOutStepLinks);
                     await _manufacturingDBContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
                     _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
-                        $"Tạo mới công đoạn {req.ProductionStepId} của sản phẩm {req.ProductId}", req.JsonSerialize());
+                        $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerId}", req.JsonSerialize());
                     return step.ProductionStepId;
                 }
                 catch (Exception ex)
@@ -67,18 +67,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionStepById(int productId, int productionStepId)
+        public async Task<bool> DeleteProductionStepById(long containerId, long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep
                                    .Where(s => s.ProductionStepId == productionStepId)
-                                   .Include(x=>x.InOutStepLink)
+                                   .Include(x=>x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
                 throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
 
-            var productInSteps = await _manufacturingDBContext.ProductInStep
-                .Where(x => productionStep.InOutStepLink.Select(r => r.ProductInStepId)
-                .Contains(x.ProductInStepId)).ToListAsync();
+            var productInSteps = await _manufacturingDBContext.ProductionStepLinkData
+                .Where(x => productionStep.ProductionStepLinkDataRole.Select(r => r.ProductionStepLinkDataId)
+                .Contains(x.ProductionStepLinkDataId)).ToListAsync();
 
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -91,68 +91,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
-                        $"Xóa công đoạn {productionStep.ProductionStepId} của sản phẩm {productionStep.ProductId}", productionStep.JsonSerialize());
+                        $"Xóa công đoạn {productionStep.ProductionStepId} của {productionStep.ContainerId}", productionStep.JsonSerialize());
                     return true;
                 }
                 catch (Exception ex)
                 {
                     await trans.RollbackAsync();
-                    _logger.LogError(ex, "DeleteProductionStagesById");
+                    _logger.LogError(ex, "DeleteProductionStepById");
                     throw;
                 }
             }
         }
 
-        public async Task<bool> GenerateProductionStepMapping(int productId, List<ProductionStepLinkModel> req)
-        {
-            using (var trans = _manufacturingDBContext.Database.BeginTransaction())
-            {
-                try
-                {
-                    var oldMapping = _manufacturingDBContext.ProductionStepLink.Where(m => m.ProductId == productId).ToList();
-                    if (oldMapping.Count > 0)
-                    {
-                        _manufacturingDBContext.ProductionStepLink.RemoveRange(oldMapping);
-                        await _manufacturingDBContext.SaveChangesAsync();
-                    }
-
-                    _manufacturingDBContext.ProductionStepLink.AddRange(_mapper.Map<List<ProductionStepLink>>(req));
-                    await _manufacturingDBContext.SaveChangesAsync();
-                    trans.Commit();
-
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, productId,
-                        $"Khởi tạo mapping công đoạn của sản phẩm {productId}", req.JsonSerialize());
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    await trans.RollbackAsync();
-                    _logger.LogError(ex, "GenerateStagesMapping");
-                    throw;
-                }
-            }
-            
-        }
-
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId(int productId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByProductId(long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                                        .Where(s => s.ProductId == productId)
+                                        .Where(s => s.ContainerId == containerId)
                                         .ProjectTo<ProductionStepModel>(_mapper.ConfigurationProvider)
-                                        .ToListAsync();
-            var productionStepLinks = await _manufacturingDBContext.ProductionStepLink.AsNoTracking()
-                                        .Where(s => s.ProductId == productId)
-                                        .ProjectTo<ProductionStepLinkModel>(_mapper.ConfigurationProvider)
                                         .ToListAsync();
 
             return new ProductionProcessInfo
             {
                 ProductionSteps = productionSteps,
-                ProductionStepLinks = productionStepLinks
             };
         }
 
-        public async Task<ProductionStepInfo> GetProductionStepById(int productId, int productionStepId)
+        public async Task<ProductionStepInfo> GetProductionStepById(long containerId, long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                                     .Where(s => s.ProductionStepId == productionStepId)
@@ -161,16 +125,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (productionStep == null)
                 throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
 
-            productionStep.ProductInSteps = await _manufacturingDBContext.InOutStepLink.AsNoTracking()
+            productionStep.ProductInSteps = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
                                             .Where(d => d.ProductionStepId == productionStep.ProductionStepId)
                                             .Include(x => x.ProductionStep)
-                                            .ProjectTo<ProductInStepInfo>(_mapper.ConfigurationProvider)
+                                            .ProjectTo<ProductionStepLinkDataInfo >(_mapper.ConfigurationProvider)
                                             .ToListAsync();
 
             return productionStep;
         }
 
-        public async Task<bool> UpdateProductionStagesById(int productId, int productionStepId, ProductionStepInfo req)
+        public async Task<bool> UpdateProductionStepById(long containerId, long productionStepId, ProductionStepInfo req)
         {
             var sProductionStep = await _manufacturingDBContext.ProductionStep
                                    .Where(s => s.ProductionStepId == productionStepId)
@@ -178,7 +142,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (sProductionStep == null)
                 throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
 
-            var dInOutStepLinks = await _manufacturingDBContext.InOutStepLink
+            var dInOutStepLinks = await _manufacturingDBContext.ProductionStepLinkDataRole
                                     .Where(x => x.ProductionStepId == sProductionStep.ProductionStepId)
                                     .ToListAsync();
 
@@ -188,49 +152,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     _mapper.Map((ProductionStepModel)req, sProductionStep);
 
-                    var rInOutStepLinks = await InsertAndUpdateProductInStep(sProductionStep.ProductionStepId, req.ProductInSteps);
-                    _manufacturingDBContext.InOutStepLink.RemoveRange(dInOutStepLinks);
+                    var rInOutStepLinks = await InsertAndUpdateProductionStepLinkData(sProductionStep.ProductionStepId, req.ProductInSteps);
+                    _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(dInOutStepLinks);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    await _manufacturingDBContext.InOutStepLink.AddRangeAsync(rInOutStepLinks);
+                    await _manufacturingDBContext.ProductionStepLinkDataRole.AddRangeAsync(rInOutStepLinks);
                     await _manufacturingDBContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
                     _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
-                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của sản phẩm {sProductionStep.ProductId}", req.JsonSerialize());
+                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của sản phẩm {sProductionStep.ContainerId}", req.JsonSerialize());
                     return true;
                 }catch(Exception ex)
                 {
                     await trans.RollbackAsync();
-                    _logger.LogError(ex, "UpdateProductionStagesById");
+                    _logger.LogError(ex, "UpdateProductionStepById");
                     throw;
                 }
             }
 
         }
 
-        private async Task<IList<InOutStepLink>> InsertAndUpdateProductInStep(int productionStepId, List<ProductInStepInfo> source)
+        private async Task<IList<ProductionStepLinkDataRole>> InsertAndUpdateProductionStepLinkData(long productionStepId, List<ProductionStepLinkDataInfo > source)
         {
-            var nProductionInSteps = source.Where(x => x.ProductInStepId <= 0)
-                                            .Select(x => _mapper.Map<ProductInStep>((ProductInStepModel)x)).ToList();
+            var nProductionInSteps = source.Where(x => x.ProductionStepLinkDataId <= 0)
+                                            .Select(x => _mapper.Map<ProductionStepLinkData>((ProductionStepLinkDataModel)x)).ToList();
 
-            var uProductionInSteps = source.Where(x => x.ProductInStepId > 0)
-                                            .Select(x => (ProductInStepModel)x).ToList();
-            var destProductionInSteps = _manufacturingDBContext.ProductInStep.Where(x => uProductionInSteps.Select(y => y.ProductId).Contains(x.ProductId)).ToList();
+            var uProductionInSteps = source.Where(x => x.ProductionStepLinkDataId > 0)
+                                            .Select(x => (ProductionStepLinkDataModel)x).ToList();
+            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData.Where(x => uProductionInSteps.Select(y => y.ProductId).Contains(x.ProductId)).ToList();
             foreach (var d in destProductionInSteps)
             {
                 var s = uProductionInSteps.FirstOrDefault(s => s.ProductId == d.ProductId);
                 _mapper.Map(s, d);
             }
 
-            await _manufacturingDBContext.ProductInStep.AddRangeAsync(nProductionInSteps);
+            await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(nProductionInSteps);
             await _manufacturingDBContext.SaveChangesAsync();
 
-            var inOutStepLinks = source.Where(x => x.ProductInStepId > 0).Select(x=> new InOutStepLink
+            var inOutStepLinks = source.Where(x => x.ProductionStepLinkDataId > 0).Select(x=> new ProductionStepLinkDataRole
             {
-                InOutStepType = (int)x.InOutStepType,
-                ProductInStepId = x.ProductInStepId,
+                ProductionStepLinkDataRoleTypeId = (int)x.ProductionStepLinkDataRoleTypeId,
+                ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                 ProductionStepId = productionStepId
             }).ToList();
 
@@ -240,10 +204,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (s == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
-                inOutStepLinks.Add(new InOutStepLink
+                inOutStepLinks.Add(new ProductionStepLinkDataRole
                 {
-                    InOutStepType = (int)s.InOutStepType,
-                    ProductInStepId = p.ProductInStepId,
+                    ProductionStepLinkDataRoleTypeId = (int)s.ProductionStepLinkDataRoleTypeId,
+                    ProductionStepLinkDataId = p.ProductionStepLinkDataId,
                     ProductionStepId = productionStepId
                 });
             }
