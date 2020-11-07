@@ -22,6 +22,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public long? PurchaseOrderId { get; set; }
+        public string PurchaseOrderCode { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }
         public virtual ICollection<RequestOutsourcePart> RequestOutsourcePart { get; set; }

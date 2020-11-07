@@ -67,7 +67,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var newItem in req)
             {
-                var oldAttachment = oldAttachments.FirstOrDefault(a => a.ProductId == newItem.ProductId && a.AttachmentId == newItem.AttachmentId);
+                var oldAttachment = oldAttachments.FirstOrDefault(a => a.ProductId == newItem.ProductId && a.AttachmentFileId == newItem.AttachmentFileId);
                 if (oldAttachment != null)
                 {
                     if (oldAttachment.Title != newItem.Title)

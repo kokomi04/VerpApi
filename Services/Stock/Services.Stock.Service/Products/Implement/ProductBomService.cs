@@ -76,7 +76,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 				                        ProductBom child
 				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
 				                        WHERE child.IsDeleted = 0 
-                                            AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId AND m.BranchIds = bom.BranchIds))
+                                            AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId AND m.BranchIds = bom.BranchIds)
                                             AND CHARINDEX(CONCAT('""', child.ProductId, '""'), bom.BranchIds, 0) <= 0
                         )
                         SELECT bom.*, p.ProductCode, p.ProductName, u.UnitName, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial

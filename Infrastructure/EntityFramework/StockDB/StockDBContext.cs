@@ -369,14 +369,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.HasOne(d => d.Attachment)
-                    .WithMany(p => p.ProductAttachmentAttachment)
-                    .HasForeignKey(d => d.AttachmentId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__ProductBo__Paren__61C668D1");
-
                 entity.HasOne(d => d.Product)
-                    .WithMany(p => p.ProductAttachmentProduct)
+                    .WithMany(p => p.ProductAttachment)
                     .HasForeignKey(d => d.ProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductBo__Produ__60D24498");
@@ -436,6 +430,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterial>(entity =>
             {
+                entity.HasIndex(e => e.RootProductId)
+                    .HasName("IDX_RootProductId");
+
                 entity.Property(e => e.BranchIds).IsRequired();
             });
 
