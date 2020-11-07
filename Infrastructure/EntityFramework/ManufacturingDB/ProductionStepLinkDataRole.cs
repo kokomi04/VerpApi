@@ -9,7 +9,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionStepId { get; set; }
         public int ProductionStepLinkDataRoleTypeId { get; set; }
 
-        public virtual ProductionStepLinkData ProductionStep { get; set; }
-        public virtual ProductionStep ProductionStepLinkData { get; set; }
+        public virtual ProductionStep ProductionStep { get; set; }
+        public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
     }
 }

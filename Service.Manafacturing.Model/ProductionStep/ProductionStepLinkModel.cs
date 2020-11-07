@@ -6,7 +6,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
-    public class ProductionStepLinkModel: IMapFrom<ProductionStepLink>
+    public class ProductionStepLinkModel
     {
         public int ProductId { get; set; }
         public int FromStepId { get; set; }

@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     {
         public int RequestOutsourcePartId { get; set; }
         public int ProductionOrderDetailId { get; set; }
-        public int ProductInStepId { get; set; }
+        public long ProductInStepId { get; set; }
         public int Quantity { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
@@ -18,7 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string RequestOrder { get; set; }
         public int UnitId { get; set; }
 
-        public virtual ProductInStep ProductInStep { get; set; }
+        public virtual ProductionStepLinkData ProductInStep { get; set; }
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
     }
 }

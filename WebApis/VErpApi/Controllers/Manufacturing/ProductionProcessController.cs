@@ -22,45 +22,39 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{productId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute]int productId)
+        [Route("{containerId}")]
+        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute]long containerId)
         {
-            return await _productionProcessService.GetProductionProcessByProductId(productId);
+            return await _productionProcessService.GetProductionProcessByProductId(containerId);
         }
 
         [HttpGet]
-        [Route("{productId}/{productionStepId}")]
-        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] int productId, [FromRoute] int productionStepId)
+        [Route("{containerId}/{productionStepId}")]
+        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] long containerId, [FromRoute] long productionStepId)
         {
-            return await _productionProcessService.GetProductionStepById(productId, productionStepId);
+            return await _productionProcessService.GetProductionStepById(containerId, productionStepId);
         }
 
         [HttpPut]
-        [Route("{productId}/{productionStepId}")]
-        public async Task<bool> UpdateProductionStepsById([FromRoute] int productId, [FromRoute] int productionStepId,[FromBody] ProductionStepInfo req)
+        [Route("{containerId}/{productionStepId}")]
+        public async Task<bool> UpdateProductionStepsById([FromRoute] long containerId, [FromRoute] long productionStepId,[FromBody] ProductionStepInfo req)
         {
-            return await _productionProcessService.UpdateProductionStagesById(productId, productionStepId, req);
+            return await _productionProcessService.UpdateProductionStepById(containerId, productionStepId, req);
         }
 
         [HttpPost]
-        [Route("{productId}")]
-        public async Task<int> CreateProductionStep([FromRoute]int productId,[FromBody] ProductionStepInfo req)
+        [Route("{containerId}")]
+        public async Task<long> CreateProductionStep([FromRoute]long containerId,[FromBody] ProductionStepInfo req)
         {
-            return await _productionProcessService.CreateProductionStep(productId, req);
+            return await _productionProcessService.CreateProductionStep(containerId, req);
         }
 
         [HttpDelete]
-        [Route("{productId}/{productionStepId}")]
-        public async Task<bool> DeleteProductionStepById([FromRoute] int productId, [FromRoute] int productionStepId)
+        [Route("{containerId}/{productionStepId}")]
+        public async Task<bool> DeleteProductionStepById([FromRoute] int containerId, [FromRoute] int productionStepId)
         {
-            return await _productionProcessService.DeleteProductionStepById(productId, productionStepId);
+            return await _productionProcessService.DeleteProductionStepById(containerId, productionStepId);
         }
-
-        [HttpPost]
-        [Route("{productId}/stagesMapping")]
-        public async Task<bool> GenerateProductionStepMapping([FromRoute]int productId, [FromBody] List<ProductionStepLinkModel> req)
-        {
-            return await _productionProcessService.GenerateProductionStepMapping(productId, req);
-        }
+        
     }
 }
