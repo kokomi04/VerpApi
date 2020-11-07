@@ -10,7 +10,7 @@ namespace VErp.Services.Stock.Model.Product
     {
         public long? ProductAttachmentId { get; set; }
         public int ProductId { get; set; }
-        public int AttachmentId { get; set; }
+        public long AttachmentFileId { get; set; }
         public string Title { get; set; }
     }
 }

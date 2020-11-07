@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         public long ProductAttachmentId { get; set; }
         public int ProductId { get; set; }
-        public int AttachmentId { get; set; }
+        public long AttachmentFileId { get; set; }
         public string Title { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -16,7 +16,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual Product Attachment { get; set; }
         public virtual Product Product { get; set; }
     }
 }
