@@ -11,6 +11,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     {
         public long ProductionStepId { get; set; }
         public long ProductionStepLinkDataId { get; set; }
-        public ProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
+        public EnumProductionProcess.ProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
     }
 }

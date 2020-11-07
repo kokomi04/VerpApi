@@ -11,10 +11,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public long ProductionStepId { get; set; }
-        public int StepId { get; set; }
+        public int? StepId { get; set; }
         public string Title { get; set; }
         public int? ParentId { get; set; }
-        public int ContainerIdTypeId { get; set; }
+        public int ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

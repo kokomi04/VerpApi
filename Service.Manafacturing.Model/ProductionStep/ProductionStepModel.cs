@@ -13,10 +13,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     public class ProductionStepModel: IMapFrom<ProductionStepEnity>
     {
         public long ProductionStepId { get; set; }
-        public int StepId { get; set; }
+        public int? StepId { get; set; }
         public string Title { get; set; }
         public int? ParentId { get; set; }
-        public ContainerIdType ContainerIdTypeId { get; set; }
+        public EnumProductionProcess.ContainerType ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
@@ -24,6 +24,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 
     public class ProductionStepInfo: ProductionStepModel
     {
-        public List<ProductionStepLinkDataInfo > ProductInSteps { get; set; }
+        public List<ProductionStepLinkDataInfo > ProductionStepLinkDatas { get; set; }
     }
 }
