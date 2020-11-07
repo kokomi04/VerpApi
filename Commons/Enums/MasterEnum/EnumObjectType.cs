@@ -164,5 +164,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Nút chức năng CTGS")]
         InputAction = 58,
         PackingList = 59,
+
+        [Description("Nhóm danh mục")]
+        CategoryGroup = 60,
     }
 }
