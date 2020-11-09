@@ -55,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
                         $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req.JsonSerialize());
                     return step.ProductionStepId;
                 }
@@ -91,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
                         $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumProductionProcess.ContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep.JsonSerialize());
                     return true;
                 }
@@ -197,7 +197,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
                         $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.ContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req.JsonSerialize());
                     return true;
                 }
@@ -218,10 +218,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var uProductionInSteps = source.Where(x => x.ProductionStepLinkDataId > 0)
                                             .Select(x => (ProductionStepLinkDataModel)x).ToList();
-            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData.Where(x => uProductionInSteps.Select(y => y.ProductId).Contains(x.ProductId)).ToList();
+            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData
+                .Where(x => uProductionInSteps.Select(y => new {y.ObjectId, y.ObjectTypeId })
+                            .Any(y=> x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
+
             foreach (var d in destProductionInSteps)
             {
-                var s = uProductionInSteps.FirstOrDefault(s => s.ProductId == d.ProductId);
+                var s = uProductionInSteps.FirstOrDefault(s => s.ObjectId == d.ObjectId && (int)s.ObjectTypeId == d.ObjectTypeId);
                 _mapper.Map(s, d);
             }
 
@@ -237,7 +240,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var p in nProductionInSteps)
             {
-                var s = source.FirstOrDefault(x => x.ProductId == p.ProductId);
+                var s = source.FirstOrDefault(x => x.ObjectId == p.ObjectId && (int)x.ObjectTypeId == p.ObjectTypeId);
                 if (s == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
