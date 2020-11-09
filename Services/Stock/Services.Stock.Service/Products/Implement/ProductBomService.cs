@@ -48,50 +48,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            var sql = @$"WITH prd_bom AS (
-		                        SELECT
-				                        ProductBomId,
-				                        ProductId,
-				                        ChildProductId,
-				                        ProductId ParentProductId,
-				                        1 AS Level,
-				                        Quantity,
-				                        Wastage,
-                                        CONVERT(nvarchar(max), CONCAT('""', ProductId, '""')) AS BranchIds,
-                                        CONVERT(nvarchar(max), ROW_NUMBER() OVER(ORDER BY ProductBomId)) AS NumberOrder
-                                FROM ProductBom
-		                        WHERE ProductId = @ProductId AND IsDeleted = 0
-		                        UNION ALL
-		                        SELECT
-				                        child.ProductBomId,
-				                        child.ProductId, 
-				                        child.ChildProductId,
-				                        bom.ProductId ParentProductId,
-				                        bom.Level + 1 AS Level,
-				                        child.Quantity,
-				                        child.Wastage,
-                                        CONVERT(nvarchar(max), CONCAT(bom.BranchIds, ',""', child.ProductId, '""')) AS BranchIds,
-                                        CONVERT(nvarchar(max), CONCAT(bom.NumberOrder,'.', ROW_NUMBER() OVER(ORDER BY child.ProductBomId))) NumberOrder
-                                FROM
-				                        ProductBom child
-				                        INNER JOIN prd_bom bom ON bom.ChildProductId = child.ProductId
-				                        WHERE child.IsDeleted = 0 
-                                            AND NOT EXISTS (SELECT 1 FROM ProductMaterial m WHERE m.RootProductId = @ProductId AND m.ProductId = child.ProductId AND m.BranchIds = bom.BranchIds)
-                                            AND CHARINDEX(CONCAT('""', child.ProductId, '""'), bom.BranchIds, 0) <= 0
-                        )
-                        SELECT bom.*, p.ProductCode, p.ProductName, u.UnitName, CONVERT(BIT, CASE WHEN m.ProductId IS NOT NULL THEN 1 ELSE 0 END) AS IsMaterial
-                        FROM prd_bom bom
-                        LEFT JOIN ProductMaterial m ON m.RootProductId = @ProductId AND m.ProductId = bom.ChildProductId AND m.BranchIds = bom.BranchIds
-                        LEFT JOIN Product p ON bom.ChildProductId = p.ProductId
-                        LEFT JOIN ProductExtraInfo pei ON bom.ProductId = pei.ProductId
-                        LEFT JOIN v_Unit u ON p.UnitId = u.F_Id;";
-
             var parammeters = new SqlParameter[]
             {
                 new SqlParameter("@ProductId", productId)
             };
 
-            var resultData = await _stockDbContext.QueryDataTable(sql, parammeters);
+            var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductBom", parammeters);
 
             return resultData.ConvertData<ProductBomOutput>();
         }

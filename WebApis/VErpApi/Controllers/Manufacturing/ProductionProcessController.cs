@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.SqlServer.Management.SqlParser.Metadata;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -22,10 +23,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute]long containerId)
+        [Route("{containerTypeId}/{containerId}")]
+        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute]long containerId)
         {
-            return await _productionProcessService.GetProductionProcessByProductId(containerId);
+            return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }
 
         [HttpGet]

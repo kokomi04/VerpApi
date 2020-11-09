@@ -8,8 +8,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
     public class ProductionStepLinkModel
     {
-        public int ProductId { get; set; }
-        public int FromStepId { get; set; }
-        public int ToStepId { get; set; }
+        public long FromStepId { get; set; }
+        public long ToStepId { get; set; }
     }
 }
