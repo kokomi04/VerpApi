@@ -433,7 +433,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasIndex(e => e.RootProductId)
                     .HasName("IDX_RootProductId");
 
-                entity.Property(e => e.BranchIds).IsRequired();
+                entity.Property(e => e.PathProductIds).IsRequired();
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
