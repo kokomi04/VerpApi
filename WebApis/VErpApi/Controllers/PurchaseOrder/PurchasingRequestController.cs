@@ -78,9 +78,23 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<long> Add([FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.Create(req).ConfigureAwait(true);
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.Normal, req).ConfigureAwait(true);
         }
 
+
+        [HttpPost]
+        [Route("CreateFromOrderMaterial")]
+        public async Task<long> CreateFromOrderMaterial([FromBody] PurchasingRequestInput req)
+        {
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.Normal, req).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("GetInfoByOrderMaterial/{orderDetailId}")]
+        public async Task<PurchasingRequestOutput> CreateFromOrderMaterial([FromRoute] long orderDetailId)
+        {
+            return await _purchasingRequestService.GetByOrderDetailId(orderDetailId).ConfigureAwait(true);
+        }
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]

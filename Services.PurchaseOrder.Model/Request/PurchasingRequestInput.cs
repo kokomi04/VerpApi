@@ -10,6 +10,7 @@ namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingRequestInput : IMapFrom<PurchasingRequest>
     {
+        public long OrderDetailId { get; set; }
         public string PurchasingRequestCode { get; set; }
 
         public long Date { get; set; }
@@ -42,4 +43,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public void Mapping(Profile profile) => MappingBase<PurchasingRequestInputDetail>(profile);
 
     }
+
+   
 }

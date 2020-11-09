@@ -82,6 +82,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return data;
         }
 
+        public async Task<PurchasingRequestOutput> GetByOrderDetailId(long orderDetailId)
+        {
+            var info = await _purchaseOrderDBContext
+                .PurchasingRequest
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.OrderDetailId == orderDetailId && r.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial);
+
+            if (info == null) return null;
+
+            var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
+                .Where(d => d.PurchasingRequestId == info.PurchasingRequestId)
+                .ToListAsync();
+
+            var data = _mapper.Map<PurchasingRequestOutput>(info);
+
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+
+            return data;
+        }
+
 
         public async Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
@@ -279,7 +299,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
 
-        public async Task<long> Create(PurchasingRequestInput model)
+        public async Task<long> Create(EnumPurchasingRequestType requestType, PurchasingRequestInput model)
         {
             await ValidateProductUnitConversion(model);
 
@@ -305,6 +325,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 purchasingRequest.UpdatedByUserId = _currentContext.UserId;
                 purchasingRequest.CreatedDatetimeUtc = DateTime.UtcNow;
                 purchasingRequest.UpdatedDatetimeUtc = DateTime.UtcNow;
+                purchasingRequest.PurchasingRequestTypeId = (int)requestType;
+
+                if (requestType == EnumPurchasingRequestType.OrderMaterial)
+                {
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                    purchasingRequest.CensorByUserId = _currentContext.UserId;
+                    purchasingRequest.CensorDatetimeUtc = DateTime.UtcNow;
+                }
 
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -355,6 +383,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsApproved = null;
                 info.UpdatedByUserId = _currentContext.UserId;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial)
+                {
+                    info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                    info.CensorByUserId = _currentContext.UserId;
+                    info.CensorDatetimeUtc = DateTime.UtcNow;
+                }
 
                 var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
 
