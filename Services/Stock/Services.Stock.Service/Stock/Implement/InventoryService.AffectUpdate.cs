@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        
+
         public async Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId)))
@@ -212,13 +212,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var totalMoney = InputCalTotalMoney(updateDetails);
                 InventoryInputUpdateData(inventoryInfo, req.Inventory, totalMoney);
-               
+
             }
             else
             {
                 inventoryInfo.IsDeleted = true;
                 inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                 inventoryInfo.UpdatedByUserId = _currentContextService.UserId;
+
+                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Xóa phiếu {inventoryInfo.InventoryCode} do không tồn tại mặt hàng nào", req.JsonSerialize(), EnumAction.Delete);
             }
 
 
@@ -236,7 +238,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var puIds = products.Select(p => p.ProductUnitConversionId).ToList();
 
-            var puConversions = (await _stockDbContext.ProductUnitConversion.Where(pu => puIds.Contains(pu.ProductUnitConversionId)).ToListAsync()).ToDictionary(pu=>pu.ProductUnitConversionId,pu=>pu);
+            var puConversions = (await _stockDbContext.ProductUnitConversion.Where(pu => puIds.Contains(pu.ProductUnitConversionId)).ToListAsync()).ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
 
             foreach (var p in products)
             {
@@ -455,7 +457,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //    return InventoryErrorCode.InOuputAffectObjectsInvalid;
                     //}
                 }
-            }            
+            }
 
         }
 

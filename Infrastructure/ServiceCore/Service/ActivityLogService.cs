@@ -18,7 +18,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData);
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null);
     }
 
     public class ActivityLogService : IActivityLogService
@@ -38,11 +38,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _internalActivityLogClient = internalActivityLogClient;
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData)
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null)
         {
             try
             {
-                if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
+                if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
                 {
                     var headers = new Metadata();
                     headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
@@ -50,7 +50,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     var reulst = await _internalActivityLogClient.LogAsync(new GrpcProto.Protos.ActivityInput
                     {
                         UserId = _currentContext.UserId,
-                        ActionId = (int)_currentContext.Action,
+                        ActionId = action == null ? (int)_currentContext.Action : (int)action.Value,
                         ObjectTypeId = (int)objectTypeId,
                         ObjectId = objectId,
                         MessageTypeId = (int)EnumMessageType.ActivityLog,
@@ -76,7 +76,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
 
                 return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/Log", body);
-               
+
             }
             catch (Exception ex)
             {
@@ -84,6 +84,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return false;
             }
         }
-        
+
     }
 }
