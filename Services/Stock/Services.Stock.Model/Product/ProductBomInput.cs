@@ -13,6 +13,5 @@ namespace VErp.Services.Stock.Model.Product
         public int ChildProductId { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? Wastage { get; set; }
-        public bool IsMaterial { get; set; }
     }
 }

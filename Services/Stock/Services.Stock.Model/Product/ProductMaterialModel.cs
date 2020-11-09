@@ -10,7 +10,7 @@ namespace VErp.Services.Stock.Model.Product
     {
         public int ProductMaterialId { get; set; }
         public int RootProductId { get; set; }
-        public string BranchIds { get; set; }
+        public string PathProductIds { get; set; }
         public int ProductId { get; set; }
     }
 }
