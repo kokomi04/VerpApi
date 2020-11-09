@@ -25,5 +25,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     public class ProductionStepInfo: ProductionStepModel
     {
         public List<ProductionStepLinkDataInfo > ProductionStepLinkDatas { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
+                .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
+                .ReverseMap()
+                .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore());
+        }
     }
 }

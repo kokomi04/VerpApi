@@ -72,7 +72,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var productionStep = await _manufacturingDBContext.ProductionStep
                                    .Where(s => s.ProductionStepId == productionStepId)
-                                   .Include(x=>x.ProductionStepLinkDataRole)
+                                   .Include(x => x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
                 throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
@@ -104,16 +104,51 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId(long containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                                        .Where(s => s.ContainerId == containerId)
-                                        .ProjectTo<ProductionStepModel>(_mapper.ConfigurationProvider)
+                                        .Include(s => s.ProductionStepLinkDataRole)
+                                        .ThenInclude(r => r.ProductionStepLinkData)
+                                        .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
+                                        .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
                                         .ToListAsync();
+
+            var linkGroups = productionSteps
+                .SelectMany(s => s.ProductionStepLinkDatas, (s, d) => new
+                {
+                    s.ProductionStepId,
+                    d.ProductionStepLinkDataId,
+                    d.ProductionStepLinkDataRoleTypeId
+                })
+                .GroupBy(l => l.ProductionStepLinkDataId);
+
+            var productionStepLinks = new List<ProductionStepLinkModel>();
+
+            foreach (var linkGroup in linkGroups)
+            {
+                var fromIds = linkGroup.Where(l => l.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.ProductionStepLinkDataRoleType.Output).Select(l => l.ProductionStepId).Distinct().ToList();
+                var toIds = linkGroup.Where(l => l.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.ProductionStepLinkDataRoleType.Input).Select(l => l.ProductionStepId).Distinct().ToList();
+                foreach (var fromId in fromIds)
+                {
+                    bool bExisted = productionStepLinks.Any(l => l.FromStepId == fromId);
+                    foreach (var toId in toIds)
+                    {
+                        if (!bExisted || !productionStepLinks.Any(l => l.FromStepId == fromId && l.ToStepId == toId))
+                        {
+                            productionStepLinks.Add(new ProductionStepLinkModel
+                            {
+                                FromStepId = fromId,
+                                ToStepId = toId
+                            });
+                        }
+                    }
+                }
+            }
 
             return new ProductionProcessInfo
             {
                 ProductionSteps = productionSteps,
+                ProductionStepLinks = productionStepLinks
             };
         }
 
@@ -129,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             productionStep.ProductionStepLinkDatas = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
                                             .Where(d => d.ProductionStepId == productionStep.ProductionStepId)
                                             .Include(x => x.ProductionStep)
-                                            .ProjectTo<ProductionStepLinkDataInfo >(_mapper.ConfigurationProvider)
+                                            .ProjectTo<ProductionStepLinkDataInfo>(_mapper.ConfigurationProvider)
                                             .ToListAsync();
 
             return productionStep;
@@ -147,7 +182,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                     .Where(x => x.ProductionStepId == sProductionStep.ProductionStepId)
                                     .ToListAsync();
 
-            using(var trans  = _manufacturingDBContext.Database.BeginTransaction())
+            using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
                 {
@@ -165,7 +200,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
                         $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.ContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req.JsonSerialize());
                     return true;
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     await trans.RollbackAsync();
                     _logger.LogError(ex, "UpdateProductionStepById");
@@ -175,7 +211,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         }
 
-        private async Task<IList<ProductionStepLinkDataRole>> InsertAndUpdateProductionStepLinkData(long productionStepId, List<ProductionStepLinkDataInfo > source)
+        private async Task<IList<ProductionStepLinkDataRole>> InsertAndUpdateProductionStepLinkData(long productionStepId, List<ProductionStepLinkDataInfo> source)
         {
             var nProductionInSteps = source.Where(x => x.ProductionStepLinkDataId <= 0)
                                             .Select(x => _mapper.Map<ProductionStepLinkData>((ProductionStepLinkDataModel)x)).ToList();
@@ -192,7 +228,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(nProductionInSteps);
             await _manufacturingDBContext.SaveChangesAsync();
 
-            var inOutStepLinks = source.Where(x => x.ProductionStepLinkDataId > 0).Select(x=> new ProductionStepLinkDataRole
+            var inOutStepLinks = source.Where(x => x.ProductionStepLinkDataId > 0).Select(x => new ProductionStepLinkDataRole
             {
                 ProductionStepLinkDataRoleTypeId = (int)x.ProductionStepLinkDataRoleTypeId,
                 ProductionStepLinkDataId = x.ProductionStepLinkDataId,
