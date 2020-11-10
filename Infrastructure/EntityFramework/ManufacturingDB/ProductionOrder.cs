@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int? Status { get; set; }
 
         public virtual ICollection<ProductionOrderDetail> ProductionOrderDetail { get; set; }
     }

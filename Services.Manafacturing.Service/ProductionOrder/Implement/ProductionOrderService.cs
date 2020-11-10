@@ -20,6 +20,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -69,7 +70,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .FirstOrDefault();
         }
 
-        public async Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data)
+        public async Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data, bool isDraft)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -87,6 +88,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
                 data.ProductionOrderCode = generated.CustomCode;
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
+
+                // Set status
+                productionOrder.Status = isDraft ? (int)EnumProductionOrderStatus.Draft : (int)EnumProductionOrderStatus.Waiting;
+
                 _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
@@ -101,7 +106,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
-        public async Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data)
+        public async Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data, bool isDraft)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -112,7 +117,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .FirstOrDefault();
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
+                if (productionOrder.Status > (int)EnumProductionOrderStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Không được phép sửa LSX đang hoặc đã sản xuất");
+
                 _mapper.Map(data, productionOrder);
+                // Set status
+                productionOrder.Status = isDraft ? (int)EnumProductionOrderStatus.Draft : (int)EnumProductionOrderStatus.Waiting;
+
+                // Set status
+                productionOrder.Status = isDraft ? (int)EnumProductionOrderStatus.Draft : (int)EnumProductionOrderStatus.Waiting;
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
 

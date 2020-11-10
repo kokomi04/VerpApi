@@ -26,8 +26,4 @@ namespace VErp.Commons.Enums.Manafacturing
             ProductSemi = 2
         }
     }
-    
-
-    
-    
 }
