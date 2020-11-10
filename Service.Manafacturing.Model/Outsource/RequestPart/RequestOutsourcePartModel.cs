@@ -21,11 +21,11 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public void Mapping(Profile profile)
         {
             profile.CreateMap<RequestOutsourcePart, RequestOutsourcePartModel>()
-                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreateDateRequest.GetUnix()))
+                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
                 .ForMember(m => m.RequestOutsourcePartDetail, v => v.MapFrom(m => m.RequestOutsourcePartDetail))
                 .ReverseMap()
-                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreateDateRequest.UnixToDateTime()))
+                .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
                 .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()))
                 .ForMember(m => m.RequestOutsourcePartDetail, v => v.Ignore());
         }
