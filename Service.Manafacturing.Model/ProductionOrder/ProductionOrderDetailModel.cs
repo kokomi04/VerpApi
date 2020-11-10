@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
         public long? OrderId { get; set; }
-        public string PurchaseOrderCode { get; set; }
+        public string OrderCode { get; set; }
 
         public int OrderQuantity { get; set; }
         public int OrderedQuantity { get; set; }
