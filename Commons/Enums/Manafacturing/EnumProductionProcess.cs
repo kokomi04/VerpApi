@@ -34,8 +34,4 @@ namespace VErp.Commons.Enums.Manafacturing
             OutsourceStep = 2
         }
     }
-    
-
-    
-    
 }
