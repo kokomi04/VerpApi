@@ -156,12 +156,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             // Kiểm tra đã tồn tại quy trình sx gắn với lệnh sx 
             if (_manufacturingDBContext.ProductionStep
-                .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && s.ContainerId == productionOrderId))
+                .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Quy trình cho lệnh sản xuất đã tồn tại.");
 
-            var productIds = _manufacturingDBContext.ProductionOrderDetail
+            var products = _manufacturingDBContext.ProductionOrderDetail
                 .Where(o => o.ProductionOrderId == productionOrderId)
-                .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity })
+                .ToList();
+
+            var productIds = products.Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity })
                 .ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
 
             var productionSteps = _manufacturingDBContext.ProductionStep
@@ -185,8 +187,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 try
                 {
+                    // Tạo step ứng với quy trình sản xuất
+                    var productMap = new Dictionary<int, ProductionStep>();
+                    foreach (var product in products)
+                    {
+                        var newStep = new ProductionStep
+                        {
+                            StepId = null,
+                            Title = $"{product.OrderCode}", // Thiếu tên sản phẩm
+                            ContainerTypeId = (int)EnumProductionProcess.ContainerType.LSX,
+                            ContainerId = productionOrderId,
+                            IsGroup = true
+                        };
+                        _manufacturingDBContext.ProductionStep.Add(newStep);
+                        productMap.Add(product.ProductId, newStep);
+                    }
+                    _manufacturingDBContext.SaveChanges();
+
                     // create productionStep
                     var stepMap = new Dictionary<long, ProductionStep>();
+                    var parentIdUpdater = new List<ProductionStep>();
                     foreach (var step in productionSteps)
                     {
                         var newStep = new ProductionStep
@@ -197,17 +217,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ContainerId = productionOrderId,
                             IsGroup = productionSteps.Any(s => s.ParentId == step.ProductionStepId)
                         };
+                        if (step.ParentId.HasValue)
+                        {
+                            parentIdUpdater.Add(step);
+                        }
+                        else
+                        {
+                            newStep.ParentId = productMap[step.ContainerId].ProductionStepId;
+                        }
                         _manufacturingDBContext.ProductionStep.Add(newStep);
                         stepMap.Add(step.ProductionStepId, newStep);
                     }
                     _manufacturingDBContext.SaveChanges();
 
                     // update parentId
-                    foreach (var step in productionSteps)
+                    foreach (var step in parentIdUpdater)
                     {
                         if (!step.ParentId.HasValue) continue;
                         stepMap[step.ProductionStepId].ParentId = stepMap[step.ParentId.Value].ProductionStepId;
                     }
+
 
                     // Create data
                     var linkDataMap = new Dictionary<long, ProductionStepLinkData>();
@@ -377,8 +406,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                             .Select(x => (ProductionStepLinkDataModel)x).ToList();
 
             var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData
-                .Where(x => uProductionInSteps.Select(y => new {y.ObjectId, y.ObjectTypeId })
-                            .Any(y=> x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
+                .Where(x => uProductionInSteps.Select(y => new { y.ObjectId, y.ObjectTypeId })
+                            .Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
 
             foreach (var d in destProductionInSteps)
             {

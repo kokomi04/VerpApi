@@ -17,5 +17,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Note { get; set; }
         public long? PurchaseOrderId { get; set; }
         public string PurchaseOrderCode { get; set; }
+
+        public int OrderQuantity { get; set; }
+        public int OrderedQuantity { get; set; }
     }
 }

@@ -28,6 +28,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.HasValue? source.FinishDate.Value.UnixToDateTime() : null))
                 .ReverseMap()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.MapFrom(source => source.ProductionOrderDetail))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.Status))
                 .ForMember(dest => dest.VoucherDate, opt => opt.MapFrom(source => source.VoucherDate.GetUnix()))
                 .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.GetUnix()));
         }
@@ -46,7 +47,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         {
             profile.CreateMap<ProductionOrderEntity, ProductionOrderListModel>()
                 .ForMember(dest => dest.VoucherDate, opt => opt.MapFrom(source => source.VoucherDate.GetUnix()))
-                .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.GetUnix()));
+                .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.GetUnix()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.Status));
         }
     }
 }
