@@ -43,31 +43,36 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
         }
 
-        public async Task<int> CreateRequest(RequestOutsourcePartModel req)
+        public async Task<int> CreateRequestOutsourcePart(RequestOutsourcePartModel req)
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
                 {
-                    var o = _mapper.Map<RequestOutsourcePart>(req);
-                    await _manufacturingDBContext.RequestOutsourcePart.AddAsync(o);
+                    var quest = _mapper.Map<RequestOutsourcePart>(req);
+                    await _manufacturingDBContext.RequestOutsourcePart.AddAsync(quest);
+                    _manufacturingDBContext.SaveChanges();
+
+                    var details = _mapper.Map<List<RequestOutsourcePartDetail>>(req.RequestOutsourcePartDetail);
+                    details.ForEach(x => x.RequestOutsourcePartId = quest.RequestOutsourcePartId);
+                    await _manufacturingDBContext.RequestOutsourcePartDetail.AddRangeAsync(details);
                     _manufacturingDBContext.SaveChanges();
 
                     trans.Commit();
-                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, o.RequestOutsourcePartId,
-                        $"Tạo YCGC {o.RequestOutsourcePartId} của chi tiết {o.ProductInStepId} trong LSXDetail {o.ProductionOrderDetailId}", o.JsonSerialize());
-                    return o.RequestOutsourcePartId;
+                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, quest.RequestOutsourcePartId,
+                        $"Tạo YCGC chi tiết {quest.RequestOutsourcePartId}", quest.JsonSerialize());
+                    return quest.RequestOutsourcePartId;
                 }
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError("CreateOutsource");
+                    _logger.LogError("CreateRequestOutsourcePart");
                     throw;
                 }
             }
         }
 
-        public async Task<bool> DeleteRequest(int requestId)
+        public async Task<bool> DeleteRequestOutsourcePart(int requestId)
         {
             var outsInfo = await _manufacturingDBContext.RequestOutsourcePart
                 .Where(x => x.RequestOutsourcePartId == requestId)
@@ -77,6 +82,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var tracks = await _manufacturingDBContext.TrackOutsource
                 .Where(t => t.OutsourceId == requestId && t.OutsourceType == TRACK_OUTSOURCE_TYPE)
                 .ToListAsync();
+            var details = await _manufacturingDBContext.RequestOutsourcePartDetail
+                .Where(x => x.RequestOutsourcePartId == requestId)
+                .ToListAsync();
 
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -84,27 +92,28 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     outsInfo.IsDeleted = true;
                     tracks.ForEach(t => t.IsDeleted = true);
+                    details.ForEach(d => d.IsDeleted = true);
                     _manufacturingDBContext.SaveChanges();
 
                     trans.Commit();
                     _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, outsInfo.RequestOutsourcePartId,
-                        $"Xóa YCGC {outsInfo.RequestOutsourcePartId} của chi tiết {outsInfo.ProductInStepId} trong LSXDetail {outsInfo.ProductionOrderDetailId}", outsInfo.JsonSerialize());
+                        $"Xóa YCGC chi tiết {outsInfo.RequestOutsourcePartId}", outsInfo.JsonSerialize());
                     return true;
                 }
                 catch (Exception ex)
                 {
                     trans.Rollback();
-                    _logger.LogError("CreateOutsource");
+                    _logger.LogError("DeleteRequestOutsourcePart");
                     throw;
                 }
             }
         }
 
-        public async Task<PageData<RequestOutsourcePartModel>> GetListRequest(string keyWord, int page, int size)
+        public async Task<PageData<RequestOutsourcePartModel>> GetListRequestOutsourcePart(string keyWord, int page, int size)
         {
             var query = _manufacturingDBContext.RequestOutsourcePart.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyWord))
-                query = query.Where(x => x.RequestOrder.Contains(keyWord));
+                query = query.Where(x => x.RequestOutsourcePartCode.Contains(keyWord));
 
             var total = await query.CountAsync();
 
@@ -124,20 +133,44 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return _mapper.Map<RequestOutsourcePartModel>(info);
         }
 
-        public async Task<bool> UpdateRequest(int requestId, RequestOutsourcePartModel req)
+        public async Task<bool> UpdateRequestOutsourcePart(int requestId, RequestOutsourcePartModel req)
         {
-            var outsInfo = await _manufacturingDBContext.RequestOutsourcePart
+            var request = await _manufacturingDBContext.RequestOutsourcePart
                 .Where(x => x.RequestOutsourcePartId == requestId)
                 .FirstOrDefaultAsync();
-            if (outsInfo == null)
+            if (request == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRquest);
 
-            _mapper.Map(req, outsInfo);
-            _manufacturingDBContext.SaveChanges();
+            var details = await _manufacturingDBContext.RequestOutsourcePartDetail
+                .Where(x => x.RequestOutsourcePartId == requestId)
+                .ToListAsync();
+            using(var trans = _manufacturingDBContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    _mapper.Map(req, request);
 
-            _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, outsInfo.RequestOutsourcePartId,
-                        $"Cập nhật YCGC {outsInfo.RequestOutsourcePartId} của chi tiết {outsInfo.ProductInStepId} trong LSXDetail {outsInfo.ProductionOrderDetailId}", outsInfo.JsonSerialize());
-            return true;
+                    foreach (var dest in details)
+                    {
+                        var source = req.RequestOutsourcePartDetail.FirstOrDefault(x => x.RequestOutsourcePartDetailId == dest.RequestOutsourcePartDetailId);
+                        if (source != null)
+                            _mapper.Map(source, dest);
+                    }
+
+                    _manufacturingDBContext.SaveChanges();
+
+                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, request.RequestOutsourcePartId,
+                                $"Cập nhật YCGC chi tiết {request.RequestOutsourcePartId}", request.JsonSerialize());
+                    return true;
+                }
+                catch(Exception ex)
+                {
+                    trans.Rollback();
+                    _logger.LogError("UpdateRequestOutsourcePart");
+                    throw;
+                }
+            }
+            
         }
     }
 }

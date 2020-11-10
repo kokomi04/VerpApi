@@ -19,6 +19,12 @@ namespace VErp.Commons.Enums.Manafacturing
             Input = 1,
             Output = 2,
         }
+
+        public enum ProductionStepLinkDataObjectType
+        {
+            Product = 1,
+            ProductSemi = 2
+        }
     }
     
 

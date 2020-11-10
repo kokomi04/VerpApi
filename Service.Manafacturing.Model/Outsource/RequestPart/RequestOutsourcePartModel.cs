@@ -1,7 +1,9 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
@@ -9,10 +11,23 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     public class RequestOutsourcePartModel : IMapFrom<RequestOutsourcePart>
     {
         public int RequestOutsourcePartId { get; set; }
+        public string RequestOutsourcePartCode { get; set; }
         public int ProductionOrderDetailId { get; set; }
-        public int ProductInStepId { get; set; }
-        public int Quantity { get; set; }
-        public string RequestOrder { get; set; }
-        public int UnitId { get; set; }
+        public long CreateDateRequest { get; set; }
+        public long DateRequiredComplete { get; set; }
+
+        public IList<RequestOutsourcePartDetailModel> RequestOutsourcePartDetail { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<RequestOutsourcePart, RequestOutsourcePartModel>()
+                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreateDateRequest.GetUnix()))
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
+                .ForMember(m => m.RequestOutsourcePartDetail, v => v.MapFrom(m => m.RequestOutsourcePartDetail))
+                .ReverseMap()
+                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreateDateRequest.UnixToDateTime()))
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()))
+                .ForMember(m => m.RequestOutsourcePartDetail, v => v.Ignore());
+        }
     }
 }
