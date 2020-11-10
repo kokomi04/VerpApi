@@ -18,6 +18,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
@@ -27,16 +28,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly IProductHelperService _productHelperService;
 
         public ProductionProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionProcessService> logger
-            , IMapper mapper)
+            , IMapper mapper
+            , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _productHelperService = productHelperService;
         }
 
         public async Task<long> CreateProductionStep(int containerId, ProductionStepInfo req)
@@ -159,12 +163,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Quy trình cho lệnh sản xuất đã tồn tại.");
 
-            var products = _manufacturingDBContext.ProductionOrderDetail
+            var productIds = _manufacturingDBContext.ProductionOrderDetail
                 .Where(o => o.ProductionOrderId == productionOrderId)
-                .ToList();
-
-            var productIds = products.Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity })
+                .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity })
                 .ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
+
+            var products = await _productHelperService.GetListProducts(productIds.Select(p => p.Key).ToList());
+            if(productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
                 .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.ContainsKey(s.ContainerId))
@@ -194,13 +199,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         var newStep = new ProductionStep
                         {
                             StepId = null,
-                            Title = $"{product.OrderCode}", // Thiếu tên sản phẩm
+                            Title = $"{product.ProductCode} / {product.ProductName}", // Thiếu tên sản phẩm
                             ContainerTypeId = (int)EnumProductionProcess.ContainerType.LSX,
                             ContainerId = productionOrderId,
                             IsGroup = true
                         };
                         _manufacturingDBContext.ProductionStep.Add(newStep);
-                        productMap.Add(product.ProductId, newStep);
+                        productMap.Add(product.ProductId.Value, newStep);
                     }
                     _manufacturingDBContext.SaveChanges();
 
@@ -236,7 +241,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         if (!step.ParentId.HasValue) continue;
                         stepMap[step.ProductionStepId].ParentId = stepMap[step.ParentId.Value].ProductionStepId;
                     }
-
 
                     // Create data
                     var linkDataMap = new Dictionary<long, ProductionStepLinkData>();

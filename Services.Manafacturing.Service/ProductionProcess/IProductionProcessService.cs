@@ -15,7 +15,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<long> CreateProductionStep(int containerId, ProductionStepInfo req);
         Task<bool> DeleteProductionStepById(int containerId, long productionStepId);
         Task<bool> MergeProductionProcess(int productOrderId, IList<long> productionStepIds);
-
         Task<bool> CreateProductionProcess(int productionOrderId);
         //Task<bool> GenerateProductionStepMapping(int containerId, List<ProductionStepLinkModel> req);
     }

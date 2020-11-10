@@ -12,6 +12,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
     public class ProductionOrderModel : ProductionOrderListModel
     {
+        public bool? HasProcess { get; set; }
+
         public ProductionOrderModel()
         {
             ProductionOrderDetail = new HashSet<ProductionOrderDetailModel>();
@@ -42,7 +44,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? FinishDate { get; set; }
         public string Description { get; set; }
         public EnumProductionOrderStatus? Status { get; set; }
-
+        
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderEntity, ProductionOrderListModel>()
