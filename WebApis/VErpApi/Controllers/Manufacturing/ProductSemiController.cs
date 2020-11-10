@@ -21,9 +21,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<ProductSemiModel>> GetListProductSemis(int containerId, int containerType)
+        public async Task<IList<ProductSemiModel>> GetListProductSemis(int productId)
         {
-            return await _productSemiService.GetListProductSemis(containerId, containerType);
+            return await _productSemiService.GetListProductSemis(productId);
         }
 
         [HttpPost]

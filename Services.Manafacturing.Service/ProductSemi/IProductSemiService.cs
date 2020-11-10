@@ -8,7 +8,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi
 {
     public interface IProductSemiService
     {
-        Task<IList<ProductSemiModel>> GetListProductSemis(int containerId, int containerType);
+        Task<IList<ProductSemiModel>> GetListProductSemis(int productId);
         Task<long> CreateProductSemi(ProductSemiModel model);
         Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model);
         Task<bool> DeleteProductSemi(long productSemiId);

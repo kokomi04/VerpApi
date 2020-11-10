@@ -341,7 +341,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false)
         {
-            Expression exp = Expression.Constant(false);
+            Expression exp = null;
             if (clause != null)
             {
                 if (clause is SingleClause)

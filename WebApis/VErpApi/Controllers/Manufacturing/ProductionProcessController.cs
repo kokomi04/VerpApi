@@ -24,28 +24,28 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute]long containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute]int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }
 
         [HttpGet]
         [Route("{containerId}/{productionStepId}")]
-        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] long containerId, [FromRoute] long productionStepId)
+        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] int containerId, [FromRoute] long productionStepId)
         {
             return await _productionProcessService.GetProductionStepById(containerId, productionStepId);
         }
 
         [HttpPut]
         [Route("{containerId}/{productionStepId}")]
-        public async Task<bool> UpdateProductionStepsById([FromRoute] long containerId, [FromRoute] long productionStepId,[FromBody] ProductionStepInfo req)
+        public async Task<bool> UpdateProductionStepsById([FromRoute] int containerId, [FromRoute] long productionStepId, [FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.UpdateProductionStepById(containerId, productionStepId, req);
         }
 
         [HttpPost]
         [Route("{containerId}")]
-        public async Task<long> CreateProductionStep([FromRoute]long containerId,[FromBody] ProductionStepInfo req)
+        public async Task<long> CreateProductionStep([FromRoute]int containerId, [FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.CreateProductionStep(containerId, req);
         }
@@ -56,6 +56,6 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.DeleteProductionStepById(containerId, productionStepId);
         }
-        
+
     }
 }
