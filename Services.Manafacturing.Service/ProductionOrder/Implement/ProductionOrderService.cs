@@ -21,6 +21,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 using VErp.Commons.Enums.Manafacturing;
+using Microsoft.Data.SqlClient;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -67,11 +68,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Where(o => o.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionOrderModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefault();
+            if (productOrder != null)
+            {
+                var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ProductionOrderId", productionOrderId)
+                };
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfo", parammeters);
 
+                var lstEtraInfo = resultData.ConvertData<ProductionOrderExtraInfo>();
 
+                foreach (var item in productOrder.ProductionOrderDetail)
+                {
+                    var extraInfo = lstEtraInfo.First(i => i.ProductionOrderDetailId == item.ProductionOrderDetailId);
+                    item.OrderQuantity = extraInfo.OrderQuantity;
+                    item.OrderedQuantity = extraInfo.OrderedQuantity;
+                }
+            }
 
             return productOrder;
-
         }
 
         public async Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data, bool isDraft)
