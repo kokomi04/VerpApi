@@ -91,6 +91,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
                 data.ProductionOrderCode = generated.CustomCode;
+
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
 
                 // Set status
@@ -98,8 +99,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                // Tạo detail
+                foreach (var item in data.ProductionOrderDetail)
+                {
+                    item.ProductionOrderDetailId = 0;
+                    item.ProductionOrderId = productionOrder.ProductionOrderId;
+                    // Tạo mới
+                    var entity = _mapper.Map<ProductionOrderDetail>(item);
+                    _manufacturingDBContext.ProductionOrderDetail.Add(entity);
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
+                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, 0);
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;
             }
@@ -194,7 +207,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.IsDeleted = true;
                 }
-               
+
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
