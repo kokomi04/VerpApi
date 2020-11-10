@@ -84,6 +84,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     item.OrderQuantity = extraInfo.OrderQuantity;
                     item.OrderedQuantity = extraInfo.OrderedQuantity;
                 }
+
+                productOrder.HasProcess = _manufacturingDBContext.ProductionStep
+                .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId);
             }
 
             return productOrder;

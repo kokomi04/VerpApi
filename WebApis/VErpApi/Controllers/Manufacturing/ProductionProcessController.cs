@@ -57,5 +57,18 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.DeleteProductionStepById(containerId, productionStepId);
         }
 
+        [HttpPost]
+        [Route("productionOrder/{productionOrderId}")]
+        public async Task<bool> CreateProductionProcess([FromRoute]int productionOrderId)
+        {
+            return await _productionProcessService.CreateProductionProcess(productionOrderId);
+        }
+
+        [HttpPut]
+        [Route("productionOrder/{productionOrderId}")]
+        public async Task<bool> MergeProductionProcess([FromRoute]int productionOrderId, [FromBody] IList<long> productionStepIds)
+        {
+            return await _productionProcessService.MergeProductionProcess(productionOrderId, productionStepIds);
+        }
     }
 }
