@@ -57,17 +57,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query)
                 .ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
-
             return (lst, total);
         }
 
         public async Task<ProductionOrderModel> GetProductionOrder(int productionOrderId)
         {
-            return _manufacturingDBContext.ProductionOrder
+            var productOrder = _manufacturingDBContext.ProductionOrder
                 .Include(o => o.ProductionOrderDetail)
                 .Where(o => o.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionOrderModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefault();
+
+
+
+            return productOrder;
+
         }
 
         public async Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data, bool isDraft)
