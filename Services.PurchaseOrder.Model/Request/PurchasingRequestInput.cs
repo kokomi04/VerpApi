@@ -15,6 +15,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long Date { get; set; }
         public string Content { get; set; }
+
         public List<PurchasingRequestInputDetail> Details { set; get; }
 
         public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequest, PurchasingRequestInput>()
@@ -33,6 +34,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
+
+        public int OriginalProductId { get; set; }
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
             => profile.CreateMap<PurchasingRequestDetail, T>()

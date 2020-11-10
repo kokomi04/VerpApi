@@ -179,6 +179,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getutcdate())");
 
+                entity.Property(e => e.OrderDetailId).HasComment("VoucherValueRowId");
+
+                entity.Property(e => e.OrderDetailQuantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OrderDetailRequestQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.PurchasingRequestCode)
                     .IsRequired()
                     .HasMaxLength(128);
