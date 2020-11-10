@@ -5,12 +5,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class OutsourceOrder
     {
+        public OutsourceOrder()
+        {
+            OutsourceOrderDetail = new HashSet<OutsourceOrderDetail>();
+        }
+
         public int OutsoureOrderId { get; set; }
-        public int RequestContainerId { get; set; }
-        public int OutsourceOrderType { get; set; }
+        public int RequestoObjectId { get; set; }
+        public int RequestObjectTypeId { get; set; }
         public string OutsoureOrderCode { get; set; }
-        public DateTime CreateOutsoureOrderDate { get; set; }
-        public DateTime FinishOutsoureOrderDate { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
         public string ProviderAddress { get; set; }
@@ -27,5 +30,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+
+        public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
     }
 }

@@ -10,7 +10,7 @@ using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
-    [Route("api/requestOutsource")]
+    [Route("api/manufacturing/requestOutsource")]
     [ApiController]
     public class RequestOutsourceController : ControllerBase
     {

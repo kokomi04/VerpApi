@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
+        public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
@@ -39,13 +40,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.HasKey(e => e.OutsoureOrderId);
 
-                entity.Property(e => e.CreateOutsoureOrderDate).HasColumnType("datetime");
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.FinishOutsoureOrderDate).HasColumnType("datetime");
 
                 entity.Property(e => e.OutsoureOrderCode)
                     .IsRequired()
@@ -67,7 +64,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.RequestContainerId).HasComment(@"1: Gia công chi tiết
+                entity.Property(e => e.RequestoObjectId).HasComment(@"1: Gia công chi tiết
 2: Gia công công đoạn");
 
                 entity.Property(e => e.TransportToAdress)
@@ -88,6 +85,28 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
+
+            modelBuilder.Entity<OutsourceOrderDetail>(entity =>
+            {
+                entity.Property(e => e.OutsourceOrderDetailId).ValueGeneratedNever();
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Price).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Tax).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.OutsoureOrder)
+                    .WithMany(p => p.OutsourceOrderDetail)
+                    .HasForeignKey(d => d.OutsoureOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
+            });
+
             modelBuilder.Entity<ProductSemi>(entity =>
             {
                 entity.Property(e => e.ProductSemiId).ValueGeneratedNever();
@@ -194,8 +213,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<RequestOutsourcePart>(entity =>
             {
-                entity.Property(e => e.CreateDateRequest).HasColumnType("datetime");
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DateRequiredComplete).HasColumnType("datetime");
