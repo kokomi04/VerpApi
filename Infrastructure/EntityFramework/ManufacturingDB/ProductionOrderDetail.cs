@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public int ProductionOrderDetailId { get; set; }
         public int ProductionOrderId { get; set; }
-        public int? ProductId { get; set; }
+        public int ProductId { get; set; }
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }

@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
+        public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
@@ -23,7 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
-        public virtual DbSet<Step> Step { get; set; }
+       public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
         public virtual DbSet<TrackOutsource> TrackOutsource { get; set; }
 
@@ -32,6 +33,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<ProductSemi>(entity =>
+            {
+                entity.Property(e => e.ProductSemiId).ValueGeneratedNever();
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<ProductionOrder>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(128);
@@ -87,6 +103,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 

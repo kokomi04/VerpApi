@@ -11,8 +11,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     public class ProductionStepLinkDataModel: IMapFrom<ProductionStepLinkData>
     {
         public long ProductionStepLinkDataId { get; set; }
-        public int ProductId { get; set; }
-        public int ProductUnitConversionId { get; set; }
+        public int ObjectId { get; set; }
+        public int UnitId { get; set; }
         public decimal Quantity { get; set; }
         public int SortOrder { get; set; }
     }
@@ -25,10 +25,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepLinkDataRole, ProductionStepLinkDataInfo >()
-                .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductId))
+                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ProductionStepLinkData.ObjectId))
                 .ForMember(m => m.ProductionStepLinkDataId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataId))
                 .ForMember(m => m.Quantity, v => v.MapFrom(m => m.ProductionStepLinkData.Quantity))
-                .ForMember(m => m.ProductUnitConversionId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductUnitConversionId))
+                .ForMember(m => m.UnitId, v => v.MapFrom(m => m.ProductionStepLinkData.UnitId))
                 .ForMember(m => m.SortOrder, v => v.MapFrom(m => m.ProductionStepLinkData.SortOrder))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 .ReverseMap()

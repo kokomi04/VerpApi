@@ -21,7 +21,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderModel, ProductionOrderEntity>()
-                .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore());
+                .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
+                .ReverseMap()
+                .ForMember(dest => dest.ProductionOrderDetail, opt => opt.MapFrom(source => source.ProductionOrderDetail));
         }
     }
 

@@ -8,6 +8,8 @@ using System.IO;
 using System.Linq;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -41,7 +43,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             serializer.Serialize(writer, value);
-
         }
 
         public override bool CanWrite
@@ -57,47 +58,54 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         private Clause ConvertToClause(JToken token)
         {
-            Clause resultClause = null;
-            if (!(token is JObject))
+            try
             {
-                return null;
-            }
-            var props = (token as JObject).Properties();
-            bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
-            bool isArray = props.Any(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower());
-            if (isSingle)
-            {
-                var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
-                var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
-                var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
-                var dataType = props.First(c => c.Name.ToLower() == nameof(SingleClause.DataType).ToLower()).Value.ToString();
-                resultClause = new SingleClause
+                Clause resultClause = null;
+                if (!(token is JObject))
                 {
-                    DataType = (EnumDataType)int.Parse(dataType),
-                    FieldName = fieldName,
-                    Operator = (EnumOperator)int.Parse(ope),
-                    Value = value.ToObject<object>()
-                };
-            }
-            else if(isArray)
-            {
-                var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
-                var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value.ToString();
-                var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower()).Value.ToString();
-
-                resultClause = new ArrayClause
-                {
-                    Condition = MasterEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
-                    Not = bool.Parse(not)
-                };
-                var arrClause = clauses.ToArray();
-                foreach (var item in arrClause)
-                {
-                    var clause = ConvertToClause(item);
-                    (resultClause as ArrayClause).Rules.Add(clause);
+                    return null;
                 }
+                var props = (token as JObject).Properties();
+                bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
+                bool isArray = props.Any(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower());
+                if (isSingle)
+                {
+                    var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
+                    var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
+                    var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
+                    var dataType = props.First(c => c.Name.ToLower() == nameof(SingleClause.DataType).ToLower()).Value.ToString();
+                    resultClause = new SingleClause
+                    {
+                        DataType = (EnumDataType)int.Parse(dataType),
+                        FieldName = fieldName,
+                        Operator = (EnumOperator)int.Parse(ope),
+                        Value = value.ToObject<object>()
+                    };
+                }
+                else if (isArray)
+                {
+                    var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
+                    var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value.ToString();
+                    var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower()).Value.ToString();
+
+                    resultClause = new ArrayClause
+                    {
+                        Condition = MasterEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
+                        Not = bool.Parse(not)
+                    };
+                    var arrClause = clauses.ToArray();
+                    foreach (var item in arrClause)
+                    {
+                        var clause = ConvertToClause(item);
+                        (resultClause as ArrayClause).Rules.Add(clause);
+                    }
+                }
+                return resultClause;
             }
-            return resultClause;
+            catch (Exception)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Định dạng bộ lọc truyền lên không hợp lệ");
+            }
         }
 
         public override bool CanConvert(Type objectType)
