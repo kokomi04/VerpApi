@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionStepLinkData()
         {
             ProductionStepLinkDataRole = new HashSet<ProductionStepLinkDataRole>();
-            RequestOutsourcePartDetail = new HashSet<RequestOutsourcePartDetail>();
         }
 
         public long ProductionStepLinkDataId { get; set; }
@@ -25,6 +24,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
-        public virtual ICollection<RequestOutsourcePartDetail> RequestOutsourcePartDetail { get; set; }
     }
 }

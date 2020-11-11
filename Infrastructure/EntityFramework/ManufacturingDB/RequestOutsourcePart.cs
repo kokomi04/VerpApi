@@ -5,15 +5,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class RequestOutsourcePart
     {
-        public RequestOutsourcePart()
-        {
-            RequestOutsourcePartDetail = new HashSet<RequestOutsourcePartDetail>();
-        }
-
         public int RequestOutsourcePartId { get; set; }
         public string RequestOutsourcePartCode { get; set; }
         public int ProductionOrderDetailId { get; set; }
         public DateTime DateRequiredComplete { get; set; }
+        public int ProductId { get; set; }
+        public int Quanity { get; set; }
+        public int Status { get; set; }
+        public int UnitId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
@@ -22,6 +21,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
-        public virtual ICollection<RequestOutsourcePartDetail> RequestOutsourcePartDetail { get; set; }
     }
 }

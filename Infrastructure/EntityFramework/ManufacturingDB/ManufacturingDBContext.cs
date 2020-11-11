@@ -26,7 +26,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
-        public virtual DbSet<RequestOutsourcePartDetail> RequestOutsourcePartDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
         public virtual DbSet<TrackOutsource> TrackOutsource { get; set; }
@@ -242,29 +241,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderDetailId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_RequestOutsourcePart_ProductionOrderDetail");
-            });
-
-            modelBuilder.Entity<RequestOutsourcePartDetail>(entity =>
-            {
-                entity.Property(e => e.RequestOutsourcePartDetailId).ValueGeneratedNever();
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.ProductionStepLinkData)
-                    .WithMany(p => p.RequestOutsourcePartDetail)
-                    .HasForeignKey(d => d.ProductionStepLinkDataId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestOutsourcePartDetail_ProductionStepLinkData");
-
-                entity.HasOne(d => d.RequestOutsourcePart)
-                    .WithMany(p => p.RequestOutsourcePartDetail)
-                    .HasForeignKey(d => d.RequestOutsourcePartId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestOutsourcePartDetail_RequestOutsourcePart");
             });
 
             modelBuilder.Entity<Step>(entity =>

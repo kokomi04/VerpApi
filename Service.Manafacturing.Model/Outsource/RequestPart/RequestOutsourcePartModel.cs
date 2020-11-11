@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
@@ -15,19 +17,31 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public int ProductionOrderDetailId { get; set; }
         public long CreateDateRequest { get; set; }
         public long DateRequiredComplete { get; set; }
-
-        public IList<RequestOutsourcePartDetailModel> RequestOutsourcePartDetail { get; set; }
+        public int ProductId { get; set; }
+        public int Quanity { get; set; }
+        public int UnitId { get; set; }
+        public OutsourcePartProcessType Status { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<RequestOutsourcePart, RequestOutsourcePartModel>()
                 .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
-                .ForMember(m => m.RequestOutsourcePartDetail, v => v.MapFrom(m => m.RequestOutsourcePartDetail))
                 .ReverseMap()
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()))
-                .ForMember(m => m.RequestOutsourcePartDetail, v => v.Ignore());
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
         }
     }
+
+    public class RequestOutsourcePartInfo: RequestOutsourcePartModel
+    {
+        public string ProductionOrderCode { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitName { get; set; }
+        public string ProductPartName { get; set; }
+
+    }
+
+
 }
