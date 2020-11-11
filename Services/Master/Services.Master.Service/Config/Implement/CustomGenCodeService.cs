@@ -134,7 +134,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted);
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {objectTypeId.GetEnumDescription()} {(objectId > 0 ? (int?)objectId : null)}");
             }
 
             return new CustomGenCodeOutputModel()
