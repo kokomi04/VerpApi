@@ -75,7 +75,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> DeleteProductionStepById(int containerId, long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep
-                                   .Where(s => s.ProductionStepId == productionStepId)
+                                   .Where(s => s.ProductionStepId == productionStepId && s.ContainerId == containerId)
                                    .Include(x => x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
@@ -163,13 +163,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Quy trình cho lệnh sản xuất đã tồn tại.");
 
-            var productIds = _manufacturingDBContext.ProductionOrderDetail
+            var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
                 .Where(o => o.ProductionOrderId == productionOrderId)
-                .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity })
-                .ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
+                .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity, od.ProductionOrderDetailId })
+                .ToList();
+
+            var productIds = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
+
+            var productOrderMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.ProductionOrderDetailId);
 
             var products = await _productHelperService.GetListProducts(productIds.Select(p => p.Key).ToList());
-            if(productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
+            if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
                 .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.ContainsKey(s.ContainerId))
@@ -209,8 +213,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                     _manufacturingDBContext.SaveChanges();
 
+                    // Map step quy trình với chi tiết lệnh sản xuất
+                    foreach (var item in productMap)
+                    {
+                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                        {
+                            ProductionOrderDetailId = productOrderMap[item.Key],
+                            ProductionStepId = item.Value.ProductionStepId
+                        });
+                    }
+
                     // create productionStep
                     var stepMap = new Dictionary<long, ProductionStep>();
+                    var stepOrderMap = new Dictionary<int, ProductionStep>();
+
                     var parentIdUpdater = new List<ProductionStep>();
                     foreach (var step in productionSteps)
                     {
@@ -232,6 +248,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         }
                         _manufacturingDBContext.ProductionStep.Add(newStep);
                         stepMap.Add(step.ProductionStepId, newStep);
+                        stepOrderMap.Add(step.ContainerId, newStep);
+
                     }
                     _manufacturingDBContext.SaveChanges();
 
@@ -240,6 +258,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         if (!step.ParentId.HasValue) continue;
                         stepMap[step.ProductionStepId].ParentId = stepMap[step.ParentId.Value].ProductionStepId;
+                    }
+
+                    // Map step công đoạn, quy trình con với chi tiết lệnh sản xuất
+                    foreach (var item in stepOrderMap)
+                    {
+                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                        {
+                            ProductionOrderDetailId = productOrderMap[item.Key],
+                            ProductionStepId = item.Value.ProductionStepId
+                        });
                     }
 
                     // Create data
@@ -284,7 +312,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     throw;
                 }
             }
-
         }
 
         public async Task<bool> MergeProductionProcess(int productionOrderId, IList<long> productionStepIds)
@@ -293,9 +320,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(s => s.ContainerId == productionOrderId
                 && productionStepIds.Contains(s.ProductionStepId)
                 && s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX
-                && !s.ParentId.HasValue)
+                && !s.ParentId.HasValue
+                && !s.StepId.HasValue)
                 .ToList();
+
             if (productionSteps.Count != productionStepIds.Count()) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy quy trình trong lệnh sản xuất");
+
+            var productionStepOrder = _manufacturingDBContext.ProductionStepOrder.Where(so => productionStepIds.Contains(so.ProductionStepId)).ToList();
 
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -316,8 +347,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         item.IsDeleted = true;
                     }
-
                     _manufacturingDBContext.SaveChanges();
+
+                    // Maping quy trình với chi tiết lệnh SX
+                    foreach (var item in productionStepOrder)
+                    {
+                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                        {
+                            ProductionStepId = productionStep.ProductionStepId,
+                            ProductionOrderDetailId = item.ProductionOrderDetailId
+                        });
+                    }
+                    _manufacturingDBContext.ProductionStepOrder.RemoveRange(productionStepOrder);
 
                     var childProductionSteps = _manufacturingDBContext.ProductionStep.Where(s => productionStepIds.Contains(s.ParentId)).ToList();
                     // Cập nhật parentStep
@@ -338,9 +379,102 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     _logger.LogError(ex, "MergeProductionProcess");
                     throw;
                 }
-
             }
         }
+
+        public async Task<bool> MergeProductionStep(int productionOrderId, IList<long> productionStepIds)
+        {
+            var productionSteps = _manufacturingDBContext.ProductionStep
+                .Where(s => s.ContainerId == productionOrderId && productionStepIds.Contains(s.ProductionStepId) && s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX)
+                .ToList();
+            if (productionSteps.Count <= 1)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu gộp 2 công đoạn trở lên");
+
+            if (productionSteps.Count != productionStepIds.Count())
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy quy trình trong lệnh sản xuất");
+
+            if (productionSteps.Any(s => !s.StepId.HasValue))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không được phép gộp quy trình con");
+
+            var roles = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(r => productionStepIds.Contains(r.ProductionStepId))
+                .ToList();
+
+            var linkDataIds = roles.Select(r => r.ProductionStepLinkDataId).Distinct().ToList();
+
+            var linkDatas = _manufacturingDBContext.ProductionStepLinkData
+                .Where(d => linkDataIds.Contains(d.ProductionStepLinkDataId))
+                .ToDictionary(d => d.ProductionStepLinkDataId, d => d);
+
+            var group = roles.GroupBy(r => r.ProductionStepId).ToDictionary(g => g.Key, g => g.Select(r => new
+            {
+                r.ProductionStepLinkDataRoleTypeId,
+                linkDatas[r.ProductionStepLinkDataId].ObjectId,
+                linkDatas[r.ProductionStepLinkDataId].ObjectTypeId,
+            }).ToList());
+
+            // Validate loại công đoạn
+            if (productionSteps.Select(s => s.StepId).Distinct().Count() != 1)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không được gộp các công đoạn không đồng nhất");
+
+            // validate input, output
+            var firstStepId = productionStepIds[0];
+            for (int indx = 1; indx < productionStepIds.Count; indx++)
+            {
+                var stepId = productionStepIds[indx];
+                var bOk = group[stepId].Count == group[firstStepId].Count
+                    && group[stepId].All(r => group[firstStepId].Any(p => p.ObjectId == r.ObjectId && p.ObjectTypeId == r.ObjectTypeId && p.ProductionStepLinkDataRoleTypeId == r.ProductionStepLinkDataRoleTypeId));
+                if (!bOk) throw new BadRequestException(GeneralCode.InvalidParams, "Không được gộp các công đoạn không đồng nhất");
+            }
+
+            using (var trans = _manufacturingDBContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    // Gộp các đầu ra, đầu vào step vào step đầu tiên
+                    foreach (var role in roles)
+                    {
+                        if (role.ProductionStepId == productionStepIds[0]) continue;
+                        role.ProductionStepId = productionStepIds[0];
+                    }
+                    // Xóa các step còn lại
+                    foreach (var step in productionSteps)
+                    {
+                        if (step.ProductionStepId == productionStepIds[0]) continue;
+                        step.IsDeleted = true;
+                    }
+
+                    // Maping quy trình với chi tiết lệnh SX
+                    var productionStepOrder = _manufacturingDBContext.ProductionStepOrder
+                        .Where(so => productionStepIds.Contains(so.ProductionStepId)).ToList();
+                    var orderDetailIds = productionStepOrder.Select(so => so.ProductionOrderDetailId).Distinct();
+                    // Xóa mapping cũ 
+                    _manufacturingDBContext.ProductionStepOrder.RemoveRange(productionStepOrder);
+                    // Tạo lại mapping mới
+                    foreach (var orderDetailId in orderDetailIds)
+                    {
+                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                        {
+                            ProductionStepId = productionStepIds[0],
+                            ProductionOrderDetailId = orderDetailId
+                        });
+                    }
+                
+                    _manufacturingDBContext.SaveChanges();
+
+                    await trans.CommitAsync();
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await trans.RollbackAsync();
+                    _logger.LogError(ex, "MergeProductionStep");
+                    throw;
+                }
+            }
+        }
+
 
         public async Task<ProductionStepInfo> GetProductionStepById(int containerId, long productionStepId)
         {

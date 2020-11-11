@@ -209,6 +209,18 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<ProductionStepOrder>(entity =>
             {
                 entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderDetailId });
+
+                entity.HasOne(d => d.ProductionOrderDetail)
+                    .WithMany(p => p.ProductionStepOrder)
+                    .HasForeignKey(d => d.ProductionOrderDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepOrder_ProductionOrderDetail");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.ProductionStepOrder)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepOrder_ProductionStep");
             });
 
             modelBuilder.Entity<RequestOutsourcePart>(entity =>

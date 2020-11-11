@@ -6,6 +6,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     public partial class ProductionStepOrder
     {
         public long ProductionStepId { get; set; }
-        public long ProductionOrderDetailId { get; set; }
+        public int ProductionOrderDetailId { get; set; }
+
+        public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
+        public virtual ProductionStep ProductionStep { get; set; }
     }
 }

@@ -65,10 +65,17 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("productionOrder/{productionOrderId}")]
+        [Route("productionOrder/{productionOrderId}/process")]
         public async Task<bool> MergeProductionProcess([FromRoute]int productionOrderId, [FromBody] IList<long> productionStepIds)
         {
             return await _productionProcessService.MergeProductionProcess(productionOrderId, productionStepIds);
+        }
+
+        [HttpPut]
+        [Route("productionOrder/{productionOrderId}/step")]
+        public async Task<bool> MergeProductionStep([FromRoute]int productionOrderId, [FromBody] IList<long> productionStepIds)
+        {
+            return await _productionProcessService.MergeProductionStep(productionOrderId, productionStepIds);
         }
     }
 }
