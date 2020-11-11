@@ -48,6 +48,7 @@ namespace VErp.Commons.Enums.MasterEnum
         InventoryDetail = 13,
 
         [Description("Kiện")]
+        [GenCodeObject]
         Package = 14,
 
         [Description("Sản phẩm kho")]
