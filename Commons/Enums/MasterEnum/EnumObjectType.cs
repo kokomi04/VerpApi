@@ -186,7 +186,9 @@ namespace VErp.Commons.Enums.MasterEnum
         StepGroup = 62,
         [Description("Yêu cầu gia công chi tiết")]
         RequestOutsourcePart = 63,
+
         [Description("Lệnh sản xuất")]
+        [GenCodeObject]
         ProductionOrder = 70,
     }
 }
