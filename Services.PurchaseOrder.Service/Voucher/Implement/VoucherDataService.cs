@@ -2147,7 +2147,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<VoucherBillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
         {
-            var singleFields = (await(
+            var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
@@ -2202,6 +2202,27 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             return result;
         }
+
+
+        public async Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size)
+        {
+            var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailByPurchasingRequest",
+                new[]
+                {
+                   new SqlParameter("@Keyword", EnumDataType.Text.GetSqlValue(keyword)),
+                   new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
+                   new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
+                   new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
+                   new SqlParameter("@Page",page),
+                   new SqlParameter("@Size",size),
+                   total
+                });
+
+            return (data, (total.Value as long?).GetValueOrDefault());
+        }
+
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
