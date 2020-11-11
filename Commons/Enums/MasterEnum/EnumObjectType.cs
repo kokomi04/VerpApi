@@ -67,8 +67,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         PurchasingRequest = 19,
 
-        [Description("YC VTHH chi tiết")]
-        [GenCodeObject]
+        [Description("YC VTHH chi tiết")]        
         PurchasingRequestDetail = 20,
 
         [Description("Phiếu đề nghị VTHH")]
