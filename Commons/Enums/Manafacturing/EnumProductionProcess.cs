@@ -33,5 +33,15 @@ namespace VErp.Commons.Enums.Manafacturing
             [Description("Gia công công đoạn")]
             OutsourceStep = 2
         }
+
+        public enum OutsourcePartProcessType
+        {
+            [Description("Chưa xử lý")]
+            Unprocessed = 1,
+            [Description("Đang xử lý")]
+            Processing = 2,
+            [Description("Đã xử lý")]
+            Processed = 3
+        }
     }
 }

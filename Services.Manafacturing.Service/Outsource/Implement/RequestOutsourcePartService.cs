@@ -13,164 +13,163 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
     public class RequestOutsourcePartService : IRequestOutsourcePartService
     {
-        private const int TRACK_OUTSOURCE_TYPE = (int)EnumTrackOutsourceType.OutsourceComposition;
-
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public RequestOutsourcePartService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<RequestOutsourcePartService> logger
-            , IMapper mapper)
+            , IMapper mapper
+            , ICustomGenCodeHelperService customGenCodeHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<int> CreateRequestOutsourcePart(RequestOutsourcePartModel req)
+        public async Task<bool> CreateRequestOutsourcePart(List<RequestOutsourcePartModel> datas)
         {
-            using (var trans = _manufacturingDBContext.Database.BeginTransaction())
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
             {
-                try
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.RequestOutsource, 0);
+                if (currentConfig == null)
                 {
-                    var quest = _mapper.Map<RequestOutsourcePart>(req);
-                    await _manufacturingDBContext.RequestOutsourcePart.AddAsync(quest);
-                    _manufacturingDBContext.SaveChanges();
-
-                    var details = _mapper.Map<List<RequestOutsourcePartDetail>>(req.RequestOutsourcePartDetail);
-                    details.ForEach(x => x.RequestOutsourcePartId = quest.RequestOutsourcePartId);
-                    await _manufacturingDBContext.RequestOutsourcePartDetail.AddRangeAsync(details);
-                    _manufacturingDBContext.SaveChanges();
-
-                    trans.Commit();
-                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, quest.RequestOutsourcePartId,
-                        $"Tạo YCGC chi tiết {quest.RequestOutsourcePartId}", quest.JsonSerialize());
-                    return quest.RequestOutsourcePartId;
+                    throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                 }
-                catch (Exception ex)
+                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                if (generated == null)
                 {
-                    trans.Rollback();
-                    _logger.LogError("CreateRequestOutsourcePart");
-                    throw;
+                    throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
+
+                var enties = new List<RequestOutsourcePart>();
+                foreach (var data in datas)
+                {
+                    data.RequestOutsourcePartCode = generated.CustomCode;
+                    data.Status = EnumProductionProcess.OutsourcePartProcessType.Unprocessed;
+                    enties.Add(_mapper.Map<RequestOutsourcePart>(data));
+                }
+
+                await _manufacturingDBContext.RequestOutsourcePart.AddRangeAsync(enties);
+                await _manufacturingDBContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.RequestOutsource, 0);
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, enties.First().ProductionOrderDetailId, $"Thêm mới yêu cầu gia công chi tiết {enties.First().RequestOutsourcePartCode}", enties.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "CreateRequestOutsourcePart");
+                throw;
             }
         }
 
-        public async Task<bool> DeleteRequestOutsourcePart(int requestId)
+        public async Task<IList<RequestOutsourcePartInfo>> GetRequestOutsourcePartExtraInfo(int productionOrderDetailId = 0)
         {
-            var outsInfo = await _manufacturingDBContext.RequestOutsourcePart
-                .Where(x => x.RequestOutsourcePartId == requestId)
-                .FirstOrDefaultAsync();
-            if (outsInfo == null)
-                throw new BadRequestException(OutsourceErrorCode.NotFoundRquest);
-            var tracks = await _manufacturingDBContext.TrackOutsource
-                .Where(t => t.OutsourceId == requestId && t.OutsourceType == TRACK_OUTSOURCE_TYPE)
-                .ToListAsync();
-            var details = await _manufacturingDBContext.RequestOutsourcePartDetail
-                .Where(x => x.RequestOutsourcePartId == requestId)
-                .ToListAsync();
+            var sql = $@"SELECT rp.RequestOutsourcePartId, rp.RequestOutsourcePartCode,rp.ProductionOrderDetailId, 
+                        DATEDIFF(ms, '1970-01-01 00:00:00', rp.DateRequiredComplete) DateRequiredComplete, DATEDIFF(ms, '1970-01-01 00:00:00', rp.CreatedDatetimeUtc) CreateDateRequest,
+                        po.ProductionOrderCode, p1.ProductCode, p1.ProductName, rp.Status, rp.Quanity, u.UnitName, p2.ProductName ProductPartName, rp.ProductId, rp.UnitId
+                        FROM [ManufacturingDB].[dbo].RequestOutsourcePart rp
+                        JOIN [ManufacturingDB].[dbo].ProductionOrderDetail pod ON rp.ProductionOrderDetailId = pod.ProductionOrderDetailId
+                        JOIN [ManufacturingDB].[dbo].ProductionOrder po ON pod.ProductionOrderId = po.ProductionOrderId
+                        JOIN [StockDB].[dbo].Product p1 ON pod.ProductId = p1.ProductId 
+                        JOIN [MasterDB].[dbo].Unit u ON u.UnitId = rp.UnitId
+                        JOIN [StockDB].[dbo].Product p2 ON rp.ProductId = p2.ProductId
+                        Where rp.IsDeleted = 0 ";
 
-            using (var trans = _manufacturingDBContext.Database.BeginTransaction())
+            if (productionOrderDetailId != 0)
             {
-                try
-                {
-                    outsInfo.IsDeleted = true;
-                    tracks.ForEach(t => t.IsDeleted = true);
-                    details.ForEach(d => d.IsDeleted = true);
-                    _manufacturingDBContext.SaveChanges();
-
-                    trans.Commit();
-                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, outsInfo.RequestOutsourcePartId,
-                        $"Xóa YCGC chi tiết {outsInfo.RequestOutsourcePartId}", outsInfo.JsonSerialize());
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError("DeleteRequestOutsourcePart");
-                    throw;
-                }
+                sql += " and rp.ProductionOrderDetailId = @ProductionOrderDetailId";
             }
+
+            var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ProductionOrderDetailId", productionOrderDetailId)
+                };
+
+            var data = (await _manufacturingDBContext.QueryDataTable(sql, parammeters)).ConvertData<RequestOutsourcePartInfo>();
+
+            return data;
         }
 
-        public async Task<PageData<RequestOutsourcePartModel>> GetListRequestOutsourcePart(string keyWord, int page, int size)
+        public async Task<bool> UpdateRequestOutsourcePart(int productionOrderDetailId, List<RequestOutsourcePartModel> req)
         {
-            var query = _manufacturingDBContext.RequestOutsourcePart.AsNoTracking();
-            if (!string.IsNullOrWhiteSpace(keyWord))
-                query = query.Where(x => x.RequestOutsourcePartCode.Contains(keyWord));
+            var datas = _manufacturingDBContext.RequestOutsourcePart.Where(x => x.ProductionOrderDetailId == productionOrderDetailId).ToList();
+            if (datas.Count <= 0)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công của {productionOrderDetailId}");
 
-            var total = await query.CountAsync();
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var nData = req.Where(x => datas.Any(y => y.RequestOutsourcePartId != x.RequestOutsourcePartId)).ToList();
+                var dData = datas.Where(x => req.Any(y => y.RequestOutsourcePartId != x.RequestOutsourcePartId)).ToList();
+                var uData = datas.Where(x => req.Any(y => y.RequestOutsourcePartId == x.RequestOutsourcePartId)).ToList();
 
-            var data = query.Skip((page - 1) * size).Take(size)
-                        .ProjectTo<RequestOutsourcePartModel>(_mapper.ConfigurationProvider)
-                        .ToList();
+                foreach(var d in dData)
+                {
+                    if (d.Status != (int)OutsourcePartProcessType.Unprocessed)
+                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, "Yêu cầu gia công chi tiết đã có đơn hàng giao công");
+                    d.IsDeleted = true;
+                }
+                foreach (var d in uData)
+                {
+                    if (d.Status != (int)OutsourcePartProcessType.Unprocessed)
+                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, "Yêu cầu gia công chi tiết đã có đơn hàng giao công");
 
+                    var s = req.FirstOrDefault(x => x.RequestOutsourcePartId == d.RequestOutsourcePartId);
+                    _mapper.Map(s, d);
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
+                await CreateRequestOutsourcePart(nData);
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, req.First().ProductionOrderDetailId, $"Cập nhật yêu cầu gia công chi tiết {req.First().RequestOutsourcePartCode}", req.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "CreateRequestOutsourcePart");
+                throw;
+            }
+
+        }
+
+        public async Task<PageData<RequestOutsourcePartInfo>> GetListRequestOutsourcePart(string keyword, int page, int size)
+        {
+            var data = await GetRequestOutsourcePartExtraInfo();
+            var total = data.Count();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                data = data.Where(x => x.RequestOutsourcePartCode.Contains(keyword)).ToList();
+            }
+
+            data = data.Skip((page - 1) * size).Take(size).ToList();
             return (data, total);
-        }
-
-        public async Task<RequestOutsourcePartModel> GetRequestById(int requestId)
-        {
-            var info = await _manufacturingDBContext.RequestOutsourcePart
-                .FirstOrDefaultAsync(X => X.RequestOutsourcePartId == requestId);
-            if (info == null)
-                throw new BadRequestException(OutsourceErrorCode.NotFoundRquest);
-            return _mapper.Map<RequestOutsourcePartModel>(info);
-        }
-
-        public async Task<bool> UpdateRequestOutsourcePart(int requestId, RequestOutsourcePartModel req)
-        {
-            var request = await _manufacturingDBContext.RequestOutsourcePart
-                .Where(x => x.RequestOutsourcePartId == requestId)
-                .FirstOrDefaultAsync();
-            if (request == null)
-                throw new BadRequestException(OutsourceErrorCode.NotFoundRquest);
-
-            var details = await _manufacturingDBContext.RequestOutsourcePartDetail
-                .Where(x => x.RequestOutsourcePartId == requestId)
-                .ToListAsync();
-            using(var trans = _manufacturingDBContext.Database.BeginTransaction())
-            {
-                try
-                {
-                    _mapper.Map(req, request);
-
-                    foreach (var dest in details)
-                    {
-                        var source = req.RequestOutsourcePartDetail.FirstOrDefault(x => x.RequestOutsourcePartDetailId == dest.RequestOutsourcePartDetailId);
-                        if (source != null)
-                            _mapper.Map(source, dest);
-                    }
-
-                    _manufacturingDBContext.SaveChanges();
-
-                    _activityLogService.CreateLog(EnumObjectType.RequestOutsourcePart, request.RequestOutsourcePartId,
-                                $"Cập nhật YCGC chi tiết {request.RequestOutsourcePartId}", request.JsonSerialize());
-                    return true;
-                }
-                catch(Exception ex)
-                {
-                    trans.Rollback();
-                    _logger.LogError("UpdateRequestOutsourcePart");
-                    throw;
-                }
-            }
-            
         }
     }
 }
