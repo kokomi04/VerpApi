@@ -272,11 +272,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public PageData<ObjectType> GetAllObjectType()
         {
-            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(m => new ObjectType
-            {
-                ObjectTypeId = m.Enum,
-                ObjectTypeName = m.Description ?? m.Name.ToString()
-            }).ToList();
+            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>()
+                .Where(m => m.Attributes != null && m.Attributes.Any(a => a.GetType() == typeof(GenCodeObjectAttribute)))
+                .Select(m => new ObjectType
+                {
+                    ObjectTypeId = m.Enum,
+                    ObjectTypeName = m.Description ?? m.Name.ToString()
+                }).ToList();
 
 
             return (allData, allData.Count);
