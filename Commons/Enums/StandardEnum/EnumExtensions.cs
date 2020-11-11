@@ -54,6 +54,21 @@ namespace VErp.Commons.Enums.StandardEnum
             }
         }
 
+        public static IList<object> GetEnumAttributes(this Enum value)
+        {
+            try
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi == null)
+                    return new List<object>();
+                return (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+            }
+            catch (Exception)
+            {
+                return new List<object>();
+            }
+        }
+
         public static IEnumerable<EnumInfo<T>> GetEnumMembers<T>() where T : Enum
         {
             var values = Enum.GetValues(typeof(T)).Cast<T>();
@@ -63,7 +78,8 @@ namespace VErp.Commons.Enums.StandardEnum
                 {
                     Enum = value,
                     Name = value.ToString(),
-                    Description = value.GetEnumDescription()
+                    Description = value.GetEnumDescription(),
+                    Attributes = value.GetEnumAttributes()
                 };
             }
         }
@@ -74,5 +90,6 @@ namespace VErp.Commons.Enums.StandardEnum
         public T Enum { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public IList<object> Attributes { get; set; }
     }
 }
