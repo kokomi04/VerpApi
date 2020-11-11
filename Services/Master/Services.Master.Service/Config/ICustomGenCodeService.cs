@@ -29,7 +29,7 @@ namespace VErp.Services.Master.Service.Config
 
         Task<bool> MapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
 
-        Task<bool> DeleteMapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req);
+        Task<bool> DeleteMapObjectCustomGenCode(int objectCustomGenCodeMappingId);
 
         Task<bool> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data);
 
