@@ -24,9 +24,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public long? OrderId { get; set; }
-        public string OrderCode { get; set; }
+        public int? Status { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }
+        public virtual ProductionSchedule ProductionSchedule { get; set; }
         public virtual ICollection<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual ICollection<RequestOutsourcePart> RequestOutsourcePart { get; set; }
     }

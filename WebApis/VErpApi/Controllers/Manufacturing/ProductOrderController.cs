@@ -25,16 +25,16 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("")]
-        public async Task<ProductionOrderModel> CreateProductionOrder([FromBody] ProductionOrderModel req, [FromQuery] bool isDraft)
+        public async Task<ProductionOrderModel> CreateProductionOrder([FromBody] ProductionOrderModel req)
         {
-            return await _productionOrderService.CreateProductionOrder(req, isDraft);
+            return await _productionOrderService.CreateProductionOrder(req);
         }
 
         [HttpPut]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderModel req, [FromQuery] bool isDraft)
+        public async Task<ProductionOrderModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderModel req)
         {
-            return await _productionOrderService.UpdateProductionOrder(productionOrderId, req, isDraft);
+            return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
 
         [HttpPost]

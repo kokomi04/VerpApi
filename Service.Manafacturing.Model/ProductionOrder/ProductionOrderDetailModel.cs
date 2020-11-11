@@ -7,15 +7,16 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public class ProductionOrderDetailModel : ProductionOrderExtraInfo, IMapFrom<ProductionOrderDetail>
+    public class ProductionOrderDetailModel : IMapFrom<ProductionOrderDetail>
     {
+        public int ProductionOrderDetailId { get; set; }
         public int ProductionOrderId { get; set; }
         public int? ProductId { get; set; }
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
         public long? OrderId { get; set; }
-        public string OrderCode { get; set; }
+        public ProductionOrderExtraInfo ExtraInfo { get; set; }
     }
 
 
@@ -24,6 +25,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int ProductionOrderDetailId { get; set; }
         public decimal? OrderQuantity { get; set; }
         public int? OrderedQuantity { get; set; }
+        public string PartnerCode { get; set; }
+        public string PartnerName { get; set; }
+        public string OrderCode { get; set; }
     }
-
 }
