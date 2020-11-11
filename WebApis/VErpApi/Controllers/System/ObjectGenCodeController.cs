@@ -130,10 +130,10 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpDelete]
-        [Route("MapObjectGenCode")]
-        public async Task<bool> DeleteMapObjectGenCode(ObjectGenCodeMapping model)
+        [Route("MapObjectGenCode/{ObjectCustomGenCodeMappingId}")]
+        public async Task<bool> DeleteMapObjectGenCode([FromRoute] int objectCustomGenCodeMappingId)
         {
-            return await _customGenCodeService.DeleteMapObjectGenCode(model);
+            return await _customGenCodeService.DeleteMapObjectGenCode(objectCustomGenCodeMappingId);
         }
     }
 }
