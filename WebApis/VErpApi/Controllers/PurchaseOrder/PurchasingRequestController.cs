@@ -97,7 +97,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
             req.OrderDetailId = orderDetailId;
-            return await _purchasingRequestService.Create(EnumPurchasingRequestType.Normal, req).ConfigureAwait(true);
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.OrderMaterial, req).ConfigureAwait(true);
         }
 
         [HttpPut]
