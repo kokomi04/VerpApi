@@ -61,7 +61,7 @@ namespace VErp.Commons.Enums.StandardEnum
                 FieldInfo fi = value.GetType().GetField(value.ToString());
                 if (fi == null)
                     return new List<object>();
-                return (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
+                return fi.GetCustomAttributes(false);
             }
             catch (Exception)
             {

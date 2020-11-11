@@ -477,10 +477,19 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<bool> DeleteMapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req)
+        public async Task<bool> DeleteMapObjectCustomGenCode(int objectCustomGenCodeMappingId)
         {
-            _masterDbContext.ObjectCustomGenCodeMapping.Remove(req);
+            var info = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectCustomGenCodeMappingId == objectCustomGenCodeMappingId);
+            if (info == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+            _masterDbContext.ObjectCustomGenCodeMapping.Remove(info);
             await _masterDbContext.SaveChangesAsync();
+
+            var objectName = ((EnumObjectType)info.ObjectTypeId).GetEnumDescription();
+
+            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, objectCustomGenCodeMappingId, $"Loại bỏ cấu hình sinh mã khỏi đối tượng {objectName} {(info.ObjectId > 0 ? (int?)info.ObjectId : null)}", info.JsonSerialize());
             return true;
         }
     }

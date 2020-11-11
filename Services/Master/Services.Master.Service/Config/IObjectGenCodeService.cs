@@ -31,6 +31,6 @@ namespace VErp.Services.Master.Service.Config
 
         PageData<ObjectType> GetAllObjectType();
         public Task<bool> MapObjectGenCode(ObjectGenCodeMapping model);
-        public Task<bool> DeleteMapObjectGenCode(ObjectGenCodeMapping model);
+        public Task<bool> DeleteMapObjectGenCode(int objectCustomGenCodeMappingId);
     }
 }
