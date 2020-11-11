@@ -297,7 +297,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectCustomGenCodeMappingId = x.ObjectCustomGenCodeMappingId,
                     ObjectTypeId = x.ObjectTypeId,
                     CustomGenCodeId = x.CustomGenCodeId,
-                    ObjectTypeName = allObjectType.FirstOrDefault(e => (int)e.ObjectTypeId == x.ObjectTypeId).ObjectTypeName
+                    ObjectTypeName = allObjectType.FirstOrDefault(e => (int)e.ObjectTypeId == x.ObjectTypeId)?.ObjectTypeName
                 }).ToList();
 
             if (!string.IsNullOrWhiteSpace(keyword))
