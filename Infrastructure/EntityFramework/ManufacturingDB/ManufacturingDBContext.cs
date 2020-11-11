@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
+        public virtual DbSet<ProductionSchedule> ProductionSchedule { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
@@ -134,13 +135,25 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.Note).HasMaxLength(128);
 
-                entity.Property(e => e.OrderCode).HasMaxLength(128);
-
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionOrderDetail)
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderDetail_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionSchedule>(entity =>
+            {
+                entity.HasKey(e => e.ProductionOrderDetailId)
+                    .HasName("PK__Producti__6DBD23C6891FE415");
+
+                entity.Property(e => e.ProductionOrderDetailId).ValueGeneratedOnAdd();
+
+                entity.HasOne(d => d.ProductionOrderDetail)
+                    .WithOne(p => p.ProductionSchedule)
+                    .HasForeignKey<ProductionSchedule>(d => d.ProductionOrderDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionSchedule_ProductionOrderDetail");
             });
 
             modelBuilder.Entity<ProductionStep>(entity =>

@@ -7,13 +7,11 @@ namespace VErp.Commons.Enums.Manafacturing
 {
     public enum EnumProductionOrderStatus : int
     {
-        [Description("Bản nháp")]
-        Draft = 1,
         [Description("Chưa sản xuât")]
-        Waiting = 2,
+        Waiting = 1,
         [Description("Đang sản xuất")]
-        Processing = 3,
+        Processing = 2,
         [Description("Hoàn thành")]
-        Finished = 4
+        Finished = 3
     }
 }
