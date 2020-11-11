@@ -38,6 +38,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingRequestService _purchasingRequestService;
         private readonly IProductHelperService _productHelperService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -49,6 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IObjectGenCodeService objectGenCodeService
             , IPurchasingRequestService purchasingRequestService
             , IProductHelperService productHelperService
+            , ICustomGenCodeHelperService customGenCodeHelperService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -60,6 +62,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _objectGenCodeService = objectGenCodeService;
             _purchasingRequestService = purchasingRequestService;
             _productHelperService = productHelperService;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
 
@@ -339,15 +342,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             await ValidateProductUnitConversion(model);
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(0)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
-                model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
-                if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
-                {
-                    var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                    if (existedItem != null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted);
-                }
-
+                await GeneratePurchasingSuggestCode(null, model);
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -389,6 +386,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
 
+                    await ConfirmPurchasingSuggestCode();
+
                     return purchasingSuggest.PurchasingSuggestId;
                 }
             }
@@ -398,14 +397,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             await ValidateProductUnitConversion(model);
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
-                model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
-                if (!string.IsNullOrEmpty(model.PurchasingSuggestCode))
-                {
-                    var existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestId != purchasingSuggestId && r.PurchasingSuggestCode == model.PurchasingSuggestCode);
-                    if (existedItem != null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestCodeAlreadyExisted);
-                }
+                await GeneratePurchasingSuggestCode(purchasingSuggestId, model);
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -516,14 +510,45 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
 
+                    await ConfirmPurchasingSuggestCode();
                     return true;
                 }
             }
         }
 
+        private async Task GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
+        {
+            model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
+
+            PurchasingSuggest existedItem = null;
+            if (!string.IsNullOrWhiteSpace(model.PurchasingSuggestCode))
+            {
+                existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode && r.PurchasingSuggestId != purchasingSuggestId);
+                if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+            }
+            else
+            {
+                int dem = 0;
+                do
+                {
+                    var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingRequest, 0);
+                    model.PurchasingSuggestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, 0))?.CustomCode;
+                    existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode && r.PurchasingSuggestId != purchasingSuggestId);
+                    dem++;
+                } while (existedItem != null && dem < 10);
+            }
+
+        }
+
+        private async Task<bool> ConfirmPurchasingSuggestCode()
+        {
+            return await _customGenCodeHelperService.ConfirmCode(EnumObjectType.PurchasingSuggest, 0);
+        }
+
+
         public async Task<bool> Delete(long purchasingSuggestId)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -717,7 +742,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             .ToListAsync();
         }
 
-     
+
 
         public async Task<PageData<PoAssignmentOutputList>> PoAssignmentListByUser(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
@@ -1129,7 +1154,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<long> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
                 var validate = await ValidatePoAssignmentInput(purchasingSuggestId, null, model);
 
@@ -1178,7 +1203,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<bool> PoAssignmentUpdate(long purchasingSuggestId, long poAssignmentId, PoAssignmentInput model)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -1280,7 +1305,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
 
                 var code = await _objectGenCodeService.GenerateCode(EnumObjectType.PoAssignment);
-                
+
                 assignmentInfo.PoAssignmentCode = code;
                 assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.WaitToConfirm;
                 assignmentInfo.UpdatedByUserId = _currentContext.UserId;
@@ -1336,7 +1361,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<bool> PoAssignmentDelete(long purchasingSuggestId, long poAssignmentId)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest(purchasingSuggestId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -1394,7 +1419,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 select new PoAssignmentBasicInfo
                 {
                     PoAssignmentId = r.PoAssignmentId,
-                    PoAssignmentCode = r.PoAssignmentCode                  
+                    PoAssignmentCode = r.PoAssignmentCode
                 })
             .ToListAsync();
         }

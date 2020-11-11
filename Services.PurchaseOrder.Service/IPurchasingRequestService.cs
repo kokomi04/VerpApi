@@ -29,9 +29,9 @@ namespace VErp.Services.PurchaseOrder.Service
 
         IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream);
 
-        Task<bool> Update(long purchasingRequestId, PurchasingRequestInput model);              
+        Task<bool> Update(EnumPurchasingRequestType purchasingRequestTypeId, long purchasingRequestId, PurchasingRequestInput model);
 
-        Task<bool> Delete(long purchasingRequestId);
+        Task<bool> Delete(long? orderDetailId, long purchasingRequestId);
 
         Task<bool> SendToCensor(long purchasingRequestId);
 

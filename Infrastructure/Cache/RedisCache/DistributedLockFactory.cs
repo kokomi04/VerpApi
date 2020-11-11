@@ -120,11 +120,14 @@ namespace Verp.Cache.RedisCache
         {
             return $"GENERATECODE_CUSTOM_LOCK_{customGenCodeId}";
         }
-
-
-        public static string GetLockPoSuggest(long purchasingOrderSugguestId)
+        public static string GetLockPoRequest()
         {
-            return $"PO_SUGGUEST_LOCK_{purchasingOrderSugguestId}";
+            return $"PO_REQUEST_LOCK";
+        }
+
+        public static string GetLockPoSuggest()
+        {
+            return $"PO_SUGGUEST_LOCK";
         }
     }
 
