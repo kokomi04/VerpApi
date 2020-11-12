@@ -158,6 +158,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.ProductionOrderDetailId = 0;
                     item.ProductionOrderId = productionOrder.ProductionOrderId;
+                    item.Status = EnumProductionOrderStatus.Waiting;
                     // Tạo mới
                     var entity = _mapper.Map<ProductionOrderDetail>(item);
                     _manufacturingDBContext.ProductionOrderDetail.Add(entity);
@@ -189,7 +190,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
-
                 _mapper.Map(data, productionOrder);
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
