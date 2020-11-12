@@ -25,14 +25,14 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("")]
-        public async Task<ProductionOrderModel> CreateProductionOrder([FromBody] ProductionOrderModel req)
+        public async Task<ProductionOrderInputModel> CreateProductionOrder([FromBody] ProductionOrderInputModel req)
         {
             return await _productionOrderService.CreateProductionOrder(req);
         }
 
         [HttpPut]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderModel req)
+        public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderInputModel req)
         {
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
@@ -40,14 +40,14 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("Search")]
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, filters);
+            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpGet]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderModel> GetProductionOrder([FromRoute] int productionOrderId)
+        public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] int productionOrderId)
         {
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }

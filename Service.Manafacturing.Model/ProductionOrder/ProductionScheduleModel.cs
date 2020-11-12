@@ -9,7 +9,6 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-
     public class ProductionScheduleModel : IMapFrom<ProductionSchedule>
     {
         public int ProductionScheduleId { get; set; }
@@ -17,6 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public EnumProductionOrderStatus? Status { get; set; }
+        public int ProductionScheduleQuantity { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionScheduleModel, ProductionSchedule>()
@@ -26,4 +26,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.Status));
         }
     }
+
 }
