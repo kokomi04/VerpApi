@@ -10,7 +10,7 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public class ProductionOrderModel
+    public class ProductionOrderModel : IMapFrom<ProductionOrderEntity>
     {
         public int ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
