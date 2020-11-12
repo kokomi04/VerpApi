@@ -32,5 +32,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
+        public string UnitName { get; set; }
     }
 }
