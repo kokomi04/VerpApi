@@ -45,37 +45,63 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
         }
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
-            var query = _manufacturingDBContext.ProductionOrderDetail
-                .Include(od => od.ProductionOrder)
-                .ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider);
+            var parammeters = new List<SqlParameter>();
+
+            var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(o => o.ProductionOrderCode.Contains(keyword) || o.Description.Contains(keyword));
+                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                whereCondition.Append("|| v.Description LIKE @KeyWord ");
+                whereCondition.Append("|| v.ProductTitle LIKE @KeyWord ");
+                whereCondition.Append("|| v.PartnerTitle LIKE @KeyWord ");
+                whereCondition.Append("|| v.OrderCode LIKE @KeyWord ) ");
+                parammeters.Add(new SqlParameter("@KeyWord", $"%{keyword}%"));
             }
-            query = query.InternalFilter(filters);
-            var total = await query.CountAsync();
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query)
-                .ToListAsync();
-            var lstGroup = lst.GroupBy(o => o.ProductionOrderId).ToList();
-            foreach (var group in lstGroup)
+
+            if (filters != null)
             {
-                var parammeters = new SqlParameter[]
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
                 {
-                    new SqlParameter("@ProductionOrderId", group.Key)
-                };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByProductionOrderId", parammeters);
-
-                var lstEtraInfo = resultData.ConvertData<ProductionOrderExtraInfo>();
-
-                foreach (var item in group)
-                {
-                    var extraInfo = lstEtraInfo.First(i => i.ProductionOrderDetailId == item.ProductionOrderDetailId);
-                    item.ExtraInfo = extraInfo;
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
                 }
             }
+
+            var sql = new StringBuilder("SELECT * FROM vProductionOrderDetail v ");
+            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionOrderDetailId) Total FROM vProductionOrderDetail v ");
+            if (whereCondition.Length > 0)
+            {
+                totalSql.Append("WHERE ");
+                totalSql.Append(whereCondition);
+                sql.Append("WHERE ");
+                sql.Append(whereCondition);
+            }
+            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "ProductionOrderDetailId" : orderByFieldName;
+            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
+
+            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+
+            var total = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+            }
+
+            if (size >= 0)
+            {
+                sql.Append(@$" OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT { size}
+                ROWS ONLY");
+            }
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
@@ -83,45 +109,39 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId)
         {
             var parammeters = new SqlParameter[]
-                {
-                    new SqlParameter("@OrderId", orderId)
-                };
+            {
+                new SqlParameter("@OrderId", orderId)
+            };
             var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByOrderId", parammeters);
 
             return resultData.ConvertData<ProductionOrderExtraInfo>();
         }
 
-        public async Task<ProductionOrderModel> GetProductionOrder(int productionOrderId)
+        public async Task<ProductionOrderOutputModel> GetProductionOrder(int productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
-                .Include(o => o.ProductionOrderDetail)
                 .Where(o => o.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionOrderModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<ProductionOrderOutputModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefault();
             if (productOrder != null)
             {
+                var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId = @ProductionOrderId";
                 var parammeters = new SqlParameter[]
                 {
                     new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByProductionOrderId", parammeters);
+                var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
 
-                var lstEtraInfo = resultData.ConvertData<ProductionOrderExtraInfo>();
-
-                foreach (var item in productOrder.ProductionOrderDetail)
-                {
-                    var extraInfo = lstEtraInfo.First(i => i.ProductionOrderDetailId == item.ProductionOrderDetailId);
-                    item.ExtraInfo = extraInfo;
-                }
+                productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
                 productOrder.HasProcess = _manufacturingDBContext.ProductionStep
-                .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId);
+                    .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId);
             }
 
             return productOrder;
         }
 
-        public async Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data)
+        public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -144,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 else
                 {
                     // Validate unique
-                    if(_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode))
+                    if (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode))
                         throw new BadRequestException(ProductOrderErrorCode.ProductOrderCodeAlreadyExisted);
                 }
 
@@ -158,9 +178,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.ProductionOrderDetailId = 0;
                     item.ProductionOrderId = productionOrder.ProductionOrderId;
-                    item.Status = EnumProductionOrderStatus.Waiting;
                     // Tạo mới
                     var entity = _mapper.Map<ProductionOrderDetail>(item);
+                    entity.Status = (int)EnumProductionOrderStatus.Waiting;
+
                     _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -180,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
-        public async Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data)
+        public async Task<ProductionOrderInputModel> UpdateProductionOrder(int productionOrderId, ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -223,11 +244,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
-                data = _manufacturingDBContext.ProductionOrder
-                    .Include(o => o.ProductionOrderDetail)
-                    .Where(o => o.ProductionOrderId == productionOrderId)
-                    .ProjectTo<ProductionOrderModel>(_mapper.ConfigurationProvider)
-                    .FirstOrDefault();
                 return data;
             }
             catch (Exception ex)
