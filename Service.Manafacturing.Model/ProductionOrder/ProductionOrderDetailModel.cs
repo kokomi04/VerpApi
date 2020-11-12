@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
@@ -17,6 +18,16 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Note { get; set; }
         public long? OrderId { get; set; }
         public ProductionOrderExtraInfo ExtraInfo { get; set; }
+
+        public EnumProductionOrderStatus? Status { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionOrderDetail, ProductionOrderDetailModel>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.Status))
+                .ReverseMap()
+                .ForMember(dest => dest.Status, opt => opt.Ignore());
+        }
     }
 
 

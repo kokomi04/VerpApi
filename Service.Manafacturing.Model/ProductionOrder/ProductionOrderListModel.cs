@@ -17,7 +17,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? FinishDate { get; set; }
         public string Description { get; set; }
 
-        public EnumProductionOrderStatus? Status { get; set; }
 
         public void Mapping(Profile profile)
         {
