@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     public interface IProductionScheduleService
     {
         Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, int page, int size, Clause filters = null);
-        Task<ProductionScheduleModel> UpdateProductionSchedule(int productionOrderDetailId, ProductionScheduleModel data);
+        Task<ProductionScheduleModel> UpdateProductionSchedule(int productionScheduleId, ProductionScheduleModel data);
         Task<ProductionScheduleModel> CreateProductionSchedule(ProductionScheduleModel data);
     }
 }

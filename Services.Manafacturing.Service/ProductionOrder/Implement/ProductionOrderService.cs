@@ -127,17 +127,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, 0);
-                if (currentConfig == null)
+                if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                    CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, 0);
+                    if (currentConfig == null)
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                    }
+                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                    if (generated == null)
+                    {
+                        throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                    }
+                    data.ProductionOrderCode = generated.CustomCode;
                 }
-                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
-                if (generated == null)
+                else
                 {
-                    throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                    // Validate unique
+                    if(_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode))
+                        throw new BadRequestException(ProductOrderErrorCode.ProductOrderCodeAlreadyExisted);
                 }
-                data.ProductionOrderCode = generated.CustomCode;
 
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
 
@@ -156,7 +165,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, 0);
+                if (string.IsNullOrEmpty(data.ProductionOrderCode))
+                {
+                    await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, 0);
+                }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;
             }

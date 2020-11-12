@@ -5,10 +5,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionSchedule
     {
-        public int ProductionOrderDetailId { get; set; }
+        public int ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int Status { get; set; }
+        public int ProductionOrderDetailId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
     }
