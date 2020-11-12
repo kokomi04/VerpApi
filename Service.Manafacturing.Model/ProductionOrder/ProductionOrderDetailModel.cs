@@ -29,6 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string PartnerCode { get; set; }
         public string PartnerName { get; set; }
         public string OrderCode { get; set; }
+        public int? ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
     }
