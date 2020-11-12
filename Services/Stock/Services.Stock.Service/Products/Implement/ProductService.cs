@@ -823,24 +823,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var quantitativeUnitTypeId = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>().FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (quantitativeUnitTypeId != null) entity.QuantitativeUnitTypeId = quantitativeUnitTypeId.Enum;
                         return true;
-                    case nameof(ProductImportModel.ProductTypeCode):
-                    case nameof(ProductImportModel.ProductTypeName):
-                    case nameof(ProductImportModel.ProductCate):
-                    case nameof(ProductImportModel.Unit):
-                    case nameof(ProductImportModel.SecondaryUnit01):
-                    case nameof(ProductImportModel.SecondaryUnit02):
-                    case nameof(ProductImportModel.SecondaryUnit03):
-                    case nameof(ProductImportModel.SecondaryUnit04):
-                    case nameof(ProductImportModel.SecondaryUnit05):
-                    default:
-                        var type = entity.GetType();
-                        var p = type.GetProperty(propertyName);
-                        if (p != null)
-                        {
-                            p.SetValue(entity, value);
-                        }
-                        return true;
+                    //case nameof(ProductImportModel.ProductTypeCode):
+                    //case nameof(ProductImportModel.ProductTypeName):
+                    //case nameof(ProductImportModel.ProductCate):
+                    //case nameof(ProductImportModel.Unit):
+                    //case nameof(ProductImportModel.SecondaryUnit01):
+                    //case nameof(ProductImportModel.SecondaryUnit02):
+                    //case nameof(ProductImportModel.SecondaryUnit03):
+                    //case nameof(ProductImportModel.SecondaryUnit04):
+                    //case nameof(ProductImportModel.SecondaryUnit05):                    
+                    //    var type = entity.GetType();
+                    //    var p = type.GetProperty(propertyName);
+                    //    if (p != null)
+                    //    {
+                    //        p.SetValue(entity, value);
+                    //    }
+                    //    return true;
                 }
+                return false;
             });
 
             var includeProductCates = new List<ProductCate>();
