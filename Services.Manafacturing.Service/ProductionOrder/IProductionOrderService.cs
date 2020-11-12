@@ -11,6 +11,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     public interface IProductionOrderService
     {
         Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, Clause filters = null);
+        Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
         Task<ProductionOrderModel> GetProductionOrder(int productionOrderId);
         Task<ProductionOrderModel> UpdateProductionOrder(int productionOrderId, ProductionOrderModel data);
         Task<ProductionOrderModel> CreateProductionOrder(ProductionOrderModel data);

@@ -66,7 +66,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     new SqlParameter("@ProductionOrderId", group.Key)
                 };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfo", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByProductionOrderId", parammeters);
 
                 var lstEtraInfo = resultData.ConvertData<ProductionOrderExtraInfo>();
 
@@ -78,6 +78,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             return (lst, total);
+        }
+
+        public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId)
+        {
+            var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@OrderId", orderId)
+                };
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByOrderId", parammeters);
+
+            return resultData.ConvertData<ProductionOrderExtraInfo>();
         }
 
         public async Task<ProductionOrderModel> GetProductionOrder(int productionOrderId)
@@ -93,7 +104,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfo", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionOrder_GetExtraInfoByProductionOrderId", parammeters);
 
                 var lstEtraInfo = resultData.ConvertData<ProductionOrderExtraInfo>();
 
