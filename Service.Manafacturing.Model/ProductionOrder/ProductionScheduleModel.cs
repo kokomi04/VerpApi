@@ -16,6 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long EndDate { get; set; }
         public int ProductionScheduleQuantity { get; set; }
         public string ProductionOrderCode { get; set; }
+        public long? ScheduleTurnId { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionScheduleEntity, ProductionScheduleModel>()
@@ -33,6 +34,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int ProductionScheduleStatus { get; set; }
         public int ProductionScheduleQuantity { get; set; }
         public string ProductionOrderCode { get; set; }
+        public long? ScheduleTurnId { get; set; }
     }
 
     public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
