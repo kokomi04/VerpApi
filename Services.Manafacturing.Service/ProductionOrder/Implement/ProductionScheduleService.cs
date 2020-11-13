@@ -81,10 +81,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 SELECT 
                     t.ProductionOrderId
                     , v.ProductionOrderCode
-                    , v.VoucherDate
+                    , v.ProductionDate
                     , v.FinishDate
                 FROM tmp t LEFT JOIN vProductionPlanningOrder v ON t.ProductionOrderDetailId = v.ProductionOrderDetailId
-                ORDER BY v.VoucherDate DESC
+                ORDER BY v.ProductionDate DESC
                 ";
             var resultData = await _manufacturingDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
             return resultData.ConvertData<ProductionPlanningOrderEntity>()
