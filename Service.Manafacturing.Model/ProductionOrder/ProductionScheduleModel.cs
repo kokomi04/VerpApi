@@ -9,7 +9,7 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public class ProductionScheduleModel : ProductionPlaningOrderDetailModel, IMapFrom<ProductionScheduleEntity>
+    public class ProductionScheduleModel : ProductionPlanningOrderDetailModel, IMapFrom<ProductionScheduleEntity>
     {
         public int ProductionScheduleId { get; set; }
         public long StartDate { get; set; }
@@ -26,7 +26,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         }
     }
 
-    public class ProductionScheduleEntity : ProductionPlaningOrderDetailModel
+    public class ProductionScheduleEntity : ProductionPlanningOrderDetailModel
     {
         public int ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }

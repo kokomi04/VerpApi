@@ -9,32 +9,32 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public class ProductionPlaningOrderModel : ProductionPlaningOrderBaseModel, IMapFrom<ProductionPlaningOrderEntity>
+    public class ProductionPlanningOrderModel : ProductionPlanningOrderBaseModel, IMapFrom<ProductionPlanningOrderEntity>
     {
-        public long VoucherDate { get; set; }
+        public long ProductionDate { get; set; }
         public long? FinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionPlaningOrderEntity, ProductionPlaningOrderModel>()
-                .ForMember(dest => dest.VoucherDate, opt => opt.MapFrom(source => source.VoucherDate.GetUnix()))
+            profile.CreateMap<ProductionPlanningOrderEntity, ProductionPlanningOrderModel>()
+                .ForMember(dest => dest.ProductionDate, opt => opt.MapFrom(source => source.ProductionDate.GetUnix()))
                 .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.GetUnix()));
         }
     }
 
-    public class ProductionPlaningOrderEntity : ProductionPlaningOrderBaseModel
+    public class ProductionPlanningOrderEntity : ProductionPlanningOrderBaseModel
     {
-        public DateTime VoucherDate { get; set; }
+        public DateTime ProductionDate { get; set; }
         public DateTime? FinishDate { get; set; }
     }
 
-    public class ProductionPlaningOrderBaseModel
+    public class ProductionPlanningOrderBaseModel
     {
         public int ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
     }
 
-    public class ProductionPlaningOrderDetailModel
+    public class ProductionPlanningOrderDetailModel
     {
         public int ProductionOrderDetailId { get; set; }
         public int TotalQuantity { get; set; }
