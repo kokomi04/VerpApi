@@ -177,7 +177,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.PartnerTitle
                     , v.ProductionStepId
                 FROM vProductionPlainingOrder v
-                WHERE v.ProductionOrderId IN ({string.Join(",", data.Select(od => od.ProductionOrderDetailId).Distinct().ToList())})
+                WHERE v.ProductionOrderDetailId IN ({string.Join(",", data.Select(od => od.ProductionOrderDetailId).Distinct().ToList())})
                 ";
 
             var plainingOrders = (await _manufacturingDBContext.QueryDataTable(plainingOrderSql, Array.Empty<SqlParameter>()))
@@ -214,7 +214,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
             try
             {
-                var currentTurnId = _manufacturingDBContext.ProductionSchedule.Max(s => s.ScheduleTurnId);
+                var currentTurnId = _manufacturingDBContext.ProductionSchedule.Select(s => s.ScheduleTurnId).OrderByDescending(s => s).FirstOrDefault();
                 var dataMap = new List<(ProductionScheduleInputModel Input, ProductionSchedule Entity)>();
                 foreach (var item in data)
                 {
