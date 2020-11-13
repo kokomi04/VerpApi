@@ -167,29 +167,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(o => o.ProductionOrderId == productionOrderId)
                 .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity, od.ProductionOrderDetailId })
                 .ToList();
-            if(productionOrderDetails.Count == 0)
+            if (productionOrderDetails.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại sản phẩm trong lệnh sản xuất.");
 
-            var productIds = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
+            var productIds = productionOrderDetails.Select(od => od.ProductId).ToList();
+            var productIdMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
 
             var productOrderMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.ProductionOrderDetailId);
 
-            var products = await _productHelperService.GetListProducts(productIds.Select(p => p.Key).ToList());
-            if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
+            var products = await _productHelperService.GetListProducts(productIdMap.Select(p => p.Key).ToList());
+            if (productIdMap.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
-                .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.ContainsKey(s.ContainerId))
+                .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.Contains(s.ContainerId))
                 .ToList();
 
-            var productionStepIds = productionSteps
-                .Select(s => new
-                {
-                    s.ProductionStepId,
-                    s.ContainerId
-                }).ToDictionary(s => s.ProductionStepId, s => productIds[s.ContainerId]);
+            var productionStepIds = productionSteps.Select(s => s.ProductionStepId).ToList();
+            var productionStepIdMap = productionSteps
+                 .Select(s => new
+                 {
+                     s.ProductionStepId,
+                     s.ContainerId
+                 }).ToDictionary(s => s.ProductionStepId, s => productIdMap[s.ContainerId]);
 
             var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole
-                .Where(r => productionStepIds.ContainsKey(r.ProductionStepId))
+                .Where(r => productionStepIds.Contains(r.ProductionStepId))
                 .ToList();
             var linkDataIds = linkDataRoles.Select(r => r.ProductionStepLinkDataId).ToList();
             var linkDatas = _manufacturingDBContext.ProductionStepLinkData.Where(d => linkDataIds.Contains(d.ProductionStepLinkDataId)).ToList();
@@ -282,7 +284,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ObjectId = item.ObjectId,
                             ObjectTypeId = item.ObjectTypeId,
                             UnitId = item.UnitId,
-                            Quantity = item.Quantity * productionStepIds[linkDataRole.ProductionStepId],
+                            Quantity = item.Quantity * productionStepIdMap[linkDataRole.ProductionStepId],
                             SortOrder = item.SortOrder
                         };
 
@@ -461,7 +463,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ProductionOrderDetailId = orderDetailId
                         });
                     }
-                
+
                     _manufacturingDBContext.SaveChanges();
 
                     await trans.CommitAsync();
