@@ -5,7 +5,7 @@ using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
-    public enum EnumProductionOrderStatus : int
+    public enum EnumProductionStatus : int
     {
         [Description("Chưa sản xuât")]
         Waiting = 1,

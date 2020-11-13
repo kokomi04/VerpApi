@@ -8,9 +8,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public int Status { get; set; }
+        public int ProductionScheduleStatus { get; set; }
         public int ProductionOrderDetailId { get; set; }
         public int ProductionScheduleQuantity { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
     }

@@ -32,6 +32,27 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionScheduleService.GetProductionSchedule(keyword, page, size, orderByFieldName, asc, filters);
         }
 
+        [HttpPost]
+        [Route("")]
+        public async Task<ProductionScheduleInputModel> CreateProductionSchedule([FromBody] ProductionScheduleInputModel data)
+        {
+            return await _productionScheduleService.CreateProductionSchedule(data);
+        }
+
+        [HttpPut]
+        [Route("{productionScheduleId}")]
+        public async Task<ProductionScheduleInputModel> UpdateProductionSchedule([FromRoute] int productionScheduleId, [FromBody] ProductionScheduleInputModel data)
+        {
+            return await _productionScheduleService.UpdateProductionSchedule(productionScheduleId, data);
+        }
+
+        [HttpDelete]
+        [Route("{productionScheduleId}")]
+        public async Task<bool> DeleteProductionSchedule([FromRoute] int productionScheduleId)
+        {
+            return await _productionScheduleService.DeleteProductionSchedule(productionScheduleId);
+        }
+
         [HttpGet]
         [Route("plainingOrder")]
         public async Task<IList<ProductionPlaningOrderModel>> GetProductionPlaningOrderDetail()
@@ -46,6 +67,6 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionScheduleService.GetProductionPlaningOrderDetail(productionOrderId);
         }
 
-     
+
     }
 }

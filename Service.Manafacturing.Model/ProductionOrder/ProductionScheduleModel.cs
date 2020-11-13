@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
             profile.CreateMap<ProductionScheduleEntity, ProductionScheduleModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
-                .ForMember(dest => dest.ProductionScheduleQuantity, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.ProductionScheduleQuantity));
+                .ForMember(dest => dest.ProductionScheduleQuantity, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionScheduleQuantity));
         }
     }
 
@@ -37,6 +37,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
     {
+        public int? ProductionScheduleId { get; set; }
         public int ProductionOrderDetailId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
