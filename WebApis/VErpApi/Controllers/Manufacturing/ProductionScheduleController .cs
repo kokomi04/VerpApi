@@ -57,17 +57,17 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("plainingOrder")]
-        public async Task<IList<ProductionPlaningOrderModel>> GetProductionPlaningOrderDetail()
+        [Route("planningOrder")]
+        public async Task<IList<ProductionPlanningOrderModel>> GetProductionPlanningOrderDetail()
         {
-            return await _productionScheduleService.GetProductionPlaningOrders();
+            return await _productionScheduleService.GetProductionPlanningOrders();
         }
 
         [HttpGet]
-        [Route("plainingOrder/{productionOrderId}")]
-        public async Task<IList<ProductionPlaningOrderDetailModel>> GetProductionPlaningOrderDetail([FromRoute]int productionOrderId)
+        [Route("planningOrder/{productionOrderId}")]
+        public async Task<IList<ProductionPlanningOrderDetailModel>> GetProductionPlanningOrderDetail([FromRoute]int productionOrderId)
         {
-            return await _productionScheduleService.GetProductionPlaningOrderDetail(productionOrderId);
+            return await _productionScheduleService.GetProductionPlanningOrderDetail(productionOrderId);
         }
 
 

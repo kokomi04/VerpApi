@@ -45,7 +45,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<IList<ProductionPlaningOrderDetailModel>> GetProductionPlaningOrderDetail(int productionOrderId)
+        public async Task<IList<ProductionPlanningOrderDetailModel>> GetProductionPlanningOrderDetail(int productionOrderId)
         {
             var dataSql = @$"
                 SELECT v.ProductionOrderDetailId
@@ -58,7 +58,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.OrderCode
                     , v.PartnerTitle
                     , v.ProductionStepId
-                FROM vProductionPlainingOrder v
+                FROM vProductionPlanningOrder v
                 WHERE v.ProductionOrderId = @ProductionOrderId
                 ";
             var sqlParams = new SqlParameter[]
@@ -67,15 +67,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             };
 
             var resultData = await _manufacturingDBContext.QueryDataTable(dataSql, sqlParams);
-            return resultData.ConvertData<ProductionPlaningOrderDetailModel>();
+            return resultData.ConvertData<ProductionPlanningOrderDetailModel>();
         }
 
-        public async Task<IList<ProductionPlaningOrderModel>> GetProductionPlaningOrders()
+        public async Task<IList<ProductionPlanningOrderModel>> GetProductionPlanningOrders()
         {
             var dataSql = @$"
                  ;WITH tmp AS (
                     SELECT ProductionOrderId, MAX(ProductionOrderDetailId) ProductionOrderDetailId
-                    FROM vProductionPlainingOrder
+                    FROM vProductionPlanningOrder
                     GROUP BY ProductionOrderId    
                 )
                 SELECT 
@@ -83,13 +83,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.ProductionOrderCode
                     , v.VoucherDate
                     , v.FinishDate
-                FROM tmp t LEFT JOIN vProductionPlainingOrder v ON t.ProductionOrderDetailId = v.ProductionOrderDetailId
+                FROM tmp t LEFT JOIN vProductionPlanningOrder v ON t.ProductionOrderDetailId = v.ProductionOrderDetailId
                 ORDER BY v.VoucherDate DESC
                 ";
             var resultData = await _manufacturingDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
-            return resultData.ConvertData<ProductionPlaningOrderEntity>()
+            return resultData.ConvertData<ProductionPlanningOrderEntity>()
                 .AsQueryable()
-                .ProjectTo<ProductionPlaningOrderModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<ProductionPlanningOrderModel>(_mapper.ConfigurationProvider)
                 .ToList();
         }
 
@@ -164,8 +164,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         
         public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data)
         {
-            // Get plaining order detail
-            var plainingOrderSql = @$"
+            // Get planning order detail
+            var planningOrderSql = @$"
                 SELECT v.ProductionOrderDetailId
                     , v.TotalQuantity
                     , v.ProductTitle
@@ -176,21 +176,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.OrderCode
                     , v.PartnerTitle
                     , v.ProductionStepId
-                FROM vProductionPlainingOrder v
+                FROM vProductionPlanningOrder v
                 WHERE v.ProductionOrderDetailId IN ({string.Join(",", data.Select(od => od.ProductionOrderDetailId).Distinct().ToList())})
                 ";
 
-            var plainingOrders = (await _manufacturingDBContext.QueryDataTable(plainingOrderSql, Array.Empty<SqlParameter>()))
-                .ConvertData<ProductionPlaningOrderDetailModel>();
+            var planningOrders = (await _manufacturingDBContext.QueryDataTable(planningOrderSql, Array.Empty<SqlParameter>()))
+                .ConvertData<ProductionPlanningOrderDetailModel>();
 
             // Validate
-            if (plainingOrders.Count == 0 || plainingOrders.Count != data.Count)
+            if (planningOrders.Count == 0 || planningOrders.Count != data.Count)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm không có trong danh sách cần lên kế hoạch sản xuất");
 
             if (data.Count > 1)
             {
                 // Validate nếu sản phẩm chung quy trình
-                if (plainingOrders.Select(po => po.ProductionStepId).Distinct().Count() > 1)
+                if (planningOrders.Select(po => po.ProductionStepId).Distinct().Count() > 1)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm không cùng trong một quy trình sản xuất");
 
                 // Validate thời gian
@@ -198,7 +198,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm phải trùng ngày bắt đầu, ngày kết thúc");
 
                 // Validate số lượng
-                var quantityMap = plainingOrders.Join(data, po => po.ProductionOrderDetailId, s => s.ProductionOrderDetailId, (po, s) => new
+                var quantityMap = planningOrders.Join(data, po => po.ProductionOrderDetailId, s => s.ProductionOrderDetailId, (po, s) => new
                 {
                     po.TotalQuantity,
                     s.ProductionScheduleQuantity

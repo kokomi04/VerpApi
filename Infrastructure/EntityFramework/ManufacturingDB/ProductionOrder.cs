@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public int ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
-        public DateTime VoucherDate { get; set; }
+        public DateTime ProductionDate { get; set; }
         public DateTime? FinishDate { get; set; }
         public string Description { get; set; }
         public int CreatedByUserId { get; set; }
