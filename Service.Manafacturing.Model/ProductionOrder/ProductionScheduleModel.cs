@@ -9,22 +9,38 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public class ProductionScheduleModel : IMapFrom<ProductionSchedule>
+    public class ProductionScheduleModel : ProductionPlaningOrderDetailModel, IMapFrom<ProductionScheduleEntity>
     {
         public int ProductionScheduleId { get; set; }
-        public int ProductionOrderDetailId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public EnumProductionOrderStatus? Status { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
         public int ProductionScheduleQuantity { get; set; }
+        public string ProductionOrderCode { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionScheduleModel, ProductionSchedule>()
-                .ForMember(dest => dest.ProductionScheduleId, opt => opt.Ignore())
-                .ForMember(dest => dest.Status, opt => opt.Ignore())
-                .ReverseMap()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.Status));
+            profile.CreateMap<ProductionScheduleEntity, ProductionScheduleModel>()
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
+                .ForMember(dest => dest.ProductionScheduleQuantity, opt => opt.MapFrom(source => (EnumProductionOrderStatus)source.ProductionScheduleQuantity));
         }
+    }
+
+    public class ProductionScheduleEntity : ProductionPlaningOrderDetailModel
+    {
+        public int ProductionScheduleId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int ProductionScheduleStatus { get; set; }
+        public int ProductionScheduleQuantity { get; set; }
+        public string ProductionOrderCode { get; set; }
+    }
+
+    public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
+    {
+        public int ProductionOrderDetailId { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+        public int ProductionScheduleQuantity { get; set; }
     }
 
 }
