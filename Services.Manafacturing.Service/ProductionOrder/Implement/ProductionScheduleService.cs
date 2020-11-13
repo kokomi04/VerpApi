@@ -58,7 +58,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.OrderCode
                     , v.PartnerTitle
                     , v.ProductionStepId
-                FROM vProductionOrderDetail v
+                FROM vProductionPlainingOrder v
                 WHERE v.ProductionOrderId = @ProductionOrderId
                 ";
             var sqlParams = new SqlParameter[]
@@ -161,6 +161,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return (lst, total);
         }
+        
         public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data)
         {
             // Get plaining order detail
@@ -175,8 +176,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.OrderCode
                     , v.PartnerTitle
                     , v.ProductionStepId
-                    , v.ScheduleTurnId
-                FROM vProductionOrderDetail v
+                FROM vProductionPlainingOrder v
                 WHERE v.ProductionOrderId IN ({string.Join(",", data.Select(od => od.ProductionOrderDetailId).Distinct().ToList())})
                 ";
 
