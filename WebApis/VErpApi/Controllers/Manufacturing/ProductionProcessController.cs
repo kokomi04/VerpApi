@@ -24,7 +24,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute]int containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }
@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("{containerId}")]
-        public async Task<long> CreateProductionStep([FromRoute]int containerId, [FromBody] ProductionStepInfo req)
+        public async Task<long> CreateProductionStep([FromRoute] int containerId, [FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.CreateProductionStep(containerId, req);
         }
@@ -59,23 +59,37 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("productionOrder/{productionOrderId}")]
-        public async Task<bool> CreateProductionProcess([FromRoute]int productionOrderId)
+        public async Task<bool> CreateProductionProcess([FromRoute] int productionOrderId)
         {
             return await _productionProcessService.CreateProductionProcess(productionOrderId);
         }
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/process")]
-        public async Task<bool> MergeProductionProcess([FromRoute]int productionOrderId, [FromBody] IList<long> productionStepIds)
+        public async Task<bool> MergeProductionProcess([FromRoute] int productionOrderId, [FromBody] IList<long> productionStepIds)
         {
             return await _productionProcessService.MergeProductionProcess(productionOrderId, productionStepIds);
         }
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/step")]
-        public async Task<bool> MergeProductionStep([FromRoute]int productionOrderId, [FromBody] IList<long> productionStepIds)
+        public async Task<bool> MergeProductionStep([FromRoute] int productionOrderId, [FromBody] IList<long> productionStepIds)
         {
             return await _productionProcessService.MergeProductionStep(productionOrderId, productionStepIds);
+        }
+
+        [HttpPost]
+        [Route("stepClient")]
+        public async Task<bool> InsertAndUpdateStepClientData([FromBody] StepClientDataModel model)
+        {
+            return await _productionProcessService.InsertAndUpdateStepClientData(model);
+        }
+
+        [HttpGet]
+        [Route("stepClient/{containerTypeId}/{containerId}")]
+        public async Task<string> GetStepClientData([FromRoute] int containerTypeId, [FromRoute] long containerId)
+        {
+            return await _productionProcessService.GetStepClientData(containerTypeId, containerId);
         }
     }
 }

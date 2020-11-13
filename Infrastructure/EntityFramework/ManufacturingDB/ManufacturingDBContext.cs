@@ -30,6 +30,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<RequestOutsourceStep> RequestOutsourceStep { get; set; }
         public virtual DbSet<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
+        public virtual DbSet<StepClientData> StepClientData { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -311,6 +312,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.StepGroupId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Step_StepGroup");
+            });
+
+            modelBuilder.Entity<StepClientData>(entity =>
+            {
+                entity.HasKey(e => new { e.ContainerId, e.ContainerTypeId });
+
+                entity.Property(e => e.ContainerTypeId).HasComment("1-SP 2-LSX");
             });
 
             modelBuilder.Entity<StepGroup>(entity =>
