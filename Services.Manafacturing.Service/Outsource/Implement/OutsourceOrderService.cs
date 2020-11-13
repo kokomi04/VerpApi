@@ -65,7 +65,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                         req.OutsoureOrderCode = generated.CustomCode;
                     }
-                    if(!req.CreateDateOrder.HasValue)
+                    if (!req.CreateDateOrder.HasValue)
                     {
                         req.CreateDateOrder = DateTime.UtcNow.GetUnix();
                     }

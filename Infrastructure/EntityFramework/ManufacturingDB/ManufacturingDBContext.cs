@@ -56,40 +56,27 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.ProviderAddress)
-                    .IsRequired()
-                    .HasMaxLength(256);
+                entity.Property(e => e.ProviderAddress).HasMaxLength(256);
 
-                entity.Property(e => e.ProviderName)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProviderName).HasMaxLength(128);
 
-                entity.Property(e => e.ProviderPhone)
-                    .IsRequired()
-                    .HasMaxLength(20);
+                entity.Property(e => e.ProviderPhone).HasMaxLength(20);
 
-                entity.Property(e => e.ProviderReceiver)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
 
-                entity.Property(e => e.RequestObjectId).HasComment(@"1: Gia công chi tiết
+                entity.Property(e => e.RequestObjectCode)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment(@"1: Gia công chi tiết
 2: Gia công công đoạn");
 
-                entity.Property(e => e.TransportToAdress)
-                    .IsRequired()
-                    .HasMaxLength(256);
+                entity.Property(e => e.TransportToAddress).HasMaxLength(256);
 
-                entity.Property(e => e.TransportToCompany)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.TransportToCompany).HasMaxLength(128);
 
-                entity.Property(e => e.TransportToPhone)
-                    .IsRequired()
-                    .HasMaxLength(20);
+                entity.Property(e => e.TransportToPhone).HasMaxLength(20);
 
-                entity.Property(e => e.TransportToReceiver)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.TransportToReceiver).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });

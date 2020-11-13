@@ -30,31 +30,31 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{containerId}/{productionStepId}")]
-        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] int containerId, [FromRoute] long productionStepId)
+        [Route("{productionStepId}")]
+        public async Task<ProductionStepModel> GetProductionStepById([FromRoute] long productionStepId)
         {
-            return await _productionProcessService.GetProductionStepById(containerId, productionStepId);
+            return await _productionProcessService.GetProductionStepById(productionStepId);
         }
 
         [HttpPut]
-        [Route("{containerId}/{productionStepId}")]
-        public async Task<bool> UpdateProductionStepsById([FromRoute] int containerId, [FromRoute] long productionStepId, [FromBody] ProductionStepInfo req)
+        [Route("{productionStepId}")]
+        public async Task<bool> UpdateProductionStepsById([FromRoute] long productionStepId, [FromBody] ProductionStepInfo req)
         {
-            return await _productionProcessService.UpdateProductionStepById(containerId, productionStepId, req);
+            return await _productionProcessService.UpdateProductionStepById(productionStepId, req);
         }
 
         [HttpPost]
-        [Route("{containerId}")]
-        public async Task<long> CreateProductionStep([FromRoute] int containerId, [FromBody] ProductionStepInfo req)
+        [Route("")]
+        public async Task<long> CreateProductionStep([FromBody] ProductionStepInfo req)
         {
-            return await _productionProcessService.CreateProductionStep(containerId, req);
+            return await _productionProcessService.CreateProductionStep(req);
         }
 
         [HttpDelete]
-        [Route("{containerId}/{productionStepId}")]
-        public async Task<bool> DeleteProductionStepById([FromRoute] int containerId, [FromRoute] int productionStepId)
+        [Route("{productionStepId}")]
+        public async Task<bool> DeleteProductionStepById([FromRoute] int productionStepId)
         {
-            return await _productionProcessService.DeleteProductionStepById(containerId, productionStepId);
+            return await _productionProcessService.DeleteProductionStepById(productionStepId);
         }
 
         [HttpPost]

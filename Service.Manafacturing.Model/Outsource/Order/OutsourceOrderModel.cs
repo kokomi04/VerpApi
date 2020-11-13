@@ -12,8 +12,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
     public class OutsourceOrderModel: IMapFrom<OutsourceOrder>
     {
         public int OutsoureOrderId { get; set; }
-        public int RequestObjectId { get; set; }
-        public EnumProductionProcess.OutsourceOrderRequestObjectType RequestObjectTypeId { get; set; }
+        public int RequestObjectCode { get; set; }
         public string OutsoureOrderCode { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
@@ -21,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProviderPhone { get; set; }
         public string TransportToReceiver { get; set; }
         public string TransportToCompany { get; set; }
-        public string TransportToAdress { get; set; }
+        public string TransportToAddress { get; set; }
         public string TransportToPhone { get; set; }
         public string OutsoureRequired { get; set; }
         public string Note { get; set; }

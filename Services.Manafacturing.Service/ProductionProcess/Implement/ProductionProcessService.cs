@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _productHelperService = productHelperService;
         }
 
-        public async Task<long> CreateProductionStep(int containerId, ProductionStepInfo req)
+        public async Task<long> CreateProductionStep(ProductionStepInfo req)
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -72,10 +72,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionStepById(int containerId, long productionStepId)
+        public async Task<bool> DeleteProductionStepById(long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep
-                                   .Where(s => s.ProductionStepId == productionStepId && s.ContainerId == containerId)
+                                   .Where(s => s.ProductionStepId == productionStepId)
                                    .Include(x => x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
@@ -480,7 +480,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        public async Task<ProductionStepInfo> GetProductionStepById(int containerId, long productionStepId)
+        public async Task<ProductionStepInfo> GetProductionStepById(long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                                     .Where(s => s.ProductionStepId == productionStepId)
@@ -498,7 +498,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return productionStep;
         }
 
-        public async Task<bool> UpdateProductionStepById(int containerId, long productionStepId, ProductionStepInfo req)
+        public async Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req)
         {
             var sProductionStep = await _manufacturingDBContext.ProductionStep
                                    .Where(s => s.ProductionStepId == productionStepId)
