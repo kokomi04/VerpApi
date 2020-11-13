@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     {
         Task<IList<ProductionPlaningOrderModel>> GetProductionPlaningOrders();
         Task<IList<ProductionPlaningOrderDetailModel>> GetProductionPlaningOrderDetail(int productionOrderId);
-        Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
+        Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule(List<ProductionScheduleInputModel> data);
         Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data);
         Task<bool> DeleteProductionSchedule(int[] productionScheduleIds);

@@ -93,15 +93,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
-        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
 
-            var whereCondition = new StringBuilder();
+            var whereCondition = new StringBuilder(" (v.StartDate <= @FromDate AND v.EndDate >= @ToDate) ");
+
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+            if(!fromDateTime.HasValue || !toDateTime.HasValue)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
+
+            parammeters.Add(new SqlParameter("@FromDate", fromDateTime.Value));
+            parammeters.Add(new SqlParameter("@ToDate", toDateTime.Value));
+
             if (!string.IsNullOrEmpty(keyword))
             {
-                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                whereCondition.Append("AND (v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("|| v.ProductTitle LIKE @Keyword ");
                 whereCondition.Append("|| v.OrderCode LIKE @Keyword ");
                 whereCondition.Append("|| v.PartnerTitle LIKE @Keyword ");
@@ -116,20 +125,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 filters.FilterClauseProcess("vProductionSchedule", "v", ref filterCondition, ref parammeters, ref suffix);
                 if (filterCondition.Length > 2)
                 {
-                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(" AND ");
                     whereCondition.Append(filterCondition);
                 }
             }
 
             var sql = new StringBuilder("SELECT * FROM vProductionSchedule v ");
             var totalSql = new StringBuilder("SELECT COUNT(v.ProductionScheduleId) Total FROM vProductionSchedule v ");
-            if (whereCondition.Length > 0)
-            {
-                totalSql.Append("WHERE ");
-                totalSql.Append(whereCondition);
-                sql.Append("WHERE ");
-                sql.Append(whereCondition);
-            }
+
+            totalSql.Append("WHERE ");
+            totalSql.Append(whereCondition);
+            sql.Append("WHERE ");
+            sql.Append(whereCondition);
+
             orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "ProductionOrderDetailId" : orderByFieldName;
             sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
 
@@ -218,7 +226,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 _manufacturingDBContext.SaveChanges();
-                foreach(var item in dataMap)
+                foreach (var item in dataMap)
                 {
                     item.Input.ProductionScheduleId = item.Entity.ProductionScheduleId;
                 }
@@ -298,7 +306,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             try
             {
-                foreach(var item in productionSchedules)
+                foreach (var item in productionSchedules)
                 {
                     item.IsDeleted = true;
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, item.ProductionScheduleId, $"Xóa lịch sản xuất ", item.JsonSerialize());
