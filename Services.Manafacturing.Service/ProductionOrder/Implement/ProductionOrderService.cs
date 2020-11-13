@@ -54,11 +54,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (!string.IsNullOrEmpty(keyword))
             {
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
-                whereCondition.Append("|| v.Description LIKE @KeyWord ");
-                whereCondition.Append("|| v.ProductTitle LIKE @KeyWord ");
-                whereCondition.Append("|| v.PartnerTitle LIKE @KeyWord ");
-                whereCondition.Append("|| v.OrderCode LIKE @KeyWord ) ");
-                parammeters.Add(new SqlParameter("@KeyWord", $"%{keyword}%"));
+                whereCondition.Append("|| v.Description LIKE @Keyword ");
+                whereCondition.Append("|| v.ProductTitle LIKE @Keyword ");
+                whereCondition.Append("|| v.PartnerTitle LIKE @Keyword ");
+                whereCondition.Append("|| v.OrderCode LIKE @Keyword ) ");
+                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
 
             if (filters != null)
