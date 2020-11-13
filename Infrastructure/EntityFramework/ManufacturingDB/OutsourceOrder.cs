@@ -11,7 +11,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public int OutsoureOrderId { get; set; }
-        public int RequestoObjectId { get; set; }
+        public int RequestObjectId { get; set; }
         public int RequestObjectTypeId { get; set; }
         public DateTime CreateDateOrder { get; set; }
         public string OutsoureOrderCode { get; set; }
@@ -33,6 +33,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int SubsidiaryId { get; set; }
 
         public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
     }
