@@ -11,6 +11,8 @@ using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -25,7 +27,8 @@ namespace VErpApi.Controllers.Manufacturing
             _productionScheduleService = productionScheduleService;
         }
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
         [Route("")]
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
@@ -34,23 +37,23 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("")]
-        public async Task<ProductionScheduleInputModel> CreateProductionSchedule([FromBody] ProductionScheduleInputModel data)
+        public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule([FromBody] List<ProductionScheduleInputModel> data)
         {
             return await _productionScheduleService.CreateProductionSchedule(data);
         }
 
         [HttpPut]
-        [Route("{productionScheduleId}")]
-        public async Task<ProductionScheduleInputModel> UpdateProductionSchedule([FromRoute] int productionScheduleId, [FromBody] ProductionScheduleInputModel data)
+        [Route("")]
+        public async Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule([FromBody] List<ProductionScheduleInputModel> data)
         {
-            return await _productionScheduleService.UpdateProductionSchedule(productionScheduleId, data);
+            return await _productionScheduleService.UpdateProductionSchedule(data);
         }
 
         [HttpDelete]
-        [Route("{productionScheduleId}")]
-        public async Task<bool> DeleteProductionSchedule([FromRoute] int productionScheduleId)
+        [Route("")]
+        public async Task<bool> DeleteProductionSchedule([FromBody] int[] productionScheduleIds)
         {
-            return await _productionScheduleService.DeleteProductionSchedule(productionScheduleId);
+            return await _productionScheduleService.DeleteProductionSchedule(productionScheduleIds);
         }
 
         [HttpGet]

@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public long ScheduleTurnId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
     }

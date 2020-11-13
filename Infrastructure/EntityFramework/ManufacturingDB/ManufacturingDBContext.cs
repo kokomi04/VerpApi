@@ -31,7 +31,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
-        public virtual DbSet<TrackOutsource> TrackOutsource { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -319,21 +318,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.StepGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
-            });
-
-            modelBuilder.Entity<TrackOutsource>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DateTrack).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Description)
-                    .IsRequired()
-                    .HasMaxLength(255);
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             OnModelCreatingPartial(modelBuilder);

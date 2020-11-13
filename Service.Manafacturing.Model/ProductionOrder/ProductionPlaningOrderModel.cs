@@ -45,5 +45,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int PlannedQuantity { get; set; }
         public string OrderCode { get; set; }
         public string PartnerTitle { get; set; }
+        public long ProductionStepId { get; set; }
     }
 }
