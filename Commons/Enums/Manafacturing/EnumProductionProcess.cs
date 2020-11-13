@@ -26,7 +26,7 @@ namespace VErp.Commons.Enums.Manafacturing
             ProductSemi = 2
         }
 
-        public enum OutsourceOrderRequestContainerType
+        public enum OutsourceOrderRequestObjectType
         {
             [Description("Gia công chi tiết")]
             OutsourcePart = 1,
