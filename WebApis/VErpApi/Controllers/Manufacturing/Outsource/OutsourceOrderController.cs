@@ -22,40 +22,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             _outsourceOrderService = outsourceOrderService;
         }
 
-        [HttpGet]
-        [Route("parts")]
-        public async Task<PageData<OutsoureOrderInfo>> GetListOutsourcePartOrder([FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _outsourceOrderService.GetListOutsourceOrder((int)EnumProductionProcess.OutsourceOrderRequestContainerType.OutsourcePart, keyWord, page, size);
-        }
-
-        [HttpGet]
-        [Route("steps")]
-        public async Task<PageData<OutsoureOrderInfo>> GetListOutsourceStepOrder([FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _outsourceOrderService.GetListOutsourceOrder((int)EnumProductionProcess.OutsourceOrderRequestContainerType.OutsourceStep, keyWord, page, size);
-        }
-
         [HttpPost]
         [Route("")]
-        public async Task<int> CreateOutsourceOrder([FromBody] OutsoureOrderInfo req)
+        public async Task<int> CreateOutsourceOrder([FromBody] OutsourceOrderInfo req)
         {
             return await _outsourceOrderService.CreateOutsourceOrder(req);
         }
-
-        [HttpPut]
-        [Route("{outsourceOrderId}")]
-        public async Task<bool> UpdateOutsourceOrder([FromRoute] int outsourceOrderId, [FromBody] OutsoureOrderInfo req)
-        {
-            return await _outsourceOrderService.UpdateOutsourceOrder(outsourceOrderId, req);
-        }
-
-        [HttpDelete]
-        [Route("{outsourceOrderId}")]
-        public async Task<bool> DeleteOutsourceOrder([FromRoute] int outsourceOrderId)
-        {
-            return await _outsourceOrderService.DeleteOutsourceOrder(outsourceOrderId);       
-        }
+        
 
     }
 }

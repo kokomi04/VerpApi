@@ -191,5 +191,7 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionOrder = 70,
         [Description("Kế hoạch sản xuất")]
         ProductionSchedule = 70,
+        [Description("Đơn hàng gia công")]
+        OutsourceOrder = 71,
     }
 }
