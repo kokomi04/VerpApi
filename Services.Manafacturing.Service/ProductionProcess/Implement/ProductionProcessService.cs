@@ -167,6 +167,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(o => o.ProductionOrderId == productionOrderId)
                 .Select(od => new { od.ProductId, TotalQuantity = od.Quantity + od.ReserveQuantity, od.ProductionOrderDetailId })
                 .ToList();
+            if(productionOrderDetails.Count == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại sản phẩm trong lệnh sản xuất.");
 
             var productIds = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
 

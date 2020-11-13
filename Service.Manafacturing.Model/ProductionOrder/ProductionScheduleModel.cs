@@ -42,6 +42,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public int ProductionScheduleQuantity { get; set; }
+        public long? ScheduleTurnId { get; set; }
     }
 
 }
