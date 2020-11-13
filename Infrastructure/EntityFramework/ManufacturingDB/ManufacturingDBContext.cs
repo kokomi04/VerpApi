@@ -72,7 +72,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.RequestoObjectId).HasComment(@"1: Gia công chi tiết
+                entity.Property(e => e.RequestObjectId).HasComment(@"1: Gia công chi tiết
 2: Gia công công đoạn");
 
                 entity.Property(e => e.TransportToAdress)

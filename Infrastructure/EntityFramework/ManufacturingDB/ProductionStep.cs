@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
+        public int SubsidiaryId { get; set; }
 
         public virtual Step Step { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }

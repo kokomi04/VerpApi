@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int SubsidiaryId { get; set; }
 
         public virtual StepGroup StepGroup { get; set; }
         public virtual ICollection<ProductionStep> ProductionStep { get; set; }
