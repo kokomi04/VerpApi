@@ -98,7 +98,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
 
-            var whereCondition = new StringBuilder(" (v.StartDate <= @FromDate AND v.EndDate >= @ToDate) ");
+            var whereCondition = new StringBuilder(" (v.StartDate <= @ToDate AND v.EndDate >= @FromDate) ");
 
             var fromDateTime = fromDate.UnixToDateTime();
             var toDateTime = toDate.UnixToDateTime();
@@ -131,7 +131,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             var sql = new StringBuilder("SELECT * FROM vProductionSchedule v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionScheduleId) Total FROM vProductionSchedule v ");
+            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionScheduleId) Total, SUM(v.TotalPrice) AdditionResult FROM vProductionSchedule v ");
 
             totalSql.Append("WHERE ");
             totalSql.Append(whereCondition);
@@ -144,9 +144,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
 
             var total = 0;
+            decimal additionResult = 0;
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+                additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
             }
 
             if (size >= 0)
@@ -159,7 +161,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionScheduleEntity>().AsQueryable().ProjectTo<ProductionScheduleModel>(_mapper.ConfigurationProvider).ToList();
 
-            return (lst, total);
+            return (lst, total, additionResult);
         }
         
         public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data)
