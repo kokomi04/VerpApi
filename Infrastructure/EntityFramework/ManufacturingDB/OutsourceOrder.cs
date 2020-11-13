@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int OutsoureOrderId { get; set; }
         public int RequestoObjectId { get; set; }
         public int RequestObjectTypeId { get; set; }
+        public DateTime CreateDateOrder { get; set; }
         public string OutsoureOrderCode { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
@@ -22,8 +23,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string TransportToCompany { get; set; }
         public string TransportToAdress { get; set; }
         public string TransportToPhone { get; set; }
-        public string RequestInfo { get; set; }
+        public string OutsoureRequired { get; set; }
         public string Note { get; set; }
+        public decimal FreigthCost { get; set; }
+        public decimal OtherCost { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }

@@ -92,11 +92,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
-        public async Task<ProductionScheduleModel> CreateProductionSchedule(ProductionScheduleModel data)
-        {
-            throw new NotImplementedException();
-        }
-
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
@@ -157,10 +152,88 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return (lst, total);
         }
-
-        public async Task<ProductionScheduleModel> UpdateProductionSchedule(int productionOrderDetailId, ProductionScheduleModel data)
+        public async Task<ProductionScheduleInputModel> CreateProductionSchedule(ProductionScheduleInputModel data)
         {
-            throw new NotImplementedException();
+            // Get plaining order detail
+            var plainingOrderSql = @$"
+                SELECT v.ProductionOrderDetailId
+                    , v.TotalQuantity
+                    , v.ProductTitle
+                    , v.PlannedQuantity
+                    , v.ProductionOrderCode
+                FROM vProductionOrderDetail v
+                WHERE v.ProductionOrderDetailId = @ProductionOrderDetailId
+                ";
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ProductionOrderDetailId", data.ProductionOrderDetailId)
+            };
+
+            var plainingOrder = await _manufacturingDBContext.QueryDataTable(plainingOrderSql, sqlParams);
+
+            // Validate
+            if (plainingOrder == null || plainingOrder.Rows.Count == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm không có trong danh sách cần lên kế hoạch sản xuất");
+
+            try
+            {
+                var productionSchedule = _mapper.Map<ProductionSchedule>(data);
+                _manufacturingDBContext.ProductionSchedule.Add(productionSchedule);
+                _manufacturingDBContext.SaveChanges();
+                data.ProductionScheduleId = productionSchedule.ProductionScheduleId;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionOrderDetailId, $"Thêm mới lịch sản xuất cho LSX {plainingOrder.Rows[0]["ProductionOrderCode"]}", data.JsonSerialize());
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductSchedule");
+                throw;
+            }
+        }
+
+        public async Task<ProductionScheduleInputModel> UpdateProductionSchedule(int productionScheduleId, ProductionScheduleInputModel data)
+        {
+            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == productionScheduleId);
+            if (productionSchedule == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
+            if (productionSchedule.ProductionScheduleStatus == (int)EnumProductionStatus.Finished)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không được thay đổi lịch sản xuất đã hoàn thành");
+            try
+            {
+                productionSchedule.ProductionScheduleQuantity = data.ProductionScheduleQuantity;
+                productionSchedule.StartDate = data.StartDate.UnixToDateTime().Value;
+                productionSchedule.EndDate = data.EndDate.UnixToDateTime().Value;
+                _manufacturingDBContext.SaveChanges();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionScheduleId, $"Cập nhật lịch sản xuất có id {productionScheduleId}", data.JsonSerialize());
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductSchedule");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteProductionSchedule(int productionScheduleId)
+        {
+            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == productionScheduleId);
+            if (productionSchedule == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
+            if (productionSchedule.ProductionScheduleStatus != (int)EnumProductionStatus.Waiting)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được xóa lịch sản xuất đã chưa thực hiện");
+            try
+            {
+              
+                productionSchedule.IsDeleted = true;
+                _manufacturingDBContext.SaveChanges();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionScheduleId, $"Xóa lịch sản xuất có id {productionScheduleId}", productionSchedule.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteProductSchedule");
+                throw;
+            }
         }
     }
 }

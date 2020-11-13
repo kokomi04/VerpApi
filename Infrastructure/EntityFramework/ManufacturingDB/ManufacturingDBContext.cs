@@ -42,9 +42,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.HasKey(e => e.OutsoureOrderId);
 
+                entity.Property(e => e.CreateDateOrder).HasColumnType("datetime");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.FreigthCost).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OutsoureOrderCode)
                     .IsRequired()
