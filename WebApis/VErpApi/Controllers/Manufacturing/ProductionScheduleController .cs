@@ -29,10 +29,10 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [VErpAction(EnumAction.View)]
-        [Route("")]
-        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        [Route("Search")]
+        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
-            return await _productionScheduleService.GetProductionSchedule(keyword, page, size, orderByFieldName, asc, filters);
+            return await _productionScheduleService.GetProductionSchedule(keyword, fromDate, toDate, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpPost]
