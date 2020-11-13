@@ -45,6 +45,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long EndDate { get; set; }
         public int ProductionScheduleQuantity { get; set; }
         public long? ScheduleTurnId { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionScheduleInputModel, ProductionSchedule>()
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()));
+        }
     }
 
 }
