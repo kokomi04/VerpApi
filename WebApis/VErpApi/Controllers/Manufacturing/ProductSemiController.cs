@@ -10,7 +10,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/ProductSemi")]
     [ApiController]
-    public class ProductSemiController
+    public class ProductSemiController: ControllerBase
     {
         private readonly IProductSemiService _productSemiService;
 
