@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
+        public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionSchedule> ProductionSchedule { get; set; }
@@ -113,6 +114,24 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<ProductionAssignment>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionStepId, e.ProductionScheduleId, e.DepartmentId })
+                    .HasName("PK_ProductionStepOrder_copy1");
+
+                entity.HasOne(d => d.ProductionSchedule)
+                    .WithMany(p => p.ProductionAssignment)
+                    .HasForeignKey(d => d.ProductionScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionAssignment_ProductionSchedule");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.ProductionAssignment)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductionAssignment_ProductionStep");
             });
 
             modelBuilder.Entity<ProductionOrder>(entity =>
