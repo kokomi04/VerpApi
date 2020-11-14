@@ -11,8 +11,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
     public interface IProductionAssignmentService
     {
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId);
-        Task<IList<ProductionAssignmentModel>> UpdateProductionAssignment(ProductionAssignmentModel data);
-        Task<IList<ProductionAssignmentModel>> CreateProductionAssignment(ProductionAssignmentModel data);
-        Task<bool> DeleteProductionAssignment(int productionAssignmentId);
+        Task<ProductionAssignmentModel> UpdateProductionAssignment(ProductionAssignmentModel data);
+        Task<ProductionAssignmentModel> CreateProductionAssignment(ProductionAssignmentModel data);
+        Task<bool> DeleteProductionAssignment(ProductionAssignmentModel data);
     }
 }
