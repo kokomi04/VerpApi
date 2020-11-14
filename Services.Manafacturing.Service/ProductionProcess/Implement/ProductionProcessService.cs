@@ -547,9 +547,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var uProductionInSteps = source.Where(x => x.ProductionStepLinkDataId > 0)
                                             .Select(x => (ProductionStepLinkDataModel)x).ToList();
 
-            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData
-                .Where(x => uProductionInSteps.Select(y => new { y.ObjectId, y.ObjectTypeId })
-                            .Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
+            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData.AsEnumerable()
+                .Where(x => uProductionInSteps.Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
 
             foreach (var d in destProductionInSteps)
             {
