@@ -292,7 +292,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 
 
                 if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
-                if (dest.Directory.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
                 if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
 
                 source.CopyTo(dest.FullName);
@@ -315,7 +314,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var dest = new FileInfo(d);
 
                 if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
-                if (dest.Directory.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
                 if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
 
                 source.MoveTo(dest.FullName);
