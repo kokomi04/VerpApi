@@ -171,24 +171,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại sản phẩm trong lệnh sản xuất.");
 
             var productIds = productionOrderDetails.Select(od => od.ProductId).ToList();
-            var productIdMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.TotalQuantity.GetValueOrDefault());
 
             var productOrderMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.ProductionOrderDetailId);
 
-            var products = await _productHelperService.GetListProducts(productIdMap.Select(p => p.Key).ToList());
-            if (productIdMap.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
+            var products = await _productHelperService.GetListProducts(productIds);
+            if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
                 .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.Contains(s.ContainerId))
                 .ToList();
 
             var productionStepIds = productionSteps.Select(s => s.ProductionStepId).ToList();
-            var productionStepIdMap = productionSteps
-                 .Select(s => new
-                 {
-                     s.ProductionStepId,
-                     s.ContainerId
-                 }).ToDictionary(s => s.ProductionStepId, s => productIdMap[s.ContainerId]);
 
             var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole
                 .Where(r => productionStepIds.Contains(r.ProductionStepId))
@@ -284,7 +277,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ObjectId = item.ObjectId,
                             ObjectTypeId = item.ObjectTypeId,
                             UnitId = item.UnitId,
-                            Quantity = item.Quantity * productionStepIdMap[linkDataRole.ProductionStepId],
+                            Quantity = item.Quantity,
                             SortOrder = item.SortOrder
                         };
 
