@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionSchedule
     {
+        public ProductionSchedule()
+        {
+            ProductionAssignment = new HashSet<ProductionAssignment>();
+        }
+
         public int ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -21,5 +26,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ScheduleTurnId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
+        public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
     }
 }

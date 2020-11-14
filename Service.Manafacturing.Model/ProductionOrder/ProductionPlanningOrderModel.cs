@@ -40,7 +40,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int TotalQuantity { get; set; }
         public string ProductTitle { get; set; }
         public decimal UnitPrice { get; set; }
-        public decimal TotalPrice { get; set; }
         public string UnitName { get; set; }
         public int PlannedQuantity { get; set; }
         public string OrderCode { get; set; }

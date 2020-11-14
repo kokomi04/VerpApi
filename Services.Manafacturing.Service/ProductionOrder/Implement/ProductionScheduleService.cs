@@ -52,7 +52,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.TotalQuantity
                     , v.ProductTitle
                     , v.UnitPrice
-                    , v.TotalPrice
                     , v.UnitName
                     , v.PlannedQuantity
                     , v.OrderCode
@@ -131,7 +130,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             var sql = new StringBuilder("SELECT * FROM vProductionSchedule v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionScheduleId) Total, SUM(v.TotalPrice) AdditionResult FROM vProductionSchedule v ");
+            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionScheduleId) Total, SUM(v.UnitPrice * v.ProductionScheduleQuantity) AdditionResult FROM vProductionSchedule v ");
 
             totalSql.Append("WHERE ");
             totalSql.Append(whereCondition);
@@ -172,7 +171,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     , v.TotalQuantity
                     , v.ProductTitle
                     , v.UnitPrice
-                    , v.TotalPrice
                     , v.UnitName
                     , v.PlannedQuantity
                     , v.OrderCode
