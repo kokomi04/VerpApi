@@ -40,6 +40,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductName { get; set; }
         public string UnitName { get; set; }
         public string ProductPartName { get; set; }
+        public string ProductPartCode { get; set; }
+        public string OrderCode { get; set; }
 
     }
 

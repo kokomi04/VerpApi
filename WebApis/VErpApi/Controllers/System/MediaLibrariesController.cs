@@ -46,8 +46,8 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// thay đổi tên directory
         /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="newDirectory"></param>
+        /// <param name="directory">đường dẫn folder</param>
+        /// <param name="newName">tên folder thay thế</param>
         /// <returns></returns>
         [HttpPost]
         [Route("structure/rename")]
@@ -59,8 +59,8 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// Copy directory
         /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="newDirectory"></param>
+        /// <param name="directory">đường dẫn folder gốc</param>
+        /// <param name="newDirectory">đường dẫn folder chuyển tới</param>
         /// <returns></returns>
         [HttpPost]
         [Route("structure/copy")]
@@ -72,8 +72,8 @@ namespace VErpApi.Controllers.System
         /// <summary>
         /// move directory
         /// </summary>
-        /// <param name="directory"></param>
-        /// <param name="newDirectory"></param>
+        /// <param name="directory">đường dẫn folder gốc</param>
+        /// <param name="newDirectory">đường dẫn folder chuyển tới</param>
         /// <returns></returns>
         [HttpPost]
         [Route("structure/move")]
@@ -111,7 +111,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("files/copy")]
-        public async Task<bool> CopyFiles([FromForm] string directory, [FromForm] List<string> files)
+        public async Task<bool> CopyFiles([FromQuery] string directory, [FromBody] List<string> files)
         {
             return await _mediaService.CopyFiles(files, directory);
         }
@@ -124,7 +124,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("files/move")]
-        public async Task<bool> MoveFiles([FromForm] string directory, [FromForm] List<string> files)
+        public async Task<bool> MoveFiles([FromQuery] string directory, [FromBody] List<string> files)
         {
             return await _mediaService.MoveFiles(files, directory);
         }

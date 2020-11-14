@@ -10,6 +10,7 @@ namespace VErp.Commons.Enums.ErrorCodes
     {
         SubdirectoryExists = 1,
         NotFoundDirectory = 2,
-        DirectoryNotEmpty = 3
+        DirectoryNotEmpty = 3,
+        GeneralError = 4
     }
 }

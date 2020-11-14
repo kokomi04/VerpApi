@@ -26,6 +26,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
+        public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
         public virtual DbSet<RequestOutsourceStep> RequestOutsourceStep { get; set; }
         public virtual DbSet<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }
@@ -55,40 +56,27 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.ProviderAddress)
-                    .IsRequired()
-                    .HasMaxLength(256);
+                entity.Property(e => e.ProviderAddress).HasMaxLength(256);
 
-                entity.Property(e => e.ProviderName)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProviderName).HasMaxLength(128);
 
-                entity.Property(e => e.ProviderPhone)
-                    .IsRequired()
-                    .HasMaxLength(20);
+                entity.Property(e => e.ProviderPhone).HasMaxLength(20);
 
-                entity.Property(e => e.ProviderReceiver)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
 
-                entity.Property(e => e.RequestObjectId).HasComment(@"1: Gia công chi tiết
+                entity.Property(e => e.RequestObjectCode)
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasComment(@"1: Gia công chi tiết
 2: Gia công công đoạn");
 
-                entity.Property(e => e.TransportToAdress)
-                    .IsRequired()
-                    .HasMaxLength(256);
+                entity.Property(e => e.TransportToAddress).HasMaxLength(256);
 
-                entity.Property(e => e.TransportToCompany)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.TransportToCompany).HasMaxLength(128);
 
-                entity.Property(e => e.TransportToPhone)
-                    .IsRequired()
-                    .HasMaxLength(20);
+                entity.Property(e => e.TransportToPhone).HasMaxLength(20);
 
-                entity.Property(e => e.TransportToReceiver)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.TransportToReceiver).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
@@ -235,6 +223,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStepOrder_ProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionStepRoleClient>(entity =>
+            {
+                entity.HasKey(e => new { e.ContainerId, e.ContainerTypeId })
+                    .HasName("PK_StepClientData");
+
+                entity.Property(e => e.ContainerTypeId).HasComment("1-SP 2-LSX");
             });
 
             modelBuilder.Entity<RequestOutsourcePart>(entity =>

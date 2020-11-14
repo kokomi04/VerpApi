@@ -89,16 +89,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<IList<RequestOutsourcePartInfo>> GetRequestOutsourcePartExtraInfo(int productionOrderDetailId = 0)
         {
-            var sql = $@"SELECT rp.RequestOutsourcePartId, rp.RequestOutsourcePartCode,rp.ProductionOrderDetailId, 
-                        DATEDIFF(ms, '1970-01-01 00:00:00', rp.DateRequiredComplete) DateRequiredComplete, DATEDIFF(ms, '1970-01-01 00:00:00', rp.CreatedDatetimeUtc) CreateDateRequest,
-                        po.ProductionOrderCode, p1.ProductCode, p1.ProductName, rp.Status, rp.Quanity, u.UnitName, p2.ProductName ProductPartName, rp.ProductId, rp.UnitId
-                        FROM [ManufacturingDB].[dbo].RequestOutsourcePart rp
-                        JOIN [ManufacturingDB].[dbo].ProductionOrderDetail pod ON rp.ProductionOrderDetailId = pod.ProductionOrderDetailId
-                        JOIN [ManufacturingDB].[dbo].ProductionOrder po ON pod.ProductionOrderId = po.ProductionOrderId
-                        JOIN [StockDB].[dbo].Product p1 ON pod.ProductId = p1.ProductId 
-                        JOIN [MasterDB].[dbo].Unit u ON u.UnitId = rp.UnitId
-                        JOIN [StockDB].[dbo].Product p2 ON rp.ProductId = p2.ProductId
-                        Where rp.IsDeleted = 0 ";
+            var sql = $@"SELECT        rp.RequestOutsourcePartId, rp.RequestOutsourcePartCode, rp.ProductionOrderDetailId, DATEDIFF(s, '1970-01-01 00:00:00', rp.DateRequiredComplete) AS DateRequiredComplete, DATEDIFF(s, 
+                         '1970-01-01 00:00:00', rp.CreatedDatetimeUtc) AS CreateDateRequest, pod.ProductionOrderCode, pod.ProductCode, pod.ProductName, rp.Status, rp.Quanity, u.UnitName, p2.ProductName AS ProductPartName, 
+                         rp.ProductId, rp.UnitId, pod.OrderCode, p2.ProductCode AS ProductPartCode
+FROM            dbo.RequestOutsourcePart AS rp INNER JOIN
+                         dbo.vProductionOrderDetail AS pod ON rp.ProductionOrderDetailId = pod.ProductionOrderDetailId INNER JOIN
+                         MasterDB.dbo.Unit AS u ON u.UnitId = rp.UnitId INNER JOIN
+                         StockDB.dbo.Product AS p2 ON rp.ProductId = p2.ProductId
+WHERE        (rp.IsDeleted = 0) ";
 
             if (productionOrderDetailId != 0)
             {

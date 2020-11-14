@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _productHelperService = productHelperService;
         }
 
-        public async Task<long> CreateProductionStep(int containerId, ProductionStepInfo req)
+        public async Task<long> CreateProductionStep(ProductionStepInfo req)
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -72,10 +72,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionStepById(int containerId, long productionStepId)
+        public async Task<bool> DeleteProductionStepById(long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep
-                                   .Where(s => s.ProductionStepId == productionStepId && s.ContainerId == containerId)
+                                   .Where(s => s.ProductionStepId == productionStepId)
                                    .Include(x => x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
@@ -473,7 +473,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        public async Task<ProductionStepInfo> GetProductionStepById(int containerId, long productionStepId)
+        public async Task<ProductionStepInfo> GetProductionStepById(long productionStepId)
         {
             var productionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                                     .Where(s => s.ProductionStepId == productionStepId)
@@ -491,7 +491,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return productionStep;
         }
 
-        public async Task<bool> UpdateProductionStepById(int containerId, long productionStepId, ProductionStepInfo req)
+        public async Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req)
         {
             var sProductionStep = await _manufacturingDBContext.ProductionStep
                                    .Where(s => s.ProductionStepId == productionStepId)
@@ -540,9 +540,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var uProductionInSteps = source.Where(x => x.ProductionStepLinkDataId > 0)
                                             .Select(x => (ProductionStepLinkDataModel)x).ToList();
 
-            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData
-                .Where(x => uProductionInSteps.Select(y => new { y.ObjectId, y.ObjectTypeId })
-                            .Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
+            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData.AsEnumerable()
+                .Where(x => uProductionInSteps.Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
 
             foreach (var d in destProductionInSteps)
             {
@@ -575,6 +574,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
 
             return inOutStepLinks;
+        }
+
+        public async Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model)
+        {
+            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId).FirstOrDefault();
+            if(info != null)
+                info.ClientData = model.ClientData;
+            else
+                _manufacturingDBContext.Add(_mapper.Map<ProductionStepRoleClient>(model));
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId)
+        {
+            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefault();
+            if (info == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            return info.ClientData;
         }
     }
 }
