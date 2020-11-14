@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<bool> CreateRequestOutsourcePart(RequestOutsourcePartInfo req)
+        public async Task<int> CreateRequestOutsourcePart(RequestOutsourcePartInfo req)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -86,7 +86,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _customGenCodeHelperService.ConfirmCode(EnumObjectType.RequestOutsource, 0);
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.RequestOutsourcePartId, $"Thêm mới yêu cầu gia công chi tiết {order.RequestOutsourcePartId}", order.JsonSerialize());
-                return true;
+
+                return order.RequestOutsourcePartId;
             }
             catch (Exception ex)
             {
@@ -98,21 +99,30 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<RequestOutsourcePartInfo> GetRequestOutsourcePartExtraInfo(int requestOutsourcePartId = 0)
         {
+            var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartExtractInfo v WHERE v.RequestOutsourcePartId = @RequestOutsourcePartId");
 
             var parammeters = new List<SqlParameter>();
-            var whereCondition = new StringBuilder();
-            whereCondition.Append("(v.RequestOutsourcePartId = @RequestOutsourcePartId ");
             parammeters.Add(new SqlParameter("@RequestOutsourcePartId", requestOutsourcePartId));
 
-            var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartDetail v ");
-            var data = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+            var extractInfo = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
                     .ConvertData<RequestOutsourcePartDetailInfo>();
-            if(data.Count == 0)
+            if(extractInfo.Count == 0)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
-            var rs = _mapper.Map<RequestOutsourcePartInfo>(data[0]);
-            rs.RequestOutsourcePartDetail = data;
+            var rs = _mapper.Map<RequestOutsourcePartInfo>(extractInfo[0]);
+            rs.Status = GetRequestOutsourcePartStatus(extractInfo);
+            rs.RequestOutsourcePartDetail = extractInfo.Where(x=>x.RequestOutsourcePartDetailId > 0).ToList();
             return rs;
+        }
+
+        private string GetRequestOutsourcePartStatus(List<RequestOutsourcePartDetailInfo> req) {
+            if (req.Where(x => x.Status == OutsourcePartProcessType.Unprocessed).Count() > 0)
+                return OutsourcePartProcessType.Unprocessed.GetEnumDescription();
+            else if (req.Where(x => x.Status == OutsourcePartProcessType.Processing).Count() > 0)
+                return OutsourcePartProcessType.Processing.GetEnumDescription();
+            else if (req.Where(x => x.Status == OutsourcePartProcessType.Processed).Count() > 0)
+                return OutsourcePartProcessType.Processed.GetEnumDescription(); 
+            return string.Empty;
         }
 
         public async Task<bool> UpdateRequestOutsourcePart(int requestOutsourcePartId, RequestOutsourcePartInfo req)
@@ -132,43 +142,39 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
                 var lsUpdateDetail = details.Where(x => req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
 
-                //Valid Delete
-                lsDeleteDetail.ForEach( x=>{
-                    if (x.Status != (int)OutsourcePartProcessType.Unprocessed)
-                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Không thể xóa chi tiết id/{x.RequestOutsourcePartDetailId} vì trạng thái của nó là {((OutsourcePartProcessType)x.Status).GetEnumDescription()}");
-                });
-                //Valid Update
+                //Valid Delete and action
+
+                lsDeleteDetail.ForEach(x => x.IsDeleted = true);
+
+                //Valid Update and action
                 lsUpdateDetail.ForEach(x => {
                     if (x.Status != (int)OutsourcePartProcessType.Unprocessed)
                         throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Không thể sửa chi tiết id/{x.RequestOutsourcePartDetailId} vì trạng thái của nó là {((OutsourcePartProcessType)x.Status).GetEnumDescription()}");
                 });
 
 
-                //foreach (var d in dData)
-                //{
-                //    if (d.Status != (int)OutsourcePartProcessType.Unprocessed)
-                //        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, "Yêu cầu gia công chi tiết đã có đơn hàng giao công");
-                //    d.IsDeleted = true;
-                //}
-                //foreach (var d in uData)
-                //{
-                //    if (d.Status != (int)OutsourcePartProcessType.Unprocessed)
-                //        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, "Yêu cầu gia công chi tiết đã có đơn hàng giao công");
+                foreach(var u in lsUpdateDetail) {
+                    var s = req.RequestOutsourcePartDetail.FirstOrDefault(x => x.RequestOutsourcePartDetailId == u.RequestOutsourcePartDetailId);
+                    if (s == null)
+                        throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
+                    _mapper.Map(s, u);
+                }
 
-                //    var s = req.FirstOrDefault(x => x.RequestOutsourcePartId == d.RequestOutsourcePartId);
-                //    _mapper.Map(s, d);
-                //}
-                //await _manufacturingDBContext.SaveChangesAsync();
-                //await CreateRequestOutsourcePart(nData);
-                //trans.Commit();
+                // create new detail
+                lsNewDetail.ForEach(x => x.RequestOutsourcePartId = info.RequestOutsourcePartId);
+                var temp = _mapper.Map<List<RequestOutsourcePartDetail>>(lsNewDetail);
+                await _manufacturingDBContext.RequestOutsourcePartDetail.AddRangeAsync(temp);
 
-                //await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, req.First().ProductionOrderDetailId, $"Cập nhật yêu cầu gia công chi tiết {req.First().RequestOutsourcePartCode}", req.JsonSerialize());
+                await _manufacturingDBContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.RequestOutsource, req.RequestOutsourcePartId, $"Cập nhật yêu cầu gia công chi tiết {req.RequestOutsourcePartId}", req.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "CreateRequestOutsourcePart");
+                _logger.LogError(ex, "UpdateRequestOutsourcePart");
                 throw;
             }
         }
@@ -177,7 +183,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
-
             var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -189,8 +194,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
 
-            var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartDetail v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.RequestOutsourcePartDetailId) Total FROM vRequestOutsourcePartDetail v ");
+            var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartExtractInfo v ");
+            var totalSql = new StringBuilder("SELECT COUNT(v.RequestOutsourcePartDetailId) Total FROM vRequestOutsourcePartExtractInfo v ");
             if (whereCondition.Length > 0)
             {
                 totalSql.Append("WHERE ");
@@ -220,6 +225,19 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var lst = resultData.ConvertData<RequestOutsourcePartDetailInfo>().ToList();
 
             return (lst, total);
+        }
+
+        public async Task<bool> DeletedRequestOutsourcePart(int requestOutsourcePartId) {
+            var order = await _manufacturingDBContext.RequestOutsourcePart.FirstOrDefaultAsync(x => x.RequestOutsourcePartId == requestOutsourcePartId);
+            if (order == null)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
+            var details = await _manufacturingDBContext.RequestOutsourcePartDetail.Where(x => x.RequestOutsourcePartId == order.RequestOutsourcePartId).ToListAsync();
+
+            details.ForEach(x => x.IsDeleted = true);
+            order.IsDeleted = true;
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
         }
     }
 }

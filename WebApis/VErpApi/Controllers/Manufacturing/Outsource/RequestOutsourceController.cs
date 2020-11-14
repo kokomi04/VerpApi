@@ -35,16 +35,20 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         }
         [HttpPost]
         [Route("parts")]
-        public async Task<bool> CreateRequestOutsourcePart([FromBody] List<RequestOutsourcePartDetailModel> req)
+        public async Task<int> CreateRequestOutsourcePart([FromBody] RequestOutsourcePartInfo req)
         {
             return await _requestPartService.CreateRequestOutsourcePart(req);
         }
         [HttpPut]
         [Route("parts/{requestOutsourcePartId}")]
-        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] int requestOutsourcePartId, [FromBody] List<RequestOutsourcePartDetailModel> req)
+        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] int requestOutsourcePartId, [FromBody] RequestOutsourcePartInfo req)
         {
             return await _requestPartService.UpdateRequestOutsourcePart(requestOutsourcePartId, req);
         }
-
+        [HttpDelete]
+        [Route("parts/{requestOutsourcePartId}")]
+        public async Task<bool> DeletedRequestOutsourcePart([FromRoute] int requestOutsourcePartId) {
+            return await _requestPartService.DeletedRequestOutsourcePart(requestOutsourcePartId);
+        }
     }
 }
