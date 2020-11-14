@@ -26,11 +26,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
+        public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
         public virtual DbSet<RequestOutsourceStep> RequestOutsourceStep { get; set; }
         public virtual DbSet<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
-        public virtual DbSet<StepClientData> StepClientData { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -225,6 +225,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_ProductionStepOrder_ProductionStep");
             });
 
+            modelBuilder.Entity<ProductionStepRoleClient>(entity =>
+            {
+                entity.HasKey(e => new { e.ContainerId, e.ContainerTypeId })
+                    .HasName("PK_StepClientData");
+
+                entity.Property(e => e.ContainerTypeId).HasComment("1-SP 2-LSX");
+            });
+
             modelBuilder.Entity<RequestOutsourcePart>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
@@ -299,13 +307,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.StepGroupId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Step_StepGroup");
-            });
-
-            modelBuilder.Entity<StepClientData>(entity =>
-            {
-                entity.HasKey(e => new { e.ContainerId, e.ContainerTypeId });
-
-                entity.Property(e => e.ContainerTypeId).HasComment("1-SP 2-LSX");
             });
 
             modelBuilder.Entity<StepGroup>(entity =>

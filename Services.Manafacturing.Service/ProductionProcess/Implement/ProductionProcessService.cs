@@ -584,21 +584,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return inOutStepLinks;
         }
 
-        public async Task<bool> InsertAndUpdateStepClientData(StepClientDataModel model)
+        public async Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model)
         {
-            var info = _manufacturingDBContext.StepClientData.Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId).FirstOrDefault();
+            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId).FirstOrDefault();
             if(info != null)
                 info.ClientData = model.ClientData;
             else
-                _manufacturingDBContext.Add(_mapper.Map<StepClientData>(model));
+                _manufacturingDBContext.Add(_mapper.Map<ProductionStepRoleClient>(model));
 
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
         }
 
-        public async Task<string> GetStepClientData(int containerTypeId, long containerId)
+        public async Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId)
         {
-            var info = _manufacturingDBContext.StepClientData.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefault();
+            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefault();
             if (info == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
             return info.ClientData;

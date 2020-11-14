@@ -6,7 +6,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
-    public class StepClientDataModel: IMapFrom<StepClientData>
+    public class ProductionStepRoleClientModel : IMapFrom<ProductionStepRoleClient>
     {
         public int ContainerId { get; set; }
         public int ContainerTypeId { get; set; }

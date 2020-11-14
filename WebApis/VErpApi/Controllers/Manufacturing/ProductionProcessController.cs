@@ -79,17 +79,17 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("productionStepClient")]
-        public async Task<bool> InsertAndUpdateStepClientData([FromBody] StepClientDataModel model)
+        [Route("productionStepRoleClient")]
+        public async Task<bool> InsertAndUpdateStepClientData([FromBody] ProductionStepRoleClientModel  model)
         {
-            return await _productionProcessService.InsertAndUpdateStepClientData(model);
+            return await _productionProcessService.InsertAndUpdatePorductionStepRoleClient(model);
         }
 
         [HttpGet]
-        [Route("productionStepClient/{containerTypeId}/{containerId}")]
+        [Route("productionStepRoleClient/{containerTypeId}/{containerId}")]
         public async Task<string> GetStepClientData([FromRoute] int containerTypeId, [FromRoute] long containerId)
         {
-            return await _productionProcessService.GetStepClientData(containerTypeId, containerId);
+            return await _productionProcessService.GetPorductionStepRoleClient(containerTypeId, containerId);
         }
     }
 }
