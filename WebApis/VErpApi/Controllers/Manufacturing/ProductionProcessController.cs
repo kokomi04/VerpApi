@@ -30,28 +30,28 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{productionStepId}")]
+        [Route("productionStep/{productionStepId}")]
         public async Task<ProductionStepModel> GetProductionStepById([FromRoute] long productionStepId)
         {
             return await _productionProcessService.GetProductionStepById(productionStepId);
         }
 
         [HttpPut]
-        [Route("{productionStepId}")]
+        [Route("productionStep/{productionStepId}")]
         public async Task<bool> UpdateProductionStepsById([FromRoute] long productionStepId, [FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.UpdateProductionStepById(productionStepId, req);
         }
 
         [HttpPost]
-        [Route("")]
+        [Route("productionStep")]
         public async Task<long> CreateProductionStep([FromBody] ProductionStepInfo req)
         {
             return await _productionProcessService.CreateProductionStep(req);
         }
 
         [HttpDelete]
-        [Route("{productionStepId}")]
+        [Route("productionStep/{productionStepId}")]
         public async Task<bool> DeleteProductionStepById([FromRoute] int productionStepId)
         {
             return await _productionProcessService.DeleteProductionStepById(productionStepId);
@@ -79,14 +79,14 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("stepClient")]
+        [Route("productionStepClient")]
         public async Task<bool> InsertAndUpdateStepClientData([FromBody] StepClientDataModel model)
         {
             return await _productionProcessService.InsertAndUpdateStepClientData(model);
         }
 
         [HttpGet]
-        [Route("stepClient/{containerTypeId}/{containerId}")]
+        [Route("productionStepClient/{containerTypeId}/{containerId}")]
         public async Task<string> GetStepClientData([FromRoute] int containerTypeId, [FromRoute] long containerId)
         {
             return await _productionProcessService.GetStepClientData(containerTypeId, containerId);
