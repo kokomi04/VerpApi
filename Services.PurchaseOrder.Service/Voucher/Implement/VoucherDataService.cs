@@ -298,10 +298,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
             // Validate multiRow existed
-            if (data.Rows == null || data.Rows.Count == 0)
-            {
-                throw new BadRequestException(VoucherErrorCode.MultiRowAreaEmpty);
-            }
+            if (data.Rows == null || data.Rows.Count == 0) data.Rows = new List<NonCamelCaseDictionary>(){
+                new NonCamelCaseDictionary()
+            };
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
             // Lấy thông tin field
             var voucherAreaFields = await GetVoucherFields(voucherTypeId);
@@ -522,8 +522,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
         {
+            List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(script))
@@ -536,38 +537,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
 
-                //var pattern = @"@{(?<word>\w+)}";
-                //Regex rx = new Regex(pattern);
-                //var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
-
-                //for (int i = 0; i < match.Count; i++)
-                //{
-                //    var fieldName = match[i];
-                //    var field = fields.First(f => f.FieldName == fieldName);
-                //    if (!field.IsMultiRow)
-                //    {
-                //        var paramName = $"@{match[i]}";
-                //        script = script.Replace($"@{{{match[i]}}}", paramName);
-                //        data.Info.TryGetValue(fieldName, out string value);
-                //        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                //    }
-                //    else
-                //    {
-                //        var paramNames = new List<string>();
-                //        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
-                //        {
-                //            var paramName = $"@{match[i]}_{rowIndx}";
-                //            paramNames.Add($"({paramName})");
-                //            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                //            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                //        }
-                //        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
-                //        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
-                //    }
-                //}
-                await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
+                resultData = (await _purchaseOrderDBContext.QueryDataTable(script, parammeters)).ConvertData();
             }
-            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string);
+            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
 
         private string[] GetFieldInFilter(Clause[] clauses)
@@ -926,10 +898,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
 
             // Validate multiRow existed
-            if (data.Rows == null || data.Rows.Count == 0)
-            {
-                throw new BadRequestException(VoucherErrorCode.MultiRowAreaEmpty);
-            }
+            if (data.Rows == null || data.Rows.Count == 0) data.Rows = new List<NonCamelCaseDictionary>(){
+                new NonCamelCaseDictionary()
+            };
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
 
@@ -955,8 +926,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             // Get changed rows
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
-            var rowsSQL = new StringBuilder("SELECT F_Id,");
+            var rowsSQL = new StringBuilder("SELECT F_Id");
             var multiFields = voucherAreaFields.Where(f => f.IsMultiRow).ToList();
+            if (multiFields.Count > 0) rowsSQL.Append(",");
             AppendSelectFields(ref rowsSQL, multiFields);
             rowsSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
             var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
@@ -991,7 +963,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
-            { 
+            {
                 // Get all fields
                 var voucherFields = _purchaseOrderDBContext.VoucherField
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
@@ -1217,9 +1189,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             List<string> changeFieldIndexes = new List<string>();
             foreach (var field in fields)
             {
-                var currentValue = currentRow[field.FieldName].ToString();
-                var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue?.ToString())
+                currentRow.TryGetValue(field.FieldName, out object currentValue);
+                futureRow.TryGetValue(field.FieldName, out object updateValue);
+
+                if (((EnumDataType)field.DataTypeId).CompareValue(currentValue, updateValue) != 0)
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
@@ -1892,7 +1865,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var billInfo = new VoucherBillInfoModel
                 {
                     Info = info,
-                    Rows = rows.ToArray()
+                    Rows = rows.Count > 0 ? rows.ToArray() : new NonCamelCaseDictionary[]
+                    {
+                        new NonCamelCaseDictionary()
+                    }
                 };
 
                 await ValidateSaleVoucherConfig(billInfo?.Info, null);
@@ -1961,7 +1937,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int voucherTypeId, long fId)
         {
-
             var dataSql = @$"
                 SELECT     r.*
                 FROM {VOUCHERVALUEROW_VIEW} r 
@@ -2151,7 +2126,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             if (billDate != null || oldDate != null)
             {
-
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {
@@ -2170,6 +2144,85 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
         }
+
+        public async Task<VoucherBillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
+        {
+            var singleFields = (await (
+               from af in _purchaseOrderDBContext.VoucherAreaField
+               join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
+               join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
+
+            var result = new VoucherBillInfoModel();
+
+            var dataSql = @$"
+
+                SELECT     r.*
+                FROM {VOUCHERVALUEROW_VIEW} r 
+
+                WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+            ";
+            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+
+            var billEntryInfoSql = $"SELECT r.* FROM { VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+
+            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+
+            result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
+
+            if (billEntryInfo.Rows.Count > 0)
+            {
+                for (var i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    for (var j = 0; j < data.Columns.Count; j++)
+                    {
+                        var column = data.Columns[j];
+                        if (singleFields.Contains(column.ColumnName))
+                        {
+                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
+                        }
+                    }
+                }
+            }
+            else
+            {
+                result.Info = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
+            }
+
+            result.Rows = data.ConvertData();
+
+            return result;
+        }
+
+
+        public async Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size)
+        {
+            var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailByPurchasingRequest",
+                new[]
+                {
+                   new SqlParameter("@Keyword", EnumDataType.Text.GetSqlValue(keyword)),
+                   new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
+                   new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
+                   new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
+                   new SqlParameter("@Page",page),
+                   new SqlParameter("@Size",size),
+                   total
+                });
+
+            return (data, (total.Value as long?).GetValueOrDefault());
+        }
+
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

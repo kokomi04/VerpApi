@@ -454,54 +454,52 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
         {
-
-            var inventoryExport = new InventoryImportFacade();
-            inventoryExport.SetProductService(_productService);
-            inventoryExport.SetMasterDBContext(_masterDBContext);
-            inventoryExport.SetStockDBContext(_stockDbContext);
-            await inventoryExport.ProcessExcelFile(mapping, stream, model);
+            var insertedData = new Dictionary<long, (string inventoryCode, object data)>();
 
             long inventoryId = 0;
-            if (model.Type == EnumInventoryType.Input)
-            {
-                var inventoryData = inventoryExport.GetInputInventoryModels();
 
-                var insertedData = new Dictionary<long, InventoryInModel>();
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var inventoryExport = new InventoryImportFacade();
+                inventoryExport.SetProductService(_productService);
+                inventoryExport.SetMasterDBContext(_masterDBContext);
+                inventoryExport.SetStockDBContext(_stockDbContext);
+                await inventoryExport.ProcessExcelFile(mapping, stream, model);
+
+                if (model.Type == EnumInventoryType.Input)
                 {
+                    var inventoryData = inventoryExport.GetInputInventoryModels();
+
                     foreach (var item in inventoryData)
                     {
                         inventoryId = await AddInventoryInputDB(item);
-                        insertedData.Add(inventoryId, item);
+                        insertedData.Add(inventoryId, (item.InventoryCode, item));
                     }
-
-                    await trans.CommitAsync();
                 }
-
-                foreach (var item in insertedData)
+                else
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Nhập tồn đầu {item.Value.InventoryCode}", item.Value.JsonSerialize());
-                }
-            }
-            else
-            {
-                var inventoryData = await inventoryExport.GetOutputInventoryModels();
+                    var inventoryData = await inventoryExport.GetOutputInventoryModels();
 
-                var insertedData = new Dictionary<long, InventoryOutModel>();
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-                {
                     foreach (var item in inventoryData)
                     {
                         inventoryId = await AddInventoryOutputDb(item);
-                        insertedData.Add(inventoryId, item);
+                        insertedData.Add(inventoryId, (item.InventoryCode, item));
                     }
 
-                    await trans.CommitAsync();
                 }
 
-                foreach (var item in insertedData)
+                await trans.CommitAsync();
+            }
+
+            foreach (var item in insertedData)
+            {
+                if (model.Type == EnumInventoryType.Input)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, item.Key, $"Xuất ban đầu {item.Value.InventoryCode}", item.Value.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Nhập tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
+                }
+                else
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Xuất tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
                 }
             }
             return inventoryId;
@@ -649,7 +647,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
-                
+
 
                 var inventoryObj = new Inventory
                 {
@@ -768,7 +766,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(GeneralCode.InvalidParams);
                         }
 
-                        await ValidateInventoryConfig(req.Date.UnixToDateTime(), inventoryObj.Date);                     
+                        await ValidateInventoryConfig(req.Date.UnixToDateTime(), inventoryObj.Date);
 
                         #endregion
 
@@ -1729,13 +1727,54 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 productInfos.TryGetValue(details.ProductId, out var productInfo);
 
-                if (details.ProductUnitConversionQuantity == 0)
-                    details.ProductUnitConversionQuantity = details.PrimaryQuantity;
+                //if (details.ProductUnitConversionId <= 0)
+                //{
+                //    details.ProductUnitConversionId = productUnitConversions.FirstOrDefault(u => u.ProductId == productInfo.ProductId && u.IsDefault).ProductUnitConversionId;
+                //    details.ProductUnitConversionQuantity = details.PrimaryQuantity;
+                //}
 
                 if (productInfo == null)
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
+
+
+                //if (details.ProductUnitConversionId > 0)
+                //{
+                var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                if (productUnitConversionInfo == null)
+                {
+                    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                }
+                if (productUnitConversionInfo.ProductId != details.ProductId)
+                {
+                    return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
+                }
+
+                if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
+                {
+                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression, details.ProductUnitConversionQuantity);
+                    if (isSuccess)
+                    {
+                        details.ProductUnitConversionQuantity = pucQuantity;
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={productUnitConversionInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
+                        //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
+                            $"Không thể tính giá trị đơn vị chuyển đổi \"{productUnitConversionInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
+                    }
+                }
+
+                if (!isApproved && details.ProductUnitConversionQuantity <= 0)
+                {
+                    //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                    throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
+                        $"Không thể tính giá trị đơn vị chuyển đổi \"{productUnitConversionInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
+                }
+
+                // }
 
                 if (!isApproved)
                 {
@@ -1744,40 +1783,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         return GeneralCode.InvalidParams;
                     }
                 }
-
-
-                if (details.ProductUnitConversionId > 0)
-                {
-                    var productUnitConversionInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
-                    if (productUnitConversionInfo == null)
-                    {
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
-                    }
-                    if (productUnitConversionInfo.ProductId != details.ProductId)
-                    {
-                        return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
-                    }
-
-                    if ((productUnitConversionInfo.IsFreeStyle ?? false) == false)
-                    {
-                        var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, productUnitConversionInfo.FactorExpression, details.ProductUnitConversionQuantity);
-                        if (isSuccess)
-                        {
-                            details.ProductUnitConversionQuantity = pucQuantity;
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={productUnitConversionInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
-                            return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        }
-                    }
-
-                    if (!isApproved && details.ProductUnitConversionQuantity <= 0)
-                    {
-                        return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                    }
-                }
-
 
                 switch (details.PackageOptionId)
                 {

@@ -30,6 +30,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public string Title { get; set; }
         public string InputAreaCode { get; set; }
         public bool IsMultiRow { get; set; }
+        public int Columns { get; set; }
+        public string ColumnStyles { get; set; }
         public IList<InputAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {

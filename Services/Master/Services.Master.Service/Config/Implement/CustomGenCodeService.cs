@@ -134,7 +134,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted);
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {objectTypeId.GetEnumDescription()} {(objectId > 0 ? (int?)objectId : null)}");
             }
 
             return new CustomGenCodeOutputModel()
@@ -435,11 +435,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public PageData<ObjectType> GetAllObjectType()
         {
-            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(m => new ObjectType
-            {
-                ObjectTypeId = m.Enum,
-                ObjectTypeName = m.Description ?? m.Name.ToString()
-            }).ToList();
+            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>()
+                .Where(m => m.Attributes != null && m.Attributes.Any(a => a.GetType() == typeof(GenCodeObjectAttribute)))
+                .Select(m => new ObjectType
+                {
+                    ObjectTypeId = m.Enum,
+                    ObjectTypeName = m.Description ?? m.Name.ToString()
+                }).ToList();
 
 
             return (allData, allData.Count);
@@ -460,7 +462,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
             }
-          
+
             if (config == null)
             {
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
@@ -475,10 +477,19 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<bool> DeleteMapObjectCustomGenCode(int currentId, ObjectCustomGenCodeMapping req)
+        public async Task<bool> DeleteMapObjectCustomGenCode(int objectCustomGenCodeMappingId)
         {
-            _masterDbContext.ObjectCustomGenCodeMapping.Remove(req);
+            var info = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectCustomGenCodeMappingId == objectCustomGenCodeMappingId);
+            if (info == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+            _masterDbContext.ObjectCustomGenCodeMapping.Remove(info);
             await _masterDbContext.SaveChangesAsync();
+
+            var objectName = ((EnumObjectType)info.ObjectTypeId).GetEnumDescription();
+
+            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, objectCustomGenCodeMappingId, $"Loại bỏ cấu hình sinh mã khỏi đối tượng {objectName} {(info.ObjectId > 0 ? (int?)info.ObjectId : null)}", info.JsonSerialize());
             return true;
         }
     }

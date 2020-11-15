@@ -732,6 +732,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputArea.Title = data.Title;
                 inputArea.IsMultiRow = data.IsMultiRow;
                 inputArea.Columns = data.Columns;
+                inputArea.ColumnStyles = data.ColumnStyles;
                 inputArea.SortOrder = data.SortOrder;
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -1044,9 +1045,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputFieldInputModel> AddInputField(InputFieldInputModel data)
         {
-            ValidateInputField(data);
-
             FieldDataProcess(ref data);
+            ValidateInputField(data);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1078,10 +1078,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data)
         {
             var inputField = await _accountancyDBContext.InputField.FirstOrDefaultAsync(f => f.InputFieldId == inputFieldId);
-
-            ValidateInputField(data, inputField, inputFieldId);
-
             FieldDataProcess(ref data);
+            ValidateInputField(data, inputField, inputFieldId);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try

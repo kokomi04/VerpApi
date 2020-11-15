@@ -16,6 +16,8 @@ namespace VErp.Commons.Enums.MasterEnum
         PurchaseOrder = 4,
         [Description("Kế toán")]
         Accountant = 5,
+        [Description("Sản xuất")]
+        Manufacturing = 6,
     }
 
 }

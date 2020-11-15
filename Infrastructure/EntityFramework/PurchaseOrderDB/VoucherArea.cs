@@ -23,6 +23,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string ColumnStyles { get; set; }
 
         public virtual VoucherType VoucherType { get; set; }
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }

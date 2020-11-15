@@ -174,6 +174,20 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                 lstPermissions.Add(permission);
                             }
                             break;
+                        default:
+
+                            var modulePermission = new RolePermissionEntity
+                            {
+                                CreatedDatetimeUtc = DateTime.UtcNow,
+                                ModuleId = m.ModuleId,
+                                RoleId = roleInfo.RoleId,
+                                Permission = int.MaxValue,
+                                ObjectTypeId = 0,
+                                ObjectId = 0,
+                                JsonActionIds = null
+                            };
+                            lstPermissions.Add(modulePermission);
+                            break;
                     }
                 }
 

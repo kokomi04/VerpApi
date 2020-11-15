@@ -1,13 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>VErp.Infrastructure.EF.ManufacturingDB</AssemblyName>
+    <RootNamespace>VErp.Infrastructure.EF.ManufacturingDB</RootNamespace>
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Folder Include="Partial\" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EFExtensions\EFExtensions.csproj" />

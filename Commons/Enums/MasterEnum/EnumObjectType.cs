@@ -7,8 +7,11 @@ namespace VErp.Commons.Enums.MasterEnum
 {
     public enum EnumObjectType
     {
+        
         [Description("Nhân viên")]
+        [GenCodeObject]
         UserAndEmployee = 1,
+
         [Description("Nhóm quyền")]
         Role = 2,
         [Description("Phân quyền")]
@@ -27,7 +30,9 @@ namespace VErp.Commons.Enums.MasterEnum
         Stock = 9,
         [Description("File")]
         File = 10,
+        
         [Description("Vị trí trong kho")]
+        [GenCodeObject]
         Location = 11,
 
         //[Description("Phiếu xuất/nhập kho")]
@@ -43,6 +48,7 @@ namespace VErp.Commons.Enums.MasterEnum
         InventoryDetail = 13,
 
         [Description("Kiện")]
+        [GenCodeObject]
         Package = 14,
 
         [Description("Sản phẩm kho")]
@@ -52,30 +58,35 @@ namespace VErp.Commons.Enums.MasterEnum
         //GenCodeConfig = 16,
 
         [Description("Đối tác")]
+        [GenCodeObject]
         Customer = 17,
 
         [Description("BOM")]
         ProductBom = 18,
 
         [Description("Phiếu YC VTHH")]
+        [GenCodeObject]
         PurchasingRequest = 19,
 
-        [Description("YC VTHH chi tiết")]
+        [Description("YC VTHH chi tiết")]        
         PurchasingRequestDetail = 20,
 
         [Description("Phiếu đề nghị VTHH")]
+        [GenCodeObject]
         PurchasingSuggest = 21,
 
         [Description("Đề nghị VTHH chi tiết")]
         PurchasingSuggestDetail = 22,
 
         [Description("Phân công mua hàng")]
+        [GenCodeObject]
         PoAssignment = 23,
 
         [Description("Phân công mua hàng chi tiết")]
         PoAssignmentDetail = 24,
 
         [Description("Đơn đặt hàng")]
+        [GenCodeObject]
         PurchaseOrder = 25,
 
         [Description("Đơn đặt hàng chi tiết")]
@@ -89,9 +100,12 @@ namespace VErp.Commons.Enums.MasterEnum
         BusinessInfo = 28,
 
         [Description("Bộ phận")]
+        [GenCodeObject]
         Department = 29,
 
-      
+
+        [Description("Nhóm danh mục")]
+        CategoryGroup = 31,
 
         [Description("Loại danh mục")]
         Category = 32,
@@ -163,6 +177,23 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Nút chức năng CTGS")]
         InputAction = 58,
-        PackingList = 59,
+
+        [Description("Công đoạn sản xuất")]
+        ProductionStep = 60,
+        [Description("Danh mục công đoạn")]
+        Step = 61,
+        [Description("Nhóm danh mục công đoạn")]
+        StepGroup = 62,
+        [Description("Yêu cầu gia công")]
+        RequestOutsource = 63,
+        [Description("Lệnh sản xuất")]
+        [GenCodeObject]
+        ProductionOrder = 70,
+        [Description("Kế hoạch sản xuất")]
+        ProductionSchedule = 71,
+        [Description("Đơn hàng gia công")]
+        OutsourceOrder = 72,
+        [Description("Phân công sản xuất")]
+        ProductionAssignment = 73,
     }
 }

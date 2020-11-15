@@ -15,8 +15,6 @@ using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service.Voucher;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
-using VErp.Services.PurchaseOrder.Service.PackingList;
-using VErp.Services.PurchaseOrder.Model.PackingList;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -26,12 +24,10 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
     public class VoucherController : VErpBaseController
     {
         private readonly IVoucherDataService _voucherDataService;
-        private readonly IPackingListService _packingListService;
 
-        public VoucherController(IVoucherDataService voucherDataService, IPackingListService packingListService)
+        public VoucherController(IVoucherDataService voucherDataService)
         {
             _voucherDataService = voucherDataService;
-            _packingListService = packingListService;
         }
 
         [HttpPost]
@@ -112,45 +108,20 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpGet]
-        [Route("{voucherTypeId}/{fId}/packinglists")]
-        public async Task<PageData<PackingListModel>> CreatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
+        [Route("{voucherTypeId}/{fId}/info/pkl/{voucherTypeBKLId}")]
+        public async Task<VoucherBillInfoModel> GetPackingListInfo([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int voucherTypeBKLId)
         {
-            return await _packingListService.GetPackingLists(fId, keyWord, page, size);
-        }
-
-        [HttpPost]
-        [Route("{voucherTypeId}/{fId}/packinglists")]
-        public async Task<int> CreatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromBody] PackingListModel packingList)
-        {
-            return await _packingListService.CreatePackingList(fId, packingList);
-        }
-
-        [HttpPut]
-        [Route("{voucherTypeId}/{fId}/packinglists/{packingListId}")]
-        public async Task<bool> UpdatePackingList([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int packingListId, [FromBody] PackingListModel packingList)
-        {
-            return await _packingListService.UpdatePackingList(fId, packingListId, packingList);
+            if (voucherTypeId == 0) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _voucherDataService.GetPackingListInfo(voucherTypeBKLId, fId);
         }
 
         [HttpGet]
-        [Route("{voucherTypeId}/{fId}/packinglists/{packingListId}")]
-        public async Task<PackingListModel> GetPackingListById([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int packingListId)
+        [Route("OrderDetailByPurchasingRequest")]
+        public async Task<PageDataTable> OrderDetailByPurchasingRequest(
+            [FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] bool? isCreatedPurchasingRequest,
+            [FromQuery] int page, [FromQuery] int size)
         {
-            return await _packingListService.GetPackingListById(packingListId);
-        }
-
-        [HttpDelete]
-        [Route("{voucherTypeId}/{fId}/packinglists/{packingListId}")]
-        public async Task<bool> DeletePackingListById([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int packingListId)
-        {
-            return await _packingListService.DeletePackingList(packingListId);
-        }
-
-        [HttpGet]
-        [Route("{voucherTypeId}/{fId}/packinglists/products")]
-        public async Task<List<NonCamelCaseDictionary>> Get([FromRoute] int voucherTypeId, [FromRoute] long fId)
-        {
-            return await _packingListService.GetPackingListProductInVoucherBill(fId);
+            return await _voucherDataService.OrderDetailByPurchasingRequest(keyword, fromDate, toDate, isCreatedPurchasingRequest, page, size);
         }
     }
 }

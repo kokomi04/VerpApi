@@ -22,6 +22,7 @@ namespace VErp.Services.Master.Model.CategoryConfig
         public string Description { get; set; }
         public string ModuleTypeTitle { get; set; }
         public string Joins { get; set; }
+        public string RawSql { get; set; }
         public ICollection<OutSideDataFieldConfigModel> OutsideDataFieldConfig { get; set; }
 
         public void Mapping(Profile profile)

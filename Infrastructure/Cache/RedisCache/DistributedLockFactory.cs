@@ -91,6 +91,11 @@ namespace Verp.Cache.RedisCache
             return $"CATEGORY_LOCK_{categoryId}";
         }
 
+        public static string GetLockProductionOrderKey(int productOrderId)
+        {
+            return $"PRODUCTION_ORDER_LOCK_{productOrderId}";
+        }
+
         public static string GetLockInputTypeKey(int inputTypeId)
         {
             return $"INPUTTYPE_LOCK_{inputTypeId}";
@@ -115,11 +120,14 @@ namespace Verp.Cache.RedisCache
         {
             return $"GENERATECODE_CUSTOM_LOCK_{customGenCodeId}";
         }
-
-
-        public static string GetLockPoSuggest(long purchasingOrderSugguestId)
+        public static string GetLockPoRequest()
         {
-            return $"PO_SUGGUEST_LOCK_{purchasingOrderSugguestId}";
+            return $"PO_REQUEST_LOCK";
+        }
+
+        public static string GetLockPoSuggest()
+        {
+            return $"PO_SUGGUEST_LOCK";
         }
     }
 

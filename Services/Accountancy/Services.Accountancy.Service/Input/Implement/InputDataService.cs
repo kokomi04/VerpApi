@@ -569,8 +569,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
         {
+            List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
             var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
             if (!string.IsNullOrEmpty(script))
@@ -582,38 +583,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
                 };
-                //var pattern = @"@{(?<word>\w+)}";
-                //Regex rx = new Regex(pattern);
-                //var match = rx.Matches(script).Select(m => m.Groups["word"].Value).Distinct().ToList();
 
-                //for (int i = 0; i < match.Count; i++)
-                //{
-                //    var fieldName = match[i];
-                //    var field = fields.First(f => f.FieldName == fieldName);
-                //    if (!field.IsMultiRow)
-                //    {
-                //        var paramName = $"@{match[i]}";
-                //        script = script.Replace($"@{{{match[i]}}}", paramName);
-                //        data.Info.TryGetValue(fieldName, out string value);
-                //        parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                //    }
-                //    else
-                //    {
-                //        var paramNames = new List<string>();
-                //        for (int rowIndx = 0; rowIndx < data.Rows.Count; rowIndx++)
-                //        {
-                //            var paramName = $"@{match[i]}_{rowIndx}";
-                //            paramNames.Add($"({paramName})");
-                //            data.Rows[rowIndx].TryGetValue(fieldName, out string value);
-                //            parammeters.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(value)) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                //        }
-                //        var valueParams = paramNames.Count > 0 ? $"VALUES {string.Join(",", paramNames)}" : "SELECT TOP 0 1";
-                //        script = script.Replace($"@{{{match[i]}}}", $"( {valueParams}) {match[i]}(value)");
-                //    }
-                //}
-                await _accountancyDBContext.Database.ExecuteSqlRawAsync(script, parammeters);
+                resultData = (await _accountancyDBContext.QueryDataTable(script, parammeters)).ConvertData();
             }
-            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string);
+            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
 
         private string[] GetFieldInFilter(Clause[] clauses)
@@ -1258,9 +1231,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             List<string> changeFieldIndexes = new List<string>();
             foreach (var field in fields)
             {
-                var currentValue = currentRow[field.FieldName].ToString();
-                var updateValue = futureRow[field.FieldName];
-                if (currentValue != updateValue?.ToString())
+                currentRow.TryGetValue(field.FieldName, out object currentValue);
+                futureRow.TryGetValue(field.FieldName, out object updateValue);
+
+                if (((EnumDataType)field.DataTypeId).CompareValue(currentValue, updateValue) != 0)
                 {
                     changeFieldIndexes.Add(field.FieldName);
                 }
