@@ -56,7 +56,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.Description LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
-                whereCondition.Append("OR| v.PartnerTitle LIKE @Keyword ");
+                whereCondition.Append("OR v.PartnerTitle LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -82,7 +82,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 sql.Append("WHERE ");
                 sql.Append(whereCondition);
             }
-            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "ProductionOrderDetailId" : orderByFieldName;
+            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "v.ProductionOrderId" : orderByFieldName;
             sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
