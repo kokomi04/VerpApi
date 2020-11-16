@@ -37,7 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
         public async Task<long> CreateProductSemi(ProductSemiModel model)
         {
             var data = _mapper.Map<ProductSemiEntity>(model);
-            await _manuDBContext.ProductSemi.AddAsync(_mapper.Map<ProductSemiEntity>(model));
+            await _manuDBContext.ProductSemi.AddAsync(data);
             await _manuDBContext.SaveChangesAsync();
             return data.ProductSemiId;
         }

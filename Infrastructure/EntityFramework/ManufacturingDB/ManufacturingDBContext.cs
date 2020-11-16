@@ -103,8 +103,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductSemi>(entity =>
             {
-                entity.Property(e => e.ProductSemiId).ValueGeneratedNever();
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
