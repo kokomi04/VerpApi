@@ -32,18 +32,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductHelperService _productHelperService;
 
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productHelperService = productHelperService;
         }
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
@@ -201,6 +204,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
         public async Task<ProductionOrderInputModel> UpdateProductionOrder(int productionOrderId, ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
@@ -235,6 +239,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                 }
                 // Xóa
+                // Validate lịch sản xuất
+                var delIds = oldDetail.Select(od => od.ProductionOrderDetailId).ToList();
+                var hasScheduleDetailIds = _manufacturingDBContext.ProductionSchedule
+                    .Where(sc => delIds.Contains(sc.ProductionOrderDetailId))
+                    .Select(sc => sc.ProductionOrderDetailId)
+                    .Distinct()
+                    .ToList();
+                if (hasScheduleDetailIds.Count > 0)
+                {
+                    var productIds = oldDetail
+                        .Where(od => hasScheduleDetailIds.Contains(od.ProductionOrderDetailId))
+                        .Select(od => od.ProductId)
+                        .ToList();
+                    var products = (await _productHelperService.GetListProducts(productIds)).Select(p => p.ProductCode).ToList();
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
+                }
+
                 foreach (var item in oldDetail)
                 {
                     item.IsDeleted = true;
@@ -267,6 +288,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 productionOrder.IsDeleted = true;
 
                 var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
+
+                // Validate lịch sản xuất
+                var delIds = detail.Select(od => od.ProductionOrderDetailId).ToList();
+                var hasScheduleDetailIds = _manufacturingDBContext.ProductionSchedule
+                    .Where(sc => delIds.Contains(sc.ProductionOrderDetailId))
+                    .Select(sc => sc.ProductionOrderDetailId)
+                    .Distinct()
+                    .ToList();
+                if (hasScheduleDetailIds.Count > 0)
+                {
+                    var productIds = detail
+                        .Where(od => hasScheduleDetailIds.Contains(od.ProductionOrderDetailId))
+                        .Select(od => od.ProductId)
+                        .ToList();
+                    var products = (await _productHelperService.GetListProducts(productIds)).Select(p => p.ProductCode).ToList();
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
+                }
+
                 // Xóa chi tiết
                 foreach (var item in detail)
                 {
