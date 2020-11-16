@@ -61,7 +61,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("productionOrder/{productionOrderId}")]
         public async Task<bool> CreateProductionProcess([FromRoute] int productionOrderId)
         {
-            return await _productionProcessService.CreateProductionProcess(productionOrderId);
+            return await _productionProcessService.IncludeProductionProcess(productionOrderId);
         }
 
         [HttpPut]

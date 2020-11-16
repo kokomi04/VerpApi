@@ -156,7 +156,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             };
         }
 
-        public async Task<bool> CreateProductionProcess(int productionOrderId)
+        public async Task<bool> IncludeProductionProcess(int productionOrderId)
         {
             // Kiểm tra đã tồn tại quy trình sx gắn với lệnh sx 
             if (_manufacturingDBContext.ProductionStep

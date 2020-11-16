@@ -147,15 +147,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if(countDetailId == 0)
                 {
-                    productOrder.HasProcess = EnumProcessStatus.Waiting;
+                    productOrder.ProcessStatus = EnumProcessStatus.Waiting;
                 }
                 else if (countDetailId < detailIds.Count)
                 {
-                    productOrder.HasProcess = EnumProcessStatus.Incomplete;
+                    productOrder.ProcessStatus = EnumProcessStatus.Incomplete;
                 }
                 else
                 {
-                    productOrder.HasProcess = EnumProcessStatus.Complete;
+                    productOrder.ProcessStatus = EnumProcessStatus.Complete;
                 }
             }
 
