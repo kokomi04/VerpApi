@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public long? OrderId { get; set; }
+        public long? OrderDetailId { get; set; }
         public int? Status { get; set; }
         public int SubsidiaryId { get; set; }
 

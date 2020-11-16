@@ -14,8 +14,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
-        public long? OrderId { get; set; }
-
         public int Status { get; set; }
     }
 
@@ -27,13 +25,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
-        public long? OrderId { get; set; }
+        public long? OrderDetailId { get; set; }
     }
 
 
     public class ProductionOrderExtraInfo
     {
         public int? ProductionOrderDetailId { get; set; }
+        public long OrderDetailId { get; set; }
         public decimal? OrderQuantity { get; set; }
         public int? OrderedQuantity { get; set; }
         public string PartnerId { get; set; }
