@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
     public class ProductionOrderDetailOutputModel : ProductionOrderExtraInfo
     {
-        public int ProductionOrderId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
@@ -19,8 +19,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderDetailInputModel :  IMapFrom<ProductionOrderDetail>
     {
-        public int? ProductionOrderDetailId { get; set; }
-        public int ProductionOrderId { get; set; }
+        public long? ProductionOrderDetailId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int? ProductId { get; set; }
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }
@@ -31,7 +31,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderExtraInfo
     {
-        public int? ProductionOrderDetailId { get; set; }
+        public long? ProductionOrderDetailId { get; set; }
         public long OrderDetailId { get; set; }
         public decimal? OrderQuantity { get; set; }
         public int? OrderedQuantity { get; set; }

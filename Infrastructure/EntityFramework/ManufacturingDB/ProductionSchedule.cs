@@ -10,11 +10,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             ProductionAssignment = new HashSet<ProductionAssignment>();
         }
 
-        public int ProductionScheduleId { get; set; }
+        public long ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int ProductionScheduleStatus { get; set; }
-        public int ProductionOrderDetailId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
         public int ProductionScheduleQuantity { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

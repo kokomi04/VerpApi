@@ -30,13 +30,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionPlanningOrderBaseModel
     {
-        public int ProductionOrderId { get; set; }
+        public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
     }
 
     public class ProductionPlanningOrderDetailModel
     {
-        public int ProductionOrderDetailId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
         public int TotalQuantity { get; set; }
         public string ProductTitle { get; set; }
         public decimal UnitPrice { get; set; }
