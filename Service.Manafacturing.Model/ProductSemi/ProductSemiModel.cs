@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductSemi
     public class ProductSemiModel: IMapFrom<ProductSemiEntity>
     {
         public long ProductSemiId { get; set; }
-        public int ContainerId { get; set; }
+        public long ContainerId { get; set; }
         public EnumProductionProcess.ContainerType ContainerTypeId { get; set; }
         public string Title { get; set; }
     }

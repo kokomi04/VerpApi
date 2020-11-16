@@ -6,7 +6,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     public partial class ProductSemi
     {
         public long ProductSemiId { get; set; }
-        public int ProductId { get; set; }
+        public long ContainerId { get; set; }
+        public int ContainerTypeId { get; set; }
         public string Title { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

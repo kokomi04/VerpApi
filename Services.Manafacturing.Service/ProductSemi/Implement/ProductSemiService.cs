@@ -52,9 +52,9 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             return true;
         }
 
-        public async Task<IList<ProductSemiModel>> GetListProductSemis(int productId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemi(long containerId, int containerTypeId)
         {
-            var ls = await _manuDBContext.ProductSemi.Where(x => x.ProductId == productId)
+            var ls = await _manuDBContext.ProductSemi.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId)
                 .ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
             return ls;
