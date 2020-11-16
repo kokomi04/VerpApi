@@ -10,7 +10,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             RequestOutsourceStepDetail = new HashSet<RequestOutsourceStepDetail>();
         }
 
-        public int RequestOutsourceStepId { get; set; }
+        public long RequestOutsourceStepId { get; set; }
         public string RequestOutsourceStepCode { get; set; }
         public int ProductionOrderId { get; set; }
         public DateTime DateRequiredComplete { get; set; }

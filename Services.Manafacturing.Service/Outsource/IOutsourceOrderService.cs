@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
 {
     public interface IOutsourceOrderService
     {
-        Task<int> CreateOutsourceOrder(OutsourceOrderInfo req);
+        Task<long> CreateOutsourceOrder(OutsourceOrderInfo req);
      
     }
 }

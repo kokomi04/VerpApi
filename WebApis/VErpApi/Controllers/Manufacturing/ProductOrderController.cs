@@ -65,5 +65,13 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.DeleteProductionOrder(productionOrderId);
         }
+
+        [HttpGet]
+        [Route("detail/{productionOrderDetailId}")]
+        public async Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail([FromRoute] long? productionOrderDetailId)
+        {
+            return await _productionOrderService.GetProductionOrderDetail(productionOrderDetailId);
+        }
+
     }
 }

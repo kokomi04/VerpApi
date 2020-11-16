@@ -394,5 +394,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
+        public async Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId)
+        {
+            
+            if (productionOrderDetailId.HasValue)
+            {
+                var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderDetailId = @ProductionOrderDetailId";
+                var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ProductionOrderDetailId", productionOrderDetailId.Value)
+                };
+                var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+                var rs = resultData.ConvertData<ProductionOrderDetailOutputModel>().FirstOrDefault();
+                return rs;
+            }
+
+            return null;
+        }
     }
 }

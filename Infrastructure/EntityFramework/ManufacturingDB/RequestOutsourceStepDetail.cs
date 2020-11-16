@@ -5,8 +5,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class RequestOutsourceStepDetail
     {
-        public int RequestOutsourceStepDetailId { get; set; }
-        public int RequestOutsourceStepId { get; set; }
+        public long RequestOutsourceStepDetailId { get; set; }
+        public long RequestOutsourceStepId { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         public int Quanity { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
