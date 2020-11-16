@@ -82,4 +82,16 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             public string ConversionDescription { get; set; }
         }
     }
+
+    public class ProductDefaultModel
+    {
+        public int? ProductId { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập mã sản phẩm")]
+        public string ProductCode { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập tên sản phẩm")]
+        [MaxLength(128, ErrorMessage = "Tên sản phẩm quá dài")]
+        public string ProductName { get; set; }
+        public int UnitId { get; set; }
+        public string Specification { get; set; }
+    }
 }
