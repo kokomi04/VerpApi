@@ -8,11 +8,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
-    public interface IProductionOrderDetail
-    {
-    }
-
-    public class ProductionOrderDetailOutputModel : ProductionOrderExtraInfo, IProductionOrderDetail
+    public class ProductionOrderDetailOutputModel : ProductionOrderExtraInfo
     {
         public int ProductionOrderId { get; set; }
         public int? Quantity { get; set; }
@@ -23,7 +19,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int Status { get; set; }
     }
 
-    public class ProductionOrderDetailInputModel : IProductionOrderDetail, IMapFrom<ProductionOrderDetail>
+    public class ProductionOrderDetailInputModel :  IMapFrom<ProductionOrderDetail>
     {
         public int? ProductionOrderDetailId { get; set; }
         public int ProductionOrderId { get; set; }
