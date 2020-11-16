@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
     public class ProductionScheduleModel : ProductionPlanningOrderDetailModel, IMapFrom<ProductionScheduleEntity>
     {
-        public int ProductionScheduleId { get; set; }
+        public long ProductionScheduleId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public EnumProductionStatus ProductionScheduleStatus { get; set; }
@@ -29,7 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionScheduleEntity : ProductionPlanningOrderDetailModel
     {
-        public int ProductionScheduleId { get; set; }
+        public long ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int ProductionScheduleStatus { get; set; }
@@ -40,7 +40,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
     {
-        public int? ProductionScheduleId { get; set; }
+        public long? ProductionScheduleId { get; set; }
         public int ProductionOrderDetailId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }

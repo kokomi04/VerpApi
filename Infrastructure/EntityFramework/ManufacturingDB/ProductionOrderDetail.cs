@@ -12,8 +12,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             RequestOutsourcePart = new HashSet<RequestOutsourcePart>();
         }
 
-        public int ProductionOrderDetailId { get; set; }
-        public int ProductionOrderId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int ProductId { get; set; }
         public int? Quantity { get; set; }
         public int? ReserveQuantity { get; set; }

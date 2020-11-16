@@ -172,7 +172,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var productIds = productionOrderDetails.Select(od => od.ProductId).ToList();
 
-            var productOrderMap = productionOrderDetails.ToDictionary(p => p.ProductId, p => p.ProductionOrderDetailId);
+            var productOrderMap = productionOrderDetails.ToDictionary(p => (long)p.ProductId, p => p.ProductionOrderDetailId);
 
             var products = await _productHelperService.GetListProducts(productIds);
             if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
@@ -194,7 +194,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 try
                 {
                     // Tạo step ứng với quy trình sản xuất
-                    var productMap = new Dictionary<int, ProductionStep>();
+                    var productMap = new Dictionary<long, ProductionStep>();
                     foreach (var product in products)
                     {
                         var newStep = new ProductionStep
@@ -222,7 +222,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     // create productionStep
                     var stepMap = new Dictionary<long, ProductionStep>();
-                    var stepOrderMap = new Dictionary<int, ProductionStep>();
+                    var stepOrderMap = new Dictionary<long, ProductionStep>();
 
                     var parentIdUpdater = new List<ProductionStep>();
                     foreach (var step in productionSteps)

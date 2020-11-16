@@ -137,8 +137,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
-                productOrder.HasProcess = _manufacturingDBContext.ProductionStep
-                    .Any(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX && s.ContainerId == productionOrderId);
+
+                var detailIds = productOrder.ProductionOrderDetail.Select(od => od.ProductionOrderDetailId).ToList();
+                var countDetailId = _manufacturingDBContext.ProductionStepOrder
+                    .Where(so => detailIds.Contains(so.ProductionOrderDetailId))
+                    .Select(so => so.ProductionOrderDetailId)
+                    .Distinct()
+                    .Count();
+
+                if(countDetailId == 0)
+                {
+                    productOrder.HasProcess = EnumProcessStatus.Waiting;
+                }
+                else if (countDetailId < detailIds.Count)
+                {
+                    productOrder.HasProcess = EnumProcessStatus.Incomplete;
+                }
+                else
+                {
+                    productOrder.HasProcess = EnumProcessStatus.Complete;
+                }
             }
 
             return productOrder;
@@ -256,11 +274,39 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
                 }
 
-                foreach (var item in oldDetail)
+                // Xóa quy trình sản xuất
+                var stepOrders = _manufacturingDBContext.ProductionStepOrder.Where(so => delIds.Contains(so.ProductionOrderDetailId)).ToList();
+                // Check gộp quy trình
+                var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();
+                if (_manufacturingDBContext.ProductionStepOrder.Any(so => stepIds.Contains(so.ProductionStepId) && !delIds.Contains(so.ProductionOrderDetailId)))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Yếu cầu xóa các sản phẩm gộp cùng 1 quy trình cùng nhau");
+                var steps = _manufacturingDBContext.ProductionStep.Where(s => stepIds.Contains(s.ProductionStepId)).ToList();
+                var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(r => stepIds.Contains(r.ProductionStepId)).ToList();
+                var linkDataIds = linkDataRoles.Select(r => r.ProductionStepLinkDataId).Distinct().ToList();
+                var linkDatas = _manufacturingDBContext.ProductionStepLinkData.Where(d => linkDataIds.Contains(d.ProductionStepLinkDataId)).ToList();
+
+                // Xóa role
+                _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(linkDataRoles);
+                // Xóa quan hệ step-order
+                _manufacturingDBContext.ProductionStepOrder.RemoveRange(stepOrders);
+                await _manufacturingDBContext.SaveChangesAsync();
+                // Xóa step
+                foreach(var item in steps)
+                {
+                    item.IsDeleted = true;
+                }
+                // Xóa link data
+                foreach (var item in linkDatas)
                 {
                     item.IsDeleted = true;
                 }
 
+                // Xóa chi tiết
+                foreach (var item in oldDetail)
+                {
+                    item.IsDeleted = true;
+                }
+              
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
@@ -304,6 +350,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         .ToList();
                     var products = (await _productHelperService.GetListProducts(productIds)).Select(p => p.ProductCode).ToList();
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
+                }
+                // Xóa quy trình sản xuất
+                var stepOrders = _manufacturingDBContext.ProductionStepOrder.Where(so => delIds.Contains(so.ProductionOrderDetailId)).ToList();
+                var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();
+                var steps = _manufacturingDBContext.ProductionStep.Where(s => stepIds.Contains(s.ProductionStepId)).ToList();
+                var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(r => stepIds.Contains(r.ProductionStepId)).ToList();
+                var linkDataIds = linkDataRoles.Select(r => r.ProductionStepLinkDataId).Distinct().ToList();
+                var linkDatas = _manufacturingDBContext.ProductionStepLinkData.Where(d => linkDataIds.Contains(d.ProductionStepLinkDataId)).ToList();
+
+                // Xóa role
+                _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(linkDataRoles);
+                // Xóa quan hệ step-order
+                _manufacturingDBContext.ProductionStepOrder.RemoveRange(stepOrders);
+                await _manufacturingDBContext.SaveChangesAsync();
+                // Xóa step
+                foreach (var item in steps)
+                {
+                    item.IsDeleted = true;
+                }
+                // Xóa link data
+                foreach (var item in linkDatas)
+                {
+                    item.IsDeleted = true;
                 }
 
                 // Xóa chi tiết

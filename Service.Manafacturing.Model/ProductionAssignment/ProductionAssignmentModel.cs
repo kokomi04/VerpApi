@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductionAssignmentModel : IMapFrom<ProductionAssignmentEntity>
     {
         public long? ProductionStepId { get; set; }
-        public int ProductionScheduleId { get; set; }
+        public long ProductionScheduleId { get; set; }
         public int DepartmentId { get; set; }
         public int AssignmentQuantity { get; set; }
     }
