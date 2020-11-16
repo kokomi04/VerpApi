@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
     {
         Task<PageData<RequestOutsourcePartDetailInfo>> GetListRequestOutsourcePart(string keyWord, int page, int size);
         Task<RequestOutsourcePartInfo> GetRequestOutsourcePartExtraInfo(int requestOutsourcePartId = 0);
-        Task<int> CreateRequestOutsourcePart(RequestOutsourcePartInfo req);
+        Task<long> CreateRequestOutsourcePart(RequestOutsourcePartInfo req);
         Task<bool> UpdateRequestOutsourcePart(int requestOutsourcePartId, RequestOutsourcePartInfo req);
         Task<bool> DeletedRequestOutsourcePart(int requestOutsourcePart);
 

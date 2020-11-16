@@ -12,18 +12,26 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
     public class RequestOutsourcePartDetailModel : IMapFrom<RequestOutsourcePartDetail>
     {
-        public int RequestOutsourcePartDetailId { get; set; }
-        public int ProductId { get; set; }
+        public long RequestOutsourcePartDetailId { get; set; }
+        public int ProductPartId { get; set; }
         public int Quanity { get; set; }
         public int UnitId { get; set; }
         public OutsourcePartProcessType Status { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<RequestOutsourcePartDetail, RequestOutsourcePartDetailModel>()
+                .ForMember(m => m.ProductPartId, v => v.MapFrom(m => m.ProductId))
+                .ReverseMap()
+                .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ProductPartId));
+        }
     }
 
     public class RequestOutsourcePartDetailInfo: RequestOutsourcePartDetailModel
     {
-        public int RequestOutsourcePartId { get; set; }
+        public long RequestOutsourcePartId { get; set; }
         public string RequestOutsourcePartCode { get; set; }
-        public int ProductionOrderDetailId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
         public long CreateDateRequest { get; set; }
         public long DateRequiredComplete { get; set; }
         public string ProductionOrderCode { get; set; }
@@ -33,6 +41,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductPartName { get; set; }
         public string ProductPartCode { get; set; }
         public string OrderCode { get; set; }
+        public int ProductId { get; set; }
 
     }
 

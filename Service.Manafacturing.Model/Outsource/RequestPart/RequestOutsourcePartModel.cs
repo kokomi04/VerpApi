@@ -10,9 +10,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
     public class RequestOutsourcePartModel: IMapFrom<RequestOutsourcePart>
     {
-        public int RequestOutsourcePartId { get; set; }
+        public long RequestOutsourcePartId { get; set; }
         public string RequestOutsourcePartCode { get; set; }
-        public int ProductionOrderDetailId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
         public long CreateDateRequest { get; set; }
         public long DateRequiredComplete { get; set; }
 

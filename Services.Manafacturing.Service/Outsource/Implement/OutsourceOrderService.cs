@@ -44,7 +44,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<int> CreateOutsourceOrder(OutsourceOrderInfo req)
+        public async Task<long> CreateOutsourceOrder(OutsourceOrderInfo req)
         {
             using (var trans = _manuDBContext.Database.BeginTransaction())
             {

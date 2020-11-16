@@ -17,7 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string Title { get; set; }
         public long? ParentId { get; set; }
         public int ContainerTypeId { get; set; }
-        public int ContainerId { get; set; }
+        public long ContainerId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }

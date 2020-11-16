@@ -5,8 +5,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class RequestOutsourcePartDetail
     {
-        public int RequestOutsourcePartDetailId { get; set; }
-        public int RequestOutsourcePartId { get; set; }
+        public long RequestOutsourcePartDetailId { get; set; }
+        public long RequestOutsourcePartId { get; set; }
         public int ProductId { get; set; }
         public int Quanity { get; set; }
         public int UnitId { get; set; }

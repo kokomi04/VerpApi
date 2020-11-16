@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<int> CreateRequestOutsourcePart(RequestOutsourcePartInfo req)
+        public async Task<long> CreateRequestOutsourcePart(RequestOutsourcePartInfo req)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try

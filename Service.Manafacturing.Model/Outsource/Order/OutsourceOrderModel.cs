@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
     public class OutsourceOrderModel: IMapFrom<OutsourceOrder>
     {
-        public int OutsoureOrderId { get; set; }
+        public long OutsoureOrderId { get; set; }
         public int RequestObjectCode { get; set; }
         public string OutsoureOrderCode { get; set; }
         public string ProviderName { get; set; }

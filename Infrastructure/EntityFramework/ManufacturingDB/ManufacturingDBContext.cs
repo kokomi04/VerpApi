@@ -121,7 +121,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionAssignment>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.ProductionScheduleId, e.DepartmentId })
+                entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ProductionScheduleId })
                     .HasName("PK_ProductionStepOrder_copy1");
 
                 entity.HasOne(d => d.ProductionSchedule)
