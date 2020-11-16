@@ -111,6 +111,18 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         /// <summary>
+        /// Thêm mới sản phẩm vào danh mục mặc định
+        /// </summary>
+        /// <param name="product"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("default")]
+        public async Task<int> AddProductDefault([FromBody] ProductDefaultModel product)
+        {
+            return await _productService.AddProductDefault(product);
+        }
+
+        /// <summary>
         /// Lấy thông tin sản phẩm
         /// </summary>
         /// <param name="productId"></param>
