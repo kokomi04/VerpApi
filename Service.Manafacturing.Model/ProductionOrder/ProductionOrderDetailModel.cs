@@ -34,6 +34,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderExtraInfo
     {
         public int? ProductionOrderDetailId { get; set; }
+        public long OrderDetailId { get; set; }
         public decimal? OrderQuantity { get; set; }
         public int? OrderedQuantity { get; set; }
         public string PartnerId { get; set; }
