@@ -61,6 +61,9 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 throw new BadRequestException(ProductCateErrorCode.ProductCateNameAlreadyExisted);
             }
 
+            if (req.IsDefault && _stockContext.ProductCate.Any(pc => pc.IsDefault))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép chọn tối đa môt loại danh mục mặt hàng là mặc định");
+
             var productCate = new ProductCate()
             {
                 ProductCateName = req.ProductCateName,
@@ -68,7 +71,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
-                SortOrder = req.SortOrder
+                SortOrder = req.SortOrder,
+                IsDefault = req.IsDefault
             };
 
             await _stockContext.ProductCate.AddAsync(productCate);
@@ -101,6 +105,9 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 throw new BadRequestException(ProductCateErrorCode.ProductCateInUsed);
             }
 
+            if (productCate.IsDefault)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không được phép xóa danh mục mặt hàng mặc định");
+
             productCate.IsDeleted = true;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
 
@@ -121,7 +128,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                     ProductCateId = c.ProductCateId,
                     ParentProductCateId = c.ParentProductCateId,
                     ProductCateName = c.ProductCateName,
-                    SortOrder = c.SortOrder
+                    SortOrder = c.SortOrder,
+                    IsDefault = c.IsDefault
                 })
                 .FirstOrDefaultAsync();
 
@@ -150,7 +158,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 ParentProductCateId = c.ParentProductCateId,
                 ProductCateId = c.ProductCateId,
                 ProductCateName = c.ProductCateName,
-                SortOrder = c.SortOrder
+                SortOrder = c.SortOrder,
+                IsDefault = c.IsDefault
             });
 
             if (size > 0)
@@ -175,10 +184,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 throw new BadRequestException(ProductCateErrorCode.ProductCateNameAlreadyExisted);
             }
 
+            if (req.IsDefault && _stockContext.ProductCate.Any(pc => pc.ProductCateId != productCateId && pc.IsDefault))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép chọn tối đa môt loại danh mục mặt hàng là mặc định");
+
             productCate.ProductCateName = req.ProductCateName;
             productCate.ParentProductCateId = req.ParentProductCateId;
             productCate.UpdatedDatetimeUtc = DateTime.UtcNow;
             productCate.SortOrder = req.SortOrder;
+            productCate.IsDefault = req.IsDefault;
 
             await _stockContext.SaveChangesAsync();
 

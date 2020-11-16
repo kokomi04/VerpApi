@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public int SortOrder { get; set; }
         public int SubsidiaryId { get; set; }
+        public bool IsDefault { get; set; }
 
         public virtual ProductCate ParentProductCate { get; set; }
         public virtual ICollection<ProductCate> InverseParentProductCate { get; set; }
