@@ -101,7 +101,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var fromDateTime = fromDate.UnixToDateTime();
             var toDateTime = toDate.UnixToDateTime();
-            if(!fromDateTime.HasValue || !toDateTime.HasValue)
+            if (!fromDateTime.HasValue || !toDateTime.HasValue)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
 
             parammeters.Add(new SqlParameter("@FromDate", fromDateTime.Value));
@@ -162,7 +162,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return (lst, total, additionResult);
         }
-        
+
         public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data)
         {
             // Get planning order detail
@@ -220,15 +220,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.ScheduleTurnId = currentTurnId + 1;
                     var productionSchedule = _mapper.Map<ProductionSchedule>(item);
+                    productionSchedule.ProductionScheduleStatus = (int)EnumProductionStatus.Waiting;
                     _manufacturingDBContext.ProductionSchedule.Add(productionSchedule);
                     dataMap.Add((item, productionSchedule));
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionOrderDetailId, $"Thêm mới lịch sản xuất cho LSX", data.JsonSerialize());
                 }
 
                 _manufacturingDBContext.SaveChanges();
-                foreach (var item in dataMap)
+                foreach (var (input, entity) in dataMap)
                 {
-                    item.Input.ProductionScheduleId = item.Entity.ProductionScheduleId;
+                    input.ProductionScheduleId = entity.ProductionScheduleId;
                 }
                 return data;
             }
