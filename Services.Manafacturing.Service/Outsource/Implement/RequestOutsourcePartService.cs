@@ -127,8 +127,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateRequestOutsourcePart(int requestOutsourcePartId, RequestOutsourcePartInfo req)
         {
-            var order = _manufacturingDBContext.RequestOutsourcePart.Where(x => x.RequestOutsourcePartId == requestOutsourcePartId).ToList();
-            if (order.Count <= 0)
+            var order = await _manufacturingDBContext.RequestOutsourcePart.FirstOrDefaultAsync(x => x.RequestOutsourcePartId == requestOutsourcePartId);
+            if (order == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công của {requestOutsourcePartId}");
 
             var details = _manufacturingDBContext.RequestOutsourcePartDetail.Where(x => x.RequestOutsourcePartId == requestOutsourcePartId).ToList();
@@ -136,7 +136,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 var info = _mapper.Map<RequestOutsourcePart>(req as RequestOutsourcePartModel);
-                _mapper.Map(info, order);
+
+                order.DateRequiredComplete = info.DateRequiredComplete;
 
                 var lsDeleteDetail = details.Where(x => !req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
                 var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
