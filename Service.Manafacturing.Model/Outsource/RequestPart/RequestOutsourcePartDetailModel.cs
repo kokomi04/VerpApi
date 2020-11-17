@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     {
         public long RequestOutsourcePartDetailId { get; set; }
         public int ProductPartId { get; set; }
-        public int Quanity { get; set; }
+        public int Quantity { get; set; }
         public int UnitId { get; set; }
         public OutsourcePartProcessType Status { get; set; }
 
