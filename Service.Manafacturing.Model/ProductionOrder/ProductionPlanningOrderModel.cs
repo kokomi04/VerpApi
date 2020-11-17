@@ -38,6 +38,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public long ProductionOrderDetailId { get; set; }
         public int TotalQuantity { get; set; }
+        public int ProductId { get; set; }
         public string ProductTitle { get; set; }
         public decimal UnitPrice { get; set; }
         public string UnitName { get; set; }
