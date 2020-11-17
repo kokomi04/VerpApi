@@ -92,7 +92,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
-        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedules(long scheduleTurnId)
+        {
+            var sql = "SELECT * FROM vProductionSchedule v WHERE v.ScheduleTurnId = @ScheduleTurnId";
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters);
+            return resultData.ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleModel>(_mapper.ConfigurationProvider)
+                .ToList();
+        }
+
+        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
