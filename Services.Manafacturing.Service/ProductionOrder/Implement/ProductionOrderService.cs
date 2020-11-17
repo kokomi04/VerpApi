@@ -201,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     item.ProductionOrderId = productionOrder.ProductionOrderId;
                     // Tạo mới
                     var entity = _mapper.Map<ProductionOrderDetail>(item);
-                    entity.Status = (int)EnumProductionStatus.Waiting;
+                    entity.Status = (int)EnumProductionStatus.NotReady;
 
                     _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                 }

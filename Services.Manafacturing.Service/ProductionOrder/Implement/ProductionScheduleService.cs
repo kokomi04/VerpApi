@@ -220,7 +220,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.ScheduleTurnId = currentTurnId + 1;
                     var productionSchedule = _mapper.Map<ProductionSchedule>(item);
-                    productionSchedule.ProductionScheduleStatus = (int)EnumProductionStatus.Waiting;
+                    productionSchedule.ProductionScheduleStatus = (int)EnumScheduleStatus.Waiting;
                     _manufacturingDBContext.ProductionSchedule.Add(productionSchedule);
                     dataMap.Add((item, productionSchedule));
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionOrderDetailId, $"Thêm mới lịch sản xuất cho LSX", data.JsonSerialize());
