@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             _manufacturingDBContext.Step.Add(_mapper.Map<StepEnity>(entity));
             await _manufacturingDBContext.SaveChangesAsync();
 
-            _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
             return entity.StepGroupId;
         }
 
@@ -55,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
             destInfo.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();
-            _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Xóa danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Xóa danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
             return true;
         }
 
@@ -82,7 +82,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             _mapper.Map(req, destInfo);
 
             await _manufacturingDBContext.SaveChangesAsync();
-            _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Cập nhật danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Cập nhật danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
             return true;
         }
     }
