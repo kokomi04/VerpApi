@@ -79,9 +79,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                    .Include(x => x.ProductionStepLinkDataRole)
                                    .FirstOrDefaultAsync();
             if (productionStep == null)
-                throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
+                throw new BadRequestException(ProductionStepErrorCode.NotFoundProductionStep);
 
-            var productInSteps = await _manufacturingDBContext.ProductionStepLinkData
+            var productStepLinks = await _manufacturingDBContext.ProductionStepLinkData.Include(x=>x.ProductionStepLinkDataRole)
                 .Where(x => productionStep.ProductionStepLinkDataRole.Select(r => r.ProductionStepLinkDataId)
                 .Contains(x.ProductionStepLinkDataId)).ToListAsync();
 
@@ -90,7 +90,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 try
                 {
                     productionStep.IsDeleted = true;
-                    productInSteps.ForEach(s => s.IsDeleted = true);
+                    foreach(var p in productStepLinks)
+                    {
+                        if (p.ProductionStepLinkDataRole.Count > 1)
+                            throw new BadRequestException(ProductionStepErrorCode.InvalidDeleteProductionStep, 
+                                    "Không thể xóa công đoạn!. Đang tồn tại mối quan hệ với công đoạn khác");
+                        p.IsDeleted = true;
+                    }
 
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
@@ -499,7 +505,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                     .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
                                     .FirstOrDefaultAsync();
             if (productionStep == null)
-                throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
+                throw new BadRequestException(ProductionStepErrorCode.NotFoundProductionStep);
 
             productionStep.ProductionStepLinkDatas = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
                                             .Where(d => d.ProductionStepId == productionStep.ProductionStepId)
@@ -516,7 +522,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                    .Where(s => s.ProductionStepId == productionStepId)
                                    .FirstOrDefaultAsync();
             if (sProductionStep == null)
-                throw new BadRequestException(ProductionStagesErrorCode.NotFoundProductionStep);
+                throw new BadRequestException(ProductionStepErrorCode.NotFoundProductionStep);
 
             var dInOutStepLinks = await _manufacturingDBContext.ProductionStepLinkDataRole
                                     .Where(x => x.ProductionStepId == sProductionStep.ProductionStepId)
