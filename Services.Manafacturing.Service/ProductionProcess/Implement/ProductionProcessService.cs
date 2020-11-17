@@ -108,6 +108,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
+        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId)
+        {
+            var productOrderDetailIds = _manufacturingDBContext.ProductionSchedule
+                .Where(s => s.ScheduleTurnId == scheduleTurnId)
+                .Select(s => s.ProductionOrderDetailId)
+                .ToList();
+
+            var productionStepIds = _manufacturingDBContext.ProductionStepOrder
+                .Where(so => productOrderDetailIds.Contains(so.ProductionOrderDetailId))
+                .Select(so => so.ProductionStepId)
+                .Distinct()
+                .ToList();
+
+            var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                                        .Include(s => s.ProductionStepLinkDataRole)
+                                        .ThenInclude(r => r.ProductionStepLinkData)
+                                        .Where(s => productionStepIds.Contains(s.ProductionStepId))
+                                        .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+                                        .ToListAsync();
+
+            return new ProductionProcessInfo
+            {
+                ProductionSteps = productionSteps,
+                ProductionStepLinks = CalcProductionStepLink(productionSteps)
+            };
+        }
+
         public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
@@ -117,14 +144,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                         .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
                                         .ToListAsync();
 
+            return new ProductionProcessInfo
+            {
+                ProductionSteps = productionSteps,
+                ProductionStepLinks = CalcProductionStepLink(productionSteps)
+            };
+        }
+
+        private List<ProductionStepLinkModel> CalcProductionStepLink(List<ProductionStepInfo> productionSteps)
+        {
             var linkGroups = productionSteps
-                .SelectMany(s => s.ProductionStepLinkDatas, (s, d) => new
-                {
-                    s.ProductionStepId,
-                    d.ProductionStepLinkDataId,
-                    d.ProductionStepLinkDataRoleTypeId
-                })
-                .GroupBy(l => l.ProductionStepLinkDataId);
+               .SelectMany(s => s.ProductionStepLinkDatas, (s, d) => new
+               {
+                   s.ProductionStepId,
+                   d.ProductionStepLinkDataId,
+                   d.ProductionStepLinkDataRoleTypeId
+               })
+               .GroupBy(l => l.ProductionStepLinkDataId);
 
             var productionStepLinks = new List<ProductionStepLinkModel>();
 
@@ -149,11 +185,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
             }
 
-            return new ProductionProcessInfo
-            {
-                ProductionSteps = productionSteps,
-                ProductionStepLinks = productionStepLinks
-            };
+            return productionStepLinks;
         }
 
         public async Task<bool> IncludeProductionProcess(int productionOrderId)
@@ -595,10 +627,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return inOutStepLinks;
         }
 
-        public async Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model)
+        public async Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel model)
         {
             var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId).FirstOrDefault();
-            if(info != null)
+            if (info != null)
                 info.ClientData = model.ClientData;
             else
                 _manufacturingDBContext.Add(_mapper.Map<ProductionStepRoleClient>(model));
