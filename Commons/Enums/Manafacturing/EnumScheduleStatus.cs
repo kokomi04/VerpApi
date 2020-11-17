@@ -5,10 +5,8 @@ using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
-    public enum EnumProductionStatus : int
+    public enum EnumScheduleStatus : int
     {
-        [Description("Đang thiết lập")]
-        NotReady = 0,
         [Description("Chờ sản xuât")]
         Waiting = 1,
         [Description("Đang sản xuất")]
