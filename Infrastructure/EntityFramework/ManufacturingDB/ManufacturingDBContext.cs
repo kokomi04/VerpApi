@@ -48,11 +48,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.DateRequiredComplete)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.FreigthCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.OutsoureOrderCode)
                     .IsRequired()
@@ -65,12 +71,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProviderPhone).HasMaxLength(20);
 
                 entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
-
-                entity.Property(e => e.RequestObjectCode)
-                    .IsRequired()
-                    .HasMaxLength(50)
-                    .HasComment(@"1: Gia công chi tiết
-2: Gia công công đoạn");
 
                 entity.Property(e => e.TransportToAddress).HasMaxLength(256);
 

@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
+        public int ProductId { get; set; }
     }
 
     public class ProductionStepInfo: ProductionStepModel

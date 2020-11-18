@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public int ProductId { get; set; }
 
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual ICollection<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }

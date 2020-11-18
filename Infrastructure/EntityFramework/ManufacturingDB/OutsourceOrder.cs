@@ -11,9 +11,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public long OutsoureOrderId { get; set; }
-        public string RequestObjectCode { get; set; }
-        public DateTime CreateDateOrder { get; set; }
+        public int OutsourceTypeId { get; set; }
         public string OutsoureOrderCode { get; set; }
+        public DateTime CreateDateOrder { get; set; }
+        public DateTime DateRequiredComplete { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
         public string ProviderAddress { get; set; }

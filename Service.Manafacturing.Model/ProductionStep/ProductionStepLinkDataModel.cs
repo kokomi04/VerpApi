@@ -16,6 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int UnitId { get; set; }
         public decimal Quantity { get; set; }
         public int SortOrder { get; set; }
+        public int ProductId { get; set; }
     }
 
     public class ProductionStepLinkDataInfo : ProductionStepLinkDataModel, IMapFrom<ProductionStepLinkDataRole>
