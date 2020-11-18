@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     {
         public long OutsourceOrderDetailId { get; set; }
         public long OutsoureOrderId { get; set; }
-        public int ObjectId { get; set; }
+        public long ObjectId { get; set; }
         public decimal Price { get; set; }
         public decimal Tax { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
