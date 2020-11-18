@@ -599,13 +599,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var uProductionInSteps = source.Where(x => x.ProductionStepLinkDataId > 0)
                                             .Select(x => (ProductionStepLinkDataModel)x).ToList();
 
-            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData.AsEnumerable()
-                .Where(x => uProductionInSteps.Any(y => x.ObjectId == y.ObjectId && x.ObjectTypeId == (int)y.ObjectTypeId)).ToList();
+            var destProductionInSteps = _manufacturingDBContext.ProductionStepLinkData
+                .Where(x => uProductionInSteps.Select(x => x.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId)).ToList();
 
             foreach (var d in destProductionInSteps)
             {
-                var s = uProductionInSteps.FirstOrDefault(s => s.ObjectId == d.ObjectId && (int)s.ObjectTypeId == d.ObjectTypeId);
-                _mapper.Map(s, d);
+                var s = uProductionInSteps.FirstOrDefault(s => s.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                if (s != null)
+                    _mapper.Map(s, d);
             }
 
             await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(nProductionInSteps);
