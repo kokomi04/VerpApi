@@ -26,6 +26,20 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productSemiService.GetListProductSemi(containerId, containerTypeId);
         }
 
+        [HttpGet]
+        [Route("{productSemiId}")]
+        public async Task<ProductSemiModel> GetListProductSemiById([FromRoute] long productSemiId)
+        {
+            return await _productSemiService.GetListProductSemiById(productSemiId);
+        }
+
+        [HttpPost]
+        [Route("getByContainerId")]
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListId([FromBody] List<long> containerId)
+        {
+            return await _productSemiService.GetListProductSemiByListId(containerId);
+        }
+
         [HttpPost]
         [Route("")]
         public async Task<long> CreateProductSemi([FromBody] ProductSemiModel model)

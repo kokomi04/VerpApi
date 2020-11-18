@@ -16,7 +16,7 @@ using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 {
-    public class ProductSemiService: IProductSemiService
+    public class ProductSemiService : IProductSemiService
     {
         private readonly ManufacturingDBContext _manuDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -58,6 +58,22 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 .ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
             return ls;
+        }
+
+        public async Task<ProductSemiModel> GetListProductSemiById(long productSemiId)
+        {
+            var data = await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
+            if (data == null)
+                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+            return data;
+        }
+
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListId(List<long> lsId)
+        {
+            var data = await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsId.Contains(p.ProductSemiId)).ToListAsync();
+            if (data.Count == 0)
+                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+            return data;
         }
 
         public async Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model)
