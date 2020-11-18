@@ -81,7 +81,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (productionStep == null)
                 throw new BadRequestException(ProductionStepErrorCode.NotFoundProductionStep);
 
-            var productStepLinks = await _manufacturingDBContext.ProductionStepLinkData.Include(x=>x.ProductionStepLinkDataRole)
+            var productStepLinks = await _manufacturingDBContext.ProductionStepLinkData.Include(x => x.ProductionStepLinkDataRole)
                 .Where(x => productionStep.ProductionStepLinkDataRole.Select(r => r.ProductionStepLinkDataId)
                 .Contains(x.ProductionStepLinkDataId)).ToListAsync();
 
@@ -90,10 +90,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 try
                 {
                     productionStep.IsDeleted = true;
-                    foreach(var p in productStepLinks)
+                    foreach (var p in productStepLinks)
                     {
                         if (p.ProductionStepLinkDataRole.Count > 1)
-                            throw new BadRequestException(ProductionStepErrorCode.InvalidDeleteProductionStep, 
+                            throw new BadRequestException(ProductionStepErrorCode.InvalidDeleteProductionStep,
                                     "Không thể xóa công đoạn!. Đang tồn tại mối quan hệ với công đoạn khác");
                         p.IsDeleted = true;
                     }
@@ -128,11 +128,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ToList();
 
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                                        .Include(s => s.ProductionStepLinkDataRole)
-                                        .ThenInclude(r => r.ProductionStepLinkData)
-                                        .Where(s => productionStepIds.Contains(s.ProductionStepId))
-                                        .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
-                                        .ToListAsync();
+                .Include(s => s.Step)
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .Where(s => productionStepIds.Contains(s.ProductionStepId))
+                .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
             return new ProductionProcessInfo
             {
@@ -144,11 +145,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                                        .Include(s => s.ProductionStepLinkDataRole)
-                                        .ThenInclude(r => r.ProductionStepLinkData)
-                                        .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
-                                        .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
-                                        .ToListAsync();
+                .Include(s => s.Step)
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
+                .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
             return new ProductionProcessInfo
             {
