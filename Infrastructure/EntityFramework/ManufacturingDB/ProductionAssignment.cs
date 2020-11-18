@@ -9,7 +9,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ScheduleTurnId { get; set; }
         public int DepartmentId { get; set; }
         public int AssignmentQuantity { get; set; }
-        public long ProductionStepLinkDataId { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
     }
