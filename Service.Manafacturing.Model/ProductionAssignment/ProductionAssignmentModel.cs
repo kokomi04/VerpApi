@@ -17,7 +17,16 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public int DepartmentId { get; set; }
         public string DepartmentName { get; set; }
         public int AssignmentQuantity { get; set; }
-        public long ProductionStepLinkDataId { get; set; }
+        public long ObjectId { get; set; }
+        public EnumProductionProcess.ProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public int CompletedQuantity { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
+                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataRoleType)m.ObjectTypeId))
+                .ReverseMap()
+                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId));
+        }
     }
 }
