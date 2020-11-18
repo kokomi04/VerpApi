@@ -344,7 +344,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
-                await GeneratePurchasingSuggestCode(null, model);
+                var customGenCodeId = await GeneratePurchasingSuggestCode(null, model);
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -386,7 +386,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
 
-                    await ConfirmPurchasingSuggestCode();
+                    await ConfirmPurchasingSuggestCode(customGenCodeId);
 
                     return purchasingSuggest.PurchasingSuggestId;
                 }
@@ -399,7 +399,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoSuggest()))
             {
-                await GeneratePurchasingSuggestCode(purchasingSuggestId, model);
+                var customGenCodeId = await GeneratePurchasingSuggestCode(purchasingSuggestId, model);
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
@@ -510,14 +510,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
 
-                    await ConfirmPurchasingSuggestCode();
+                    await ConfirmPurchasingSuggestCode(customGenCodeId);
                     return true;
                 }
             }
         }
 
-        private async Task GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
+        private async Task<int> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
         {
+            int customGenCodeId = 0;
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
 
             PurchasingSuggest existedItem = null;
@@ -528,21 +529,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
             else
             {
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                customGenCodeId = config.CustomGenCodeId;
                 int dem = 0;
                 do
                 {
-                    var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingRequest, 0);
-                    model.PurchasingSuggestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, 0))?.CustomCode;
+                    model.PurchasingSuggestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
                     existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode && r.PurchasingSuggestId != purchasingSuggestId);
                     dem++;
                 } while (existedItem != null && dem < 10);
             }
-
+            return customGenCodeId;
         }
 
-        private async Task<bool> ConfirmPurchasingSuggestCode()
+        private async Task<bool> ConfirmPurchasingSuggestCode(int customGenCodeId)
         {
-            return await _customGenCodeHelperService.ConfirmCode(EnumObjectType.PurchasingSuggest, 0);
+            if (customGenCodeId <= 0) return true;
+
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
         }
 
 
@@ -1304,9 +1308,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
-                var code = await _objectGenCodeService.GenerateCode(EnumObjectType.PoAssignment);
+                var customGenCodeId = await GeneratePoAssignmentCode(poAssignmentId, assignmentInfo);
 
-                assignmentInfo.PoAssignmentCode = code;
                 assignmentInfo.PoAssignmentStatusId = (int)EnumPoAssignmentStatus.WaitToConfirm;
                 assignmentInfo.UpdatedByUserId = _currentContext.UserId;
                 assignmentInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -1317,8 +1320,43 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Phát lệnh phân công mua hàng {assignmentInfo.PoAssignmentCode}", poAssignmentId.JsonSerialize());
 
+                await ConfirmPoAssignmentCode(customGenCodeId);
+
                 return true;
             }
+        }
+
+        private async Task<int> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
+        {
+            int customGenCodeId = 0;
+            model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();
+
+            PoAssignment existedItem = null;
+            if (!string.IsNullOrWhiteSpace(model.PoAssignmentCode))
+            {
+                existedItem = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
+                if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+            }
+            else
+            {
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                customGenCodeId = config.CustomGenCodeId;
+                int dem = 0;
+                do
+                {
+                    model.PoAssignmentCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    existedItem = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
+                    dem++;
+                } while (existedItem != null && dem < 10);
+            }
+            return customGenCodeId;
+        }
+
+        private async Task<bool> ConfirmPoAssignmentCode(int customGenCodeId)
+        {
+            if (customGenCodeId <= 0) return true;
+
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
         }
 
         public async Task<bool> PoAssignmentUserConfirm(long poAssignmentId)

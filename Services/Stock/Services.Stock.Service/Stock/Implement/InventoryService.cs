@@ -56,14 +56,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IUnitService _unitService;
         private readonly IFileService _fileService;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
-
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -71,13 +70,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityLogService activityLogService
             , IUnitService unitService
             , IFileService fileService
-            , IObjectGenCodeService objectGenCodeService
             , IAsyncRunnerService asyncRunner
             , IOrganizationHelperService organizationHelperService
             , IStockHelperService stockHelperService
             , IProductHelperService productHelperService
             , ICurrentContextService currentContextService
             , IProductService productService
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -87,13 +86,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _activityLogService = activityLogService;
             _unitService = unitService;
             _fileService = fileService;
-            _objectGenCodeService = objectGenCodeService;
             _asyncRunner = asyncRunner;
             _organizationHelperService = organizationHelperService;
             _stockHelperService = stockHelperService;
             _productHelperService = productHelperService;
             _currentContextService = currentContextService;
             _productService = productService;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
 
@@ -2085,12 +2084,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
-            var newPackageCodeResult = await _objectGenCodeService.GenerateCode(EnumObjectType.Package);
+            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+            var customGenCodeId = config.CustomGenCodeId;
+
+            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue);
 
             var newPackage = new Package()
             {
                 PackageTypeId = (int)EnumPackageType.Custom,
-                PackageCode = newPackageCodeResult,
+                PackageCode = newPackageCodeResult?.CustomCode,
                 LocationId = null,
                 StockId = stockId,
                 ProductId = detail.ProductId,
@@ -2109,6 +2111,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             };
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
+
+            await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+
             return newPackage;
         }
 

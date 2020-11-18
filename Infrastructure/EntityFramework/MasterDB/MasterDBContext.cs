@@ -141,8 +141,6 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Filters).HasMaxLength(512);
-
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
                     .IsUnicode(false);
@@ -357,12 +355,12 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
-            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
-            {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
-                    .HasName("UK_ObjectCustomGenCode")
-                    .IsUnique();
-            });
+            //modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            //{
+            //    entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
+            //        .HasName("UK_ObjectCustomGenCode")
+            //        .IsUnique();
+            //});
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
             {

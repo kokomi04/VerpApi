@@ -88,7 +88,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int Column { get; set; }
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
-        public int? IdGencode { get; set; }
+        //public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
 
         public bool Compare(InputAreaField curField)

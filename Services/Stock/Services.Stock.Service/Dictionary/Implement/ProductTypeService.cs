@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -133,7 +134,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productType;
         }
 
-        public async Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = (from c in _stockContext.ProductType select c);
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -142,6 +143,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         where c.ProductTypeName.Contains(keyword)
                         select c;
             }
+
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
 

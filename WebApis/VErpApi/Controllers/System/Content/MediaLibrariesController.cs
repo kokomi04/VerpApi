@@ -25,23 +25,23 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("structure")]
-        public async Task<DirectoryStructure> GetDirectoryStructure()
+        public DirectoryStructure GetDirectoryStructure()
         {
-            return await _mediaService.GetDirectoryStructure();
+            return _mediaService.GetDirectoryStructure();
         }
 
         [HttpPost]
         [Route("structure/create")]
-        public async Task<bool> CreateDirectory([FromQuery] string root, [FromQuery] string subdirectory)
+        public bool CreateDirectory([FromQuery] string root, [FromQuery] string subdirectory)
         {
-            return await _mediaService.CreateSubdirectory(root, subdirectory);
+            return _mediaService.CreateSubdirectory(root, subdirectory);
         }
 
         [HttpDelete]
         [Route("structure/delete")]
-        public async Task<bool> DeleteDirectory([FromQuery] string directory)
+        public bool DeleteDirectory([FromQuery] string directory)
         {
-            return await _mediaService.DeletedDirectory(directory);
+            return _mediaService.DeletedDirectory(directory);
         }
         /// <summary>
         /// thay đổi tên directory
@@ -51,9 +51,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("structure/rename")]
-        public async Task<bool> RenameDirectory([FromQuery] string directory, [FromQuery] string newName)
+        public bool RenameDirectory([FromQuery] string directory, [FromQuery] string newName)
         {
-            return await _mediaService.RenameDirectory(directory, newName);
+            return _mediaService.RenameDirectory(directory, newName);
         }
 
         /// <summary>
@@ -64,9 +64,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("structure/copy")]
-        public async Task<bool> CopyDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
+        public bool CopyDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
         {
-            return await _mediaService.CopyDirectory(directory, newDirectory);
+            return _mediaService.CopyDirectory(directory, newDirectory);
         }
 
         /// <summary>
@@ -77,16 +77,16 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("structure/move")]
-        public async Task<bool> MoveDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
+        public bool MoveDirectory([FromQuery] string directory, [FromQuery] string newDirectory)
         {
-            return await _mediaService.MoveDirectory(directory, newDirectory);
+            return _mediaService.MoveDirectory(directory, newDirectory);
         }
 
         [HttpGet]
         [Route("files")]
-        public async Task<PageData<VisualFile>> GetVisualFiles([FromQuery] string directory, [FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
+        public PageData<VisualFile> GetVisualFiles([FromQuery] string directory, [FromQuery] string keyWord, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _mediaService.GetVisualFiles(directory, keyWord, page, size);
+            return _mediaService.GetVisualFiles(directory, keyWord, page, size);
         }
 
         [HttpPost]
@@ -98,9 +98,9 @@ namespace VErpApi.Controllers.System
 
         [HttpDelete]
         [Route("files/delete")]
-        public async Task<bool> DeleteFiles([FromBody] List<string> files)
+        public bool DeleteFiles([FromBody] List<string> files)
         {
-            return await _mediaService.DeleteFiles(files);
+            return _mediaService.DeleteFiles(files);
         }
 
         /// <summary>
@@ -111,9 +111,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("files/copy")]
-        public async Task<bool> CopyFiles([FromQuery] string directory, [FromBody] List<string> files)
+        public bool CopyFiles([FromQuery] string directory, [FromBody] List<string> files)
         {
-            return await _mediaService.CopyFiles(files, directory);
+            return _mediaService.CopyFiles(files, directory);
         }
 
         /// <summary>
@@ -124,9 +124,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("files/move")]
-        public async Task<bool> MoveFiles([FromQuery] string directory, [FromBody] List<string> files)
+        public bool MoveFiles([FromQuery] string directory, [FromBody] List<string> files)
         {
-            return await _mediaService.MoveFiles(files, directory);
+            return _mediaService.MoveFiles(files, directory);
         }
 
         /// <summary>
@@ -137,19 +137,19 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("files/rename")]
-        public async Task<bool> RenameFile([FromQuery] string file, [FromQuery] string nfile)
+        public bool RenameFile([FromQuery] string file, [FromQuery] string nfile)
         {
-            return await _mediaService.RenameFile(file, nfile);
+            return _mediaService.RenameFile(file, nfile);
         }
 
         [AllowAnonymous]
         [Route("view")]
         [HttpGet]
-        public async Task<IActionResult> Preview([FromQuery] string filePath, [FromQuery] bool thumb)
+        public IActionResult Preview([FromQuery] string filePath, [FromQuery] bool thumb)
         {
             if (string.IsNullOrWhiteSpace(filePath)) return NotFound();
 
-            var r = await _mediaService.GetFileStream(filePath, thumb);
+            var r = _mediaService.GetFileStream(filePath, thumb);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }

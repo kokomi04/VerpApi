@@ -52,7 +52,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.RequestOutsource, 0);
+                int customGenCodeId = 0;
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.RequestOutsource, EnumObjectType.RequestOutsource, 0);
                 if (currentConfig == null)
                 {
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -62,6 +63,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
+                customGenCodeId = currentConfig.CustomGenCodeId;
 
                 var enties = new List<RequestOutsourcePart>();
                 foreach (var data in datas)
@@ -75,7 +77,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.RequestOutsource, 0);
+                if (customGenCodeId > 0)
+                {
+                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                }
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, enties.First().ProductionOrderDetailId, $"Thêm mới yêu cầu gia công chi tiết {enties.First().RequestOutsourcePartCode}", enties.JsonSerialize());
                 return true;
             }

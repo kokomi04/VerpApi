@@ -27,6 +27,7 @@ using System.Reflection;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using System.Text;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -40,7 +41,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IFileService _fileService;
         private readonly IAsyncRunnerService _asyncRunner;
-
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         public ProductService(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
@@ -50,6 +51,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IActivityLogService activityLogService
             , IFileService fileService
             , IAsyncRunnerService asyncRunner
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -60,17 +62,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
             _fileService = fileService;
             _asyncRunner = asyncRunner;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
         public async Task<int> AddProduct(ProductModel req)
         {
+            var customGenCodeId = await GenerateProductCode(null, req);
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 var productId = await AddProductToDb(req);
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
+
+                await ConfirmProductCode(customGenCodeId);
+
                 return productId;
             }
+
+           
         }
 
         public async Task<int> AddProductDefault(ProductDefaultModel req)
@@ -318,14 +328,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
             if (productExisted != null)
-            {
-                if (productExisted.ProductCode == req.ProductCode)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+            {             
                 throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
+            var customGenCodeId = await GenerateProductCode(productId, req);
 
             long? oldMainImageFileId = 0L;
 
@@ -481,6 +490,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
+
+                    await ConfirmProductCode(customGenCodeId);
                 }
                 catch (Exception)
                 {
@@ -500,6 +511,39 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
+
+        private async Task<int> GenerateProductCode(int? productId, ProductModel model)
+        {
+            int customGenCodeId = 0;
+            model.ProductCode = (model.ProductCode ?? "").Trim();
+
+            Product existedItem = null;
+            if (!string.IsNullOrWhiteSpace(model.ProductCode))
+            {
+                existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
+                if (existedItem != null) throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+            }
+            else
+            {
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                customGenCodeId = config.CustomGenCodeId;
+                int dem = 0;
+                do
+                {
+                    model.ProductCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
+                    dem++;
+                } while (existedItem != null && dem < 10);
+            }
+            return customGenCodeId;
+        }
+
+        private async Task<bool> ConfirmProductCode(int customGenCodeId)
+        {
+            if (customGenCodeId <= 0) return true;
+
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+        }
 
         public async Task<bool> DeleteProduct(int productId)
         {
