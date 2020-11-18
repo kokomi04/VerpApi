@@ -121,14 +121,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionAssignment>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ProductionScheduleId })
+                entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ScheduleTurnId })
                     .HasName("PK_ProductionStepOrder_copy1");
-
-                entity.HasOne(d => d.ProductionSchedule)
-                    .WithMany(p => p.ProductionAssignment)
-                    .HasForeignKey(d => d.ProductionScheduleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionAssignment_ProductionSchedule");
 
                 entity.HasOne(d => d.ProductionStep)
                     .WithMany(p => p.ProductionAssignment)
