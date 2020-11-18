@@ -27,8 +27,8 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("scheduleTurnId")]
-        public async Task<IList<ProductionAssignmentModel>> GetProductionSchedules([FromRoute]long scheduleTurnId)
+        [Route("{scheduleTurnId}")]
+        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute]long scheduleTurnId)
         {
             return await _productionAssignmentService.GetProductionAssignments(scheduleTurnId);
         }
