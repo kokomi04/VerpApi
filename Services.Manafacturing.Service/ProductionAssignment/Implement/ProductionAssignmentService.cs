@@ -48,7 +48,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<ProductionAssignmentModel> CreateProductionAssignment(ProductionAssignmentModel data)
         {
-            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId);
+            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == data.ScheduleTurnId);
             if (productionSchedule == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
             var productionStep = _manufacturingDBContext.ProductionStep.FirstOrDefault(s => s.ProductionStepId == data.ProductionStepId);
@@ -77,7 +77,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         public async Task<bool> DeleteProductionAssignment(ProductionAssignmentModel data)
         {
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
-                .FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId
+                .FirstOrDefault(s => s.ScheduleTurnId == data.ScheduleTurnId
                 && s.ProductionStepId == data.ProductionStepId
                 && s.DepartmentId == data.DepartmentId);
             if (productionAssignment == null)
@@ -86,7 +86,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 _manufacturingDBContext.ProductionAssignment.Remove(productionAssignment);
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Xóa phân công sản xuất cho kế hoạch {productionAssignment.ProductionScheduleId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Xóa phân công sản xuất cho nhóm kế hoạch {productionAssignment.ScheduleTurnId}", data.JsonSerialize());
 
                 _manufacturingDBContext.SaveChanges();
 
@@ -101,29 +101,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId)
         {
-            var scheduleIds = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ScheduleTurnId == scheduleTurnId)
-                .Select(s => s.ProductionScheduleId)
-                .ToList();
-            return await _manufacturingDBContext.ProductionAssignment
-                .Where(a => scheduleIds.Contains(a.ProductionScheduleId))
-                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var dataSql = "SELECT * FROM vProductionAssignment v WHERE v.ScheduleTurnId = @ScheduleTurnId";
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(dataSql, sqlParams);
+            return resultData.ConvertData<ProductionAssignmentModel>();
         }
 
         public async Task<ProductionAssignmentModel> UpdateProductionAssignment(ProductionAssignmentModel data)
         {
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
-                .FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId 
+                .FirstOrDefault(s => s.ScheduleTurnId == data.ScheduleTurnId
                 && s.ProductionStepId == data.ProductionStepId
                 && s.DepartmentId == data.DepartmentId);
             if (productionAssignment == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin phân công công việc không tồn tại");
-            
+
             try
             {
                 productionAssignment.AssignmentQuantity = data.AssignmentQuantity;
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Cập nhật phân công sản xuất cho kế hoạch {productionAssignment.ProductionScheduleId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Cập nhật phân công sản xuất cho nhóm kế hoạch {productionAssignment.ScheduleTurnId}", data.JsonSerialize());
 
                 _manufacturingDBContext.SaveChanges();
 
