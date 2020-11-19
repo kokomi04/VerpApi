@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long ScheduleTurnId { get; set; }
         public int DepartmentId { get; set; }
         public string DepartmentName { get; set; }
-        public int AssignmentQuantity { get; set; }
+        public decimal AssignmentQuantity { get; set; }
         public long ObjectId { get; set; }
         public EnumProductionProcess.ProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public int CompletedQuantity { get; set; }

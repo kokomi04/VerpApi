@@ -15,8 +15,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionOrderDetailId { get; set; }
         public long ProductionOrderId { get; set; }
         public int ProductId { get; set; }
-        public int? Quantity { get; set; }
-        public int? ReserveQuantity { get; set; }
+        public decimal? Quantity { get; set; }
+        public decimal? ReserveQuantity { get; set; }
         public string Note { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

@@ -8,7 +8,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionStepId { get; set; }
         public long ScheduleTurnId { get; set; }
         public int DepartmentId { get; set; }
-        public int AssignmentQuantity { get; set; }
+        public decimal AssignmentQuantity { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
 

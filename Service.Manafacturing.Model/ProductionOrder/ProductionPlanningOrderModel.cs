@@ -42,7 +42,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductTitle { get; set; }
         public decimal UnitPrice { get; set; }
         public string UnitName { get; set; }
-        public int PlannedQuantity { get; set; }
+        public decimal PlannedQuantity { get; set; }
         public string OrderCode { get; set; }
         public string PartnerTitle { get; set; }
         public long ProductionStepId { get; set; }

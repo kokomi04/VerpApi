@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public EnumScheduleStatus ProductionScheduleStatus { get; set; }
-        public int ProductionScheduleQuantity { get; set; }
+        public decimal ProductionScheduleQuantity { get; set; }
         public string ProductionOrderCode { get; set; }
         public long? ScheduleTurnId { get; set; }
         public void Mapping(Profile profile)
@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int ProductionScheduleStatus { get; set; }
-        public int ProductionScheduleQuantity { get; set; }
+        public decimal ProductionScheduleQuantity { get; set; }
         public string ProductionOrderCode { get; set; }
         public long? ScheduleTurnId { get; set; }
     }
@@ -44,7 +44,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int ProductionOrderDetailId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public int ProductionScheduleQuantity { get; set; }
+        public decimal ProductionScheduleQuantity { get; set; }
         public long? ScheduleTurnId { get; set; }
         public void Mapping(Profile profile)
         {
