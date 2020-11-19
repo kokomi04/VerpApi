@@ -70,10 +70,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
         public async Task<IList<ProductSemiModel>> GetListProductSemiByListId(List<long> lsId)
         {
-            var data = await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsId.Contains(p.ProductSemiId)).ToListAsync();
-            if (data.Count == 0)
-                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
-            return data;
+            return await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsId.Contains(p.ProductSemiId)).ToListAsync();
         }
 
         public async Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model)
