@@ -126,9 +126,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
-                    .FirstOrDefault(s => s.ScheduleTurnId == scheduleTurnId
-                    && s.ProductionStepId == productionStepId);
-                _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
+                    .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
+                    .ToList();
+                if (oldProductionAssignments.Count > 0)
+                {
+                    _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
+                    _manufacturingDBContext.SaveChanges();
+                }
                 var newProductionAssignments = data.AsQueryable().ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider).ToList();
                 _manufacturingDBContext.ProductionAssignment.AddRange(newProductionAssignments);
 
