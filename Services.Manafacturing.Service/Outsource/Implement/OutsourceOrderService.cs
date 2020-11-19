@@ -50,9 +50,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 try
                 {
+                    int customGenCodeId = 0;
                     if (string.IsNullOrWhiteSpace(req.OutsoureOrderCode))
                     {
-                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, 0);
+                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0);
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -62,6 +63,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                         }
+                        
+                        customGenCodeId = currentConfig.CustomGenCodeId;
 
                         req.OutsoureOrderCode = generated.CustomCode;
                     }
@@ -79,7 +82,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     _manuDBContext.OutsourceOrderDetail.AddRange(detail);
                     await _manuDBContext.SaveChangesAsync();
 
-                    await _customGenCodeHelperService.ConfirmCode(EnumObjectType.OutsourceOrder, 0);
+                    if (customGenCodeId > 0)
+                    {
+                        await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                    }
 
                     await trans.CommitAsync();
 

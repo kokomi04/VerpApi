@@ -65,7 +65,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _logger = logger;
         }
 
-        public async Task<bool> CreateSubdirectory(string root, string subdirectory)
+        public bool CreateSubdirectory(string root, string subdirectory)
         {
             var pPath = GenerateMediaFilePath(root);
             if (!Directory.Exists(GetPhysicalFilePath(pPath)))
@@ -79,12 +79,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<DirectoryStructure> GetDirectoryStructure()
+        public DirectoryStructure GetDirectoryStructure()
         {
             return GetDirectoryStructure(GenerateRootPath());
         }
 
-        public async Task<PageData<VisualFile>> GetVisualFiles(string directory, string keyWord, int page, int size)
+        public PageData<VisualFile> GetVisualFiles(string directory, string keyWord, int page, int size)
         {
             var rootDirectory = GenerateRootPath();
             var ls = new List<VisualFile>();
@@ -164,17 +164,17 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> DeleteFiles(IList<string> files)
+        public bool DeleteFiles(IList<string> files)
         {
             foreach (var file in files)
             {
-                await DeleteFile(file);
+                DeleteFile(file);
             }
 
             return true;
         }
 
-        public async Task<bool> DeleteFile(string filePath)
+        public bool DeleteFile(string filePath)
         {
             filePath = GetPhysicalFilePath(GenerateMediaFilePath(filePath));
             if (!File.Exists(filePath))
@@ -184,7 +184,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<(Stream file, string fileName, string contentType)> GetFileStream(string filePath, bool thumb)
+        public (Stream file, string fileName, string contentType) GetFileStream(string filePath, bool thumb)
         {
             filePath = GenerateMediaFilePath(filePath);
 
@@ -204,7 +204,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return result;
         }
 
-        public async Task<bool> DeletedDirectory(string directory)
+        public bool DeletedDirectory(string directory)
         {
             if (string.IsNullOrWhiteSpace(directory)) 
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
@@ -218,7 +218,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> CopyDirectory(string pathSource, string pathDest)
+        public bool CopyDirectory(string pathSource, string pathDest)
         {
             if (pathSource.Equals(pathDest))
                 throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Không thể thực hiện di chuyển vào chính nó");
@@ -239,7 +239,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> MoveDirectory(string pathSource, string pathDest)
+        public bool MoveDirectory(string pathSource, string pathDest)
         {
             if (pathSource.Equals(pathDest))
                 throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Không thể thực hiện di chuyển vào chính nó");
@@ -260,7 +260,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> RenameDirectory(string pathSource, string newNameFolder)
+        public bool RenameDirectory(string pathSource, string newNameFolder)
         {
             if (string.IsNullOrWhiteSpace(pathSource) || string.IsNullOrWhiteSpace(newNameFolder))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
@@ -277,7 +277,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> CopyFiles(IList<string> files, string pathSource)
+        public bool CopyFiles(IList<string> files, string pathSource)
         {
             if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
@@ -300,7 +300,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> MoveFiles(IList<string> files, string directory)
+        public bool MoveFiles(IList<string> files, string directory)
         {
             if (string.IsNullOrWhiteSpace(directory))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
@@ -322,7 +322,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> RenameFile(string filePath, string newNameFile)
+        public bool RenameFile(string filePath, string newNameFile)
         {
             if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(newNameFile))
                 throw new BadRequestException(FileErrorCode.FileNotFound);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
@@ -20,6 +21,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? VoucherTypeGroupId { get; set; }
 
         public IList<VoucherActionSimpleModel> ActionObjects { get; set; }
+
+        public IList<VoucherAreaFieldSimpleModel> AreaFields { get; set; }
     }
 
     public class VoucherActionSimpleModel
@@ -30,5 +33,15 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
         public string Title { get; set; }
         public int SortOrder { get; set; }
+    }
+
+    public class VoucherAreaFieldSimpleModel
+    {
+        public int VoucherAreaId { get; set; }
+        public string VoucherAreaTitle { get; set; }
+        public int VoucherAreaFieldId { get; set; }
+        public string VoucherAreaFieldTitle { get; set; }        
+        public int VoucherFieldId { get; set; }
+        public EnumFormType FormTypeId { get; set; }
     }
 }

@@ -1347,7 +1347,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         CustomGenCodeOutputModelOut currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputType, field.InputAreaFieldId);
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, field.InputAreaFieldId);
 
                             if (currentConfig == null)
                             {
@@ -1410,9 +1410,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            foreach (var (key, value) in areaFieldGenCodes)
+            var customGenCodeIds = areaFieldGenCodes.Select(f => f.Value.CustomGenCodeId).ToList();
+            foreach (var customGenCodeId in customGenCodeIds)
             {
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, key);
+                await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
             }
         }
 

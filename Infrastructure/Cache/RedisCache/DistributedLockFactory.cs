@@ -111,9 +111,9 @@ namespace Verp.Cache.RedisCache
             return $"STOCK_LOCK_{stockId}";
         }
 
-        public static string GetLockGenerateCodeKey(EnumObjectType objectTypeId)
+        public static string GetLockGenerateCodeKey(int customGenCodeId)
         {
-            return $"GENERATECODE_LOCK_{objectTypeId}";
+            return $"GENERATECODE_LOCK_{customGenCodeId}";
         }
 
         public static string GetLockGenerateCodeCustomKey(int customGenCodeId)

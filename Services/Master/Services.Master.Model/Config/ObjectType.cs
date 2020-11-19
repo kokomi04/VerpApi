@@ -10,4 +10,6 @@ namespace VErp.Services.Master.Model.Config
         public EnumObjectType ObjectTypeId { get; set; }
         public string ObjectTypeName { get; set; }
     }
+
+  
 }

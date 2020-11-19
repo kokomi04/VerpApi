@@ -134,11 +134,45 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 .GroupBy(a => a.VoucherTypeId)
                 .ToDictionary(a => a.Key, a => a.ToList());
 
+            var areaFields = await (
+                from a in _purchaseOrderDBContext.VoucherArea
+                join af in _purchaseOrderDBContext.VoucherAreaField on a.VoucherAreaId equals af.VoucherAreaId
+                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
+                select new
+                {
+                    a.VoucherTypeId,
+                    a.VoucherAreaId,
+                    VoucherAreaTitle = a.Title,
+
+                    af.VoucherAreaFieldId,
+                    VoucherAreaFieldTitle = af.Title,
+                    f.VoucherFieldId,
+                    f.FormTypeId,
+                }
+                ).ToListAsync();
+
+            var typeFields = areaFields.GroupBy(t => t.VoucherTypeId)
+                .ToDictionary(t => t.Key, t => t.Select(f => new VoucherAreaFieldSimpleModel()
+                {
+                    VoucherAreaId = f.VoucherAreaId,
+                    VoucherAreaTitle = f.VoucherAreaTitle,
+                    VoucherAreaFieldId = f.VoucherAreaFieldId,
+                    VoucherAreaFieldTitle = f.VoucherAreaFieldTitle,
+                    VoucherFieldId = f.VoucherFieldId,
+                    FormTypeId = (EnumFormType)f.FormTypeId
+                }).ToList()
+                );
+
             foreach (var item in voucherTypes)
             {
                 if (actions.TryGetValue(item.VoucherTypeId, out var _actions))
                 {
                     item.ActionObjects = _actions.Cast<VoucherActionSimpleModel>().ToList();
+                }
+
+                if(typeFields.TryGetValue(item.VoucherTypeId, out var _fields))
+                {
+                    item.AreaFields = _fields;
                 }
             }
 
@@ -1014,9 +1048,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         VoucherAreaFieldId = f.VoucherAreaFieldId.Value,
                         IdGencode = f.IdGencode.Value
                     })
-                    .ToDictionary(c => c.VoucherAreaFieldId, c => c.IdGencode);
+                    .ToDictionary(c => (long)c.VoucherAreaFieldId, c => c.IdGencode);
 
-                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.VoucherType, genCodeConfigs);
+                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, genCodeConfigs);
 
                 if (!result)
                 {

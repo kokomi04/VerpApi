@@ -168,9 +168,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                int customGenCodeId = 0;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
-                    CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, 0);
+                    CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0);
                     if (currentConfig == null)
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -180,6 +181,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                     }
+
+                    customGenCodeId = currentConfig.CustomGenCodeId;
+
                     data.ProductionOrderCode = generated.CustomCode;
                 }
                 else
@@ -208,9 +212,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
-                if (string.IsNullOrEmpty(data.ProductionOrderCode))
+                if (customGenCodeId > 0)
                 {
-                    await _customGenCodeHelperService.ConfirmCode(EnumObjectType.InputType, 0);
+                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
                 }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;

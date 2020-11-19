@@ -5,7 +5,7 @@ using System.Text;
 
 namespace VErp.Services.Grpc.Client
 {
-    public class InternalCustomGenCodeClient : CustomGenCodeProvider.CustomGenCodeProviderClient
-    {
-    }
+    //public class InternalCustomGenCodeClient : CustomGenCodeProvider.CustomGenCodeProviderClient
+    //{
+    //}
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -33,6 +35,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
+            if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
         }
     }

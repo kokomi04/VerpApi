@@ -1305,7 +1305,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         CustomGenCodeOutputModelOut currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherType, field.VoucherAreaFieldId);
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId);
 
                             if (currentConfig == null)
                             {
@@ -1365,9 +1365,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            foreach (var (key, value) in areaFieldGenCodes)
+            var customGenCodeIds = areaFieldGenCodes.Select(a => a.Value.CustomGenCodeId);
+            foreach (var customGenCodeId in customGenCodeIds)
             {
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.VoucherType, key);
+                await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
             }
         }
 
