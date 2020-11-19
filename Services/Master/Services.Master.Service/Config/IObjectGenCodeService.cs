@@ -17,7 +17,7 @@ namespace VErp.Services.Master.Service.Config
 
         public Task<bool> MapObjectGenCode(ObjectGenCodeMapping model);
 
-        Task<bool> UpdateMultiConfig(EnumObjectType objectTypeId, EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> data);
+        Task<bool> UpdateMultiConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes);
 
         public Task<bool> DeleteMapObjectGenCode(int objectCustomGenCodeMappingId);
     }

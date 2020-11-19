@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface ICustomGenCodeHelperService
     {
         //Task<bool> MapObjectCustomGenCode(EnumObjectType objectTypeId, Dictionary<int, int> data);
+        Task<bool> MapObjectCustomGenCode(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes);
 
         Task<CustomGenCodeOutputModelOut> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId);
         Task<CustomCodeModelOutput> GenerateCode(int customGenCodeId, int lastValue);
@@ -27,7 +28,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         private readonly IHttpCrossService _httpCrossService;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-       // private readonly CustomGenCodeProvider.CustomGenCodeProviderClient _customGenCodeClient;
+        // private readonly CustomGenCodeProvider.CustomGenCodeProviderClient _customGenCodeClient;
         public CustomGenCodeHelperService(IHttpCrossService httpCrossService,
             IOptions<AppSetting> appSetting,
             ILogger<ProductHelperService> logger)
@@ -37,20 +38,20 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _logger = logger;
             //_customGenCodeClient = customGenCodeClient;
         }
-        //public async Task<bool> MapObjectCustomGenCode(EnumObjectType objectTypeId, Dictionary<int, int> data)
-        //{
-        //    if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
-        //    {
-        //        var reuestData = new MapObjectCustomGenCodeRequest
-        //        {
-        //            ObjectTypeId = (int)objectTypeId
-        //        };
-        //        reuestData.Data.Add(data);
+        public async Task<bool> MapObjectCustomGenCode(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes)
+        {
+            //if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
+            //{
+            //    var reuestData = new MapObjectCustomGenCodeRequest
+            //    {
+            //        ObjectTypeId = (int)objectTypeId
+            //    };
+            //    reuestData.Data.Add(data);
 
-        //        return (await _customGenCodeClient.MapObjectCustomGenCodeAsync(reuestData)).IsSuccess;
-        //    }
-        //    return await _httpCrossService.Post<bool>($"api/internal/InternalCustomGenCode/{(int)objectTypeId}/multiconfigs", data);
-        //}
+            //    return (await _customGenCodeClient.MapObjectCustomGenCodeAsync(reuestData)).IsSuccess;
+            //}
+            return await _httpCrossService.Post<bool>($"api/internal/InternalCustomGenCode/multiconfigs?targetObjectTypeId={(int)targetObjectTypeId}&configObjectTypeId={(int)configObjectTypeId}", objectCustomGenCodes);
+        }
 
         public async Task<CustomGenCodeOutputModelOut> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId)
         {

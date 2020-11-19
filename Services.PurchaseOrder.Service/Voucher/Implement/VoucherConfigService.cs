@@ -1041,22 +1041,22 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // Get list gen code
-                //var genCodeConfigs = fields
-                //    .Where(f => f.IdGencode.HasValue)
-                //    .Select(f => new
-                //    {
-                //        VoucherAreaFieldId = f.VoucherAreaFieldId.Value,
-                //        IdGencode = f.IdGencode.Value
-                //    })
-                //    .ToDictionary(c => c.VoucherAreaFieldId, c => c.IdGencode);
+                var genCodeConfigs = fields
+                    .Where(f => f.IdGencode.HasValue)
+                    .Select(f => new
+                    {
+                        VoucherAreaFieldId = f.VoucherAreaFieldId.Value,
+                        IdGencode = f.IdGencode.Value
+                    })
+                    .ToDictionary(c => (long)c.VoucherAreaFieldId, c => c.IdGencode);
 
-                //var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.VoucherType, genCodeConfigs);
+                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, genCodeConfigs);
 
-                //if (!result)
-                //{
-                //    trans.TryRollbackTransaction();
-                //    throw new BadRequestException(VoucherErrorCode.MapGenCodeConfigFail);
-                //}
+                if (!result)
+                {
+                    trans.TryRollbackTransaction();
+                    throw new BadRequestException(VoucherErrorCode.MapGenCodeConfigFail);
+                }
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherTypeId, $"Cập nhật trường dữ liệu chứng từ {voucherTypeInfo.Title}", fields.JsonSerialize());

@@ -24,12 +24,12 @@ namespace VErpApi.Controllers.System.Internal
             _objectGenCodeService = objectGenCodeService;
         }
 
-        //[HttpPost]
-        //[Route("{objectTypeId}/multiconfigs")]
-        //public async Task<bool> MapObjectCustomGenCode([FromRoute] int objectTypeId,[FromBody] Dictionary<int,int> data)
-        //{
-        //    return await _genCodeConfigService.UpdateMultiConfig(objectTypeId, data).ConfigureAwait(true);
-        //}
+        [HttpPost]
+        [Route("multiconfigs")]
+        public async Task<bool> UpdateMultiConfig([FromQuery] EnumObjectType targetObjectTypeId, [FromQuery] EnumObjectType configObjectTypeId, [FromBody] Dictionary<long, int> objectCustomGenCodes)
+        {
+            return await _objectGenCodeService.UpdateMultiConfig(targetObjectTypeId, configObjectTypeId, objectCustomGenCodes).ConfigureAwait(true);
+        }
 
         [HttpGet]
         [Route("currentConfig")]

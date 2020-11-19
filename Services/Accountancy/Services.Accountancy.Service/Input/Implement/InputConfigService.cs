@@ -156,11 +156,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var typeFields = areaFields.GroupBy(t => t.InputTypeId)
                 .ToDictionary(t => t.Key, t => t.Select(f => new InputAreaFieldSimpleModel()
                 {
-                   InputAreaId = f.InputAreaId,
-                   InputAreaTitle = f.InputAreaTitle,
-                   InputAreaFieldId = f.InputAreaFieldId,
-                   InputAreaFieldTitle = f.InputAreaFieldTitle,
-                   InputFieldId = f.InputFieldId,
+                    InputAreaId = f.InputAreaId,
+                    InputAreaTitle = f.InputAreaTitle,
+                    InputAreaFieldId = f.InputAreaFieldId,
+                    InputAreaFieldTitle = f.InputAreaFieldTitle,
+                    InputFieldId = f.InputFieldId,
                     FormTypeId = (EnumFormType)f.FormTypeId
                 }).ToList()
                 );
@@ -1047,22 +1047,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // Get list gen code
-                //var genCodeConfigs = fields
-                //    .Where(f => f.IdGencode.HasValue)
-                //    .Select(f => new
-                //    {
-                //        InputAreaFieldId = f.InputAreaFieldId.Value,
-                //        IdGencode = f.IdGencode.Value
-                //    })
-                //    .ToDictionary(c => c.InputAreaFieldId, c => c.IdGencode);
+                var genCodeConfigs = fields
+                    .Where(f => f.IdGencode.HasValue)
+                    .Select(f => new
+                    {
+                        InputAreaFieldId = f.InputAreaFieldId.Value,
+                        IdGencode = f.IdGencode.Value
+                    })
+                    .ToDictionary(c => (long)c.InputAreaFieldId, c => c.IdGencode);
 
-                //var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.InputType, genCodeConfigs);
+                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, genCodeConfigs);
 
-                //if (!result)
-                //{
-                //    trans.TryRollbackTransaction();
-                //    throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
-                //}
+                if (!result)
+                {
+                    trans.TryRollbackTransaction();
+                    throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
+                }
 
                 trans.Commit();
 

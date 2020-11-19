@@ -125,7 +125,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
                 TargetObjectTypeId = (int)model.TargetObjectTypeId,
                 ConfigObjectTypeId = (int)model.ConfigObjectTypeId,
-
+                ObjectId = (int)model.ConfigObjectId,
                 ConfigObjectId = model.ConfigObjectId,//default
                 ObjectTypeId = (int)model.ObjectTypeId,
                 UpdatedByUserId = _currentContextService.UserId
@@ -159,12 +159,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             return true;
 
         }
-        public async Task<bool> UpdateMultiConfig(EnumObjectType objectTypeId, EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> data)
+        public async Task<bool> UpdateMultiConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes)
         {
 
             var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
 
-            foreach (var mapConfig in data)
+            foreach (var mapConfig in objectCustomGenCodes)
             {
                 var config = await _masterDbContext.CustomGenCode
                     .Where(c => c.IsActived)
@@ -180,12 +180,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 if (curMapConfig == null)
                 {
                     curMapConfig = new ObjectCustomGenCodeMapping
-                    {
-                        ObjectTypeId = (int)objectTypeId,
+                    {                       
+                        CustomGenCodeId = mapConfig.Value,                        
                         TargetObjectTypeId = (int)targetObjectTypeId,
                         ConfigObjectTypeId = (int)configObjectTypeId,
+                        ObjectId = (int)mapConfig.Key,
                         ConfigObjectId = mapConfig.Key,
-                        CustomGenCodeId = mapConfig.Value,
+                        ObjectTypeId = (int)targetObjectTypeId,
+                        UpdatedByUserId = _currentContextService.UserId
                     };
                     _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
                 }
@@ -261,11 +263,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 result = result.Where(c =>
-                 c.ObjectTypeName.Contains(keyword)
-                 || c.TargetObjectName.Contains(keyword)
-                 || c.TargetObjectTypeName.Contains(keyword)
-                 || c.FieldName.Contains(keyword)
-                 || c.CustomGenCodeName.Contains(keyword)
+                 c.ObjectTypeName?.Contains(keyword) == true
+                 || c.TargetObjectName?.Contains(keyword) == true
+                 || c.TargetObjectTypeName?.Contains(keyword) == true
+                 || c.FieldName?.Contains(keyword) == true
+                 || c.CustomGenCodeName?.Contains(keyword) == true
                 ).ToList();
             }
             var total = result.Count;
@@ -294,7 +296,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             foreach (var stock in await stocksTask)
-            {              
+            {
 
                 result.Add(
                     GetObjectGenCodeMappingTypeModel(
@@ -503,7 +505,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 TargetObjectTypeId = targeObjectTypeId,
                 TargetObjectTypeName = targeObjectTypeId.GetEnumDescription(),
 
-                ConfigObjectTypeId= configObjectTypeId.Value,
+                ConfigObjectTypeId = configObjectTypeId.Value,
                 ObjectTypeId = configObjectTypeId.Value,
                 ObjectTypeName = configObjectTypeId.Value.GetEnumDescription(),
 
