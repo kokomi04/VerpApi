@@ -696,19 +696,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<long> CreateProductionStepGroup(ProductionStepGroupModel req)
         {
-            var group = _mapper.Map<ProductionStep>(req as ProductionStepModel);
-            group.IsGroup = true;
-
-            _manufacturingDBContext.ProductionStep.Add(group);
+            var productionStepGroupId = await CreateProductionStep(req);
+            var stepGroup = await _manufacturingDBContext.ProductionStep.SingleOrDefaultAsync(x => x.ProductionStepId == productionStepGroupId);
+            stepGroup.IsGroup = true;
             await _manufacturingDBContext.SaveChangesAsync();
 
             var child = _manufacturingDBContext.ProductionStep.Where(s => req.ListProductionStepId.Contains(s.ProductionStepId));
             foreach (var c in child)
             {
-                c.ParentId = group.ProductionStepId;
+                c.ParentId = stepGroup.ProductionStepId;
             }
             await _manufacturingDBContext.SaveChangesAsync();
-            return group.ProductionStepId;
+
+            await _activityLogService.CreateLog(EnumObjectType.ProductionStep, stepGroup.ProductionStepId,
+                        $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req.JsonSerialize());
+            return stepGroup.ProductionStepId;
         }
     }
 }
