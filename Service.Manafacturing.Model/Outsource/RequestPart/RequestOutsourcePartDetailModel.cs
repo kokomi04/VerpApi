@@ -15,9 +15,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public long RequestOutsourcePartDetailId { get; set; }
         public long RequestOutsourcePartId { get; set; }
         public int ProductPartId { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public int UnitId { get; set; }
-        public OutsourcePartProcessType Status { get; set; }
+        public OutsourcePartProcessType StatusId { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -42,7 +42,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductPartCode { get; set; }
         public string OrderCode { get; set; }
         public int ProductId { get; set; }
-        public int ProductOrderDetailQuantity { get; set; }
+        public decimal ProductOrderDetailQuantity { get; set; }
         public string ProductTitle { get; set; }
 
     }

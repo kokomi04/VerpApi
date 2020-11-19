@@ -8,9 +8,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long RequestOutsourcePartDetailId { get; set; }
         public long RequestOutsourcePartId { get; set; }
         public int ProductId { get; set; }
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public int UnitId { get; set; }
-        public int Status { get; set; }
+        public int StatusId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }

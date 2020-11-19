@@ -115,7 +115,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var data = await _manuDBContext.RequestOutsourcePartDetail.Where(x => listID.Contains(x.RequestOutsourcePartDetailId)).ToListAsync();
             foreach (var e in data)
-                e.Status = (int)status;
+                e.StatusId = (int)status;
             await _manuDBContext.SaveChangesAsync();
 
         }
