@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
     public class ProductionOrderOutputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
-        public bool? HasProcess { get; set; }
+        public EnumProcessStatus ProcessStatus { get; set; }
         public virtual ICollection<ProductionOrderDetailOutputModel> ProductionOrderDetail { get; set; }
 
         public void Mapping(Profile profile)
@@ -39,7 +39,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductOrderModel
     {
-        public int ProductionOrderId { get; set; }
+        public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public long ProductionDate { get; set; }
         public long? FinishDate { get; set; }

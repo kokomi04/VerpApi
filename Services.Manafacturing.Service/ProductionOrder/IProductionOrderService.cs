@@ -16,5 +16,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionOrderInputModel> UpdateProductionOrder(int productionOrderId, ProductionOrderInputModel data);
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
         Task<bool> DeleteProductionOrder(int productionOrderId);
+        Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
     }
 }

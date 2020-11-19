@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string Title { get; set; }
         public long? ParentId { get; set; }
         public EnumProductionProcess.ContainerType ContainerTypeId { get; set; }
-        public int ContainerId { get; set; }
+        public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
     }
@@ -29,6 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue? s.Step.StepName: s.Title))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore());
         }

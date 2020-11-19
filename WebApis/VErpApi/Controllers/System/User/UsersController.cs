@@ -14,6 +14,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Users;
@@ -27,14 +28,17 @@ namespace VErpApi.Controllers.System
     {
         private readonly IUserService _userService;
         private readonly IObjectGenCodeService _objectGenCodeService;
+        private readonly IGenCodeConfigService _genCodeConfigService;
         private readonly IFileService _fileService;
         public UsersController(IUserService userService
             , IObjectGenCodeService objectGenCodeService
+            , IGenCodeConfigService genCodeConfigService
             , IFileService fileService
             )
         {
             _userService = userService;
             _objectGenCodeService = objectGenCodeService;
+            _genCodeConfigService = genCodeConfigService;
             _fileService = fileService;
         }
 
@@ -167,9 +171,10 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateUserCode")]
-        public async Task<string> GenerateUserCode()
+        public async Task<CustomCodeModel> GenerateUserCode()
         {
-            return await _objectGenCodeService.GenerateCode(EnumObjectType.UserAndEmployee).ConfigureAwait(true);
+            var currentConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.UserAndEmployee, EnumObjectType.UserAndEmployee, 0);
+            return await _genCodeConfigService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
         }
 
         [HttpGet]

@@ -27,6 +27,7 @@ using System.Reflection;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using System.Text;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -40,7 +41,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IFileService _fileService;
         private readonly IAsyncRunnerService _asyncRunner;
-
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         public ProductService(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
@@ -50,6 +51,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IActivityLogService activityLogService
             , IFileService fileService
             , IAsyncRunnerService asyncRunner
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -60,16 +62,93 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
             _fileService = fileService;
             _asyncRunner = asyncRunner;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
         public async Task<int> AddProduct(ProductModel req)
         {
+            var customGenCodeId = await GenerateProductCode(null, req);
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 var productId = await AddProductToDb(req);
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
+
+                await ConfirmProductCode(customGenCodeId);
+
                 return productId;
+            }
+
+           
+        }
+
+        public async Task<int> AddProductDefault(ProductDefaultModel req)
+        {
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                req.ProductCode = (req.ProductCode ?? "").Trim();
+                var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+                if (productExisted != null)
+                {
+                    if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
+                        throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
+                    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                }
+                var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
+                if (defaultProductCate == null)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Danh mục mặt hàng mặc định không tồn tại");
+                var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
+                if (unitInfo == null)
+                {
+                    throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Sản phẩm {req.ProductCode}, đơn vị tính không tìm thấy ");
+                }
+                var productInfo = new Product()
+                {
+                    ProductCode = req.ProductCode,
+                    ProductName = req.ProductName ?? req.ProductCode,
+                    ProductInternalName = req.ProductName.NormalizeAsInternalName(),
+                    IsCanBuy = false,
+                    IsCanSell = false,
+                    ProductCateId = defaultProductCate.ProductCateId,
+                    UnitId = req.UnitId
+                };
+
+                await _stockContext.AddAsync(productInfo);
+                await _stockContext.SaveChangesAsync();
+
+                var productStockInfo = new ProductStockInfo()
+                {
+                    ProductId = productInfo.ProductId,
+                    StockOutputRuleId = (int)EnumStockOutputRule.None
+                };
+
+                await _stockContext.AddAsync(productStockInfo);
+
+                var productExtra = new ProductExtraInfo()
+                {
+                    ProductId = productInfo.ProductId,
+                    Specification = req.Specification
+                };
+
+                await _stockContext.AddAsync(productExtra);
+                var unitConverion = new ProductUnitConversion()
+                {
+                    ProductId = productInfo.ProductId,
+                    ProductUnitConversionName = unitInfo.UnitName,
+                    SecondaryUnitId = req.UnitId,
+                    FactorExpression = "1",
+                    ConversionDescription = "Mặc định",
+                    IsDefault = true,
+                    IsFreeStyle = false
+                };
+                _stockContext.ProductUnitConversion.Add(unitConverion);
+
+                await _stockContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
+                return productInfo.ProductId;
             }
         }
 
@@ -249,14 +328,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && (p.ProductCode == req.ProductCode || p.ProductName == req.ProductName));
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
             if (productExisted != null)
-            {
-                if (productExisted.ProductCode == req.ProductCode)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+            {             
                 throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
+            var customGenCodeId = await GenerateProductCode(productId, req);
 
             long? oldMainImageFileId = 0L;
 
@@ -412,6 +490,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var lstUnitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
+
+                    await ConfirmProductCode(customGenCodeId);
                 }
                 catch (Exception)
                 {
@@ -431,6 +511,39 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
+
+        private async Task<int> GenerateProductCode(int? productId, ProductModel model)
+        {
+            int customGenCodeId = 0;
+            model.ProductCode = (model.ProductCode ?? "").Trim();
+
+            Product existedItem = null;
+            if (!string.IsNullOrWhiteSpace(model.ProductCode))
+            {
+                existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
+                if (existedItem != null) throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+            }
+            else
+            {
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                customGenCodeId = config.CustomGenCodeId;
+                int dem = 0;
+                do
+                {
+                    model.ProductCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
+                    dem++;
+                } while (existedItem != null && dem < 10);
+            }
+            return customGenCodeId;
+        }
+
+        private async Task<bool> ConfirmProductCode(int customGenCodeId)
+        {
+            if (customGenCodeId <= 0) return true;
+
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+        }
 
         public async Task<bool> DeleteProduct(int productId)
         {
@@ -823,22 +936,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var quantitativeUnitTypeId = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>().FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (quantitativeUnitTypeId != null) entity.QuantitativeUnitTypeId = quantitativeUnitTypeId.Enum;
                         return true;
-                    //case nameof(ProductImportModel.ProductTypeCode):
-                    //case nameof(ProductImportModel.ProductTypeName):
-                    //case nameof(ProductImportModel.ProductCate):
-                    //case nameof(ProductImportModel.Unit):
-                    //case nameof(ProductImportModel.SecondaryUnit01):
-                    //case nameof(ProductImportModel.SecondaryUnit02):
-                    //case nameof(ProductImportModel.SecondaryUnit03):
-                    //case nameof(ProductImportModel.SecondaryUnit04):
-                    //case nameof(ProductImportModel.SecondaryUnit05):                    
-                    //    var type = entity.GetType();
-                    //    var p = type.GetProperty(propertyName);
-                    //    if (p != null)
-                    //    {
-                    //        p.SetValue(entity, value);
-                    //    }
-                    //    return true;
+                        //case nameof(ProductImportModel.ProductTypeCode):
+                        //case nameof(ProductImportModel.ProductTypeName):
+                        //case nameof(ProductImportModel.ProductCate):
+                        //case nameof(ProductImportModel.Unit):
+                        //case nameof(ProductImportModel.SecondaryUnit01):
+                        //case nameof(ProductImportModel.SecondaryUnit02):
+                        //case nameof(ProductImportModel.SecondaryUnit03):
+                        //case nameof(ProductImportModel.SecondaryUnit04):
+                        //case nameof(ProductImportModel.SecondaryUnit05):                    
+                        //    var type = entity.GetType();
+                        //    var p = type.GetProperty(propertyName);
+                        //    if (p != null)
+                        //    {
+                        //        p.SetValue(entity, value);
+                        //    }
+                        //    return true;
                 }
                 return false;
             });

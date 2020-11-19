@@ -136,11 +136,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 .GroupBy(a => a.InputTypeId)
                 .ToDictionary(a => a.Key, a => a.ToList());
 
+            var areaFields = await (
+              from a in _accountancyDBContext.InputArea
+              join af in _accountancyDBContext.InputAreaField on a.InputAreaId equals af.InputAreaId
+              join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+              select new
+              {
+                  a.InputTypeId,
+                  a.InputAreaId,
+                  InputAreaTitle = a.Title,
+
+                  af.InputAreaFieldId,
+                  InputAreaFieldTitle = af.Title,
+                  f.InputFieldId,
+                  f.FormTypeId,
+              }
+              ).ToListAsync();
+
+            var typeFields = areaFields.GroupBy(t => t.InputTypeId)
+                .ToDictionary(t => t.Key, t => t.Select(f => new InputAreaFieldSimpleModel()
+                {
+                    InputAreaId = f.InputAreaId,
+                    InputAreaTitle = f.InputAreaTitle,
+                    InputAreaFieldId = f.InputAreaFieldId,
+                    InputAreaFieldTitle = f.InputAreaFieldTitle,
+                    InputFieldId = f.InputFieldId,
+                    FormTypeId = (EnumFormType)f.FormTypeId
+                }).ToList()
+                );
+
             foreach (var item in inputTypes)
             {
                 if (actions.TryGetValue(item.InputTypeId, out var _actions))
                 {
                     item.ActionObjects = _actions.Cast<InputActionSimpleModel>().ToList();
+                }
+
+                if (typeFields.TryGetValue(item.InputTypeId, out var _fields))
+                {
+                    item.AreaFields = _fields;
                 }
             }
 
@@ -1020,15 +1054,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         InputAreaFieldId = f.InputAreaFieldId.Value,
                         IdGencode = f.IdGencode.Value
                     })
-                    .ToDictionary(c => c.InputAreaFieldId, c => c.IdGencode);
+                    .ToDictionary(c => (long)c.InputAreaFieldId, c => c.IdGencode);
 
-                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.InputType, genCodeConfigs);
+                var result = await _customGenCodeHelperService.MapObjectCustomGenCode(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, genCodeConfigs);
 
                 if (!result)
                 {
                     trans.TryRollbackTransaction();
                     throw new BadRequestException(InputErrorCode.MapGenCodeConfigFail);
                 }
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}", fields.JsonSerialize());

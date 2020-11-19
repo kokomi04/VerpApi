@@ -46,88 +46,101 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<ProductionAssignmentModel> CreateProductionAssignment(ProductionAssignmentModel data)
-        {
-            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId);
-            if (productionSchedule == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
-            var productionStep = _manufacturingDBContext.ProductionStep.FirstOrDefault(s => s.ProductionStepId == data.ProductionStepId);
-            if (productionStep == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
-            if (_manufacturingDBContext.ProductionStep.Any(s => s.ParentId == productionStep.ProductionStepId))
-                throw new BadRequestException(GeneralCode.InvalidParams, "Không được phân công công việc cho quy trình con");
-            try
-            {
-
-                var productionAssignment = _mapper.Map<ProductionAssignmentEntity>(data);
-                _manufacturingDBContext.ProductionAssignment.Add(productionAssignment);
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Phân công sản xuất cho kế hoạch {productionSchedule.ProductionScheduleId}", data.JsonSerialize());
-
-                _manufacturingDBContext.SaveChanges();
-
-                return data;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CreateProductAssignment");
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteProductionAssignment(ProductionAssignmentModel data)
-        {
-            var productionAssignment = _manufacturingDBContext.ProductionAssignment
-                .FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId
-                && s.ProductionStepId == data.ProductionStepId
-                && s.DepartmentId == data.DepartmentId);
-            if (productionAssignment == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin phân công công việc không tồn tại");
-
-            try
-            {
-                _manufacturingDBContext.ProductionAssignment.Remove(productionAssignment);
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Xóa phân công sản xuất cho kế hoạch {productionAssignment.ProductionScheduleId}", data.JsonSerialize());
-
-                _manufacturingDBContext.SaveChanges();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "DeleteProductAssignment");
-                throw;
-            }
-        }
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId)
         {
-            var scheduleIds = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ScheduleTurnId == scheduleTurnId)
-                .Select(s => s.ProductionScheduleId)
-                .ToList();
-            return await _manufacturingDBContext.ProductionAssignment
-                .Where(a => scheduleIds.Contains(a.ProductionScheduleId))
-                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var dataSql = "SELECT * FROM vProductionAssignment v WHERE v.ScheduleTurnId = @ScheduleTurnId";
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(dataSql, sqlParams);
+            return resultData.ConvertData<ProductionAssignmentModel>();
         }
 
-        public async Task<ProductionAssignmentModel> UpdateProductionAssignment(ProductionAssignmentModel data)
+        public async Task<bool> UpdateProductionAssignment(long productionStepId, long scheduleTurnId, ProductionAssignmentModel[] data)
         {
-            var productionAssignment = _manufacturingDBContext.ProductionAssignment
-                .FirstOrDefault(s => s.ProductionScheduleId == data.ProductionScheduleId 
-                && s.ProductionStepId == data.ProductionStepId
-                && s.DepartmentId == data.DepartmentId);
-            if (productionAssignment == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin phân công công việc không tồn tại");
-            
+            // Validate
+            var step = _manufacturingDBContext.ProductionStep
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .Where(s => s.ProductionStepId == productionStepId)
+                .FirstOrDefault();
+
+            if (data.Any(a => a.ScheduleTurnId != scheduleTurnId || a.ProductionStepId != productionStepId))
+                new BadRequestException(GeneralCode.InvalidParams, "Thông tin lượt kế hoạch hoặc công đoạn sản xuất giữa các tổ không khớp");
+
+
+            if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
+
+            var productionSchedules = (from s in _manufacturingDBContext.ProductionSchedule
+                                       join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                                       where s.ScheduleTurnId == scheduleTurnId
+                                       select new
+                                       {
+                                           s.ProductionOrderDetailId,
+                                           s.ProductionScheduleQuantity,
+                                           od.ProductId
+                                       }).ToList();
+
+            var productionOrderDetailIds = productionSchedules.Select(s => s.ProductionOrderDetailId).ToList();
+
+            if (productionOrderDetailIds.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+
+            if (!_manufacturingDBContext.ProductionStepOrder.Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại trong quy trình sản xuất");
+            }
+
+            var quantityMap = productionSchedules.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(v => v.ProductionScheduleQuantity));
+
+            var linkDatas = step.ProductionStepLinkDataRole
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.ProductionStepLinkDataRoleType.Output)
+                .Select(r => new
+                {
+                    r.ProductionStepLinkData.ObjectTypeId,
+                    r.ProductionStepLinkData.ObjectId,
+                    Quantity = r.ProductionStepLinkData.Quantity * quantityMap[r.ProductionStepLinkData.ProductId]
+                })
+                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                .ToDictionary(g => g.Key, g => g.Sum(v => v.Quantity));
+
+            if (data.Any(d => d.AssignmentQuantity <= 0))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
+
+            foreach (var linkData in linkDatas)
+            {
+                decimal totalAssignmentQuantity = 0;
+
+                foreach (var assignment in data)
+                {
+                    var sourceData = linkDatas[new { ObjectTypeId = (int)assignment.ObjectTypeId, assignment.ObjectId }];
+                    totalAssignmentQuantity += assignment.AssignmentQuantity * linkData.Value / sourceData;
+                }
+
+                if (totalAssignmentQuantity > linkData.Value)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công lớn hơn số lượng trong kế hoạch sản xuất");
+            }
+
             try
             {
-                productionAssignment.AssignmentQuantity = data.AssignmentQuantity;
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionAssignment.ProductionStepId, $"Cập nhật phân công sản xuất cho kế hoạch {productionAssignment.ProductionScheduleId}", data.JsonSerialize());
+                var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
+                    .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
+                    .ToList();
+                if (oldProductionAssignments.Count > 0)
+                {
+                    _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
+                    _manufacturingDBContext.SaveChanges();
+                }
+                var newProductionAssignments = data.AsQueryable().ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider).ToList();
+                _manufacturingDBContext.ProductionAssignment.AddRange(newProductionAssignments);
 
                 _manufacturingDBContext.SaveChanges();
 
-                return data;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho nhóm kế hoạch {scheduleTurnId}", data.JsonSerialize());
+
+                return true;
             }
             catch (Exception ex)
             {

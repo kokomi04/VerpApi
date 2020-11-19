@@ -24,9 +24,16 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByProductId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
+        }
+
+        [HttpGet]
+        [Route("ScheduleTurn/{scheduleTurnId}")]
+        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn([FromRoute] long scheduleTurnId)
+        {
+            return await _productionProcessService.GetProductionProcessByScheduleTurn(scheduleTurnId);
         }
 
         [HttpGet]
@@ -50,6 +57,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.CreateProductionStep(req);
         }
 
+        [HttpPost]
+        [Route("productionStepGroup")]
+        public async Task<long> CreateProductionStepGroup([FromBody] ProductionStepGroupModel req)
+        {
+            return await _productionProcessService.CreateProductionStepGroup(req);
+        }
+
         [HttpDelete]
         [Route("productionStep/{productionStepId}")]
         public async Task<bool> DeleteProductionStepById([FromRoute] int productionStepId)
@@ -61,7 +75,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("productionOrder/{productionOrderId}")]
         public async Task<bool> CreateProductionProcess([FromRoute] int productionOrderId)
         {
-            return await _productionProcessService.CreateProductionProcess(productionOrderId);
+            return await _productionProcessService.IncludeProductionProcess(productionOrderId);
         }
 
         [HttpPut]

@@ -92,7 +92,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
-        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedule(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedules(long scheduleTurnId)
+        {
+            var sql = "SELECT * FROM vProductionSchedule v WHERE v.ScheduleTurnId = @ScheduleTurnId";
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters);
+            return resultData.ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleModel>(_mapper.ConfigurationProvider)
+                .ToList();
+        }
+
+        public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -101,7 +115,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var fromDateTime = fromDate.UnixToDateTime();
             var toDateTime = toDate.UnixToDateTime();
-            if(!fromDateTime.HasValue || !toDateTime.HasValue)
+            if (!fromDateTime.HasValue || !toDateTime.HasValue)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
 
             parammeters.Add(new SqlParameter("@FromDate", fromDateTime.Value));
@@ -162,7 +176,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return (lst, total, additionResult);
         }
-        
+
         public async Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data)
         {
             // Get planning order detail
@@ -220,15 +234,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.ScheduleTurnId = currentTurnId + 1;
                     var productionSchedule = _mapper.Map<ProductionSchedule>(item);
+                    productionSchedule.ProductionScheduleStatus = (int)EnumScheduleStatus.Waiting;
                     _manufacturingDBContext.ProductionSchedule.Add(productionSchedule);
                     dataMap.Add((item, productionSchedule));
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionOrderDetailId, $"Thêm mới lịch sản xuất cho LSX", data.JsonSerialize());
                 }
 
                 _manufacturingDBContext.SaveChanges();
-                foreach (var item in dataMap)
+                foreach (var (input, entity) in dataMap)
                 {
-                    item.Input.ProductionScheduleId = item.Entity.ProductionScheduleId;
+                    input.ProductionScheduleId = entity.ProductionScheduleId;
                 }
                 return data;
             }

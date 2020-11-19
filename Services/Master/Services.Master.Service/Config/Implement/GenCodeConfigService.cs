@@ -22,18 +22,19 @@ using Verp.Cache.RedisCache;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
-    public class CustomGenCodeService : ICustomGenCodeService
+    public class GenCodeConfigService : IGenCodeConfigService
     {
         private readonly MasterDBContext _masterDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
 
-        public CustomGenCodeService(MasterDBContext masterDbContext
+        public GenCodeConfigService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
-
+            , ICurrentContextService currentContextService
 
         )
         {
@@ -41,6 +42,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
@@ -116,49 +118,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             return info;
         }
 
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType objectTypeId, int objectId)
-        {
-            var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId))?.CustomGenCodeId;
-
-            CustomGenCode obj = null;
-
-            if (customGenCodeId.HasValue)
-            {
-                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.CustomGenCodeId == customGenCodeId);
-            }
-            else
-            {
-                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
-            }
-
-
-            if (obj == null)
-            {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {objectTypeId.GetEnumDescription()} {(objectId > 0 ? (int?)objectId : null)}");
-            }
-
-            return new CustomGenCodeOutputModel()
-            {
-                CustomGenCodeId = obj.CustomGenCodeId,
-                ParentId = obj.ParentId,
-                CustomGenCodeName = obj.CustomGenCodeName,
-                Description = obj.Description,
-                CodeLength = obj.CodeLength,
-                Prefix = obj.Prefix,
-                Suffix = obj.Suffix,
-                Seperator = obj.Seperator,
-                LastValue = obj.LastValue,
-                LastCode = obj.LastCode,
-                IsActived = obj.IsActived,
-                UpdatedUserId = obj.UpdatedUserId,
-                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
-                SortOrder = obj.SortOrder,
-                IsDefault = obj.IsDefault
-            };
-        }
-
-        public async Task<bool> Update(int customGenCodeId, int currentUserId, CustomGenCodeInputModel model)
+       
+        public async Task<bool> Update(int customGenCodeId, CustomGenCodeInputModel model)
         {
 
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
@@ -174,7 +135,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.Suffix = model.Suffix;
             obj.Seperator = model.Seperator;
             obj.Description = model.Description;
-            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedUserId = _currentContextService.UserId;
             obj.UpdatedTime = DateTime.UtcNow;
 
             obj.LastValue = model.LastValue;
@@ -225,81 +186,9 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterDbContext.SaveChangesAsync();
         }
 
-        public async Task<bool> MapObjectCustomGenCode(int currentUserId, ObjectCustomGenCodeMapping model)
-        {
+        
 
-            var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && !c.IsDeleted && c.CustomGenCodeId == model.CustomGenCodeId);
-            if (config == null)
-            {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-            }
-            var obj = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == model.ObjectTypeId && m.ObjectId == model.ObjectId);
-            if (obj == null)
-            {
-                _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
-                obj = model;
-            }
-            else
-            {
-                obj.CustomGenCodeId = model.CustomGenCodeId;
-                obj.UpdatedByUserId = currentUserId;
-            }
-            await _masterDbContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
-
-            return true;
-
-        }
-        public async Task<bool> UpdateMultiConfig(int objectTypeId, Dictionary<int, int> data)
-        {
-
-            var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
-
-            foreach (var mapConfig in data)
-            {
-                var config = await _masterDbContext.CustomGenCode
-                    .Where(c => c.IsActived)
-                    .Where(c => c.CustomGenCodeId == mapConfig.Value)
-                    .FirstOrDefaultAsync();
-                if (config == null)
-                {
-                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-                }
-                var curMapConfig = await _masterDbContext.ObjectCustomGenCodeMapping
-                    .FirstOrDefaultAsync(m => m.ObjectTypeId == objectTypeId && m.ObjectId == mapConfig.Key);
-                if (curMapConfig == null)
-                {
-                    curMapConfig = new ObjectCustomGenCodeMapping
-                    {
-                        ObjectTypeId = objectTypeId,
-                        ObjectId = mapConfig.Key,
-                        CustomGenCodeId = mapConfig.Value,
-                    };
-                    _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
-                }
-                else if (curMapConfig.CustomGenCodeId != mapConfig.Value)
-                {
-                    curMapConfig.CustomGenCodeId = mapConfig.Value;
-                }
-
-                if (!dic.ContainsKey(curMapConfig))
-                {
-                    dic.Add(curMapConfig, config);
-                }
-            }
-            await _masterDbContext.SaveChangesAsync();
-
-            foreach (var item in dic)
-            {
-                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
-            }
-
-            return true;
-
-        }
-
-        public async Task<bool> Delete(int currentUserId, int customGenCodeId)
+        public async Task<bool> Delete(int customGenCodeId)
         {
 
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
@@ -308,7 +197,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
             }
             obj.IsDeleted = true;
-            obj.UpdatedUserId = currentUserId;
+            obj.UpdatedUserId = _currentContextService.UserId;
             obj.UpdatedTime = DateTime.UtcNow;
 
 
@@ -322,7 +211,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<int> Create(int currentUserId, CustomGenCodeInputModel model)
+        public async Task<int> Create(CustomGenCodeInputModel model)
         {
 
             if (_masterDbContext.CustomGenCode.Any(q => q.CustomGenCodeName == model.CustomGenCodeName))
@@ -346,7 +235,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
 
                 IsDeleted = false,
-                UpdatedUserId = currentUserId,
+                UpdatedUserId = _currentContextService.UserId,
                 ResetDate = DateTime.UtcNow,
                 CreatedTime = DateTime.UtcNow,
                 UpdatedTime = DateTime.UtcNow
@@ -433,35 +322,10 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public PageData<ObjectType> GetAllObjectType()
-        {
-            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>()
-                .Where(m => m.Attributes != null && m.Attributes.Any(a => a.GetType() == typeof(GenCodeObjectAttribute)))
-                .Select(m => new ObjectType
-                {
-                    ObjectTypeId = m.Enum,
-                    ObjectTypeName = m.Description ?? m.Name.ToString()
-                }).ToList();
-
-
-            return (allData, allData.Count);
-        }
-
-        public async Task<bool> ConfirmCode(int objectTypeId, int objectId)
+        public async Task<bool> ConfirmCode(int customGenCodeId)
         {
 
-            var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId))?.CustomGenCodeId;
-
-            CustomGenCode config = null;
-
-            if (customGenCodeId.HasValue)
-            {
-                config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.CustomGenCodeId == customGenCodeId);
-            }
-            else
-            {
-                config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
-            }
+            var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId);
 
             if (config == null)
             {
@@ -477,20 +341,6 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<bool> DeleteMapObjectCustomGenCode(int objectCustomGenCodeMappingId)
-        {
-            var info = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectCustomGenCodeMappingId == objectCustomGenCodeMappingId);
-            if (info == null)
-            {
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            }
-            _masterDbContext.ObjectCustomGenCodeMapping.Remove(info);
-            await _masterDbContext.SaveChangesAsync();
 
-            var objectName = ((EnumObjectType)info.ObjectTypeId).GetEnumDescription();
-
-            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, objectCustomGenCodeMappingId, $"Loại bỏ cấu hình sinh mã khỏi đối tượng {objectName} {(info.ObjectId > 0 ? (int?)info.ObjectId : null)}", info.JsonSerialize());
-            return true;
-        }
     }
 }

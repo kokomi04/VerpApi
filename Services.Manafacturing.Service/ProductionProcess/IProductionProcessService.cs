@@ -9,18 +9,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
+        Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId);
         Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId);
         Task<ProductionStepInfo> GetProductionStepById(long productionStepId);
         Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req);
         Task<long> CreateProductionStep(ProductionStepInfo req);
         Task<bool> DeleteProductionStepById(long productionStepId);
         Task<bool> MergeProductionProcess(int productOrderId, IList<long> productionStepIds);
-        Task<bool> CreateProductionProcess(int productionOrderId);
+        Task<bool> IncludeProductionProcess(int productionOrderId);
         Task<bool> MergeProductionStep(int productionOrderId, IList<long> productionStepIds);
         //Task<bool> GenerateProductionStepMapping(int containerId, List<ProductionStepLinkModel> req);
 
         //ProductionStepRoleClient
         Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);
+
+        Task<long> CreateProductionStepGroup(ProductionStepGroupModel req);
     }
 }

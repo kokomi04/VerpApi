@@ -34,21 +34,21 @@ namespace VErpApi.Controllers.Stock.Products
         private readonly IFileService _fileService;
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IProductTypeService _productTypeService;
-        private readonly ICustomGenCodeService _customGenCodeService;
+        private readonly IGenCodeConfigService _genCodeConfigService;
 
         public ProductsController(
             IProductService productService
             , IFileService fileService
             , IObjectGenCodeService objectGenCodeService
             , IProductTypeService productTypeService
-            , ICustomGenCodeService customGenCodeService
+            , IGenCodeConfigService genCodeConfigService
             )
         {
             _productService = productService;
             _fileService = fileService;
             _objectGenCodeService = objectGenCodeService;
             _productTypeService = productTypeService;
-            _customGenCodeService = customGenCodeService;
+            _genCodeConfigService = genCodeConfigService;
         }
 
         /// <summary>
@@ -111,6 +111,18 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         /// <summary>
+        /// Thêm mới sản phẩm vào danh mục mặc định
+        /// </summary>
+        /// <param name="product"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("default")]
+        public async Task<int> AddProductDefault([FromBody] ProductDefaultModel product)
+        {
+            return await _productService.AddProductDefault(product);
+        }
+
+        /// <summary>
         /// Lấy thông tin sản phẩm
         /// </summary>
         /// <param name="productId"></param>
@@ -160,40 +172,19 @@ namespace VErpApi.Controllers.Stock.Products
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
         }
 
-        /// <summary>
-        /// Sinh mã sản phẩm
-        /// </summary>
-        /// <param name="productTypeId"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("GenerateProductCode")]
-        public async Task<string> GenerateProductCode([FromQuery] int? productTypeId)
-        {
-            var typeCode = "";
-            if (productTypeId.HasValue)
-            {
-                var typeInfo = await _productTypeService.GetInfoProductType(productTypeId.Value);
-
-                typeCode = typeInfo.IdentityCode;
-            }
-            var objectCode = await _objectGenCodeService.GenerateCode(EnumObjectType.Product);
-
-
-            return string.IsNullOrWhiteSpace(typeCode) ? objectCode : typeCode + objectCode;
-        }
-
-
         private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
         {
             // var lastValue = 0;
             var isGenCode = false;
+            int customGenCodeId = 0;
             if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
             {
                 var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
 
-                var productTypeConfig = await _customGenCodeService.GetCurrentConfig(EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
+                var productTypeConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.Product, EnumObjectType.ProductType, product.ProductTypeId.Value);
+                customGenCodeId = productTypeConfig.CustomGenCodeId;
 
-                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.IdentityCode).ConfigureAwait(true);
+                var code = await _genCodeConfigService.GenerateCode(productTypeConfig.CustomGenCodeId, productTypeConfig.LastValue, productTypeInfo.IdentityCode).ConfigureAwait(true);
 
                 product.ProductCode = code.CustomCode;
                 // lastValue = code.Data.LastValue;
@@ -214,7 +205,7 @@ namespace VErpApi.Controllers.Stock.Products
 
             if (isGenCode)
             {
-                await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
+                await _genCodeConfigService.ConfirmCode(customGenCodeId);
             }
 
             return r;

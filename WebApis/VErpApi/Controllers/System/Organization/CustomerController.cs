@@ -17,6 +17,7 @@ using System.Linq;
 using VErp.Commons.GlobalObject;
 using Newtonsoft.Json;
 using VErp.Commons.Library.Model;
+using VErp.Services.Master.Model.Config;
 
 namespace VErpApi.Controllers.System
 {
@@ -26,17 +27,20 @@ namespace VErpApi.Controllers.System
     {
         private readonly ICustomerService _customerService;
         private readonly IObjectGenCodeService _objectGenCodeService;
+        private readonly IGenCodeConfigService _genCodeConfigService;
         private readonly IFileService _fileService;
         private readonly IFileProcessDataService _fileProcessDataService;
 
         public CustomerController(ICustomerService customerService
             , IObjectGenCodeService objectGenCodeService
+            , IGenCodeConfigService genCodeConfigService
             , IFileService fileService
             , IFileProcessDataService fileProcessDataService
             )
         {
             _customerService = customerService;
             _objectGenCodeService = objectGenCodeService;
+            _genCodeConfigService = genCodeConfigService;
             _fileService = fileService;
             _fileProcessDataService = fileProcessDataService;
         }
@@ -127,9 +131,10 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("GenerateCustomerCode")]
-        public async Task<string> GenerateCustomerCode()
+        public async Task<CustomCodeModel> GenerateCustomerCode()
         {
-            return await _objectGenCodeService.GenerateCode(EnumObjectType.Customer);
+            var currentConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.Customer, EnumObjectType.Customer, 0);
+            return await _genCodeConfigService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
         }
 
         /// <summary>

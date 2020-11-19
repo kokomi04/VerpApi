@@ -6,13 +6,14 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
     public class OutsourceOrderModel: IMapFrom<OutsourceOrder>
     {
-        public int OutsoureOrderId { get; set; }
-        public int RequestObjectCode { get; set; }
+        public long OutsoureOrderId { get; set; }
+        public OutsourceOrderType OutsourceTypeId { get; set; }
         public string OutsoureOrderCode { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
@@ -27,29 +28,34 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal FreigthCost { get; set; }
         public decimal OtherCost { get; set; }
         public long? CreateDateOrder { get; set; }
+        public long DateRequiredComplete { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceOrderModel>()
                 .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.GetUnix()))
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
                 .ReverseMap()
-                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.Value.UnixToDateTime()));
+                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.Value.UnixToDateTime()))
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
         }
 
     }
 
     public class OutsourceOrderInfo: OutsourceOrderModel, IMapFrom<OutsourceOrder>
     {
-        public IList<OutsourceOrderDetailModel> OutsourceOrderDetails { get; set; }
+        public IList<OutsourceOrderDetailModel> OutsourceOrderDetail { get; set; }
 
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceOrderInfo>()
                 .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.GetUnix()))
-                .ForMember(m => m.OutsourceOrderDetails, v => v.MapFrom(m => m.OutsourceOrderDetail))
+                .ForMember(m => m.OutsourceOrderDetail, v => v.MapFrom(m => m.OutsourceOrderDetail))
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
                 .ReverseMap()
                 .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.Value.UnixToDateTime()))
-                .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore());
+                .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
+                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
         }
     }
 

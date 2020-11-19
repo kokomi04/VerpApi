@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
@@ -20,6 +21,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? InputTypeGroupId { get; set; }
 
         public IList<InputActionSimpleModel> ActionObjects { get; set; }
+        public IList<InputAreaFieldSimpleModel> AreaFields { get; set; }
     }
 
     public class InputActionSimpleModel
@@ -30,5 +32,15 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
         public string Title { get; set; }
         public int SortOrder { get; set; }
+    }
+
+    public class InputAreaFieldSimpleModel
+    {
+        public int InputAreaId { get; set; }
+        public string InputAreaTitle { get; set; }
+        public int InputAreaFieldId { get; set; }
+        public string InputAreaFieldTitle { get; set; }
+        public int InputFieldId { get; set; }
+        public EnumFormType FormTypeId { get; set; }
     }
 }

@@ -7,7 +7,9 @@ namespace VErp.Commons.Enums.Manafacturing
 {
     public enum EnumProductionStatus : int
     {
-        [Description("Chưa sản xuât")]
+        [Description("Đang thiết lập")]
+        NotReady = 0,
+        [Description("Chờ sản xuât")]
         Waiting = 1,
         [Description("Đang sản xuất")]
         Processing = 2,

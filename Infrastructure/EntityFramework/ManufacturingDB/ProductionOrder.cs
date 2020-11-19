@@ -10,7 +10,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             ProductionOrderDetail = new HashSet<ProductionOrderDetail>();
         }
 
-        public int ProductionOrderId { get; set; }
+        public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public DateTime ProductionDate { get; set; }
         public DateTime? FinishDate { get; set; }

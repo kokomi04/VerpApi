@@ -17,6 +17,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using Verp.Cache.RedisCache;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -26,307 +27,496 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly ICustomGenCodeService _customGenCodeService;
+        private readonly IGenCodeConfigService _genCodeConfigService;
         private readonly ICurrentContextService _currentContextService;
+
+        private readonly IProductHelperService _productHelperService;
+        private readonly IStockHelperService _stockHelperService;
+        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
-            , ICustomGenCodeService customGenCodeService
+            , IGenCodeConfigService genCodeConfigService
             , ICurrentContextService currentContextService
+            , IProductHelperService productHelperService
+            , IStockHelperService stockHelperService
+            , IInputTypeHelperService inputTypeHelperService
+            , IVoucherTypeHelperService voucherTypeHelperService
         )
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
-            _customGenCodeService = customGenCodeService;
+            _genCodeConfigService = genCodeConfigService;
             _currentContextService = currentContextService;
+            _productHelperService = productHelperService;
+            _stockHelperService = stockHelperService;
+            _inputTypeHelperService = inputTypeHelperService;
+            _voucherTypeHelperService = voucherTypeHelperService;
         }
 
-        //public async Task<PageData<ObjectGenCodeOutputModel>> GetList(EnumObjectType objectType = 0, string keyword = "", int page = 1, int size = 10)
+
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId)
+        {
+            var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.TargetObjectTypeId == (int)targetObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == configObjectId))?.CustomGenCodeId;
+
+            CustomGenCode obj = null;
+
+            if (customGenCodeId.HasValue)
+            {
+                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.CustomGenCodeId == customGenCodeId);
+            }
+            else
+            {
+                obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.IsActived && c.IsDefault);
+            }
+
+
+            if (obj == null)
+            {
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {targetObjectTypeId.GetEnumDescription()} {(configObjectId > 0 ? (long?)configObjectId : null)}");
+            }
+
+            return new CustomGenCodeOutputModel()
+            {
+                CustomGenCodeId = obj.CustomGenCodeId,
+                ParentId = obj.ParentId,
+                CustomGenCodeName = obj.CustomGenCodeName,
+                Description = obj.Description,
+                CodeLength = obj.CodeLength,
+                Prefix = obj.Prefix,
+                Suffix = obj.Suffix,
+                Seperator = obj.Seperator,
+                LastValue = obj.LastValue,
+                LastCode = obj.LastCode,
+                IsActived = obj.IsActived,
+                UpdatedUserId = obj.UpdatedUserId,
+                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
+                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
+                SortOrder = obj.SortOrder,
+                IsDefault = obj.IsDefault
+            };
+        }
+
+        //public PageData<ObjectType> GetAllObjectType()
         //{
-
-        //    var allObjectType = EnumExtensions.GetEnumMembers<EnumObjectType>().Select(e => (int)e.Enum);
-
-        //    _masterDbContext.ObjectCustomGenCodeMapping.AsNoTracking().Where(x => allObjectType.Contains(x.ObjectTypeId));
-
-
-
-        //    var query = from ogc in _masterDbContext.ObjectGenCode
-        //                select ogc;
-
-        //    if (objectType > 0 && Enum.IsDefined(typeof(EnumObjectType), objectType))
-        //    {
-        //        query = query.Where(q => q.ObjectTypeId == (int)objectType);
-        //    }
-
-        //    if (!string.IsNullOrWhiteSpace(keyword))
-        //    {
-        //        query = from q in query
-        //                where q.ObjectTypeName.Contains(keyword) || q.Prefix.Contains(keyword) || q.Suffix.Contains(keyword) || q.Seperator.Contains(keyword)
-        //                select q;
-        //    }
-
-        //    var total = await query.CountAsync();
-        //    var objList = await query.Skip((page - 1) * size).Take(size).ToListAsync();
-
-        //    var pagedData = new List<ObjectGenCodeOutputModel>();
-        //    foreach (var item in objList)
-        //    {
-        //        var info = new ObjectGenCodeOutputModel()
+        //    var allData = EnumExtensions.GetEnumMembers<EnumObjectType>()
+        //        .Where(m => m.Attributes != null && m.Attributes.Any(a => a.GetType() == typeof(GenCodeObjectAttribute)))
+        //        .Select(m => new ObjectType
         //        {
-        //            ObjectGenCodeId = item.ObjectGenCodeId,
-        //            ObjectTypeId = item.ObjectTypeId,
-        //            ObjectTypeName = item.ObjectTypeName,
-        //            CodeLength = item.CodeLength,
-        //            Prefix = item.Prefix,
-        //            Suffix = item.Suffix,
-        //            Seperator = item.Seperator,
-        //            LastCode = item.LastCode,
-        //            IsActived = item.IsActived,
-        //            UpdatedUserId = item.UpdatedUserId,
-        //            CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
-        //            UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
-        //        };
-        //        pagedData.Add(info);
-        //    }
-        //    return (pagedData, total);
+        //            ObjectTypeId = m.Enum,
+        //            ObjectTypeName = m.Description ?? m.Name.ToString()
+        //        }).ToList();
+
+
+        //    return (allData, allData.Count);
         //}
 
-        //public async Task<ObjectGenCodeOutputModel> GetInfo(int objectGenCodeId)
-        //{
-
-        //    var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-        //    if (obj == null)
-        //    {
-        //        throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
-        //    }
-        //    var info = new ObjectGenCodeOutputModel()
-        //    {
-        //        ObjectGenCodeId = obj.ObjectGenCodeId,
-        //        ObjectTypeId = obj.ObjectTypeId,
-        //        ObjectTypeName = obj.ObjectTypeName,
-        //        CodeLength = obj.CodeLength,
-        //        Prefix = obj.Prefix,
-        //        Suffix = obj.Suffix,
-        //        Seperator = obj.Seperator,
-        //        LastCode = obj.LastCode,
-        //        IsActived = obj.IsActived,
-        //        UpdatedUserId = obj.UpdatedUserId,
-        //        CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-        //        UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0
-        //    };
-        //    return info;
-
-        //}
-
-        //public async Task<bool> Update(int objectGenCodeId, int currentUserId, ObjectGenCodeInputModel model)
-        //{
-
-        //    var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-
-        //    if (obj == null)
-        //    {
-        //        throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
-        //    }
-
-        //    obj.CodeLength = model.CodeLength;
-        //    obj.Prefix = model.Prefix;
-        //    obj.Suffix = model.Suffix;
-        //    obj.Seperator = model.Seperator;
-        //    obj.UpdatedUserId = currentUserId;
-        //    obj.UpdatedTime = DateTime.Now;
-
-        //    await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Cập nhật cấu hình gen code cho {obj.ObjectTypeName} ", model.JsonSerialize());
-
-        //    await _masterDbContext.SaveChangesAsync();
-        //    return true;
-
-        //}
-
-
-        //public async Task<bool> Delete(int currentUserId, int objectGenCodeId)
-        //{
-
-        //    var obj = await _masterDbContext.ObjectGenCode.FirstOrDefaultAsync(p => p.ObjectGenCodeId == objectGenCodeId);
-        //    if (obj == null)
-        //    {
-        //        throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
-        //    }
-        //    obj.IsDeleted = true;
-        //    obj.UpdatedUserId = currentUserId;
-        //    obj.UpdatedTime = DateTime.Now;
-
-        //    await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, obj.ObjectGenCodeId, $"Xoá cấu hình gen code cho {obj.ObjectTypeName} ", obj.JsonSerialize());
-
-        //    await _masterDbContext.SaveChangesAsync();
-
-        //    return true;
-        //}
-
-        //public async Task<int> Create(EnumObjectType objectType, int currentUserId, ObjectGenCodeInputModel model)
-        //{
-        //    if (await _masterDbContext.ObjectGenCode.AnyAsync(q => q.ObjectTypeId == (int)objectType))
-        //    {
-        //        throw new BadRequestException(ObjectGenCodeErrorCode.ConfigAlreadyExisted);
-        //    }
-        //    // Lấy thông tin tên loại đối tượng tương ứng
-        //    var objectTypes = GetAllObjectType().List;
-        //    var objType = objectTypes.FirstOrDefault(q => q.ObjectTypeId == objectType);
-        //    if (objType == null)
-        //    {
-        //        throw new BadRequestException(GeneralCode.InvalidParams);
-        //    }
-        //    var entity = new ObjectGenCode()
-        //    {
-        //        ObjectTypeId = (int)objectType,
-        //        ObjectTypeName = objType.ObjectTypeName,
-        //        CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
-        //        Prefix = model.Prefix ?? string.Empty,
-        //        Suffix = model.Suffix ?? string.Empty,
-        //        Seperator = model.Seperator ?? string.Empty,
-        //        DateFormat = string.Empty,
-        //        LastValue = 0,
-        //        LastCode = string.Empty,
-        //        IsActived = true,
-        //        IsDeleted = false,
-        //        UpdatedUserId = currentUserId,
-        //        ResetDate = DateTime.Now,
-        //        CreatedTime = DateTime.Now,
-        //        UpdatedTime = DateTime.Now
-        //    };
-        //    _masterDbContext.ObjectGenCode.Add(entity);
-        //    await _activityLogService.CreateLog(EnumObjectType.GenCodeConfig, entity.ObjectGenCodeId, $"Thêm mới cấu hình gen code cho {entity.ObjectTypeName} ", model.JsonSerialize());
-
-        //    await _masterDbContext.SaveChangesAsync();
-
-        //    return entity.ObjectGenCodeId;
-
-        //}
-
-        public async Task<string> GenerateCode(EnumObjectType objectType)
-        {
-            /*using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
-            {
-                using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
-                {
-                    try
-                    {
-                        var config = _masterDbContext.ObjectGenCode.FirstOrDefault(q => q.ObjectTypeId == (int)objectType && q.IsActived && !q.IsDeleted);
-                        if (config == null)
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(ObjectGenCodeErrorCode.ConfigNotFound);
-                        }
-                        string newCode = string.Empty;
-                        var newId = 0;
-                        var maxId = (int)Math.Pow(10, config.CodeLength);
-                        var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
-
-                        if (config.LastValue < 1)
-                        {
-                            newId = 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-                        else
-                        {
-                            newId = config.LastValue + 1;
-                            var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                            newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
-                        }
-
-                        if (!(newId < maxId))
-                        {
-                            config.CodeLength += 1;
-                            config.ResetDate = DateTime.Now;
-                        }
-                        config.LastValue = newId;
-                        config.LastCode = newCode;
-
-                        _masterDbContext.SaveChanges();
-                        trans.Commit();
-
-                        return newCode;
-
-                    }
-                    catch (Exception)
-                    {
-                        trans.Rollback();
-                        throw;
-                    }
-                }
-            }*/
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeKey(objectType)))
-            {
-                var currentConfig = await _customGenCodeService.GetCurrentConfig(objectType, 0);
-                var customCode = await _customGenCodeService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
-
-                await _customGenCodeService.ConfirmCode((int)objectType, 0);
-
-                return customCode.CustomCode;
-            }
-        }
-
-        public PageData<ObjectType> GetAllObjectType()
-        {
-            var allData = EnumExtensions.GetEnumMembers<EnumObjectType>()
-                .Where(m => m.Attributes != null && m.Attributes.Any(a => a.GetType() == typeof(GenCodeObjectAttribute)))
-                .Select(m => new ObjectType
-                {
-                    ObjectTypeId = m.Enum,
-                    ObjectTypeName = m.Description ?? m.Name.ToString()
-                }).ToList();
-
-
-            return (allData, allData.Count);
-        }
-
-        public async Task<PageData<ObjectGenCodeModel>> GetList(string keyword, int page, int size)
-        {
-            var allObjectType = GetAllObjectType().List;
-
-            var query = _masterDbContext.ObjectCustomGenCodeMapping
-                .AsNoTracking()
-                .Where(x => x.ObjectId == 0)
-                .ToList()
-                .Select(x => new ObjectGenCodeModel
-                {
-                    ObjectCustomGenCodeMappingId = x.ObjectCustomGenCodeMappingId,
-                    ObjectTypeId = x.ObjectTypeId,
-                    CustomGenCodeId = x.CustomGenCodeId,
-                    ObjectTypeName = allObjectType.FirstOrDefault(e => (int)e.ObjectTypeId == x.ObjectTypeId)?.ObjectTypeName
-                }).ToList();
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                query = query.Where(x => x.ObjectTypeName.Contains(keyword)).ToList();
-            }
-
-            var total = query.Count();
-            var objList = query.Skip((page - 1) * size).Take(size).ToList();
-
-            return (query, total);
-        }
 
         public async Task<bool> MapObjectGenCode(ObjectGenCodeMapping model)
         {
-            return await _customGenCodeService.MapObjectCustomGenCode(_currentContextService.UserId, new ObjectCustomGenCodeMapping
+            return await MapObjectCustomGenCode(new ObjectCustomGenCodeMapping
             {
                 CustomGenCodeId = model.CustomGenCodeId,
                 ObjectCustomGenCodeMappingId = model.ObjectCustomGenCodeMappingId,
-                ObjectId = 0,//default
-                ObjectTypeId = model.ObjectTypeId,
+                TargetObjectTypeId = (int)model.TargetObjectTypeId,
+                ConfigObjectTypeId = (int)model.ConfigObjectTypeId,
+                ObjectId = (int)model.ConfigObjectId,
+                ConfigObjectId = model.ConfigObjectId,//default
+                ObjectTypeId = (int)model.ObjectTypeId,
                 UpdatedByUserId = _currentContextService.UserId
             });
 
         }
 
+        public async Task<bool> MapObjectCustomGenCode(ObjectCustomGenCodeMapping model)
+        {
+
+            var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(c => c.CustomGenCodeId == model.CustomGenCodeId);
+            if (config == null)
+            {
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+            }
+            var obj = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.TargetObjectTypeId == model.TargetObjectTypeId && m.ConfigObjectTypeId == model.ConfigObjectTypeId && m.ConfigObjectId == model.ConfigObjectId);
+            if (obj == null)
+            {
+                _masterDbContext.ObjectCustomGenCodeMapping.Add(model);
+                obj = model;
+            }
+            else
+            {
+                obj.CustomGenCodeId = model.CustomGenCodeId;
+                obj.UpdatedByUserId = _currentContextService.UserId;
+            }
+            await _masterDbContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
+
+            return true;
+
+        }
+        public async Task<bool> UpdateMultiConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes)
+        {
+
+            var dic = new Dictionary<ObjectCustomGenCodeMapping, CustomGenCode>();
+
+            foreach (var mapConfig in objectCustomGenCodes)
+            {
+                var config = await _masterDbContext.CustomGenCode
+                    .Where(c => c.IsActived)
+                    .Where(c => c.CustomGenCodeId == mapConfig.Value)
+                    .FirstOrDefaultAsync();
+                if (config == null)
+                {
+                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+                }
+                var curMapConfig = await _masterDbContext.ObjectCustomGenCodeMapping
+                    .FirstOrDefaultAsync(m => m.TargetObjectTypeId == (int)targetObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == mapConfig.Key);
+
+                if (curMapConfig == null)
+                {
+                    curMapConfig = new ObjectCustomGenCodeMapping
+                    {                       
+                        CustomGenCodeId = mapConfig.Value,                        
+                        TargetObjectTypeId = (int)targetObjectTypeId,
+                        ConfigObjectTypeId = (int)configObjectTypeId,
+                        ObjectId = (int)mapConfig.Key,
+                        ConfigObjectId = mapConfig.Key,
+                        ObjectTypeId = (int)targetObjectTypeId,
+                        UpdatedByUserId = _currentContextService.UserId
+                    };
+                    _masterDbContext.ObjectCustomGenCodeMapping.Add(curMapConfig);
+                }
+                else if (curMapConfig.CustomGenCodeId != mapConfig.Value)
+                {
+                    curMapConfig.CustomGenCodeId = mapConfig.Value;
+                }
+
+                if (!dic.ContainsKey(curMapConfig))
+                {
+                    dic.Add(curMapConfig, config);
+                }
+            }
+            await _masterDbContext.SaveChangesAsync();
+
+            foreach (var item in dic)
+            {
+                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
+            }
+
+            return true;
+
+        }
+
         public async Task<bool> DeleteMapObjectGenCode(int objectCustomGenCodeMappingId)
         {
-            return await _customGenCodeService.DeleteMapObjectCustomGenCode(objectCustomGenCodeMappingId);
+
+            var info = await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.ObjectCustomGenCodeMappingId == objectCustomGenCodeMappingId);
+            if (info == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+            _masterDbContext.ObjectCustomGenCodeMapping.Remove(info);
+            await _masterDbContext.SaveChangesAsync();
+
+            var objectName = ((EnumObjectType)info.ObjectTypeId).GetEnumDescription();
+
+            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, objectCustomGenCodeMappingId, $"Loại bỏ cấu hình sinh mã khỏi đối tượng {objectName} {(info.ConfigObjectId > 0 ? (long?)info.ConfigObjectId : null)}", info.JsonSerialize());
+            return true;
+
         }
+
+        private IList<ObjectCustomGenCodeMapping> _objectCustomGenCodeMappings;
+        private IList<CustomGenCode> _customGenCodes;
+
+        public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(string keyword, int page, int size)
+        {
+            keyword = keyword?.ToLower();
+            _objectCustomGenCodeMappings = await _masterDbContext.ObjectCustomGenCodeMapping.ToListAsync();
+            _customGenCodes = await _masterDbContext.CustomGenCode.ToListAsync();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+
+            var organizationTask = OrganizationMappingTypeModels();
+
+            var stockTask = StockMappingTypeModels();
+
+            var purchasingOrderTask = PurchasingOrderMappingTypeModels();
+
+            var vourcherTask = VourcherMappingTypeModels();
+
+            var inputTask = InputMappingTypeModels();
+
+            var manufactureTask = ManufactureMappingTypeModels();
+
+            result.AddRange(await organizationTask);
+            result.AddRange(await stockTask);
+            result.AddRange(await purchasingOrderTask);
+            result.AddRange(await vourcherTask);
+            result.AddRange(await inputTask);
+            result.AddRange(await manufactureTask);
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                result = result.Where(c =>
+                 c.ObjectTypeName?.Contains(keyword) == true
+                 || c.TargetObjectName?.Contains(keyword) == true
+                 || c.TargetObjectTypeName?.Contains(keyword) == true
+                 || c.FieldName?.Contains(keyword) == true
+                 || c.CustomGenCodeName?.Contains(keyword) == true
+                ).ToList();
+            }
+            var total = result.Count;
+
+            return (result.Skip((page - 1) * size).Take(size).ToList(), total);
+        }
+
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> StockMappingTypeModels()
+        {
+            var productTypesTask = _productHelperService.GetAllProductType();
+            var stocksTask = _stockHelperService.GetAllStock();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+            foreach (var stock in await stocksTask)
+            {
+                result.Add(
+                    GetObjectGenCodeMappingTypeModel(
+                    moduleTypeId: EnumModuleType.Stock,
+                    targeObjectTypeId: EnumObjectType.InventoryInput,
+                    configObjectTypeId: EnumObjectType.Stock,
+                    configObjectId: stock.StockId,
+                    targetObjectName: stock.StockName,
+                    fieldName: "Mã phiếu nhập")
+                );
+
+            }
+
+            foreach (var stock in await stocksTask)
+            {
+
+                result.Add(
+                    GetObjectGenCodeMappingTypeModel(
+                    moduleTypeId: EnumModuleType.Stock,
+                    targeObjectTypeId: EnumObjectType.InventoryOutput,
+                    configObjectTypeId: EnumObjectType.Stock,
+                    configObjectId: stock.StockId,
+                    targetObjectName: stock.StockName,
+                    fieldName: "Mã phiếu xuất")
+                );
+
+            }
+
+            result.Add(
+                   GetObjectGenCodeMappingTypeModel(
+                   moduleTypeId: EnumModuleType.Stock,
+                   targeObjectTypeId: EnumObjectType.Location,
+                   fieldName: "Mã vị trí")
+               );
+
+            result.Add(
+                   GetObjectGenCodeMappingTypeModel(
+                   moduleTypeId: EnumModuleType.Stock,
+                   targeObjectTypeId: EnumObjectType.Package,
+                   fieldName: "Mã kiện")
+               );
+
+
+            foreach (var inputType in await productTypesTask)
+            {
+                result.Add(
+                    GetObjectGenCodeMappingTypeModel(
+                    moduleTypeId: EnumModuleType.Stock,
+                    targeObjectTypeId: EnumObjectType.Product,
+                    configObjectTypeId: EnumObjectType.ProductType,
+                    configObjectId: inputType.ProductTypeId,
+                    targetObjectName: inputType.ProductTypeName,
+                    fieldName: "Mã sản phẩm")
+                );
+            }
+
+            return result;
+        }
+
+
+        private Task<IList<ObjectGenCodeMappingTypeModel>> OrganizationMappingTypeModels()
+        {
+
+            IList<ObjectGenCodeMappingTypeModel> result = new List<ObjectGenCodeMappingTypeModel>();
+
+            result.Add(
+                 GetObjectGenCodeMappingTypeModel(
+                 moduleTypeId: EnumModuleType.Organization,
+                 targeObjectTypeId: EnumObjectType.Customer,
+                 fieldName: "Mã đối tác")
+             );
+
+
+            result.Add(
+                 GetObjectGenCodeMappingTypeModel(
+                 moduleTypeId: EnumModuleType.Organization,
+                 targeObjectTypeId: EnumObjectType.UserAndEmployee,
+                 fieldName: "Mã nhân viên")
+             );
+
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Organization,
+                targeObjectTypeId: EnumObjectType.Department,
+                fieldName: "Mã bộ phận")
+            );
+
+            return Task.FromResult(result);
+        }
+
+        private Task<IList<ObjectGenCodeMappingTypeModel>> PurchasingOrderMappingTypeModels()
+        {
+
+            IList<ObjectGenCodeMappingTypeModel> result = new List<ObjectGenCodeMappingTypeModel>();
+
+
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.PurchaseOrder,
+                targeObjectTypeId: EnumObjectType.PurchasingRequest,
+                fieldName: "Mã YCVTHH")
+            );
+
+            result.Add(
+              GetObjectGenCodeMappingTypeModel(
+              moduleTypeId: EnumModuleType.PurchaseOrder,
+              targeObjectTypeId: EnumObjectType.PurchasingSuggest,
+              fieldName: "Mã đề nghị VTHH")
+            );
+
+            result.Add(
+             GetObjectGenCodeMappingTypeModel(
+             moduleTypeId: EnumModuleType.PurchaseOrder,
+             targeObjectTypeId: EnumObjectType.PoAssignment,
+             fieldName: "Mã phân công mua hàng")
+           );
+
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.PurchaseOrder,
+                targeObjectTypeId: EnumObjectType.PurchaseOrder,
+                fieldName: "Mã đơn đặt hàng")
+            );
+
+            return Task.FromResult(result);
+        }
+
+
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> VourcherMappingTypeModels()
+        {
+            var voucherTypes = _voucherTypeHelperService.GetVoucherTypeSimpleList();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+            foreach (var voucherType in await voucherTypes)
+            {
+                foreach (var areaField in voucherType.AreaFields.Where(f => f.FormTypeId == EnumFormType.Generate))
+                {
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.PurchaseOrder,
+                        targeObjectTypeId: EnumObjectType.VoucherTypeRow,
+                        configObjectTypeId: EnumObjectType.VoucherAreaField,
+                        configObjectId: areaField.VoucherAreaFieldId,
+                        targetObjectName: voucherType.Title,
+                        fieldName: areaField.VoucherAreaFieldTitle)
+                    );
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> InputMappingTypeModels()
+        {
+            var inputTypes = _inputTypeHelperService.GetInputTypeSimpleList();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+            foreach (var inputType in await inputTypes)
+            {
+                foreach (var areaField in inputType.AreaFields.Where(f => f.FormTypeId == EnumFormType.Generate))
+                {
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.Accountant,
+                        targeObjectTypeId: EnumObjectType.InputTypeRow,
+                        configObjectTypeId: EnumObjectType.InputAreaField,
+                        configObjectId: areaField.InputAreaFieldId,
+                        targetObjectName: inputType.Title,
+                        fieldName: areaField.InputAreaFieldTitle)
+                    );
+                }
+            }
+
+            return result;
+        }
+
+        private Task<IList<ObjectGenCodeMappingTypeModel>> ManufactureMappingTypeModels()
+        {
+            IList<ObjectGenCodeMappingTypeModel> result = new List<ObjectGenCodeMappingTypeModel>();
+
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                targeObjectTypeId: EnumObjectType.ProductionOrder,
+                fieldName: "Mã LSX")
+            );
+
+            result.Add(
+             GetObjectGenCodeMappingTypeModel(
+             moduleTypeId: EnumModuleType.Manufacturing,
+             targeObjectTypeId: EnumObjectType.RequestOutsource,
+             fieldName: "Mã yêu cầu gia công")
+         );
+
+            result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Manufacturing,
+               targeObjectTypeId: EnumObjectType.OutsourceOrder,
+               fieldName: "Mã đơn hàng gia công")
+           );
+
+            return Task.FromResult(result);
+        }
+
+
+        private ObjectGenCodeMappingTypeModel GetObjectGenCodeMappingTypeModel(
+            EnumModuleType moduleTypeId,
+            EnumObjectType targeObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0,
+            string targetObjectName = "", string fieldName = "")
+        {
+            configObjectTypeId = configObjectTypeId ?? targeObjectTypeId;
+
+            var mapping = _objectCustomGenCodeMappings.FirstOrDefault(m => m.TargetObjectTypeId == (int)targeObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == configObjectId);
+            var config = _customGenCodes.FirstOrDefault(c => c.CustomGenCodeId == mapping?.CustomGenCodeId);
+
+            return new ObjectGenCodeMappingTypeModel()
+            {
+                ObjectCustomGenCodeMappingId = mapping?.ObjectCustomGenCodeMappingId,
+                ModuleTypeId = moduleTypeId,
+                ModuleTypeName = moduleTypeId.GetEnumDescription(),
+                TargetObjectTypeId = targeObjectTypeId,
+                TargetObjectTypeName = targeObjectTypeId.GetEnumDescription(),
+
+                ConfigObjectTypeId = configObjectTypeId.Value,
+                ObjectTypeId = configObjectTypeId.Value,
+                ObjectTypeName = configObjectTypeId.Value.GetEnumDescription(),
+
+                ConfigObjectId = configObjectId,
+                TargetObjectName = targetObjectName,
+
+                FieldName = fieldName,
+                CustomGenCodeId = mapping?.CustomGenCodeId,
+                CustomGenCodeName = config?.CustomGenCodeName
+            };
+        }
+
     }
 }

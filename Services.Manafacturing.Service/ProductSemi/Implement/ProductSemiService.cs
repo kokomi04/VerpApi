@@ -16,7 +16,7 @@ using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 {
-    public class ProductSemiService: IProductSemiService
+    public class ProductSemiService : IProductSemiService
     {
         private readonly ManufacturingDBContext _manuDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -37,7 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
         public async Task<long> CreateProductSemi(ProductSemiModel model)
         {
             var data = _mapper.Map<ProductSemiEntity>(model);
-            await _manuDBContext.ProductSemi.AddAsync(_mapper.Map<ProductSemiEntity>(model));
+            await _manuDBContext.ProductSemi.AddAsync(data);
             await _manuDBContext.SaveChangesAsync();
             return data.ProductSemiId;
         }
@@ -52,12 +52,25 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             return true;
         }
 
-        public async Task<IList<ProductSemiModel>> GetListProductSemis(int productId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemi(long containerId, int containerTypeId)
         {
-            var ls = await _manuDBContext.ProductSemi.Where(x => x.ProductId == productId)
+            var ls = await _manuDBContext.ProductSemi.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId)
                 .ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
             return ls;
+        }
+
+        public async Task<ProductSemiModel> GetListProductSemiById(long productSemiId)
+        {
+            var data = await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
+            if (data == null)
+                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+            return data;
+        }
+
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListId(List<long> lsId)
+        {
+            return await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsId.Contains(p.ProductSemiId)).ToListAsync();
         }
 
         public async Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model)

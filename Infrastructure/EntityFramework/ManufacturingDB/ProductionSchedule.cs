@@ -5,17 +5,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionSchedule
     {
-        public ProductionSchedule()
-        {
-            ProductionAssignment = new HashSet<ProductionAssignment>();
-        }
-
-        public int ProductionScheduleId { get; set; }
+        public long ProductionScheduleId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public int ProductionScheduleStatus { get; set; }
-        public int ProductionOrderDetailId { get; set; }
-        public int ProductionScheduleQuantity { get; set; }
+        public long ProductionOrderDetailId { get; set; }
+        public decimal ProductionScheduleQuantity { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -26,6 +21,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ScheduleTurnId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
-        public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
     }
 }

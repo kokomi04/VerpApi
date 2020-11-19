@@ -27,31 +27,17 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("scheduleTurnId")]
-        public async Task<IList<ProductionAssignmentModel>> GetProductionSchedules([FromRoute]long scheduleTurnId)
+        [Route("{scheduleTurnId}")]
+        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute]long scheduleTurnId)
         {
             return await _productionAssignmentService.GetProductionAssignments(scheduleTurnId);
         }
 
-        [HttpPost]
-        [Route("")]
-        public async Task<ProductionAssignmentModel> CreateProductionAssignment([FromBody] ProductionAssignmentModel data)
-        {
-            return await _productionAssignmentService.CreateProductionAssignment(data);
-        }
-
         [HttpPut]
-        [Route("")]
-        public async Task<ProductionAssignmentModel> UpdateProductionAssignment([FromBody] ProductionAssignmentModel data)
+        [Route("{productionStepId}/{scheduleTurnId}")]
+        public async Task<bool> UpdateProductionAssignment([FromRoute]long productionStepId, [FromRoute]long scheduleTurnId, [FromBody] ProductionAssignmentModel[] data)
         {
-            return await _productionAssignmentService.UpdateProductionAssignment(data);
-        }
-
-        [HttpDelete]
-        [Route("")]
-        public async Task<bool> DeleteProductionAssignment([FromBody] ProductionAssignmentModel data)
-        {
-            return await _productionAssignmentService.DeleteProductionAssignment(data);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data);
         }
     }
 }

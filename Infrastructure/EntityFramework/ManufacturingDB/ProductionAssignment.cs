@@ -6,11 +6,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     public partial class ProductionAssignment
     {
         public long ProductionStepId { get; set; }
-        public int ProductionScheduleId { get; set; }
+        public long ScheduleTurnId { get; set; }
         public int DepartmentId { get; set; }
-        public int AssignmentQuantity { get; set; }
+        public decimal AssignmentQuantity { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
 
-        public virtual ProductionSchedule ProductionSchedule { get; set; }
         public virtual ProductionStep ProductionStep { get; set; }
     }
 }

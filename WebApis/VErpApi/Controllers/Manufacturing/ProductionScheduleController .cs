@@ -27,12 +27,19 @@ namespace VErpApi.Controllers.Manufacturing
             _productionScheduleService = productionScheduleService;
         }
 
+        [HttpGet]
+        [Route("{scheduleTurnId}")]
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedules([FromRoute] long scheduleTurnId)
+        {
+            return await _productionScheduleService.GetProductionSchedules(scheduleTurnId);
+        }
+
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("Search")]
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
-            return await _productionScheduleService.GetProductionSchedule(keyword, fromDate, toDate, page, size, orderByFieldName, asc, filters);
+            return await _productionScheduleService.GetProductionSchedules(keyword, fromDate, toDate, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpPost]
