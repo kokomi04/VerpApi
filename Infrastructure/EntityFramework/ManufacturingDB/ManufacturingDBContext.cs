@@ -124,6 +124,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ScheduleTurnId })
                     .HasName("PK_ProductionStepOrder_copy1");
 
+                entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.ProductionStep)
                     .WithMany(p => p.ProductionAssignment)
                     .HasForeignKey(d => d.ProductionStepId)
@@ -144,6 +146,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.Note).HasMaxLength(128);
 
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ReserveQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.Status).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.ProductionOrder)
@@ -155,6 +161,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionSchedule>(entity =>
             {
+                entity.Property(e => e.ProductionScheduleQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.ProductionOrderDetail)
                     .WithMany(p => p.ProductionSchedule)
                     .HasForeignKey(d => d.ProductionOrderDetailId)

@@ -10,7 +10,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime EndDate { get; set; }
         public int ProductionScheduleStatus { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public int ProductionScheduleQuantity { get; set; }
+        public decimal ProductionScheduleQuantity { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
