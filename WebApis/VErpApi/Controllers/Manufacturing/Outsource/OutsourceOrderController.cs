@@ -23,10 +23,10 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         }
 
         [HttpPost]
-        [Route("")]
-        public async Task<long> CreateOutsourceOrder([FromBody] OutsourceOrderInfo req)
+        [Route("part")]
+        public async Task<long> CreateOutsourceOrderPart([FromBody] OutsourceOrderInfo req)
         {
-            return await _outsourceOrderService.CreateOutsourceOrder(req);
+            return await _outsourceOrderService.CreateOutsourceOrderPart(req);
         }
         
 
