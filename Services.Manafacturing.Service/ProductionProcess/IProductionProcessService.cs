@@ -23,5 +23,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //ProductionStepRoleClient
         Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);
+
+        Task<long> CreateProductionStepGroup(ProductionStepGroupModel req);
     }
 }
