@@ -33,6 +33,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.UnitId, v => v.MapFrom(m => m.ProductionStepLinkData.UnitId))
                 .ForMember(m => m.SortOrder, v => v.MapFrom(m => m.ProductionStepLinkData.SortOrder))
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ObjectTypeId))
+                .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkData, v => v.Ignore())
