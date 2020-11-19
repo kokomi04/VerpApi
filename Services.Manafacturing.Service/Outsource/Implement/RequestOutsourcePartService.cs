@@ -87,7 +87,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.RequestOutsource, 0);
+                
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.RequestOutsourcePartId, $"Thêm mới yêu cầu gia công chi tiết {order.RequestOutsourcePartId}", order.JsonSerialize());
 
                 if (customGenCodeId > 0)
