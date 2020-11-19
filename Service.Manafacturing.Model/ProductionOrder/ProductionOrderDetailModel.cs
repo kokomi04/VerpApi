@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? ReserveQuantity { get; set; }
         public string Note { get; set; }
         public int Status { get; set; }
+        public long? RequestOutsourcePartId { get; set; }
     }
 
     public class ProductionOrderDetailInputModel :  IMapFrom<ProductionOrderDetail>

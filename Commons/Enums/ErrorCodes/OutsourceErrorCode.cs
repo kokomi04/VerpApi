@@ -14,5 +14,6 @@ namespace VErp.Commons.Enums.ErrorCodes
         [Description("Không tìm thấy đơn hàng gia công")]
         NotFoundOutsourOrder = 2,
         InValidRequestOutsource = 3,
+        OutsoureOrderCodeAlreadyExisted = 4,
     }
 }
