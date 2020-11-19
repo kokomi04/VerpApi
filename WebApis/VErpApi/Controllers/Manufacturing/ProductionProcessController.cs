@@ -57,6 +57,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.CreateProductionStep(req);
         }
 
+        [HttpPost]
+        [Route("productionStepGroup")]
+        public async Task<long> CreateProductionStepGroup([FromBody] ProductionStepGroupModel req)
+        {
+            return await _productionProcessService.CreateProductionStepGroup(req);
+        }
+
         [HttpDelete]
         [Route("productionStep/{productionStepId}")]
         public async Task<bool> DeleteProductionStepById([FromRoute] int productionStepId)

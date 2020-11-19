@@ -19,6 +19,8 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using Microsoft.Data.SqlClient;
+using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
@@ -144,6 +146,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId)
         {
+
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Include(s => s.Step)
                 .Include(s => s.ProductionStepLinkDataRole)
@@ -151,6 +154,41 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
                 .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            var lsProductionStepId = productionSteps.Select(x => x.ProductionStepId).ToList();
+            var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
+            var parammeters = new List<SqlParameter>();
+            var whereCondition = new StringBuilder();
+
+            if (lsProductionStepId.Count > 0) whereCondition.Append("v.ProductionStepId IN ( ");
+            for (int i = 0; i < lsProductionStepId.Count; i++)
+            {
+                var number = lsProductionStepId[i];
+                string pName = $"@ProductionStepId{i + 1}";
+
+                if (i == lsProductionStepId.Count - 1)
+                    whereCondition.Append($"{pName}");
+                else
+                    whereCondition.Append($"{pName}, ");
+
+                parammeters.Add(new SqlParameter(pName, number));
+            }
+
+            if (lsProductionStepId.Count > 0) whereCondition.Append(" )");
+
+            if (whereCondition.Length > 0)
+            {
+                sql.Append(" WHERE ");
+                sql.Append(whereCondition);
+            }
+
+            var productionStepLinkDataInfos = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                    .ConvertData<ProductionStepLinkDataInfo>();
+
+            foreach (var s in productionSteps)
+            {
+                s.ProductionStepLinkDatas = productionStepLinkDataInfos.Where(x => x.ProductionStepId == s.ProductionStepId).ToList();
+            }
 
             return new ProductionProcessInfo
             {
@@ -650,10 +688,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId)
         {
-            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefault();
+            var info = await _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefaultAsync();
             if (info == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
             return info.ClientData;
+        }
+
+        public async Task<long> CreateProductionStepGroup(ProductionStepGroupModel req)
+        {
+            var group = _mapper.Map<ProductionStep>(req as ProductionStepModel);
+            group.IsGroup = true;
+
+            _manufacturingDBContext.ProductionStep.Add(group);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            var child = _manufacturingDBContext.ProductionStep.Where(s => req.ListProductionStepId.Contains(s.ProductionStepId));
+            foreach (var c in child)
+            {
+                c.ParentId = group.ProductionStepId;
+            }
+            await _manufacturingDBContext.SaveChangesAsync();
+            return group.ProductionStepId;
         }
     }
 }
