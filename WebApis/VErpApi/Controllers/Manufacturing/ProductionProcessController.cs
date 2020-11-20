@@ -109,7 +109,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("productionStep/updateSortOrder")]
-        public async Task<bool> UpdateProductionStepSortOrder([FromQuery]IList<PorductionStepSortOrderModel> req)
+        public async Task<bool> UpdateProductionStepSortOrder([FromBody] IList<PorductionStepSortOrderModel> req)
         {
             return await _productionProcessService.UpdateProductionStepSortOrder(req);
         }
