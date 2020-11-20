@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
     public interface IProductionProcessService
     {
         Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId);
-        Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId);
+        Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.EnumContainerType containerTypeId, long containerId);
         Task<ProductionStepInfo> GetProductionStepById(long productionStepId);
         Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req);
         Task<long> CreateProductionStep(ProductionStepInfo req);

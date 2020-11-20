@@ -104,7 +104,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
-                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumProductionProcess.ContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep.JsonSerialize());
+                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep.JsonSerialize());
                     return true;
                 }
                 catch (Exception ex)
@@ -144,7 +144,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             };
         }
 
-        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.ContainerType containerTypeId, long containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.EnumContainerType containerTypeId, long containerId)
         {
 
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
@@ -271,7 +271,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
-                .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.SP && productIds.Contains(s.ContainerId))
+                .Where(s => s.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.Product && productIds.Contains(s.ContainerId))
                 .ToList();
 
             var productionStepIds = productionSteps.Select(s => s.ProductionStepId).ToList();
@@ -299,7 +299,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         StepId = null,
                         Title = $"{product.ProductCode} / {product.ProductName}", // Thiếu tên sản phẩm
-                        ContainerTypeId = (int)EnumProductionProcess.ContainerType.LSX,
+                        ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
                         ContainerId = productionOrderId,
                         IsGroup = true
                     };
@@ -329,7 +329,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         StepId = step.StepId,
                         Title = step.Title,
-                        ContainerTypeId = (int)EnumProductionProcess.ContainerType.LSX,
+                        ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
                         ContainerId = productionOrderId,
                         IsGroup = productionSteps.Any(s => s.ParentId == step.ProductionStepId)
                     };
@@ -413,7 +413,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var productionSteps = _manufacturingDBContext.ProductionStep
                 .Where(s => s.ContainerId == productionOrderId
                 && productionStepIds.Contains(s.ProductionStepId)
-                && s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX
+                && s.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.ProductionOrder
                 && !s.ParentId.HasValue
                 && !s.StepId.HasValue)
                 .ToList();
@@ -430,7 +430,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var productionStep = new ProductionStep
                     {
                         Title = $"Quy trình chung ({string.Join(",", productionSteps.Select(s => s.Title).ToList())}",
-                        ContainerTypeId = (int)EnumProductionProcess.ContainerType.LSX,
+                        ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
                         ContainerId = productionOrderId,
                         IsGroup = true
                     };
@@ -479,7 +479,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> MergeProductionStep(int productionOrderId, IList<long> productionStepIds)
         {
             var productionSteps = _manufacturingDBContext.ProductionStep
-                .Where(s => s.ContainerId == productionOrderId && productionStepIds.Contains(s.ProductionStepId) && s.ContainerTypeId == (int)EnumProductionProcess.ContainerType.LSX)
+                .Where(s => s.ContainerId == productionOrderId && productionStepIds.Contains(s.ProductionStepId) && s.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.ProductionOrder)
                 .ToList();
             if (productionSteps.Count <= 1)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu gộp 2 công đoạn trở lên");
@@ -616,7 +616,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
-                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.ContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req.JsonSerialize());
+                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req.JsonSerialize());
                     return true;
                 }
                 catch (Exception ex)

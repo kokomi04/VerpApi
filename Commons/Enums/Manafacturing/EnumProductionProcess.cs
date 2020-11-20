@@ -7,12 +7,12 @@ namespace VErp.Commons.Enums.Manafacturing
 {
     public static class EnumProductionProcess
     {
-        public enum ContainerType
+        public enum EnumContainerType
         {
             [Description("Sản phẩm")]
-            SP = 1,
+            Product = 1,
             [Description("Lệnh sản xuất")]
-            LSX = 2,
+            ProductionOrder = 2,
         }
         public enum ProductionStepLinkDataRoleType
         {
