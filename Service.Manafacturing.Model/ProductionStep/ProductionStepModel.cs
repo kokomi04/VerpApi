@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int? StepId { get; set; }
         public string Title { get; set; }
         public long? ParentId { get; set; }
-        public EnumProductionProcess.ContainerType ContainerTypeId { get; set; }
+        public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }

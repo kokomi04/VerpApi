@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }

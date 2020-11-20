@@ -22,6 +22,7 @@ using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -147,6 +148,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _logger.LogError(ex, "UpdateProductAssignment");
                 throw;
             }
+        }
+
+
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, int page, int size, string orderByFieldName, bool asc)
+        {
+            var assignmentQuery = (
+                from a in _manufacturingDBContext.ProductionAssignment
+                join t in _manufacturingDBContext.ProductionSchedule on a.ScheduleTurnId equals t.ScheduleTurnId
+                join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
+                join o in _manufacturingDBContext.ProductionOrder on s.ContainerId equals o.ProductionOrderId
+                join od in _manufacturingDBContext.ProductionOrderDetail on t.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where a.DepartmentId == departmentId
+                select new DepartmentProductionAssignmentModel
+                {
+                    ProductionOrderId = o.ProductionOrderId,
+                    ProductionOrderCode = o.ProductionOrderCode,
+                    OrderCode = od.OrderDetailId.ToString(),
+                    ProductId = od.ProductId,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate,
+                    ProductionScheduleStatus = (EnumScheduleStatus)t.ProductionScheduleStatus
+                });
+            var total = await assignmentQuery.CountAsync();
+            if (string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                orderByFieldName = nameof(DepartmentProductionAssignmentModel.StartDate);
+            }
+            var pagedData = await assignmentQuery.SortByFieldName(orderByFieldName, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            return (pagedData, total);
         }
     }
 }
