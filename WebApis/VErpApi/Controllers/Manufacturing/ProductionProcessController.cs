@@ -106,5 +106,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.GetPorductionStepRoleClient(containerTypeId, containerId);
         }
+
+        [HttpPut]
+        [Route("productionStep/updateSortOrder")]
+        public async Task<bool> UpdateProductionStepSortOrder([FromQuery]IList<PorductionStepSortOrderModel> req)
+        {
+            return await _productionProcessService.UpdateProductionStepSortOrder(req);
+        }
     }
 }

@@ -696,9 +696,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<long> CreateProductionStepGroup(ProductionStepGroupModel req)
         {
-            var productionStepGroupId = await CreateProductionStep(req);
-            var stepGroup = await _manufacturingDBContext.ProductionStep.SingleOrDefaultAsync(x => x.ProductionStepId == productionStepGroupId);
+            var stepGroup = _mapper.Map<ProductionStep>(req);
             stepGroup.IsGroup = true;
+            _manufacturingDBContext.ProductionStep.Add(stepGroup);
             await _manufacturingDBContext.SaveChangesAsync();
 
             var child = _manufacturingDBContext.ProductionStep.Where(s => req.ListProductionStepId.Contains(s.ProductionStepId));
@@ -711,6 +711,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _activityLogService.CreateLog(EnumObjectType.ProductionStep, stepGroup.ProductionStepId,
                         $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req.JsonSerialize());
             return stepGroup.ProductionStepId;
+        }
+
+        public async Task<bool> UpdateProductionStepSortOrder(IList<PorductionStepSortOrderModel> req)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var lsProductionStep = await _manufacturingDBContext.ProductionStep.Where(x => req.Select(y => y.ProductionStepId).Contains(x.ProductionStepId)).ToListAsync();
+                foreach(var p in lsProductionStep)
+                {
+                    p.SortOrder = req.SingleOrDefault(y => y.ProductionStepId == p.ProductionStepId).SortOrder;
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionStep, req.First().ProductionStepId,
+                        $"Cập nhật vị trí cho các công đoạn", req.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "UpdateProductionStepSortOrder");
+                throw;
+            }
         }
     }
 }
