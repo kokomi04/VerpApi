@@ -28,7 +28,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourceOrderService.CreateOutsourceOrderPart(req);
         }
-        
+
+        [HttpGet]
+        [Route("part")]
+        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size);
+        }
 
     }
 }

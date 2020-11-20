@@ -42,8 +42,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
-                entity.HasKey(e => e.OutsoureOrderId);
-
                 entity.Property(e => e.CreateDateOrder).HasColumnType("datetime");
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
@@ -58,11 +56,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.OutsoureOrderCode)
+                entity.Property(e => e.OutsourceOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ProviderAddress).HasMaxLength(256);
 
@@ -95,9 +93,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
-                entity.HasOne(d => d.OutsoureOrder)
+                entity.HasOne(d => d.OutsourceOrder)
                     .WithMany(p => p.OutsourceOrderDetail)
-                    .HasForeignKey(d => d.OutsoureOrderId)
+                    .HasForeignKey(d => d.OutsourceOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
             });
