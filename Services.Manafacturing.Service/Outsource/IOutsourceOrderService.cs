@@ -11,6 +11,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource
     public interface IOutsourceOrderService
     {
         Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req);
-     
+        Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart(string keyword, int page, int size);
+
+
     }
 }
