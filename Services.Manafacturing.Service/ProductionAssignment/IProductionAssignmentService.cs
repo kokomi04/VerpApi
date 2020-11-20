@@ -13,6 +13,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId);
         Task<bool> UpdateProductionAssignment( long productionStepId, long scheduleTurnId, ProductionAssignmentModel[] data);
 
-        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, int page, int size, string orderByFieldName, bool asc)
+        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, int page, int size, string orderByFieldName, bool asc);
+
+        Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment(int departmentId, long scheduleTurnId);
     }
 }

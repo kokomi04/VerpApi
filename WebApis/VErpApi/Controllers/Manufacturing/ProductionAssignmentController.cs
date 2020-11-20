@@ -48,5 +48,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, page, size, orderByFieldName, asc);
         }
+
+        [HttpGet]
+        [Route("Departments/{departmentId}/{scheduleTurnId}")]
+        public async Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment([FromRoute] int departmentId, [FromRoute] long scheduleTurnId)
+        {
+            return await _productionAssignmentService.DepartmentScheduleTurnAssignment(departmentId, scheduleTurnId);
+        }
     }
 }
