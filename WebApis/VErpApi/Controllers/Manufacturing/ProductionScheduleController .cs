@@ -59,7 +59,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpDelete]
         [Route("")]
-        public async Task<bool> DeleteProductionSchedule([FromBody] int[] productionScheduleIds)
+        public async Task<bool> DeleteProductionSchedule([FromBody] long[] productionScheduleIds)
         {
             return await _productionScheduleService.DeleteProductionSchedule(productionScheduleIds);
         }
