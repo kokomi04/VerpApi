@@ -162,6 +162,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 where a.DepartmentId == departmentId
                 select new DepartmentProductionAssignmentModel
                 {
+                    ScheduleTurnId = a.ScheduleTurnId,
                     ProductionOrderId = o.ProductionOrderId,
                     ProductionOrderCode = o.ProductionOrderCode,
                     OrderCode = od.OrderDetailId.ToString(),
@@ -169,7 +170,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     StartDate = t.StartDate,
                     EndDate = t.EndDate,
                     ProductionScheduleStatus = (EnumScheduleStatus)t.ProductionScheduleStatus
-                });
+                })
+                .Distinct();
             var total = await assignmentQuery.CountAsync();
             if (string.IsNullOrWhiteSpace(orderByFieldName))
             {
@@ -177,6 +179,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
             var pagedData = await assignmentQuery.SortByFieldName(orderByFieldName, asc).Skip((page - 1) * size).Take(size).ToListAsync();
             return (pagedData, total);
+        }
+
+        public async Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment(int departmentId, long scheduleTurnId)
+        {
+            var assignmentQuery = (
+                from a in _manufacturingDBContext.ProductionAssignment
+                join t in _manufacturingDBContext.ProductionSchedule on a.ScheduleTurnId equals t.ScheduleTurnId
+                join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
+                join o in _manufacturingDBContext.ProductionOrder on s.ContainerId equals o.ProductionOrderId
+                join od in _manufacturingDBContext.ProductionOrderDetail on t.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where a.DepartmentId == departmentId && a.ScheduleTurnId == scheduleTurnId
+                select new DepartmentProductionAssignmentDetailModel
+                {
+                    ScheduleTurnId = a.ScheduleTurnId,
+                    ProductionOrderId = o.ProductionOrderId,
+                    ProductionOrderCode = o.ProductionOrderCode,
+                    OrderCode = od.OrderDetailId.ToString(),
+                    ProductId = od.ProductId,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate,
+                    ProductionScheduleStatus = (EnumScheduleStatus)t.ProductionScheduleStatus,
+
+                    ProductionStepId = a.ProductionStepId,
+                    ProductionScheduleQuantity = t.ProductionScheduleQuantity,
+                    AssignmentQuantity = a.AssignmentQuantity,
+                    ObjectTypeId = a.ObjectTypeId,
+                    ObjectId = a.ObjectId
+                });
+
+            return await assignmentQuery.ToListAsync();
         }
     }
 }
