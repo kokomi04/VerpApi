@@ -20,6 +20,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> MergeProductionStep(int productionOrderId, IList<long> productionStepIds);
         //Task<bool> GenerateProductionStepMapping(int containerId, List<ProductionStepLinkModel> req);
 
+        Task<bool> UpdateProductionStepSortOrder(IList<PorductionStepSortOrderModel> req);
+
         //ProductionStepRoleClient
         Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);

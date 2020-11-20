@@ -34,4 +34,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore());
         }
     }
+
+    public class PorductionStepSortOrderModel
+    {
+        public long ProductionStepId { get; set; }
+        public int SortOrder { get; set; }
+    }
 }
