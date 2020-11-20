@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long RequestOutsourcePartId { get; set; }
         public string RequestOutsourcePartCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public DateTime DateRequiredComplete { get; set; }
+        public DateTime RequestOutsourcePartFinishDate { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }

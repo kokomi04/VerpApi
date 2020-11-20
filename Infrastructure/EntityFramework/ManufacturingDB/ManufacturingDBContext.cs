@@ -42,23 +42,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
-                entity.Property(e => e.CreateDateOrder).HasColumnType("datetime");
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DateRequiredComplete)
-                    .HasColumnType("datetime")
-                    .HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.FreigthCost).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.FreightCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OutsourceOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.OutsourceOrderFinishDate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
 
@@ -146,7 +142,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.ReserveQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ReserveQuantity)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasComment("Bù hao (dự trữ)");
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((1))");
 
@@ -258,8 +256,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<RequestOutsourcePart>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DateRequiredComplete).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 

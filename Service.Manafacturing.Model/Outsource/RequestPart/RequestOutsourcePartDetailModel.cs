@@ -32,8 +32,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     {
         public string RequestOutsourcePartCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public long CreateDateRequest { get; set; }
-        public long DateRequiredComplete { get; set; }
+        public long RequestOutsourcePartDate { get; set; }
+        public long RequestOutsourcePartFinishDate { get; set; }
         public string ProductionOrderCode { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }

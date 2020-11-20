@@ -77,9 +77,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         if (_manufacturingDBContext.OutsourceOrder.Any(o => o.OutsourceOrderCode == req.OutsourceOrderCode))
                             throw new BadRequestException(OutsourceErrorCode.OutsoureOrderCodeAlreadyExisted);
                     }
-                    if (!req.CreateDateOrder.HasValue)
+                    if (!req.OutsourceOrderDate.HasValue)
                     {
-                        req.CreateDateOrder = DateTime.UtcNow.GetUnix();
+                        req.OutsourceOrderDate = DateTime.UtcNow.GetUnix();
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);

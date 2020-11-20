@@ -10,11 +10,13 @@ using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore;
+
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/manufacturing/ProductOrder")]
     [ApiController]
-    public class ProductOrderController : ControllerBase
+    public class ProductOrderController : VErpBaseController
     {
         private readonly IProductionOrderService _productionOrderService;
 

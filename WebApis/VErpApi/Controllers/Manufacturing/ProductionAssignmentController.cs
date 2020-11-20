@@ -12,12 +12,13 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductionAssignmentController : ControllerBase
+    public class ProductionAssignmentController : VErpBaseController
     {
         private readonly IProductionAssignmentService _productionAssignmentService;
 

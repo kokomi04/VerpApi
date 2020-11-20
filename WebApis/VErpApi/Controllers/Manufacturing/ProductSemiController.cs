@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductSemi;
 using VErp.Services.Manafacturing.Service.ProductSemi;
 
@@ -10,7 +11,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/ProductSemi")]
     [ApiController]
-    public class ProductSemiController: ControllerBase
+    public class ProductSemiController: VErpBaseController
     {
         private readonly IProductSemiService _productSemiService;
 

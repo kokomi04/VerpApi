@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Service.Outsource;
@@ -12,7 +13,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 {
     [Route("api/manufacturing/requestOutsource")]
     [ApiController]
-    public class RequestOutsourceController : ControllerBase
+    public class RequestOutsourceController : VErpBaseController
     {
         private readonly IRequestOutsourcePartService _requestPartService;
 

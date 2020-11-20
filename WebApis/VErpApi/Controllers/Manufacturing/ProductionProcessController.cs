@@ -8,12 +8,13 @@ using Microsoft.SqlServer.Management.SqlParser.Metadata;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductionProcessController : ControllerBase
+    public class ProductionProcessController : VErpBaseController
     {
         private readonly IProductionProcessService _productionProcessService;
 

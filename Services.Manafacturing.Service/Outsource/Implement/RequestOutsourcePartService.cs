@@ -146,7 +146,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 var info = _mapper.Map<RequestOutsourcePart>(req as RequestOutsourcePartModel);
 
-                order.DateRequiredComplete = info.DateRequiredComplete;
+                order.RequestOutsourcePartFinishDate = info.RequestOutsourcePartFinishDate;
 
                 var lsDeleteDetail = details.Where(x => !req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
                 var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
