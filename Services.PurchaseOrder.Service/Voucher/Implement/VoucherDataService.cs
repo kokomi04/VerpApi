@@ -2224,6 +2224,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         }
 
 
+        public async Task<NonCamelCaseDictionary> OrderDetail(long fId)
+        {
+            var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo",
+                new[]
+                {
+                   new SqlParameter("@F_Id", EnumDataType.BigInt.GetSqlValue(fId)),
+                   total
+                });
+
+            return data.ConvertData()?.FirstOrDefault();
+        }
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

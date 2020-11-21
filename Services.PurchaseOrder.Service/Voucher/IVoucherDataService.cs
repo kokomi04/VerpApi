@@ -38,5 +38,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<VoucherBillInfoModel> GetPackingListInfo(int inputTypeId, long fId);
 
         Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
+
+        Task<NonCamelCaseDictionary> OrderDetail(long fId);
     }
 }
