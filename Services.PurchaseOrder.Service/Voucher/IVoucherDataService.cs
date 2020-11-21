@@ -39,6 +39,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
 
-        Task<NonCamelCaseDictionary> OrderDetail(long fId);
+        Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
     }
 }

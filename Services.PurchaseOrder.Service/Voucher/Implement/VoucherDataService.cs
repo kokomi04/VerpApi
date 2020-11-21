@@ -2224,17 +2224,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         }
 
 
-        public async Task<NonCamelCaseDictionary> OrderDetail(long fId)
+        public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
         {
             var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
-            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo",
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo_ByFIds",
                 new[]
                 {
-                   new SqlParameter("@F_Id", EnumDataType.BigInt.GetSqlValue(fId)),
+                   fIds.ToSqlParameter("@F_Ids"),
                    total
                 });
 
-            return data.ConvertData()?.FirstOrDefault();
+            return data.ConvertData();
         }
 
 
