@@ -25,7 +25,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string TransportToPhone { get; set; }
         public string OutsoureRequired { get; set; }
         public string Note { get; set; }
-        public decimal FreigthCost { get; set; }
+        public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
         public long? OutsourceOrderDate { get; set; }
         public long OutsourceOrderFinishDate { get; set; }
@@ -44,7 +44,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
 
     public class OutsourceOrderInfo: OutsourceOrderModel, IMapFrom<OutsourceOrder>
     {
-        public IList<OutsourceOrderDetailModel> OutsourceOrderDetail { get; set; }
+        public IList<OutsourceOrderDetailInfo> OutsourceOrderDetail { get; set; }
 
         public new void Mapping(Profile profile)
         {

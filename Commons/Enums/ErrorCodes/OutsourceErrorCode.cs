@@ -12,8 +12,11 @@ namespace VErp.Commons.Enums.ErrorCodes
         [Description("Không tìm thấy yêu cầu gia công")]
         NotFoundRequest = 1,
         [Description("Không tìm thấy đơn hàng gia công")]
-        NotFoundOutsourOrder = 2,
+        NotFoundOutsourceOrder = 2,
         InValidRequestOutsource = 3,
+        [Description("Đã tồn tại mã code trong hệ thống")]
         OutsoureOrderCodeAlreadyExisted = 4,
+        [Description("Không tìm thấy yêu cầu gia công chi tiết")]
+        NotFoundOutsourOrderDetail = 5,
     }
 }
