@@ -125,10 +125,10 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpGet]
-        [Route("OrderDetail")]
-        public async Task<NonCamelCaseDictionary> OrderDetailByPurchasingRequest(long orderDetailId)
+        [Route("OrderDetails")]
+        public async Task<IList<NonCamelCaseDictionary>> OrderDetailByPurchasingRequest(IList<long> orderDetailIds)
         {
-            return await _voucherDataService.OrderDetail(orderDetailId);
+            return await _voucherDataService.OrderDetails(orderDetailIds);
         }
     }
 }
