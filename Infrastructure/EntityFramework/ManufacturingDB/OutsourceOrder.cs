@@ -10,11 +10,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             OutsourceOrderDetail = new HashSet<OutsourceOrderDetail>();
         }
 
-        public long OutsoureOrderId { get; set; }
+        public long OutsourceOrderId { get; set; }
         public int OutsourceTypeId { get; set; }
-        public string OutsoureOrderCode { get; set; }
-        public DateTime CreateDateOrder { get; set; }
-        public DateTime DateRequiredComplete { get; set; }
+        public string OutsourceOrderCode { get; set; }
+        public DateTime OutsourceOrderDate { get; set; }
+        public DateTime OutsourceOrderFinishDate { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
         public string ProviderAddress { get; set; }
@@ -25,7 +25,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string TransportToPhone { get; set; }
         public string OutsoureRequired { get; set; }
         public string Note { get; set; }
-        public decimal FreigthCost { get; set; }
+        public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

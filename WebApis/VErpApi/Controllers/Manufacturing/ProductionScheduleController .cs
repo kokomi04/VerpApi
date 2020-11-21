@@ -13,12 +13,13 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductionScheduleController : ControllerBase
+    public class ProductionScheduleController : VErpBaseController
     {
         private readonly IProductionScheduleService _productionScheduleService;
 
@@ -58,7 +59,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpDelete]
         [Route("")]
-        public async Task<bool> DeleteProductionSchedule([FromBody] int[] productionScheduleIds)
+        public async Task<bool> DeleteProductionSchedule([FromBody] long[] productionScheduleIds)
         {
             return await _productionScheduleService.DeleteProductionSchedule(productionScheduleIds);
         }

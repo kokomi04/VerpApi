@@ -8,12 +8,13 @@ using Microsoft.SqlServer.Management.SqlParser.Metadata;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductionProcessController : ControllerBase
+    public class ProductionProcessController : VErpBaseController
     {
         private readonly IProductionProcessService _productionProcessService;
 
@@ -24,7 +25,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.ContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }
@@ -104,6 +105,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<string> GetStepClientData([FromRoute] int containerTypeId, [FromRoute] long containerId)
         {
             return await _productionProcessService.GetPorductionStepRoleClient(containerTypeId, containerId);
+        }
+
+        [HttpPut]
+        [Route("productionStep/updateSortOrder")]
+        public async Task<bool> UpdateProductionStepSortOrder([FromBody] IList<PorductionStepSortOrderModel> req)
+        {
+            return await _productionProcessService.UpdateProductionStepSortOrder(req);
         }
     }
 }

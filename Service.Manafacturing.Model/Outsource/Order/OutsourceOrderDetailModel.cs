@@ -9,9 +9,19 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
     public class OutsourceOrderDetailModel: IMapFrom<OutsourceOrderDetail>
     {
         public long OutsourceOrderDetailId { get; set; }
-        public long OutsoureOrderId { get; set; }
+        public long OutsourceOrderId { get; set; }
         public long ObjectId { get; set; }
         public decimal Price { get; set; }
         public decimal Tax { get; set; }
+    }
+
+    public class OutsourceOrderDetailInfo: OutsourceOrderDetailModel
+    {
+        public string ProductPartCode { get; set; }
+        public string ProductPartName { get; set; }
+        public string UnitName { get; set; }
+        public decimal Quantity { get; set; }
+        public string RequestOutsourcePartCode { get; set; }
+        public long RequestOutsourcePartFinishDate { get; set; }
     }
 }

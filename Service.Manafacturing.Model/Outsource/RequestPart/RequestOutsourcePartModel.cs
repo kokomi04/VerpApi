@@ -13,17 +13,17 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public long RequestOutsourcePartId { get; set; }
         public string RequestOutsourcePartCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public long CreateDateRequest { get; set; }
-        public long DateRequiredComplete { get; set; }
+        public long RequestOutsourcePartDate { get; set; }
+        public long RequestOutsourcePartFinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<RequestOutsourcePart, RequestOutsourcePartModel>()
-                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
+                .ForMember(m => m.RequestOutsourcePartDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
+                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate.GetUnix()))
                 .ReverseMap()
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
+                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate.UnixToDateTime()));
         }
     }
 
@@ -42,8 +42,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 
         public new void Mapping(Profile profile) {
             profile.CreateMap<RequestOutsourcePartDetailInfo, RequestOutsourcePartInfo>()
-                .ForMember(m => m.CreateDateRequest, v => v.MapFrom(m => m.CreateDateRequest))
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete))
+                .ForMember(m => m.RequestOutsourcePartDate, v => v.MapFrom(m => m.RequestOutsourcePartDate))
+                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate))
                 .ForMember(m => m.RequestOutsourcePartId, v => v.MapFrom(m => m.RequestOutsourcePartId))
                 .ForMember(m => m.RequestOutsourcePartCode, v => v.MapFrom(m => m.RequestOutsourcePartCode))
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrderCode))

@@ -12,9 +12,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
     public class OutsourceOrderModel: IMapFrom<OutsourceOrder>
     {
-        public long OutsoureOrderId { get; set; }
+        public long OutsourceOrderId { get; set; }
         public OutsourceOrderType OutsourceTypeId { get; set; }
-        public string OutsoureOrderCode { get; set; }
+        public string OutsourceOrderCode { get; set; }
         public string ProviderName { get; set; }
         public string ProviderReceiver { get; set; }
         public string ProviderAddress { get; set; }
@@ -25,37 +25,37 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string TransportToPhone { get; set; }
         public string OutsoureRequired { get; set; }
         public string Note { get; set; }
-        public decimal FreigthCost { get; set; }
+        public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
-        public long? CreateDateOrder { get; set; }
-        public long DateRequiredComplete { get; set; }
+        public long? OutsourceOrderDate { get; set; }
+        public long OutsourceOrderFinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceOrderModel>()
-                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.GetUnix()))
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
+                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
                 .ReverseMap()
-                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.Value.UnixToDateTime()))
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
+                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
         }
 
     }
 
     public class OutsourceOrderInfo: OutsourceOrderModel, IMapFrom<OutsourceOrder>
     {
-        public IList<OutsourceOrderDetailModel> OutsourceOrderDetail { get; set; }
+        public IList<OutsourceOrderDetailInfo> OutsourceOrderDetail { get; set; }
 
         public new void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceOrderInfo>()
-                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.GetUnix()))
+                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
                 .ForMember(m => m.OutsourceOrderDetail, v => v.MapFrom(m => m.OutsourceOrderDetail))
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.GetUnix()))
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
                 .ReverseMap()
-                .ForMember(m => m.CreateDateOrder, v => v.MapFrom(m => m.CreateDateOrder.Value.UnixToDateTime()))
+                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
                 .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
-                .ForMember(m => m.DateRequiredComplete, v => v.MapFrom(m => m.DateRequiredComplete.UnixToDateTime()));
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
         }
     }
 

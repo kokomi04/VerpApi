@@ -123,5 +123,12 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             return await _voucherDataService.OrderDetailByPurchasingRequest(keyword, fromDate, toDate, isCreatedPurchasingRequest, page, size);
         }
+        
+        [HttpPost("OrderDetails")]
+        [VErpAction(EnumAction.View)]
+        public async Task<IList<NonCamelCaseDictionary>> OrderDetailByPurchasingRequest([FromBody] IList<long> orderDetailIds)
+        {
+            return await _voucherDataService.OrderDetails(orderDetailIds);
+        }
     }
 }

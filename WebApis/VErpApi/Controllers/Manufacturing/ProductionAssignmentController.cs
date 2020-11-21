@@ -12,12 +12,13 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductionAssignmentController : ControllerBase
+    public class ProductionAssignmentController : VErpBaseController
     {
         private readonly IProductionAssignmentService _productionAssignmentService;
 
@@ -28,16 +29,31 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{scheduleTurnId}")]
-        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute]long scheduleTurnId)
+        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute] long scheduleTurnId)
         {
             return await _productionAssignmentService.GetProductionAssignments(scheduleTurnId);
         }
 
         [HttpPut]
         [Route("{productionStepId}/{scheduleTurnId}")]
-        public async Task<bool> UpdateProductionAssignment([FromRoute]long productionStepId, [FromRoute]long scheduleTurnId, [FromBody] ProductionAssignmentModel[] data)
+        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentModel[] data)
         {
             return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data);
+        }
+
+
+        [HttpGet]
+        [Route("Departments/{departmentId}")]
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
+        {
+            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, page, size, orderByFieldName, asc);
+        }
+
+        [HttpGet]
+        [Route("Departments/{departmentId}/{scheduleTurnId}")]
+        public async Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment([FromRoute] int departmentId, [FromRoute] long scheduleTurnId)
+        {
+            return await _productionAssignmentService.DepartmentScheduleTurnAssignment(departmentId, scheduleTurnId);
         }
     }
 }

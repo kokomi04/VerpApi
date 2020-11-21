@@ -138,15 +138,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var order = await _manufacturingDBContext.RequestOutsourcePart.FirstOrDefaultAsync(x => x.RequestOutsourcePartId == requestOutsourcePartId);
             if (order == null)
-                throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công của {requestOutsourcePartId}");
+                throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công có mã là {requestOutsourcePartId}");
 
             var details = _manufacturingDBContext.RequestOutsourcePartDetail.Where(x => x.RequestOutsourcePartId == requestOutsourcePartId).ToList();
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var info = _mapper.Map<RequestOutsourcePart>(req as RequestOutsourcePartModel);
-
-                order.DateRequiredComplete = info.DateRequiredComplete;
+                // update order
+                _mapper.Map(req, order);
 
                 var lsDeleteDetail = details.Where(x => !req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
                 var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
@@ -175,7 +174,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
                 // create new detail
-                lsNewDetail.ForEach(x => x.RequestOutsourcePartId = info.RequestOutsourcePartId);
+                lsNewDetail.ForEach(x => x.RequestOutsourcePartId = order.RequestOutsourcePartId);
                 var temp = _mapper.Map<List<RequestOutsourcePartDetail>>(lsNewDetail);
                 await _manufacturingDBContext.RequestOutsourcePartDetail.AddRangeAsync(temp);
 
@@ -193,7 +192,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListRequestOutsourcePart(string keyword, int page, int size)
+        public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListRequestOutsourcePart(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -207,6 +206,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 whereCondition.Append("OR v.ProductPartName LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
+            if (filters != null)
+            {
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vRequestOutsourcePartExtractInfo", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
+                {
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
+            }
 
             var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartExtractInfo v ");
             var totalSql = new StringBuilder("SELECT COUNT(v.RequestOutsourcePartDetailId) Total FROM vRequestOutsourcePartExtractInfo v ");
@@ -218,7 +228,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 sql.Append(whereCondition);
             }
 
-            sql.Append($" ORDER BY v.RequestOutsourcePartDetailId");
+            sql.Append($" ORDER BY v.RequestOutsourcePartId");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
 

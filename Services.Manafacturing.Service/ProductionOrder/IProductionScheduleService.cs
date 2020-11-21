@@ -16,6 +16,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<PageData<ProductionScheduleModel>> GetProductionSchedules(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule(List<ProductionScheduleInputModel> data);
         Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data);
-        Task<bool> DeleteProductionSchedule(int[] productionScheduleIds);
+        Task<bool> DeleteProductionSchedule(long[] productionScheduleIds);
     }
 }

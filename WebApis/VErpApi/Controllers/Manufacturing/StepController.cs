@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Step;
 using VErp.Services.Manafacturing.Service.Step;
@@ -12,7 +13,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/steps")]
     [ApiController]
-    public class StepController : ControllerBase
+    public class StepController : VErpBaseController
     {
         private readonly IStepService _stepService;
 
