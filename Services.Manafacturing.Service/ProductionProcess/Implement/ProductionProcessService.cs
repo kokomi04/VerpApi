@@ -234,7 +234,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var lsChildId = stepInfos.Where(x => x.ParentId.HasValue && x.ParentId.Value == p.ProductionStepId).Select(x => x.ProductionStepId).ToList();
                 foreach(var childId in lsChildId)
                 {
-                    var tempLink = productionStepLinks.Where(x => x.FromStepId == childId && !lsChildId.Contains(x.ToStepId))
+                    var tempToLink = productionStepLinks.Where(x => x.FromStepId == childId && !lsChildId.Contains(x.ToStepId))
                         .Select(x=> new ProductionStepLinkModel
                         {
                             FromStepCode = p.ProductionStepCode,
@@ -242,7 +242,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ToStepId = x.ToStepId,
                             ToStepCode = x.ToStepCode
                         }).ToList();
-                    productionStepLinks.AddRange(tempLink);
+                    var tempFromLink = productionStepLinks.Where(x => x.ToStepId == childId && !lsChildId.Contains(x.FromStepId))
+                        .Select(x => new ProductionStepLinkModel
+                        {
+                            FromStepCode = x.FromStepCode,
+                            FromStepId = x.FromStepId,
+                            ToStepId = p.ProductionStepId,
+                            ToStepCode = p.ProductionStepCode
+                        }).ToList();
+
+                    productionStepLinks.AddRange(tempFromLink);
+                    productionStepLinks.AddRange(tempToLink);
                 }
             }
 
