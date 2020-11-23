@@ -173,9 +173,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ContainerTypeId).HasComment(@"1: Sản phẩm
 2: Lệnh SX");
 
+                entity.Property(e => e.CoordinateX).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.CoordinateY).HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.ParentCode).HasMaxLength(50);
+
+                entity.Property(e => e.ProductionStepCode).HasMaxLength(50);
 
                 entity.Property(e => e.StepId).HasComment("NULL nếu là quy trình con");
 
@@ -201,6 +209,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ProductionStepLinkDataCode).HasMaxLength(50);
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 

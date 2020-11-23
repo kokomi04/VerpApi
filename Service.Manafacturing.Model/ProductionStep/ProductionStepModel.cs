@@ -16,10 +16,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int? StepId { get; set; }
         public string Title { get; set; }
         public long? ParentId { get; set; }
+        public string ParentCode { get; set; }
         public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
+        public int? CoordinateX { get; set; }
+        public int? CoordinateY { get; set; }
+        public string ProductionStepCode { get; set; }
     }
 
     public class ProductionStepInfo: ProductionStepModel

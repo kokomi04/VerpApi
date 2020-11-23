@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public int ProductPartId { get; set; }
         public decimal Quantity { get; set; }
         public int UnitId { get; set; }
-        public OutsourcePartProcessType StatusId { get; set; }
+        public EnumOutsourcePartProcessType StatusId { get; set; }
 
         public void Mapping(Profile profile)
         {
