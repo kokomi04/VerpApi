@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
@@ -152,7 +153,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         public async Task<bool> UploadFiles(string directory, IEnumerable<IFormFile> formFiles)
         {
-
             if (string.IsNullOrWhiteSpace(directory))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
@@ -220,8 +220,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         public bool CopyDirectory(string pathSource, string pathDest)
         {
-            if (pathSource.Equals(pathDest))
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Không thể thực hiện di chuyển vào chính nó");
             if (string.IsNullOrWhiteSpace(pathDest))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
@@ -234,15 +232,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
 
-            CopyDir(source.FullName, dest.FullName);
+            CopyDir(source.Name, source.FullName, dest.FullName);
 
             return true;
         }
 
         public bool MoveDirectory(string pathSource, string pathDest)
         {
-            if (pathSource.Equals(pathDest))
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Không thể thực hiện di chuyển vào chính nó");
+            if (pathDest.Contains(pathSource) || pathSource.Equals(pathDest))
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Khổng thể di chuyển folder vào chính nó");
             if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
@@ -341,15 +339,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
         #region private
-        private void CopyDir(string path, string dest)
+        private void CopyDir(string zipFile,string path, string dest)
         {
-            if (!Directory.Exists(dest)) Directory.CreateDirectory(dest);
-            foreach (string f in Directory.GetFiles(path))
-            {
-                FileInfo file = new FileInfo(f);
-                if (!System.IO.File.Exists(Path.Combine(dest, file.Name))) System.IO.File.Copy(f, Path.Combine(dest, file.Name));
-            }
-            foreach (string d in Directory.GetDirectories(path)) CopyDir(d, Path.Combine(dest, new DirectoryInfo(d).Name));
+            var zipPath = GenerateTempFilePath(zipFile + ".zip");
+            var fileZ = new FileInfo(GetPhysicalFilePath(zipPath));
+            if(fileZ.Exists)
+                File.Delete(GetPhysicalFilePath(zipPath));
+
+            ZipFile.CreateFromDirectory(path, GetPhysicalFilePath(zipPath));
+            ZipFile.ExtractToDirectory(GetPhysicalFilePath(zipPath), dest);
         }
         private (Stream file, string fileName, string contentType) GetFileThumb(FileInfo file)
         {
