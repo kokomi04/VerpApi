@@ -206,5 +206,6 @@ namespace VErp.Commons.Enums.MasterEnum
         OutsourceOrder = 72,
         [Description("Phân công sản xuất")]
         ProductionAssignment = 73,
+        ProductionProcess = 74,
     }
 }

@@ -13,8 +13,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public long ProductionStepId { get; set; }
+        public string ProductionStepCode { get; set; }
         public int? StepId { get; set; }
         public string Title { get; set; }
+        public string ParentCode { get; set; }
         public long? ParentId { get; set; }
         public int ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
@@ -26,6 +28,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
+        public int? CoordinateX { get; set; }
+        public int? CoordinateY { get; set; }
         public int SubsidiaryId { get; set; }
 
         public virtual Step Step { get; set; }

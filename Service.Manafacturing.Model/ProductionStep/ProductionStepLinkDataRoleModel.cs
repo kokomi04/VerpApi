@@ -1,9 +1,11 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
@@ -11,6 +13,17 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     {
         public long ProductionStepId { get; set; }
         public long ProductionStepLinkDataId { get; set; }
-        public EnumProductionProcess.ProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
+        public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
+    }
+
+    public class ProductionStepLinkDataRoleInput: ProductionStepLinkDataRoleModel
+    {
+        public string ProductionStepCode { get; set; }
+        public string ProductionStepLinkDataCode { get; set; }
+
+        //public void Mapping(Profile profile)
+        //{
+        //    profile.CreateMap<ProductionStepLinkDataRoleModel, ProductionStepLinkDataRoleInput>
+        //}
     }
 }

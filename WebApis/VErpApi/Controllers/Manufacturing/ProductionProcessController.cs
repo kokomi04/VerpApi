@@ -9,6 +9,8 @@ using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
+using VErp.Services.Manafacturing.Model.ProductionProcess;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -25,7 +27,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByContainerId([FromRoute] EnumProductionProcess.EnumContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<ProductionProcessModel> GetProductionProcessByContainerId([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
         }
@@ -95,7 +97,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("productionStepRoleClient")]
-        public async Task<bool> InsertAndUpdateStepClientData([FromBody] ProductionStepRoleClientModel  model)
+        public async Task<bool> InsertAndUpdateStepClientData([FromBody] ProductionStepRoleClientModel model)
         {
             return await _productionProcessService.InsertAndUpdatePorductionStepRoleClient(model);
         }
@@ -112,6 +114,20 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionStepSortOrder([FromBody] IList<PorductionStepSortOrderModel> req)
         {
             return await _productionProcessService.UpdateProductionStepSortOrder(req);
+        }
+
+        [HttpPost]
+        [Route("")]
+        public async Task<bool> CreateProductionProcess([FromBody] ProductionProcessModel req)
+        {
+            return await _productionProcessService.CreateProductionProcess(req);
+        }
+
+        [HttpPut]
+        [Route("{containerTypeId}/{containerId}")]
+        public async Task<bool> UpdateProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] ProductionProcessModel req)
+        {
+            return await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
         }
     }
 }
