@@ -6,10 +6,11 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Product
 {
+    [Display(Name = "Sản phẩm")]
     public class ProductImportModel
     {
         // General info
-        [Display(Name = "Mã mặt hàng", GroupName ="Thông tin chung")]
+        [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
         [MaxLength(128, ErrorMessage = "Mã mặt hàng quá dài")]
         public string ProductCode { get; set; }
@@ -110,7 +111,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "ĐVT5 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression05 { get; set; }
 
-       
+
         public ProductImportModel()
         {
             StockIds = new List<int>();

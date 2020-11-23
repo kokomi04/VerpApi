@@ -94,15 +94,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     _manufacturingDBContext.OutsourceOrderDetail.AddRange(detail);
                     await _manufacturingDBContext.SaveChangesAsync();
-                    await UpdateStatusRequestOutsourcePartDetail(detail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processing);
+                    await UpdateStatusRequestOutsourcePartDetail(detail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
                         await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
                     }
-
+                    await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
-
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công chi tiết {order.OutsourceOrderId}", req.JsonSerialize());
                     return order.OutsourceOrderId;
                 }
                 catch (Exception ex)
@@ -114,20 +114,58 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart(string keyword, int page, int size)
+        public async Task<bool> DeleteOutsourceOrderPart(long outsourceOrderId)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.SingleOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+                if (outsourceOrder == null)
+                    throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+                var outsourceOrderDetail = await _manufacturingDBContext.OutsourceOrderDetail.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
+
+                outsourceOrder.IsDeleted = true;
+                outsourceOrderDetail.ForEach(x => x.IsDeleted = true);
+                await UpdateStatusRequestOutsourcePartDetail(outsourceOrderDetail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Unprocessed);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceOrder.OutsourceOrderId, $"Loại bỏ đơn hàng gia công chi tiết {outsourceOrder.OutsourceOrderId}", outsourceOrder.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "DeleteOutsourceOrderPart");
+                throw;
+            }
+        }
+
+        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
             var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
-                whereCondition.Append("(v.OutsoureOrderCode LIKE @KeyWord ");
+                whereCondition.Append(" (v.OutsourceOrderCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductPartName LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
                 whereCondition.Append("OR v.RequestOutsourcePartCode LIKE @Keyword ");
-                whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
+                whereCondition.Append("OR v.OrderCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+            if (filters != null)
+            {
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vOutsourceOrderExtractInfo", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
+                {
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
             }
 
             var sql = new StringBuilder("SELECT * FROM vOutsourceOrderExtractInfo v ");
@@ -161,6 +199,83 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var lst = resultData.ConvertData<OutsourceOrderPartDetailOutput>().ToList();
 
             return (lst, total);
+        }
+
+        public async Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId)
+        {
+            var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.ProjectTo<OutsourceOrderInfo>(_mapper.ConfigurationProvider).SingleOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+            if (outsourceOrder == null)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+
+            var filter = new SingleClause
+            {
+                DataType = EnumDataType.BigInt,
+                FieldName = "OutsourceOrderId",
+                Operator = EnumOperator.Equal,
+                Value = outsourceOrder.OutsourceOrderId
+            };
+
+            var data = (await GetListOutsourceOrderPart(string.Empty, 1, 9999, filter)).List;
+            outsourceOrder.OutsourceOrderDetail.Clear();
+            foreach (var item in data)
+            {
+                var outsourceOrderDetail = _mapper.Map<OutsourceOrderDetailInfo>(item);
+                if(outsourceOrderDetail.OutsourceOrderDetailId > 0)
+                    outsourceOrder.OutsourceOrderDetail.Add(outsourceOrderDetail);
+            }
+
+            return outsourceOrder;
+        }
+
+        public async Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId, OutsourceOrderInfo req)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.SingleOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+                if (outsourceOrder == null)
+                    throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+
+                var outsourceOrderDetail = await _manufacturingDBContext.OutsourceOrderDetail.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
+
+                //Update order
+                _mapper.Map(req, outsourceOrder);
+
+                //Update detail
+                var lsDeleteDetail = outsourceOrderDetail.Where(x => !req.OutsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
+                var lsNewDetail = req.OutsourceOrderDetail.Where(x => !outsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
+                var lsUpdateDetail = outsourceOrderDetail.Where(x => req.OutsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
+
+                //delele detail
+                lsDeleteDetail.ForEach(x => x.IsDeleted = true);
+                await UpdateStatusRequestOutsourcePartDetail(lsDeleteDetail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
+
+                //update
+                foreach (var u in lsUpdateDetail)
+                {
+                        var s = req.OutsourceOrderDetail.FirstOrDefault(x => x.OutsourceOrderDetailId == u.OutsourceOrderDetailId);
+                        if (s == null)
+                            throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourOrderDetail);
+                        _mapper.Map(s, u);
+                }
+
+                // new 
+                lsNewDetail.ForEach(x => x.OutsourceOrderId = outsourceOrder.OutsourceOrderId);
+                var temp = _mapper.Map<List<OutsourceOrderDetail>>(lsNewDetail);
+                await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
+                await UpdateStatusRequestOutsourcePartDetail(temp.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceOrder.OutsourceOrderId, $"Cập nhật đơn hàng gia công chi tiết {outsourceOrder.OutsourceOrderId}", outsourceOrder.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "UpdateOutsourceOrderPart");
+                throw;
+            }
         }
 
         private async Task UpdateStatusRequestOutsourcePartDetail(List<long> listID, OutsourcePartProcessType status)

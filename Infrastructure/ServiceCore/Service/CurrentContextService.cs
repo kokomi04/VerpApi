@@ -89,7 +89,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private void CrossServiceLogin()
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor?.HttpContext;
+            if (httpContext == null) return;
+
             var headers = httpContext.Request.Headers;
             headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
             if (crossServiceKeys.ToString() != _appSetting?.Configuration?.InternalCrossServiceKey)

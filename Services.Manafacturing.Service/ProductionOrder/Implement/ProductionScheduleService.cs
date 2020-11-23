@@ -201,6 +201,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (planningOrders.Count == 0 || planningOrders.Count != data.Count)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm không có trong danh sách cần lên kế hoạch sản xuất");
 
+            // Validate đủ sản phẩm trong quy trình
+            var countOrderSql = @$"
+                SELECT COUNT(v.ProductionOrderDetailId) count
+                FROM vProductionPlanningOrder v
+                WHERE v.ProductionStepId = @ProductionStepId";
+            var countParams = new SqlParameter[]
+            {
+                new SqlParameter("@ProductionStepId", planningOrders[0].ProductionStepId)
+            };
+            var countResult = await _manufacturingDBContext.QueryDataTable(planningOrderSql, countParams);
+            if ((countResult.Rows[0]["Total"] as int?).GetValueOrDefault() != data.Count)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm trong quy trình sản xuất không đủ");
+
             if (data.Count > 1)
             {
                 // Validate nếu sản phẩm chung quy trình
@@ -259,12 +272,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var scheduleIds = data.Select(s => s.ProductionScheduleId).ToList();
             var productionOrderIds = data.Select(s => s.ProductionOrderDetailId).ToList();
             var productionSchedules = _manufacturingDBContext.ProductionSchedule.Where(s => scheduleIds.Contains(s.ProductionScheduleId)).ToList();
-            if (productionSchedules.Count != data.Count)
+            if (productionSchedules.Count < data.Count)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
             if (productionSchedules.Any(s => s.ProductionScheduleStatus == (int)EnumProductionStatus.Finished))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không được thay đổi lịch sản xuất đã hoàn thành");
             if (productionSchedules.Select(s => s.ScheduleTurnId).Distinct().Count() > 1)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm không cùng trong một quy trình sản xuất");
+
+            // Validate đủ sản phẩm trong quy trình
+            if (productionSchedules.Count > data.Count)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm trong quy trình sản xuất không đủ");
 
             if (data.Count > 1)
             {
@@ -309,11 +326,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionSchedule(int[] productionScheduleIds)
+        public async Task<bool> DeleteProductionSchedule(long[] productionScheduleIds)
         {
             var productionSchedules = _manufacturingDBContext.ProductionSchedule.Where(s => productionScheduleIds.Contains(s.ProductionScheduleId)).ToList();
-            if (productionSchedules.Count != productionScheduleIds.Length)
+            if (productionSchedules.Count < productionScheduleIds.Length)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
+
+            var scheduleIds = productionSchedules.Select(s => s.ProductionScheduleId).ToList();
+            var productionScheduleCount = _manufacturingDBContext.ProductionSchedule
+                .Where(s => scheduleIds.Contains(s.ProductionScheduleId)).Count();
+
+            // Validate đủ sản phẩm trong quy trình
+            if (productionScheduleCount > productionScheduleIds.Length)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm trong quy trình sản xuất không đủ");
+
             if (productionSchedules.Any(s => s.ProductionScheduleStatus != (int)EnumProductionStatus.Waiting))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được xóa lịch sản xuất đã chưa thực hiện");
             if (productionSchedules.Select(s => s.ScheduleTurnId).Distinct().Count() > 1)

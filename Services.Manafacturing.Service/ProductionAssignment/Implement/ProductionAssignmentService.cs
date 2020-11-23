@@ -22,6 +22,7 @@ using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -147,6 +148,95 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _logger.LogError(ex, "UpdateProductAssignment");
                 throw;
             }
+        }
+
+
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, int page, int size, string orderByFieldName, bool asc)
+        {
+            var assignmentQuery = (
+                from a in _manufacturingDBContext.ProductionAssignment
+                join t in _manufacturingDBContext.ProductionSchedule on a.ScheduleTurnId equals t.ScheduleTurnId
+                join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
+                join o in _manufacturingDBContext.ProductionOrder on s.ContainerId equals o.ProductionOrderId
+                join od in _manufacturingDBContext.ProductionOrderDetail on t.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where a.DepartmentId == departmentId
+                select new
+                {
+                    a.ScheduleTurnId,
+                    o.ProductionOrderId,
+                    o.ProductionOrderCode,
+                    od.OrderDetailId,
+                    od.ProductId,
+                    t.StartDate,
+                    t.EndDate,
+                    t.ProductionScheduleStatus
+                })
+                .Distinct();
+            var total = await assignmentQuery.CountAsync();
+            if (string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                orderByFieldName = nameof(DepartmentProductionAssignmentModel.StartDate);
+            }
+            var pagedData = await assignmentQuery.SortByFieldName(orderByFieldName, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            return (pagedData.Select(d => new DepartmentProductionAssignmentModel()
+            {
+                ScheduleTurnId = d.ScheduleTurnId,
+                ProductionOrderId = d.ProductionOrderId,
+                ProductionOrderCode = d.ProductionOrderCode,
+                OrderDetailId = d.OrderDetailId,
+                ProductId = d.ProductId,
+                StartDate = d.StartDate.GetUnix(),
+                EndDate = d.EndDate.GetUnix(),
+                ProductionScheduleStatus = (EnumScheduleStatus)d.ProductionScheduleStatus
+            }).ToList(), total);
+        }
+
+        public async Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment(int departmentId, long scheduleTurnId)
+        {
+            var assignmentQuery = (
+                from a in _manufacturingDBContext.ProductionAssignment
+                join t in _manufacturingDBContext.ProductionSchedule on a.ScheduleTurnId equals t.ScheduleTurnId
+                join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
+                join o in _manufacturingDBContext.ProductionOrder on s.ContainerId equals o.ProductionOrderId
+                join od in _manufacturingDBContext.ProductionOrderDetail on t.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where a.DepartmentId == departmentId && a.ScheduleTurnId == scheduleTurnId
+                select new
+                {
+                    a.ScheduleTurnId,
+                    o.ProductionOrderId,
+                    o.ProductionOrderCode,
+                    od.OrderDetailId,
+                    od.ProductId,
+                    t.StartDate,
+                    t.EndDate,
+                    t.ProductionScheduleStatus,
+
+                    a.ProductionStepId,
+                    t.ProductionScheduleQuantity,
+                    a.AssignmentQuantity,
+                    a.ObjectTypeId,
+                    a.ObjectId
+                });
+
+            return (await assignmentQuery.ToListAsync())
+                .Select(d => new DepartmentProductionAssignmentDetailModel()
+                {
+                    ScheduleTurnId = d.ScheduleTurnId,
+                    ProductionOrderId = d.ProductionOrderId,
+                    ProductionOrderCode = d.ProductionOrderCode,
+                    OrderDetailId = d.OrderDetailId,
+                    ProductId = d.ProductId,
+                    StartDate = d.StartDate.GetUnix(),
+                    EndDate = d.EndDate.GetUnix(),
+                    ProductionScheduleStatus = (EnumScheduleStatus)d.ProductionScheduleStatus,
+
+                    ProductionStepId = d.ProductionStepId,
+                    ProductionScheduleQuantity = d.ProductionScheduleQuantity,
+                    AssignmentQuantity = d.AssignmentQuantity,
+                    ObjectTypeId = d.ObjectTypeId,
+                    ObjectId = d.ObjectId
+                })
+                .ToList();
         }
     }
 }

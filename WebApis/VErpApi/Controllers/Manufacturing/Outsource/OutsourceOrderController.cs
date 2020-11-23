@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Service.Outsource;
@@ -30,11 +31,32 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourceOrderService.CreateOutsourceOrderPart(req);
         }
 
-        [HttpGet]
-        [Route("part")]
-        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size)
+        [HttpPost]
+        [Route("part/search")]
+        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size);
+            return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size, filters);
+        }
+
+        [HttpDelete]
+        [Route("part/{outsourceOrderId}")]
+        public async Task<bool> DeleteOutsourceOrderPart([FromRoute] long outsourceOrderId)
+        {
+            return await _outsourceOrderService.DeleteOutsourceOrderPart(outsourceOrderId);
+        }
+
+        [HttpGet]
+        [Route("part/{outsourceOrderId}")]
+        public async Task<OutsourceOrderInfo> GetOutsourceOrderPart([FromRoute] long outsourceOrderId)
+        {
+            return await _outsourceOrderService.GetOutsourceOrderPart(outsourceOrderId);
+        }
+
+        [HttpPut]
+        [Route("part/{outsourceOrderId}")]
+        public async Task<bool> UpdateOutsourceOrderPart([FromRoute] long outsourceOrderId, [FromBody] OutsourceOrderInfo req)
+        {
+            return await _outsourceOrderService.UpdateOutsourceOrderPart(outsourceOrderId, req);
         }
 
     }

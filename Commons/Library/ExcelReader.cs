@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using NPOI;
 using NPOI.HSSF.UserModel;
@@ -326,6 +327,19 @@ namespace VErp.Commons.Library
         {
             var fields = typeof(T).GetProperties();
 
+            var displayNames = new Dictionary<PropertyInfo, string>();
+
+            foreach (var prop in fields)
+            {
+                displayNames.Add(prop, prop.GetCustomAttributes<DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name);
+                if (string.IsNullOrWhiteSpace(displayNames[prop]))
+                {
+                    displayNames[prop] = prop.Name;
+                }
+
+            }
+
+
             var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
             var lstData = new List<T>();
@@ -343,6 +357,7 @@ namespace VErp.Commons.Library
 
                     var mappingField = mapping.MappingFields[fieldIndx];
 
+                    var fieldDisplay = "";
                     try
                     {
                         string value = null;
@@ -358,6 +373,8 @@ namespace VErp.Commons.Library
                         var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
 
                         if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+
+                        fieldDisplay = displayNames[field];
 
                         if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
 
@@ -377,10 +394,11 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception($"Lỗi dòng {mapping.FromRow + rowIndx} cột {mappingField.Column} {ex.Message}", ex);
+                        throw new Exception($"Lỗi dòng {mapping.FromRow + rowIndx} cột {mappingField.Column} \"{fieldDisplay}\" {ex.Message}", ex);
                     }
 
                 }
+
                 if (!isIgnoreRow)
                 {
                     var context = new ValidationContext(entityInfo);
@@ -388,7 +406,7 @@ namespace VErp.Commons.Library
                     bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
                     if (!isValid)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
                     }
 
                     lstData.Add(entityInfo);
