@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcess
         public List<ProductionStepModel> ProductionSteps { get; set; }
         public List<ProductionStepLinkDataInput> ProductionStepLinkDatas { get; set; }
         public List<ProductionStepLinkDataRoleInput> ProductionStepLinkDataRoles { get; set; }
-        public List<ProductionStepLinkModel> ProductionStepLinks { get; set; }
+        public List<ProductionStepLinkDataRoleInput> ProductionStepGroupLinkDataRoles { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
+        public List<ProductionStepLinkModel> ProductionStepLinks { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
     }
 }
