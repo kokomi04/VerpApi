@@ -210,7 +210,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 new SqlParameter("@ProductionStepId", planningOrders[0].ProductionStepId)
             };
-            var countResult = await _manufacturingDBContext.QueryDataTable(planningOrderSql, countParams);
+            var countResult = await _manufacturingDBContext.QueryDataTable(countOrderSql, countParams);
             if ((countResult.Rows[0]["count"] as int?).GetValueOrDefault() != data.Count)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Danh sách sản phẩm trong quy trình sản xuất không đủ");
 
