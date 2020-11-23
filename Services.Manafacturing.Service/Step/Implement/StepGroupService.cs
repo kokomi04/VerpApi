@@ -48,13 +48,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> DeleteStepGroup(int stepGroupId)
         {
-            var destInfo = _manufacturingDBContext.StepGroup.FirstOrDefault(x => x.StepGroupId == stepGroupId);
-            if (destInfo == null)
+            var groupStep = _manufacturingDBContext.StepGroup.Include(x=>x.Step).FirstOrDefault(x => x.StepGroupId == stepGroupId);
+            if (groupStep == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+            if(groupStep.Step.Count > 0 )
+                throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa nhóm!. Đang tồn tại công đoạn trong nhóm");
 
-            destInfo.IsDeleted = true;
+            groupStep.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.StepGroup, destInfo.StepGroupId, $"Xóa nhóm danh mục công đoạn '{destInfo.StepGroupName}'", destInfo.JsonSerialize());
+
+            await _activityLogService.CreateLog(EnumObjectType.StepGroup, groupStep.StepGroupId, $"Xóa nhóm danh mục công đoạn '{groupStep.StepGroupName}'", groupStep.JsonSerialize());
             return true;
         }
 
