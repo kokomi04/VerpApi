@@ -97,7 +97,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var quantityMap = productionSchedules.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(v => v.ProductionScheduleQuantity));
 
             var linkDatas = step.ProductionStepLinkDataRole
-                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.ProductionStepLinkDataRoleType.Output)
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output)
                 .Select(r => new
                 {
                     r.ProductionStepLinkData.ObjectTypeId,

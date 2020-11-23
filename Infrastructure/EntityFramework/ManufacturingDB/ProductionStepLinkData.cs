@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public long ProductionStepLinkDataId { get; set; }
+        public string ProductionStepLinkDataCode { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public int UnitId { get; set; }

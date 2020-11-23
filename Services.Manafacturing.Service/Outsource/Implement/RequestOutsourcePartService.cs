@@ -79,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 foreach (var data in req.RequestOutsourcePartDetail)
                 {
                     data.RequestOutsourcePartId = order.RequestOutsourcePartId;
-                    data.StatusId = OutsourcePartProcessType.Unprocessed;
+                    data.StatusId = EnumOutsourcePartProcessType.Unprocessed;
                     orderDetails.Add(_mapper.Map<RequestOutsourcePartDetail>(data as RequestOutsourcePartDetailModel));
                 }
 
@@ -125,12 +125,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         private string GetRequestOutsourcePartStatus(List<RequestOutsourcePartDetailInfo> req)
         {
-            if (req.Where(x => x.StatusId == OutsourcePartProcessType.Unprocessed).Count() > 0)
-                return OutsourcePartProcessType.Unprocessed.GetEnumDescription();
-            else if (req.Where(x => x.StatusId == OutsourcePartProcessType.Processing).Count() > 0)
-                return OutsourcePartProcessType.Processing.GetEnumDescription();
-            else if (req.Where(x => x.StatusId == OutsourcePartProcessType.Processed).Count() > 0)
-                return OutsourcePartProcessType.Processed.GetEnumDescription();
+            if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Unprocessed).Count() > 0)
+                return EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
+            else if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Processing).Count() > 0)
+                return EnumOutsourcePartProcessType.Processing.GetEnumDescription();
+            else if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Processed).Count() > 0)
+                return EnumOutsourcePartProcessType.Processed.GetEnumDescription();
             return string.Empty;
         }
 
@@ -154,16 +154,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 //Valid Delete and action
                 foreach (var d in lsDeleteDetail)
                 {
-                    if (d.StatusId != (int)OutsourcePartProcessType.Unprocessed)
+                    if (d.StatusId != (int)EnumOutsourcePartProcessType.Unprocessed)
                         throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource,
-                            $"Không thể xóa chi tiết id/{d.RequestOutsourcePartDetailId} vì trạng thái của nó là {((OutsourcePartProcessType)d.StatusId).GetEnumDescription()}");
+                            $"Không thể xóa chi tiết id/{d.RequestOutsourcePartDetailId} vì trạng thái của nó là {((EnumOutsourcePartProcessType)d.StatusId).GetEnumDescription()}");
                     d.IsDeleted = true;
                 }
 
                 //Valid Update and action
                 foreach (var u in lsUpdateDetail)
                 {
-                    if (u.StatusId == (int)OutsourcePartProcessType.Unprocessed)
+                    if (u.StatusId == (int)EnumOutsourcePartProcessType.Unprocessed)
                     {
                         var s = req.RequestOutsourcePartDetail.FirstOrDefault(x => x.RequestOutsourcePartDetailId == u.RequestOutsourcePartDetailId);
                         if (s == null)

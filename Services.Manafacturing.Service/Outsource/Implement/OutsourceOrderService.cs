@@ -83,7 +83,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);
-                    order.OutsourceTypeId = (int)OutsourceOrderType.OutsourcePart;
+                    order.OutsourceTypeId = (int)EnumOutsourceOrderType.OutsourcePart;
                     order.OutsourceOrderCode = string.IsNullOrWhiteSpace(order.OutsourceOrderCode) ? outsoureOrderCode : order.OutsourceOrderCode;
 
                     _manufacturingDBContext.OutsourceOrder.Add(order);
@@ -94,7 +94,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     _manufacturingDBContext.OutsourceOrderDetail.AddRange(detail);
                     await _manufacturingDBContext.SaveChangesAsync();
-                    await UpdateStatusRequestOutsourcePartDetail(detail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
+
+                    await UpdateStatusRequestOutsourcePartDetail(detail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processing);
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
@@ -126,7 +127,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 outsourceOrder.IsDeleted = true;
                 outsourceOrderDetail.ForEach(x => x.IsDeleted = true);
-                await UpdateStatusRequestOutsourcePartDetail(outsourceOrderDetail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Unprocessed);
+                await UpdateStatusRequestOutsourcePartDetail(outsourceOrderDetail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Unprocessed);
 
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -248,7 +249,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 //delele detail
                 lsDeleteDetail.ForEach(x => x.IsDeleted = true);
-                await UpdateStatusRequestOutsourcePartDetail(lsDeleteDetail.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
+                await UpdateStatusRequestOutsourcePartDetail(lsDeleteDetail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processed);
 
                 //update
                 foreach (var u in lsUpdateDetail)
@@ -263,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 lsNewDetail.ForEach(x => x.OutsourceOrderId = outsourceOrder.OutsourceOrderId);
                 var temp = _mapper.Map<List<OutsourceOrderDetail>>(lsNewDetail);
                 await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
-                await UpdateStatusRequestOutsourcePartDetail(temp.Select(x => x.ObjectId).ToList(), OutsourcePartProcessType.Processed);
+                await UpdateStatusRequestOutsourcePartDetail(temp.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processed);
 
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -278,7 +279,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        private async Task UpdateStatusRequestOutsourcePartDetail(List<long> listID, OutsourcePartProcessType status)
+
+        private async Task UpdateStatusRequestOutsourcePartDetail(List<long> listID, EnumOutsourcePartProcessType status)
         {
             var data = await _manufacturingDBContext.RequestOutsourcePartDetail.Where(x => listID.Contains(x.RequestOutsourcePartDetailId)).ToListAsync();
             foreach (var e in data)

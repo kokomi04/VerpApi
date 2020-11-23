@@ -14,7 +14,7 @@ namespace VErp.Commons.Enums.Manafacturing
             [Description("Lệnh sản xuất")]
             ProductionOrder = 2,
         }
-        public enum ProductionStepLinkDataRoleType
+        public enum EnumProductionStepLinkDataRoleType
         {
             Input = 1,
             Output = 2,
@@ -26,7 +26,7 @@ namespace VErp.Commons.Enums.Manafacturing
             ProductSemi = 2
         }
 
-        public enum OutsourceOrderType
+        public enum EnumOutsourceOrderType
         {
             [Description("Gia công chi tiết")]
             OutsourcePart = 1,
@@ -34,7 +34,7 @@ namespace VErp.Commons.Enums.Manafacturing
             OutsourceStep = 2
         }
 
-        public enum OutsourcePartProcessType
+        public enum EnumOutsourcePartProcessType
         {
             [Description("Chưa xử lý")]
             Unprocessed = 1,

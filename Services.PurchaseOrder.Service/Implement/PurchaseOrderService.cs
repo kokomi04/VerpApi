@@ -628,15 +628,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var found = false;
                     foreach (var detail in details)
                     {
+
                         if (item.PurchaseOrderDetailId == detail.PurchaseOrderDetailId)
                         {
                             found = true;
+
+                          
 
                             detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
                                                         item.PurchasingSuggestDetailId :
                                                         assignmentDetail?.PurchasingSuggestDetailId;
 
                             detail.PoAssignmentDetailId = item.PoAssignmentDetailId;
+                            detail.ProductId = item.ProductId;
                             detail.ProviderProductName = item.ProviderProductName;
                             detail.PrimaryQuantity = item.PrimaryQuantity;
                             detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
@@ -666,7 +670,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                                     assignmentDetail?.PurchasingSuggestDetailId,
 
                             PoAssignmentDetailId = item.PoAssignmentDetailId,
-
+                            ProductId = item.ProductId,
                             ProviderProductName = item.ProviderProductName,
                             PrimaryQuantity = item.PrimaryQuantity,
                             PrimaryUnitPrice = item.PrimaryUnitPrice,

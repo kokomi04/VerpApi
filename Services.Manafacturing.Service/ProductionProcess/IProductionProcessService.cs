@@ -4,13 +4,18 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Services.Manafacturing.Model.ProductionProcess;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
+        Task<bool> CreateProductionProcess(ProductionProcessModel req);
+        Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
+
         Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId);
-        Task<ProductionProcessInfo> GetProductionProcessByContainerId(EnumProductionProcess.EnumContainerType containerTypeId, long containerId);
+        Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);
         Task<ProductionStepInfo> GetProductionStepById(long productionStepId);
         Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req);
         Task<long> CreateProductionStep(ProductionStepInfo req);
