@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ObjectTypeId))
+                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataObjectType)m.ObjectTypeId))
                 .ReverseMap()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId));
         }
