@@ -25,6 +25,8 @@ namespace VErp.Services.Stock.Service.FileResources
 
         Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
 
+        Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb);
+
         Task<(FileEnity info, string physicalPath)> GetFileAndPath(long fileId);
 
         Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
