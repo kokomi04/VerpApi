@@ -20,6 +20,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string RequestOutsourcePartCode { get; set; }
         public string UnitName { get; set; }
         public decimal Quantity { get; set; }
+        public decimal QuantityOrigin { get; set; }
+        public decimal QuantityProcessed { get; set; }
         public long RequestOutsourcePartFinishDate{ get; set; }
 
         public new void Mapping(Profile profile)

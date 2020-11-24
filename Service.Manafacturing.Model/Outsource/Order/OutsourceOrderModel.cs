@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
@@ -28,6 +29,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
         public long? OutsourceOrderDate { get; set; }
+        [Required(ErrorMessage = "OutsourceOrderFinishDate là bắt buộc")]
         public long OutsourceOrderFinishDate { get; set; }
 
         public void Mapping(Profile profile)

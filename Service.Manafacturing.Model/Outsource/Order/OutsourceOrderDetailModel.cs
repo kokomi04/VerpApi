@@ -11,6 +11,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long OutsourceOrderDetailId { get; set; }
         public long OutsourceOrderId { get; set; }
         public long ObjectId { get; set; }
+        public decimal Quantity { get; set; }
         public decimal Price { get; set; }
         public decimal Tax { get; set; }
     }
@@ -20,7 +21,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProductPartCode { get; set; }
         public string ProductPartName { get; set; }
         public string UnitName { get; set; }
-        public decimal Quantity { get; set; }
+        public decimal QuantityOrigin { get; set; }
+        public decimal QuantityProcessed{ get; set; }
         public string RequestOutsourcePartCode { get; set; }
         public long RequestOutsourcePartFinishDate { get; set; }
     }

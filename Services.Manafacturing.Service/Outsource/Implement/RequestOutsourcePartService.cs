@@ -147,35 +147,20 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 // update order
                 _mapper.Map(req, order);
 
-                var lsDeleteDetail = details.Where(x => !req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
-                var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
-                var lsUpdateDetail = details.Where(x => req.RequestOutsourcePartDetail.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
-
-                //Valid Delete and action
-                foreach (var d in lsDeleteDetail)
-                {
-                    if (d.StatusId != (int)EnumOutsourcePartProcessType.Unprocessed)
-                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource,
-                            $"Không thể xóa chi tiết id/{d.RequestOutsourcePartDetailId} vì trạng thái của nó là {((EnumOutsourcePartProcessType)d.StatusId).GetEnumDescription()}");
-                    d.IsDeleted = true;
-                }
-
                 //Valid Update and action
-                foreach (var u in lsUpdateDetail)
+                foreach (var u in details)
                 {
-                    if (u.StatusId == (int)EnumOutsourcePartProcessType.Unprocessed)
-                    {
                         var s = req.RequestOutsourcePartDetail.FirstOrDefault(x => x.RequestOutsourcePartDetailId == u.RequestOutsourcePartDetailId);
-                        if (s == null)
-                            throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
+                    if (s != null)
                         _mapper.Map(s, u);
-                    }
-                    
+                    else
+                        u.IsDeleted = true;
                 }
 
                 // create new detail
-                lsNewDetail.ForEach(x => x.RequestOutsourcePartId = order.RequestOutsourcePartId);
+                var lsNewDetail = req.RequestOutsourcePartDetail.Where(x => !details.Select(x => x.RequestOutsourcePartDetailId).Contains(x.RequestOutsourcePartDetailId)).ToList();
                 var temp = _mapper.Map<List<RequestOutsourcePartDetail>>(lsNewDetail);
+                temp.ForEach(x => x.RequestOutsourcePartId = order.RequestOutsourcePartId);
                 await _manufacturingDBContext.RequestOutsourcePartDetail.AddRangeAsync(temp);
 
                 await _manufacturingDBContext.SaveChangesAsync();

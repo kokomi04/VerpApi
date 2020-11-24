@@ -242,25 +242,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 //Update order
                 _mapper.Map(req, outsourceOrder);
 
-                //Update detail
-                var lsDeleteDetail = outsourceOrderDetail.Where(x => !req.OutsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
-                var lsNewDetail = req.OutsourceOrderDetail.Where(x => !outsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
-                var lsUpdateDetail = outsourceOrderDetail.Where(x => req.OutsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
-
-                //delele detail
-                lsDeleteDetail.ForEach(x => x.IsDeleted = true);
-                await UpdateStatusRequestOutsourcePartDetail(lsDeleteDetail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processed);
-
-                //update
-                foreach (var u in lsUpdateDetail)
+                //update detail
+                foreach (var u in outsourceOrderDetail)
                 {
-                        var s = req.OutsourceOrderDetail.FirstOrDefault(x => x.OutsourceOrderDetailId == u.OutsourceOrderDetailId);
-                        if (s == null)
-                            throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourOrderDetail);
+                    var s = req.OutsourceOrderDetail.FirstOrDefault(x => x.OutsourceOrderDetailId == u.OutsourceOrderDetailId);
+                    if (s != null)
                         _mapper.Map(s, u);
+                    else
+                        u.IsDeleted = true;
                 }
 
-                // new 
+                var lsNewDetail = req.OutsourceOrderDetail.Where(x => !outsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
                 lsNewDetail.ForEach(x => x.OutsourceOrderId = outsourceOrder.OutsourceOrderId);
                 var temp = _mapper.Map<List<OutsourceOrderDetail>>(lsNewDetail);
                 await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
