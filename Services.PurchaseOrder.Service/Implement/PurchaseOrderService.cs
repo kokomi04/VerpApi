@@ -480,6 +480,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     AdditionNote = model.AdditionNote,
                     PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
                     IsApproved = null,
+                    IsChecked = null,
                     PoProcessStatusId = null,
                     DeliveryFee = model.DeliveryFee,
                     OtherFee = model.OtherFee,
@@ -599,6 +600,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.Content = model.Content;
                 info.AdditionNote = model.AdditionNote;
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff;
+                info.IsChecked = null;
                 info.IsApproved = null;
                 info.PoProcessStatusId = null;
                 info.DeliveryFee = model.DeliveryFee;
@@ -633,7 +635,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             found = true;
 
-                          
+
 
                             detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
                                                         item.PurchasingSuggestDetailId :
@@ -1226,6 +1228,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
+                info.IsChecked = null;
+                info.IsApproved = null;
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.WaitToCensor;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
                 info.UpdatedByUserId = _currentContext.UserId;
