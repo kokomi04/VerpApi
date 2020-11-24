@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
+        public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionSchedule> ProductionSchedule { get; set; }
@@ -125,6 +126,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionAssignment_ProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionHandover>(entity =>
+            {
+                entity.Property(e => e.ProductionHandoverId).ValueGeneratedNever();
+
+                entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<ProductionOrder>(entity =>

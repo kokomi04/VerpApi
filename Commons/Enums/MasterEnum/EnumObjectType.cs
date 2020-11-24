@@ -207,5 +207,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Phân công sản xuất")]
         ProductionAssignment = 73,
         ProductionProcess = 74,
+        [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
+        ProductionHandover = 75,
     }
 }
