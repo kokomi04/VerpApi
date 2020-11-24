@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -14,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string RequestOutsourcePartCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public long RequestOutsourcePartDate { get; set; }
+        [Required(ErrorMessage = "RequestOutsourcePartFinishDate is required")]
         public long RequestOutsourcePartFinishDate { get; set; }
 
         public void Mapping(Profile profile)
