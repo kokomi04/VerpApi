@@ -54,7 +54,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 // Get cấu hình sinh mã
                 int customGenCodeId = 0;
-                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.RequestOutsource, EnumObjectType.RequestOutsource, 0);
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0);
 
                 if (currentConfig == null)
                 {
@@ -166,7 +166,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.RequestOutsource, req.RequestOutsourcePartId, $"Cập nhật yêu cầu gia công chi tiết {req.RequestOutsourcePartId}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, req.RequestOutsourcePartId, $"Cập nhật yêu cầu gia công chi tiết {req.RequestOutsourcePartId}", req.JsonSerialize());
                 return true;
             }
             catch (Exception ex)

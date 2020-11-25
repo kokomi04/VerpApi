@@ -17,6 +17,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
+        public virtual DbSet<OutsourceStepRequest> OutsourceStepRequest { get; set; }
+        public virtual DbSet<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
@@ -33,8 +35,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<RequestOutsourcePart> RequestOutsourcePart { get; set; }
         public virtual DbSet<RequestOutsourcePartDetail> RequestOutsourcePartDetail { get; set; }
-        public virtual DbSet<RequestOutsourceStep> RequestOutsourceStep { get; set; }
-        public virtual DbSet<RequestOutsourceStepDetail> RequestOutsourceStepDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
 
@@ -99,6 +99,49 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.OutsourceOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
+            });
+
+            modelBuilder.Entity<OutsourceStepRequest>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+
+                entity.Property(e => e.OutsourceStepRequestCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.OutsourceStepRequest)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequest_ProductionOrder");
+            });
+
+            modelBuilder.Entity<OutsourceStepRequestData>(entity =>
+            {
+                entity.HasKey(e => new { e.OutsourceStepRequestId, e.ProductionStepLinkDataId })
+                    .HasName("PK_RequestOutsourceStepOutput");
+
+                entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: input 2:input");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.OutsourceStepRequest)
+                    .WithMany(p => p.OutsourceStepRequestData)
+                    .HasForeignKey(d => d.OutsourceStepRequestId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequestData_OutsourceStepRequest");
+
+                entity.HasOne(d => d.ProductionStepLinkData)
+                    .WithMany(p => p.OutsourceStepRequestData)
+                    .HasForeignKey(d => d.ProductionStepLinkDataId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequestData_ProductionStepLinkData");
             });
 
             modelBuilder.Entity<ProductSemi>(entity =>
@@ -348,48 +391,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.RequestOutsourcePartId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_RequestOutsourcePartDetail_RequestOutsourcePart");
-            });
-
-            modelBuilder.Entity<RequestOutsourceStep>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DateRequiredComplete).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
-
-                entity.Property(e => e.PathStepId).IsRequired();
-
-                entity.Property(e => e.RequestOutsourceStepCode)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<RequestOutsourceStepDetail>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.ProductionStepLinkData)
-                    .WithMany(p => p.RequestOutsourceStepDetail)
-                    .HasForeignKey(d => d.ProductionStepLinkDataId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestOutsourceStepDetail_ProductionStepLinkData");
-
-                entity.HasOne(d => d.RequestOutsourceStep)
-                    .WithMany(p => p.RequestOutsourceStepDetail)
-                    .HasForeignKey(d => d.RequestOutsourceStepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_RequestOutsourceStepDetail_RequestOutsourceStep");
             });
 
             modelBuilder.Entity<Step>(entity =>

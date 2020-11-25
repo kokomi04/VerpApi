@@ -31,5 +31,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);
 
         Task<long> CreateProductionStepGroup(ProductionStepGroupModel req);
+
+        Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
     }
 }
