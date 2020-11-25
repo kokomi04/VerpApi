@@ -366,11 +366,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 productionOrderDetails.RemoveAll(od => hasProcessDetailIds.Contains(od.ProductionOrderDetailId));
             }
 
-            var productIds = productionOrderDetails.Select(od => od.ProductId).ToList();
+            var productIds = productionOrderDetails.Select(od => (long)od.ProductId).ToList();
 
             var productOrderMap = productionOrderDetails.ToDictionary(p => (long)p.ProductId, p => p.ProductionOrderDetailId);
 
-            var products = await _productHelperService.GetListProducts(productIds);
+            var products = await _productHelperService.GetListProducts(productIds.Cast<int>().ToList());
             if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
@@ -558,7 +558,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                     _manufacturingDBContext.ProductionStepOrder.RemoveRange(productionStepOrder);
 
-                    var childProductionSteps = _manufacturingDBContext.ProductionStep.Where(s => productionStepIds.Contains(s.ParentId)).ToList();
+                    var productionStepIdsType = productionStepIds.Cast<long?>().ToList();
+                    var childProductionSteps = _manufacturingDBContext.ProductionStep.Where(s => productionStepIdsType.Contains(s.ParentId)).ToList();
                     // Cập nhật parentStep
                     foreach (var child in childProductionSteps)
                     {

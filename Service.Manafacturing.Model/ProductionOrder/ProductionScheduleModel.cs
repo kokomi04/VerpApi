@@ -41,7 +41,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
     {
         public long? ProductionScheduleId { get; set; }
-        public int ProductionOrderDetailId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public decimal ProductionScheduleQuantity { get; set; }

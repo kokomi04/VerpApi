@@ -54,12 +54,11 @@ namespace VErp.Services.Master.Service.Guide.Implement
 
         public async Task<IList<GuideModel>> GetGuidesByCode(string guideCode)
         {
-            var ls = _masterDBContext.Guide.AsNoTracking()
+            return await _masterDBContext.Guide.AsNoTracking()
                 .Where(g => g.GuideCode.Equals(guideCode))
                 .OrderBy(x => x.SortOrder)
                 .ProjectTo<GuideModel>(_mapper.ConfigurationProvider)
-                .ToList();
-            return ls;
+                .ToListAsync();
         }
 
         public async Task<GuideModel> GetGuideById(int guideId)

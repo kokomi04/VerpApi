@@ -44,7 +44,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetList(EnumModuleType moduleType)
         {
             var data = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
-            var db = await GetDatabase(moduleType);
+            var db = GetDatabase(moduleType);
 
             using (var connection = _masterDBContext.Database.GetDbConnection())
             {
@@ -99,7 +99,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
         public async Task<bool> Create(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
-            var db = await GetDatabase(moduleType);
+            var db = GetDatabase(moduleType);
 
             using (var connection = _masterDBContext.Database.GetDbConnection())
             {
@@ -129,7 +129,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
         {
             InvalidStoreProcedure(storedProcedureModel);
 
-            var db = await GetDatabase(moduleType);
+            var db = GetDatabase(moduleType);
 
             using (var connection = _masterDBContext.Database.GetDbConnection())
             {
@@ -168,7 +168,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
         public async Task<bool> Drop(EnumModuleType moduleType, int type, StoredProcedureModel storedProcedureModel)
         {
-            var db = await GetDatabase(moduleType);
+            var db = GetDatabase(moduleType);
             using (var connection = _masterDBContext.Database.GetDbConnection())
             {
                 await connection.OpenAsync();
@@ -197,9 +197,9 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
             return false;
         }
 
-        private async Task<string> GetDatabase(EnumModuleType moduleType)
+        private string GetDatabase(EnumModuleType moduleType)
         {
-            var ls = await _subSystemService.GetDbByModuleTypeId(moduleType);
+            var ls = _subSystemService.GetDbByModuleTypeId(moduleType);
             return ls[0];
         }
 

@@ -448,7 +448,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = rowValues.Any(v => v != singleClause.Value);
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = rowValues.Any(v => v.Contains(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -463,10 +463,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = rowValues.Any(v => v.StartsWith(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = rowValues.Any(v => v.EndsWith(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -506,7 +506,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) != 0;
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = value.Contains(singleClause.Value);
+                                isRequire = value.StringContains(singleClause.Value);
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -521,10 +521,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = value.StartsWith(singleClause.Value);
+                                isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = value.EndsWith(singleClause.Value);
+                                isRequire = value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
