@@ -27,8 +27,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
-                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
-                .ReverseMap();
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title));
         }
     }
 
