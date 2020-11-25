@@ -21,15 +21,20 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public long ContainerId { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
-        public int? CoordinateX { get; set; }
-        public int? CoordinateY { get; set; }
+        public decimal? CoordinateX { get; set; }
+        public decimal? CoordinateY { get; set; }
         public string ProductionStepCode { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title));
+        }
     }
 
     public class ProductionStepInfo: ProductionStepModel
     {
         public List<ProductionStepLinkDataInfo > ProductionStepLinkDatas { get; set; }
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))

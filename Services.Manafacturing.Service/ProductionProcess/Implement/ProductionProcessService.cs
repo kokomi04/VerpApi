@@ -159,7 +159,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             // Tính toán quan hệ của quy trình con
             var productionStepGroupLinkDataRoles = CalcInOutDataForGroup(stepInfos, roles);
 
-            foreach(var group in productionSteps.Where(s => s.IsGroup.Value))
+            foreach (var group in productionSteps.Where(s => s.IsGroup.Value))
             {
                 group.ProductionStepLinkDatas = productionStepGroupLinkDataRoles
                     .Where(r => r.ProductionStepId == group.ProductionStepId)
@@ -212,32 +212,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             //Lấy thông tin dữ liệu của steplinkdata
             var lsProductionStepId = roles.Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
-            var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-            var parammeters = new List<SqlParameter>();
-            var whereCondition = new StringBuilder();
-
-            if (lsProductionStepId.Count > 0) whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-            for (int i = 0; i < lsProductionStepId.Count; i++)
+            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            if (lsProductionStepId.Count > 0)
             {
-                var number = lsProductionStepId[i];
-                string pName = $"@ProductionStepLinkDataId{i + 1}";
+                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
+                var parammeters = new List<SqlParameter>();
+                var whereCondition = new StringBuilder();
 
-                if (i == lsProductionStepId.Count - 1)
-                    whereCondition.Append($"{pName} )");
-                else
-                    whereCondition.Append($"{pName}, ");
+                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
+                for (int i = 0; i < lsProductionStepId.Count; i++)
+                {
+                    var number = lsProductionStepId[i];
+                    string pName = $"@ProductionStepLinkDataId{i + 1}";
 
-                parammeters.Add(new SqlParameter(pName, number));
+                    if (i == lsProductionStepId.Count - 1)
+                        whereCondition.Append($"{pName} )");
+                    else
+                        whereCondition.Append($"{pName}, ");
+
+                    parammeters.Add(new SqlParameter(pName, number));
+                }
+                if (whereCondition.Length > 0)
+                {
+                    sql.Append(" WHERE ");
+                    sql.Append(whereCondition);
+                }
+
+                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                        .ConvertData<ProductionStepLinkDataInput>();
             }
-
-            if (whereCondition.Length > 0)
-            {
-                sql.Append(" WHERE ");
-                sql.Append(whereCondition);
-            }
-
-            var stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                    .ConvertData<ProductionStepLinkDataInput>();
 
             // Tính toán quan hệ của quy trình con
             var productionStepGroupLinkDataRoles = CalcInOutDataForGroup(stepInfos, roles);
@@ -841,66 +844,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
         #region Production process
-        public async Task<bool> CreateProductionProcess(ProductionProcessModel req)
-        {
-            ValidProductionStepLinkData(req);
-
-            var isExists = _manufacturingDBContext.ProductionStep.Any(p => p.ContainerId == req.ContainerId && p.ContainerTypeId == (int)req.ContainerTypeId);
-            if (isExists)
-                throw new BadRequestException(ProductionProcessErrorCode.ExistsProductionProcess);
-
-            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-            try
-            {
-                var productionStepModel = _mapper.Map<List<ProductionStep>>(req.ProductionSteps);
-                var productionStepLinkData = _mapper.Map<List<ProductionStepLinkData>>(req.ProductionStepLinkDatas);
-
-                await _manufacturingDBContext.ProductionStep.AddRangeAsync(productionStepModel);
-                await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(productionStepLinkData);
-
-                //Gán parentId nếu trong nhóm công đoạn có QTSX con
-                foreach (var s in productionStepModel)
-                {
-                    if (!string.IsNullOrWhiteSpace(s.ParentCode))
-                    {
-                        var p = productionStepModel.FirstOrDefault(x => x.ProductionStepCode.Equals(s.ParentCode));
-                        if (p != null)
-                            s.ParentId = p.ProductionStepId;
-                    }
-                }
-
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                var roles = from r in req.ProductionStepLinkDataRoles
-                            join s in productionStepModel on r.ProductionStepCode equals s.ProductionStepCode
-                            join d in productionStepLinkData on r.ProductionStepLinkDataCode equals d.ProductionStepLinkDataCode
-                            select new ProductionStepLinkDataRole
-                            {
-                                ProductionStepId = s.ProductionStepId,
-                                ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                                ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId
-                            };
-                await _manufacturingDBContext.ProductionStepLinkDataRole.AddRangeAsync(roles);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Tạo quy trình sản xuất", req.JsonSerialize());
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await trans.RollbackAsync();
-                _logger.LogError(ex, "CreateProductionProcess");
-                throw;
-            }
-        }
 
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
             ValidProductionStepLinkData(req);
-            var isExists = await _manufacturingDBContext.ProductionStep.AnyAsync(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId);
-            if (!isExists)
-                throw new BadRequestException(ProductionProcessErrorCode.NotFoundProductionProcess);
+            //var isExists = await _manufacturingDBContext.ProductionStep.AnyAsync(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId);
+            //if (!isExists)
+            //    throw new BadRequestException(ProductionProcessErrorCode.NotFoundProductionProcess);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try

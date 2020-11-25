@@ -183,9 +183,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ContainerTypeId).HasComment(@"1: Sản phẩm
 2: Lệnh SX");
 
-                entity.Property(e => e.CoordinateX).HasDefaultValueSql("((0))");
+                entity.Property(e => e.CoordinateX)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.CoordinateY).HasDefaultValueSql("((0))");
+                entity.Property(e => e.CoordinateY)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 

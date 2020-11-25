@@ -11,7 +11,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
-        Task<bool> CreateProductionProcess(ProductionProcessModel req);
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
 
         Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId);
