@@ -116,13 +116,6 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.UpdateProductionStepSortOrder(req);
         }
 
-        [HttpPost]
-        [Route("")]
-        public async Task<bool> CreateProductionProcess([FromBody] ProductionProcessModel req)
-        {
-            return await _productionProcessService.CreateProductionProcess(req);
-        }
-
         [HttpPut]
         [Route("{containerTypeId}/{containerId}")]
         public async Task<bool> UpdateProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] ProductionProcessModel req)
