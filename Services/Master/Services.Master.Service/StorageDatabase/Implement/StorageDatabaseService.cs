@@ -63,7 +63,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
 
                 string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleTypeId.GetStringValue());
-                var dbs = await _manageVErpModuleService.GetDbByModuleTypeId(storage.ModuleTypeId);
+                var dbs = _manageVErpModuleService.GetDbByModuleTypeId(storage.ModuleTypeId);
                 foreach (string db in dbs)
                 {
                     string filePath = $"{outDirectory}/{db.ToLower()}.bak";
@@ -169,7 +169,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
             if (fileInfo == null)
                 throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
-            var dbs = await _manageVErpModuleService.GetDbByModuleTypeId((EnumModuleType)backup.ModuleTypeId);
+            var dbs = _manageVErpModuleService.GetDbByModuleTypeId((EnumModuleType)backup.ModuleTypeId);
             foreach(string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
@@ -224,7 +224,8 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 query = query.Where(x => x.ModuleTypeId == moduleTypeId);
             }
 
-            var data = query.AsEnumerable().GroupBy(x => new { x.BackupPoint, x.Title })
+            var data = (await query.ToListAsync())
+                .GroupBy(x => new { x.BackupPoint, x.Title })
                 .Select(g => new BackupStorageOutput
                 {
                     BackupPoint = g.Key.BackupPoint,

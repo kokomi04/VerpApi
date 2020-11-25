@@ -691,19 +691,19 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static bool Contains(this object value1, object value2)
+        public static bool StringContains(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().Contains(value2.ToString());
         }
 
-        public static bool StartsWith(this object value1, object value2)
+        public static bool StringStartsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().StartsWith(value2.ToString());
         }
 
-        public static bool EndsWith(this object value1, object value2)
+        public static bool StringEndsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().EndsWith(value2.ToString());
@@ -969,14 +969,34 @@ namespace VErp.Commons.Library
                 {
                     title = prop.Name;
                 }
-                fields.Add(new CategoryFieldNameModel()
+
+                var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
                     RefCategory = null
-                });
+                };
+               
+                if (prop.PropertyType.IsClass)
+                {
+
+                    MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
+                    MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
+                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, null);
+
+                    fileMapping.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryCode = prop.PropertyType.Name,
+                        CategoryId = prop.PropertyType.Name.GetHashCode(),
+                        CategoryTitle = title,
+                        Fields = childFields
+                    };
+                   
+                }
+
+                fields.Add(fileMapping);
             }
 
             return fields;

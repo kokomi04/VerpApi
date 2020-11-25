@@ -22,9 +22,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<SubSystemInfo>> GetSubSystems()
+        public IList<SubSystemInfo> GetSubSystems()
         {
-            return await _subSystemService.GetSubSystems();
+            return _subSystemService.GetSubSystems();
         }
     }
 }
