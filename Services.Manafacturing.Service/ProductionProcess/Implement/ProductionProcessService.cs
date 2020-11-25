@@ -848,9 +848,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
             ValidProductionStepLinkData(req);
-            //var isExists = await _manufacturingDBContext.ProductionStep.AnyAsync(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId);
-            //if (!isExists)
-            //    throw new BadRequestException(ProductionProcessErrorCode.NotFoundProductionProcess);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -946,17 +943,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var lsInputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
             var lsOutputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
 
-            var distinctLinkData = req.ProductionStepLinkDatas.Select(x => x.ProductionStepLinkDataCode).Distinct();
-            foreach (var linkDataCode in distinctLinkData)
+            var stepLinkDatas = req.ProductionStepLinkDatas.GroupBy(x=>x.ProductionStepLinkDataCode);
+            foreach (var group in stepLinkDatas)
             {
-                var inStep = lsInputStep.Where(x => x.ProductionStepLinkDataCode.Equals(linkDataCode)).ToList();
-                var outStep = lsOutputStep.Where(x => x.ProductionStepLinkDataCode.Equals(linkDataCode)).ToList();
+                if(group.Count() > 1){
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Tồn tại 2 chi tiết có mã {group.Key}");
+                }
+                var inStep = lsInputStep.Where(x => x.ProductionStepLinkDataCode.Equals(group.Key)).ToList();
+                var outStep = lsOutputStep.Where(x => x.ProductionStepLinkDataCode.Equals(group.Key)).ToList();
                 if (inStep.Count == 0 && outStep.Count == 0)
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {linkDataCode} không thuộc bất kỳ công đoạn nào");
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {group.First().ObjectTitle} không thuộc bất kỳ công đoạn nào");
                 if (inStep.Count > 1)
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {linkDataCode} không thể là đầu vào của 2 công đoạn");
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {group.First().ObjectTitle} không thể là đầu vào của 2 công đoạn");
                 if (outStep.Count > 1)
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {linkDataCode} không thể là đầu ra của 2 công đoạn");
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {group.First().ObjectTitle} không thể là đầu ra của 2 công đoạn");
             }
         }
     }
