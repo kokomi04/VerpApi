@@ -89,7 +89,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var result = new ReportDataModel();
 
-            var filters = model.Filters;
+            var filters = model.Filters.GroupBy(f => f.Key.Trim().ToLower()).ToDictionary(f => f.Key, f => f.Last().Value);
             var orderByFieldName = model.OrderByFieldName;
             var asc = model.Asc;
             var page = model.Page;
@@ -113,7 +113,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (string.IsNullOrWhiteSpace(param)) continue;
 
-                    var paramName = param.Trim();
+                    var paramName = param.Trim().ToLower();
 
                     if (filters.ContainsKey(paramName))
                     {
