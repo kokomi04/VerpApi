@@ -120,9 +120,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 throw new BadRequestException(validate);
             }
-            var result = await CreateBatchUser(new []{ req }, employeeTypeId);
+            var result = await CreateBatchUser(new[] { req }, employeeTypeId);
             return result.First().userId;
-           
+
         }
 
         public async Task<bool> UpdateEmployeeDepartmentMapping(int userId, int userDepartmentMappingId, DateTime? effectiveDate, DateTime? expirationDate)
@@ -364,8 +364,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                             DepartmentId = departmentInfo.DepartmentId,
                             DepartmentCode = departmentInfo.DepartmentCode,
                             DepartmentName = departmentInfo.DepartmentName,
-                            EffectiveDate = m.EffectiveDate,
-                            ExpirationDate = m.ExpirationDate
+                            EffectiveDate = m.EffectiveDate.GetUnix(),
+                            ExpirationDate = m.ExpirationDate.GetUnix()
                         });
                     }
                 }
@@ -695,8 +695,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                         userInfo.Departments.Add(new UserDepartmentMappingModel()
                         {
                             DepartmentId = departnemtImportModel.DepartmentId.Value,
-                            EffectiveDate = (DateTime?)effectiveDateProp.GetValue(userModel),
-                            ExpirationDate = (DateTime?)expirationDateProp.GetValue(userModel),
+                            EffectiveDate = (long?)effectiveDateProp.GetValue(userModel),
+                            ExpirationDate = (long?)expirationDateProp.GetValue(userModel),
                         });
                     }
                 }
@@ -864,29 +864,18 @@ namespace VErp.Services.Master.Service.Users.Implement
             var userDepartments = new List<EmployeeDepartmentMapping>();
             foreach (var req in ls)
             {
-                var userNameHash = req.userInfo.UserName.ToGuid();
-                User user;
-                if (!string.IsNullOrWhiteSpace(req.userInfo.UserName))
-                {
-                    user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserNameHash == userNameHash);
-                    if (user != null)
-                    {
-                        throw new BadRequestException(UserErrorCode.UserNameExisted);
-                    }
-                }
-
                 userDepartments.AddRange(req.userInfo.Departments.Select(d => new EmployeeDepartmentMapping()
                 {
                     DepartmentId = d.DepartmentId,
                     UserId = req.userId,
-                    EffectiveDate = d.EffectiveDate,
-                    ExpirationDate = d.ExpirationDate
+                    EffectiveDate = d.EffectiveDate.UnixToDateTime(),
+                    ExpirationDate = d.ExpirationDate.UnixToDateTime(),
                 }));
             };
 
             await _organizationContext.EmployeeDepartmentMapping.AddRangeAsync(userDepartments);
 
-            await _masterContext.SaveChangesAsync();
+            await _organizationContext.SaveChangesAsync();
         }
 
 
@@ -991,7 +980,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
 
             await DeleteEmployeeDepartment(userId);
-            
+
             await AddBatchUserDepartment(new List<(int userId, UserInfoInput userInfo)>() { (userId, req) });
 
             return true;

@@ -7,6 +7,7 @@ using VErp.Services.Organization.Model.Department;
 
 namespace VErp.Services.Master.Model.Users
 {
+
     public class UserInfoOutput : EmployeeBase
     {
         public int UserId { get; set; }
@@ -35,7 +36,7 @@ namespace VErp.Services.Master.Model.Users
     {
         public int DepartmentId { get; set; }
         public int? UserDepartmentMappingId { get; set; }
-        public DateTime? EffectiveDate { get; set; }
-        public DateTime? ExpirationDate { get; set; }
+        public long? EffectiveDate { get; set; }
+        public long? ExpirationDate { get; set; }
     }
 }

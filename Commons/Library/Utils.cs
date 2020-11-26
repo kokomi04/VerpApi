@@ -191,6 +191,12 @@ namespace VErp.Commons.Library
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
+        public static DateTime? UnixToDateTime(this long? unixTime)
+        {
+            if (unixTime == 0 || !unixTime.HasValue) return null;
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -978,7 +984,7 @@ namespace VErp.Commons.Library
                     FieldTitle = title,
                     RefCategory = null
                 };
-               
+
                 if (prop.PropertyType.IsClass)
                 {
 
@@ -993,7 +999,7 @@ namespace VErp.Commons.Library
                         CategoryTitle = title,
                         Fields = childFields
                     };
-                   
+
                 }
 
                 fields.Add(fileMapping);
