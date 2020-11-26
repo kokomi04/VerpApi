@@ -72,7 +72,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             maxCloumn = columns.Count;
 
-            WriteHeader();
+            await WriteHeader();
+
             WriteBody(reportInfo);
             WriteFooter();
 
@@ -102,7 +103,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return (stream, fileName, contentType);
         }
 
-        private void WriteHeader()
+        private async Task WriteHeader()
         {
             if (_model.Header != null)
             {
