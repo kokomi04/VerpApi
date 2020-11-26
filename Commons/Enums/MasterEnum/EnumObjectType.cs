@@ -209,5 +209,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionProcess = 74,
         [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
         ProductionHandover = 75,
+
+        [Description("Khai báo nhân công và chi phí")]
+        ProductionScheduleTurnShift = 77,
     }
 }
