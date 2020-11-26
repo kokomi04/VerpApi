@@ -373,7 +373,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var productOrderMap = productionOrderDetails.ToDictionary(p => (long)p.ProductId, p => p.ProductionOrderDetailId);
 
-            var products = await _productHelperService.GetListProducts(productIds.Cast<int>().ToList());
+            var products = await _productHelperService.GetListProducts(productIds.Select(p => (int)p).ToList());
             if (productIds.Count > products.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng không tồn tại.");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
