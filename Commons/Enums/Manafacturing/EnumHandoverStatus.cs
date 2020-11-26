@@ -12,6 +12,6 @@ namespace VErp.Commons.Enums.Manafacturing
         [Description("Đã duyệt")]
         Accept = 1,
         [Description("Từ chối")]
-        Reject = 1
+        Reject = 2
     }
 }

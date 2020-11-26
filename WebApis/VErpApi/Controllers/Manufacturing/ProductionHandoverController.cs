@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("{scheduleTurnId}")]
-        public async Task<ProductionHandoverModel> CreateProductionHandover([FromRoute] long scheduleTurnId, [FromBody] ProductionHandoverModel data)
+        public async Task<ProductionHandoverModel> CreateProductionHandover([FromRoute] long scheduleTurnId, [FromBody] ProductionHandoverInputModel data)
         {
             return await _productionHandoverService.CreateProductionHandover(scheduleTurnId, data);
         }

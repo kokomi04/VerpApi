@@ -46,18 +46,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _mapper = mapper;
         }
 
-        public async Task<ProductionHandoverModel> CreateProductionHandover(long scheduleTurnId, ProductionHandoverModel data)
+        public async Task<ProductionHandoverModel> CreateProductionHandover(long scheduleTurnId, ProductionHandoverInputModel data)
         {
             try
             {
-                data.Status = EnumHandoverStatus.Waiting;
                 var productionHandover = _mapper.Map<ProductionHandoverEntity>(data);
+                productionHandover.Status = (int)EnumHandoverStatus.Waiting;
                 productionHandover.ScheduleTurnId = scheduleTurnId;
                 _manufacturingDBContext.ProductionHandover.Add(productionHandover);
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
-                data.ProductionHandoverId = productionHandover.ProductionHandoverId;
-                return data;
+                return _mapper.Map<ProductionHandoverModel>(productionHandover);
             }
             catch (Exception ex)
             {
@@ -68,10 +67,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId)
         {
-            return await _manufacturingDBContext.ProductionHandover
+            return _manufacturingDBContext.ProductionHandover
                 .Where(h => h.ScheduleTurnId == scheduleTurnId)
                 .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+                .ToList();
 
         }
     }
