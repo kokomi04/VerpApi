@@ -23,6 +23,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionSchedule> ProductionSchedule { get; set; }
+        public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
+        public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
@@ -118,8 +120,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionAssignment>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ScheduleTurnId })
-                    .HasName("PK_ProductionStepOrder_copy1");
+                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId, e.DepartmentId });
 
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
 
@@ -174,6 +175,42 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderDetailId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionSchedule_ProductionOrderDetail");
+            });
+
+            modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Hours).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.ProductionAssignment)
+                    .WithMany(p => p.ProductionScheduleTurnShift)
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionScheduleTurnShift_ProductionAssignment");
+            });
+
+            modelBuilder.Entity<ProductionScheduleTurnShiftUser>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Money).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.ProductionScheduleTurnShift)
+                    .WithMany(p => p.ProductionScheduleTurnShiftUser)
+                    .HasForeignKey(d => d.ProductionScheduleTurnShiftId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionScheduleTurnShiftUser_ProductionScheduleTurnShift");
             });
 
             modelBuilder.Entity<ProductionStep>(entity =>
