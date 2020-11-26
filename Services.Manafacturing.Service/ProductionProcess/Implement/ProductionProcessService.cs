@@ -248,6 +248,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             //Tính toán mối quan hệ giữa (stepLink) các công đoạn
             var productionStepLinks = CalcProductionStepLink(roles, productionStepGroupLinkDataRoles);
 
+            var productionStepOrders = new List<ProductionStepOrderModel>();
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail
+                    .Where(x => x.ProductionOrderId == containerId)
+                    .Select(x => x.ProductionOrderDetailId)
+                    .ToListAsync();
+
+                productionStepOrders = await _manufacturingDBContext.ProductionStepOrder
+                    .Include(x=>x.ProductionStep)
+                    .Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId))
+                    .ProjectTo<ProductionStepOrderModel>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
+            }
+
             return new ProductionProcessModel
             {
                 ContainerId = containerId,
@@ -256,7 +271,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDataRoles = roles,
                 ProductionStepLinkDatas = stepLinkDatas,
                 ProductionStepLinks = productionStepLinks,
-                ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles
+                ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles,
+                ProductionStepOrders = productionStepOrders
             };
         }
 
@@ -920,6 +936,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         if (p != null)
                             s.ParentId = p.ProductionStepId;
                     }
+                }
+
+                //Lưu công đoạn thuộc QTSX trong LSX nào
+                if(containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
+                {
+                    var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
+                    var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
+                    _manufacturingDBContext.ProductionStepOrder.RemoveRange(lsProductionStepOrderOld);
+
+                    req.ProductionStepOrders.ForEach(x =>
+                    {
+                        var step = newStep.FirstOrDefault(x => x.ProductionStepCode.Equals(x.ProductionStepCode));
+                        x.ProductionStepId = step.ProductionStepId;
+                    });
+                    var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
+                    await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
                 }
 
                 await _manufacturingDBContext.SaveChangesAsync();

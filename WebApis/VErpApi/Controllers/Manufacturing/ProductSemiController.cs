@@ -56,10 +56,17 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpDelete]
-        [Route("")]
-        public async Task<bool> DeleteProductSemi([FromQuery] long productSemiId)
+        [Route("{productSemiId}")]
+        public async Task<bool> DeleteProductSemi([FromRoute] long productSemiId)
         {
             return await _productSemiService.DeleteProductSemi(productSemiId);
+        }
+
+        [HttpPost]
+        [Route("/searchByListContainerId")]
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId(IList<long> lstContainerId)
+        {
+            return await _productSemiService.GetListProductSemi(lstContainerId);
         }
     }
 }
