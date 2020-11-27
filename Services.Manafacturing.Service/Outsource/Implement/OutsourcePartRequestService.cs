@@ -26,7 +26,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
-    public class RequestOutsourcePartService : IOutsourcePartRequestService
+    public class OutsourcePartRequestService : IOutsourcePartRequestService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -34,9 +34,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
-        public RequestOutsourcePartService(ManufacturingDBContext manufacturingDB
+        public OutsourcePartRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger<RequestOutsourcePartService> logger
+            , ILogger<OutsourcePartRequestService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService)
         {
