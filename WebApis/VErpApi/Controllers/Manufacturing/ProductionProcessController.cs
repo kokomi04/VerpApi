@@ -122,5 +122,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
         }
+
+        [HttpPost]
+        [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
+        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepId)
+        {
+            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepId);
+        }
     }
 }

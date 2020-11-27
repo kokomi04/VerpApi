@@ -18,5 +18,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         ExistsProductionProcess = 5,
         [Description("Không tìm thấy quy trình sản xuất")]
         NotFoundProductionProcess = 6,
+        [Description("Các công đoạn không nằm trong cùng 1 quy trình sản xuất")]
+        ListProductionStepNotInContainerId = 7,
     }
 }
