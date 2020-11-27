@@ -449,12 +449,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     var newStep = new ProductionStep
                     {
-                        StepId = null,
+                        StepId = step.StepId,
                         Title = step.Title,
                         ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
                         ProductionStepCode = step.ProductionStepCode,
                         ContainerId = productionOrderId,
-                        IsGroup = productionSteps.Any(s => s.ParentId == step.ProductionStepId)
+                        IsGroup = productionSteps.Any(s => s.ParentId == step.ProductionStepId),
+                        CoordinateX = step.CoordinateX,
+                        CoordinateY = step.CoordinateY
                     };
                     if (step.ParentId.HasValue)
                     {
