@@ -133,8 +133,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
-                entity.Property(e => e.ProductionHandoverId).ValueGeneratedNever();
-
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(18, 5)");
             });
 
