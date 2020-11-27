@@ -442,7 +442,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 // create productionStep
                 var stepMap = new Dictionary<long, ProductionStep>();
-                var stepOrderMap = new Dictionary<long, ProductionStep>();
+                var stepOrderMap = new Dictionary<long, List<ProductionStep>>();
 
                 var parentIdUpdater = new List<ProductionStep>();
                 foreach (var step in productionSteps)
@@ -466,8 +466,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                     _manufacturingDBContext.ProductionStep.Add(newStep);
                     stepMap.Add(step.ProductionStepId, newStep);
-                    stepOrderMap.Add(step.ContainerId, newStep);
-
+                    if (!stepOrderMap.ContainsKey(step.ContainerId))
+                    {
+                        stepOrderMap.Add(step.ContainerId, new List<ProductionStep>());
+                    }
+                    stepOrderMap[step.ContainerId].Add(newStep);
                 }
                 _manufacturingDBContext.SaveChanges();
 
@@ -479,13 +482,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
 
                 // Map step công đoạn, quy trình con với chi tiết lệnh sản xuất
-                foreach (var item in stepOrderMap)
+                foreach (var group in stepOrderMap)
                 {
-                    _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                    foreach(var item in group.Value)
                     {
-                        ProductionOrderDetailId = productOrderMap[item.Key],
-                        ProductionStepId = item.Value.ProductionStepId
-                    });
+                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                        {
+                            ProductionOrderDetailId = productOrderMap[group.Key],
+                            ProductionStepId = item.ProductionStepId
+                        });
+                    }
                 }
 
                 // Create data
