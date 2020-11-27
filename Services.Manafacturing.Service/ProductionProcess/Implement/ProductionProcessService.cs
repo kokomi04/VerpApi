@@ -449,7 +449,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     var newStep = new ProductionStep
                     {
-                        StepId = step.StepId,
+                        StepId = null,
                         Title = step.Title,
                         ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
 
