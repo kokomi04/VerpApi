@@ -26,7 +26,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
-    public class RequestOutsourcePartService : IRequestOutsourcePartService
+    public class RequestOutsourcePartService : IOutsourcePartRequestService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<long> CreateRequestOutsourcePart(RequestOutsourcePartInfo req)
+        public async Task<long> CreateOutsourcePartRequest(RequestOutsourcePartInfo req)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -105,7 +105,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<RequestOutsourcePartInfo> GetRequestOutsourcePartExtraInfo(int requestOutsourcePartId = 0)
+        public async Task<RequestOutsourcePartInfo> GetOutsourcePartRequestExtraInfo(int requestOutsourcePartId = 0)
         {
             var sql = new StringBuilder("SELECT * FROM vRequestOutsourcePartExtractInfo v WHERE v.RequestOutsourcePartId = @RequestOutsourcePartId");
 
@@ -134,7 +134,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return string.Empty;
         }
 
-        public async Task<bool> UpdateRequestOutsourcePart(int requestOutsourcePartId, RequestOutsourcePartInfo req)
+        public async Task<bool> UpdateOutsourcePartRequest(int requestOutsourcePartId, RequestOutsourcePartInfo req)
         {
             var order = await _manufacturingDBContext.RequestOutsourcePart.FirstOrDefaultAsync(x => x.RequestOutsourcePartId == requestOutsourcePartId);
             if (order == null)
@@ -177,7 +177,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListRequestOutsourcePart(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -236,7 +236,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return (lst, total);
         }
 
-        public async Task<bool> DeletedRequestOutsourcePart(int requestOutsourcePartId)
+        public async Task<bool> DeletedOutsourcePartRequest(int requestOutsourcePartId)
         {
             var order = await _manufacturingDBContext.RequestOutsourcePart.FirstOrDefaultAsync(x => x.RequestOutsourcePartId == requestOutsourcePartId);
             if (order == null)

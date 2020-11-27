@@ -19,7 +19,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
-        public string DeletedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }

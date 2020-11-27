@@ -105,9 +105,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.DeletedDatetimeUtc)
-                    .HasMaxLength(10)
-                    .IsFixedLength();
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.OutsourceStepRequestCode)
                     .IsRequired()

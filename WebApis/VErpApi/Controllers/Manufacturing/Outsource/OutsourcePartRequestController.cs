@@ -16,45 +16,45 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
     [ApiController]
     public class OutsourcePartRequestController : VErpBaseController
     {
-        private readonly IRequestOutsourcePartService _requestPartService;
+        private readonly IOutsourcePartRequestService _outsourcePartRequestService;
 
-        public OutsourcePartRequestController(IRequestOutsourcePartService requestOutsourcePartService)
+        public OutsourcePartRequestController(IOutsourcePartRequestService requestOutsourcePartService)
         {
-            _requestPartService = requestOutsourcePartService;
+            _outsourcePartRequestService = requestOutsourcePartService;
         }
 
         [HttpPost]
         [Route("search")]
         public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListRequestPart([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size,[FromBody] Clause filters = null)
         {
-            return await _requestPartService.GetListRequestOutsourcePart(keyword, page, size, filters);
+            return await _outsourcePartRequestService.GetListOutsourcePartRequest(keyword, page, size, filters);
         }
 
         [HttpGet]
         [Route("{outsourcePartRequestId}")]
         public async Task<RequestOutsourcePartInfo> GetRequestOutsourcePartExtraInfo([FromRoute] int outsourcePartRequestId)
         {
-            return await _requestPartService.GetRequestOutsourcePartExtraInfo(outsourcePartRequestId);
+            return await _outsourcePartRequestService.GetOutsourcePartRequestExtraInfo(outsourcePartRequestId);
         }
 
         [HttpPost]
         [Route("")]
         public async Task<long> CreateRequestOutsourcePart([FromBody] RequestOutsourcePartInfo req)
         {
-            return await _requestPartService.CreateRequestOutsourcePart(req);
+            return await _outsourcePartRequestService.CreateOutsourcePartRequest(req);
         }
 
         [HttpPut]
         [Route("{outsourcePartRequestId}")]
         public async Task<bool> UpdateRequestOutsourcePart([FromRoute] int outsourcePartRequestId, [FromBody] RequestOutsourcePartInfo req)
         {
-            return await _requestPartService.UpdateRequestOutsourcePart(outsourcePartRequestId, req);
+            return await _outsourcePartRequestService.UpdateOutsourcePartRequest(outsourcePartRequestId, req);
         }
 
         [HttpDelete]
-        [Route("/{outsourcePartRequestId}")]
+        [Route("{outsourcePartRequestId}")]
         public async Task<bool> DeletedRequestOutsourcePart([FromRoute] int outsourcePartRequestId) {
-            return await _requestPartService.DeletedRequestOutsourcePart(outsourcePartRequestId);
+            return await _outsourcePartRequestService.DeletedOutsourcePartRequest(outsourcePartRequestId);
         }
     }
 }

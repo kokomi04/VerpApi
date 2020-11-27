@@ -209,21 +209,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }).ToList();
 
             //Lấy thông tin dữ liệu của steplinkdata
-            var lsProductionStepId = roles.Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
+            var lsProductionStepLinkDataId = roles.Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
             var stepLinkDatas = new List<ProductionStepLinkDataInput>();
-            if (lsProductionStepId.Count > 0)
+            if (lsProductionStepLinkDataId.Count > 0)
             {
                 var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
                 var parammeters = new List<SqlParameter>();
                 var whereCondition = new StringBuilder();
 
                 whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                for (int i = 0; i < lsProductionStepId.Count; i++)
+                for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
                 {
-                    var number = lsProductionStepId[i];
+                    var number = lsProductionStepLinkDataId[i];
                     string pName = $"@ProductionStepLinkDataId{i + 1}";
 
-                    if (i == lsProductionStepId.Count - 1)
+                    if (i == lsProductionStepLinkDataId.Count - 1)
                         whereCondition.Append($"{pName} )");
                     else
                         whereCondition.Append($"{pName}, ");
@@ -991,34 +991,39 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
         {
-            var lsProductionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Include(x=>x.ProductionStepLinkDataRole)
-                .Where(x => lsProductionStepId.Contains(x.ProductionStepId))
-                .ToListAsync();
-
-            var groupByContainerId = lsProductionStep.GroupBy(x => x.ContainerId);
-            if (groupByContainerId.Count() > 1)
-                throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
-
-            var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleModel
+            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            if (lsProductionStepLinkDataId.Count > 0)
             {
-                ProductionStepId = s.ProductionStepId,
-                ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
-            }).ToList();
+                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
+                var parammeters = new List<SqlParameter>();
+                var whereCondition = new StringBuilder();
 
-            // 2. Lấy danh sách đầu vào, đầu ra của tất cả công đoạn trong 1 nhóm đi gia công công đoạn
-            var childRoles = roles.Where(r => lsProductionStepId.Contains(r.ProductionStepId)).ToList();
-            // 3. Loại bỏ các role đủ 1 cặp IN/OUT
-            var inOutRoles = childRoles
-                .GroupBy(r => r.ProductionStepLinkDataId)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .ToList();
+                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
+                for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
+                {
+                    var number = lsProductionStepLinkDataId[i];
+                    string pName = $"@ProductionStepLinkDataId{i + 1}";
 
-            return inOutRoles;
+                    if (i == lsProductionStepLinkDataId.Count - 1)
+                        whereCondition.Append($"{pName} )");
+                    else
+                        whereCondition.Append($"{pName}, ");
+
+                    parammeters.Add(new SqlParameter(pName, number));
+                }
+                if (whereCondition.Length > 0)
+                {
+                    sql.Append(" WHERE ");
+                    sql.Append(whereCondition);
+                }
+
+                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                        .ConvertData<ProductionStepLinkDataInput>();
+            }
+
+            return stepLinkDatas;
         }
     }
 }

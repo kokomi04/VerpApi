@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Service.Outsource;
 
@@ -18,6 +20,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         public OutsourceStepRequestController(IOutsourceStepRequestService outsourceStepRequestService)
         {
             _outsourceStepRequestService = outsourceStepRequestService;
+        }
+
+        [HttpPost]
+        [Route("search")]
+        public async Task<PageData<OutsourceStepRequestSearch>> GetListOutsourceStepRequest([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        {
+            return await _outsourceStepRequestService.GetListOutsourceStepRequest(keyword, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpGet]
@@ -36,14 +45,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateRequestOutsourceStep(OutsourceStepRequestInfo req)
+        public async Task<long> CreateRequestOutsourceStep(OutsourceStepRequestModel req)
         {
             return await _outsourceStepRequestService.CreateOutsourceStepRequest(req);
         }
 
         [HttpPut]
         [Route("{outsourceStepRequestId}")]
-        public async Task<bool> UpdateRequestOutsourceStep([FromRoute]long outsourceStepRequestId, OutsourceStepRequestInfo req)
+        public async Task<bool> UpdateRequestOutsourceStep([FromRoute]long outsourceStepRequestId, OutsourceStepRequestModel req)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequest(outsourceStepRequestId, req);
         }

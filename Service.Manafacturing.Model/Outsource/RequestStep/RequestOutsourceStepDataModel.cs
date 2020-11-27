@@ -13,8 +13,4 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public decimal? Quantity { get; set; }
         public int ProductionStepLinkDataRoleTypeId { get; set; }
     }
-
-    public class OutsourceStepRequestDataInfo : OutsourceStepRequestDataModel
-    {
-    }
 }
