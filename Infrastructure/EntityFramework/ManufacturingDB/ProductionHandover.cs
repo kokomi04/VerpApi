@@ -22,5 +22,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public int? ToDepartmentId { get; set; }
         public long? ToProductionStepId { get; set; }
+        public DateTime? HandoverDatetime { get; set; }
     }
 }

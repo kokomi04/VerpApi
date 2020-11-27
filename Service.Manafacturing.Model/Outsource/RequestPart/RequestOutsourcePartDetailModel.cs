@@ -10,10 +10,10 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
-    public class RequestOutsourcePartDetailModel : IMapFrom<RequestOutsourcePartDetail>
+    public class RequestOutsourcePartDetailModel : IMapFrom<OutsourcePartRequestDetail>
     {
-        public long RequestOutsourcePartDetailId { get; set; }
-        public long RequestOutsourcePartId { get; set; }
+        public long OutsourcePartRequestDetailId { get; set; }
+        public long OutsourcePartRequestId { get; set; }
         public int ProductPartId { get; set; }
         public decimal Quantity { get; set; }
         public int UnitId { get; set; }
@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<RequestOutsourcePartDetail, RequestOutsourcePartDetailModel>()
+            profile.CreateMap<OutsourcePartRequestDetail, RequestOutsourcePartDetailModel>()
                 .ForMember(m => m.ProductPartId, v => v.MapFrom(m => m.ProductId))
                 .ReverseMap()
                 .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ProductPartId));
@@ -30,10 +30,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 
     public class RequestOutsourcePartDetailInfo: RequestOutsourcePartDetailModel
     {
-        public string RequestOutsourcePartCode { get; set; }
+        public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public long RequestOutsourcePartDate { get; set; }
-        public long RequestOutsourcePartFinishDate { get; set; }
+        public long OutsourcePartRequestDate { get; set; }
+        public long OutsourcePartRequestFinishDate { get; set; }
         public string ProductionOrderCode { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }

@@ -17,12 +17,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProductPartCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string OrderCode { get; set; }
-        public string RequestOutsourcePartCode { get; set; }
+        public string OutsourcePartRequestCode { get; set; }
         public string UnitName { get; set; }
         public decimal Quantity { get; set; }
         public decimal QuantityOrigin { get; set; }
         public decimal QuantityProcessed { get; set; }
-        public long RequestOutsourcePartFinishDate{ get; set; }
+        public long OutsourcePartRequestFinishDate { get; set; }
 
         public new void Mapping(Profile profile)
         {
@@ -34,8 +34,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.Tax, v => v.MapFrom(m => m.Tax))
                 .ForMember(m => m.ProductPartName, v => v.MapFrom(m => m.ProductPartName))
                 .ForMember(m => m.ProductPartCode, v => v.MapFrom(m => m.ProductPartCode))
-                .ForMember(m => m.RequestOutsourcePartCode, v => v.MapFrom(m => m.RequestOutsourcePartCode))
-                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate))
+                .ForMember(m => m.OutsourcePartRequestCode, v => v.MapFrom(m => m.OutsourcePartRequestCode))
+                .ForMember(m => m.OutsourcePartRequestFinishDate , v => v.MapFrom(m => m.OutsourcePartRequestFinishDate))
                 .ForMember(m => m.UnitName, v => v.MapFrom(m => m.UnitName))
                 .ForMember(m => m.Quantity, v => v.MapFrom(m => m.Quantity))
                 .ReverseMap();

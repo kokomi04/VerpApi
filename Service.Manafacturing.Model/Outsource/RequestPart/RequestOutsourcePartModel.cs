@@ -9,23 +9,23 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
-    public class RequestOutsourcePartModel: IMapFrom<RequestOutsourcePart>
+    public class RequestOutsourcePartModel: IMapFrom<OutsourcePartRequest>
     {
-        public long RequestOutsourcePartId { get; set; }
-        public string RequestOutsourcePartCode { get; set; }
+        public long OutsourcePartRequestId { get; set; }
+        public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public long RequestOutsourcePartDate { get; set; }
+        public long OutsourcePartRequestDate { get; set; }
         [Required(ErrorMessage = "RequestOutsourcePartFinishDate is required")]
-        public long RequestOutsourcePartFinishDate { get; set; }
+        public long OutsourcePartRequestFinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<RequestOutsourcePart, RequestOutsourcePartModel>()
-                .ForMember(m => m.RequestOutsourcePartDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
-                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate.GetUnix()))
+            profile.CreateMap<OutsourcePartRequest, RequestOutsourcePartModel>()
+                .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
+                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.GetUnix()))
                 .ReverseMap()
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
-                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate.UnixToDateTime()));
+                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.UnixToDateTime()));
         }
     }
 
@@ -40,14 +40,14 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public int ProductId { get; set; }
         public string OrderCode { get; set; }
 
-        public IList<RequestOutsourcePartDetailInfo> RequestOutsourcePartDetail { get; set; }
+        public IList<RequestOutsourcePartDetailInfo> OutsourcePartRequestDetail { get; set; }
 
         public new void Mapping(Profile profile) {
             profile.CreateMap<RequestOutsourcePartDetailInfo, RequestOutsourcePartInfo>()
-                .ForMember(m => m.RequestOutsourcePartDate, v => v.MapFrom(m => m.RequestOutsourcePartDate))
-                .ForMember(m => m.RequestOutsourcePartFinishDate, v => v.MapFrom(m => m.RequestOutsourcePartFinishDate))
-                .ForMember(m => m.RequestOutsourcePartId, v => v.MapFrom(m => m.RequestOutsourcePartId))
-                .ForMember(m => m.RequestOutsourcePartCode, v => v.MapFrom(m => m.RequestOutsourcePartCode))
+                .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.OutsourcePartRequestDate))
+                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate))
+                .ForMember(m => m.OutsourcePartRequestId, v => v.MapFrom(m => m.OutsourcePartRequestId))
+                .ForMember(m => m.OutsourcePartRequestCode, v => v.MapFrom(m => m.OutsourcePartRequestCode))
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrderCode))
                 .ForMember(m => m.ProductionOrderDetailId, v => v.MapFrom(m => m.ProductionOrderDetailId))
                 .ForMember(m => m.ProductCode, v => v.MapFrom(m => m.ProductCode))

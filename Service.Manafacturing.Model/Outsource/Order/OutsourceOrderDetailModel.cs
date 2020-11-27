@@ -23,7 +23,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string UnitName { get; set; }
         public decimal QuantityOrigin { get; set; }
         public decimal QuantityProcessed{ get; set; }
-        public string RequestOutsourcePartCode { get; set; }
-        public long RequestOutsourcePartFinishDate { get; set; }
+        public string OutsourcePartRequestCode { get; set; }
+        public long OutsourcePartRequestFinishDate { get; set; }
     }
 }
