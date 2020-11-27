@@ -18,9 +18,9 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
     {
         private readonly IOutsourcePartRequestService _outsourcePartRequestService;
 
-        public OutsourcePartRequestController(IOutsourcePartRequestService requestOutsourcePartService)
+        public OutsourcePartRequestController(IOutsourcePartRequestService outsourcePartRequestService)
         {
-            _outsourcePartRequestService = requestOutsourcePartService;
+            _outsourcePartRequestService = outsourcePartRequestService;
         }
 
         [HttpPost]

@@ -274,7 +274,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         private async Task UpdateStatusRequestOutsourcePartDetail(List<long> listID, EnumOutsourcePartProcessType status)
         {
-            var data = await _manufacturingDBContext.RequestOutsourcePartDetail.Where(x => listID.Contains(x.RequestOutsourcePartDetailId)).ToListAsync();
+            var data = await _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => listID.Contains(x.OutsourcePartRequestDetailId)).ToListAsync();
             foreach (var e in data)
                 e.StatusId = (int)status;
             await _manufacturingDBContext.SaveChangesAsync();

@@ -3,17 +3,12 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
-    public partial class RequestOutsourcePart
+    public partial class OutsourcePartRequest
     {
-        public RequestOutsourcePart()
-        {
-            RequestOutsourcePartDetail = new HashSet<RequestOutsourcePartDetail>();
-        }
-
-        public long RequestOutsourcePartId { get; set; }
-        public string RequestOutsourcePartCode { get; set; }
+        public long OutsourcePartRequestId { get; set; }
+        public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
-        public DateTime RequestOutsourcePartFinishDate { get; set; }
+        public DateTime OutsourcePartRequestFinishDate { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
@@ -23,6 +18,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
-        public virtual ICollection<RequestOutsourcePartDetail> RequestOutsourcePartDetail { get; set; }
     }
 }
