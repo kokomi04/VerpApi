@@ -29,14 +29,14 @@ namespace VErpApi.Controllers.Manufacturing
 
 
         [HttpGet]
-        [Route("Departments/{departmentId}/scheduleTurns/{scheduleTurnId}/steps/{productionStepId}")]
+        [Route("Departments/{departmentId}/scheduleTurns/{scheduleTurnId}/steps/{productionStepId}/shifts")]
         public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts([FromRoute] int departmentId, [FromRoute] long scheduleTurnId, [FromRoute] long productionStepId)
         {
             return await _productionScheduleTurnShiftService.GetShifts(departmentId, scheduleTurnId, productionStepId);
         }
 
         [HttpPost]
-        [Route("Departments/{departmentId}/scheduleTurns/{scheduleTurnId}/steps/{productionStepId}")]
+        [Route("Departments/{departmentId}/scheduleTurns/{scheduleTurnId}/steps/{productionStepId}/shifts")]
         public async Task<long> CreateShift([FromRoute] int departmentId, [FromRoute] long scheduleTurnId, [FromRoute] long productionStepId
             , [FromBody] ProductionScheduleTurnShiftModel model)
         {

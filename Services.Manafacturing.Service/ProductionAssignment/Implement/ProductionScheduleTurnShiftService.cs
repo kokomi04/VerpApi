@@ -37,8 +37,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<long> CreateShift(int departmentId, long scheduleTurnId, long productionStepId, ProductionScheduleTurnShiftModel model)
         {
-            var userModels = model.Users?.Where(u => u.UserId > 0)?.ToList();
-            if (userModels == null || userModels.Count == 0)
+            var userModels = model.Users?.Where(u => u.Key > 0)?.ToList();
+            if (userModels == null || userModels.Count() == 0)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập ít nhất một người dùng");
             }
@@ -59,13 +59,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.ProductionScheduleTurnShift.AddAsync(shift);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                var users = _mapper.Map<List<ProductionScheduleTurnShiftUser>>(userModels);
-                foreach (var u in users)
+                var users = new List<ProductionScheduleTurnShiftUser>();
+                foreach (var u in userModels)
                 {
-                    u.ProductionScheduleTurnShiftId = shift.ProductionScheduleTurnShiftId;
+                    var userData = _mapper.Map<ProductionScheduleTurnShiftUser>(u.Value);
+                    userData.UserId = u.Key;
+                    userData.ProductionScheduleTurnShiftId = shift.ProductionScheduleTurnShiftId;
+                    users.Add(userData);
                 }
+
                 await _manufacturingDBContext.ProductionScheduleTurnShiftUser.AddRangeAsync(users);
                 await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionScheduleTurnShift, shift.ProductionScheduleTurnShiftId, $"Khai báo nhân công và chi phí {shift?.FromDate?.ToString("dd/MM/yyyy")}",
                      new
@@ -87,15 +92,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             return shifts.Select(s =>
             {
                 var shift = _mapper.Map<ProductionScheduleTurnShiftModel>(s);
-                shift.Users = _mapper.Map<List<ProductionScheduleTurnShiftUserModel>>(s.ProductionScheduleTurnShiftUser);
+                var users = new Dictionary<int, ProductionScheduleTurnShiftUserModel>();
+                foreach (var u in s.ProductionScheduleTurnShiftUser)
+                {
+                    users.Add(u.UserId, _mapper.Map<ProductionScheduleTurnShiftUserModel>(u));
+                }
+                shift.Users = users;
                 return shift;
             }).ToList();
         }
 
         public async Task<bool> UpdateShift(int departmentId, long scheduleTurnId, long productionStepId, long productionScheduleTurnShiftId, ProductionScheduleTurnShiftModel model)
         {
-            var userModels = model.Users?.Where(u => u.UserId > 0)?.ToList();
-            if (userModels == null || userModels.Count == 0)
+            var userModels = model.Users?.Where(u => u.Key > 0)?.ToList();
+            if (userModels == null || userModels.Count() == 0)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập ít nhất một người dùng");
             }
@@ -106,14 +116,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy ca trong hệ thống");
             }
 
-            if(shiftInfo.DepartmentId!=departmentId || shiftInfo.ScheduleTurnId != scheduleTurnId || shiftInfo.ProductionStepId != productionStepId)
+            if (shiftInfo.DepartmentId != departmentId || shiftInfo.ScheduleTurnId != scheduleTurnId || shiftInfo.ProductionStepId != productionStepId)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
-                _mapper.Map(shiftInfo, model);
+                _mapper.Map(model, shiftInfo);
 
                 var oldUsers = await _manufacturingDBContext.ProductionScheduleTurnShiftUser.Where(u => u.ProductionScheduleTurnShiftId == productionScheduleTurnShiftId).ToListAsync();
                 foreach (var u in oldUsers)
@@ -121,14 +131,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     u.IsDeleted = true;
                 }
 
-                var users = _mapper.Map<List<ProductionScheduleTurnShiftUser>>(userModels);
-                foreach (var u in users)
+                var users = new List<ProductionScheduleTurnShiftUser>();
+                foreach (var u in userModels)
                 {
-                    u.ProductionScheduleTurnShiftId = productionScheduleTurnShiftId;
+                    var userData = _mapper.Map<ProductionScheduleTurnShiftUser>(u.Value);
+                    userData.UserId = u.Key;
+                    userData.ProductionScheduleTurnShiftId = productionScheduleTurnShiftId;
+                    users.Add(userData);
                 }
 
                 await _manufacturingDBContext.ProductionScheduleTurnShiftUser.AddRangeAsync(users);
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionScheduleTurnShift, productionScheduleTurnShiftId, $"Cập nhật khai báo nhân công và chi phí {shiftInfo?.FromDate?.ToString("dd/MM/yyyy")}",
                      new
@@ -168,6 +183,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
 
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionScheduleTurnShift, productionScheduleTurnShiftId, $"Xóa khai báo nhân công và chi phí {shiftInfo?.FromDate?.ToString("dd/MM/yyyy")}",
                      new

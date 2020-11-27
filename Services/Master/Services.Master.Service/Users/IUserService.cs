@@ -24,7 +24,7 @@ namespace VErp.Services.Master.Service.Users
         Task<bool> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
-
+        Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId);
         Task<IList<RolePermissionModel>> GetMePermission();
 
         /// <summary>
