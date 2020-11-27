@@ -452,7 +452,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         StepId = null,
                         Title = step.Title,
                         ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
-
+                        ProductionStepCode = step.ProductionStepCode,
                         ContainerId = productionOrderId,
                         IsGroup = productionSteps.Any(s => s.ParentId == step.ProductionStepId)
                     };
@@ -505,7 +505,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectTypeId = item.ObjectTypeId,
                         UnitId = item.UnitId,
                         Quantity = item.Quantity,
-                        SortOrder = item.SortOrder
+                        SortOrder = item.SortOrder,
+                        ProductionStepLinkDataCode = item.ProductionStepLinkDataCode
                     };
 
                     _manufacturingDBContext.ProductionStepLinkData.Add(newLinkData);
