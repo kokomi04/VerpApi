@@ -60,9 +60,9 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             return ls;
         }
 
-        public async Task<IList<ProductSemiModel>> GetListProductSemi(IList<long> containerId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemiListProductSemiId(IList<long> productSemiIds)
         {
-            var ls = await _manuDBContext.ProductSemi.Where(x => containerId.Contains(x.ContainerId))
+            var ls = await _manuDBContext.ProductSemi.Where(x => productSemiIds.Contains(x.ProductSemiId))
                  .ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider)
                  .ToListAsync();
             return ls;
@@ -76,9 +76,9 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             return data;
         }
 
-        public async Task<IList<ProductSemiModel>> GetListProductSemiByListId(List<long> lsId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId(IList<long> lsContainerId)
         {
-            return await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsId.Contains(p.ProductSemiId)).ToListAsync();
+            return await _manuDBContext.ProductSemi.ProjectTo<ProductSemiModel>(_mapper.ConfigurationProvider).Where(p => lsContainerId.Contains(p.ContainerId)).ToListAsync();
         }
 
         public async Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model)

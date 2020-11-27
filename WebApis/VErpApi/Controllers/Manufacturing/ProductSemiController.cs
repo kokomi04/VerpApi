@@ -35,10 +35,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("getByContainerId")]
-        public async Task<IList<ProductSemiModel>> GetListProductSemiByListId([FromBody] List<long> containerId)
+        [Route("searchByListProductSemiId")]
+        public async Task<IList<ProductSemiModel>> GetListProductSemiListProductSemiId([FromBody] List<long> lsProductSemiId)
         {
-            return await _productSemiService.GetListProductSemiByListId(containerId);
+            return await _productSemiService.GetListProductSemiListProductSemiId(lsProductSemiId);
         }
 
         [HttpPost]
@@ -63,10 +63,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("/searchByListContainerId")]
+        [Route("searchByListContainerId")]
         public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId(IList<long> lstContainerId)
         {
-            return await _productSemiService.GetListProductSemi(lstContainerId);
+            return await _productSemiService.GetListProductSemiByListContainerId(lstContainerId);
         }
     }
 }
