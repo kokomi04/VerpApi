@@ -15,14 +15,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? ProductionHandoverId { get; set; }
         public EnumHandoverStatus Status { get; set; }
         public int CreatedByUserId { get; set; }
-        public long CreatedDatetimeUtc { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverEntity, ProductionHandoverModel>()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataObjectType)m.ObjectTypeId))
                 .ForMember(m => m.Status, v => v.MapFrom(m => (EnumHandoverStatus)m.Status))
-                .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
+                .ForMember(m => m.HandoverDatetime, v => v.MapFrom(m => m.HandoverDatetime.GetUnix()));
         }
     }
 
@@ -35,11 +34,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? FromProductionStepId { get; set; }
         public int? ToDepartmentId { get; set; }
         public long? ToProductionStepId { get; set; }
+        public long? HandoverDatetime { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverInputModel, ProductionHandoverEntity>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId));
+                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
+                .ForMember(m => m.HandoverDatetime, v => v.MapFrom(m => m.HandoverDatetime.UnixToDateTime()));
         }
     }
 }
