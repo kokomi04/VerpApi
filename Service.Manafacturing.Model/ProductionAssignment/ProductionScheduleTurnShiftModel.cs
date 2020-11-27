@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long? FromDate { get; set; }
         public long? ToDate { get; set; }
         public decimal? Hours { get; set; }
-        public IList<ProductionScheduleTurnShiftUserModel> Users { get; set; }
+        public Dictionary<int, ProductionScheduleTurnShiftUserModel> Users { get; set; }
 
         private DateTime? UnixToDateTime(long? unix)
         {
@@ -46,8 +46,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     }
 
     public class ProductionScheduleTurnShiftUserModel : IMapFrom<ProductionScheduleTurnShiftUser>
-    {
-        public int UserId { get; set; }
+    {        
         public decimal? Quantity { get; set; }
         public decimal? Money { get; set; }
     }

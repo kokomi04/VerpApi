@@ -58,6 +58,13 @@ namespace VErpApi.Controllers.System
             return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [GlobalApi]
+        [Route("Departments/{departmentId}")]
+        public async Task<IList<UserBasicInfoOutput>> GetByDepartment([FromRoute]int departmentId)
+        {
+            return await _userService.GetBasicInfoByDepartment(departmentId).ConfigureAwait(true);
+        }
 
         /// <summary>
         /// Lấy danh sách users theo ids

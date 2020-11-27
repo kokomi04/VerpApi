@@ -552,6 +552,15 @@ namespace VErp.Services.Master.Service.Users.Implement
             }).ToList();
         }
 
+        public async Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId)
+        {
+            var userIds = await _organizationContext.EmployeeDepartmentMapping.Where(e => e.DepartmentId == departmentId).Select(e => e.UserId).ToListAsync();
+
+            var users = await _masterContext.User.Where(u => userIds.Contains(u.UserId)).Select(u => new { u.UserId, u.UserName }).ToListAsync();
+
+            return await GetBasicInfos(userIds);
+        }
+
         public CategoryNameModel GetCustomerFieldDataForMapping()
         {
             var result = new CategoryNameModel()
