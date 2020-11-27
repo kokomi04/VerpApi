@@ -67,7 +67,10 @@ export default class ModalApiModuleMapping extends Component {
     render() {
         var options = [];
         if (this.state.modules) {
-            options = this.state.modules;            
+            options = this.state.modules;
+            options.forEach(opt => {
+                opt.strModuleId = `${opt.moduleId}`;
+            })
         }
 
         return (
@@ -86,10 +89,10 @@ export default class ModalApiModuleMapping extends Component {
                                     <Typeahead
                                         ref={(typeahead) => this.typeahead = typeahead}
                                         id='moduleId'
-                                        filterBy={['moduleName']}
+                                        filterBy={['moduleName', 'strModuleId']}
                                         labelKey={
                                             module =>
-                                                `${module.moduleName}`
+                                                `${module.moduleId} - ${module.moduleName}`
                                         }
                                         onChange={selected => this.selectModule(selected)()}
                                         options={options}
