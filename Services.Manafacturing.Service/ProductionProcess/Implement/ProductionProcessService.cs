@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -255,7 +257,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .ToListAsync();
 
                 productionStepOrders = await _manufacturingDBContext.ProductionStepOrder
-                    .Include(x=>x.ProductionStep)
+                    .Include(x => x.ProductionStep)
                     .Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId))
                     .ProjectTo<ProductionStepOrderModel>(_mapper.ConfigurationProvider)
                     .ToListAsync();
@@ -421,7 +423,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         Title = $"{product.ProductCode} / {product.ProductName}", // Thiếu tên sản phẩm
                         ContainerTypeId = (int)EnumProductionProcess.EnumContainerType.ProductionOrder,
                         ContainerId = productionOrderId,
-                        IsGroup = true
+                        IsGroup = true,
+                        ProductionStepCode = Guid.NewGuid().ToString()
                     };
                     _manufacturingDBContext.ProductionStep.Add(newStep);
                     productMap.Add(product.ProductId.Value, newStep);
@@ -463,6 +466,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     else
                     {
                         newStep.ParentId = productMap[step.ContainerId].ProductionStepId;
+                        newStep.ParentCode = productMap[step.ContainerId].ProductionStepCode;
                     }
                     _manufacturingDBContext.ProductionStep.Add(newStep);
                     stepMap.Add(step.ProductionStepId, newStep);
@@ -479,12 +483,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     if (!step.ParentId.HasValue) continue;
                     stepMap[step.ProductionStepId].ParentId = stepMap[step.ParentId.Value].ProductionStepId;
+                    stepMap[step.ProductionStepId].ParentCode = stepMap[step.ParentId.Value].ProductionStepCode;
                 }
 
                 // Map step công đoạn, quy trình con với chi tiết lệnh sản xuất
                 foreach (var group in stepOrderMap)
                 {
-                    foreach(var item in group.Value)
+                    foreach (var item in group.Value)
                     {
                         _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
                         {
@@ -946,7 +951,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
 
                 //Lưu công đoạn thuộc QTSX trong LSX nào
-                if(containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
+                if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
                 {
                     var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
                     var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
@@ -983,10 +988,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var lsInputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
             var lsOutputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
 
-            var stepLinkDatas = req.ProductionStepLinkDatas.GroupBy(x=>x.ProductionStepLinkDataCode);
+            var stepLinkDatas = req.ProductionStepLinkDatas.GroupBy(x => x.ProductionStepLinkDataCode);
             foreach (var group in stepLinkDatas)
             {
-                if(group.Count() > 1){
+                if (group.Count() > 1)
+                {
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Tồn tại 2 chi tiết có mã {group.Key}");
                 }
                 var inStep = lsInputStep.Where(x => x.ProductionStepLinkDataCode.Equals(group.Key)).ToList();
