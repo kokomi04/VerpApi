@@ -124,19 +124,54 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công lớn hơn số lượng trong kế hoạch sản xuất");
             }
 
-            try
-            {
-                var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
+            var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
                     .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
                     .ToList();
+
+            var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
+            var newAssignments = new List<ProductionAssignmentModel>();
+            foreach (var item in data)
+            {
+                var entity = oldProductionAssignments.FirstOrDefault(a => a.DepartmentId == item.DepartmentId);
+                if (entity == null)
+                {
+                    newAssignments.Add(item);
+                }
+                else
+                {
+                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ObjectId != item.ObjectId || entity.ObjectTypeId != (int)item.ObjectTypeId)
+                    {
+                        updateAssignments.Add((entity, item));
+                    }
+                    oldProductionAssignments.Remove(entity);
+                }
+            }
+
+            // Validate khai báo chi phí
+            var deleteAssignDepartmentIds = oldProductionAssignments.Select(a => a.DepartmentId).ToList();
+            if (_manufacturingDBContext.ProductionScheduleTurnShift
+                .Any(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
+            }
+
+            try
+            {
+                // Xóa phân công
                 if (oldProductionAssignments.Count > 0)
                 {
                     _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
-                    _manufacturingDBContext.SaveChanges();
                 }
-                var newProductionAssignments = data.AsQueryable().ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider).ToList();
-                _manufacturingDBContext.ProductionAssignment.AddRange(newProductionAssignments);
-
+                // Thêm mới phân công
+                var newEntities = newAssignments.AsQueryable().ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider).ToList();
+                _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
+                // Cập nhật phân công
+                foreach (var tuple in updateAssignments)
+                {
+                    tuple.Entity.ObjectId = tuple.Model.ObjectId;
+                    tuple.Entity.ObjectTypeId = (int)tuple.Model.ObjectTypeId;
+                    tuple.Entity.AssignmentQuantity = tuple.Model.AssignmentQuantity;
+                }
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho nhóm kế hoạch {scheduleTurnId}", data.JsonSerialize());
