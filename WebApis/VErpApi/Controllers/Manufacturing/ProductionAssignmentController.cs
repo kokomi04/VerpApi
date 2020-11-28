@@ -44,16 +44,10 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("Departments/{departmentId}")]
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? scheduleTurnId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
         {
-            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, page, size, orderByFieldName, asc);
+            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
         }
 
-        [HttpGet]
-        [Route("Departments/{departmentId}/{scheduleTurnId}")]
-        public async Task<IList<DepartmentProductionAssignmentDetailModel>> DepartmentScheduleTurnAssignment([FromRoute] int departmentId, [FromRoute] long scheduleTurnId)
-        {
-            return await _productionAssignmentService.DepartmentScheduleTurnAssignment(departmentId, scheduleTurnId);
-        }
     }
 }

@@ -14,15 +14,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public int ProductId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public EnumScheduleStatus ProductionScheduleStatus { get; set; }
-    }
-
-    public class DepartmentProductionAssignmentDetailModel : DepartmentProductionAssignmentModel
-    {
-        public long ProductionStepId { get; set; }
         public decimal ProductionScheduleQuantity { get; set; }
-        public decimal AssignmentQuantity { get; set; }
-        public int ObjectTypeId { get; set; }
-        public long ObjectId { get; set; }
-    }
+        public EnumScheduleStatus ProductionScheduleStatus { get; set; }
+    }    
 }
