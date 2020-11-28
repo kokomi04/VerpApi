@@ -2226,12 +2226,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
         {
-            var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+           // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo_ByFIds",
                 new[]
                 {
-                   fIds.ToSqlParameter("@F_Ids"),
-                   total
+                   fIds.ToSqlParameter("@F_Ids")                   
                 });
 
             return data.ConvertData();
