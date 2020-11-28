@@ -46,6 +46,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _mapper = mapper;
         }
 
+        public async Task<ProductionHandoverModel> ConfirmProductionHandover(long scheduleTurnId, long productionHandoverId, EnumHandoverStatus status)
+        {
+            var productionHandover = _manufacturingDBContext.ProductionHandover.FirstOrDefault(ho => ho.ScheduleTurnId == scheduleTurnId && ho.ProductionHandoverId == productionHandoverId);
+            if (productionHandover == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+            if (!productionHandover.FromProductionStepId.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Không được xác nhận yêu cầu xuất kho");
+            if (productionHandover.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+            try
+            {
+                productionHandover.Status = (int)status;
+                _manufacturingDBContext.SaveChanges();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Xác nhận bàn giao công việc", productionHandover.JsonSerialize());
+                return _mapper.Map<ProductionHandoverModel>(productionHandover);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
         public async Task<ProductionHandoverModel> CreateProductionHandover(long scheduleTurnId, ProductionHandoverInputModel data)
         {
             try
