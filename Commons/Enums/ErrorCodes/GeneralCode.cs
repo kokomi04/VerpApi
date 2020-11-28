@@ -34,5 +34,6 @@ namespace VErp.Commons.Enums.StandardEnum
 
         [Description("Tài khoản không có quyền truy cập vào hệ thống")]
         LockedOut = 9,
+        GeneralError = 10,
     }
 }

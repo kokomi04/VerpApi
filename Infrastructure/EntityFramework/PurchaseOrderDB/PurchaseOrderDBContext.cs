@@ -15,8 +15,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
-        public virtual DbSet<PackingList> PackingList { get; set; }
-        public virtual DbSet<PackingListDetail> PackingListDetail { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
@@ -43,42 +41,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<PackingList>(entity =>
-            {
-                entity.Property(e => e.ContSealNo)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.PackingNote).HasMaxLength(255);
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<PackingListDetail>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.CubicMeter).HasColumnType("decimal(18, 3)");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 3)");
-
-                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 3)");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.PackingList)
-                    .WithMany(p => p.PackingListDetail)
-                    .HasForeignKey(d => d.PackingListId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_PackingListDetail_PackingList");
-            });
-
             modelBuilder.Entity<PoAssignment>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -216,6 +178,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.OrderDetailId).HasComment("VoucherValueRowId");
+
+                entity.Property(e => e.OrderDetailQuantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OrderDetailRequestQuantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PurchasingRequestCode)
                     .IsRequired()

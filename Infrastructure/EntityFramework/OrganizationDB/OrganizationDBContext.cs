@@ -108,17 +108,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.BankAddress)
-                    .IsRequired()
                     .HasMaxLength(255)
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.BankBranch)
-                    .IsRequired()
                     .HasMaxLength(255)
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.BankCode)
-                    .IsRequired()
                     .HasMaxLength(15)
                     .IsUnicode(false)
                     .HasDefaultValueSql("('')");
@@ -201,13 +198,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => e.UserDepartmentMappingId)
                     .HasName("PK__UserDepa__3E005141E85C5CB7");
 
-                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
-
                 entity.Property(e => e.EffectiveDate).HasColumnType("date");
 
                 entity.Property(e => e.ExpirationDate).HasColumnType("date");
-
-                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Department)
                     .WithMany(p => p.EmployeeDepartmentMapping)

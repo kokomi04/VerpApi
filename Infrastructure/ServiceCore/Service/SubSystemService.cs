@@ -11,8 +11,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface ISubSystemService
     {
-        Task<IList<SubSystemInfo>> GetSubSystems();
-        Task<string[]> GetDbByModuleTypeId(EnumModuleType moduleTypeId);
+        IList<SubSystemInfo> GetSubSystems();
+        string[] GetDbByModuleTypeId(EnumModuleType moduleTypeId);
     }
     public class SubSystemService : ISubSystemService
     {
@@ -23,9 +23,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {EnumModuleType.Organization, new[] { "OrganizationDB" } },
             {EnumModuleType.PurchaseOrder, new[] { "PurchaseOrderDB" } },
             {EnumModuleType.Stock, new[] { "StockDB" } },
+            {EnumModuleType.Manufacturing, new[] { "ManufacturingDB" } },
         };
 
-        public async Task<IList<SubSystemInfo>> GetSubSystems()
+        public IList<SubSystemInfo> GetSubSystems()
         {
             var ss = EnumExtensions.GetEnumMembers<EnumModuleType>().Select(m => new SubSystemInfo
             {
@@ -36,7 +37,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return ss;
         }
 
-        public async Task<string[]> GetDbByModuleTypeId(EnumModuleType moduleTypeId)
+        public string[] GetDbByModuleTypeId(EnumModuleType moduleTypeId)
         {
             if (!SubSystemWithDB.ContainsKey(moduleTypeId)) throw new BadRequestException(GeneralCode.ItemNotFound);
             return SubSystemWithDB[moduleTypeId];

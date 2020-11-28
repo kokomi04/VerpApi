@@ -27,6 +27,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public long? OrderDetailId { get; set; }
+        public int PurchasingRequestTypeId { get; set; }
+        public decimal? OrderDetailQuantity { get; set; }
+        public decimal? OrderDetailRequestQuantity { get; set; }
 
         public virtual ICollection<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
     }

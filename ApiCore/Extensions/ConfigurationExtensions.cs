@@ -11,6 +11,7 @@ using System.Reflection;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -80,6 +81,15 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         //        });
         //    }, ServiceLifetime.Scoped);
         //}
+
+        public static void ConfigManufacturingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
+        {
+            services.AddDbContext<ManufacturingDBContext, ManufacturingDBRestrictionContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.ManufacturingDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>

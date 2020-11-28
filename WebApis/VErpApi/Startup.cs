@@ -28,6 +28,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
+using VErp.Services.Manafacturing.Model;
+using VErp.Services.Manafacturing.Service;
 using VErp.Services.Master.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
@@ -110,6 +112,7 @@ namespace VErp.WebApis.VErpApi
             services.AddScopedServices(PurchaseOrderServiceAssembly.Assembly);
             services.AddScopedServices(OrganizationServiceAssembly.Assembly);
             services.AddScopedServices(ReportConfigServiceAssembly.Assembly);
+            services.AddScopedServices(ManufacturingServiceAssembly.Assembly);
             services.AddServiceCoreDependency();
         }
 
@@ -124,6 +127,7 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(ManufacturingModelAssembly.Assembly);
 
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
@@ -156,6 +160,8 @@ namespace VErp.WebApis.VErpApi
                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
 
                   c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/report/swagger.json", "REPORT.API V1");
+
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
 
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");
@@ -222,6 +228,13 @@ namespace VErp.WebApis.VErpApi
                     Title = "VERP Report HTTP API",
                     Version = "v1",
                     Description = "The Report Service HTTP API"
+                });
+
+                options.SwaggerDoc("manufacturing", new OpenApiInfo
+                {
+                    Title = "VERP Manufacturing HTTP API",
+                    Version = "v1",
+                    Description = "The Manufacturing Service HTTP API"
                 });
 
 

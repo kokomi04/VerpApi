@@ -93,7 +93,17 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             {
                 throw new BadRequestException(FileErrorCode.FileNotFound);
             }
-            return GetFileUrl(fileInfo, thumb, true);
+            return GenerateFileDownloadInfo(fileInfo, thumb, true);
+        }
+
+        public async Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb)
+        {
+            if (fileIds == null || fileIds.Count == 0)
+            {
+                return new List<FileToDownloadInfo>();
+            }
+            var fileInfos = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
+            return fileInfos.Select(f => GenerateFileDownloadInfo(f, thumb, true)).ToList();
         }
 
         public async Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
@@ -111,7 +121,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var lstData = new List<FileThumbnailInfo>();
             foreach (var file in fileInfos)
             {
-                var fileInfo = GetFileUrl(file, thumb, false);
+                var fileInfo = GenerateFileDownloadInfo(file, thumb, false);
                 lstData.Add(fileInfo);
             }
             return lstData;
@@ -299,7 +309,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var files = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
             foreach (var fileInfo in files)
             {
-                var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
+                var fileToDownloadInfo = GenerateFileDownloadInfo(fileInfo, thumb, true);
                 fileList.Add(fileToDownloadInfo);
             }
             return fileList;
@@ -433,7 +443,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        private FileToDownloadInfo GetFileUrl(FileEnity fileInfo, EnumThumbnailSize? thumb, bool isGetOriginFile)
+        private FileToDownloadInfo GenerateFileDownloadInfo(FileEnity fileInfo, EnumThumbnailSize? thumb, bool isGetOriginFile)
         {
             var thumbPath = "";
             if (!string.IsNullOrWhiteSpace(fileInfo.SmallThumb))
@@ -456,8 +466,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
             }
 
-            var fileUrl = isGetOriginFile ? GetFileUrl(fileInfo.FileId, fileInfo.FilePath, fileInfo.ContentType) : null;
-            var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GetFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
+            var fileUrl = isGetOriginFile ? GenerateFileUrl(fileInfo.FileId, fileInfo.FilePath, fileInfo.ContentType) : null;
+            var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GenerateFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
             return new FileToDownloadInfo()
             {
                 FileId = fileInfo.FileId,
@@ -468,7 +478,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             };
         }
 
-        private string GetFileUrl(long fileId, string filePath, string contentType)
+        private string GenerateFileUrl(long fileId, string filePath, string contentType)
         {
             var fileName = Path.GetFileName(filePath);
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";

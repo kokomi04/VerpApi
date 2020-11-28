@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -28,6 +30,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
         [Route("CheckReferFromCategory")]
         public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _voucherDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
         }
 

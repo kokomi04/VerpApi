@@ -292,7 +292,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     try
                     {
-                        CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, field.CategoryFieldId);
+                        CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId);
 
                         if (currentConfig == null)
                         {

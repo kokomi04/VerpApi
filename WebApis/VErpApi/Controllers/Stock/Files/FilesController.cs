@@ -36,9 +36,18 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpGet]
         [Route("{fileId}/GetFileUrl")]
-        public async Task<FileToDownloadInfo> GetFileUrl([FromRoute] long fileId, EnumThumbnailSize? thumb)
+        public async Task<FileToDownloadInfo> GetFileUrl([FromRoute] long fileId, [FromQuery] EnumThumbnailSize? thumb)
         {
             return await _fileService.GetFileUrl(fileId, thumb).ConfigureAwait(true);
+        }
+
+        [GlobalApi]
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("GetFilesUrls")]
+        public async Task<IList<FileToDownloadInfo>> GetFilesUrls([FromBody] IList<long> fileIds, [FromQuery] EnumThumbnailSize? thumb)
+        {
+            return await _fileService.GetFilesUrls(fileIds, thumb).ConfigureAwait(true);
         }
 
         /// <summary>

@@ -401,7 +401,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 isRequire = rowValues.Any(v => v != singleClause.Value);
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = rowValues.Any(v => v.Contains(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -416,10 +416,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = rowValues.Any(v => v.StartsWith(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = rowValues.Any(v => v.EndsWith(singleClause.Value));
+                                isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -459,7 +459,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 isRequire = ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) != 0;
                                 break;
                             case EnumOperator.Contains:
-                                isRequire = value.Contains(singleClause.Value);
+                                isRequire = value.StringContains(singleClause.Value);
                                 break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
@@ -474,10 +474,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
-                                isRequire = value.StartsWith(singleClause.Value);
+                                isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
                             case EnumOperator.EndsWith:
-                                isRequire = value.EndsWith(singleClause.Value);
+                                isRequire = value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -1305,7 +1305,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         CustomGenCodeOutputModelOut currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherType, field.VoucherAreaFieldId);
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId);
 
                             if (currentConfig == null)
                             {
@@ -1365,9 +1365,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
         {
-            foreach (var (key, value) in areaFieldGenCodes)
+            var customGenCodeIds = areaFieldGenCodes.Select(a => a.Value.CustomGenCodeId);
+            foreach (var customGenCodeId in customGenCodeIds)
             {
-                await _customGenCodeHelperService.ConfirmCode(EnumObjectType.VoucherType, key);
+                await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
             }
         }
 
@@ -2147,7 +2148,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<VoucherBillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
         {
-            var singleFields = (await(
+            var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
@@ -2202,6 +2203,39 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             return result;
         }
+
+
+        public async Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size)
+        {
+            var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailByPurchasingRequest",
+                new[]
+                {
+                   new SqlParameter("@Keyword", EnumDataType.Text.GetSqlValue(keyword)),
+                   new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
+                   new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
+                   new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
+                   new SqlParameter("@Page",page),
+                   new SqlParameter("@Size",size),
+                   total
+                });
+
+            return (data, (total.Value as long?).GetValueOrDefault());
+        }
+
+
+        public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
+        {
+           // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo_ByFIds",
+                new[]
+                {
+                   fIds.ToSqlParameter("@F_Ids")                   
+                });
+
+            return data.ConvertData();
+        }
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

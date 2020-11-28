@@ -53,10 +53,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<VoucherActionModel>> GetVoucherActions(int voucherTypeId)
         {
-            return _purchaseOrderDBContext.VoucherAction
+            return await _purchaseOrderDBContext.VoucherAction
                 .Where(a => a.VoucherTypeId == voucherTypeId)
                 .ProjectTo<VoucherActionModel>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToListAsync();
         }
 
         public async Task<VoucherActionModel> AddVoucherAction(VoucherActionModel data)

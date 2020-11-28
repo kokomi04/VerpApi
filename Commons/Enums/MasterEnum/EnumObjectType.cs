@@ -7,7 +7,7 @@ namespace VErp.Commons.Enums.MasterEnum
 {
     public enum EnumObjectType
     {
-        
+
         [Description("Nhân viên")]
         [GenCodeObject]
         UserAndEmployee = 1,
@@ -30,7 +30,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Stock = 9,
         [Description("File")]
         File = 10,
-        
+
         [Description("Vị trí trong kho")]
         [GenCodeObject]
         Location = 11,
@@ -68,7 +68,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         PurchasingRequest = 19,
 
-        [Description("YC VTHH chi tiết")]        
+        [Description("YC VTHH chi tiết")]
         PurchasingRequestDetail = 20,
 
         [Description("Phiếu đề nghị VTHH")]
@@ -103,12 +103,17 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Department = 29,
 
-      
+
+        [Description("Nhóm danh mục")]
+        CategoryGroup = 31,
 
         [Description("Loại danh mục")]
         Category = 32,
 
-        
+        [Description("Trường danh mục")]
+        CategoryField = 33,
+
+
         //AccountingAccount = 33,
 
         [Description("Loại CTGS")]
@@ -122,6 +127,9 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Dòng chứng từ ghi sổ")]
         InputTypeRow = 37,
+
+        [Description("Trường dữ liệu vùng CTGS")]
+        InputAreaField = 38,
 
         [Description("Công ty")]
         Subsidiary = 41,
@@ -175,6 +183,34 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Nút chức năng CTGS")]
         InputAction = 58,
-        PackingList = 59,
+
+        [Description("Trường dữ liệu vùng chứng từ bán hàng")]
+        VoucherAreaField = 59,
+
+        [Description("Công đoạn sản xuất")]
+        ProductionStep = 60,
+        [Description("Danh mục công đoạn")]
+        Step = 61,
+        [Description("Nhóm danh mục công đoạn")]
+        StepGroup = 62,
+        [Description("Yêu cầu gia công")]
+        [GenCodeObject]
+        OutsourceRequest = 63,
+        [Description("Lệnh sản xuất")]
+        [GenCodeObject]
+        ProductionOrder = 70,
+        [Description("Kế hoạch sản xuất")]
+        ProductionSchedule = 71,
+        [Description("Đơn hàng gia công")]
+        [GenCodeObject]
+        OutsourceOrder = 72,
+        [Description("Phân công sản xuất")]
+        ProductionAssignment = 73,
+        ProductionProcess = 74,
+        [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
+        ProductionHandover = 75,
+
+        [Description("Khai báo nhân công và chi phí")]
+        ProductionScheduleTurnShift = 77,
     }
 }

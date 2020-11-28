@@ -126,12 +126,12 @@ namespace VErp.Services.Master.Service.Category
             using var trans = await _masterContext.Database.BeginTransactionAsync();
             try
             {
-                CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                var category = _mapper.Map<CategoryEntity>(data);
                 await _masterContext.Category.AddAsync(category);
                 await _masterContext.SaveChangesAsync();
 
                 // Thêm F_Identity
-                CategoryField identityField = new CategoryField
+                var identityField = new CategoryField
                 {
                     CategoryId = category.CategoryId,
                     CategoryFieldName = AccountantConstants.F_IDENTITY,
@@ -274,12 +274,13 @@ namespace VErp.Services.Master.Service.Category
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
                 category.UsePlace = data.UsePlace;
+                category.CategoryGroupId = data.CategoryGroupId;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
                 if (category.IsOutSideData)
                 {
-                    OutSideDataConfig config = _masterContext.OutSideDataConfig
+                    var config = _masterContext.OutSideDataConfig
                         .Include(o => o.OutsideDataFieldConfig)
                         .FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
 
@@ -297,6 +298,7 @@ namespace VErp.Services.Master.Service.Category
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
                         config.Joins = data.OutSideDataConfig.Joins;
+                        config.RawSql = data.OutSideDataConfig.RawSql;
                         // Update config fields
                         var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
                         var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();

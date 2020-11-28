@@ -17,6 +17,7 @@ namespace VErp.Commons.Library.Model
     public class ImportExcelMappingField
     {
         public string FieldName { get; set; }
+        public string RefFieldName { get; set; }
         public string Column { get; set; }
         public bool IsRequire { get; set; }
     }

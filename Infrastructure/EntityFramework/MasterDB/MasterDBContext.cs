@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
+        public virtual DbSet<CategoryGroup> CategoryGroup { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
@@ -34,6 +35,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -121,6 +123,11 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UsePlace)
                     .HasMaxLength(255)
                     .IsUnicode(false);
+
+                entity.HasOne(d => d.CategoryGroup)
+                    .WithMany(p => p.Category)
+                    .HasForeignKey(d => d.CategoryGroupId)
+                    .HasConstraintName("FK_Category_CategoryGroup");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
@@ -133,8 +140,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Filters).HasMaxLength(512);
 
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
@@ -164,6 +169,21 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CategoryField_Category");
+            });
+
+            modelBuilder.Entity<CategoryGroup>(entity =>
+            {
+                entity.Property(e => e.CategoryGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<Config>(entity =>
@@ -335,12 +355,12 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
-            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
-            {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
-                    .HasName("UK_ObjectCustomGenCode")
-                    .IsUnique();
-            });
+            //modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            //{
+            //    entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
+            //        .HasName("UK_ObjectCustomGenCode")
+            //        .IsUnique();
+            //});
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
             {
@@ -383,6 +403,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasForeignKey(d => d.OutsideDataConfigId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
+            });
+
+            modelBuilder.Entity<PrintConfig>(entity =>
+            {
+                entity.Property(e => e.PrintConfigName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
             });
 
             modelBuilder.Entity<Role>(entity =>

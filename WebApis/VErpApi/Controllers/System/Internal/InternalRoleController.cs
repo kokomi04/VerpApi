@@ -67,7 +67,9 @@ namespace VErpApi.Controllers.System.Internal
 
     public class GrantPermissionRequestModel : GrantPermissionRequestBaseModel
     {
+#pragma warning disable CA2227 // Collection properties should be read only
         public IList<int> ActionIds { get; set; }
+#pragma warning restore CA2227 // Collection properties should be read only
     }
 
     public class GrantActionPermissionRequestModel : GrantPermissionRequestBaseModel
