@@ -29,7 +29,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
         public long? OutsourceOrderDate { get; set; }
-        [Required(ErrorMessage = "OutsourceOrderFinishDate là bắt buộc")]
+        [Required]
         public long OutsourceOrderFinishDate { get; set; }
 
         public void Mapping(Profile profile)

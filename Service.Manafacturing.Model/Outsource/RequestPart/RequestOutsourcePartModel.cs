@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public long OutsourcePartRequestDate { get; set; }
-        [Required(ErrorMessage = "RequestOutsourcePartFinishDate is required")]
+        [Required]
         public long OutsourcePartRequestFinishDate { get; set; }
 
         public void Mapping(Profile profile)

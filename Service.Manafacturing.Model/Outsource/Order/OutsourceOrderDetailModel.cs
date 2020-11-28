@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -10,9 +11,16 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
     {
         public long OutsourceOrderDetailId { get; set; }
         public long OutsourceOrderId { get; set; }
+        [Required]
         public long ObjectId { get; set; }
+        [Required]
+        [Range(0.00001, double.MaxValue)]
         public decimal Quantity { get; set; }
+        [Required]
+        [Range(0.00001, double.MaxValue)]
         public decimal Price { get; set; }
+        [Required]
+        [Range(0.00001, double.MaxValue)]
         public decimal Tax { get; set; }
     }
 

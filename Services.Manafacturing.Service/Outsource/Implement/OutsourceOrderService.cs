@@ -179,7 +179,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 sql.Append(whereCondition);
             }
 
-            sql.Append($" ORDER BY v.OutsourceOrderDetailId");
+            sql.Append($" ORDER BY v.OutsourceOrderId");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
 

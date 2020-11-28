@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
@@ -14,7 +15,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     {
         public long OutsourcePartRequestDetailId { get; set; }
         public long OutsourcePartRequestId { get; set; }
+        [Required]
         public int ProductPartId { get; set; }
+        [Required]
+        [Range(0.00001, double.MaxValue)]
         public decimal Quantity { get; set; }
         public int UnitId { get; set; }
         public EnumOutsourcePartProcessType StatusId { get; set; }

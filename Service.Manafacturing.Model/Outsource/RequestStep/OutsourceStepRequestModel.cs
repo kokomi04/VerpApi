@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -13,7 +14,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
     {
         public long OutsourceStepRequestId { get; set; }
         public string OutsourceStepRequestCode { get; set; }
+        [Required]
         public long ProductionOrderId { get; set; }
+        [Required]
         public long OutsourceStepRequestFinishDate { get; set; }
         public long OutsourceStepRequestDate { get; set; }
 
