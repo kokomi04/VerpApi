@@ -96,15 +96,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             var linkDatas = step.ProductionStepLinkDataRole
-                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output)
-                .Select(r => new
-                {
-                    r.ProductionStepLinkData.ObjectTypeId,
-                    r.ProductionStepLinkData.ObjectId,
-                    Quantity = r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.GetValueOrDefault()
-                })
-                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
-                .ToDictionary(g => g.Key, g => g.Sum(v => v.Quantity));
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                .ToDictionary(r => r.ProductionStepLinkDataId,
+                r => r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value);
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
@@ -115,7 +109,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 foreach (var assignment in data)
                 {
-                    var sourceData = linkDatas[new { ObjectTypeId = (int)assignment.ObjectTypeId, assignment.ObjectId }];
+                    var sourceData = linkDatas[assignment.ProductionStepLinkDataId];
                     totalAssignmentQuantity += assignment.AssignmentQuantity * linkData.Value / sourceData;
                 }
 
@@ -138,7 +132,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 else
                 {
-                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ObjectId != item.ObjectId || entity.ObjectTypeId != (int)item.ObjectTypeId)
+                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId)
                     {
                         updateAssignments.Add((entity, item));
                     }
@@ -167,8 +161,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
                 {
-                    tuple.Entity.ObjectId = tuple.Model.ObjectId;
-                    tuple.Entity.ObjectTypeId = (int)tuple.Model.ObjectTypeId;
+                    tuple.Entity.ProductionStepLinkDataId = (int)tuple.Model.ProductionStepLinkDataId;
                     tuple.Entity.AssignmentQuantity = tuple.Model.AssignmentQuantity;
                 }
                 _manufacturingDBContext.SaveChanges();
