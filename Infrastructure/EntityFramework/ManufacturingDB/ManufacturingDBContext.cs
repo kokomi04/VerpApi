@@ -141,6 +141,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.Property(e => e.ProductionStepId).HasComment("Lấy ra tên QTSX được gắn với YCGC");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.ProductionOrder)
@@ -148,6 +150,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequest_ProductionOrder");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.OutsourceStepRequest)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequest_ProductionStep");
             });
 
             modelBuilder.Entity<OutsourceStepRequestData>(entity =>
