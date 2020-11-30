@@ -72,7 +72,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (data.Any(a => a.ScheduleTurnId != scheduleTurnId || a.ProductionStepId != productionStepId))
                 new BadRequestException(GeneralCode.InvalidParams, "Thông tin lượt kế hoạch hoặc công đoạn sản xuất giữa các tổ không khớp");
 
-
             if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
             var productionSchedules = (from s in _manufacturingDBContext.ProductionSchedule
@@ -82,19 +81,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                        {
                                            s.ProductionOrderDetailId,
                                            s.ProductionScheduleQuantity,
-                                           od.ProductId
+                                           od.ProductId,
+                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity 
                                        }).ToList();
 
             var productionOrderDetailIds = productionSchedules.Select(s => s.ProductionOrderDetailId).ToList();
 
             if (productionOrderDetailIds.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
-            if (!_manufacturingDBContext.ProductionStepOrder.Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
+            if (!_manufacturingDBContext.ProductionStepOrder
+                .Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại trong quy trình sản xuất");
             }
-
-            var quantityMap = productionSchedules.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(v => v.ProductionScheduleQuantity));
 
             var linkDatas = step.ProductionStepLinkDataRole
                 .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output)
@@ -102,7 +101,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     r.ProductionStepLinkData.ObjectTypeId,
                     r.ProductionStepLinkData.ObjectId,
-                    Quantity = r.ProductionStepLinkData.Quantity * quantityMap[r.ProductionStepLinkData.ProductId]
+                    Quantity = r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.GetValueOrDefault()
                 })
                 .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
                 .ToDictionary(g => g.Key, g => g.Sum(v => v.Quantity));
@@ -185,7 +184,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc)
         {
             var assignmentQuery = (
@@ -233,6 +231,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 ProductionScheduleStatus = (EnumScheduleStatus)d.ProductionScheduleStatus,
                 ProductionScheduleQuantity = d.ProductionScheduleQuantity
             }).ToList(), total);
-        }       
+        }
     }
 }
