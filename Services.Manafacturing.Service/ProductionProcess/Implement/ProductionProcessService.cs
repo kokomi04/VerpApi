@@ -463,7 +463,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ContainerId = productionOrderId,
                             IsGroup = steps.Any(s => s.ParentId == step.ProductionStepId),
                             CoordinateX = step.CoordinateX,
-                            CoordinateY = step.CoordinateY
+                            CoordinateY = step.CoordinateY,
+                            SortOrder = step.SortOrder
                         };
                         if (step.ParentId.HasValue)
                         {
