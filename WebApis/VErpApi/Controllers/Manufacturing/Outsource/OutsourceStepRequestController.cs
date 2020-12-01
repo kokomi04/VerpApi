@@ -58,9 +58,9 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         }
         [HttpGet]
         [Route("{outsourceStepRequestId}/outsourceStepRequestData")]
-        public async Task<IList<OutsourceStepRequestDataInfo>> GetProductionStepInOutsourceStepRequest([FromRoute]long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
         {
-            return await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(outsourceStepRequestId);
+            return await _outsourceStepRequestService.GetOutsourceStepRequestData(outsourceStepRequestId);
         }
 
         [HttpGet]

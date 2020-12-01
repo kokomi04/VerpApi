@@ -264,16 +264,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var roleInput = roles.Where(x => x.ProductionStepId == productionStepId
                     && !inputLinkData.Contains(x.ProductionStepLinkDataId)
                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .FirstOrDefault();
+                .ToList();
+            foreach(var input in roleInput)
+            {
+                var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == input.ProductionStepLinkDataId
+                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                    .FirstOrDefault();
 
-            if (roleInput == null) return;
-
-            var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == roleInput.ProductionStepLinkDataId
-                    && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                .FirstOrDefault();
-
-            result.Add(roleOutput.ProductionStepId);
-            FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
+                result.Add(roleOutput.ProductionStepId);
+                FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
+            }
         }
 
 
@@ -389,7 +389,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<IList<OutsourceStepRequestDataInfo>> GetProductionStepInOutsourceStepRequest(long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId)
         {
             var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
                 .Include(x => x.OutsourceStepRequestData)

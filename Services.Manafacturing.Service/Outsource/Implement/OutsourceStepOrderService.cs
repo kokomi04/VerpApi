@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -10,8 +12,10 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
@@ -19,25 +23,28 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
-    public class OutsourceStepOrderService: IOutsourceStepOrderService
+    public class OutsourceStepOrderService : IOutsourceStepOrderService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IOutsourceStepRequestService _outsourceStepRequestService;
 
         public OutsourceStepOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceStepOrderService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IOutsourceStepRequestService outsourceStepRequestService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _outsourceStepRequestService = outsourceStepRequestService;
         }
 
         public async Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req)
@@ -81,7 +88,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     _manufacturingDBContext.OutsourceOrder.Add(order);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    var detail = _mapper.Map<List<OutsourceOrderDetail>>(req.outsourceOrderDetail.Where(x=>x.productionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output));
+                    var detail = _mapper.Map<List<OutsourceOrderDetail>>(req.outsourceOrderDetail.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output));
                     detail.ForEach(x => x.OutsourceOrderId = order.OutsourceOrderId);
 
                     _manufacturingDBContext.OutsourceOrderDetail.AddRange(detail);
@@ -105,6 +112,68 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
+        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size)
+        {
+            var outsourceStepOrders = (from o in _manufacturingDBContext.OutsourceOrder
+                                       join d in _manufacturingDBContext.OutsourceOrderDetail on o.OutsourceOrderId equals d.OutsourceOrderId
+                                       join rd in _manufacturingDBContext.OutsourceStepRequestData on d.ObjectId equals rd.ProductionStepLinkDataId
+                                       join r in _manufacturingDBContext.OutsourceStepRequest on rd.OutsourceStepRequestId equals r.OutsourceStepRequestId
+                                       where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                                       group new { o, r, rd, d } by new { o.OutsourceOrderId, o.OutsourceOrderCode, r.OutsourceStepRequestId, r.OutsourceStepRequestCode, o.OutsourceOrderFinishDate } into g
+                                       select new OutsourceStepOrderSeach
+                                       {
+                                           OutsourceOrderFinishDate = g.Key.OutsourceOrderFinishDate.GetUnix(),
+                                           OutsourceOrderId = g.Key.OutsourceOrderId,
+                                           OutsourceOrderCode = g.Key.OutsourceOrderCode,
+                                           OutsourceStepRequestCode = g.Key.OutsourceStepRequestCode,
+                                           OutsourceStepRequestId = g.Key.OutsourceStepRequestId,
+                                       }).ToList();
+            var outsourceStepRequests = (await _outsourceStepRequestService.GetListOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true)).List;
 
+            var data = from order in outsourceStepOrders
+                       join request in outsourceStepRequests
+                            on order.OutsourceStepRequestId equals request.OutsourceStepRequestId
+                       select new OutsourceStepOrderSeach
+                       {
+                           OutsourceOrderId = order.OutsourceOrderId,
+                           OutsourceStepRequestId = order.OutsourceStepRequestId,
+                           OrderCode = request.OrderCode,
+                           OutsourceOrderCode = order.OutsourceOrderCode,
+                           OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
+                           OutsourceStepRequestCode = order.OutsourceStepRequestCode,
+                           ProductionOrderCode = request.ProductionOrderCode,
+                           ProductionStepTitle = request.ProductionStepTitle
+                       };
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                data = data.Where(x => x.ProductionOrderCode.Contains(keyword)
+                                   || x.OutsourceOrderCode.Contains(keyword)
+                                   || x.OutsourceStepRequestCode.Contains(keyword)
+                                   || x.OrderCode.Contains(keyword));
+
+            var total = data.Count();
+
+            return (data.Skip((page - 1) * size).Take(size).ToList(), total);
+        }
+
+        public async Task<OutsourceStepOrderModel> GetOutsourceStepOrder(long outsourceStepOrderId)
+        {
+            var outsourceStepOrder = await _manufacturingDBContext.OutsourceOrder.AsNoTracking()
+                .Include(x=>x.OutsourceOrderDetail)
+                .ProjectTo<OutsourceStepOrderModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(x => x.OutsourceOrderId == outsourceStepOrderId);
+            if (outsourceStepOrder == null)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+            var outsourceStepRequestIds = (from d in outsourceStepOrder.outsourceOrderDetail
+                                           join rd in _manufacturingDBContext.OutsourceStepRequestData
+                                           on d.ProductionStepLinkDataId equals rd.ProductionStepLinkDataId
+                                           select rd.OutsourceStepRequestId).Distinct();
+
+            foreach(var outsourceStepRequestId in outsourceStepRequestIds)
+            {
+                var a = await _outsourceStepRequestService.GetOutsourceStepRequestData(outsourceStepRequestId);
+            }
+            throw new NotImplementedException();
+        }
     }
 }
