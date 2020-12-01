@@ -14,4 +14,23 @@ namespace VErp.Commons.GlobalObject
         int? TimeZoneOffset { get; }
         bool IsDeveloper { get; }
     }
+
+    public static class CurrentContextServiceExtensions
+    {
+        public static DateTime GetNowUtc(this ICurrentContextService currentContextService)
+        {
+            return DateTime.UtcNow;
+        }
+        public static DateTime GetNowInTimeZone(this ICurrentContextService currentContextService)
+        {
+            if (currentContextService.TimeZoneOffset.HasValue)
+            {
+                return DateTime.UtcNow.AddMinutes(-currentContextService.TimeZoneOffset.Value);
+            }
+            else
+            {
+                return DateTime.UtcNow.AddMinutes(420);
+            }
+        }
+    }
 }

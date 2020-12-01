@@ -16,6 +16,7 @@ using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -54,21 +55,21 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 try
                 {
-                    int customGenCodeId = 0;
+                    CustomGenCodeOutputModel currentConfig = null;
                     string outsoureOrderCode = "";
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0);
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0, null, req.OutsourceOrderCode, req.OutsourceOrderDate);
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                         }
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, req.OutsourceOrderCode, req.OutsourceOrderDate);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                         }
-                        customGenCodeId = currentConfig.CustomGenCodeId;
+
                         outsoureOrderCode = generated.CustomCode;
                     }
                     else
@@ -99,7 +100,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                        await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                     }
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
@@ -221,7 +222,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             foreach (var item in data)
             {
                 var outsourceOrderDetail = _mapper.Map<OutsourceOrderDetailInfo>(item);
-                if(outsourceOrderDetail.OutsourceOrderDetailId > 0)
+                if (outsourceOrderDetail.OutsourceOrderDetailId > 0)
                     outsourceOrder.OutsourceOrderDetail.Add(outsourceOrderDetail);
             }
 

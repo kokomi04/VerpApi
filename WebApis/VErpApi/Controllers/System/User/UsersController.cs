@@ -171,18 +171,7 @@ namespace VErpApi.Controllers.System
         {
             return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(true);
         }
-
-        /// <summary>
-        /// Sinh mã nhân viên
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("GenerateUserCode")]
-        public async Task<CustomCodeModel> GenerateUserCode()
-        {
-            var currentConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.UserAndEmployee, EnumObjectType.UserAndEmployee, 0);
-            return await _genCodeConfigService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
-        }
+      
 
         [HttpGet]
         [Route("fieldDataForMapping")]

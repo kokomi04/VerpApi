@@ -309,7 +309,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             await ValidateProductUnitConversion(model);
 
 
-            var customGenCodeId = await GeneratePurchasingRequestCode(null, model);
+            var customGenCodeLastValue = await GeneratePurchasingRequestCode(null, model);
 
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
@@ -357,7 +357,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequest.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequest.PurchasingRequestCode}", model.JsonSerialize());
 
-                await ConfirmPurchasingRequestCode(customGenCodeId);
+                await ConfirmPurchasingRequestCode(customGenCodeLastValue);
 
                 return purchasingRequest.PurchasingRequestId;
             }
@@ -370,7 +370,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoRequest()))
             {
 
-                int customGenCodeId = await GeneratePurchasingRequestCode(purchasingRequestId, model);
+                var customGenCodeBaseValueModel = await GeneratePurchasingRequestCode(purchasingRequestId, model);
 
                 if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
                 {
@@ -431,16 +431,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
 
-                    await ConfirmPurchasingRequestCode(customGenCodeId);
+                    await ConfirmPurchasingRequestCode(customGenCodeBaseValueModel);
 
                     return true;
                 }
             }
         }
 
-        private async Task<int> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
-        {
-            int customGenCodeId = 0;
+        private async Task<CustomGenCodeBaseValueModel> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
+        {         
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
 
             PurchasingRequest existedItem = null;
@@ -448,29 +447,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode && r.PurchasingRequestId != purchasingRequestId);
                 if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+                return null;
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingRequest, EnumObjectType.PurchasingRequest, 0);
-                customGenCodeId = config.CustomGenCodeId;
-
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingRequest, EnumObjectType.PurchasingRequest, 0, purchasingRequestId, model.PurchasingRequestCode, model.Date);
+                if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã cho YCVT");
                 int dem = 0;
                 do
                 {
 
-                    model.PurchasingRequestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    model.PurchasingRequestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, purchasingRequestId, model.PurchasingRequestCode, model.Date))?.CustomCode;
                     existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode && r.PurchasingRequestId != purchasingRequestId);
                     dem++;
                 } while (existedItem != null && dem < 10);
-            }
-            return customGenCodeId;
-
+                return config.CurrentLastValue;
+            }                      
         }
 
-        private async Task<bool> ConfirmPurchasingRequestCode(int customGenCodeId)
+        private async Task<bool> ConfirmPurchasingRequestCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
         {
-            if (customGenCodeId <= 0) return true;
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            if (customGenCodeBaseValue == null) return true;
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         }
 
         public async Task<bool> Delete(long? orderDetailId, long purchasingRequestId)

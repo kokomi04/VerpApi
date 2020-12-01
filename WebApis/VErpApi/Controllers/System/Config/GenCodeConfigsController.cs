@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.MasterDB;
@@ -34,9 +35,9 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet("{customGenCodeId}")]
-        public async Task<CustomGenCodeOutputModel> GetInfo([FromRoute] int customGenCodeId)
+        public async Task<CustomGenCodeOutputModel> GetInfo([FromRoute] int customGenCodeId, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _genCodeConfigService.GetInfo(customGenCodeId);
+            return await _genCodeConfigService.GetInfo(customGenCodeId, fId, code, date);
         }
 
         [HttpPut("{customGenCodeId}")]
@@ -58,16 +59,16 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost("{customGenCodeId}/GenerateCode")]
-        public async Task<CustomCodeModel> GenerateCode([FromRoute] int customGenCodeId, [FromQuery] int lastValue, [FromQuery] string code = "")
+        public async Task<CustomCodeGeneratedModel> GenerateCode([FromRoute] int customGenCodeId, [FromQuery] int lastValue, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _genCodeConfigService.GenerateCode(customGenCodeId, lastValue, code);
-        }   
+            return await _genCodeConfigService.GenerateCode(customGenCodeId, lastValue, fId, code, date);
+        }
 
         [HttpPut]
         [Route("{customGenCodeId}/ConfirmCode")]
-        public async Task<bool> ConfirmCode([FromRoute] int customGenCodeId)
+        public async Task<bool> ConfirmCode([FromRoute] int customGenCodeId, [FromQuery] string baseValue)
         {
-            return await _genCodeConfigService.ConfirmCode(customGenCodeId);
+            return await _genCodeConfigService.ConfirmCode(customGenCodeId, baseValue);
         }
     }
 }

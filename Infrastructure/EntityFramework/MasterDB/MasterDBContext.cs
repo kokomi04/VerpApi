@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CategoryGroup> CategoryGroup { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
+        public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
@@ -201,15 +202,17 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CustomGenCode>(entity =>
             {
+                entity.Property(e => e.BaseFormat).HasMaxLength(128);
+
                 entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
 
                 entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.CustomGenCodeName).HasMaxLength(128);
 
-                entity.Property(e => e.DateFormat)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                //entity.Property(e => e.DateFormat)
+                //    .HasMaxLength(32)
+                //    .IsUnicode(false);
 
                 entity.Property(e => e.Description)
                     .IsRequired()
@@ -221,28 +224,47 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false)
                     .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+                //entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
 
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                //entity.Property(e => e.Prefix)
+                //    .HasMaxLength(32)
+                //    .IsUnicode(false);
 
                 entity.Property(e => e.ResetDate).HasColumnType("datetime");
 
-                entity.Property(e => e.Seperator)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .IsFixedLength();
+                //entity.Property(e => e.Seperator)
+                //    .HasMaxLength(1)
+                //    .IsUnicode(false)
+                //    .IsFixedLength();
 
-                entity.Property(e => e.Suffix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                //entity.Property(e => e.Suffix)
+                //    .HasMaxLength(32)
+                //    .IsUnicode(false);
 
                 entity.Property(e => e.TempCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<CustomGenCodeValue>(entity =>
+            {
+                entity.HasKey(e => new { e.CustomGenCodeId, e.BaseValue });
+
+                entity.Property(e => e.BaseValue).HasMaxLength(128);
+
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.TempCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<DataConfig>(entity =>
@@ -355,12 +377,12 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
-            //modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
-            //{
-            //    entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
-            //        .HasName("UK_ObjectCustomGenCode")
-            //        .IsUnique();
-            //});
+            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            {
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
+                    .HasName("UK_ObjectCustomGenCode")
+                    .IsUnique();
+            });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
             {

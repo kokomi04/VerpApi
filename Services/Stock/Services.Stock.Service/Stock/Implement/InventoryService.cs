@@ -2084,10 +2084,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
-            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
-            var customGenCodeId = config.CustomGenCodeId;
+            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0, null, null, date.GetUnix());
 
-            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue);
+            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, null, null, date.GetUnix());
 
             var newPackage = new Package()
             {
@@ -2112,7 +2111,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
 
-            await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
 
             return newPackage;
         }
