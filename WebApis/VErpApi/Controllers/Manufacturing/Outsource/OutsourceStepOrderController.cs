@@ -42,5 +42,17 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourceStepOrderService.SearchOutsourceStepOrder(keyword, page, size);
         }
+
+        [HttpPut]
+        [Route("{outsouceStepOrderId}")]
+        public async Task<bool> UpdateOutsourceStepOrder([FromRoute]long outsourceStepOrderId,[FromBody] OutsourceStepOrderModel req) {
+            return await _outsourceStepOrderService.UpdateOutsourceStepOrder(outsourceStepOrderId, req);
+        }
+
+        [HttpDelete]
+        [Route("{outsouceStepOrderId}")]
+        public async Task<bool> DeleteOutsouceStepOrder([FromRoute] long outsourceStepOrderId) {
+            return await _outsourceStepOrderService.DeleteOutsouceStepOrder(outsourceStepOrderId);
+        }
     }
 }

@@ -13,5 +13,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req);
         Task<OutsourceStepOrderModel> GetOutsourceStepOrder(long outsourceStepOrderId);
         Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size);
+        Task<bool> UpdateOutsourceStepOrder(long outsourceStepOrderId, OutsourceStepOrderModel req);
+        Task<bool> DeleteOutsouceStepOrder(long outsourceStepOrderId);
     }
 }
