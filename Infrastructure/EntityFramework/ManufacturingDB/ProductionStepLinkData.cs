@@ -15,7 +15,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string ProductionStepLinkDataCode { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
-        public int UnitId { get; set; }
         public decimal Quantity { get; set; }
         public int SortOrder { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

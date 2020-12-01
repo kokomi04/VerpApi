@@ -169,7 +169,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProductionStepLinkDataCode = dataLinks[r.ProductionStepLinkDataId].ProductionStepLinkDataCode,
                         ObjectId = dataLinks[r.ProductionStepLinkDataId].ObjectId,
                         ObjectTypeId = dataLinks[r.ProductionStepLinkDataId].ObjectTypeId,
-                        UnitId = dataLinks[r.ProductionStepLinkDataId].UnitId,
                         Quantity = dataLinks[r.ProductionStepLinkDataId].Quantity,
                         SortOrder = dataLinks[r.ProductionStepLinkDataId].SortOrder,
                         ProductId = dataLinks[r.ProductionStepLinkDataId].ProductId,
@@ -512,7 +511,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             ObjectId = item.ObjectId,
                             ObjectTypeId = item.ObjectTypeId,
-                            UnitId = item.UnitId,
                             Quantity = item.Quantity * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
                             SortOrder = item.SortOrder,
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString()
