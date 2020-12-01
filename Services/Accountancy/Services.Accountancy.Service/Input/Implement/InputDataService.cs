@@ -877,7 +877,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
-                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
             }
         }
 
@@ -1891,7 +1891,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
