@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     public class ProductionStepLinkDataInput : ProductionStepLinkDataModel
     {
         public string ObjectTitle { get; set; }
-        public string UnitName { get; set; }
+        public int UnitId { get; set; }
     }
 
     public class ProductionStepLinkDataInfo : ProductionStepLinkDataModel, IMapFrom<ProductionStepLinkDataRole>
@@ -30,7 +30,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumProductionProcess.EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
         public long ProductionStepId { get; set; }
         public string ObjectTitle { get; set; }
-        public string UnitName { get; set; }
+        public int UnitId { get; set; }
 
         public void Mapping(Profile profile)
         {
