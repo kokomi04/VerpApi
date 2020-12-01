@@ -472,7 +472,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
-                        throw new BadRequestException(CategoryErrorCode.ReferValueNotFound, new string[] { field.Title });
+                        throw new BadRequestException(CategoryErrorCode.ReferValueNotFound, new string[] { field.Title + ": " + valueItem });
                     }
                 }
             }

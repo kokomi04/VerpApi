@@ -830,7 +830,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
-                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
             }
         }
 
@@ -1802,7 +1802,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                                     || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
                                 {
-                                    throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { row.Index, field.Title });
+                                    throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { row.Index, field.Title + ": " + value });
                                 }
                             }
                         }
@@ -1848,7 +1848,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
@@ -2226,11 +2226,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
         {
-           // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailInfo_ByFIds",
                 new[]
                 {
-                   fIds.ToSqlParameter("@F_Ids")                   
+                   fIds.ToSqlParameter("@F_Ids")
                 });
 
             return data.ConvertData();
