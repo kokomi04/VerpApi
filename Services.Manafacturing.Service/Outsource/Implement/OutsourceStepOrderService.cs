@@ -175,6 +175,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var outsourceStepRequestDatas = (await _outsourceStepRequestService.GetOutsourceStepRequestData(group.Key)).OrderByDescending(x=>x.ProductionStepLinkDataRoleTypeId);
 
                 var percent = decimal.Zero;
+                var lst = new List<OutsourceStepOrderDetailModel>();
                 foreach (var data in outsourceStepRequestDatas) {
                     var detail = outsourceStepOrder.outsourceOrderDetail
                                                    .FirstOrDefault(x => x.ProductionStepLinkDataId == data.ProductionStepLinkDataId);
@@ -182,7 +183,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     if (detail != null)
                         percent = (decimal)(detail.OutsourceOrderQuantity / data.OutsourceStepRequestDataQuantity);
 
-                    outsourceOrderDetail.Add(new OutsourceStepOrderDetailModel {
+                    lst.Add(new OutsourceStepOrderDetailModel {
                         OutsourceStepRequestDataQuantity = data.OutsourceStepRequestDataQuantity,
                         OutsourceOrderDetailId = detail == null ? 0 : detail.OutsourceOrderDetailId,
                         OutsourceOrderQuantity = detail == null ? (decimal)(percent * data.OutsourceStepRequestDataQuantity) : detail.OutsourceOrderQuantity,
@@ -200,6 +201,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepTitle = data.ProductionStepTitle 
                     });
                 }
+                outsourceOrderDetail.AddRange(lst.OrderBy(x => x.ProductionStepId));
             }
 
             outsourceStepOrder.outsourceOrderDetail = outsourceOrderDetail;
